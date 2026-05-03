@@ -23,6 +23,43 @@ class SearchCommandNew {
         this.pages = pages;
     }
 
+    notify(message, type = 'error') {
+        const dash = window.dashboardInstance;
+        if (dash && typeof dash.showNotification === 'function') {
+            dash.showNotification(message, type);
+        }
+    }
+
+    /** Same rules as server canonicalBookmarkURLKey (handlers.go). */
+    canonicalBookmarkURLKey(raw) {
+        const s = String(raw || '').trim();
+        try {
+            const u = new URL(s);
+            const scheme = u.protocol.replace(/:$/, '').toLowerCase();
+            const host = u.hostname.toLowerCase();
+            let path = u.pathname;
+            if (path === '/') {
+                path = '';
+            } else {
+                path = path.replace(/\/+$/, '');
+            }
+            return `${scheme}://${host}${path}${u.search}`;
+        } catch {
+            let t = s.toLowerCase();
+            const hash = t.indexOf('#');
+            if (hash >= 0) {
+                t = t.slice(0, hash);
+            }
+            return t.replace(/\/+$/, '');
+        }
+    }
+
+    duplicateBookmarkUrlMessage() {
+        return this.language
+            ? (this.language.t('config.duplicateBookmarkUrl') || 'This bookmark URL already exists on this page.')
+            : 'This bookmark URL already exists on this page.';
+    }
+
     handle(args) {
         return [{
             name: this.language ? this.language.t('config.addNewBookmark') : 'Create New Bookmark',
@@ -409,7 +446,28 @@ class SearchCommandNew {
             icon
         };
 
-        const pageId = parseInt(formData.get('page'));
+        const pageSelectEl = document.getElementById('new-bookmark-page');
+        const pageId = parseInt(String(pageSelectEl?.value ?? formData.get('page') ?? ''), 10);
+        if (!Number.isFinite(pageId) || pageId < 1) {
+            this.notify(
+                this.language ? this.language.t('config.errorCreatingBookmark') : 'Invalid page selected.',
+                'error'
+            );
+            return;
+        }
+
+        const urlKey = this.canonicalBookmarkURLKey(bookmark.url);
+        const dash = window.dashboardInstance;
+        if (dash && urlKey) {
+            const samePage = Number(dash.currentPageId) === pageId || String(dash.currentPageId) === String(pageId);
+            const pool = samePage
+                ? (dash.bookmarks || [])
+                : (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
+            if (pool.some((b) => this.canonicalBookmarkURLKey(b.url) === urlKey)) {
+                this.notify(this.duplicateBookmarkUrlMessage(), 'error');
+                return;
+            }
+        }
 
         try {
             const response = await fetch('/api/bookmarks/add', {
@@ -432,44 +490,39 @@ class SearchCommandNew {
                     }
                 }
 
-                if (window.showNotification) {
-                    window.showNotification(
-                        this.language ? this.language.t('config.bookmarkCreated') : 'Bookmark created successfully!',
-                        'success'
-                    );
-                }
-            } else {
-                if (response.status === 409 && window.showNotification) {
-                    let conflictMessage = this.language ? this.language.t('config.duplicateBookmarkUrl') || 'Duplicate bookmark URL' : 'Duplicate bookmark URL';
+                this.notify(
+                    this.language ? this.language.t('config.bookmarkCreated') : 'Bookmark created successfully!',
+                    'success'
+                );
+            } else if (response.status === 409) {
+                let conflictMessage = this.duplicateBookmarkUrlMessage();
+                const raw = await response.text();
+                if (raw) {
                     try {
-                        const errorBody = await response.json();
+                        const errorBody = JSON.parse(raw);
                         if (errorBody?.error === 'duplicate_shortcut') {
                             conflictMessage = `Duplicate shortcut "${errorBody.shortcut}".`;
                         }
-                    } catch (error) {
-                        // Keep fallback conflict message.
+                    } catch {
+                        if (raw.includes('Duplicate bookmark URL')) {
+                            conflictMessage = this.duplicateBookmarkUrlMessage();
+                        }
                     }
-                    window.showNotification(conflictMessage, 'warning');
                 }
-
+                this.notify(conflictMessage, 'error');
+            } else {
                 console.error('Failed to create bookmark');
-                
-                if (window.showNotification) {
-                    window.showNotification(
-                        this.language ? this.language.t('config.errorCreatingBookmark') : 'Error creating bookmark',
-                        'error'
-                    );
-                }
-            }
-        } catch (error) {
-            console.error('Error creating bookmark:', error);
-            
-            if (window.showNotification) {
-                window.showNotification(
+                this.notify(
                     this.language ? this.language.t('config.errorCreatingBookmark') : 'Error creating bookmark',
                     'error'
                 );
             }
+        } catch (error) {
+            console.error('Error creating bookmark:', error);
+            this.notify(
+                this.language ? this.language.t('config.errorCreatingBookmark') : 'Error creating bookmark',
+                'error'
+            );
         }
     }
 
@@ -477,9 +530,7 @@ class SearchCommandNew {
         if (iconFile) {
             const uploadedIcon = await this.uploadIconFile(iconFile);
             if (!uploadedIcon) {
-                if (window.showNotification) {
-                    window.showNotification('Icon upload failed.', 'error');
-                }
+                this.notify('Icon upload failed.', 'error');
                 return null;
             }
             return uploadedIcon;
@@ -488,9 +539,7 @@ class SearchCommandNew {
         if (iconUrl) {
             const remoteIcon = await this.uploadIconFromUrl(iconUrl);
             if (!remoteIcon) {
-                if (window.showNotification) {
-                    window.showNotification('Icon URL invalid or blocked.', 'error');
-                }
+                this.notify('Icon URL invalid or blocked.', 'error');
                 return null;
             }
             return remoteIcon;

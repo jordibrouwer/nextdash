@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,6 +23,33 @@ type Handlers struct {
 
 func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
+}
+
+// canonicalBookmarkURLKey normalizes URLs so obvious duplicates (trailing slash, hash, case) match.
+func canonicalBookmarkURLKey(raw string) string {
+	s := strings.TrimSpace(raw)
+	u, err := url.Parse(s)
+	if err != nil || u.Host == "" {
+		fallback := strings.ToLower(s)
+		if i := strings.Index(fallback, "#"); i >= 0 {
+			fallback = fallback[:i]
+		}
+		return strings.TrimSuffix(fallback, "/")
+	}
+	u.Fragment = ""
+	u.RawFragment = ""
+	scheme := strings.ToLower(u.Scheme)
+	host := strings.ToLower(u.Host)
+	path := u.EscapedPath()
+	if path == "/" {
+		path = ""
+	} else {
+		path = strings.TrimSuffix(path, "/")
+	}
+	if u.RawQuery != "" {
+		return scheme + "://" + host + path + "?" + u.RawQuery
+	}
+	return scheme + "://" + host + path
 }
 
 func findDuplicateShortcutInList(bookmarks []Bookmark) string {
@@ -235,9 +263,9 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingBookmarks := h.store.GetBookmarksByPage(request.Page)
-	newURL := strings.TrimSpace(strings.ToLower(request.Bookmark.URL))
+	newKey := canonicalBookmarkURLKey(request.Bookmark.URL)
 	for _, existingBookmark := range existingBookmarks {
-		if strings.TrimSpace(strings.ToLower(existingBookmark.URL)) == newURL {
+		if canonicalBookmarkURLKey(existingBookmark.URL) == newKey {
 			http.Error(w, "Duplicate bookmark URL", http.StatusConflict)
 			return
 		}
