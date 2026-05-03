@@ -32,7 +32,11 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
-            'tips': this.handleTipsCommand.bind(this)
+            'tips': this.handleTipsCommand.bind(this),
+            'goto': this.handleGotoCommand.bind(this),
+            'stale': this.handleStaleCommand.bind(this),
+            'duplicate': this.handleDuplicateCommand.bind(this),
+            'duplicates': this.handleDuplicateCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -444,6 +448,264 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return false;
+    }
+
+    handleGotoCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard || !dashboard.searchComponent) {
+            return [];
+        }
+        const scope = (args[0] || '').toLowerCase();
+
+        if (scope === 'all') {
+            const withUrl = (dashboard.allBookmarks || []).filter((b) => b && String(b.url || '').trim());
+            if (withUrl.length === 0) {
+                return [{
+                    name: 'No bookmarks across pages',
+                    shortcut: ':GOTO',
+                    type: 'command',
+                    action: () => {
+                        dashboard.showNotification('Nothing to open.', 'info');
+                        return true;
+                    }
+                }];
+            }
+            return [{
+                name: 'Open random bookmark (all pages)',
+                shortcut: ':GOTO',
+                type: 'command',
+                action: () => {
+                    const pick = withUrl[Math.floor(Math.random() * withUrl.length)];
+                    dashboard.searchComponent.openBookmark(pick);
+                    return true;
+                }
+            }];
+        }
+        if (!scope) {
+            const pagePool = (dashboard.bookmarks || []).filter((b) => b && String(b.url || '').trim());
+            const anyAll = (dashboard.allBookmarks || []).some((b) => b && String(b.url || '').trim());
+            if (pagePool.length === 0 && !anyAll) {
+                return [{
+                    name: 'No bookmarks available',
+                    shortcut: ':GOTO',
+                    type: 'command',
+                    action: () => {
+                        dashboard.showNotification('Nothing to open.', 'info');
+                        return true;
+                    }
+                }];
+            }
+            const rows = [{
+                name: 'Open random bookmark (this page)',
+                shortcut: ':GOTO',
+                type: 'command',
+                action: () => {
+                    const pool = (dashboard.bookmarks || []).filter((b) => b && String(b.url || '').trim());
+                    if (pool.length === 0) {
+                        dashboard.showNotification('No bookmarks on this page.', 'info');
+                        return true;
+                    }
+                    const pick = pool[Math.floor(Math.random() * pool.length)];
+                    dashboard.searchComponent.openBookmark(pick);
+                    return true;
+                }
+            }];
+            if (anyAll) {
+                rows.push({
+                    name: '',
+                    shortcut: ':GOTO',
+                    completion: ':goto all ',
+                    type: 'command-completion'
+                });
+            }
+            return rows;
+        }
+        if ('all'.startsWith(scope)) {
+            return [{
+                name: '',
+                shortcut: ':GOTO',
+                completion: ':goto all ',
+                type: 'command-completion'
+            }];
+        }
+        return [];
+    }
+
+    getStaleBookmarkPaletteRows(dashboard) {
+        const stale = typeof dashboard.getStaleBookmarksList === 'function'
+            ? dashboard.getStaleBookmarksList()
+            : [];
+        if (stale.length === 0) {
+            return [{
+                name: 'No stale bookmarks in scope',
+                shortcut: ':STALE',
+                type: 'command',
+                action: () => true
+            }];
+        }
+        const cap = 45;
+        return stale.slice(0, cap).map((bookmark, i) => ({
+            name: bookmark.name,
+            shortcut: bookmark.shortcut && String(bookmark.shortcut).trim()
+                ? String(bookmark.shortcut).trim()
+                : `⌛${i + 1}`,
+            bookmark,
+            type: 'bookmark'
+        }));
+    }
+
+    handleStaleCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) {
+            return [];
+        }
+        const a0 = (args[0] || '').toLowerCase();
+
+        if (a0 === 'list') {
+            return this.getStaleBookmarkPaletteRows(dashboard);
+        }
+        if (a0 && 'list'.startsWith(a0) && a0 !== 'list') {
+            return [{
+                name: '',
+                shortcut: ':STALE',
+                completion: ':stale list ',
+                type: 'command-completion'
+            }];
+        }
+        if (a0) {
+            return [];
+        }
+
+        return [
+            {
+                name: 'Jump to Stale section (expand + scroll)',
+                shortcut: ':STALE',
+                type: 'command',
+                action: () => {
+                    if (typeof dashboard.scrollToStaleCollection === 'function') {
+                        dashboard.scrollToStaleCollection();
+                    }
+                    return true;
+                }
+            },
+            {
+                name: '',
+                shortcut: ':STALE',
+                completion: ':stale list ',
+                type: 'command-completion'
+            }
+        ];
+    }
+
+    handleDuplicateCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        const sub = (args[0] || '').toLowerCase().trim();
+
+        if (sub === 'open' || sub === 'config') {
+            return [{
+                name: 'Open Config → Bookmarks',
+                shortcut: ':DUPLICATE',
+                type: 'command',
+                action: () => {
+                    window.location.href = '/config#bookmarks';
+                    return true;
+                }
+            }];
+        }
+
+        if (sub === 'scan') {
+            return [{
+                name: 'Run duplicate scan',
+                shortcut: ':DUPLICATE',
+                type: 'command',
+                action: () => {
+                    this.runDuplicateScan(dashboard);
+                    return true;
+                }
+            }];
+        }
+
+        if (sub && sub !== 'scan') {
+            const dupPrefix = fullQuery.trim().toLowerCase().startsWith(':duplicates') ? ':duplicates' : ':duplicate';
+            if ('open'.startsWith(sub) && sub !== 'open') {
+                return [{
+                    name: '',
+                    shortcut: ':DUPLICATE',
+                    completion: `${dupPrefix} open `,
+                    type: 'command-completion'
+                }];
+            }
+            if ('config'.startsWith(sub) && sub !== 'config') {
+                return [{
+                    name: '',
+                    shortcut: ':DUPLICATE',
+                    completion: `${dupPrefix} config `,
+                    type: 'command-completion'
+                }];
+            }
+            return [];
+        }
+
+        const trimmed = fullQuery.replace(/\s+$/, '');
+        if (trimmed === ':duplicate' || trimmed === ':duplicates') {
+            const dupPrefix = trimmed.startsWith(':duplicates') ? ':duplicates' : ':duplicate';
+            return [
+                {
+                    name: 'Scan duplicate URLs (all pages)',
+                    shortcut: ':DUPLICATE',
+                    type: 'command',
+                    action: () => {
+                        this.runDuplicateScan(dashboard);
+                        return true;
+                    }
+                },
+                {
+                    name: '',
+                    shortcut: ':DUPLICATE',
+                    completion: `${dupPrefix} open `,
+                    type: 'command-completion'
+                }
+            ];
+        }
+
+        return [{
+            name: 'Scan duplicate URLs (all pages)',
+            shortcut: ':DUPLICATE',
+            type: 'command',
+            action: () => {
+                this.runDuplicateScan(dashboard);
+                return true;
+            }
+        }];
+    }
+
+    runDuplicateScan(dashboard) {
+        fetch('/api/duplicates')
+            .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Request failed'))))
+            .then((data) => {
+                const groups = Array.isArray(data.duplicateUrls) ? data.duplicateUrls : [];
+                const groupCount = groups.length;
+                let refCount = 0;
+                groups.forEach((g) => {
+                    if (Array.isArray(g.bookmarks)) refCount += g.bookmarks.length;
+                });
+                if (!dashboard || typeof dashboard.showNotification !== 'function') {
+                    return;
+                }
+                if (groupCount === 0) {
+                    dashboard.showNotification('No duplicate URLs found.', 'success');
+                } else {
+                    dashboard.showNotification(
+                        `${groupCount} duplicate URL group(s), ${refCount} bookmark row(s). Use Config → Bookmarks to clean up.`,
+                        'warning'
+                    );
+                }
+            })
+            .catch(() => {
+                if (dashboard && typeof dashboard.showNotification === 'function') {
+                    dashboard.showNotification('Duplicate scan failed.', 'error');
+                }
+            });
     }
 
     /**

@@ -1117,3 +1117,20 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 .recent-bookmarks-empty {
     color: var(--text-secondary);
 }
+
+@keyframes nextdashStaleFlash {
+    0% {
+        box-shadow: 0 0 0 0 var(--accent-primary, rgba(100, 180, 255, 0.65));
+    }
+    40% {
+        box-shadow: 0 0 0 6px rgba(100, 180, 255, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+.category.nextdash-stale-flash {
+    animation: nextdashStaleFlash 1.1s ease-out 2;
+    border-radius: 6px;
+}

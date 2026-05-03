@@ -1673,6 +1673,37 @@ class Dashboard {
         return this.bookmarks;
     }
 
+    getStaleBookmarksList() {
+        const staleWindowMs = 30 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const source = this.getSmartCollectionSourceBookmarks();
+        if (!Array.isArray(source)) {
+            return [];
+        }
+        return source.filter((bookmark) => {
+            const lastOpened = Number(bookmark.lastOpened || 0);
+            return lastOpened === 0 || (now - lastOpened) > staleWindowMs;
+        });
+    }
+
+    scrollToStaleCollection() {
+        const el = document.querySelector('.category[data-category-id="__smart_stale__"]');
+        if (!el) {
+            this.showNotification(
+                'Stale section not visible (disabled in settings, wrong page filter, or no stale rows).',
+                'info'
+            );
+            return;
+        }
+        const collapsedKey = 'smart:__smart_stale__';
+        el.setAttribute('data-collapsed', 'false');
+        this.collapsedCategories[collapsedKey] = false;
+        this.saveCollapsedStates();
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.classList.add('nextdash-stale-flash');
+        setTimeout(() => el.classList.remove('nextdash-stale-flash'), 2200);
+    }
+
     ensureBookmarkMutationSnapshot() {
         if (!this.pendingReorderSnapshot) {
             this.pendingReorderSnapshot = this.bookmarks.map((bm) => ({ ...bm }));
