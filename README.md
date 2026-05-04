@@ -5,6 +5,22 @@ Featuring a minimalist, keyboard-first interface with extensive customization op
 
 ---
 
+## Security and network exposure
+
+nextDash is built as a **personal or small-team dashboard on a trusted network**. It does **not** provide built-in user accounts, API keys, or other application-level access control. Data is stored on disk as configured by the instance; the HTTP API and UI assume that anyone who can open the URL is allowed to use the app.
+
+**Do not** publish the service directly on the public internet without additional protection. If the port is reachable from untrusted clients, they can read, change, or delete your bookmarks and settings like any local user of the app.
+
+**Preferred setups:**
+
+- **Private overlay network** — e.g. [Tailscale](https://tailscale.com/) or another mesh/VPN so your server and browsers share a private IP range and nextDash never gets a world-routable listener.
+- **Reverse proxy on a trusted edge** — Traefik, Caddy, nginx, or similar **inside** your home/lab/VPC, terminating TLS and adding **authentication** (HTTP basic auth, OAuth2 Proxy, SSO, etc.) before traffic reaches nextDash.
+- **Local-only** — bind to `127.0.0.1` and use SSH port forwarding or the same-machine browser when that fits your workflow.
+
+If you need access from coffee-shop Wi‑Fi, use a VPN back to your network (or Tailscale) instead of exposing nextDash’s port to the WAN. Treat “Docker port mapped on a cloud host with a public IP” as **unsafe** unless something in front enforces TLS and strong auth.
+
+---
+
 ## ✨ Core Features
 
 ### ⌨️ Power User Workflow
