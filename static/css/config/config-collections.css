@@ -1,0 +1,190 @@
+/* ============================================================
+   Collections Tab
+   ============================================================ */
+
+.collections-tab {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.collections-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    background: var(--background-primary);
+    flex-shrink: 0;
+}
+
+.collections-tab-intro {
+    flex: 1 1 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ── List ── */
+
+.collections-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-primary);
+}
+
+.collection-item {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.collection-item:last-child {
+    border-bottom: none;
+}
+
+.collection-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    min-height: 2.5rem;
+}
+
+.collection-drag-handle {
+    flex-shrink: 0;
+    cursor: default;
+    color: var(--text-tertiary);
+    font-size: 1rem;
+    user-select: none;
+    opacity: 0.4;
+}
+
+.collection-item-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+    width: 1.4rem;
+    text-align: center;
+}
+
+.collection-item-name {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.collection-item-logic {
+    flex-shrink: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.collection-item-rules {
+    flex-shrink: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+/* ── Empty state ── */
+
+.collections-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-primary);
+    border-top: none;
+    padding: 2rem;
+    text-align: center;
+}
+
+.collections-empty-state p {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-tertiary);
+    max-width: 360px;
+}
+
+/* ── Edit panel ── */
+
+.collections-edit-panel {
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+}
+
+.collections-edit-header {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-primary);
+}
+
+.collections-edit-title {
+    margin: 0;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.collections-edit-body {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.col-edit-icon-input {
+    max-width: 5rem;
+}
+
+.collections-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* ── Rules ── */
+
+.col-rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.col-rule-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.col-rule-field {
+    flex: 0 0 auto;
+    width: 7rem;
+    min-width: 0;
+}
+
+.col-rule-op {
+    flex: 0 0 auto;
+    width: 6rem;
+    min-width: 0;
+}
+
+.col-rule-value {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.col-rule-remove {
+    flex: 0 0 auto;
+}
+
+.col-add-rule-btn {
+    align-self: flex-start;
+}

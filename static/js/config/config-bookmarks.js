@@ -109,6 +109,8 @@ class TagAutocomplete {
     }
 }
 
+window.TagAutocomplete = TagAutocomplete;
+
 class ConfigBookmarks {
     constructor(t) {
         this.t = t; // Translation function

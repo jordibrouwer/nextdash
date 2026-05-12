@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css">
     <link rel="stylesheet" href="/static/css/config/config-tags.css">
+    <link rel="stylesheet" href="/static/css/config/config-collections.css">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/status.css">
     <link rel="stylesheet" href="/static/css/select.css">
@@ -69,6 +70,7 @@
                     <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
                     <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
                     <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
+                    <button class="tab-button" data-tab="collections">collections</button>
                     <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
                     <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
                 </div>
@@ -1141,6 +1143,52 @@
             </div>
             </div>
 
+            <div class="tab-content" data-tab-content="collections">
+            <div class="collections-tab">
+                <div class="collections-toolbar">
+                    <span class="collections-tab-intro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</span>
+                    <button type="button" id="add-collection-btn" class="btn btn-primary btn-small">+ New collection</button>
+                </div>
+                <div id="collections-list" class="collections-list"></div>
+                <div id="collections-empty-state" class="collections-empty-state" style="display:none">
+                    <p>No collections yet. Create one to group bookmarks by tag, category, or shortcut.</p>
+                </div>
+
+                <!-- Edit panel -->
+                <div id="collections-edit-panel" class="collections-edit-panel" hidden>
+                    <div class="collections-edit-header">
+                        <h3 class="collections-edit-title" id="col-edit-title">New collection</h3>
+                    </div>
+                    <div class="collections-edit-body">
+                        <div class="bookmark-detail-section">
+                            <label class="bookmark-detail-label" for="col-edit-name">Name</label>
+                            <input type="text" id="col-edit-name" class="bookmark-detail-input" placeholder="My collection" autocomplete="off">
+                        </div>
+                        <div class="bookmark-detail-section">
+                            <label class="bookmark-detail-label" for="col-edit-icon">Icon (emoji)</label>
+                            <input type="text" id="col-edit-icon" class="bookmark-detail-input col-edit-icon-input" placeholder="★" autocomplete="off" maxlength="4">
+                        </div>
+                        <div class="bookmark-detail-section">
+                            <label class="bookmark-detail-label" for="col-edit-logic">Match logic</label>
+                            <select id="col-edit-logic" class="bookmark-detail-select">
+                                <option value="and">AND — all rules must match</option>
+                                <option value="or">OR — any rule must match</option>
+                            </select>
+                        </div>
+                        <div class="bookmark-detail-section">
+                            <label class="bookmark-detail-label">Rules</label>
+                            <div id="col-edit-rules" class="col-rules-list"></div>
+                            <button type="button" id="col-edit-add-rule" class="btn btn-secondary btn-small col-add-rule-btn">+ Add rule</button>
+                        </div>
+                    </div>
+                    <div class="collections-edit-actions">
+                        <button type="button" id="col-edit-save" class="btn btn-primary btn-small">Save</button>
+                        <button type="button" id="col-edit-cancel" class="btn btn-secondary btn-small">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+
             <div class="tab-content" data-tab-content="stats">
             <div class="stats-tab">
                 <p class="stats-intro" data-i18n="config.statsIntro">Overview from all pages (read-only).</p>
@@ -1516,6 +1564,7 @@
     <script src="/static/js/config/config-pages.js"></script>
     <script src="/static/js/config/config-categories.js"></script>
     <script src="/static/js/config/config-bookmarks.js"></script>
+    <script src="/static/js/config/config-collections.js"></script>
     <script src="/static/js/config/config-finders.js"></script>
     <script src="/static/js/config/config-backup.js"></script>
     <script src="/static/js/config/config-font.js"></script>

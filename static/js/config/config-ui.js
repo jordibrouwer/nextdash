@@ -48,13 +48,15 @@ class ConfigUI {
                     configManager.keyboard.refresh(configManager);
                 } else if (targetTab === 'tags' && configManager.tags) {
                     configManager.tags.refresh(configManager);
+                } else if (targetTab === 'collections' && configManager.collections) {
+                    configManager.collections.refresh(configManager);
                 }
             }
         };
 
     // Check initial hash and switch to corresponding tab
     const initialHash = window.location.hash.substring(1);
-    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'keyboard', 'stats', 'help'];
+    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'keyboard', 'stats', 'help'];
     if (validTabs.includes(initialHash)) {
         switchToTab(initialHash);
     } else {

@@ -80,6 +80,56 @@
   "smartStalePageIds": [],
   "smartMostUsedPageIds": [],
   "archivedPageIds": [],
+  "collections": [
+    {
+      "id": "test-8ke8m",
+      "name": "test",
+      "logic": "and",
+      "rules": [
+        {
+          "field": "tag",
+          "operator": "includes",
+          "value": "test"
+        }
+      ]
+    },
+    {
+      "id": "test-0g44v",
+      "name": "test",
+      "logic": "and",
+      "rules": [
+        {
+          "field": "tag",
+          "operator": "includes",
+          "value": "personal,"
+        }
+      ]
+    },
+    {
+      "id": "test3-0ptc6",
+      "name": "test3",
+      "logic": "and",
+      "rules": [
+        {
+          "field": "tag",
+          "operator": "includes",
+          "value": "test"
+        }
+      ]
+    },
+    {
+      "id": "jordi-3o1zi",
+      "name": "jordi",
+      "logic": "and",
+      "rules": [
+        {
+          "field": "tag",
+          "operator": "includes",
+          "value": "personal"
+        }
+      ]
+    }
+  ],
   "faviconRefreshPolicy": "on-save",
   "searchIndexed": true,
   "onboardingCompleted": true,

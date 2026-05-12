@@ -128,6 +128,9 @@ class ConfigManager {
         if (typeof ConfigTags === 'function') {
             this.tags = new ConfigTags(this.language.t.bind(this.language));
         }
+        if (typeof ConfigCollections === 'function') {
+            this.collections = new ConfigCollections(this.language.t.bind(this.language));
+        }
         this.setupDOM();
         await this.setupEventListeners();
         this.language.setupLanguageSelector();
@@ -673,6 +676,11 @@ class ConfigManager {
 
         const addFinderBtn = document.getElementById('add-finder-btn');
         if (addFinderBtn) addFinderBtn.addEventListener('click', () => this.addFinder());
+
+        const addCollectionBtn = document.getElementById('add-collection-btn');
+        if (addCollectionBtn) addCollectionBtn.addEventListener('click', () => {
+            if (this.collections) this.collections._openEdit(null, this);
+        });
 
         const pageSelector = document.getElementById('page-selector');
         if (pageSelector) {
@@ -1508,7 +1516,8 @@ class ConfigManager {
         this.renderStructureWorkspace();
         this.finders.render(this.findersData);
         this.refreshCustomSelects();
-        
+        if (this.collections) this.collections.refresh(this);
+
         // Set checkbox states
         const interleaveModeCheckbox = document.getElementById('interleave-mode-checkbox');
         if (interleaveModeCheckbox) interleaveModeCheckbox.checked = this.settingsData.interleaveMode;

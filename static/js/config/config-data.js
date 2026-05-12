@@ -39,6 +39,8 @@ class ConfigData {
                 settings.enableCustomFont = serverSettings.enableCustomFont;
                 settings.customFontPath = serverSettings.customFontPath;
                 settings.fontPreset = serverSettings.fontPreset;
+                // Always use collections from server (shared across devices)
+                settings.collections = serverSettings.collections;
             } else {
                 settings = serverSettings;
             }
