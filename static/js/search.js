@@ -309,16 +309,16 @@ class SearchComponent {
 
         // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
         if (this.searchActive) {
-            if (!/^[A-Z0-9#]$/.test(key)) {
+            if (!/^[A-Z0-9#\-]$/.test(key)) {
                 return;
             }
         } else {
             if (this.interleaveMode) {
-                if (!/^[A-Z0-9/#]$/.test(key)) {
+                if (!/^[A-Z0-9/#\-]$/.test(key)) {
                     return;
                 }
             } else {
-                if (!/^[A-Z:/#]$/.test(key)) {
+                if (!/^[A-Z:/#\-]$/.test(key)) {
                     return;
                 }
             }
@@ -378,7 +378,8 @@ class SearchComponent {
         const filters = {
             category: '',
             status: '',
-            page: ''
+            page: '',
+            tag: ''
         };
 
         const parts = (query || '').split(/\s+/).filter(Boolean);
@@ -392,6 +393,8 @@ class SearchComponent {
                 filters.status = lower.slice(7);
             } else if (lower.startsWith('page:')) {
                 filters.page = lower.slice(5);
+            } else if (lower.startsWith('tag:')) {
+                filters.tag = lower.slice(4);
             } else {
                 remaining.push(part);
             }
@@ -428,11 +431,16 @@ class SearchComponent {
             type: 'filter-completion'
         });
 
-        if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page') {
+        const allTags = Array.from(new Set(
+            (this.allBookmarks || []).flatMap(bm => (bm.tags || []).map(t => t.toLowerCase()))
+        )).sort();
+
+        if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page' || currentToken === 'tag') {
             return [
                 toCompletion('category:', 'Filter by category (example: category:work)'),
                 toCompletion('status:', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)'),
-                toCompletion('page:', 'Filter by page (current/all/number)')
+                toCompletion('page:', 'Filter by page (current/all/number)'),
+                toCompletion('tag:', 'Filter by tag (example: tag:work)')
             ];
         }
 
@@ -459,6 +467,14 @@ class SearchComponent {
                 .filter((pageValue) => pageValue.startsWith(value))
                 .slice(0, 10)
                 .map((pageValue) => toCompletion(`page:${pageValue}`, `Page: ${pageValue}`));
+        }
+
+        if (currentToken.startsWith('tag:')) {
+            const value = currentToken.slice('tag:'.length);
+            return allTags
+                .filter((tag) => tag.startsWith(value))
+                .slice(0, 8)
+                .map((tag) => toCompletion(`tag:${tag}`, `Tag: ${tag}`));
         }
 
         return [];
@@ -493,6 +509,13 @@ class SearchComponent {
             if (normalized === 'ok' && isBroken) return false;
             if (normalized === 'online' && normalizedCachedStatus !== 'online') return false;
             if (normalized === 'offline' && normalizedCachedStatus !== 'offline') return false;
+        }
+
+        if (filters.tag) {
+            const t = filters.tag.toLowerCase();
+            if (!(bookmark.tags || []).some(tag => tag.toLowerCase().includes(t))) {
+                return false;
+            }
         }
 
         if (filters.page && filters.page !== 'all' && filters.page !== 'global') {
