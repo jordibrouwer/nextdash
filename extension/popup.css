@@ -233,16 +233,18 @@ label {
   color: var(--background-primary);
 }
 
-input, select {
+input, select, textarea {
   margin-bottom: var(--padding-medium);
   padding: var(--padding-small);
   background-color: var(--background-secondary);
   border: var(--border-width) solid var(--border-primary);
   color: var(--text-primary);
   font-size: var(--font-size-text);
+  font-family: var(--font-family-main);
+  resize: vertical;
 }
 
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent-success);
 }

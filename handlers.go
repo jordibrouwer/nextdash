@@ -886,6 +886,34 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate and sanitize collections
+	seenIDs := make(map[string]struct{})
+	sanitized := settings.Collections[:0]
+	for _, col := range settings.Collections {
+		col.ID = strings.TrimSpace(col.ID)
+		col.Name = strings.TrimSpace(col.Name)
+		if col.ID == "" || col.Name == "" {
+			continue
+		}
+		if _, dup := seenIDs[col.ID]; dup {
+			continue
+		}
+		seenIDs[col.ID] = struct{}{}
+		validRules := col.Rules[:0]
+		for _, rule := range col.Rules {
+			rule.Value = strings.TrimSpace(rule.Value)
+			if rule.Value != "" {
+				validRules = append(validRules, rule)
+			}
+		}
+		if len(validRules) == 0 {
+			continue
+		}
+		col.Rules = validRules
+		sanitized = append(sanitized, col)
+	}
+	settings.Collections = sanitized
+
 	h.store.SaveSettings(settings)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})

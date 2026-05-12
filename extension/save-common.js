@@ -36,7 +36,7 @@ async function findDuplicateBookmark(serverUrl, pageId, bookmarkUrl) {
   return bookmarks.find((b) => b.url === bookmarkUrl) || null;
 }
 
-async function postAddBookmark(serverUrl, pageId, name, url, category, note) {
+async function postAddBookmark(serverUrl, pageId, name, url, category, note, tags) {
   const base = normalizeServerUrl(serverUrl);
   return fetch(new URL('/api/bookmarks/add', base), {
     method: 'POST',
@@ -49,7 +49,8 @@ async function postAddBookmark(serverUrl, pageId, name, url, category, note) {
         category: category || '',
         shortcut: '',
         checkStatus: false,
-        note: note || ''
+        note: note || '',
+        tags: Array.isArray(tags) ? tags : []
       }
     })
   });

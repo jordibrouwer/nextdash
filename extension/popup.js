@@ -321,6 +321,8 @@ async function saveBookmark(event) {
     const pageId = document.getElementById('page-select').value;
     const category = document.getElementById('category-select').value;
     const note = (document.getElementById('bookmark-note') && document.getElementById('bookmark-note').value) || '';
+    const tagsRaw = (document.getElementById('bookmark-tags') && document.getElementById('bookmark-tags').value) || '';
+    const tags = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
 
     if (!isBookmarkableUrl(url)) {
         showMessage('This URL cannot be saved. Use a normal http(s) page.', 'error');
@@ -335,7 +337,7 @@ async function saveBookmark(event) {
             const duplicate = bookmarks.find(bookmark => bookmark.url === url);
             if (duplicate) {
                 showConfirmation(`This URL already exists in this page as <strong>"${duplicate.name}"</strong>.<br><span class="highlight">Do you want to save it anyway?</span>`, async () => {
-                    await performSave(serverUrl, pageId, name, url, category);
+                    await performSave(serverUrl, pageId, name, url, category, note, tags);
                 });
                 return; // Wait for confirmation
             }
@@ -346,7 +348,7 @@ async function saveBookmark(event) {
     }
 
     // No duplicate, save directly
-    await performSave(serverUrl, pageId, name, url, category, note);
+    await performSave(serverUrl, pageId, name, url, category, note, tags);
 }
 
 async function saveSettings(event) {
@@ -365,9 +367,9 @@ async function saveSettings(event) {
     showMessage('Settings saved!', 'success');
 }
 
-async function performSave(serverUrl, pageId, name, url, category, note) {
+async function performSave(serverUrl, pageId, name, url, category, note, tags) {
     try {
-        const response = await postAddBookmark(serverUrl, pageId, name, url, category, note);
+        const response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags);
         if (!response.ok) throw new Error('Failed to save bookmark');
 
         await persistLastSaveContext(serverUrl, pageId, category);
