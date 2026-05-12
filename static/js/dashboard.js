@@ -266,6 +266,11 @@ class Dashboard {
         this.keyboardNavigation = null;
         this.swipeNavigation = null;
         this.categoryReorderInstances = [];
+        this.dashboardCategoryReorderInstances = [];
+        this._categoryDragRelayHandler = null;
+        this._categoryDropHandler = null;
+        this._pendingCategoryOrderFromDrop = null;
+        this._pendingCategorySave = null;
         this.pendingReorderSave = null;
         this.pendingReorderSnapshot = null;
         this.pendingMetadataSave = null;
@@ -1703,6 +1708,7 @@ class Dashboard {
 
         // Enable realtime drag-and-drop sorting within each category
         this.initializeCategoryReorder();
+        this.initializeDashboardCategoryReorder();
 
         // Update search component with current data
         this.updateSearchComponent();
@@ -1863,6 +1869,96 @@ class Dashboard {
         document.addEventListener('dragover', this._bookmarkDragRelayHandler, { capture: true, passive: false });
     }
 
+    initializeDashboardCategoryReorder() {
+        this.destroyDashboardCategoryReorderInstances();
+        if (typeof DragReorder === 'undefined') return;
+
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+
+        const isPacked = grid.classList.contains('packed-columns');
+        const onReorder = () => {
+            // Small delay so the DOM is fully settled after touch/mouse drag ends
+            requestAnimationFrame(() => this.syncCategoriesFromDom());
+        };
+
+        if (isPacked) {
+            grid.querySelectorAll('.dashboard-column').forEach((col) => {
+                this.dashboardCategoryReorderInstances.push(new DragReorder({
+                    container: col,
+                    itemSelector: '.category:not([data-smart-collection="true"])',
+                    itemClass: 'category-reorder-item',
+                    handleSelector: '.category-reorder-handle',
+                    longPressMs: 0,
+                    delegateItemDragOver: false,
+                    touchContainerSelector: '.dashboard-column',
+                    onReorder
+                }));
+            });
+        } else {
+            this.dashboardCategoryReorderInstances.push(new DragReorder({
+                container: grid,
+                itemSelector: '.category:not([data-smart-collection="true"])',
+                itemClass: 'category-reorder-item',
+                handleSelector: '.category-reorder-handle',
+                longPressMs: 0,
+                delegateItemDragOver: false,
+                touchContainerSelector: '#dashboard-layout',
+                onReorder
+            }));
+        }
+    }
+
+    ensureCategoryDragOverRelay() {
+        if (this._categoryDragRelayHandler) return;
+
+        // Accept the drop and immediately sync+save — DOM is correct at this moment.
+        this._categoryDropHandler = (e) => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            if (!dragged || !dragged.classList.contains('category')) return;
+            e.preventDefault();
+            this.syncCategoriesFromDom();
+        };
+        document.addEventListener('drop', this._categoryDropHandler, { capture: true });
+
+        this._categoryDragRelayHandler = (e) => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            if (!dragged) return;
+            if (!dragged.classList || !dragged.classList.contains('category')) return;
+            if (!e.dataTransfer) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (!el) return;
+            const targetColumn = el.closest('.dashboard-column');
+            if (!targetColumn) return;
+            const targetItem = el.closest('.category.category-reorder-item');
+            if (!window.__dragReorderState.placeholder) {
+                const ph = document.createElement('div');
+                ph.className = 'bookmark-drop-placeholder';
+                ph.setAttribute('aria-hidden', 'true');
+                window.__dragReorderState.placeholder = ph;
+            }
+            const placeholder = window.__dragReorderState.placeholder;
+            if (targetItem && targetItem !== dragged) {
+                targetItem.parentNode.insertBefore(placeholder, targetItem);
+                if (dragged.parentNode === targetItem.parentNode) {
+                    let isBefore = false;
+                    for (let cur = dragged.previousSibling; cur; cur = cur.previousSibling) {
+                        if (cur === targetItem) { isBefore = true; break; }
+                    }
+                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
+                }
+            } else if (!targetItem && dragged.parentNode !== targetColumn) {
+                targetColumn.appendChild(dragged);
+                targetColumn.appendChild(placeholder);
+            }
+        };
+        document.addEventListener('dragover', this._categoryDragRelayHandler, { capture: true, passive: false });
+    }
+
     destroyCategoryReorderInstances() {
         if (this._bookmarkDragRelayHandler) {
             document.removeEventListener('dragover', this._bookmarkDragRelayHandler, { capture: true, passive: false });
@@ -1879,6 +1975,21 @@ class Dashboard {
             }
         });
         this.categoryReorderInstances = [];
+    }
+
+    destroyDashboardCategoryReorderInstances() {
+        if (this._categoryDragRelayHandler) {
+            document.removeEventListener('dragover', this._categoryDragRelayHandler, { capture: true, passive: false });
+            this._categoryDragRelayHandler = null;
+        }
+        if (this._categoryDropHandler) {
+            document.removeEventListener('drop', this._categoryDropHandler, { capture: true });
+            this._categoryDropHandler = null;
+        }
+        (this.dashboardCategoryReorderInstances || []).forEach((i) => {
+            if (i && typeof i.destroy === 'function') i.destroy();
+        });
+        this.dashboardCategoryReorderInstances = [];
     }
 
     syncBookmarksFromDom() {
@@ -1931,6 +2042,50 @@ class Dashboard {
             this.statusMonitor.updateBookmarks(this.bookmarks);
         }
         this.scheduleBookmarkOrderSave();
+    }
+
+    syncCategoriesFromDom() {
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+        const els = grid.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])');
+        const newIds = Array.from(els).map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+
+        if (!newIds.length) return;
+
+        const byId = new Map(this.categories.map((c) => [String(c.id), c]));
+        const renderedSet = new Set(newIds);
+
+        // Categories not rendered (empty) — preserve them appended after rendered ones
+        const unrendered = this.categories.filter((c) => !renderedSet.has(String(c.id)));
+        const newCategories = [
+            ...newIds.map((id) => byId.get(id)).filter(Boolean),
+            ...unrendered
+        ];
+
+        this.categories = newCategories;
+        this.scheduleCategoryOrderSave();
+    }
+
+    scheduleCategoryOrderSave() {
+        if (this._pendingCategorySave) clearTimeout(this._pendingCategorySave);
+        this._pendingCategorySave = setTimeout(() => this.saveCategoryOrder(), 1000);
+    }
+
+    async saveCategoryOrder() {
+        try {
+            // Set originalId = id so the backend position-fallback doesn't remap bookmarks
+            const payload = this.categories.map((c) => ({ ...c, originalId: c.id }));
+            const res = await fetch(`/api/categories?page=${this.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Save failed');
+            this._pendingCategorySave = null;
+        } catch (err) {
+            this._pendingCategorySave = null;
+            this.showErrorNotification(`${err.message || 'Failed to save category order.'} Please try again.`);
+        }
     }
 
     scheduleBookmarkOrderSave(options = {}) {
@@ -2016,6 +2171,9 @@ class Dashboard {
         }
         categoryDiv.setAttribute('data-category-id', category.id || '');
         const isSmartCollection = category.isSmartCollection === true;
+        if (isSmartCollection) {
+            categoryDiv.setAttribute('data-smart-collection', 'true');
+        }
         const collapsedKey = isSmartCollection ? `smart:${category.id}` : category.id;
         const isCollapsed = this.settings.alwaysCollapseCategories
             ? true
@@ -2055,6 +2213,13 @@ class Dashboard {
             this.collapsedCategories[collapsedKey] = !isCollapsed;
             this.saveCollapsedStates();
         });
+        if (!isSmartCollection) {
+            const catHandle = document.createElement('span');
+            catHandle.className = 'category-reorder-handle';
+            catHandle.setAttribute('aria-hidden', 'true');
+            catHandle.addEventListener('click', (e) => e.stopPropagation());
+            titleElement.insertBefore(catHandle, titleElement.firstChild);
+        }
         categoryDiv.appendChild(titleElement);
 
         // Bookmarks list

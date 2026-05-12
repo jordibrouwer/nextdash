@@ -26,9 +26,10 @@ class DragReorder {
         this.itemSelector = options.itemSelector || null;
         this.handleSelector = options.handleSelector || null;
         this.delegateItemDragOver = Boolean(options.delegateItemDragOver);
+        this.touchContainerSelector = options.touchContainerSelector || '.bookmarks-list[data-category-id]';
         this.onReorder = options.onReorder || null;
         this.longPressMs = Number.isFinite(Number(options.longPressMs)) ? Math.max(0, Number(options.longPressMs)) : 0;
-        this.itemClass = 'reorder-item';
+        this.itemClass = options.itemClass || 'reorder-item';
         this.selected = null;
         this.dragStartMeta = null;
         /* 'ontouchstart' in window is true on many desktop Chromes → wrong branch, no HTML5 drag. */
@@ -110,6 +111,7 @@ class DragReorder {
 
         if (!this.useCoarsePointerDrag) {
             this.container.ondragover = this.containerDragOverHandler;
+            this.container.ondrop = (e) => e.preventDefault();
         }
     }
 
@@ -281,9 +283,9 @@ class DragReorder {
         const touch = e.touches[0];
         const pointElement = document.elementFromPoint(touch.clientX, touch.clientY);
         const targetItem = pointElement ? pointElement.closest(`.${this.itemClass}`) : null;
-        const targetContainer = pointElement ? pointElement.closest('.bookmarks-list[data-category-id]') : null;
+        const targetContainer = pointElement ? pointElement.closest(this.touchContainerSelector) : null;
 
-        if (targetItem && targetItem !== activeSelected) {
+        if (targetItem && targetItem !== activeSelected && !targetItem.contains(activeSelected)) {
             this.ensurePlaceholder();
             targetItem.parentNode.insertBefore(this.placeholder, targetItem);
             if (this.isBefore(activeSelected, targetItem)) {
@@ -453,6 +455,7 @@ class DragReorder {
 
         if (!this.useCoarsePointerDrag) {
             this.container.ondragover = null;
+            this.container.ondrop = null;
         }
     }
 }
