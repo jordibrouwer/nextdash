@@ -34,3 +34,8 @@ go.work.sum
 # .idea/
 # .vscode/
 >>>>>>> f7ba161f0b8e28daeffabc5aa2fa8cf7e073d0bc
+data/bookmarks-1.json
+data/bookmarks-1.json
+.gitignore
+data/health-cache.json
+data/settings.json
