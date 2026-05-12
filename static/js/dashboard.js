@@ -2172,7 +2172,46 @@ class Dashboard {
             });
         }
 
+        // User-defined collections from settings
+        const userCollections = Array.isArray(this.settings?.collections) ? this.settings.collections : [];
+        for (const col of userCollections) {
+            if (!col.id || !col.name || !Array.isArray(col.rules) || col.rules.length === 0) continue;
+            const matched = this._evaluateCollection(col, normalized);
+            collections.push({
+                id: `custom:${col.id}`,
+                name: col.icon ? `${col.icon} ${col.name}` : col.name,
+                icon: col.icon || '',
+                bookmarks: matched,
+                isSmartCollection: true
+            });
+        }
+
         return collections;
+    }
+
+    _evaluateCollection(collection, bookmarks) {
+        return bookmarks.filter(bm => {
+            const results = collection.rules.map(rule => {
+                const field = rule.field;
+                const op = rule.operator || 'includes';
+                const val = (rule.value || '').toLowerCase();
+                if (!val) return false;
+                if (field === 'tag') {
+                    const has = (bm.tags || []).some(t => t.toLowerCase() === val);
+                    return op === 'excludes' ? !has : has;
+                }
+                if (field === 'category') {
+                    const match = (bm.category || '').toLowerCase() === val;
+                    return op === 'excludes' ? !match : match;
+                }
+                if (field === 'shortcut') {
+                    const match = (bm.shortcut || '').toLowerCase() === val;
+                    return op === 'excludes' ? !match : match;
+                }
+                return false;
+            });
+            return collection.logic === 'or' ? results.some(Boolean) : results.every(Boolean);
+        });
     }
 
     getSmartStartTodayBookmarks(bookmarks) {

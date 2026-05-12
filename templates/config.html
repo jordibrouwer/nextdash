@@ -69,7 +69,6 @@
                     <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
                     <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
                     <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
-                    <button class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
                     <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
                     <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
                 </div>
@@ -819,6 +818,49 @@
                         </div>
                     </section>
 
+                    <section class="general-card" data-general-panel="backup-restore">
+                        <h3 class="section-title">Backup &amp; restore</h3>
+                        <p class="general-card-intro">Export or import your pages, bookmarks, categories, settings, and themes.</p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.backupDescription">Export your data</p>
+                                    <div class="config-advanced-action-actions">
+                                        <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
+                                        <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.importDescription">Import your data</p>
+                                    <div class="config-advanced-action-actions">
+                                        <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
+                                        <input type="file" id="import-file" accept=".zip" style="display: none;">
+                                        <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
+                                    <div class="config-advanced-action-actions">
+                                        <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
+                                        <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
+                                    <div class="config-advanced-action-actions">
+                                        <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="general-card reset-card" data-general-panel="reset">
                         <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
                         <p class="config-hint reset-danger-hint" data-i18n="config.resetSectionHint">
@@ -1096,31 +1138,6 @@
                     <!-- Finders will be loaded here -->
                 </div>
                 <button id="add-finder-btn" class="btn btn-primary" data-i18n="config.addFinder">Add Finder</button>
-            </div>
-            </div>
-
-            <div class="tab-content" data-tab-content="backups">
-            <div>
-                <div class="form-group">
-                    <label data-i18n="config.backupDescription">Export your data</label>
-                    <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
-                    <button id="backup-btn" class="btn btn-primary" data-i18n="config.createBackup">Create Backup</button>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="config.importDescription">Import your data</label>
-                    <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
-                    <input type="file" id="import-file" accept=".zip" style="display: none;">
-                    <button id="import-btn" class="btn btn-danger" data-i18n="config.selectImportFile">Select Import File</button>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="config.browserImportDescription">Import bookmarks from browser</label>
-                    <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
-                    <button id="browser-import-btn" class="btn btn-secondary" data-i18n="config.browserImportBtn">Import from Browser</button>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="config.csvExportDescription">Export bookmarks to CSV</label>
-                    <button id="csv-export-btn" class="btn btn-secondary" data-i18n="config.csvExportBtn">Export to CSV</button>
-                </div>
             </div>
             </div>
 
