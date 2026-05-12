@@ -1,0 +1,9 @@
+.git
+.gitignore
+node_modules
+dist
+build
+.tmp
+.cache
+Dockerfile*
+docker-compose*
