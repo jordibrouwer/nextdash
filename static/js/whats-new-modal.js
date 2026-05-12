@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '2026.05-whatsnew-preview-bulk-v9';
+    const VERSION = '2026.05-whatsnew-tags-collections-category-reorder-v1';
     const STORAGE_KEY = 'nextdash:last-whats-new-version';
 
     function buildHtml() {
@@ -12,6 +12,33 @@
             <div class="keyboard-cheat-sheet">
                 <p class="keyboard-cheat-sheet-intro">Recent upgrades and the places where they now work better.</p>
                 <div class="keyboard-cheat-sheet-grid">
+                    <section class="keyboard-cheat-sheet-panel">
+                        <h3 class="keyboard-cheat-sheet-section-title">Tags</h3>
+                        <div class="keyboard-cheat-sheet-list">
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">add tags</span><span class="keyboard-cheat-sheet-description">Add comma-separated tags to any bookmark in config → bookmarks or via the inline editor on the dashboard.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">tag:work</span><span class="keyboard-cheat-sheet-description">Filter bookmarks by tag in the search bar — partial matches supported.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">config → tags</span><span class="keyboard-cheat-sheet-description">See all tags with usage counts, rename, merge, or delete them from a single overview.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">tag cloud</span><span class="keyboard-cheat-sheet-description">The tag cloud at the top of the tags tab gives a visual overview — larger means more bookmarks use that tag.</span></div>
+                        </div>
+                    </section>
+                    <section class="keyboard-cheat-sheet-panel">
+                        <h3 class="keyboard-cheat-sheet-section-title">Collections</h3>
+                        <div class="keyboard-cheat-sheet-list">
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">config → collections</span><span class="keyboard-cheat-sheet-description">Create dynamic bookmark groups with a name, optional icon, match logic (AND/OR), and one or more rules.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">rule fields</span><span class="keyboard-cheat-sheet-description">Filter by tag, category, or shortcut — using includes or excludes operators.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">dashboard</span><span class="keyboard-cheat-sheet-description">Collections appear as groups on the dashboard alongside smart collections, before regular categories.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">tag collections</span><span class="keyboard-cheat-sheet-description">Enable auto tag-collections in config → general to generate one dashboard group per tag automatically.</span></div>
+                        </div>
+                    </section>
+                    <section class="keyboard-cheat-sheet-panel">
+                        <h3 class="keyboard-cheat-sheet-section-title">Category Order</h3>
+                        <div class="keyboard-cheat-sheet-list">
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">drag on dashboard</span><span class="keyboard-cheat-sheet-description">Hover over a category title to reveal the grip handle (⠿), then drag it to reorder categories directly on the dashboard.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">auto-save</span><span class="keyboard-cheat-sheet-description">The new order is saved automatically — no need to open config or press Save.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">config → categories</span><span class="keyboard-cheat-sheet-description">Category order can also be changed by dragging rows in the categories config tab.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">collapse</span><span class="keyboard-cheat-sheet-description">Click the category title (not the handle) to collapse or expand it — drag and click work independently.</span></div>
+                        </div>
+                    </section>
                     <section class="keyboard-cheat-sheet-panel">
                         <h3 class="keyboard-cheat-sheet-section-title">Preview Cards</h3>
                         <div class="keyboard-cheat-sheet-list">
