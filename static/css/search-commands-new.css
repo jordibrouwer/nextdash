@@ -1,0 +1,288 @@
+/* New Bookmark Modal Styles */
+
+.modal-new-bookmark {
+    max-width: 560px;
+    width: min(560px, 92vw);
+    padding: 0;
+    overflow: hidden;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ── */
+.nbm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    flex-shrink: 0;
+}
+
+.nbm-title {
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.nbm-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* ── Form ── */
+.new-bookmark-form {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.nbm-section {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.nbm-section-row {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.nbm-section-toggles {
+    flex-direction: row;
+    gap: 1.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── Labels ── */
+.nbm-label {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-semibold);
+    display: block;
+}
+
+/* ── Inputs ── */
+.nbm-input {
+    width: 100%;
+    padding: 0.38rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-text);
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.nbm-input:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+.nbm-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.nbm-note {
+    resize: vertical;
+    min-height: 3.5rem;
+    line-height: 1.5;
+    font-family: inherit;
+}
+
+.nbm-shortcut {
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.nbm-file-label {
+    cursor: pointer;
+}
+
+.nbm-file-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ── Row columns ── */
+.nbm-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.nbm-col-narrow {
+    flex: 0 0 7ch;
+}
+
+/* ── URL row ── */
+.nbm-url-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.nbm-url-row .nbm-input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Icon row ── */
+.nbm-icon-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.nbm-icon-preview {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+}
+
+.nbm-icon-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.nbm-icon-preview-empty {
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.nbm-icon-row .nbm-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.nbm-icon-state {
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    min-height: 1em;
+    padding-top: 0.1rem;
+}
+
+/* ── Toggles ── */
+.nbm-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.nbm-toggle-label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 0;
+    cursor: pointer;
+    position: relative;
+    margin: 0;
+    flex-shrink: 0;
+    background: var(--background-primary);
+}
+
+.nbm-toggle-label input[type="checkbox"]:checked {
+    border-color: var(--accent-success);
+}
+
+.nbm-toggle-label input[type="checkbox"]:checked::before {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--font-size-checkbox);
+    font-weight: var(--font-weight-black);
+    line-height: 1;
+    color: var(--accent-success);
+}
+
+/* ── Buttons ── */
+.nbm-btn {
+    padding: 0.38rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.nbm-btn:hover {
+    background: var(--background-secondary);
+}
+
+.nbm-btn-primary {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.nbm-btn-primary:hover {
+    background: var(--background-secondary);
+}
+
+.nbm-btn-secondary {
+    color: var(--text-secondary);
+}
+
+/* ── Footer ── */
+.nbm-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 0.65rem 1rem;
+    background: var(--background-secondary);
+    flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 580px) {
+    .modal-new-bookmark {
+        width: min(560px, 96vw);
+    }
+
+    .nbm-section-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nbm-col-narrow {
+        flex: 1;
+    }
+}

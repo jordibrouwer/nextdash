@@ -1,0 +1,74 @@
+/* Theme Variables - Simplified Color System */
+/* Colors are loaded dynamically from /api/theme.css */
+
+/* Background Patterns */
+html[data-theme] body {
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    background-image: radial-gradient(var(--background-dots) 1px, transparent 1px);
+    background-size: 15px 15px;
+}
+
+/* Preview icons in config */
+.theme-icon-preview .preview-icon {
+    width: 28px;
+    height: 28px;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
+}
+
+/* Themed icon wrappers and variants */
+.icon-themed, .icon-themed img, .icon-themed .preview-icon {
+    transition: filter .15s ease, opacity .15s ease, background-color .15s ease;
+    border-radius: 6px;
+}
+.icon-themed--muted img, .icon-themed--muted .preview-icon {
+    filter: grayscale(calc(var(--icon-theme-intensity, 0.6))); 
+    opacity: calc(1 - (var(--icon-theme-intensity, 0.25) * 0.8));
+}
+.icon-themed--tinted img, .icon-themed--tinted .preview-icon {
+    filter: saturate(calc(0.6 + var(--icon-theme-intensity, 0.4)));
+    mix-blend-mode: multiply;
+}
+.icon-themed--tinted {
+    background-color: color-mix(in srgb, var(--accent-primary) var(--icon-theme-intensity, 0.12), transparent);
+}
+.icon-themed--overlay {
+    padding: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: color-mix(in srgb, var(--accent-primary) var(--icon-theme-intensity, 0.12), transparent);
+}
+
+
+/* No Background Dots Option */
+body.no-background-dots {
+    background-image: none !important;
+}
+
+/* Custom Background (auto / gradient / image) */
+body.has-custom-background {
+    background-image: var(--custom-background-image) !important;
+    background-size: cover !important;
+}
+
+/* Dots overlay on gradient/auto backgrounds when dots are enabled */
+body.has-custom-background:not(.no-background-dots) {
+    background-image: radial-gradient(var(--background-dots) 1px, transparent 1px), var(--custom-background-image) !important;
+    background-size: 15px 15px, cover !important;
+}
+
+body.has-custom-background.bg-image {
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+}
+
+/* No Animations Option */
+body.no-animations * {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+}

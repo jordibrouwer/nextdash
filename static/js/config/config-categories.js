@@ -1,0 +1,159 @@
+/**
+ * Categories Module
+ * Handles category management (create, render, remove, reorder)
+ */
+
+class ConfigCategories {
+    constructor(t) {
+        this.t = t; // Translation function
+        this.categoryReorder = null;
+    }
+
+    /**
+     * Render categories list
+     * @param {Array} categories
+     * @param {Function} generateId - Function to generate ID from name
+     */
+    render(categories, generateId) {
+        const container = document.getElementById('categories-list');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        // Ensure categories is an array
+        if (!Array.isArray(categories)) {
+            categories = [];
+        }
+
+        categories.forEach((category, index) => {
+            const categoryElement = this.createCategoryElement(category, index, categories, generateId);
+            container.appendChild(categoryElement);
+        });
+    }
+
+    /**
+     * Create a category DOM element
+     * @param {Object} category
+     * @param {number} index
+     * @param {Array} categories - Reference to categories array
+     * @param {Function} generateId
+     * @returns {HTMLElement}
+     */
+    createCategoryElement(category, index, categories, generateId) {
+        const div = document.createElement('div');
+        div.className = 'category-item js-item is-idle';
+        div.setAttribute('data-category-index', index);
+        div.setAttribute('data-category-id', category.id); // Store the actual category ID
+        
+        // Store the original ID if not already set (for tracking renames)
+        if (!category.originalId) {
+            category.originalId = category.id;
+        }
+        
+        // Store reference to the actual category object
+        div._categoryRef = category;
+        
+        div.innerHTML = `
+            <span class="drag-handle js-drag-handle" title="Drag to reorder">⠿</span>
+            <input type="text" id="category-icon-${index}" name="category-icon-${index}" value="${category.icon || ''}" placeholder="emoticon" maxlength="2" data-category-id="${category.id}" data-field="icon" aria-label="Category emoticon">
+            <input type="text" id="category-name-${index}" name="category-name-${index}" value="${category.name}" placeholder="${this.t('config.categoryNamePlaceholder')}" data-category-id="${category.id}" data-field="name">
+            <button type="button" class="btn btn-secondary btn-small" onclick="configManager.mergeCategory(${index})">${this.t('config.merge')}</button>
+            <button type="button" class="btn btn-danger" onclick="configManager.removeCategory(${index})">${this.t('config.remove')}</button>
+        `;
+
+        // Add event listener for name changes
+        const nameInput = div.querySelector('input[data-field="name"]');
+        nameInput.addEventListener('input', (e) => {
+            // Keep category ID stable; only name changes on rename.
+            category.name = e.target.value;
+        });
+
+        const iconInput = div.querySelector('input[data-field="icon"]');
+        if (iconInput) {
+            iconInput.addEventListener('input', (e) => {
+                category.icon = (e.target.value || '').trim();
+            });
+        }
+
+        return div;
+    }
+
+    /**
+     * Initialize category reordering
+     * @param {Array} categories
+     * @param {Function} onReorder - Callback when reorder happens
+     */
+    initReorder(categories, onReorder) {
+        // Destroy previous instance if it exists
+        if (this.categoryReorder) {
+            this.categoryReorder.destroy();
+        }
+        
+        // Initialize drag-and-drop reordering
+        this.categoryReorder = new DragReorder({
+            container: '#categories-list',
+            itemSelector: '.category-item',
+            handleSelector: '.js-drag-handle',
+            onReorder: (newOrder) => {
+                // Update categories array based on new order
+                // Use stored category references instead of looking up by ID
+                const newCategories = [];
+                newOrder.forEach((item) => {
+                    // Get the category object stored on the DOM element
+                    const category = item.element._categoryRef;
+                    if (category) {
+                        newCategories.push(category);
+                    }
+                });
+                
+                onReorder(newCategories);
+            }
+        });
+    }
+
+    /**
+     * Add a new category
+     * @param {Array} categories
+     * @param {Function} generateId
+     * @returns {Object} - The new category
+     */
+    add(categories, generateId) {
+        // Ensure categories is an array
+        if (!categories || !Array.isArray(categories)) {
+            console.error('Categories must be an array');
+            return null;
+        }
+        const newCategory = {
+            id: generateId(`category-${categories.length + 1}`),
+            name: `${this.t('config.newCategoryPrefix')} ${categories.length + 1}`,
+            icon: ''
+        };
+        categories.push(newCategory);
+        return newCategory;
+    }
+
+    /**
+     * Remove a category (with confirmation)
+     * @param {Array} categories
+     * @param {number} index
+     * @returns {Promise<boolean>} - Whether the category was removed
+     */
+    async remove(categories, index, options = {}) {
+        const confirmed = await window.AppModal.danger({
+            title: this.t('config.removeCategoryTitle'),
+            message: options.message || this.t('config.removeCategoryMessage'),
+            confirmText: this.t('config.remove'),
+            cancelText: this.t('config.cancel')
+        });
+        
+        if (!confirmed) {
+            return false;
+        }
+        
+        categories.splice(index, 1);
+        return true;
+    }
+}
+
+// Export for use in other modules
+window.ConfigCategories = ConfigCategories;

@@ -1,0 +1,61 @@
+/* Notification */
+.notification {
+    position: fixed;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    right: max(1rem, env(safe-area-inset-right));
+    padding: 0.75rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    border: 1px solid;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.notification.success,
+.notification.notification-success {
+    background-color: var(--background-secondary);
+    color: var(--accent-success);
+    border-color: var(--accent-success);
+}
+
+.notification.error,
+.notification.notification-error {
+    background-color: var(--background-secondary);
+    color: var(--accent-error);
+    border-color: var(--accent-error);
+}
+
+.notification.warning,
+.notification.notification-warning {
+    background-color: var(--background-secondary);
+    color: var(--accent-warning);
+    border-color: var(--accent-warning);
+}
+
+.notification.info,
+.notification.notification-info {
+    background-color: var(--background-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-primary);
+}
+
+.notification-action {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    padding: 0.2rem 0.45rem;
+    cursor: pointer;
+    font-size: var(--font-size-controls);
+}

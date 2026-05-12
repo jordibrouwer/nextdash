@@ -1,0 +1,132 @@
+.keyboard-tab .keyboard-intro {
+    margin: 0 0 1.5rem;
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+#keyboard-bindings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.keyboard-section {
+    margin-bottom: 1.5rem;
+}
+
+.keyboard-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.keyboard-section-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+}
+
+.keyboard-bindings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.keyboard-binding-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    gap: 1.5rem;
+}
+
+.binding-description {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.binding-key-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 250px;
+}
+
+.binding-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.25rem;
+    padding: 0 0.5rem;
+    background: var(--accent-bg, rgba(100, 150, 255, 0.1));
+    border: 1px solid var(--accent-border, rgba(100, 150, 255, 0.3));
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: 'Source Code Pro', monospace;
+    color: var(--accent-text, rgba(100, 150, 255, 0.9));
+}
+
+.binding-key.custom {
+    background: var(--success-bg, rgba(40, 167, 69, 0.15));
+    border-color: var(--success-border, rgba(40, 167, 69, 0.4));
+    color: var(--success-text, rgba(76, 175, 80, 1));
+}
+
+.binding-edit-btn,
+.binding-reset-btn {
+    margin: 0;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    height: 2.25rem;
+}
+
+.binding-edit-btn.listening {
+    background: var(--warning-bg, rgba(255, 193, 7, 0.2));
+    border-color: var(--warning-border, rgba(255, 193, 7, 0.5));
+    color: var(--warning-text, rgba(255, 193, 7, 0.9));
+    animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+    }
+}
+
+.keyboard-reset-all-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .keyboard-binding-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .binding-key-display {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .binding-edit-btn,
+    .binding-reset-btn {
+        width: auto;
+    }
+}

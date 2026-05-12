@@ -1,0 +1,217 @@
+/* Configuration Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: var(--font-size-text);
+}
+
+/* Config Sections - Same system as dashboard */
+.config-section {
+    padding: 0;
+    max-width: 80%;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Optional: Set a reasonable max width for ultra-wide screens */
+@media (min-width: 1920px) {
+    .config-section {
+        max-width: 70%;
+    }
+}
+
+@media (min-width: 2560px) {
+    .config-section {
+        max-width: 60%;
+    }
+}
+
+.config-section.section-header {
+    padding-top: 2rem;
+    padding-bottom: 0;
+}
+
+.config-section.section-controls {
+    padding-top: 0;
+    padding-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: none;
+}
+
+.config-controls-wrapper {
+    background: var(--background-primary);
+}
+
+.config-section.section-content {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* Config Actions Top */
+.config-actions-top {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem 1.5rem;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 0;
+    background: var(--background-primary);
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title {
+    font-size: calc(var(--font-size-title) * 0.72);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-black);
+    opacity: 0.8;
+    color: var(--text-primary);
+    user-select: none;
+}
+
+.header-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.25rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.back-link {
+    text-decoration: none;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    transition: color 0.3s ease;
+    color: var(--text-secondary);
+}
+
+.back-link:hover {
+    color: var(--text-primary);
+}
+
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.config-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.save-status-indicator {
+    font-size: var(--font-size-controls);
+    color: var(--accent-success);
+    opacity: 0.9;
+}
+
+.save-status-indicator.is-unsaved {
+    color: var(--accent-warning);
+}
+
+.save-status-indicator.is-hidden {
+    display: none;
+}
+
+.top-quick-action {
+    display: inline-flex;
+}
+
+/* Config Main */
+.config-main {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+/* Config sections inside tabs - these should take full width of their parent */
+.tab-content .config-section,
+.config-main .config-section {
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: center;
+}
+
+.config-section h2 {
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+    color: var(--text-tertiary);
+}
+
+.config-section h2::before {
+    content: '// ';
+}
+
+/* Match .checkbox-tree-item: text and button sit side-by-side with 0.5rem gap (not pushed to viewport edge). */
+.config-advanced-action-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+}
+
+.config-advanced-action-text {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 52ch;
+    line-height: 1.45;
+    flex: 0 1 auto;
+}
+
+.config-advanced-action-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.config-onboarding-reset-hint {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 52ch;
+    line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+    .config-advanced-action-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

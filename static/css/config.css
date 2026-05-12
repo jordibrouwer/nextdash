@@ -1,0 +1,10 @@
+/* Config Styles - Imports all config modules */
+@import url('config/config-general.css');
+@import url('config/config-tabs.css');
+@import url('config/config-forms.css');
+@import url('config/config-lists.css');
+@import url('config/config-buttons.css');
+@import url('config/config-notifications.css');
+@import url('config/config-sliders.css');
+@import url('config/config-help.css');
+@import url('config/config-stats.css');

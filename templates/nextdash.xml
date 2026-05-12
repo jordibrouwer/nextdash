@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>NextDash</Name>
+  <Repository>ghcr.io/jordibrouwer/nextdash:latest</Repository>
+  <Registry>https://github.com/jordibrouwer/nextdash</Registry>
+  <Project>https://github.com/jordibrouwer/nextdash</Project>
+  <Support>https://github.com/jordibrouwer/nextdash/issues</Support>
+  <ReadMe>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/README.md</ReadMe>
+  <TemplateURL>https://raw.githubusercontent.com/jordibrouwer/unraid_templates/main/nextdash.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/favicon.png</Icon>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <ExtraParams>--restart unless-stopped</ExtraParams>
+  <Overview>A lightweight, self-hosted bookmark dashboard that features a minimalist, keyboard-driven interface with extensive customization options, making it the perfect personal dashboard for power users. Based on the excellent ThinkDashboard.</Overview>
+  <Category>Network:Web Tools:Utilities</Category>
+
+  <Config Name="WebUI Port"
+          Target="8080"
+          Default="8103"
+          Mode="tcp"
+          Description="Port for the NextDash web interface"
+          Type="Port"
+          Display="always"
+          Required="true"
+          Mask="false" />
+
+  <Config Name="AppData"
+          Target="/app/data"
+          Default="/mnt/user/appdata/nextdash/"
+          Mode="rw"
+          Description="Persistent storage path for NextDash data"
+          Type="Path"
+          Display="always"
+          Required="true"
+          Mask="false" />
+
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-1.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-2.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-3.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-4.png</Screenshot>
+</Container>

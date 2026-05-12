@@ -1,0 +1,242 @@
+/* Status Monitoring Styles */
+
+/* Status indicators */
+.bookmark-link.status-checking {
+    opacity: 0.7;
+    transition: opacity var(--transition-normal), color var(--transition-normal);
+    animation: fadeInStatus var(--transition-normal);
+}
+
+.bookmark-link.status-online {
+    position: relative;
+    transition: color var(--transition-normal), opacity var(--transition-normal);
+    animation: fadeInStatus var(--transition-normal);
+}
+
+.bookmark-link.status-offline {
+    position: relative;
+    transition: color var(--transition-normal), opacity var(--transition-normal);
+    animation: fadeInStatus var(--transition-normal);
+}
+
+/* Status colors for different themes */
+.bookmark-link.status-online {
+    color: var(--accent-success);
+}
+
+.bookmark-link.status-offline {
+    color: var(--accent-error);
+}
+
+.bookmark-link.status-checking {
+    color: var(--accent-warning);
+}
+
+.bookmark-link.status-transition-flash {
+    animation: statusTransitionPulse 240ms ease-out;
+}
+
+@keyframes statusTransitionPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(1.01);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Optional: preserve bookmark row colors while still showing status state/ping */
+body.status-color-lock .bookmark-link.status-online,
+body.status-color-lock .bookmark-link.status-offline,
+body.status-color-lock .bookmark-link.status-checking {
+    color: inherit;
+}
+
+body.status-color-lock .bookmark-link.status-online .status-text,
+body.status-color-lock .bookmark-link.status-offline .status-text,
+body.status-color-lock .bookmark-link.status-checking .status-text {
+    color: var(--text-secondary);
+}
+
+body.no-animations .bookmark-link.status-transition-flash {
+    animation: none !important;
+}
+
+/* Status text (ping time) — column 3 in dashboard six-column grid */
+.status-text {
+    grid-column: 3;
+    justify-self: end;
+    align-self: center;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-normal);
+    margin-left: 0;
+    margin-right: 0;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+/* Online status ping time */
+.bookmark-link.status-online .status-text {
+    color: var(--accent-success);
+}
+
+/* Offline status text */
+.bookmark-link.status-offline .status-text {
+    color: var(--accent-error);
+}
+
+/* Checking status text */
+.bookmark-link.status-checking .status-text {
+    color: var(--accent-warning);
+}
+
+/* Status indicator dots - HIDDEN */
+.status-indicator {
+    display: none;
+}
+
+/* Status indicator styles removed - indicator hidden */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Configuration toggle for individual bookmarks */
+.bookmark-status-toggle {
+    font-size: var(--font-size-controls);
+}
+
+.bookmark-status-toggle input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 0.25rem;
+}
+
+.bookmark-status-toggle label {
+    font-size: var(--font-size-controls);
+    opacity: 0.8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--text-secondary);
+}
+
+/* Status monitoring settings group */
+.status-settings-group {
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    background: var(--background-secondary);
+}
+
+.status-settings-info {
+    margin-top: 0.5rem;
+    margin-left: 1.625rem; /* Align with checkbox text */
+}
+
+.status-settings-info small {
+    font-size: var(--font-size-controls);
+    opacity: 0.7;
+    line-height: 1.4;
+}
+
+/* Nested setting for ping display */
+.status-settings-nested {
+    margin-left: 1.625rem;
+    margin-top: 0.75rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border-primary);
+}
+
+/* Animation for status changes */
+.bookmark-link {
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.bookmark-link:hover {
+    transform: translateX(2px);
+}
+
+/* Refresh button for manual status check */
+.status-refresh-btn {
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+.status-refresh-btn:hover {
+    background: var(--background-secondary);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+/* Status Loading Indicator */
+.status-loading-indicator {
+    display: none; /* Hidden by default */
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--accent-warning);
+    opacity: 0.8;
+    margin-left: 1rem;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.status-loading-indicator.show {
+    display: flex;
+}
+
+.status-loading-text {
+    font-family: var(--font-family-main);
+    letter-spacing: 0.05em;
+}
+
+.status-loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+    font-weight: var(--font-weight-bold);
+}
+
+@keyframes loading-dots {
+    0%, 30% {
+        content: '.';
+    }
+    31%, 60% {
+        content: '..';
+    }
+    61%, 100% {
+        content: '...';
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .status-loading-indicator {
+        font-size: calc(var(--font-size-controls) * 0.9);
+        margin-left: 0.5rem;
+    }
+}

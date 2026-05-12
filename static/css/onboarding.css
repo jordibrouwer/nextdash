@@ -1,0 +1,138 @@
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    /* Tinted scrim + blur: reads clearly as a separate layer from the dashboard (not a generic dim). */
+    background: linear-gradient(
+        168deg,
+        color-mix(in srgb, var(--accent-success) 18%, rgba(0, 0, 0, 0.08)) 0%,
+        rgba(0, 0, 0, 0.38) 42%,
+        color-mix(in srgb, var(--background-secondary) 35%, rgba(0, 0, 0, 0.5)) 100%
+    );
+    backdrop-filter: blur(6px) saturate(0.9);
+    -webkit-backdrop-filter: blur(6px) saturate(0.9);
+    z-index: 2200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 1rem;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .onboarding-overlay {
+        background: linear-gradient(
+            168deg,
+            color-mix(in srgb, var(--accent-success) 14%, rgba(0, 0, 0, 0.42)) 0%,
+            rgba(0, 0, 0, 0.52) 100%
+        );
+    }
+}
+
+.onboarding-overlay.onboarding-overlay-floating {
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+.onboarding-card {
+    width: min(640px, 96vw);
+    border: 1px solid var(--border-primary);
+    background: var(--background-modal);
+    color: var(--text-primary);
+    padding: 1rem;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-success) 22%, transparent),
+        0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.onboarding-overlay.onboarding-overlay-floating .onboarding-card {
+    position: fixed;
+    margin: 0;
+}
+
+.onboarding-progress {
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    margin-bottom: 0.35rem;
+}
+
+.onboarding-title {
+    font-size: var(--font-size-category);
+    margin-bottom: 0.35rem;
+}
+
+.onboarding-body {
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.onboarding-fields {
+    margin-bottom: 0.75rem;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.onboarding-field {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.onboarding-field-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+}
+
+.onboarding-input {
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    padding: 0.35rem 0.5rem;
+}
+
+.onboarding-fieldset {
+    border: 1px solid var(--border-primary);
+    padding: 0.45rem 0.6rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.onboarding-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-primary);
+}
+
+.onboarding-field-hint {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+}
+
+.onboarding-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.onboarding-btn {
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+}
+
+.onboarding-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.onboarding-highlight {
+    position: relative;
+    z-index: 2201;
+    box-shadow: 0 0 0 2px var(--accent-success), 0 0 0 6px rgba(16, 185, 129, 0.18);
+}
+
+@media (max-width: 768px) {
+    .onboarding-highlight {
+        box-shadow: 0 0 0 1px var(--accent-success), 0 0 0 3px rgba(16, 185, 129, 0.14);
+    }
+}

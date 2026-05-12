@@ -1,0 +1,893 @@
+/* Responsive Design System */
+
+/* General mobile button styles */
+.button-container {
+    gap: 0.5rem;
+}
+
+/* Large Desktop (1200px+) - Default styles already applied */
+
+/* Desktop (992px - 1199px) */
+@media (max-width: 1199px) {
+    .dashboard-section.section-controls,
+    .config-section.section-header {
+        padding-top: 1.75rem;
+    }
+    
+    .dashboard-section.section-content {
+        padding-bottom: 3rem; /* Space for search button */
+    }
+    
+    .config-section.section-content {
+        padding-top: 0.875rem;
+        padding-bottom: 1.75rem;
+    }
+    
+    .container {
+        max-width: 92%;
+        padding: 0 1rem;
+    }
+    
+    .dashboard-grid {
+        gap: 2rem;
+    }
+    
+    .search-container {
+        max-width: 380px;
+    }
+    
+    .search-button {
+        bottom: 1.75rem;
+        padding: 0.8rem 1rem;
+    }
+    
+    /* Tabs responsive - desktop */
+    .tabs {
+        flex-wrap: wrap;
+    }
+    
+    /* List items responsive - desktop */
+    .page-item,
+    .category-item,
+    .bookmark-item,
+    .finder-item {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .form-group {
+        flex-wrap: wrap;
+    }
+    
+    .config-actions-top {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+}
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) {
+    .dashboard-section.section-controls,
+    .config-section.section-header {
+        padding-top: 1.5rem;
+    }
+    
+    .dashboard-section.section-content {
+        padding-bottom: 3rem; /* Space for search button */
+    }
+    
+    .config-section.section-content {
+        padding-top: 0.75rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .container {
+        max-width: 95%;
+        padding: 0 0.75rem;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem;
+    }
+
+    .dashboard-grid.packed-columns {
+        display: flex !important;
+        flex-wrap: wrap;
+        grid-template-columns: unset !important;
+        gap: 1.5rem;
+    }
+
+    .dashboard-grid.packed-columns .dashboard-column {
+        flex: 1 1 calc(50% - 0.75rem);
+        gap: 1.5rem;
+    }
+    
+    .title {
+        font-size: var(--font-size-title);
+    }
+    
+    .header-actions {
+        gap: 1rem;
+        margin-left: auto;
+    }
+    
+    .page-nav-btn {
+        padding: 0.35rem 0.5rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .config-link a {
+        font-size: var(--font-size-controls);
+    }
+    
+    .bookmark-link {
+        padding: 0.4rem 0;
+    }
+    
+    .config-button {
+        padding: 0.75rem 1rem;
+    }
+    
+    .search-container {
+        max-width: 350px;
+        padding: 1.25rem 1.5rem 0.875rem 2rem;
+    }
+    
+    .search-button {
+        bottom: 1.5rem;
+        padding: 0.8rem 1rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    /* Config page tablet styles */
+    .bookmark-item {
+        display: grid;
+        grid-template-columns: 1fr 1fr 100px 120px 80px;
+        gap: 0.75rem;
+    }
+    
+    .finder-item {
+        display: grid;
+        grid-template-columns: 1fr 1fr 100px 80px;
+        gap: 0.75rem;
+    }
+    
+    .category-item {
+        display: grid;
+        grid-template-columns: 1fr 80px;
+    }
+    
+    .section {
+        margin-bottom: 2rem;
+    }
+    
+    /* Colors page - stack vertically on tablet */
+    .config-main,
+    .custom-themes-main-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    /* Tabs responsive - tablet */
+    .tabs {
+        flex-wrap: wrap;
+    }
+    
+    .tab-button {
+        padding: 0.625rem 1.25rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .config-actions-top {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+}
+
+/* Mobile Large (576px - 767px) */
+@media (max-width: 767px) {
+    .container {
+        padding: 1rem 0.5rem;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem;
+    }
+    
+    .category h3 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .bookmark-link {
+        padding: 0.35rem 0;
+    }
+    
+    .config-button {
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .shortcut-hint {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        text-align: center;
+        padding: 0.5rem;
+    }
+    
+    .search-container {
+        max-width: 320px;
+        width: 90%;
+        padding: 1rem 1.25rem 0.75rem 2rem;
+    }
+    
+    /* Prevent horizontal scroll on small screens */
+    .search-prompt,
+    .search-query,
+    .search-match-name {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .search-match {
+        padding: 0.4rem 0;
+    }
+    
+    .search-button {
+        bottom: 1.5rem;
+        padding: 0.8rem 1rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .button-container {
+        width: calc(100% - 2rem);
+        justify-content: center;
+        bottom: 1rem;
+    }
+    
+    /* Responsive button flex based on text visibility */
+    .search-button,
+    .finders-button,
+    .commands-button {
+        flex: none;
+    }
+    body[data-show-search-button-text="true"] #search-button,
+    body[data-show-finders-button-text="true"] #finders-button,
+    body[data-show-commands-button-text="true"] #commands-button {
+        flex: 1;
+    }
+    
+    /* Header responsive - mobile large */
+    .dashboard-section,
+    .config-section {
+        padding: 0;
+    }
+    
+    .dashboard-section.section-controls,
+    .config-section.section-header {
+        padding-top: 1.5rem;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-title,
+    .config-section.section-controls {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-content {
+        padding-top: 0;
+        padding-bottom: 3rem; /* Space for search button */
+    }
+    
+    .config-section.section-content {
+        padding-top: 0.75rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .container {
+        padding: 0 0.75rem;
+    }
+    
+    .header-top {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .date {
+        font-size: var(--font-size-date);
+    }
+    
+    .title {
+        font-size: var(--font-size-title);
+    }
+    
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        margin-left: 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .header .nav-links,
+    .header .header-links {
+        order: -1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .page-navigation {
+        gap: 0.125rem;
+    }
+    
+    .page-nav-btn {
+        padding: 0.3rem 0.45rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .config-link a {
+        font-size: var(--font-size-controls);
+    }
+    
+    /* Config page mobile large styles */
+    .section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-selector-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .page-selector-wrapper label {
+        white-space: normal;
+    }
+    
+    .page-selector {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .category-item,
+    .bookmark-item,
+    .finder-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .category-item input,
+    .bookmark-item input,
+    .bookmark-item select,
+    .finder-item input {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .config-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .config-actions .btn {
+        width: 100%;
+    }
+    
+    .notification {
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        right: max(1rem, env(safe-area-inset-right));
+        left: auto;
+        margin: 0;
+        max-width: 320px;
+        text-align: left;
+    }
+    
+    /* Modal responsive */
+    .modal {
+        max-width: 320px;
+        width: 95%;
+        padding: 1rem 1.25rem;
+    }
+    
+    .modal-body {
+        margin-bottom: 1.25rem;
+    }
+    
+    .modal-button {
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .modal-button-prefix {
+        min-width: 2.5ch;
+    }
+    
+    /* Colors page - stack vertically on mobile */
+    .config-main,
+    .custom-themes-main-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .colors-grid {
+        gap: 2rem;
+    }
+    
+    /* Tabs responsive - mobile large */
+    .tabs {
+        flex-wrap: wrap;
+        gap: 0;
+        top: 65px;
+    }
+    
+    .tab-button {
+        padding: 0.5rem 1rem;
+        font-size: var(--font-size-controls);
+        flex: 1 1 auto;
+        min-width: 120px;
+    }
+    
+    .config-actions-top {
+        flex-wrap: wrap;
+        gap: 0.625rem;
+    }
+    
+    .config-actions-top .btn {
+        flex: 1 1 auto;
+        min-width: 140px;
+    }
+}
+
+/* Mobile Small (480px - 575px) */
+@media (max-width: 575px) {
+    .container {
+        padding: 0.75rem 0.375rem;
+    }
+    
+    .dashboard-grid {
+        gap: 1.25rem;
+    }
+    
+    .bookmark-link {
+        padding: 0.3rem 0;
+    }
+    
+    .config-button {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .search-container {
+        max-width: 80%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0.875rem 1rem 0.625rem 2rem;
+    }
+    
+    .search-prompt {
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-button {
+        bottom: 1.25rem;
+        padding: 0.8rem 1rem;
+        font-size: var(--font-size-text);
+    }
+    
+    .button-container {
+        width: calc(100% - 2rem);
+        justify-content: center;
+    }
+    
+    /* Responsive button flex based on text visibility */
+    .search-button,
+    .finders-button,
+    .commands-button {
+        flex: none;
+    }
+    body[data-show-search-button-text="true"] #search-button,
+    body[data-show-finders-button-text="true"] #finders-button,
+    body[data-show-commands-button-text="true"] #commands-button {
+        flex: 1;
+    }
+    
+    /* Header responsive - mobile small */
+    .dashboard-section,
+    .config-section {
+        padding: 0;
+    }
+    
+    .dashboard-section.section-controls,
+    .config-section.section-header {
+        padding-top: 1.25rem;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-title,
+    .config-section.section-controls {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-content {
+        padding-top: 0;
+        padding-bottom: 3rem; /* Space for search button */
+    }
+    
+    .config-section.section-content {
+        padding-top: 0.625rem;
+        padding-bottom: 1.25rem;
+    }
+    
+    .container {
+        padding: 0 0.5rem;
+    }
+    
+    .header-top {
+        flex-direction: column;
+        gap: 0.625rem;
+    }
+    
+    .date {
+        font-size: var(--font-size-controls);
+        letter-spacing: 0.05em;
+    }
+    
+    .title {
+        font-size: var(--font-size-title);
+    }
+    
+    .header-actions {
+        width: 100%;
+        gap: 0.625rem;
+        justify-content: flex-end;
+        margin-left: 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.625rem;
+    }
+    
+    .header .nav-links,
+    .header .header-links {
+        order: -1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+    }
+    
+    .page-nav-btn {
+        padding: 0.25rem 0.4rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .page-nav-btn::before,
+    .page-nav-btn::after {
+        margin: 0 0.125rem;
+    }
+    
+    .config-link a {
+        font-size: var(--font-size-text);
+    }
+    
+    /* Config page mobile small styles */
+    .section {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        padding: 0.625rem 1rem;
+    }
+    
+    /* Tabs responsive - mobile small */
+    .tabs {
+        top: auto;
+        position: relative;
+    }
+    
+    .tab-button {
+        padding: 0.5rem 0.75rem;
+        font-size: var(--font-size-controls);
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+    
+    .config-actions-top {
+        flex-direction: column;
+    }
+    
+    .config-actions-top .btn {
+        width: 100%;
+    }
+}
+
+/* Mobile Extra Small (up to 479px) */
+@media (max-width: 479px) {
+    .container {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .dashboard-grid {
+        gap: 0rem;
+    }
+    
+    .category {
+        margin-bottom: 1.5rem;
+    }
+    
+    .category h3 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .bookmark-link {
+        padding: 0.25rem 0;
+    }
+    
+    .config-button {
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.4rem 0.625rem;
+    }
+    
+    .shortcut-hint {
+        padding: 0.375rem;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+    }
+    
+    .search-container {
+        max-width: 80%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0.75rem 0.875rem 0.5rem 2rem;
+    }
+    
+    .search-prompt {
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-match {
+        padding: 0.3rem 0;
+    }
+    
+    .search-match-shortcut {
+        min-width: 2.5ch;
+    }
+    
+    .search-button {
+        bottom: 1rem;
+        padding: 0.8rem 1rem;
+        font-size: var(--font-size-controls);
+    }
+    
+    .button-container {
+        width: calc(100% - 2rem);
+        justify-content: center;
+    }
+    
+    /* Responsive button flex based on text visibility */
+    .search-button,
+    .finders-button,
+    .commands-button {
+        flex: none;
+    }
+    body[data-show-search-button-text="true"] #search-button,
+    body[data-show-finders-button-text="true"] #finders-button,
+    body[data-show-commands-button-text="true"] #commands-button {
+        flex: 1;
+    }
+    
+    .search-button-icon {
+        font-size: var(--font-size-controls);
+    }
+    
+    /* Header responsive - mobile extra small */
+    .dashboard-section,
+    .config-section {
+        padding: 0;
+    }
+    
+    .dashboard-section.section-controls,
+    .config-section.section-header {
+        padding-top: 1rem;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-title,
+    .config-section.section-controls {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    
+    .dashboard-section.section-content {
+        padding-top: 0;
+        padding-bottom: 3rem; /* Space for search button */
+    }
+    
+    .config-section.section-content {
+        padding-top: 0.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    .container {
+        padding: 0 0.5rem;
+    }
+    
+    .header-top {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .date {
+        font-size: var(--font-size-controls);
+        letter-spacing: 0.025em;
+    }
+    
+    .title {
+        font-size: var(--font-size-title);
+    }
+    
+    .header-actions {
+        width: 100%;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-left: 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .header .nav-links,
+    .header .header-links {
+        order: -1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .page-navigation {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        gap: 0.125rem;
+        justify-content: center;
+    }
+    
+    .page-nav-btn {
+        padding: 0.25rem 0.35rem;
+        font-size: var(--font-size-controls);
+        white-space: nowrap;
+    }
+    
+    .page-nav-btn::before,
+    .page-nav-btn::after {
+        margin: 0 0.1rem;
+    }
+    
+    .config-link a {
+        font-size: var(--font-size-controls);
+        white-space: nowrap;
+    }
+    
+    /* Config page mobile extra small styles */
+    .section {
+        margin-bottom: 1rem;
+    }
+    
+    .section h2 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group {
+        margin-bottom: 0.875rem;
+    }
+    
+    .form-control {
+        padding: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .config-actions {
+        gap: 0.5rem;
+    }
+    
+    .notification {
+        bottom: max(0.5rem, env(safe-area-inset-bottom));
+        right: max(0.5rem, env(safe-area-inset-right));
+        left: auto;
+        margin: 0;
+        max-width: 280px;
+        padding: 0.75rem;
+        text-align: left;
+    }
+    
+    .category-item,
+    .bookmark-item,
+    .finder-item {
+        gap: 0.5rem;
+    }
+    
+    .category-item input,
+    .bookmark-item input,
+    .bookmark-item select,
+    .finder-item input {
+        margin-bottom: 0.375rem;
+    }
+    
+    /* Modal extra small */
+    .modal {
+        max-width: 280px;
+        width: 90%;
+        padding: 0.875rem 1rem;
+    }
+    
+    .modal-body {
+        margin-bottom: 1rem;
+    }
+    
+    .modal-actions {
+        gap: 0.75rem;
+    }
+    
+    .modal-button {
+        padding: 0.3rem 0.5rem;
+    }
+    
+    .modal-button-prefix {
+        min-width: 2ch;
+        margin-right: 0.75rem;
+    }
+    
+    /* Tabs responsive - mobile extra small */
+    .tabs {
+        position: relative;
+        top: auto;
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        padding: 0.5rem;
+        font-size: var(--font-size-controls);
+        text-align: center;
+        width: 100%;
+        border-bottom: 1px solid var(--border-primary);
+    }
+    
+    .tab-button:last-child {
+        border-bottom: none;
+    }
+
+    /* Fix for theme and language selectors in config general tab */
+    .form-group:has(#theme-select),
+    .form-group:has(#language-select) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .form-group:has(#theme-select) label,
+    .form-group:has(#language-select) label {
+        min-width: auto;
+    }
+}

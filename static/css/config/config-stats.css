@@ -1,0 +1,126 @@
+.stats-tab .stats-intro {
+    margin: 0 0 1rem;
+    opacity: 0.85;
+}
+
+.stats-block {
+    margin-bottom: 2rem;
+}
+
+.stats-block:last-child {
+    margin-bottom: 0;
+}
+
+.stats-dl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 1.5rem;
+    max-width: 32rem;
+}
+
+.stats-dl > div {
+    display: contents;
+}
+
+.stats-dl dt {
+    margin: 0;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.stats-dl dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-muted {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.stats-big {
+    margin: 0 0 1.25rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-subtitle {
+    margin: 1rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.stats-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.stats-table th,
+.stats-table td {
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+.stats-table th {
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.stats-table td {
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.stats-insights-list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.stats-insights-list li {
+    line-height: 1.35;
+}
+
+.stats-insight-action {
+    margin-left: 0.45rem;
+}
+
+.stats-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.stats-chart-wrapper {
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    padding: 1.5rem;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.stats-chart-wrapper h4 {
+    margin: 0 0 1rem 0;
+}
+
+.stats-chart-wrapper canvas {
+    flex: 1;
+    min-height: 250px;
+}

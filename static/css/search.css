@@ -1,0 +1,449 @@
+/* Search Component Styles */
+
+/* Error Notification Styles */
+.error-notification {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    max-width: 300px;
+    padding: 1rem 1.5rem;
+    background: var(--accent-error);
+    color: white;
+    border-radius: 0.25rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.24s ease, visibility 0.24s ease, transform 0.24s ease;
+    transform: translateY(-8px);
+    z-index: 2001;
+    font-size: var(--font-size-text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.error-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.error-notification.success {
+    background: var(--accent-success);
+}
+
+.error-notification::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.7);
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+
+.error-notification.show::after {
+    animation: notification-timeout 3s linear forwards;
+}
+
+@keyframes notification-timeout {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (max-width: 575px) {
+    .error-notification {
+        right: max(0.75rem, env(safe-area-inset-right));
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        max-width: calc(100vw - 1.5rem);
+    }
+}
+
+/* Shortcut Search - Con fondo sutil pero visible */
+.shortcut-search {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.shortcut-search.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.search-container {
+    padding: 1.5rem 2rem 1rem 2rem;
+    max-width: 400px;
+    width: 90%;
+    border: 1px solid var(--border-primary);
+    background: var(--background-modal);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 2rem);
+    overflow: hidden;
+    box-sizing: border-box;
+    transform: translateY(8px) scale(0.985);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.shortcut-search.show .search-container {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.search-prompt {
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-bookmark);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 0.5rem;
+    justify-content: flex-start;
+}
+
+.search-prefix {
+    font-family: var(--font-family-main);
+    margin-right: 0.5rem;
+    color: var(--accent-success);
+}
+
+.search-query {
+    font-family: var(--font-family-main);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow-x: auto;
+    display: inline-block;
+    max-width: 100%;
+    scrollbar-width: none; /* Firefox */
+}
+
+.search-query::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+.search-cursor {
+    font-family: var(--font-family-main);
+    animation: blink 1s infinite;
+    margin-left: 0.25rem;
+    color: var(--text-primary);
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Mobile input - positioned off-screen but visible to Safari */
+.search-input-mobile {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    opacity: 0.01;
+}
+
+.search-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-left: 1.5rem;
+    margin-left: -1.5rem;
+    position: relative;
+    width: 100%;
+    scrollbar-width: none;
+}
+
+@media (max-width: 575px) {
+    .search-container {
+        width: calc(100vw - 1.5rem);
+        max-height: calc(100dvh - 1.5rem);
+        padding: 1rem 1rem 0.75rem 1rem;
+    }
+
+    .search-matches {
+        padding-left: 1rem;
+        margin-left: -1rem;
+    }
+}
+
+.search-matches::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+.search-matches:empty {
+    min-height: 0;
+}
+
+.search-match {
+    padding: 0.5rem 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+    position: relative; /* Necesario para el ::before */
+    /* Remove tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.search-match:hover,
+.search-match.keyboard-selected {
+    color: var(--text-primary);
+    transform: translateX(8px);
+}
+
+.search-match.keyboard-selected::before {
+    content: '>';
+    position: absolute;
+    left: -1.5rem; /* Ahora está dentro del área con padding */
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.search-match-shortcut {
+    font-weight: var(--font-weight-bold);
+    margin-right: 1rem;
+    min-width: 3ch;
+    font-size: var(--font-size-controls);
+    color: var(--accent-success);
+}
+
+.search-match-favicon-slot {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.6rem;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.search-match-favicon-slot .bookmark-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.search-match-name {
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.search-match-meta {
+    display: block;
+    margin-top: 0.08rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-tertiary);
+}
+
+/* Special styling for config entry */
+.search-match.config-entry .search-match-shortcut {
+    color: var(--accent-warning);
+}
+
+.search-match.config-entry .search-match-name {
+    color: var(--accent-warning);
+}
+
+.search-match.filter-completion-entry .search-match-shortcut {
+    color: var(--accent-info, var(--accent-success));
+}
+
+.search-match.filter-completion-entry .search-match-name {
+    color: var(--text-secondary);
+}
+
+/* Button Container - Centered at bottom */
+/* Fixed max width so tip text length does not change container width (avoids button row jumping). */
+.button-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    gap: 1rem;
+    z-index: 1000;
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.button-hint {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: var(--font-size-text);
+    line-height: 1.5;
+    color: var(--text-secondary);
+    overflow-wrap: break-word;
+}
+
+/* Keys in tips: same chip pattern as config help `code`, better contrast on dashboard */
+.button-hint code {
+    font-family: var(--font-family-main);
+    font-size: 0.92em;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0.1rem 0.3rem;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
+body[data-show-tips="false"] .button-hint {
+    display: none;
+}
+
+/* Search Button */
+.search-button {
+    /* Button styling */
+    padding: 0.8rem 1.5rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-modal);
+    color: var(--text-primary);
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    
+    /* TTY terminal style */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    /* Transitions */
+    transition: all 0.3s ease;
+    
+    /* Remove tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.search-button:hover {
+    background: var(--background-primary);
+    border-color: var(--accent-success);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.search-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.search-button-icon {
+    color: var(--accent-success);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-category);
+}
+
+.search-button-text {
+    letter-spacing: 0.05em;
+}
+
+/* Hide buttons when search is active */
+.shortcut-search.show ~ .button-container {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hide button text based on settings */
+body[data-show-search-button-text="false"] #search-button .search-button-text,
+body[data-show-finders-button-text="false"] #finders-button .search-button-text,
+body[data-show-commands-button-text="false"] #commands-button .search-button-text {
+    display: none;
+}
+
+/* Preserve transforms when animations are disabled */
+body.no-animations .search-button {
+    transform: none !important;
+}
+
+/* Disable hover transforms when animations are disabled */
+body.no-animations .search-button:hover {
+    transform: none !important;
+}
+
+body.no-animations .search-button:active {
+    transform: none !important;
+}
+
+/* Disable search match hover transforms when animations are disabled */
+body.no-animations .search-match:hover,
+body.no-animations .search-match.keyboard-selected {
+    transform: none !important;
+}
+
+/* Ensure button container remains centered when animations are disabled */
+body.no-animations .button-container {
+    transform: translateX(-50%) !important;
+}
+
+body.no-animations .shortcut-search,
+body.no-animations .search-container,
+body.no-animations .error-notification {
+    transition: none !important;
+}
+
+body.no-animations .error-notification {
+    transform: none !important;
+}
+
+body.no-animations .error-notification.show::after {
+    animation: none !important;
+}
+
+/* Fuzzy search highlight */
+.fuzzy-highlight {
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+}

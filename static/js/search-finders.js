@@ -1,0 +1,188 @@
+/**
+ * Search Finders Component
+ * Handles finder search queries starting with ?
+ */
+
+class SearchFindersComponent {
+    constructor(language = null, finders = [], settings = {}) {
+        this.language = language;
+        this.finders = finders;
+        this.settings = settings;
+        this.shortcuts = new Map();
+        this.buildShortcutsMap();
+    }
+
+    setLanguage(language) {
+        this.language = language;
+    }
+
+    setFinders(finders) {
+        this.finders = finders;
+        this.buildShortcutsMap();
+    }
+
+    setSettings(settings) {
+        this.settings = settings;
+    }
+
+    buildShortcutsMap() {
+        this.shortcuts.clear();
+        this.finders.forEach(finder => {
+            if (finder.shortcut && finder.shortcut.trim()) {
+                this.shortcuts.set(finder.shortcut.toLowerCase(), finder);
+            }
+            if (!Array.isArray(finder.tags)) {
+                finder.tags = [];
+            }
+            finder.useCount = Number(finder.useCount || 0);
+            finder.lastUsed = Number(finder.lastUsed || 0);
+        });
+    }
+
+    getFinderMeta(finder) {
+        const tags = Array.isArray(finder.tags) ? finder.tags : [];
+        const tagsLabel = tags.length > 0 ? `#${tags.slice(0, 3).join(' #')}` : '';
+        const useLabelTemplate = this.language?.t?.('dashboard.finderUsesLabel') || 'uses {count}';
+        const useLabel = useLabelTemplate.replace('{count}', String(Number(finder.useCount || 0)));
+        return [tagsLabel, useLabel].filter(Boolean).join(' · ');
+    }
+
+    createCompletionMatch(finder) {
+        return {
+            name: finder.name,
+            shortcut: `?${finder.shortcut.toUpperCase()}`,
+            completion: `?${finder.shortcut.toUpperCase()} `,
+            meta: this.getFinderMeta(finder),
+            type: 'finder-completion'
+        };
+    }
+
+    /**
+     * Handle a finder query
+     * @param {string} query - The full query starting with ?
+     * @returns {Array} Array of match objects
+     */
+    handleQuery(query) {
+        if (!query.startsWith('?')) {
+            return [];
+        }
+
+        const afterQuestion = query.slice(1);
+        const parts = afterQuestion.split(' ');
+        const shortcut = parts[0].toLowerCase();
+
+        // If just "?", show available finders
+        if (query === '?') {
+            return this.getAvailableFinders();
+        }
+
+        // If there's a space, it's a complete shortcut with search text
+        if (parts.length > 1) {
+            const finder = this.shortcuts.get(shortcut);
+            if (finder) {
+                const searchText = parts.slice(1).join(' ');
+                return [{
+                    name: finder.name,
+                    shortcut: `?${finder.shortcut}`,
+                    searchText: searchText,
+                    url: finder.searchUrl.replace('%s', encodeURIComponent(searchText)),
+                    meta: this.getFinderMeta(finder),
+                    action: () => this.openFinder(finder, searchText),
+                    type: 'finder'
+                }];
+            }
+        }
+
+        // Otherwise, show finders whose shortcuts start with the typed letters
+        const matchingFinders = this.finders.filter(finder => 
+            finder.shortcut.toLowerCase().startsWith(shortcut)
+        );
+
+        if (matchingFinders.length > 0) {
+            return matchingFinders.map((finder) => this.createCompletionMatch(finder));
+        }
+
+        return [];
+    }
+
+    /**
+     * Get list of available finders
+     * @returns {Array} Array of finder matches
+     */
+    getAvailableFinders() {
+        return Array.from(this.shortcuts.values())
+            .sort((a, b) => Number(b.useCount || 0) - Number(a.useCount || 0))
+            .map((finder) => this.createCompletionMatch(finder));
+    }
+
+    getTopFinders(limit = 3) {
+        return [...this.finders]
+            .filter((finder) => finder.shortcut && finder.shortcut.trim())
+            .sort((a, b) => {
+                const byCount = Number(b.useCount || 0) - Number(a.useCount || 0);
+                if (byCount !== 0) return byCount;
+                return Number(b.lastUsed || 0) - Number(a.lastUsed || 0);
+            })
+            .slice(0, limit)
+            .map((finder) => this.createCompletionMatch(finder));
+    }
+
+    getFinderSuggestions(query, limit = 5) {
+        const q = String(query || '').trim().toLowerCase();
+        if (!q) return this.getTopFinders(Math.min(limit, 3));
+        return this.finders
+            .filter((finder) => {
+                const shortcut = String(finder.shortcut || '').toLowerCase();
+                const name = String(finder.name || '').toLowerCase();
+                const tags = Array.isArray(finder.tags) ? finder.tags.join(' ').toLowerCase() : '';
+                return shortcut.startsWith(q) || name.includes(q) || tags.includes(q);
+            })
+            .sort((a, b) => Number(b.useCount || 0) - Number(a.useCount || 0))
+            .slice(0, limit)
+            .map((finder) => this.createCompletionMatch(finder));
+    }
+
+    /**
+     * Open a finder with the given search text
+     * @param {Object} finder
+     * @param {string} searchText
+     */
+    openFinder(finder, searchText) {
+        let url = finder.searchUrl;
+        
+        // Convert search text to lowercase before encoding
+        const processedText = searchText.toLowerCase();
+        
+        if (url.includes('%s')) {
+            // Replace %s placeholder with encoded search text
+            url = url.replace('%s', encodeURIComponent(processedText));
+        } else {
+            // If no %s placeholder, append the search text to the URL
+            url += encodeURIComponent(processedText);
+        }
+        
+        // Create a link element to open the URL with rel attributes to prevent Referer leakage
+        const link = document.createElement('a');
+        link.href = url;
+        link.style.display = 'none'; // Hide the link
+        if (this.settings.openInNewTab) {
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+        } else {
+            link.rel = 'noreferrer';
+        }
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        finder.useCount = Number(finder.useCount || 0) + 1;
+        finder.lastUsed = Date.now();
+        fetch('/api/finders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.finders)
+        }).catch(() => {});
+    }
+}
+
+// Export for use in other modules
+window.SearchFindersComponent = SearchFindersComponent;

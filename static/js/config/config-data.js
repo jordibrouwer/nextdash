@@ -1,0 +1,222 @@
+/**
+ * Data Module
+ * Handles loading and saving of bookmarks, categories, and settings
+ */
+
+class ConfigData {
+    constructor(storage) {
+        this.storage = storage;
+    }
+
+    /**
+     * Load all data from API
+     * @param {boolean} deviceSpecific - Whether to use device-specific settings
+     * @returns {Promise<Object>} - Object containing bookmarks, categories, pages, and settings
+     */
+    async loadData(deviceSpecific) {
+        try {
+            const [bookmarksRes, pagesRes, settingsRes] = await Promise.all([
+                fetch('/api/bookmarks'),
+                fetch('/api/pages'),
+                fetch('/api/settings')
+            ]);
+
+            const bookmarks = await bookmarksRes.json();
+            const pages = await pagesRes.json();
+            
+            // Load settings from server first
+            const serverSettings = await settingsRes.json();
+            
+            // Load settings from localStorage or server based on device-specific flag
+            let settings;
+            if (deviceSpecific) {
+                const deviceSettings = this.storage.getDeviceSettings();
+                settings = deviceSettings ? { ...serverSettings, ...deviceSettings } : serverSettings;
+                // Always use favicon settings from server, regardless of device-specific
+                settings.enableCustomFavicon = serverSettings.enableCustomFavicon;
+                settings.customFaviconPath = serverSettings.customFaviconPath;
+                // Always use font settings from server, regardless of device-specific
+                settings.enableCustomFont = serverSettings.enableCustomFont;
+                settings.customFontPath = serverSettings.customFontPath;
+                settings.fontPreset = serverSettings.fontPreset;
+            } else {
+                settings = serverSettings;
+            }
+
+            return { bookmarks, pages, settings };
+        } catch (error) {
+            console.error('Error loading data:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save bookmarks to server
+     * @param {Array} bookmarks
+     * @param {string} pageId - Optional page ID for page-specific bookmarks
+     */
+    async saveBookmarks(bookmarks, pageId = null) {
+        const url = pageId ? `/api/bookmarks?page=${pageId}` : '/api/bookmarks';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookmarks)
+        });
+        
+        if (!response.ok) {
+            let errorText = '';
+            try {
+                const errorBody = await response.json();
+                if (errorBody?.error === 'duplicate_shortcut') {
+                    const shortcut = errorBody.shortcut || '';
+                    const conflict = errorBody.conflict;
+                    if (conflict?.name) {
+                        errorText = `Duplicate shortcut "${shortcut}" (already used by "${conflict.name}" on page ${conflict.pageId}).`;
+                    } else {
+                        errorText = `Duplicate shortcut "${shortcut}".`;
+                    }
+                } else {
+                    errorText = errorBody?.message || JSON.stringify(errorBody);
+                }
+            } catch (error) {
+                errorText = await response.text();
+            }
+            throw new Error(`Failed to save bookmarks: ${errorText}`);
+        }
+        
+        return await response.json();
+    }
+
+    /**
+     * Load bookmarks for a specific page
+     * @param {string} pageId
+     * @returns {Promise<Array>}
+     */
+    async loadBookmarksByPage(pageId) {
+        const res = await fetch(`/api/bookmarks?page=${pageId}`);
+        return await res.json();
+    }
+
+    /**
+     * Save categories to server for a specific page
+     * @param {Array} categories
+     * @param {string|null} pageId
+     */
+    async saveCategoriesByPage(categories, pageId = null) {
+        const url = pageId ? `/api/categories?page=${pageId}` : '/api/categories';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(categories)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save categories: ${errorText}`);
+        }
+        
+        return await response.json();
+    }
+
+    /**
+     * Load categories for a specific page if present, fall back to global categories
+     * @param {string|null} pageId
+     */
+    async loadCategoriesByPage(pageId = null) {
+        const url = pageId ? `/api/categories?page=${pageId}` : '/api/categories';
+        const res = await fetch(url);
+        return await res.json();
+    }
+
+    /**
+     * Save pages to server
+     * @param {Array} pages
+     */
+    async savePages(pages) {
+        const response = await fetch('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pages)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save pages: ${errorText}`);
+        }
+        
+        return await response.json();
+    }
+
+    /**
+     * Delete a page from server
+     * @param {number} pageId
+     */
+    async deletePage(pageId) {
+        const response = await fetch(`/api/pages/${pageId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to delete page ${pageId}`);
+        }
+    }
+
+    /**
+     * Save settings to server
+     * @param {Object} settings
+     */
+    async saveSettings(settings) {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save settings: ${errorText}`);
+        }
+        
+        return await response.json();
+    }
+
+    /**
+     * Load server settings (for switching from device-specific to global)
+     * @returns {Promise<Object>}
+     */
+    async loadServerSettings() {
+        const settingsRes = await fetch('/api/settings');
+        return await settingsRes.json();
+    }
+
+    /**
+     * Load finders from server
+     * @returns {Promise<Array>}
+     */
+    async loadFinders() {
+        const res = await fetch('/api/finders');
+        return await res.json();
+    }
+
+    /**
+     * Save finders to server
+     * @param {Array} finders
+     */
+    async saveFinders(finders) {
+        const response = await fetch('/api/finders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finders)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save finders: ${errorText}`);
+        }
+        
+        return await response.json();
+    }
+}
+
+// Export for use in other modules
+window.ConfigData = ConfigData;

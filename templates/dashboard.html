@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}" data-show-search-button-text="{{.ShowSearchButtonText}}" data-show-finders-button-text="{{.ShowFindersButtonText}}" data-show-commands-button-text="{{.ShowCommandsButtonText}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
+    <script src="/static/js/font-presets.js"></script>
+    <script src="/static/js/theme-loader.js"></script>
+    <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
+    <link rel="stylesheet" href="/api/theme.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/modal.css">
+    <link rel="stylesheet" href="/static/css/search.css">
+    <link rel="stylesheet" href="/static/css/search-commands-new.css">
+    <link rel="stylesheet" href="/static/css/status.css">
+    <link rel="stylesheet" href="/static/css/select.css">
+    <link rel="stylesheet" href="/static/css/font-size.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/onboarding.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="stylesheet" href="/static/css/enhanced-features.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        /* Prevent flash of unstyled content */
+        body.loading {
+            opacity: 0;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-show-title="{{.ShowTitle}}">
+    <!-- Container 1: Date, tabs, config button -->
+    <div class="dashboard-section section-controls">
+        <div class="container">
+            <div class="header-top">
+                <div id="date-element" class="date"></div>
+                <div id="status-loading-indicator" class="status-loading-indicator">
+                    <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
+                    <span class="status-loading-dots"></span>
+                </div>
+                <div class="header-actions">
+                    <div id="page-navigation" class="page-navigation">
+                        <!-- Pages will be loaded here -->
+                    </div>
+                    {{if .ShowHealthDashboard}}<div class="health-link">
+                        <a href="/health" data-i18n="dashboard.health">health</a>
+                    </div>{{end}}
+                    {{if .ShowConfigButton}}<div class="config-link">
+                        <a href="/config" data-i18n="dashboard.config">config</a>
+                    </div>{{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container 2: Title -->
+    <div class="dashboard-section section-title">
+        <div class="container">
+            <div class="title-wrapper">
+                <h1 class="title"></h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container 3: Bookmarks -->
+    <div class="dashboard-section section-content">
+        <div class="container">
+            <main id="dashboard-layout" class="dashboard-grid">
+            </main>
+        </div>
+    </div>
+
+    <div id="shortcut-search" class="shortcut-search">
+        <div class="search-container">
+            <div class="search-prompt">
+                <span class="search-prefix" data-i18n="dashboard.searchPrefix">></span>
+                <span id="search-query" class="search-query"></span>
+                <span class="search-cursor" data-i18n="dashboard.searchCursor">_</span>
+            </div>
+            <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            <div id="search-matches" class="search-matches"></div>
+        </div>
+    </div>
+
+    <!-- Error notification for API failures -->
+    <div id="error-notification" class="error-notification" aria-live="polite" aria-hidden="true"></div>
+
+    <!-- Search and Finders Buttons -->
+    <div class="button-container">
+        <div class="button-hint" id="button-hint-text">Tip: <code>*</code> recent, <code>!</code> cheatsheet</div>
+        <button id="commands-button" class="search-button commands-button" aria-label="Open commands">
+            <span class="search-button-icon">:</span>
+            <span class="search-button-text" data-i18n="dashboard.commandsButton">commands</span>
+        </button>
+        <button id="recent-bookmarks-button" class="search-button recent-button" aria-label="Open recent bookmarks">
+            <span class="search-button-icon">*</span>
+            <span class="search-button-text" data-i18n="dashboard.recentBookmarksButton">recent</span>
+        </button>
+        <button id="finders-button" class="search-button finders-button" aria-label="Open finders">
+            <span class="search-button-icon">?</span>
+            <span class="search-button-text" data-i18n="dashboard.findersButton">finders</span>
+        </button>
+        <button id="help-button" class="search-button help-button" aria-label="Open keyboard cheat sheet">
+            <span class="search-button-icon">!</span>
+            <span class="search-button-text">cheatsheet</span>
+        </button>
+        <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search">
+            <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+            <span class="search-button-text" data-i18n="dashboard.searchButton">search</span>
+        </button>
+    </div>
+
+    <script src="/static/js/modal.js"></script>
+    <script src="/static/js/whats-new-modal.js"></script>
+    <script src="/static/js/layout-utils.js"></script>
+    <script src="/static/js/config/config-language.js"></script>
+    <script src="/static/js/search-commands/search-commands-new.js"></script>
+    <script src="/static/js/search-commands/search-commands-remove.js"></script>
+    <script src="/static/js/search-commands/search-commands-columns.js"></script>
+    <script src="/static/js/search-commands/search-commands-fontsize.js"></script>
+    <script src="/static/js/search-commands/search-commands-theme.js"></script>
+    <script src="/static/js/search-commands.js"></script>
+    <script src="/static/js/search-finders.js"></script>
+    <script src="/static/js/fuzzy-search.js"></script>
+    <script src="/static/js/search.js"></script>
+    <script src="/static/js/status.js"></script>
+    <script src="/static/js/keyboard-navigation.js"></script>
+    <script src="/static/js/swipe-navigation.js"></script>
+    <script src="/static/js/hypr-mode.js"></script>
+    <script src="/static/js/reorder.js"></script>
+    <script src="/static/js/onboarding.js"></script>
+    <script src="/static/js/weather.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/analytics.js"></script>
+    <script>
+        // Load translations
+        document.addEventListener('DOMContentLoaded', async () => {
+            const language = new ConfigLanguage();
+            const lang = document.documentElement.getAttribute('data-lang') || 'en';
+            await language.loadTranslations(lang);
+        });
+    </script>
+</body>
+</html>

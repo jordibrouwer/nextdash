@@ -1,0 +1,87 @@
+/* Code styling for help section */
+code {
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-family: var(--font-family-mono);
+    font-size: 0.875em;
+    border: 1px solid var(--border-primary);
+    white-space: nowrap;
+}
+
+/* Link styling for help section */
+.tab-content a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+/* Help section list spacing */
+.tab-content ul li {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.tab-content ul {
+    padding-left: 1.5rem;
+}
+
+.help-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.help-index {
+    position: sticky;
+    top: 8rem;
+    border: 1px solid var(--border-primary);
+    padding: 0.75rem;
+    background: var(--background-primary);
+}
+
+.help-index ul {
+    margin-top: 0.5rem;
+}
+
+.help-index li {
+    margin-bottom: 0.45rem !important;
+}
+
+.help-content {
+    display: grid;
+    gap: 1rem;
+}
+
+.help-block {
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    padding: 0.9rem 1rem;
+}
+
+.help-intro {
+    margin: 0 0 0.75rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+}
+
+.help-block .section-title {
+    margin-bottom: 0.5rem;
+}
+
+.help-signature {
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 1024px) {
+    .help-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .help-index {
+        position: static;
+    }
+}

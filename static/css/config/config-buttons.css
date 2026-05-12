@@ -1,0 +1,87 @@
+/* Buttons */
+.btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 0;
+}
+
+.btn-primary,
+.btn-success {
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+    background-color: var(--background-secondary);
+    transform: translateX(2px);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+    color: var(--text-primary);
+    background-color: var(--background-secondary);
+}
+
+.btn-danger {
+    font-size: var(--font-size-controls);
+    border: 1px solid var(--accent-error);
+    color: var(--accent-error);
+}
+
+.btn-danger:hover {
+    background-color: var(--accent-error);
+    color: var(--background-primary);
+    transform: translateX(2px);
+}
+
+.btn-small {
+    padding: 0.375rem 0.5rem;
+    font-size: var(--font-size-text);
+}
+
+.btn-success.has-unsaved {
+    animation: savePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes savePulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
+    }
+}
+
+.unsaved-indicator {
+    display: none;
+    font-size: var(--font-size-controls);
+    color: var(--accent-warning);
+    border: 1px dashed var(--accent-warning);
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+}
+
+.unsaved-indicator.is-visible {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* File input button styling */
+.file-input-btn {
+    display: inline-block;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}

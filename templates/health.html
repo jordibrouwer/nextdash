@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>health beta</title>
+    <script src="/static/js/font-presets.js"></script>
+    <script src="/static/js/theme-loader.js"></script>
+    <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
+    <link rel="stylesheet" href="/api/theme.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/modal.css">
+    <link rel="stylesheet" href="/static/css/font-size.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/health.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body.loading {
+            opacity: 0;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+    <div class="health-shell">
+        <header class="health-header">
+            <div>
+                <p class="health-kicker" data-i18n="health.kicker">overview</p>
+                <h1 class="title" data-i18n="health.title">health beta</h1>
+                <p class="health-subtitle" data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
+            </div>
+            <div class="header-links">
+                <a href="/" class="back-link" data-i18n="health.backToDashboard">← dashboard</a>
+                <a href="/config" class="back-link" data-i18n="dashboard.config">config</a>
+                <button id="refresh-health-btn" class="back-link back-link-button" type="button" data-i18n="health.refresh">refresh</button>
+            </div>
+        </header>
+
+        <section class="health-summary" id="health-summary"></section>
+
+        <section class="health-filters">
+            <div class="health-search-wrap">
+                <label for="health-search" data-i18n="health.filterBookmarks">Filter bookmarks</label>
+                <input id="health-search" type="search" placeholder="Search name, URL, category, page..." data-i18n-placeholder="health.searchPlaceholder" autocomplete="off" />
+            </div>
+            <div class="health-filter-pills" id="health-filter-pills"></div>
+        </section>
+
+        <section class="health-bulk-actions">
+            <div class="health-panel-header">
+                <h2 data-i18n="health.bulkActions">Bulk actions</h2>
+            </div>
+            <div class="health-bulk-buttons">
+                <button id="retest-all-btn" class="health-bulk-button health-bulk-button-primary" type="button" title="Re-test all bookmarks with checkStatus enabled" data-i18n-title="health.retestAllTitle" data-i18n="health.retestAllChecked">
+                    Retest all checked
+                </button>
+                <button id="open-broken-btn" class="health-bulk-button health-bulk-button-warn" type="button" title="Open all broken bookmarks in new tabs" data-i18n-title="health.openBrokenTitle" data-i18n="health.openBrokenLinks">
+                    Open broken links
+                </button>
+                <button id="merge-duplicates-btn" class="health-bulk-button" type="button" title="Merge selected duplicate group" data-i18n-title="health.mergeDuplicateTitle" data-i18n="health.mergeDuplicateGroup" disabled>
+                    Merge duplicate group
+                </button>
+            </div>
+            <div id="health-bulk-status" class="health-bulk-status"></div>
+        </section>
+
+        <section class="health-issues-panel">
+            <div class="health-panel-header">
+                <h2 data-i18n="health.issues">Issues</h2>
+                <span id="health-results-count" class="health-results-count"></span>
+            </div>
+            <div id="health-issues" class="health-issues"></div>
+        </section>
+
+        <section class="health-duplicates-panel">
+            <div class="health-panel-header">
+                <h2 data-i18n="health.duplicateGroups">Duplicate groups</h2>
+            </div>
+            <div id="health-duplicates" class="health-duplicates"></div>
+        </section>
+    </div>
+
+    <script src="/static/js/config/config-language.js"></script>
+    <script src="/static/js/health.js"></script>
+</body>
+</html>
