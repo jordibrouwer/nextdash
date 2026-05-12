@@ -1270,6 +1270,24 @@ class ConfigSettings {
             this.toggleSmartCollectionControls('mostUsed', showSmartMostUsedCollectionCheckbox.checked);
         }
 
+        const showTagCollectionsCheckbox = document.getElementById('show-tag-collections-checkbox');
+        const tagCollectionsMinCountRow = document.getElementById('tag-collections-min-count-row');
+        const tagCollectionsMinCountInput = document.getElementById('tag-collections-min-count');
+        if (showTagCollectionsCheckbox) {
+            showTagCollectionsCheckbox.checked = settings.showTagCollections === true;
+            if (tagCollectionsMinCountRow) tagCollectionsMinCountRow.style.display = settings.showTagCollections ? '' : 'none';
+            showTagCollectionsCheckbox.addEventListener('change', (e) => {
+                settings.showTagCollections = e.target.checked;
+                if (tagCollectionsMinCountRow) tagCollectionsMinCountRow.style.display = e.target.checked ? '' : 'none';
+            });
+        }
+        if (tagCollectionsMinCountInput) {
+            tagCollectionsMinCountInput.value = settings.tagCollectionsMinCount ?? 0;
+            tagCollectionsMinCountInput.addEventListener('input', (e) => {
+                settings.tagCollectionsMinCount = parseInt(e.target.value) || 0;
+            });
+        }
+
         const smartRecentPagesSelect = document.getElementById('smart-recent-pages-select');
         if (smartRecentPagesSelect) {
             smartRecentPagesSelect.addEventListener('change', () => {
@@ -1437,6 +1455,10 @@ class ConfigSettings {
         if (showSmartRecentCollectionCheckbox) settings.showSmartRecentCollection = showSmartRecentCollectionCheckbox.checked;
         if (showSmartStaleCollectionCheckbox) settings.showSmartStaleCollection = showSmartStaleCollectionCheckbox.checked;
         if (showSmartMostUsedCollectionCheckbox) settings.showSmartMostUsedCollection = showSmartMostUsedCollectionCheckbox.checked;
+        const showTagCollectionsChk = document.getElementById('show-tag-collections-checkbox');
+        if (showTagCollectionsChk) settings.showTagCollections = showTagCollectionsChk.checked;
+        const tagMinCountInp = document.getElementById('tag-collections-min-count');
+        if (tagMinCountInp) settings.tagCollectionsMinCount = parseInt(tagMinCountInp.value) || 0;
         if (smartTodayPagesSelect) settings.smartTodayPageIds = this.getSelectedPageIds(smartTodayPagesSelect);
         if (smartRecentPagesSelect) settings.smartRecentPageIds = this.getSelectedPageIds(smartRecentPagesSelect);
         if (smartStalePagesSelect) settings.smartStalePageIds = this.getSelectedPageIds(smartStalePagesSelect);

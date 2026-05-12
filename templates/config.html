@@ -558,6 +558,21 @@
                                 </select>
                             </div>
                         </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-tag-collections-checkbox">
+                                    <span class="checkbox-text">Show Smart: Tag collections (one per tag)</span>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child" id="tag-collections-min-count-row" style="display:none">
+                                <span class="tree-symbol">└──</span>
+                                <label for="tag-collections-min-count">Minimum bookmarks per tag:</label>
+                                <div class="number-input-wrapper">
+                                    <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
+                                    <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
+                                    <button type="button" class="number-input-up" data-input="tag-collections-min-count">+</button>
+                                </div>
+                            </div>
                     </section>
 
                     <!-- 5. Header & Buttons: all footer/header button visibility -->

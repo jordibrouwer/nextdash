@@ -2186,6 +2186,29 @@ class Dashboard {
             });
         }
 
+        if (this.settings?.showTagCollections) {
+            const minCount = this.settings.tagCollectionsMinCount || 0;
+            const tagMap = new Map();
+            normalized.forEach(bm => {
+                (bm.tags || []).forEach(tag => {
+                    if (!tagMap.has(tag)) tagMap.set(tag, []);
+                    tagMap.get(tag).push(bm);
+                });
+            });
+            [...tagMap.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .forEach(([tag, bms]) => {
+                    if (minCount > 0 && bms.length < minCount) return;
+                    collections.push({
+                        id: `tag:${tag}`,
+                        name: `🏷 ${tag}`,
+                        icon: '🏷',
+                        bookmarks: bms,
+                        isSmartCollection: true
+                    });
+                });
+        }
+
         return collections;
     }
 

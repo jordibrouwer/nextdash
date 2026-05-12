@@ -157,6 +157,8 @@ type Settings struct {
 	SmartMostUsedPageIds        []int                            `json:"smartMostUsedPageIds"`        // Page IDs where smart most used is enabled (empty = all)
 	ArchivedPageIds             []int                            `json:"archivedPageIds"`             // Archived pages hidden from active management flows
 	Collections                 []Collection                     `json:"collections,omitempty"`       // User-defined dynamic collections
+	ShowTagCollections          bool                             `json:"showTagCollections"`          // Auto-generate a collection per tag
+	TagCollectionsMinCount      int                              `json:"tagCollectionsMinCount"`      // Minimum bookmarks per tag to show collection (0 = all)
 	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
 	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
