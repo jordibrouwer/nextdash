@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Jordi Brouwer\\\\OneDrive\\\\Developing\\\\nextDash\\\\nextDash\" -Recurse -Name)"
+    ]
+  }
+}

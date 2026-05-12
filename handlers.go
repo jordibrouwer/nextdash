@@ -516,6 +516,10 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for i := range bookmarks {
+		bookmarks[i].Tags = normalizeTags(bookmarks[i].Tags)
+	}
+
 	h.store.SaveBookmarksByPage(pageID, bookmarks)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
@@ -575,9 +579,29 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		request.Bookmark.CreatedAt = time.Now().UnixMilli()
 	}
 
+	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
+
 	h.store.AddBookmarkToPage(request.Page, request.Bookmark)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// normalizeTags trims, lowercases, deduplicates, and removes empty tag values.
+func normalizeTags(tags []string) []string {
+	seen := make(map[string]struct{}, len(tags))
+	result := make([]string, 0, len(tags))
+	for _, t := range tags {
+		t = strings.ToLower(strings.TrimSpace(t))
+		if t == "" {
+			continue
+		}
+		if _, exists := seen[t]; exists {
+			continue
+		}
+		seen[t] = struct{}{}
+		result = append(result, t)
+	}
+	return result
 }
 
 func slugify(s string) string {

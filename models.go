@@ -25,7 +25,8 @@ type Bookmark struct {
 	PreviewTitle string `json:"previewTitle,omitempty"` // Preview metadata
 	PreviewDesc  string `json:"previewDesc,omitempty"`  // Preview description
 	PreviewImage string `json:"previewImage,omitempty"` // Preview image URL
-	Note         string `json:"note,omitempty"`         // User note for bookmark
+	Note         string   `json:"note,omitempty"`         // User note for bookmark
+	Tags         []string `json:"tags,omitempty"`
 }
 
 type Finder struct {
@@ -35,6 +36,20 @@ type Finder struct {
 	Tags      []string `json:"tags,omitempty"`
 	UseCount  int      `json:"useCount,omitempty"`
 	LastUsed  int64    `json:"lastUsed,omitempty"`
+}
+
+type CollectionRule struct {
+	Field    string `json:"field"`    // "tag", "category", "shortcut"
+	Operator string `json:"operator"` // "includes", "excludes"
+	Value    string `json:"value"`
+}
+
+type Collection struct {
+	ID    string           `json:"id"`
+	Name  string           `json:"name"`
+	Icon  string           `json:"icon,omitempty"`
+	Logic string           `json:"logic"` // "and" | "or"
+	Rules []CollectionRule `json:"rules"`
 }
 
 type Category struct {
@@ -141,6 +156,7 @@ type Settings struct {
 	SmartStalePageIds           []int                            `json:"smartStalePageIds"`           // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                            `json:"smartMostUsedPageIds"`        // Page IDs where smart most used is enabled (empty = all)
 	ArchivedPageIds             []int                            `json:"archivedPageIds"`             // Archived pages hidden from active management flows
+	Collections                 []Collection                     `json:"collections,omitempty"`       // User-defined dynamic collections
 	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
 	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
