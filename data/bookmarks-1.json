@@ -1,0 +1,133 @@
+{
+  "page": {
+    "id": 1,
+    "name": "main"
+  },
+  "categories": [
+    {
+      "id": "development",
+      "name": "Development",
+      "originalId": "development"
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "originalId": "media"
+    },
+    {
+      "id": "social",
+      "name": "Social",
+      "originalId": "social"
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "originalId": "search"
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "originalId": "utilities"
+    }
+  ],
+  "bookmarks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com",
+      "pageId": 1,
+      "shortcut": "G",
+      "category": "development",
+      "checkStatus": false,
+      "icon": "",
+      "tags": [
+        "work",
+        "dev",
+        "personal"
+      ]
+    },
+    {
+      "name": "GitHub Issues",
+      "url": "https://github.com/issues",
+      "pageId": 1,
+      "shortcut": "GI",
+      "category": "development",
+      "pinned": true,
+      "checkStatus": true,
+      "icon": "",
+      "tags": [
+        "work",
+        "dev"
+      ]
+    },
+    {
+      "name": "GitHub Pull Requests",
+      "url": "https://github.com/pulls",
+      "pageId": 1,
+      "shortcut": "GP",
+      "category": "development",
+      "checkStatus": false,
+      "icon": "",
+      "tags": [
+        "personal",
+        "jordi"
+      ]
+    },
+    {
+      "name": "YouTube",
+      "url": "https://youtube.com",
+      "pageId": 1,
+      "shortcut": "Y",
+      "category": "media",
+      "checkStatus": false,
+      "icon": "",
+      "lastOpened": 1778597154052,
+      "openCount": 1,
+      "previewTitle": "YouTube",
+      "previewDesc": "Bekijk je favoriete video\u0026#39;s, luister naar de muziek die je leuk vindt, upload originele content en deel alles met vrienden, familie en anderen op YouTube.",
+      "previewImage": "https://www.youtube.com/img/desktop/yt_1200.png",
+      "tags": [
+        "personal",
+        "work",
+        "dev",
+        "jordi"
+      ]
+    },
+    {
+      "name": "YouTube Studio",
+      "url": "https://studio.youtube.com",
+      "pageId": 1,
+      "shortcut": "YS",
+      "category": "media",
+      "checkStatus": false,
+      "icon": ""
+    },
+    {
+      "name": "Facebook",
+      "url": "https://facebook.com",
+      "pageId": 1,
+      "shortcut": "F",
+      "category": "social",
+      "checkStatus": false,
+      "icon": "",
+      "previewTitle": "Facebook"
+    },
+    {
+      "name": "Instagram",
+      "url": "https://instagram.com",
+      "pageId": 1,
+      "shortcut": "INS",
+      "category": "social",
+      "checkStatus": false,
+      "icon": ""
+    },
+    {
+      "name": "Google",
+      "url": "https://google.com",
+      "pageId": 1,
+      "shortcut": "",
+      "category": "search",
+      "checkStatus": false,
+      "icon": ""
+    }
+  ]
+}

@@ -249,6 +249,9 @@ class ConfigBookmarks {
         const noteBadge = String(bookmark.note || '').trim()
             ? `<span class="bookmark-row-badge is-active" title="Has note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.75h7l3.75 3.75V19A1.25 1.25 0 0 1 17 20.25H7A1.25 1.25 0 0 1 5.75 19V6A1.25 1.25 0 0 1 7 4.75Z"/><path d="M14.5 4.75V8.5h3.75"/><path d="M8.75 11h6.5"/><path d="M8.75 14h5.25"/></svg></span>`
             : '';
+        const tagsBadge = (bookmark.tags?.length > 0)
+            ? `<span class="bookmark-row-badge is-active" title="${this._escHtml((bookmark.tags || []).join(', '))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3H5a2 2 0 0 0-2 2v4.5a1 1 0 0 0 .29.71l9 9a1 1 0 0 0 1.42 0l6-6a1 1 0 0 0 0-1.42l-9-9A1 1 0 0 0 9.5 3Z"/><circle cx="6.5" cy="6.5" r="0.5" fill="currentColor"/></svg></span>`
+            : '';
 
         if (this.activeDetailIndex === fullIndex) div.classList.add('is-selected-detail');
 
@@ -266,7 +269,7 @@ class ConfigBookmarks {
                     ${openCount > 0 ? `<span class="bookmark-row-opens">${openCount}×</span>` : ''}
                 </span>
             </span>
-            <span class="bookmark-row-badges">${pinBadge}${statusBadge}${noteBadge}</span>
+            <span class="bookmark-row-badges">${pinBadge}${statusBadge}${noteBadge}${tagsBadge}</span>
         `;
 
         div._bookmarkRef = bookmark;
@@ -368,6 +371,9 @@ class ConfigBookmarks {
         const noteEl = document.getElementById('detail-note');
         if (noteEl) noteEl.value = bookmark.note || '';
 
+        const tagsEl = document.getElementById('detail-tags');
+        if (tagsEl) tagsEl.value = (bookmark.tags ?? []).join(', ');
+
         this._updateDetailIconPreview(bookmark);
     }
 
@@ -425,7 +431,8 @@ class ConfigBookmarks {
             badgesSpan.innerHTML =
                 (bookmark.pinned ? `<span class="bookmark-row-badge is-active" title="Pinned"><svg viewBox="0 0 24 24"><path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"/></svg></span>` : '')
                 + (bookmark.checkStatus ? `<span class="bookmark-row-badge is-active" title="Status check"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z"/></svg></span>` : '')
-                + (String(bookmark.note || '').trim() ? `<span class="bookmark-row-badge is-active" title="Has note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.75h7l3.75 3.75V19A1.25 1.25 0 0 1 17 20.25H7A1.25 1.25 0 0 1 5.75 19V6A1.25 1.25 0 0 1 7 4.75Z"/><path d="M14.5 4.75V8.5h3.75"/><path d="M8.75 11h6.5"/><path d="M8.75 14h5.25"/></svg></span>` : '');
+                + (String(bookmark.note || '').trim() ? `<span class="bookmark-row-badge is-active" title="Has note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.75h7l3.75 3.75V19A1.25 1.25 0 0 1 17 20.25H7A1.25 1.25 0 0 1 5.75 19V6A1.25 1.25 0 0 1 7 4.75Z"/><path d="M14.5 4.75V8.5h3.75"/><path d="M8.75 11h6.5"/><path d="M8.75 14h5.25"/></svg></span>` : '')
+                + (bookmark.tags?.length > 0 ? `<span class="bookmark-row-badge is-active" title="${this._escHtml((bookmark.tags || []).join(', '))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3H5a2 2 0 0 0-2 2v4.5a1 1 0 0 0 .29.71l9 9a1 1 0 0 0 1.42 0l6-6a1 1 0 0 0 0-1.42l-9-9A1 1 0 0 0 9.5 3Z"/><circle cx="6.5" cy="6.5" r="0.5" fill="currentColor"/></svg></span>` : '');
         }
         const titleEl = document.getElementById('bookmark-detail-title');
         if (titleEl && this.activeDetailIndex === index) titleEl.textContent = bookmark.name || 'Bookmark';
@@ -499,6 +506,17 @@ class ConfigBookmarks {
 
         if (noteEl) noteEl.addEventListener('input', (e) => {
             bookmark.note = e.target.value;
+            this._syncRow(index, bookmark);
+            if (window.configManager?.markDirty) window.configManager.markDirty();
+        }, { signal });
+
+        const tagsEl = get('detail-tags');
+        if (tagsEl) tagsEl.addEventListener('input', (e) => {
+            bookmark.tags = e.target.value
+                .split(',')
+                .map(t => t.trim().toLowerCase())
+                .filter(t => t.length > 0)
+                .filter((t, i, arr) => arr.indexOf(t) === i);
             this._syncRow(index, bookmark);
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });

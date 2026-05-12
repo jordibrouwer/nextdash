@@ -2802,6 +2802,13 @@ class Dashboard {
         noteInput.value = bookmark.note || '';
         form.appendChild(mkField(this.language.t('bookmark.noteLabel') || 'Note', noteInput));
 
+        const tagsInput = document.createElement('input');
+        tagsInput.type = 'text';
+        tagsInput.className = 'bookmark-inline-input';
+        tagsInput.placeholder = 'work, dev, personal…';
+        tagsInput.value = (Array.isArray(bookmark.tags) ? bookmark.tags : []).join(', ');
+        form.appendChild(mkField('Tags', tagsInput));
+
         const shortcutInput = document.createElement('input');
         shortcutInput.type = 'text';
         shortcutInput.className = 'bookmark-inline-input';
@@ -2873,6 +2880,7 @@ class Dashboard {
                 pinInput,
                 statusInput,
                 noteInput,
+                tagsInput,
                 getPendingIcon: () => pendingIcon
             });
         });
@@ -2955,6 +2963,9 @@ class Dashboard {
         }
 
         const previousUrl = String(bookmark.url || '').trim();
+        const parsedTags = fields.tagsInput
+            ? fields.tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i)
+            : (bookmark.tags || []);
         const nextBookmarkState = {
             name,
             url,
@@ -2962,9 +2973,9 @@ class Dashboard {
             shortcut,
             category,
             pinned: fields.pinInput.checked,
-            checkStatus: fields.statusInput.checked
-            ,
-            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : (bookmark.note || '')
+            checkStatus: fields.statusInput.checked,
+            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : (bookmark.note || ''),
+            tags: parsedTags
         };
 
         if (bookmarkRef.scope === 'current') {
@@ -3437,6 +3448,7 @@ class Dashboard {
                 const preview = await this.fetchBookmarkPreviewData(openLink, bookmark);
                 if (!preview || !openLink._previewHoverActive) return;
                 preview.note = bookmark.note || '';
+                preview.tags = Array.isArray(bookmark.tags) ? bookmark.tags.filter(Boolean) : [];
                 this.showBookmarkPreviewCard(preview, event);
             }, hoverDelay);
         });
@@ -3524,6 +3536,7 @@ class Dashboard {
                 <div class="bookmark-preview-card-title"></div>
                 <div class="bookmark-preview-card-description"></div>
                 <div class="bookmark-preview-card-note"></div>
+                <div class="bookmark-preview-card-tags"></div>
                 <div class="bookmark-preview-card-domain"></div>
             </div>
         `;
@@ -3560,6 +3573,24 @@ class Dashboard {
                 noteEl.style.display = 'none';
             }
         }
+        const tagsEl = card.querySelector('.bookmark-preview-card-tags');
+        if (tagsEl) {
+            const tags = Array.isArray(preview?.tags) ? preview.tags.filter(Boolean) : [];
+            if (tags.length > 0) {
+                tagsEl.innerHTML = '';
+                tags.forEach(tag => {
+                    const chip = document.createElement('span');
+                    chip.className = 'bookmark-tag-chip';
+                    chip.textContent = tag;
+                    tagsEl.appendChild(chip);
+                });
+                tagsEl.style.display = 'flex';
+            } else {
+                tagsEl.innerHTML = '';
+                tagsEl.style.display = 'none';
+            }
+        }
+
         domainEl.textContent = domain;
         domainEl.style.display = domain ? 'block' : 'none';
 

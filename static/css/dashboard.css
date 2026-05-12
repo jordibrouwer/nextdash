@@ -478,6 +478,14 @@ body {
     display: none;
 }
 
+/* Preview card tags */
+.bookmark-preview-card-tags {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    margin-top: 0.4rem;
+}
+
 .dashboard-grid.layout-terminal .category-title::before {
     content: '$ ';
 }
@@ -861,6 +869,27 @@ a.bookmark-open:hover {
 
 .bookmark-note-badge.is-empty {
     opacity: 0;
+}
+
+.bookmark-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem;
+    margin-left: 0.35rem;
+}
+
+.bookmark-tag-chip {
+    font-size: 0.68rem;
+    line-height: 1;
+    padding: 0.15em 0.45em;
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-secondary);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
 }
 
 .bookmark-shortcut {
