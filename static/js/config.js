@@ -125,6 +125,9 @@ class ConfigManager {
         if (typeof ConfigKeyboard === 'function') {
             this.keyboard = new ConfigKeyboard(this.language.t.bind(this.language));
         }
+        if (typeof ConfigTags === 'function') {
+            this.tags = new ConfigTags(this.language.t.bind(this.language));
+        }
         this.setupDOM();
         await this.setupEventListeners();
         this.language.setupLanguageSelector();

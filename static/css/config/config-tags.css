@@ -1,0 +1,267 @@
+/* ============================================================
+   Tag Autocomplete dropdown (shared — appended to body)
+   ============================================================ */
+
+.tag-ac-dropdown {
+    position: fixed;
+    z-index: 9999;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    max-height: 14rem;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tag-ac-item {
+    padding: 0.35rem 0.6rem;
+    font-family: inherit;
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag-ac-item strong {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.tag-ac-item:hover,
+.tag-ac-item-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   Tags Tab
+   ============================================================ */
+
+.tags-tab {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+    min-height: 300px;
+}
+
+.tags-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    background: var(--background-primary);
+    flex-shrink: 0;
+}
+
+.tags-tab-intro {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ── Tag cloud ── */
+
+.tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.6rem;
+    padding: 0.85rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-top: none;
+    border-bottom: none;
+    background: var(--background-secondary);
+}
+
+.tag-cloud-chip {
+    --tag-scale: 0.5;
+    display: inline-block;
+    padding: 0.15em 0.35em;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: calc(0.75rem + var(--tag-scale) * 0.5rem);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+}
+
+.tag-cloud-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Tag list ── */
+
+.tags-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-primary);
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 0;
+    scrollbar-width: none;
+}
+
+.tags-list::-webkit-scrollbar {
+    display: none;
+}
+
+.tags-section-divider {
+    padding: 0.4rem 0.75rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    user-select: none;
+}
+
+/* ── Tag item ── */
+
+.tag-item {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.tag-item:last-child {
+    border-bottom: none;
+}
+
+.tag-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    min-height: 2.5rem;
+}
+
+.tag-drag-handle {
+    flex-shrink: 0;
+    cursor: default;
+    color: var(--text-tertiary);
+    font-size: 1rem;
+    user-select: none;
+    opacity: 0.4;
+}
+
+.tag-item-label {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.tag-item-label:hover {
+    color: var(--text-secondary);
+}
+
+.tag-item-count {
+    flex-shrink: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.tag-item-count:hover {
+    color: var(--text-secondary);
+}
+
+.tag-rename-input {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-text);
+}
+
+.tag-rename-input:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+/* ── Drill-down panel ── */
+
+.tag-drilldown {
+    display: none;
+    flex-direction: column;
+    border-top: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+}
+
+.tag-drilldown.is-open {
+    display: flex;
+}
+
+.tag-drilldown-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem 0.35rem 2.4rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.tag-drilldown-row:last-child {
+    border-bottom: none;
+}
+
+.tag-drilldown-name {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag-drilldown-cat {
+    flex-shrink: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.tag-drilldown-more {
+    padding: 0.35rem 0.75rem 0.35rem 2.4rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* ── Empty state ── */
+
+.tags-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    border: 1px solid var(--border-primary);
+    border-top: none;
+    padding: 2rem;
+    text-align: center;
+}
+
+.tags-empty-state p {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-tertiary);
+    max-width: 360px;
+}

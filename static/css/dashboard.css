@@ -478,6 +478,42 @@ body {
     display: none;
 }
 
+/* Tag autocomplete dropdown (appended to body by tag-autocomplete.js) */
+.tag-ac-dropdown {
+    position: fixed;
+    z-index: 9999;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    max-height: 14rem;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tag-ac-item {
+    padding: 0.35rem 0.6rem;
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag-ac-item strong {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.tag-ac-item:hover,
+.tag-ac-item-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
 /* Preview card tags */
 .bookmark-preview-card-tags {
     display: none;

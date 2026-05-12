@@ -3,6 +3,112 @@
  * Handles bookmark management (create, render, remove, reorder)
  */
 
+// Session-level tag pool — grows as tags are typed/saved, persists across bookmark switches
+const _sessionTags = new Set();
+
+class TagAutocomplete {
+    constructor(input, getTagsFn) {
+        this._input = input;
+        this._getTagsFn = getTagsFn;
+        this._dropdown = null;
+        this._activeIndex = -1;
+        this._onInput = this._handleInput.bind(this);
+        this._onKeydown = this._handleKeydown.bind(this);
+        this._onBlur = this._handleBlur.bind(this);
+        this._onScroll = this._reposition.bind(this);
+        input.addEventListener('input', this._onInput);
+        input.addEventListener('keydown', this._onKeydown);
+        input.addEventListener('blur', this._onBlur);
+        input.addEventListener('focus', this._onInput);
+    }
+    static attach(input, getTagsFn) {
+        TagAutocomplete.detach(input);
+        input._tagAutocomplete = new TagAutocomplete(input, getTagsFn);
+    }
+    static detach(input) {
+        if (input._tagAutocomplete) { input._tagAutocomplete._destroy(); delete input._tagAutocomplete; }
+    }
+    _handleInput() {
+        const token = this._currentToken();
+        if (!token) { this._close(); return; }
+        const known = (this._getTagsFn() || []).map(t => t.toLowerCase());
+        const used = this._usedTags();
+        const candidates = known.filter(t => t.startsWith(token) && t !== token && !used.includes(t))
+            .sort((a, b) => a.localeCompare(b)).slice(0, 8);
+        if (candidates.length === 0) { this._close(); return; }
+        this._open(candidates, token);
+    }
+    _handleKeydown(e) {
+        if (!this._dropdown) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); this._activeIndex = Math.min(this._activeIndex + 1, this._items().length - 1); this._highlightActive(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); this._activeIndex = Math.max(this._activeIndex - 1, 0); this._highlightActive(); }
+        else if (e.key === 'Tab' || e.key === 'Enter') { const t = this._items()[this._activeIndex] ?? this._items()[0]; if (t) { e.preventDefault(); this._accept(t.dataset.tag); } }
+        else if (e.key === 'Escape') { e.preventDefault(); this._close(); }
+    }
+    _handleBlur() { setTimeout(() => this._close(), 120); }
+    _open(candidates, token) {
+        if (!this._dropdown) {
+            this._dropdown = document.createElement('ul');
+            this._dropdown.className = 'tag-ac-dropdown';
+            document.body.appendChild(this._dropdown);
+            window.addEventListener('scroll', this._onScroll, true);
+        }
+        this._dropdown.innerHTML = '';
+        this._activeIndex = 0;
+        candidates.forEach((tag, i) => {
+            const li = document.createElement('li');
+            li.className = 'tag-ac-item' + (i === 0 ? ' tag-ac-item-active' : '');
+            li.dataset.tag = tag;
+            const bold = document.createElement('strong');
+            bold.textContent = tag.slice(0, token.length);
+            li.appendChild(bold);
+            li.appendChild(document.createTextNode(tag.slice(token.length)));
+            li.addEventListener('mousedown', (e) => { e.preventDefault(); this._accept(tag); });
+            this._dropdown.appendChild(li);
+        });
+        this._reposition();
+    }
+    _reposition() {
+        if (!this._dropdown) return;
+        const r = this._input.getBoundingClientRect();
+        this._dropdown.style.cssText = `left:${r.left}px;top:${r.bottom}px;width:${r.width}px`;
+    }
+    _close() {
+        if (this._dropdown) { this._dropdown.remove(); this._dropdown = null; window.removeEventListener('scroll', this._onScroll, true); }
+        this._activeIndex = -1;
+    }
+    _items() { return this._dropdown ? [...this._dropdown.querySelectorAll('.tag-ac-item')] : []; }
+    _highlightActive() { this._items().forEach((li, i) => li.classList.toggle('tag-ac-item-active', i === this._activeIndex)); }
+    _accept(tag) {
+        const val = this._input.value;
+        const lastComma = val.lastIndexOf(',');
+        const prevParts = (lastComma >= 0 ? val.slice(0, lastComma) : '').split(',').map(t => t.trim()).filter(Boolean);
+        prevParts.push(tag);
+        this._input.value = prevParts.join(', ') + ', ';
+        this._input.selectionStart = this._input.selectionEnd = this._input.value.length;
+        this._close();
+        this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        this._input.focus();
+    }
+    _currentToken() {
+        const val = this._input.value;
+        const lastComma = val.lastIndexOf(',');
+        return (lastComma >= 0 ? val.slice(lastComma + 1) : val).trimStart().toLowerCase();
+    }
+    _usedTags() {
+        const val = this._input.value;
+        const lastComma = val.lastIndexOf(',');
+        return (lastComma >= 0 ? val.slice(0, lastComma) : '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    }
+    _destroy() {
+        this._input.removeEventListener('input', this._onInput);
+        this._input.removeEventListener('keydown', this._onKeydown);
+        this._input.removeEventListener('blur', this._onBlur);
+        this._input.removeEventListener('focus', this._onInput);
+        this._close();
+    }
+}
+
 class ConfigBookmarks {
     constructor(t) {
         this.t = t; // Translation function
@@ -511,15 +617,28 @@ class ConfigBookmarks {
         }, { signal });
 
         const tagsEl = get('detail-tags');
-        if (tagsEl) tagsEl.addEventListener('input', (e) => {
-            bookmark.tags = e.target.value
-                .split(',')
-                .map(t => t.trim().toLowerCase())
-                .filter(t => t.length > 0)
-                .filter((t, i, arr) => arr.indexOf(t) === i);
-            this._syncRow(index, bookmark);
-            if (window.configManager?.markDirty) window.configManager.markDirty();
-        }, { signal });
+        if (tagsEl) {
+            tagsEl.addEventListener('input', (e) => {
+                bookmark.tags = e.target.value
+                    .split(',')
+                    .map(t => t.trim().toLowerCase())
+                    .filter(t => t.length > 0)
+                    .filter((t, i, arr) => arr.indexOf(t) === i);
+                bookmark.tags.forEach(t => _sessionTags.add(t));
+                this._syncRow(index, bookmark);
+                if (window.configManager?.markDirty) window.configManager.markDirty();
+            }, { signal });
+
+            // Seed session pool from all loaded bookmarks
+            (window.configManager?.allBookmarksData ?? []).forEach(bm => (bm.tags || []).forEach(t => _sessionTags.add(t)));
+
+            TagAutocomplete.attach(tagsEl, () => {
+                // Also add whatever is currently typed so mid-entry tokens are suggestable
+                tagsEl.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => _sessionTags.add(t));
+                return [..._sessionTags];
+            });
+            signal.addEventListener('abort', () => TagAutocomplete.detach(tagsEl));
+        }
 
         if (metaBtn) metaBtn.addEventListener('click', () => this._refreshDetailMeta(index, bookmark), { signal });
 

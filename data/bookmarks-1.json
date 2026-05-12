@@ -56,7 +56,8 @@
       "icon": "",
       "tags": [
         "work",
-        "dev"
+        "dev",
+        "jordi"
       ]
     },
     {
@@ -69,7 +70,8 @@
       "icon": "",
       "tags": [
         "personal",
-        "jordi"
+        "jordi",
+        "work"
       ]
     },
     {
@@ -99,7 +101,10 @@
       "shortcut": "YS",
       "category": "media",
       "checkStatus": false,
-      "icon": ""
+      "icon": "",
+      "tags": [
+        "work"
+      ]
     },
     {
       "name": "Facebook",
@@ -118,7 +123,10 @@
       "shortcut": "INS",
       "category": "social",
       "checkStatus": false,
-      "icon": ""
+      "icon": "",
+      "tags": [
+        "personal"
+      ]
     },
     {
       "name": "Google",

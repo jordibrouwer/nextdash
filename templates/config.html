@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/static/css/config/config-stats.css">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css">
+    <link rel="stylesheet" href="/static/css/config/config-tags.css">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/status.css">
     <link rel="stylesheet" href="/static/css/select.css">
@@ -65,10 +66,10 @@
                     <button class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
                     <button class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
                     <button class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
+                    <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
                     <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
                     <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
                     <button class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
-                    <button class="tab-button" data-tab="keyboard" data-i18n="config.keyboardTab">keyboard</button>
                     <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
                     <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
                 </div>
@@ -807,6 +808,14 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="checkbox-tree-item">
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text">Customize which keys trigger search, navigation, and other dashboard actions.</p>
+                                    <div class="config-advanced-action-actions">
+                                        <a href="#keyboard" id="go-to-keyboard-link" class="btn btn-secondary btn-small" data-i18n="config.keyboardTab">Keyboard shortcuts</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -847,6 +856,19 @@
                     <!-- Categories will be loaded here -->
                 </div>
                 <button id="add-category-btn" class="btn btn-primary" data-i18n="config.addCategory">Add Category</button>
+            </div>
+            </div>
+
+            <div class="tab-content" data-tab-content="tags">
+            <div class="tags-tab">
+                <div class="tags-toolbar">
+                    <span class="tags-tab-intro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag.</span>
+                </div>
+                <div id="tags-cloud" class="tags-cloud"></div>
+                <div id="tags-list" class="tags-list"></div>
+                <div id="tags-empty-state" class="tags-empty-state" style="display:none">
+                    <p>No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
+                </div>
             </div>
             </div>
 
@@ -1484,6 +1506,7 @@
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/config/config-stats.js"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
+    <script src="/static/js/config/config-tags.js"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/config.js"></script>
 </body>
