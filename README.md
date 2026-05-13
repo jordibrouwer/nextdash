@@ -79,39 +79,6 @@ Featuring a minimalist, keyboard-first interface with extensive customization op
 | ![7](screenshots/nextdash-7.png) | 
 ---
 
-## 🛠 Recent Improvements
-- **Config Bookmarks Split-View**: Rebuilt `config#bookmarks` as a split-view layout — compact list on the left, detail panel on the right. Click any row to edit all fields (name, URL, page, category, shortcut, icon, note, pinned, status) without leaving the page. Changes sync live to the list row as you type.
-- **Redesigned New-Bookmark Modal (`Ctrl+Shift+A`)**: The quick-add modal is redesigned to match the config split-view style — flat section layout, themed buttons, page selector, and note field all in one place.
-- **Config Workspace Overhaul**: Rebuilt `config#bookmarks` into a structured workspace for pages, categories, bookmarks, and archived pages with contextual add flows.
-- **Page Templates + Archiving**: Added page templates (e.g. Work, Personal, Learn), archive/restore support, and cleaner navigation for large setups.
-- **Config Command Palette**: Added fast in-config actions via `Ctrl+K` / `Cmd+K`.
-- **Favicon Workflow Upgrade**: Added auto-fetch on URL blur, manual fetch, subtle fetch status, bulk favicon refresh, and configurable favicon refresh policy.
-- **Dashboard/Quick Add Favicon Support**: Inline dashboard edit, quick add, and `Ctrl+Shift+A` new-bookmark modal now support favicon fetch + preview.
-- **Link Preview Cards on Hover**: Added rich hover previews with toggle and delay settings in config.
-- **Dead Link Auto-Healer + Health Actions**: Added auto-heal suggestions (archive, redirect detect, title refresh, 1-click fix), persistent ping status updates, and direct delete from Health.
-- **Personal Usage Insights**: Added actionable usage insights on `config#stats` to open hot pages/bookmarks and trigger quick cleanup actions.
-- **Bookmark Health Dashboard**: Real-time health monitoring with duplicate detection, broken link scanning, stale bookmark tracking, and missing metadata detection. Filter by issue type and bulk merge duplicates.
-- **Bookmark Notes**: Added bookmark notes with a dashboard badge, hover preview text, and edit support from create/inline/config flows.
-- **Interactive Onboarding**: A guided setup for new installations (language, weather, layout, search tips, keyboard and mouse bookmark usage, then finish).
-- **Local Weather Location**: You can now set a custom location for local weather display (manual city or browser location).
-- **Inline What's New**: New in-app "what's new" modal with recent updates and usage tips.
-- **Keyboard rebinding (new)**: Add `config -> keyboard` to view and rebind dashboard shortcuts; custom bindings persist in settings and can be reset individually or all at once.
-- **Stats charts (config#stats)**: Visual charts for Most Clicked, Stale (30+ days), and Latest Added bookmarks for quicker insights.
-- **Search history & UX**: Search now keeps up to 20 recent queries, shows them as suggestions when the search modal is open, deduplicates repeated queries and lets you click/enter to rerun a past search.
-- **Search modal fit/scroll**: The search modal now fits within the viewport and the results/history list scrolls internally so long lists never get clipped off-screen.
-- **What's New refresh & help sync**: The inline "what's new" modal was refreshed with the latest features, and the Config Help page gained a dedicated "What's New" section with localized strings.
-- **Factory Reset Flow**: Added a dedicated reset block in config with a large danger button, 2-step confirmation (including typing `RESET`), and reset to default starter data.
-- **Context Tips Per Page**: Inline tips now adapt per page and auto-hide after first use of the related action; includes a reset option in config.
-- **Bulk Actions++**: Extended bookmark bulk tools with category assign, cross-page move, and status apply modes (toggle/enable/disable).
-- **Finder Upgrade**: Added finder tags, usage tracking (use count + last used), and top finder suggestions in search results.
-- **Search Filter UX**: Added filter autocomplete and clear value hints for `category:`, `status:`, and `page:`.
-- **Expanded Font Switching**: Quickly switch UI fonts in settings: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, and System UI.
-- **Advanced Asset Management**: Upload custom icons, fonts and favicons directly from the settings panel.
-- **Validation Guardrails**: Built-in detection for duplicate shortcuts and URL conflicts.
-- **Sync & Undo**: Real-time sync between tabs and undo toasts for destructive actions.
-
----
-
 ## Security and network exposure
 
 nextDash is built as a **personal or small-team dashboard on a trusted network**. It does **not** provide built-in user accounts, API keys, or other application-level access control. Data is stored on disk as configured by the instance; the HTTP API and UI assume that anyone who can open the URL is allowed to use the app.
