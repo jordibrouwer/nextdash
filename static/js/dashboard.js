@@ -1708,7 +1708,7 @@ class Dashboard {
 
         // Enable realtime drag-and-drop sorting within each category
         this.initializeCategoryReorder();
-        this.initializeDashboardCategoryReorder();
+        // this.initializeDashboardCategoryReorder();
 
         // Update search component with current data
         this.updateSearchComponent();
@@ -2213,13 +2213,6 @@ class Dashboard {
             this.collapsedCategories[collapsedKey] = !isCollapsed;
             this.saveCollapsedStates();
         });
-        if (!isSmartCollection) {
-            const catHandle = document.createElement('span');
-            catHandle.className = 'category-reorder-handle';
-            catHandle.setAttribute('aria-hidden', 'true');
-            catHandle.addEventListener('click', (e) => e.stopPropagation());
-            titleElement.insertBefore(catHandle, titleElement.firstChild);
-        }
         categoryDiv.appendChild(titleElement);
 
         // Bookmarks list
