@@ -39,3 +39,5 @@ data/bookmarks-1.json
 .gitignore
 data/health-cache.json
 data/settings.json
+.claude/
+data/
