@@ -976,38 +976,6 @@ a.bookmark-open:hover {
     opacity: 0;
 }
 
-.bookmark-shortcut[data-shortcut] {
-    position: relative;
-}
-
-.bookmark-shortcut[data-shortcut]::after {
-    content: 'Press ' attr(data-shortcut) ' to open';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%) translateX(0);
-    white-space: nowrap;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    color: var(--text-secondary);
-    font-size: calc(var(--font-size-controls) * 0.85);
-    font-weight: var(--font-weight-normal);
-    padding: 0.2em 0.55em;
-    border-radius: 4px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 10;
-    margin-top: 0;
-}
-
-.bookmark-link:hover .bookmark-shortcut[data-shortcut]::after {
-    opacity: 1;
-}
-
-body.preview-card-active .bookmark-shortcut[data-shortcut]::after {
-    opacity: 0;
-}
 
 .bookmark-icon-slot {
     width: 1.15em;

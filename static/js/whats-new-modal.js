@@ -43,13 +43,6 @@
                         </div>
                     </section>
                     <section class="keyboard-cheat-sheet-panel">
-                        <h3 class="keyboard-cheat-sheet-section-title">Shortcut tooltip on hover</h3>
-                        <div class="keyboard-cheat-sheet-list">
-                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">hover bookmark</span><span class="keyboard-cheat-sheet-description">"Press X to open" tooltip appears near the shortcut when a shortcut is set.</span></div>
-                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">auto-hides</span><span class="keyboard-cheat-sheet-description">Tooltip is suppressed when the preview card is visible.</span></div>
-                        </div>
-                    </section>
-                    <section class="keyboard-cheat-sheet-panel">
                         <h3 class="keyboard-cheat-sheet-section-title">Hover card — usage stats</h3>
                         <div class="keyboard-cheat-sheet-list">
                             <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">hover bookmark</span><span class="keyboard-cheat-sheet-description">Preview card now shows open count and last-opened date.</span></div>
