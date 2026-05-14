@@ -1740,17 +1740,30 @@ class Dashboard {
         container.classList.remove('page-transition');
 
         if (!Array.isArray(this.bookmarks) || this.bookmarks.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <div class="empty-state-text">No bookmarks yet</div>
-                    <div class="empty-state-subtext">Use :new or open config to add your first bookmark.</div>
-                    <div class="empty-state-action">
-                        <a class="btn btn-primary" href="/config#bookmarks">Add bookmarks</a>
-                        <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
+            const hasBookmarksOnOtherPages = Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0;
+            const currentPage = this.pages.find(p => p.id === this.currentPageId);
+            const pageName = currentPage ? currentPage.name : '';
+
+            if (hasBookmarksOnOtherPages) {
+                container.innerHTML = `
+                    <div class="empty-state empty-state--page">
+                        <div class="empty-state-label">// ${pageName}</div>
+                        <div class="empty-state-text">This page is empty</div>
+                        <div class="empty-state-subtext">Press <kbd>Ctrl+Shift+A</kbd> to add a bookmark here, or use <kbd>:new</kbd> in the command bar.</div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state empty-state--fresh">
+                        <div class="empty-state-text">No bookmarks yet</div>
+                        <div class="empty-state-subtext">Press <kbd>Ctrl+Shift+A</kbd> to add your first bookmark, or import existing data.</div>
+                        <div class="empty-state-action">
+                            <a class="btn btn-primary" href="/config#bookmarks">Add bookmarks</a>
+                            <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
+                        </div>
+                    </div>
+                `;
+            }
             if (this.language && typeof this.language.applyTranslations === 'function') {
                 this.language.applyTranslations();
             }

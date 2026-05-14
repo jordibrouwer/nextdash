@@ -433,38 +433,50 @@ kbd {
 .empty-state {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 60px 20px;
-    text-align: center;
+    padding: 3rem 0;
+    text-align: left;
     color: var(--text-secondary);
+    max-width: 40ch;
 }
 
-.empty-state-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
-    opacity: 0.5;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+.empty-state-label {
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
 }
 
 .empty-state-text {
-    font-size: 16px;
-    margin-bottom: 10px;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
+    margin-bottom: 0.5rem;
 }
 
 .empty-state-subtext {
-    font-size: 13px;
+    font-size: var(--font-size-controls);
     color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.empty-state-subtext kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.9em;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0 0.3em;
 }
 
 .empty-state-action {
-    margin-top: 20px;
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 /* ===== Confirmation Dialogs ===== */
