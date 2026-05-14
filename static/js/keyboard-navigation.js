@@ -37,6 +37,14 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Ctrl+C — copy URL of selected bookmark
+            if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyC' && this.currentIndex >= 0) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.copyUrlForCurrent();
+                return;
+            }
+
             // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
@@ -483,6 +491,33 @@ class KeyboardNavigation {
                 }
             });
         }
+    }
+
+    copyUrlForCurrent() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const row = this.navigableElements[this.currentIndex];
+        const openLink = row && row.querySelector('a.bookmark-open');
+        const url = (openLink && openLink.href) || row.dataset.bookmarkUrl || '';
+        if (!url) return;
+
+        navigator.clipboard.writeText(url).then(() => {
+            if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
+                this.dashboard.showNotification('URL copied', 'success', { duration: 2000 });
+            }
+        }).catch(() => {
+            // Fallback for browsers without clipboard API permission
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch { /* ignore */ }
+            document.body.removeChild(ta);
+            if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
+                this.dashboard.showNotification('URL copied', 'success', { duration: 2000 });
+            }
+        });
     }
 
     selectCurrentElement() {

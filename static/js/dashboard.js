@@ -1299,6 +1299,7 @@ class Dashboard {
             'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet',
             'Tip: <code>Ctrl+Shift+A</code> new bookmark',
             'Tip: <code>-</code> preview card on keyboard-selected bookmark',
+            'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark',
             'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'
         ];
         const normalTips = [
@@ -1535,6 +1536,7 @@ class Dashboard {
                     { keys: '← / →', description: 'Move horizontally through the bookmark grid' },
                     { keys: 'Enter / Space', description: 'Open the selected bookmark' },
                     { keys: '-', description: 'Toggle preview card on the keyboard-selected bookmark' },
+                    { keys: 'Ctrl + C', description: 'Copy the URL of the keyboard-selected bookmark to the clipboard' },
                     { keys: ';', description: 'Open inline edit (arrow-highlighted row or Tab-focused link)' },
                     { keys: 'Esc', description: 'Clear selection or undo the latest reorder' },
                     { keys: 'Double-click page tab', description: 'Rename the page tab inline' },

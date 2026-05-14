@@ -72,6 +72,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Arrow Up/Down/Left/Right` — move through the bookmark grid
 - `Enter` / `Space` — open the focused bookmark
 - `-` — toggle the preview card on the focused bookmark
+- `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
 - `;` — inline-edit the highlighted bookmark
 - `Ctrl + Shift + A` — open the new bookmark modal
 - `Esc` — clear selection or undo the latest drag reorder
