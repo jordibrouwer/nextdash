@@ -2869,7 +2869,8 @@ class ConfigManager {
 let configManager;
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => configManager = new ConfigManager());
+    document.addEventListener('DOMContentLoaded', () => { configManager = new ConfigManager(); window.configManager = configManager; });
 } else {
     configManager = new ConfigManager();
+    window.configManager = configManager;
 }

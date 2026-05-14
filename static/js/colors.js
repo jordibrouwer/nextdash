@@ -506,10 +506,10 @@ async function removeCustomTheme(themeId) {
     }
 }
 
-// Make functions globally accessible
-window.configManager = {
+// Make functions globally accessible (merge to avoid overwriting config.js's configManager)
+window.configManager = Object.assign(window.configManager || {}, {
     removeCustomTheme: removeCustomTheme
-};
+});
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', async () => {

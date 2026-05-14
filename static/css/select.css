@@ -46,26 +46,21 @@
 }
 
 .custom-select-options {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 0;
-    right: 0;
+    position: fixed;
     border: 1px solid var(--border-primary);
     max-height: 250px;
     overflow-y: auto;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-    z-index: 1000;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 9999;
     background-color: var(--background-primary);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-.custom-select.open .custom-select-options {
+.custom-select-options.is-open {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
 }
 
 .custom-select-option {

@@ -19,20 +19,23 @@
     border-right: none;
     height: 100%;
     min-height: 0;
+    overflow: visible;
+}
+
+.bookmarks-list-scroll-area {
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
 }
 
-.bookmarks-splitview-list::-webkit-scrollbar {
+.bookmarks-list-scroll-area::-webkit-scrollbar {
     display: none;
 }
 
 /* Controls balk: page + filter + add knop */
 .bookmarks-list-controls {
-    position: sticky;
-    top: 0;
-    z-index: 10;
     background: var(--background-primary);
     border-bottom: 1px solid var(--border-primary);
     padding: 0.6rem 0.75rem;
@@ -89,10 +92,8 @@
     border-bottom: none;
     box-shadow: 0 -2px 8px rgba(0,0,0,.12);
 }
-/* Make bulk-toolbar sticky under the controls when active */
+/* bulk-toolbar sits outside the scroll area, no sticky needed */
 .bulk-toolbar.is-active-selection {
-    position: sticky;
-    top: 48px; /* leaves room for the controls toolbar */
     z-index: 19;
 }
 
@@ -715,7 +716,7 @@
         position: static;
     }
 
-    .bookmarks-splitview-list .bookmarks-list {
+    .bookmarks-list-scroll-area {
         overflow-y: auto;
     }
 

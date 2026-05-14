@@ -43,18 +43,18 @@ class CustomSelect {
         // Create options container
         this.optionsContainer = document.createElement('div');
         this.optionsContainer.className = 'custom-select-options';
-        
+
         this.populateOptions();
-        
-        // Assemble structure
+
+        // Assemble structure (options container goes to body to escape overflow clipping)
         customSelect.appendChild(this.trigger);
-        customSelect.appendChild(this.optionsContainer);
         this.wrapper.appendChild(customSelect);
-        
+        document.body.appendChild(this.optionsContainer);
+
         // Insert wrapper before original select
         this.originalSelect.parentNode.insertBefore(this.wrapper, this.originalSelect);
         this.wrapper.appendChild(this.originalSelect);
-        
+
         // Setup event listeners
         this.setupEventListeners();
     }
@@ -134,31 +134,48 @@ class CustomSelect {
         });
     }
 
+    _repositionOptions() {
+        const rect = this.trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const maxH = 250;
+
+        this.optionsContainer.style.width = `${rect.width}px`;
+        this.optionsContainer.style.left = `${rect.left}px`;
+
+        if (spaceBelow >= Math.min(maxH, 120) || spaceBelow >= spaceAbove) {
+            // Open downward
+            this.optionsContainer.style.top = `${rect.bottom + 2}px`;
+            this.optionsContainer.style.transform = '';
+            this.optionsContainer.style.maxHeight = `${Math.min(maxH, spaceBelow - 8)}px`;
+        } else {
+            // Open upward: anchor bottom of options to top of trigger
+            this.optionsContainer.style.top = `${rect.top - 2}px`;
+            this.optionsContainer.style.maxHeight = `${Math.min(maxH, spaceAbove - 8)}px`;
+            this.optionsContainer.style.transform = 'translateY(-100%)';
+        }
+    }
+
     open() {
         if (this.isOpen) return;
-        
+
         this.isOpen = true;
         this.wrapper.querySelector('.custom-select').classList.add('open');
-        
+        this.optionsContainer.classList.add('is-open');
+
         // Remove tabindex from trigger when open to allow tab navigation to work
         this.trigger.tabIndex = -1;
-        
-        // Highlight the currently selected option or first option based on how it was opened
-        if (this.openedWithKeyboard) {
-            // When opened with keyboard, highlight the selected option
-            this.highlightOption(this.originalSelect.selectedIndex);
-        } else {
-            // When opened with mouse/enter/space, highlight the selected option
-            this.highlightOption(this.originalSelect.selectedIndex);
-        }
-        
+
+        this._repositionOptions();
+
+        this.highlightOption(this.originalSelect.selectedIndex);
+
         // Close other selects
         document.querySelectorAll('.custom-select.open').forEach(other => {
             const otherWrapper = other.closest('.custom-select-wrapper');
             if (!otherWrapper) return;
             if (otherWrapper === this.wrapper) return;
 
-            // If the original select stored an instance, call its close() to keep state in sync
             const origSelect = otherWrapper.querySelector('select');
             try {
                 if (origSelect && origSelect.__customSelectInstance && typeof origSelect.__customSelectInstance.close === 'function') {
@@ -174,17 +191,21 @@ class CustomSelect {
 
     close() {
         if (!this.isOpen) return;
-        
+
         this.isOpen = false;
         this.wrapper.querySelector('.custom-select').classList.remove('open');
-        
+        this.optionsContainer.classList.remove('is-open');
+
         // Restore tabindex to trigger
         this.trigger.tabIndex = 0;
-        
+
         // Remove highlight from all options
         const options = this.optionsContainer.querySelectorAll('.custom-select-option');
         options.forEach(option => option.classList.remove('highlighted'));
-        
+
+        // Reset transform used for upward opening
+        this.optionsContainer.style.transform = '';
+
         // Reset keyboard flag
         this.openedWithKeyboard = false;
     }
@@ -290,12 +311,17 @@ class CustomSelect {
             this.updateSelectedOption();
         });
 
-        // Close when clicking outside
+        // Close when clicking outside (also allow clicking inside the detached optionsContainer)
         document.addEventListener('click', (e) => {
-            if (this.isOpen && !this.wrapper.contains(e.target)) {
+            if (this.isOpen && !this.wrapper.contains(e.target) && !this.optionsContainer.contains(e.target)) {
                 this.close();
             }
         });
+
+        // Reposition on scroll/resize so the detached container follows the trigger
+        this._onScroll = () => { if (this.isOpen) this._repositionOptions(); };
+        window.addEventListener('scroll', this._onScroll, true);
+        window.addEventListener('resize', this._onScroll);
     }
 
     // Method to update options if the original select changes
@@ -306,6 +332,9 @@ class CustomSelect {
 
     // Destroy the custom select and restore original
     destroy() {
+        window.removeEventListener('scroll', this._onScroll, true);
+        window.removeEventListener('resize', this._onScroll);
+        this.optionsContainer.remove();
         this.wrapper.parentNode.insertBefore(this.originalSelect, this.wrapper);
         this.wrapper.remove();
     }
