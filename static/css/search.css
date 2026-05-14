@@ -307,12 +307,12 @@
     max-width: 100%;
     box-sizing: border-box;
     padding: 0.7rem;
-    border: 1px solid color-mix(in srgb, var(--border-primary) 86%, transparent);
-    border-radius: 0.9rem;
-    background: color-mix(in srgb, var(--background-modal) 88%, transparent);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .button-hint {
