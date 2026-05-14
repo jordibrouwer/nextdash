@@ -17,6 +17,7 @@ class KeyboardNavigation {
     }
 
     setupEventListeners() {
+        // Capture phase so we can intercept '-' before the search handler sees it.
         document.addEventListener('keydown', (e) => {
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
@@ -36,13 +37,21 @@ class KeyboardNavigation {
                 return;
             }
 
-            // Don't handle if modifier keys are pressed (except Shift for now)
+            // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
             }
 
+            // '-' — toggle preview card (only when a row is selected)
+            if (e.key === '-' && this.currentIndex >= 0) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.togglePreviewCardForCurrent();
+                return;
+            }
+
             this.handleKeyPress(e);
-        });
+        }, true); // capture phase
 
         // Update navigable elements when dashboard changes
         this.observer = new MutationObserver(() => {
@@ -396,16 +405,21 @@ class KeyboardNavigation {
     }
 
     highlightCurrentElement() {
+        // Dismiss any open keyboard-triggered preview card when moving to a new row
+        if (this.dashboard && typeof this.dashboard.hideBookmarkPreviewCard === 'function') {
+            this.dashboard.hideBookmarkPreviewCard();
+        }
+
         // Remove previous highlights
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
         });
-        
+
         // Highlight current element
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];
             currentElement.classList.add('keyboard-selected');
-            
+
             // Scroll into view if needed
             currentElement.scrollIntoView({
                 behavior: 'smooth',
@@ -415,6 +429,59 @@ class KeyboardNavigation {
             this.syncRovingTabStops({ focus: true });
         } else {
             this.syncRovingTabStops({ focus: false });
+        }
+    }
+
+    togglePreviewCardForCurrent() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const dash = this.dashboard;
+        if (!dash || typeof dash.showBookmarkPreviewCard !== 'function') return;
+
+        // If card is already visible for this row, dismiss it
+        if (dash.previewCardElement && dash.previewCardElement.classList.contains('is-visible')) {
+            dash.hideBookmarkPreviewCard();
+            return;
+        }
+
+        if (dash.settings && dash.settings.showLinkPreviewCards === false) return;
+
+        const row = this.navigableElements[this.currentIndex];
+        const openLink = row && row.querySelector('a.bookmark-open');
+        if (!openLink) return;
+
+        // Derive bookmark — prefer data-bookmark-index, fall back to URL match
+        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+        let bookmark = (Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0)
+            ? (dash.bookmarks || [])[bookmarkIndex]
+            : null;
+        if (!bookmark) {
+            const url = row.dataset.bookmarkUrl || openLink.href || '';
+            if (url) {
+                bookmark = (dash.bookmarks || []).find(b => b.url === url)
+                    || (dash.allBookmarks || []).find(b => b.url === url)
+                    || null;
+            }
+        }
+        if (!bookmark) return;
+
+        // Use cached preview data if available, otherwise fetch
+        const rect = row.getBoundingClientRect();
+        const fakeX = rect.right + 16;
+        const fakeY = rect.top + rect.height / 2;
+
+        if (openLink._previewData) {
+            const preview = { ...openLink._previewData, note: bookmark.note || '', tags: bookmark.tags || [], openCount: bookmark.openCount || 0, lastOpened: bookmark.lastOpened || null };
+            dash.showBookmarkPreviewCard(preview, { clientX: fakeX, clientY: fakeY });
+        } else {
+            dash.fetchBookmarkPreviewData(openLink, bookmark).then(preview => {
+                if (!preview) return;
+                const enriched = { ...preview, note: bookmark.note || '', tags: bookmark.tags || [], openCount: bookmark.openCount || 0, lastOpened: bookmark.lastOpened || null };
+                // Only show if the same row is still selected
+                if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex] === row) {
+                    const r = row.getBoundingClientRect();
+                    dash.showBookmarkPreviewCard(enriched, { clientX: r.right + 16, clientY: r.top + r.height / 2 });
+                }
+            });
         }
     }
 

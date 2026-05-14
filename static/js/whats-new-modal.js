@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v3';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v4';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function buildHtml() {
@@ -82,6 +82,13 @@
                         <div class="keyboard-cheat-sheet-list">
                             <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">Create Backup</span><span class="keyboard-cheat-sheet-description">Button shows a spinner and "Creating…" while the ZIP is being generated.</span></div>
                             <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">Import / Export CSV</span><span class="keyboard-cheat-sheet-description">All backup buttons show a loading state during the operation.</span></div>
+                        </div>
+                    </section>
+                    <section class="keyboard-cheat-sheet-panel">
+                        <h3 class="keyboard-cheat-sheet-section-title">Preview card via keyboard</h3>
+                        <div class="keyboard-cheat-sheet-list">
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">-</span><span class="keyboard-cheat-sheet-description">Toggle the preview card on the keyboard-selected bookmark (navigate with ↑ ↓ first).</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">- again / ↑ ↓</span><span class="keyboard-cheat-sheet-description">Press - again or move to another bookmark to close the card.</span></div>
                         </div>
                     </section>
                 </div>
