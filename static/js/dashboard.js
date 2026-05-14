@@ -4257,11 +4257,14 @@ class Dashboard {
         const height = card.offsetHeight || 140;
 
         if (left + width > window.innerWidth - margin) {
-            left = Math.max(margin, clientX - width - 12);
+            left = clientX - width - 12;
         }
         if (top + height > window.innerHeight - margin) {
-            top = Math.max(margin, window.innerHeight - height - margin);
+            top = window.innerHeight - height - margin;
         }
+
+        left = Math.min(Math.max(margin, left), window.innerWidth - width - margin);
+        top = Math.min(Math.max(margin, top), window.innerHeight - height - margin);
 
         card.style.left = `${left}px`;
         card.style.top = `${top}px`;
