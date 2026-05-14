@@ -810,15 +810,53 @@ class SearchComponent {
         if (this.searchMatches.length === 0) {
             // Show empty container when no matches (no message when opened from button)
             if (this.currentQuery.length > 0) {
-                // Only show "no matches" if user has typed something
+                const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
+                const q = this.currentQuery.trim();
+
+                // Header: no matches
                 const noMatchElement = document.createElement('div');
-                noMatchElement.className = 'search-match';
+                noMatchElement.className = 'search-match search-no-match-header';
                 noMatchElement.innerHTML = `
                     <span class="search-match-shortcut">—</span>
-                    <span class="search-match-name">${this.language ? this.language.t('dashboard.noMatchesFound') : 'No matches found'}</span>
+                    <span class="search-match-name">${t('dashboard.noMatchesFound', 'No matches found')}</span>
                 `;
                 matchesContainer.appendChild(noMatchElement);
-                this.matchElements.push(noMatchElement); // Store reference
+
+                // Hint: add as new bookmark via :new
+                const newHint = document.createElement('div');
+                newHint.className = 'search-match search-hint-entry';
+                newHint.innerHTML = `
+                    <span class="search-match-shortcut search-hint-shortcut">:new</span>
+                    <span class="search-match-name search-hint-name">${t('dashboard.hintAddBookmark', 'Add as new bookmark')}</span>
+                `;
+                newHint.addEventListener('click', () => {
+                    this.currentQuery = `:new ${q}`;
+                    this.handleSearch(this.currentQuery);
+                    const input = document.getElementById('shortcut-search-input');
+                    if (input) { input.value = this.currentQuery; input.focus(); }
+                });
+                matchesContainer.appendChild(newHint);
+                this.matchElements.push(newHint);
+
+                // Hint: search with a finder if any exist
+                if (Array.isArray(this.finders) && this.finders.length > 0) {
+                    const firstFinder = this.finders[0];
+                    const finderShortcut = firstFinder.shortcut ? firstFinder.shortcut.toUpperCase() : '?';
+                    const finderHint = document.createElement('div');
+                    finderHint.className = 'search-match search-hint-entry';
+                    finderHint.innerHTML = `
+                        <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
+                        <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${firstFinder.name || finderShortcut}</span>
+                    `;
+                    finderHint.addEventListener('click', () => {
+                        this.currentQuery = `?${finderShortcut} ${q}`;
+                        this.handleSearch(this.currentQuery);
+                        const input = document.getElementById('shortcut-search-input');
+                        if (input) { input.value = this.currentQuery; input.focus(); }
+                    });
+                    matchesContainer.appendChild(finderHint);
+                    this.matchElements.push(finderHint);
+                }
             } else {
                 const noRecentElement = document.createElement('div');
                 noRecentElement.className = 'search-match';

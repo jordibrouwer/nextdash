@@ -326,6 +326,43 @@
     color: var(--accent-info, #60a5fa);
 }
 
+/* No-match state */
+.search-match.search-no-match-header {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+
+.search-match.search-no-match-header:hover,
+.search-match.search-no-match-header.keyboard-selected {
+    transform: none;
+    color: inherit;
+}
+
+.search-match.search-hint-entry {
+    opacity: 0.7;
+    border-left: 2px solid transparent;
+    padding-left: 0.25rem;
+    transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.search-match.search-hint-entry:hover {
+    opacity: 1;
+    border-left-color: var(--accent-primary, #4287f5);
+}
+
+.search-hint-shortcut {
+    color: var(--accent-primary, #4287f5);
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.82em;
+    letter-spacing: 0.02em;
+}
+
+.search-hint-name {
+    font-weight: var(--font-weight-normal);
+    color: var(--text-secondary);
+}
+
 .search-match-use-count {
     flex-shrink: 0;
     font-size: var(--font-size-controls);
