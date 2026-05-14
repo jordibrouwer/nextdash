@@ -479,6 +479,47 @@ kbd {
     flex-wrap: wrap;
 }
 
+.empty-state-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.empty-state-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    background: none;
+    border: none;
+    padding: 0.2rem 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.12s ease;
+}
+
+.empty-state-action-btn:hover {
+    color: var(--text-primary);
+}
+
+.empty-state-action-btn kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.9em;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0 0.3em;
+    transition: background 0.12s ease;
+}
+
+.empty-state-action-btn:hover kbd {
+    background: color-mix(in srgb, var(--accent-primary) 15%, var(--background-secondary));
+    border-color: var(--accent-primary);
+}
+
 /* ===== Confirmation Dialogs ===== */
 .confirm-dialog {
     position: fixed;

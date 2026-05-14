@@ -1750,20 +1750,46 @@ class Dashboard {
                     <div class="empty-state empty-state--page">
                         <div class="empty-state-label">// ${pageName}</div>
                         <div class="empty-state-text">This page is empty</div>
-                        <div class="empty-state-subtext">Press <kbd>Ctrl+Shift+A</kbd> to add a bookmark here, or use <kbd>:new</kbd> in the command bar.</div>
+                        <div class="empty-state-actions">
+                            <button class="empty-state-action-btn" id="empty-state-new-bookmark" type="button"><kbd>Ctrl+Shift+A</kbd> New bookmark</button>
+                            <button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> Search</button>
+                            <button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> Add via command</button>
+                        </div>
                     </div>
                 `;
+                container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
+                    this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+                });
+                container.querySelector('#empty-state-search')?.addEventListener('click', () => {
+                    this.searchComponent?.openSearchInterface();
+                });
+                container.querySelector('#empty-state-command-new')?.addEventListener('click', () => {
+                    if (this.searchComponent) {
+                        this.searchComponent.openSearchInterface();
+                        this.searchComponent.currentQuery = ':new';
+                        this.searchComponent.updateSearch();
+                        this.searchComponent.renderSearchMatches();
+                    }
+                });
             } else {
                 container.innerHTML = `
                     <div class="empty-state empty-state--fresh">
                         <div class="empty-state-text">No bookmarks yet</div>
-                        <div class="empty-state-subtext">Press <kbd>Ctrl+Shift+A</kbd> to add your first bookmark, or import existing data.</div>
+                        <div class="empty-state-actions">
+                            <button class="empty-state-action-btn" id="empty-state-new-bookmark-fresh" type="button"><kbd>Ctrl+Shift+A</kbd> New bookmark</button>
+                            <button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> Search</button>
+                        </div>
                         <div class="empty-state-action">
-                            <a class="btn btn-primary" href="/config#bookmarks">Add bookmarks</a>
                             <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
                         </div>
                     </div>
                 `;
+                container.querySelector('#empty-state-new-bookmark-fresh')?.addEventListener('click', () => {
+                    this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+                });
+                container.querySelector('#empty-state-search-fresh')?.addEventListener('click', () => {
+                    this.searchComponent?.openSearchInterface();
+                });
             }
             if (this.language && typeof this.language.applyTranslations === 'function') {
                 this.language.applyTranslations();
