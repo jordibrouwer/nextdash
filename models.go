@@ -9,22 +9,22 @@ import (
 )
 
 type Bookmark struct {
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	PageID       int    `json:"pageId,omitempty"`
-	Shortcut     string `json:"shortcut"`
-	Category     string `json:"category"`
-	Pinned       bool   `json:"pinned,omitempty"`
-	CheckStatus  bool   `json:"checkStatus"`
-	Icon         string `json:"icon"`
-	CreatedAt    int64  `json:"createdAt,omitempty"` // Timestamp when bookmark was created
-	LastOpened   int64  `json:"lastOpened,omitempty"`
-	LastChecked  int64  `json:"lastChecked,omitempty"`
-	LastError    string `json:"lastError,omitempty"`
-	OpenCount    int    `json:"openCount,omitempty"`    // Analytics: track opens
-	PreviewTitle string `json:"previewTitle,omitempty"` // Preview metadata
-	PreviewDesc  string `json:"previewDesc,omitempty"`  // Preview description
-	PreviewImage string `json:"previewImage,omitempty"` // Preview image URL
+	Name         string   `json:"name"`
+	URL          string   `json:"url"`
+	PageID       int      `json:"pageId,omitempty"`
+	Shortcut     string   `json:"shortcut"`
+	Category     string   `json:"category"`
+	Pinned       bool     `json:"pinned,omitempty"`
+	CheckStatus  bool     `json:"checkStatus"`
+	Icon         string   `json:"icon"`
+	CreatedAt    int64    `json:"createdAt,omitempty"` // Timestamp when bookmark was created
+	LastOpened   int64    `json:"lastOpened,omitempty"`
+	LastChecked  int64    `json:"lastChecked,omitempty"`
+	LastError    string   `json:"lastError,omitempty"`
+	OpenCount    int      `json:"openCount,omitempty"`    // Analytics: track opens
+	PreviewTitle string   `json:"previewTitle,omitempty"` // Preview metadata
+	PreviewDesc  string   `json:"previewDesc,omitempty"`  // Preview description
+	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
 	Note         string   `json:"note,omitempty"`         // User note for bookmark
 	Tags         []string `json:"tags,omitempty"`
 }
@@ -325,7 +325,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowFindersButton:           false,
 			ShowCommandsButton:          true,
 			ShowRecentButton:            true,
-			ShowTips:                    true,
+			ShowTips:                    false,
 			ShowSearchFlowBanner:        true,
 			ShowCheatSheetButton:        true,
 			ShowSearchButtonText:        true,
@@ -968,8 +968,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowFindersButton:         false,
 			ShowCommandsButton:        true,
 			ShowRecentButton:          true,
-			ShowTips:                  true,
-			ShowSearchFlowBanner:     true,
+			ShowTips:                  false,
+			ShowSearchFlowBanner:      true,
 			ShowCheatSheetButton:      true,
 			ShowSearchButtonText:      true,
 			ShowFindersButtonText:     true,
@@ -1067,7 +1067,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowHealthDashboard = true
 		}
 		if _, ok := rawSettings["showTips"]; !ok {
-			settings.ShowTips = true
+			settings.ShowTips = false
 		}
 		if _, ok := rawSettings["showSearchFlowBanner"]; !ok {
 			settings.ShowSearchFlowBanner = true

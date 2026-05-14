@@ -203,7 +203,7 @@ class Dashboard {
             showConfigButton: true,
             showHealthDashboard: true,
             showRecentButton: true,
-            showTips: true,
+            showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,
             showCheatSheetButton: true,
@@ -509,7 +509,7 @@ class Dashboard {
                 this.settings.showHealthDashboard = true;
             }
             if (typeof this.settings.showTips === 'undefined') {
-                this.settings.showTips = true;
+                this.settings.showTips = false;
             }
             if (typeof this.settings.showSearchFlowBanner === 'undefined') {
                 this.settings.showSearchFlowBanner = true;

@@ -51,7 +51,7 @@ class ConfigManager {
             showCheatSheetButton: true,
             showRecentButton: true,
             showHealthDashboard: true,
-            showTips: true,
+            showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,
             showStatus: false,
@@ -205,7 +205,7 @@ class ConfigManager {
                 this.settingsData.showHealthDashboard = true;
             }
             if (typeof this.settingsData.showTips === 'undefined') {
-                this.settingsData.showTips = true;
+                this.settingsData.showTips = false;
             }
             if (typeof this.settingsData.showSearchFlowBanner === 'undefined') {
                 this.settingsData.showSearchFlowBanner = true;
