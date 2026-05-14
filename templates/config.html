@@ -894,26 +894,32 @@
             </div>
 
             <div class="tab-content" data-tab-content="pages">
-            <div>
-                <div id="pages-list" class="pages-list js-list">
+            <div class="simple-tab">
+                <div class="simple-toolbar">
+                    <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.</span>
+                    <button id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
+                </div>
+                <div id="pages-list" class="pages-list js-list simple-list">
                     <!-- Pages will be loaded here -->
                 </div>
-                <button id="add-page-btn" class="btn btn-primary" data-i18n="config.addPage">Add Page</button>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="categories">
-            <div>
-                <div class="page-selector-wrapper">
-                    <label for="categories-page-selector" data-i18n="config.categoriesPageLabel">Categories page:</label>
-                    <select id="categories-page-selector" class="page-selector">
-                        <!-- Pages will be loaded here -->
-                    </select>
+            <div class="simple-tab">
+                <div class="simple-toolbar">
+                    <span class="simple-tab-intro" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</span>
+                    <div class="simple-toolbar-right">
+                        <label for="categories-page-selector" data-i18n="config.categoriesPageLabel">Page:</label>
+                        <select id="categories-page-selector" class="page-selector simple-page-select">
+                            <!-- Pages will be loaded here -->
+                        </select>
+                        <button id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
+                    </div>
                 </div>
-                <div id="categories-list" class="categories-list js-list">
+                <div id="categories-list" class="categories-list js-list simple-list">
                     <!-- Categories will be loaded here -->
                 </div>
-                <button id="add-category-btn" class="btn btn-primary" data-i18n="config.addCategory">Add Category</button>
             </div>
             </div>
 
@@ -1151,11 +1157,14 @@
             </div>
 
             <div class="tab-content" data-tab-content="finders">
-            <div>
-                <div id="finders-list" class="finders-list js-list">
+            <div class="simple-tab">
+                <div class="simple-toolbar">
+                    <span class="simple-tab-intro" data-i18n="config.findersIntro">Finders are quick-search shortcuts that open a filtered view on the dashboard when triggered by a key combination.</span>
+                    <button id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+                </div>
+                <div id="finders-list" class="finders-list js-list simple-list">
                     <!-- Finders will be loaded here -->
                 </div>
-                <button id="add-finder-btn" class="btn btn-primary" data-i18n="config.addFinder">Add Finder</button>
             </div>
             </div>
 
