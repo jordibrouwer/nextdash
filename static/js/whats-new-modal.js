@@ -80,8 +80,8 @@
                     <section class="keyboard-cheat-sheet-panel">
                         <h3 class="keyboard-cheat-sheet-section-title">Preview card via keyboard</h3>
                         <div class="keyboard-cheat-sheet-list">
-                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">-</span><span class="keyboard-cheat-sheet-description">Toggle the preview card on the keyboard-selected bookmark (navigate with ↑ ↓ first).</span></div>
-                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">- again / ↑ ↓</span><span class="keyboard-cheat-sheet-description">Press - again or move to another bookmark to close the card.</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">[</span><span class="keyboard-cheat-sheet-description">Toggle the preview card on the keyboard-selected bookmark (navigate with ↑ ↓ first).</span></div>
+                            <div class="keyboard-cheat-sheet-row"><span class="keyboard-cheat-sheet-keys">[ again / ↑ ↓</span><span class="keyboard-cheat-sheet-description">Press [ again or move to another bookmark to close the card.</span></div>
                         </div>
                     </section>
                     <section class="keyboard-cheat-sheet-panel">

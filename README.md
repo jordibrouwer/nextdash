@@ -71,7 +71,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Shift + Left/Right` — cycle between page tabs
 - `Arrow Up/Down/Left/Right` — move through the bookmark grid
 - `Enter` / `Space` — open the focused bookmark
-- `-` — toggle the preview card on the focused bookmark
+- `[` — toggle the preview card on the focused bookmark
 - `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
 - `;` — inline-edit the highlighted bookmark
 - `Ctrl + Shift + A` — open the new bookmark modal
@@ -203,7 +203,7 @@ See `extension/README.md` for full usage and development notes.
 - Page transition: smooth fade + slide animation when switching between page tabs
 - Shortcut tooltip: "Press X to open" tooltip on bookmark hover when a shortcut is assigned; auto-hides when preview card is open
 - Hover preview card: shows open count and last-opened date; repositions automatically to stay fully within the viewport
-- Preview card via keyboard: press `-` on a keyboard-selected bookmark to toggle the preview card; navigating away closes it automatically
+- Preview card via keyboard: press `[` on a keyboard-selected bookmark to toggle the preview card; navigating away closes it automatically
 
 **Config**
 - Per-setting reset button (↺) appears when a value differs from its default; click to restore the default and mark the form dirty

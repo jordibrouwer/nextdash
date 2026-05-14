@@ -17,7 +17,7 @@ class KeyboardNavigation {
     }
 
     setupEventListeners() {
-        // Capture phase so we can intercept '-' before the search handler sees it.
+        // Capture phase so we can intercept '[' before the search handler sees it.
         document.addEventListener('keydown', (e) => {
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
@@ -50,8 +50,8 @@ class KeyboardNavigation {
                 return;
             }
 
-            // '-' — toggle preview card (only when a row is selected)
-            if (e.key === '-' && this.currentIndex >= 0) {
+            // '[' — toggle preview card (only when a row is selected)
+            if (e.key === '[' && this.currentIndex >= 0) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.togglePreviewCardForCurrent();
