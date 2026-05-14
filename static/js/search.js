@@ -16,6 +16,7 @@ class SearchComponent {
         this.matchElements = []; // Store references to DOM elements for selection highlighting
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.justCompleted = false; // Flag to prevent accidental execution after completion
+        this.emptyStateExpandedGroups = new Set(); // Tracks expanded groups in empty search state
         this.pendingConfirmation = false; // Flag to prevent accidental confirmation execution
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
@@ -573,10 +574,7 @@ class SearchComponent {
             const hasFilters = Object.values(filters).some((value) => Boolean(value));
             
             if (searchQuery.length === 0 && !hasFilters) {
-                this.searchMatches = [...this.getSearchHistoryMatches(), ...this.getSavedSearchMatches()];
-                if (this.settings.includeFindersInSearch) {
-                    this.searchMatches.push(...this.findersComponent.getTopFinders(3));
-                }
+                this.searchMatches = this.getEmptyStateMatches();
             } else if (searchQuery.length === 0 && hasFilters) {
                 this.searchMatches = this.bookmarks
                     .filter((bookmark) => this.matchesAdvancedFilters(bookmark, filters))
@@ -681,7 +679,7 @@ class SearchComponent {
             this.lastNonCommandQuery = query;
         }
 
-        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?')) {
+        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
             const raw = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
             const filterAutocompleteMatches = this.getFilterAutocompleteMatches(raw);
             if (filterAutocompleteMatches.length > 0) {
@@ -745,6 +743,7 @@ class SearchComponent {
 
     closeSearch() {
         this.searchActive = false;
+        this.emptyStateExpandedGroups.clear();
         this.resetQuery();
         const searchElement = document.getElementById('shortcut-search');
         const mobileInput = document.getElementById('search-input-mobile');
@@ -897,7 +896,11 @@ class SearchComponent {
                     <span class="search-command-group-count">${match.count}</span>
                 `;
                 headerEl.addEventListener('click', () => {
-                    this.commandsComponent.toggleGroup(match.groupId);
+                    if (match._emptyStateGroup) {
+                        this.toggleEmptyStateGroup(match._emptyStateGroup);
+                    } else {
+                        this.commandsComponent.toggleGroup(match.groupId);
+                    }
                     this.updateSearch();
                 });
                 fragment.appendChild(headerEl);
@@ -1047,7 +1050,11 @@ class SearchComponent {
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (selectedMatch.type === 'command-group-header') {
-                this.commandsComponent.toggleGroup(selectedMatch.groupId);
+                if (selectedMatch._emptyStateGroup) {
+                    this.toggleEmptyStateGroup(selectedMatch._emptyStateGroup);
+                } else {
+                    this.commandsComponent.toggleGroup(selectedMatch.groupId);
+                }
                 this.updateSearch();
                 return;
             }
@@ -1216,6 +1223,61 @@ class SearchComponent {
 
         this.searchHistory = [cleanedQuery, ...this.searchHistory.filter((entry) => entry !== cleanedQuery)].slice(0, 20);
         this.saveSearchHistory();
+    }
+
+    toggleEmptyStateGroup(groupId) {
+        if (this.emptyStateExpandedGroups.has(groupId)) {
+            this.emptyStateExpandedGroups.delete(groupId);
+        } else {
+            this.emptyStateExpandedGroups.add(groupId);
+        }
+    }
+
+    getEmptyStateMatches() {
+        const result = [];
+        const historyMatches = this.getSearchHistoryMatches();
+        const savedMatches = this.getSavedSearchMatches();
+        const recentItems = [...historyMatches, ...savedMatches];
+
+        const filterItems = [
+            { shortcut: '↳', name: 'Filter by category (example: category:work)', completion: 'category: ', type: 'filter-completion' },
+            { shortcut: '↳', name: 'Filter by status (online/offline/pinned/broken…)', completion: 'status: ', type: 'filter-completion' },
+            { shortcut: '↳', name: 'Filter by page (current/all/number)', completion: 'page: ', type: 'filter-completion' },
+            { shortcut: '↳', name: 'Filter by tag (example: tag:work)', completion: 'tag: ', type: 'filter-completion' }
+        ];
+
+        const finderItems = this.settings.includeFindersInSearch
+            ? this.findersComponent.getTopFinders(this.finders.length || 10)
+            : [];
+
+        const groups = [
+            { id: 'recent', label: 'Recent', items: recentItems },
+            { id: 'filters', label: 'Filters', items: filterItems },
+            { id: 'finders', label: 'Finders', items: finderItems }
+        ];
+
+        for (const group of groups) {
+            if (group.id === 'finders' && group.items.length === 0) continue;
+            // Recent is open by default when it has items, others start closed
+            const defaultOpen = group.id === 'recent' && group.items.length > 0;
+            const toggled = this.emptyStateExpandedGroups.has(group.id);
+            const isExpanded = toggled ? !defaultOpen : defaultOpen;
+
+            result.push({
+                type: 'command-group-header',
+                groupId: `empty_${group.id}`,
+                label: group.label,
+                count: group.items.length,
+                expanded: isExpanded,
+                _emptyStateGroup: group.id
+            });
+
+            if (isExpanded) {
+                result.push(...group.items);
+            }
+        }
+
+        return result;
     }
 
     getSearchHistoryMatches() {
