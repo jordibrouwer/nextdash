@@ -536,6 +536,8 @@ class ConfigManager {
 
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 
+        this.settings.attachSettingResetButtons(this.settingsData, () => this.markDirty());
+
         const addPageBtn = document.getElementById('add-page-btn');
         if (addPageBtn) addPageBtn.addEventListener('click', () => this.addPage());
 

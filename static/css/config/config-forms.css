@@ -88,6 +88,37 @@
     line-height: 1.45;
 }
 
+.setting-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.35rem;
+    padding: 0;
+    width: 1.4em;
+    height: 1.4em;
+    background: none;
+    border: none;
+    border-radius: 3px;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s, color 0.15s;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.setting-reset-btn--visible {
+    opacity: 0.6;
+    pointer-events: auto;
+}
+
+.setting-reset-btn--visible:hover {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
 .reset-danger-btn {
     display: block;
     width: 100%;

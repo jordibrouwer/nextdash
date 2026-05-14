@@ -1762,6 +1762,109 @@ class ConfigSettings {
     }
 
     /**
+     * Attach a ↺ reset button next to a setting input.
+     * Shows when the current value differs from the default; resets on click.
+     * @param {HTMLElement} el - The input/select/checkbox element
+     * @param {string} key - The settings key
+     * @param {*} defaultValue - The default value for this key
+     * @param {Object} settings - Live settings object
+     * @param {Function} [onReset] - Optional callback after reset (receives new value)
+     */
+    watchSetting(el, key, defaultValue, settings, onReset) {
+        if (!el) return;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'setting-reset-btn';
+        btn.title = 'Reset to default';
+        btn.setAttribute('aria-label', 'Reset to default');
+        btn.textContent = '↺';
+
+        const getElValue = () => {
+            if (el.type === 'checkbox') return el.checked;
+            if (el.type === 'number') return Number(el.value);
+            return el.value;
+        };
+
+        const valuesEqual = (a, b) => {
+            if (typeof a === 'boolean') return a === b;
+            if (typeof a === 'number') return Number(a) === Number(b);
+            return String(a) === String(b);
+        };
+
+        const updateVisibility = () => {
+            const isDefault = valuesEqual(getElValue(), defaultValue);
+            btn.classList.toggle('setting-reset-btn--visible', !isDefault);
+        };
+
+        btn.addEventListener('click', () => {
+            if (el.type === 'checkbox') {
+                el.checked = defaultValue;
+            } else {
+                el.value = String(defaultValue);
+            }
+            settings[key] = defaultValue;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            updateVisibility();
+            if (onReset) onReset(defaultValue);
+        });
+
+        el.parentElement.style.position = 'relative';
+        el.insertAdjacentElement('afterend', btn);
+        el.addEventListener('change', updateVisibility);
+        updateVisibility();
+    }
+
+    /**
+     * Attach watchSetting to all tracked settings inputs.
+     * Call once after all inputs are bound.
+     * @param {Object} settings - Live settings object
+     * @param {Function} [markDirty] - Optional markDirty callback
+     */
+    attachSettingResetButtons(settings, markDirty) {
+        const defaults = this.getDefaults();
+        const watch = (id, key, onReset) => {
+            const el = document.getElementById(id);
+            this.watchSetting(el, key, defaults[key], settings, (val) => {
+                if (markDirty) markDirty();
+                if (onReset) onReset(val);
+            });
+        };
+
+        watch('theme-select', 'theme');
+        watch('columns-input', 'columnsPerRow');
+        watch('density-mode-select', 'densityMode');
+        watch('language-select', 'language');
+        watch('font-size-select', 'fontSize');
+        watch('font-weight-select', 'fontWeight');
+        watch('date-format-select', 'dateFormat');
+        watch('time-format-select', 'timeFormat');
+        watch('weather-unit-select', 'weatherUnit');
+        watch('weather-refresh-select', 'weatherRefreshMinutes');
+        watch('link-preview-delay-select', 'linkPreviewHoverDelayMs');
+        watch('new-tab-checkbox', 'openInNewTab');
+        watch('show-background-dots-checkbox', 'showBackgroundDots');
+        watch('show-title-checkbox', 'showTitle');
+        watch('show-date-checkbox', 'showDate');
+        watch('show-time-checkbox', 'showTime');
+        watch('animations-enabled-checkbox', 'animationsEnabled');
+        watch('show-page-tabs-checkbox', 'showPageTabs');
+        watch('show-page-names-in-tabs-checkbox', 'showPageNamesInTabs');
+        watch('always-collapse-categories-checkbox', 'alwaysCollapseCategories');
+        watch('global-shortcuts-checkbox', 'globalShortcuts');
+        watch('show-search-button-checkbox', 'showSearchButton');
+        watch('show-finders-button-checkbox', 'showFindersButton');
+        watch('show-commands-button-checkbox', 'showCommandsButton');
+        watch('show-shortcuts-checkbox', 'showShortcuts');
+        watch('show-icons-checkbox', 'showIcons');
+        watch('show-link-preview-cards-checkbox', 'showLinkPreviewCards');
+        watch('packed-columns-checkbox', 'packedColumns');
+        watch('include-finders-in-search-checkbox', 'includeFindersInSearch');
+        watch('enable-fuzzy-suggestions-checkbox', 'enableFuzzySuggestions');
+        watch('interleave-mode-checkbox', 'interleaveMode');
+    }
+
+    /**
      * Reset settings to defaults
      * @returns {Object} - Default settings
      */
