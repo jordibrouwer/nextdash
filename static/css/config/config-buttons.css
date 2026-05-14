@@ -79,6 +79,32 @@
     align-items: center;
 }
 
+/* Button loading state */
+.btn.btn-loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.btn.btn-loading::before {
+    content: '';
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: btnSpinnerRotate 0.65s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes btnSpinnerRotate {
+    to { transform: rotate(360deg); }
+}
+
 /* File input button styling */
 .file-input-btn {
     display: inline-block;

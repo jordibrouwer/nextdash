@@ -27,6 +27,20 @@ class ConfigBackup {
         return n;
     }
 
+    setButtonLoading(btn, loading, loadingText) {
+        if (!btn) return;
+        if (loading) {
+            btn._originalText = btn.textContent;
+            btn.textContent = loadingText || btn.textContent;
+            btn.classList.add('btn-loading');
+            btn.disabled = true;
+        } else {
+            btn.textContent = btn._originalText || btn.textContent;
+            btn.classList.remove('btn-loading');
+            btn.disabled = false;
+        }
+    }
+
     /**
      * Initialize the backup functionality
      */
@@ -109,20 +123,14 @@ class ConfigBackup {
         const backupBtn = document.getElementById('backup-btn');
         if (!backupBtn) return;
 
+        this.setButtonLoading(backupBtn, true, this.t('config.backupInProgress') || 'Creating…');
         try {
-            // Disable button to prevent multiple clicks
-            backupBtn.disabled = true;
-
-            // Fetch the backup
-            const response = await fetch('/api/backup', {
-                method: 'GET',
-            });
+            const response = await fetch('/api/backup', { method: 'GET' });
 
             if (!response.ok) {
                 throw new Error(`Backup failed: ${response.statusText}`);
             }
 
-            // Create download
             const now = new Date();
             const timestamp = now.toISOString().replace('T', '_').replace(/\..+/, '').replace(':', '-').replace(':', '-');
             const filename = `nextDash-backup-${timestamp}.zip`;
@@ -137,20 +145,16 @@ class ConfigBackup {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            // Show success message
             if (typeof configManager !== 'undefined' && configManager.ui) {
                 configManager.ui.showNotification(this.t('config.backupCreated') || 'Backup created successfully!', 'success');
             }
-
         } catch (error) {
             console.error('Backup error:', error);
-            // Show error message
             if (typeof configManager !== 'undefined' && configManager.ui) {
                 configManager.ui.showNotification(this.t('config.backupError') || 'Failed to create backup. Please try again.', 'error');
             }
         } finally {
-            // Re-enable button
-            backupBtn.disabled = false;
+            this.setButtonLoading(backupBtn, false);
         }
     }
 
@@ -220,7 +224,13 @@ class ConfigBackup {
             }
 
             if (confirmed) {
-                await this.performImport(zip);
+                const importBtn = document.getElementById('import-btn');
+                this.setButtonLoading(importBtn, true, this.t('config.importInProgress') || 'Importing…');
+                try {
+                    await this.performImport(zip);
+                } finally {
+                    this.setButtonLoading(importBtn, false);
+                }
             }
         } catch (error) {
             console.error('Import validation error:', error);
@@ -240,7 +250,7 @@ class ConfigBackup {
      */
     async exportBookmarksCSV() {
         const btn = document.getElementById('csv-export-btn');
-        if (btn) btn.disabled = true;
+        this.setButtonLoading(btn, true, this.t('config.csvExportInProgress') || 'Exporting…');
         try {
             const [bookmarksRes, pagesRes] = await Promise.all([
                 fetch('/api/bookmarks?all=true'),
@@ -279,7 +289,7 @@ class ConfigBackup {
             console.error('CSV export error:', e);
             if (configManager?.ui) configManager.ui.showNotification(this.t('config.csvExportError'), 'error');
         } finally {
-            if (btn) btn.disabled = false;
+            this.setButtonLoading(btn, false);
         }
     }
 
@@ -388,7 +398,13 @@ class ConfigBackup {
         if (confirmed) {
             const selectEl = document.getElementById('browser-import-page-select');
             const pageId = selectEl ? parseInt(selectEl.value, 10) : (pages[0]?.id || 1);
-            await this.performBrowserImport(bookmarks, pageId);
+            const browserBtn = document.getElementById('browser-import-btn');
+            this.setButtonLoading(browserBtn, true, this.t('config.importInProgress') || 'Importing…');
+            try {
+                await this.performBrowserImport(bookmarks, pageId);
+            } finally {
+                this.setButtonLoading(browserBtn, false);
+            }
         }
     }
 
