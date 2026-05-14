@@ -546,6 +546,13 @@ class ConfigManager {
 
         const addBookmarkBtn = document.getElementById('add-bookmark-btn');
         if (addBookmarkBtn) addBookmarkBtn.addEventListener('click', () => this.addBookmark());
+
+        if (window.ConfigQuickAdd) {
+            this.quickAdd = new window.ConfigQuickAdd(this);
+            const quickAddBtn = document.getElementById('config-quick-add-btn');
+            if (quickAddBtn) quickAddBtn.addEventListener('click', () => this.quickAdd.open());
+        }
+
         const structureAddPageBtn = document.getElementById('structure-add-page-btn');
         if (structureAddPageBtn) structureAddPageBtn.addEventListener('click', () => this.addPage());
         const structureAddCategoryBtn = document.getElementById('structure-add-category-btn');
