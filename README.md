@@ -189,11 +189,28 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
-- Config: Backup & Restore section moved above Advanced
-- Config: Backup & Restore and Advanced action rows now align buttons in a consistent grid
-- Dashboard: config link always visible regardless of the `showConfigButton` setting
-- Dashboard: health link visibility correctly controlled by `showHealthDashboard` setting
-- Defaults: search flow banner enabled by default for new installs
+**Command palette & search — grouped UI**
+- Command palette (`:`) now shows commands in three collapsible groups: Bookmarks, View, Dashboard — no more long flat list
+- Search empty state shows Recent, Filters, and Finders as collapsible groups; Recent expands automatically when you have history
+- Navigate group headers with ↑ ↓ arrow keys or Tab; Enter or click to toggle open/closed
+- No-match state shows clickable hints: `:new <query>` to add as bookmark, `?FINDER <query>` to search externally
+
+**Dashboard UX**
+- Empty page state: terminal-style prompt with page name and keyboard shortcuts when a page has no bookmarks
+- Fresh install state: separate "No bookmarks yet" message with direct links to add or import
+- Page transition: smooth fade + slide animation when switching between page tabs
+- Shortcut tooltip: "Press X to open" tooltip on bookmark hover when a shortcut is assigned; auto-hides when preview card is open
+- Hover preview card: shows open count and last-opened date; repositions automatically to stay fully within the viewport
+
+**Config**
+- Per-setting reset button (↺) appears when a value differs from its default; click to restore the default and mark the form dirty
+- Backup & Restore buttons show a spinner and loading label (Creating… / Importing… / Exporting…) during operations
+- Backup & Restore section moved above Advanced; action rows aligned in a consistent grid
+- Config link always visible; health link visibility controlled by the `showHealthDashboard` setting
+
+**Onboarding**
+- New step for smart collections: toggle Today and Most Used directly from the onboarding flow
+- Search flow banner enabled by default for new installs
 
 ### Recent
 
