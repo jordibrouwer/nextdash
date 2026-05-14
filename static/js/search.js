@@ -866,10 +866,15 @@ class SearchComponent {
             }
             const bookmarkIconHtml = this.buildSearchBookmarkIconHtml(match);
             
+            const finderUseBadge = (match.type === 'finder-completion' && match.useCount > 0)
+                ? `<span class="search-match-use-count">${match.useCount}</span>`
+                : '';
+
             matchElement.innerHTML = `
                 ${shortcutHtml}
                 ${bookmarkIconHtml}
                 <span class="search-match-name">${displayName}${match.meta ? `<span class="search-match-meta">${match.meta}</span>` : ''}</span>
+                ${finderUseBadge}
             `;
             
             matchElement.addEventListener('click', () => {

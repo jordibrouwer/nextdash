@@ -41,10 +41,7 @@ class SearchFindersComponent {
 
     getFinderMeta(finder) {
         const tags = Array.isArray(finder.tags) ? finder.tags : [];
-        const tagsLabel = tags.length > 0 ? `#${tags.slice(0, 3).join(' #')}` : '';
-        const useLabelTemplate = this.language?.t?.('dashboard.finderUsesLabel') || 'uses {count}';
-        const useLabel = useLabelTemplate.replace('{count}', String(Number(finder.useCount || 0)));
-        return [tagsLabel, useLabel].filter(Boolean).join(' · ');
+        return tags.length > 0 ? `#${tags.slice(0, 3).join(' #')}` : '';
     }
 
     createCompletionMatch(finder) {
@@ -53,6 +50,7 @@ class SearchFindersComponent {
             shortcut: `?${finder.shortcut.toUpperCase()}`,
             completion: `?${finder.shortcut.toUpperCase()} `,
             meta: this.getFinderMeta(finder),
+            useCount: Number(finder.useCount || 0),
             type: 'finder-completion'
         };
     }

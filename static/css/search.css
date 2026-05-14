@@ -290,6 +290,21 @@
     color: var(--text-secondary);
 }
 
+/* Finder entries */
+.search-match.finder-entry .search-match-shortcut {
+    color: var(--accent-info, #60a5fa);
+}
+
+.search-match-use-count {
+    flex-shrink: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal);
+    min-width: 2ch;
+    text-align: right;
+    opacity: 0.7;
+}
+
 /* Button Container - Centered at bottom */
 /* Fixed max width so tip text length does not change container width (avoids button row jumping). */
 .button-container {
