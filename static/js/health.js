@@ -170,6 +170,7 @@
                 <div class="health-issue-actions">
                     <button type="button" class="health-action" data-open-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.open', 'open'))}</button>
                     <button type="button" class="health-action" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.ping', 'ping'))}</button>
+                    <button type="button" class="health-action" data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.refreshFavicon', 'favicon'))}</button>
                     <button type="button" class="health-action health-action-danger" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
                     ${issue.status === 'broken' ? `
                         <button type="button" class="health-action" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
@@ -297,6 +298,16 @@
                 const name = button.getAttribute('data-delete-name') || '';
                 if (!Number.isFinite(pageId) || !Number.isFinite(index)) return;
                 await handleDeleteIssue(button, pageId, index, name);
+            });
+        });
+
+        document.querySelectorAll('[data-favicon-url]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const url = button.getAttribute('data-favicon-url');
+                const pageId = Number(button.getAttribute('data-favicon-page'));
+                const index = Number(button.getAttribute('data-favicon-index'));
+                if (!url || !Number.isFinite(pageId) || !Number.isFinite(index)) return;
+                await handleFaviconRefresh(button, url, pageId, index);
             });
         });
 
@@ -575,6 +586,44 @@
             showBulkStatus(t('health.deleted', 'Bookmark deleted.'));
             await loadReport();
             render();
+        } catch (error) {
+            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
+        } finally {
+            button.disabled = false;
+            button.textContent = original;
+        }
+    }
+
+    async function handleFaviconRefresh(button, url, pageId, index) {
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = t('health.autoHealWorking', 'working...');
+        try {
+            const dash = window.dashboardInstance;
+            if (!dash || typeof dash.fetchAndAssignFaviconForUrl !== 'function') {
+                throw new Error('Dashboard not available');
+            }
+
+            const iconPath = await dash.fetchAndAssignFaviconForUrl(url);
+            if (!iconPath) {
+                showBulkStatus(t('health.faviconNotFound', 'No favicon found for this URL.'));
+                return;
+            }
+
+            // Fetch the page's bookmark list, update the icon at the given index, POST back
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) throw new Error('Failed to load bookmarks');
+            const bookmarks = await res.json();
+            if (!Array.isArray(bookmarks) || !bookmarks[index]) throw new Error('Bookmark not found');
+            bookmarks[index].icon = iconPath;
+            const saveRes = await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookmarks)
+            });
+            if (!saveRes.ok) throw new Error('Failed to save bookmark');
+
+            showBulkStatus(t('health.faviconRefreshed', 'Favicon updated.'));
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
