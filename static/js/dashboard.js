@@ -703,8 +703,8 @@ class Dashboard {
             if (this.searchComponent) {
                 this.updateSearchComponent();
             }
-            this.renderDashboard({ animate: false });
-            
+            this.renderDashboard({ animate: true });
+
             // Reset keyboard navigation to first element when changing pages
             if (this.keyboardNavigation) {
                 this.keyboardNavigation.resetToFirst();
@@ -1867,7 +1867,7 @@ class Dashboard {
         if (animate) {
             requestAnimationFrame(() => {
                 container.classList.add('page-transition');
-                setTimeout(() => container.classList.remove('page-transition'), 220);
+                setTimeout(() => container.classList.remove('page-transition'), 250);
             });
         }
 

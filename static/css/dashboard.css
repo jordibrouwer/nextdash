@@ -253,14 +253,14 @@ body {
     max-width: 100%;
 }
 
-.dashboard-grid.page-transition {
-    animation: dashboardPageFade 180ms ease-out;
+#dashboard-layout.page-transition {
+    animation: dashboardPageFade 200ms ease-out;
 }
 
 @keyframes dashboardPageFade {
     from {
-        opacity: 0.55;
-        transform: translateY(6px);
+        opacity: 0;
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -1559,7 +1559,7 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     border-radius: 6px;
 }
 
-body.no-animations .dashboard-grid.page-transition,
+body.no-animations #dashboard-layout.page-transition,
 body.no-animations .category.animate-enter,
 body.no-animations .bookmark-link.animate-enter,
 body.no-animations .bookmark-inline-form {
