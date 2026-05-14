@@ -38,8 +38,8 @@
 }
 
 .modal.keyboard-cheat-sheet-modal {
-    max-width: 1120px;
-    width: min(96vw, 1120px);
+    max-width: 820px;
+    width: min(90vw, 820px);
     margin: auto;
     max-height: 90vh;
     overflow: hidden;

@@ -1147,7 +1147,7 @@ class Dashboard {
     }
 
     maybeShowWhatsNew() {
-        if (this.onboardingStartedInSession) {
+        if (this.onboardingStartedInSession || (typeof this.isModalOpen === 'function' && this.isModalOpen())) {
             return;
         }
         this.showWhatsNewModal({ force: false });
@@ -1182,14 +1182,20 @@ class Dashboard {
                 dash.renderPageNavigation();
                 dash.renderDashboard();
                 dash.updateSearchComponent();
+                dash.onboardingStartedInSession = false;
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
                 await dash.saveSettings();
+                dash.onboardingStartedInSession = false;
+                setTimeout(() => dash.maybeShowWhatsNew(), 0);
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
         onboarding.maybeStart();
+        if (!this.onboardingStartedInSession) {
+            this.maybeShowWhatsNew();
+        }
     }
 
     initializeButtonTipsRotation() {
