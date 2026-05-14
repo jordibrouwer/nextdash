@@ -301,21 +301,29 @@
     flex-wrap: wrap;
     justify-content: center;
     align-content: flex-start;
-    gap: 1rem;
+    gap: 0.55rem;
     z-index: 1000;
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     box-sizing: border-box;
+    padding: 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 86%, transparent);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--background-modal) 88%, transparent);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .button-hint {
     flex: 1 1 100%;
     min-width: 0;
     max-width: 100%;
+    padding: 0.25rem 0.35rem;
     margin-left: auto;
     margin-right: auto;
     text-align: center;
-    font-size: var(--font-size-text);
+    font-size: calc(var(--font-size-text) * 0.95);
     line-height: 1.5;
     color: var(--text-secondary);
     overflow-wrap: break-word;
@@ -338,10 +346,10 @@
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
     letter-spacing: 0.02em;
-    background: color-mix(in srgb, var(--background-modal) 88%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
+    background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 82%, transparent);
     border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     animation: searchFlowHintEnter 260ms ease-out both;
@@ -435,22 +443,23 @@ body[data-show-tips="false"] .button-hint {
 /* Search Button */
 .search-button {
     /* Button styling */
-    padding: 0.8rem 1.5rem;
+    padding: 0.62rem 0.92rem;
     border: 1px solid var(--border-primary);
-    background: var(--background-modal);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    color: var(--text-secondary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-normal);
     cursor: pointer;
     
     /* TTY terminal style */
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    border-radius: 0.65rem;
     
     /* Transitions */
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     
     /* Remove tap highlight on mobile */
     -webkit-tap-highlight-color: transparent;
@@ -462,25 +471,49 @@ body[data-show-tips="false"] .button-hint {
 }
 
 .search-button:hover {
-    background: var(--background-primary);
+    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
     border-color: var(--accent-success);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
 }
 
 .search-button:active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.search-button:focus-visible {
+    outline: 2px solid var(--accent-success);
+    outline-offset: 2px;
+    color: var(--text-primary);
 }
 
 .search-button-icon {
-    color: var(--accent-success);
+    color: color-mix(in srgb, var(--accent-success) 85%, var(--text-secondary));
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-category);
 }
 
 .search-button-text {
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
+}
+
+#search-button {
+    background: color-mix(in srgb, var(--accent-success) 18%, var(--background-primary));
+    border-color: color-mix(in srgb, var(--accent-success) 58%, var(--border-primary));
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
+}
+
+#search-button .search-button-icon {
+    color: var(--accent-success);
+}
+
+#search-button:hover {
+    background: color-mix(in srgb, var(--accent-success) 26%, var(--background-primary));
+    border-color: var(--accent-success);
 }
 
 /* Hide buttons when search is active */
