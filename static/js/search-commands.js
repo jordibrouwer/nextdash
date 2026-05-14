@@ -18,7 +18,10 @@ class SearchCommandsComponent {
         
         // Initialize :theme command handler
         this.themeCommandHandler = new SearchCommandTheme(language);
-        
+
+        // Initialize :note command handler
+        this.noteCommandHandler = new SearchCommandNote(language);
+
         // Available commands
         this.availableCommands = {
             'new': this.handleNewCommand.bind(this),
@@ -39,7 +42,8 @@ class SearchCommandsComponent {
             'packed': this.handlePackedColumnsCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
-            'duplicates': this.handleDuplicateCommand.bind(this)
+            'duplicates': this.handleDuplicateCommand.bind(this),
+            'note': this.handleNoteCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -63,6 +67,9 @@ class SearchCommandsComponent {
         }
         if (this.themeCommandHandler) {
             this.themeCommandHandler.setLanguage(language);
+        }
+        if (this.noteCommandHandler) {
+            this.noteCommandHandler.setLanguage(language);
         }
     }
 
@@ -159,6 +166,10 @@ class SearchCommandsComponent {
      */
     handleThemeCommand(args, fullQuery) {
         return this.themeCommandHandler.handle(args);
+    }
+
+    handleNoteCommand(args, fullQuery) {
+        return this.noteCommandHandler.handle(args, this.currentBookmarks, this.allBookmarks);
     }
 
     /**
