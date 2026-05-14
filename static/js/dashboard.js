@@ -3033,12 +3033,15 @@ class Dashboard {
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
         const showShortcuts = this.settings.showShortcuts !== false;
-        shortcutSpan.textContent = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
+        const shortcutText = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
             ? String(bookmark.shortcut).toUpperCase()
             : '';
-        if (!shortcutSpan.textContent) {
+        shortcutSpan.textContent = shortcutText;
+        if (!shortcutText) {
             shortcutSpan.classList.add('is-empty');
             shortcutSpan.setAttribute('aria-hidden', 'true');
+        } else {
+            shortcutSpan.dataset.shortcut = shortcutText;
         }
         row.appendChild(shortcutSpan);
 
@@ -4238,6 +4241,7 @@ class Dashboard {
         }
 
         card.classList.add('is-visible');
+        document.body.classList.add('preview-card-active');
         this.positionBookmarkPreviewCard(event.clientX, event.clientY);
     }
 
@@ -4266,6 +4270,7 @@ class Dashboard {
     hideBookmarkPreviewCard() {
         if (!this.previewCardElement) return;
         this.previewCardElement.classList.remove('is-visible');
+        document.body.classList.remove('preview-card-active');
     }
 
     dismissBookmarkPreviewInteractions() {
