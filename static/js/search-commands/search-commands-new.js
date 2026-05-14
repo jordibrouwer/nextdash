@@ -145,6 +145,10 @@ class SearchCommandNew {
                             <label class="nbm-label" for="new-bookmark-note">${t('config.bookmarkNoteLabel', 'Note')}</label>
                             <textarea id="new-bookmark-note" name="note" class="nbm-input nbm-note" rows="2"></textarea>
                         </div>
+                        <div class="nbm-section">
+                            <label class="nbm-label" for="new-bookmark-tags">Tags <span class="nbm-label-hint">comma-separated</span></label>
+                            <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="work, dev, personal…" autocomplete="off" spellcheck="false">
+                        </div>
                         <div class="nbm-section nbm-section-toggles">
                             <label class="nbm-toggle-label">
                                 <input type="checkbox" id="new-bookmark-pinned" name="pinned">
@@ -431,6 +435,18 @@ class SearchCommandNew {
                 this.autoFetchModalFaviconFromUrlField();
             });
         }
+
+        const tagsInput = document.getElementById('new-bookmark-tags');
+        if (tagsInput && typeof TagAutocomplete !== 'undefined') {
+            const dash = window.dashboardInstance;
+            const pool = new Set();
+            (dash?.allBookmarks?.length ? dash.allBookmarks : dash?.bookmarks ?? [])
+                .forEach(bm => (bm.tags || []).forEach(t => pool.add(t.toLowerCase())));
+            TagAutocomplete.attach(tagsInput, () => {
+                tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => pool.add(t));
+                return [...pool];
+            });
+        }
     }
 
     handleKeyDown(e) {
@@ -455,13 +471,18 @@ class SearchCommandNew {
 
     closeModal() {
         if (this.modal) {
+            const tagsInput = document.getElementById('new-bookmark-tags');
+            if (tagsInput && typeof TagAutocomplete !== 'undefined') {
+                TagAutocomplete.detach(tagsInput);
+            }
+
             this.modal.classList.remove('show');
             document.body.style.overflow = '';
-            
+
             if (this.keyboardBlockHandler) {
                 document.removeEventListener('keydown', this.keyboardBlockHandler, true);
             }
-            
+
             setTimeout(() => {
                 if (this.modal) {
                     this.modal.remove();
@@ -488,6 +509,9 @@ class SearchCommandNew {
             return;
         }
 
+        const rawTags = String(formData.get('tags') || '');
+        const tags = rawTags.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i);
+
         const bookmark = {
             name: formData.get('name').trim(),
             url: formData.get('url').trim(),
@@ -496,6 +520,7 @@ class SearchCommandNew {
             category: formData.get('category'),
             pinned: formData.get('pinned') === 'on',
             checkStatus: formData.get('checkStatus') === 'on',
+            tags,
             icon,
             createdAt: Date.now()
         };

@@ -72,6 +72,13 @@
     display: block;
 }
 
+.nbm-label-hint {
+    font-weight: var(--font-weight-normal, 400);
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.9);
+    margin-left: 0.3em;
+}
+
 /* ── Inputs ── */
 .nbm-input {
     width: 100%;
