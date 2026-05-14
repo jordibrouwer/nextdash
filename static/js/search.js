@@ -14,6 +14,7 @@ class SearchComponent {
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
         this.matchElements = []; // Store references to DOM elements for selection highlighting
+        this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.justCompleted = false; // Flag to prevent accidental execution after completion
         this.pendingConfirmation = false; // Flag to prevent accidental confirmation execution
         this.resetLegacySearchPresetsOnce();
@@ -137,7 +138,7 @@ class SearchComponent {
 
             // Don't trigger shortcuts if user is typing in an input, except when search is active and it's a navigation key
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                if (!this.searchActive || !['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key)) {
+                if (!this.searchActive || !['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].includes(e.key)) {
                     return;
                 }
             }
@@ -254,6 +255,12 @@ class SearchComponent {
         if (key === 'ARROWDOWN' && this.searchActive) {
             e.preventDefault();
             this.navigateMatches(1);
+            return;
+        }
+
+        if (key === 'TAB' && this.searchActive) {
+            e.preventDefault();
+            this.navigateMatches(e.shiftKey ? -1 : 1);
             return;
         }
         
@@ -797,6 +804,7 @@ class SearchComponent {
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
         this.matchElements = []; // Clear element references
+        this.selectableMatches = [];
         this.justCompleted = false; // Reset flag
     }
 
@@ -806,6 +814,7 @@ class SearchComponent {
 
         matchesContainer.innerHTML = '';
         this.matchElements = []; // Reset element references
+        this.selectableMatches = [];
 
         if (this.searchMatches.length === 0) {
             // Show empty container when no matches (no message when opened from button)
@@ -837,6 +846,7 @@ class SearchComponent {
                 });
                 matchesContainer.appendChild(newHint);
                 this.matchElements.push(newHint);
+                this.selectableMatches.push({ type: 'hint-new' });
 
                 // Hint: search with a finder if any exist
                 if (Array.isArray(this.finders) && this.finders.length > 0) {
@@ -856,6 +866,7 @@ class SearchComponent {
                     });
                     matchesContainer.appendChild(finderHint);
                     this.matchElements.push(finderHint);
+                    this.selectableMatches.push({ type: 'hint-finder' });
                 }
             } else {
                 const noRecentElement = document.createElement('div');
@@ -866,6 +877,7 @@ class SearchComponent {
                 `;
                 matchesContainer.appendChild(noRecentElement);
                 this.matchElements.push(noRecentElement);
+                this.selectableMatches.push({ type: 'no-recent' });
             }
             return;
         }
@@ -873,9 +885,30 @@ class SearchComponent {
         // Use DocumentFragment for batch DOM operations (improves performance)
         const fragment = document.createDocumentFragment();
         
-        this.searchMatches.forEach((match, index) => {
+        this.searchMatches.forEach((match) => {
+            if (match.type === 'command-group-header') {
+                const mySelectableIndex = this.matchElements.length;
+                const headerEl = document.createElement('div');
+                const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
+                headerEl.className = `search-command-group-header${selectedClass}`;
+                headerEl.innerHTML = `
+                    <span class="search-command-group-arrow">${match.expanded ? '▾' : '▸'}</span>
+                    <span class="search-command-group-label">${match.label}</span>
+                    <span class="search-command-group-count">${match.count}</span>
+                `;
+                headerEl.addEventListener('click', () => {
+                    this.commandsComponent.toggleGroup(match.groupId);
+                    this.updateSearch();
+                });
+                fragment.appendChild(headerEl);
+                this.matchElements.push(headerEl);
+                this.selectableMatches.push(match);
+                return;
+            }
+
+            const mySelectableIndex = this.matchElements.length;
             const matchElement = document.createElement('div');
-            const baseClass = `search-match ${index === this.selectedMatchIndex ? 'keyboard-selected' : ''}`;
+            const baseClass = `search-match ${mySelectableIndex === this.selectedMatchIndex ? 'keyboard-selected' : ''}`;
             const configClass = (match.type === 'config' || match.type === 'colors') ? ' config-entry' : '';
             const commandClass = (match.type === 'command' || match.type === 'command-completion') ? ' command-entry' : '';
             const finderClass = (match.type === 'finder' || match.type === 'finder-completion') ? ' finder-entry' : '';
@@ -883,7 +916,8 @@ class SearchComponent {
             const historyClass = match.type === 'history' ? ' history-entry' : '';
             const savedClass = match.type === 'saved-search' ? ' saved-search-entry' : '';
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
-            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass;
+            const groupChildClass = match.groupId ? ' command-group-child' : '';
+            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + groupChildClass;
             
             // Get the display name based on match type
             let displayName;
@@ -975,7 +1009,8 @@ class SearchComponent {
             });
             
             fragment.appendChild(matchElement);
-            this.matchElements.push(matchElement); // Store reference
+            this.matchElements.push(matchElement);
+            this.selectableMatches.push(match);
         });
         
         // Batch append to DOM
@@ -983,16 +1018,17 @@ class SearchComponent {
     }
 
     navigateMatches(direction) {
-        if (this.searchMatches.length === 0) return;
-        
+        const count = this.matchElements.length;
+        if (count === 0) return;
+
         this.selectedMatchIndex += direction;
-        
+
         if (this.selectedMatchIndex < 0) {
-            this.selectedMatchIndex = this.searchMatches.length - 1;
-        } else if (this.selectedMatchIndex >= this.searchMatches.length) {
+            this.selectedMatchIndex = count - 1;
+        } else if (this.selectedMatchIndex >= count) {
             this.selectedMatchIndex = 0;
         }
-        
+
         this.updateSelectionHighlight();
     }
 
@@ -1008,8 +1044,13 @@ class SearchComponent {
             return;
         }
         
-        if (this.searchMatches.length > 0 && this.selectedMatchIndex >= 0) {
-            const selectedMatch = this.searchMatches[this.selectedMatchIndex];
+        if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
+            const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
+            if (selectedMatch.type === 'command-group-header') {
+                this.commandsComponent.toggleGroup(selectedMatch.groupId);
+                this.updateSearch();
+                return;
+            }
             if (selectedMatch.type === 'config') {
                 this.openConfig();
             } else if (selectedMatch.type === 'colors') {

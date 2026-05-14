@@ -22,6 +22,27 @@ class SearchCommandsComponent {
         // Initialize :note command handler
         this.noteCommandHandler = new SearchCommandNote(language);
 
+        // Command groups (order matters — shown collapsed by default)
+        this.commandGroups = [
+            {
+                id: 'bookmarks',
+                label: 'Bookmarks',
+                commands: ['new', 'remove', 'note', 'save', 'saved', 'sort', 'stale', 'duplicates', 'goto']
+            },
+            {
+                id: 'view',
+                label: 'View',
+                commands: ['theme', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons']
+            },
+            {
+                id: 'dashboard',
+                label: 'Dashboard',
+                commands: ['buttons', 'tips']
+            }
+        ];
+        // Track which groups are expanded (none by default)
+        this.expandedGroups = new Set();
+
         // Available commands
         this.availableCommands = {
             'new': this.handleNewCommand.bind(this),
@@ -94,7 +115,7 @@ class SearchCommandsComponent {
         if (this.removeCommandHandler) {
             this.removeCommandHandler.resetState();
         }
-        // Add other handlers if they have state
+        this.expandedGroups.clear();
     }
 
     /**
@@ -145,17 +166,44 @@ class SearchCommandsComponent {
         return [];
     }
 
+    toggleGroup(groupId) {
+        if (this.expandedGroups.has(groupId)) {
+            this.expandedGroups.delete(groupId);
+        } else {
+            this.expandedGroups.add(groupId);
+        }
+    }
+
     /**
-     * Get list of available commands
-     * @returns {Array} Array of command matches
+     * Get list of available commands as collapsible groups
+     * @returns {Array} Array of group headers and (if expanded) command rows
      */
     getAvailableCommands() {
-        return Object.keys(this.availableCommands).map(commandName => ({
-            name: '',
-            shortcut: `:${commandName.toUpperCase()}`,
-            completion: `:${commandName.toUpperCase()} `,
-            type: 'command-completion'
-        }));
+        const result = [];
+        for (const group of this.commandGroups) {
+            const isExpanded = this.expandedGroups.has(group.id);
+            result.push({
+                type: 'command-group-header',
+                groupId: group.id,
+                label: group.label,
+                count: group.commands.length,
+                expanded: isExpanded
+            });
+            if (isExpanded) {
+                for (const cmd of group.commands) {
+                    if (this.availableCommands[cmd]) {
+                        result.push({
+                            name: '',
+                            shortcut: `:${cmd.toUpperCase()}`,
+                            completion: `:${cmd.toUpperCase()} `,
+                            type: 'command-completion',
+                            groupId: group.id
+                        });
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     /**

@@ -304,6 +304,65 @@
     color: var(--text-tertiary);
 }
 
+/* Command group headers */
+.search-command-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0 0.2rem;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--border-primary);
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.search-command-group-header:first-child {
+    border-top: none;
+    margin-top: 0;
+}
+
+.search-command-group-header:hover,
+.search-command-group-header.keyboard-selected {
+    opacity: 1;
+}
+
+.search-command-group-header.keyboard-selected {
+    color: var(--text-primary);
+}
+
+.search-command-group-header.keyboard-selected .search-command-group-label {
+    color: var(--text-primary);
+}
+
+.search-command-group-arrow {
+    font-size: 0.7em;
+    width: 1em;
+    text-align: center;
+    color: var(--accent-success);
+    flex-shrink: 0;
+}
+
+.search-command-group-label {
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.search-command-group-count {
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    opacity: 0.7;
+}
+
+.search-match.command-group-child {
+    padding-left: 1.25rem;
+}
+
 /* Special styling for config entry */
 .search-match.config-entry .search-match-shortcut {
     color: var(--accent-warning);
