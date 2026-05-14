@@ -187,7 +187,7 @@ See `extension/README.md` for full usage and development notes.
 
 ## Changelog
 
-### Unreleased
+### Newest
 
 - Config: Backup & Restore section moved above Advanced
 - Config: Backup & Restore and Advanced action rows now align buttons in a consistent grid
