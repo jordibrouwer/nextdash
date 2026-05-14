@@ -89,6 +89,10 @@
 
     <!-- Search and Finders Buttons -->
     <div class="button-container">
+        <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite">
+            <span class="search-flow-hint-text">Search flow: <span class="search-flow-chip">&gt;</span> search · <span class="search-flow-chip">:</span> commands · <span class="search-flow-chip">?</span> finders</span>
+            <button type="button" id="search-flow-hint-close" class="search-flow-hint-close" aria-label="Dismiss search flow hint">×</button>
+        </div>
         <div class="button-hint" id="button-hint-text">Tip: <code>*</code> recent, <code>!</code> cheatsheet</div>
         <button id="commands-button" class="search-button commands-button" aria-label="Open commands">
             <span class="search-button-icon">:</span>

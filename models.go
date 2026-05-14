@@ -98,6 +98,7 @@ type Settings struct {
 	ShowCommandsButton          bool                             `json:"showCommandsButton"`
 	ShowRecentButton            bool                             `json:"showRecentButton"`
 	ShowTips                    bool                             `json:"showTips"`
+	ShowSearchFlowBanner        bool                             `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton        bool                             `json:"showCheatSheetButton"`
 	ShowSearchButtonText        bool                             `json:"showSearchButtonText"`
 	ShowFindersButtonText       bool                             `json:"showFindersButtonText"`
@@ -325,6 +326,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowCommandsButton:          true,
 			ShowRecentButton:            true,
 			ShowTips:                    true,
+			ShowSearchFlowBanner:        true,
 			ShowCheatSheetButton:        true,
 			ShowSearchButtonText:        true,
 			ShowFindersButtonText:       true,
@@ -967,6 +969,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowCommandsButton:        true,
 			ShowRecentButton:          true,
 			ShowTips:                  true,
+			ShowSearchFlowBanner:     true,
 			ShowCheatSheetButton:      true,
 			ShowSearchButtonText:      true,
 			ShowFindersButtonText:     true,
@@ -1065,6 +1068,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showTips"]; !ok {
 			settings.ShowTips = true
+		}
+		if _, ok := rawSettings["showSearchFlowBanner"]; !ok {
+			settings.ShowSearchFlowBanner = true
 		}
 		if _, ok := rawSettings["showSmartRecentCollection"]; !ok {
 			settings.ShowSmartRecentCollection = false

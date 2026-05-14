@@ -321,6 +321,99 @@
     overflow-wrap: break-word;
 }
 
+.search-flow-hint {
+    position: relative;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.95rem;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    background: color-mix(in srgb, var(--background-modal) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: searchFlowHintEnter 260ms ease-out both;
+}
+
+.search-flow-hint[hidden] {
+    display: none !important;
+}
+
+.search-flow-hint-text {
+    min-width: 0;
+}
+
+.search-flow-chip {
+    display: inline-block;
+    min-width: 1.8ch;
+    padding: 0.08rem 0.4rem;
+    margin: 0 0.15rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: var(--accent-success);
+    font-family: var(--font-family-main);
+    font-size: 0.9em;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+
+.search-flow-hint-close {
+    flex: 0 0 auto;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--background-secondary) 86%, transparent);
+    color: var(--text-primary);
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.search-flow-hint-close:hover {
+    transform: scale(1.05);
+    background: var(--background-secondary);
+    border-color: var(--accent-success);
+}
+
+.search-flow-hint-close:active {
+    transform: scale(0.96);
+}
+
+@keyframes searchFlowHintEnter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body.no-animations .search-flow-hint {
+    animation: none !important;
+}
+
+body.no-animations .search-flow-hint-close {
+    transition: none !important;
+}
+
 /* Keys in tips: same chip pattern as config help `code`, better contrast on dashboard */
 .button-hint code {
     font-family: var(--font-family-main);

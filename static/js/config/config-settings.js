@@ -633,8 +633,17 @@ class ConfigSettings {
             });
         }
 
+        const showSearchFlowBannerCheckbox = document.getElementById('show-search-flow-banner-checkbox');
+        if (showSearchFlowBannerCheckbox) {
+            showSearchFlowBannerCheckbox.checked = settings.showSearchFlowBanner !== false;
+            showSearchFlowBannerCheckbox.addEventListener('change', (e) => {
+                settings.showSearchFlowBanner = e.target.checked;
+            });
+        }
+
         this.bindInfoButton('hypr-mode-info-btn', 'config.hyprModeInfoTitle', 'config.hyprModeInfoMessage');
         this.bindInfoButton('interleave-mode-info-btn', 'config.interleaveModeInfoTitle', 'config.interleaveModeInfoMessage');
+        this.bindInfoButton('show-search-flow-banner-info-btn', 'config.showSearchFlowBannerInfoTitle', 'config.showSearchFlowBannerInfoMessage');
         this.bindInfoButton('fuzzy-suggestions-info-btn', 'config.fuzzySuggestionsInfoTitle', 'config.fuzzySuggestionsInfoMessage');
         this.bindInfoButton('include-finders-in-search-info-btn', 'config.includeFindersInSearchInfoTitle', 'config.includeFindersInSearchInfoMessage');
         this.bindInfoButton('packed-columns-info-btn', 'config.packedColumnsInfoTitle', 'config.packedColumnsInfoMessage');
@@ -1907,6 +1916,14 @@ class ConfigSettings {
             if (!response.ok) {
                 console.error('Settings save failed:', response.status);
                 return false;
+            }
+            if (settings?.showSearchFlowBanner !== false) {
+                try {
+                    sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');
+                    localStorage.removeItem('nextDashSearchFlowHintDismissedV1');
+                } catch {
+                    // Ignore localStorage errors.
+                }
             }
             return true;
         } catch (error) {

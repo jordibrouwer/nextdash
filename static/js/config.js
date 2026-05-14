@@ -52,6 +52,7 @@ class ConfigManager {
             showRecentButton: true,
             showHealthDashboard: true,
             showTips: true,
+            showSearchFlowBanner: true,
             showSyncToasts: false,
             showStatus: false,
             colorizeStatus: true,
@@ -205,6 +206,9 @@ class ConfigManager {
             }
             if (typeof this.settingsData.showTips === 'undefined') {
                 this.settingsData.showTips = true;
+            }
+            if (typeof this.settingsData.showSearchFlowBanner === 'undefined') {
+                this.settingsData.showSearchFlowBanner = true;
             }
             if (typeof this.settingsData.showLinkPreviewCards === 'undefined') {
                 this.settingsData.showLinkPreviewCards = true;
@@ -2783,6 +2787,8 @@ class ConfigManager {
         document.getElementById('show-cheatsheet-button-checkbox').checked = this.settingsData.showCheatSheetButton;
         const showTipsCheckbox = document.getElementById('show-tips-checkbox');
         if (showTipsCheckbox) showTipsCheckbox.checked = this.settingsData.showTips !== false;
+        const showSearchFlowBannerCheckbox = document.getElementById('show-search-flow-banner-checkbox');
+        if (showSearchFlowBannerCheckbox) showSearchFlowBannerCheckbox.checked = this.settingsData.showSearchFlowBanner !== false;
         const showSyncToastsCheckbox = document.getElementById('show-sync-toasts-checkbox');
         if (showSyncToastsCheckbox) showSyncToastsCheckbox.checked = this.settingsData.showSyncToasts !== false;
         document.getElementById('show-search-button-text-checkbox').checked = this.settingsData.showSearchButtonText;

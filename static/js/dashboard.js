@@ -204,6 +204,7 @@ class Dashboard {
             showHealthDashboard: true,
             showRecentButton: true,
             showTips: true,
+            showSearchFlowBanner: true,
             showSyncToasts: false,
             showCheatSheetButton: true,
             showStatus: false,
@@ -509,6 +510,9 @@ class Dashboard {
             }
             if (typeof this.settings.showTips === 'undefined') {
                 this.settings.showTips = true;
+            }
+            if (typeof this.settings.showSearchFlowBanner === 'undefined') {
+                this.settings.showSearchFlowBanner = true;
             }
             if (typeof this.settings.showLinkPreviewCards === 'undefined') {
                 this.settings.showLinkPreviewCards = true;
@@ -856,6 +860,7 @@ class Dashboard {
         document.body.setAttribute('data-show-finders-button-text', this.settings.showFindersButtonText);
         document.body.setAttribute('data-show-commands-button-text', this.settings.showCommandsButtonText);
         document.body.setAttribute('data-show-tips', this.settings.showTips !== false);
+        document.body.setAttribute('data-show-search-flow-banner', this.settings.showSearchFlowBanner !== false);
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
         document.body.setAttribute('data-show-note-icon', this.settings.showNoteIcon === false ? 'false' : 'true');
@@ -1196,6 +1201,7 @@ class Dashboard {
         if (!hintEl) {
             return;
         }
+        this.initializeSearchFlowHint();
         if (this.tipRotationTimer) {
             clearTimeout(this.tipRotationTimer);
             this.tipRotationTimer = null;
@@ -1217,6 +1223,7 @@ class Dashboard {
             'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'
         ];
         const normalTips = [
+            'Tip: <code>&gt;</code> search, <code>:</code> commands, <code>?</code> finders',
             'Tip: <code>&gt;</code> open search',
             'Tip: <code>?</code> open finders',
             'Tip: <code>:</code> open commands',
@@ -1280,6 +1287,47 @@ class Dashboard {
             this.tipRotationTimer = setTimeout(run, delay);
         };
         run();
+    }
+
+    initializeSearchFlowHint() {
+        const hintEl = document.getElementById('search-flow-hint');
+        const closeButton = document.getElementById('search-flow-hint-close');
+        if (!hintEl || !closeButton) {
+            return;
+        }
+
+        hintEl.hidden = false;
+
+        if (this.settings.showSearchFlowBanner === false) {
+            hintEl.hidden = true;
+            return;
+        }
+
+        const storageKey = 'nextDashSearchFlowHintDismissedV2';
+        const legacyStorageKey = 'nextDashSearchFlowHintDismissedV1';
+        try {
+            if (localStorage.getItem(storageKey) === 'true') {
+                hintEl.hidden = true;
+                return;
+            }
+            if (localStorage.getItem(legacyStorageKey) === 'true') {
+                localStorage.removeItem(legacyStorageKey);
+            }
+        } catch {
+            // Ignore localStorage errors.
+        }
+
+        closeButton.onclick = async () => {
+            hintEl.hidden = true;
+            this.settings.showSearchFlowBanner = false;
+            document.body.setAttribute('data-show-search-flow-banner', 'false');
+            try {
+                sessionStorage.setItem(storageKey, 'true');
+            } catch {
+                // Ignore localStorage errors.
+            }
+            await this.saveSettings();
+        };
     }
 
     getInlineTipUsageState() {
