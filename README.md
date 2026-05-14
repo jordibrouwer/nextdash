@@ -1,4 +1,4 @@
-# nextDash
+# 🚀 nextDash
 
 **A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
 
