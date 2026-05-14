@@ -192,6 +192,22 @@ body {
     opacity: 1;
 }
 
+.page-tab-rename-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--text-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    padding: 0;
+    margin: 0;
+    width: 8ch;
+    min-width: 4ch;
+    max-width: 20ch;
+    outline: none;
+}
+
 @keyframes healthLinkShimmer {
     0% {
         text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0);

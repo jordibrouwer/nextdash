@@ -788,15 +788,71 @@ class Dashboard {
                     btn.classList.remove('active');
                 });
                 pageBtn.classList.add('active');
-                
+
                 // Load bookmarks for selected page
                 this.loadPageBookmarks(page.id);
                 // Update title
                 this.updatePageTitle(page.name);
                 this.markInlineTipUsed('page_switch');
             });
+            pageBtn.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                this._startPageTabRename(pageBtn, page);
+            });
             container.appendChild(pageBtn);
         });
+    }
+
+    _startPageTabRename(btn, page) {
+        if (btn.querySelector('.page-tab-rename-input')) return;
+
+        const originalLabel = btn.textContent;
+        btn.textContent = '';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'page-tab-rename-input';
+        input.value = page.name;
+        input.setAttribute('aria-label', 'Rename page');
+        btn.appendChild(input);
+        input.focus();
+        input.select();
+
+        let done = false;
+
+        const commit = async () => {
+            if (done) return;
+            done = true;
+            const newName = input.value.trim();
+            if (btn.contains(input)) btn.removeChild(input);
+            if (!newName || newName === page.name) {
+                btn.textContent = originalLabel;
+                return;
+            }
+            page.name = newName;
+            btn.textContent = this.settings.showPageNamesInTabs ? newName : originalLabel;
+            this.updatePageTitle(newName);
+            try {
+                await fetch('/api/pages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.pages)
+                });
+            } catch (e) { /* ignore */ }
+        };
+
+        const cancel = () => {
+            if (done) return;
+            done = true;
+            if (btn.contains(input)) btn.removeChild(input);
+            btn.textContent = originalLabel;
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        });
+        input.addEventListener('blur', commit);
     }
 
     shouldPackDashboardColumns() {
