@@ -6,6 +6,8 @@
 class ConfigUI {
     constructor() {
         this.notificationTimeout = null;
+        this._breadcrumbObserver = null;
+        this._currentTab = 'general';
         this.initTabs();
         this.initNumberInputControls();
     }
@@ -22,7 +24,7 @@ class ConfigUI {
             // Remove active class from all buttons and contents
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
-            
+
             // Add active class to target button and corresponding content
             const targetButton = document.querySelector(`.tab-button[data-tab="${targetTab}"]`);
             const targetContent = document.querySelector(`[data-tab-content="${targetTab}"]`);
@@ -32,7 +34,11 @@ class ConfigUI {
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            
+
+            this._currentTab = targetTab;
+            this.updateBreadcrumb(targetTab, null);
+            this.initBreadcrumbObserver(targetTab);
+
             // Update URL hash
             window.location.hash = `#${targetTab}`;
             
@@ -169,6 +175,55 @@ class ConfigUI {
             notificationAction.textContent = '';
             notificationAction.onclick = null;
         }
+    }
+
+    updateBreadcrumb(tab, subsection) {
+        const el = document.getElementById('config-breadcrumb');
+        if (!el) return;
+        const sep = `<span class="config-breadcrumb-sep">/</span>`;
+        let html = `config${sep}${tab}`;
+        if (subsection) {
+            html += `${sep}<span class="config-breadcrumb-sub">${subsection}</span>`;
+        }
+        el.innerHTML = html;
+    }
+
+    initBreadcrumbObserver(tab) {
+        if (this._breadcrumbObserver) {
+            this._breadcrumbObserver.disconnect();
+            this._breadcrumbObserver = null;
+        }
+        if (tab !== 'general') return;
+
+        const panels = document.querySelectorAll('[data-general-panel]');
+        if (!panels.length || typeof IntersectionObserver === 'undefined') return;
+
+        const visibleRatios = new Map();
+
+        this._breadcrumbObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                visibleRatios.set(entry.target, entry.intersectionRatio);
+            });
+
+            let topPanel = null;
+            let topRatio = 0;
+            visibleRatios.forEach((ratio, el) => {
+                if (ratio > topRatio) {
+                    topRatio = ratio;
+                    topPanel = el;
+                }
+            });
+
+            const subsection = topPanel
+                ? (topPanel.querySelector('.section-title') || {}).textContent || null
+                : null;
+
+            if (this._currentTab === 'general') {
+                this.updateBreadcrumb('general', subsection);
+            }
+        }, { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0] });
+
+        panels.forEach(p => this._breadcrumbObserver.observe(p));
     }
 
     /**

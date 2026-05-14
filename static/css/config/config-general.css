@@ -62,6 +62,32 @@ body {
     padding: 0 2rem;
 }
 
+/* Config breadcrumb */
+.config-breadcrumb {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    padding: 0.4rem 0 0.6rem;
+    letter-spacing: 0.02em;
+    min-height: 1.6rem;
+    transition: opacity 0.15s ease;
+}
+
+.config-breadcrumb:empty {
+    display: none;
+}
+
+.config-breadcrumb-sep {
+    margin: 0 0.4em;
+    opacity: 0.5;
+}
+
+.config-breadcrumb-sub {
+    color: var(--text-primary);
+    opacity: 0.85;
+}
+
 /* Config Actions Top */
 .config-actions-top {
     display: flex;
