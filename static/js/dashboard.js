@@ -703,6 +703,7 @@ class Dashboard {
             if (this.searchComponent) {
                 this.updateSearchComponent();
             }
+            window.scrollTo({ top: 0, behavior: 'instant' });
             this.renderDashboard({ animate: true });
 
             // Reset keyboard navigation to first element when changing pages
