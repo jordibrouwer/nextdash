@@ -3017,6 +3017,19 @@ class Dashboard {
         }
         row.appendChild(pinBadge);
 
+        const openCountBadge = document.createElement('span');
+        openCountBadge.className = 'bookmark-open-count';
+        const openCount = Number(bookmark.openCount || 0);
+        if (openCount > 0) {
+            openCountBadge.textContent = openCount >= 1000 ? `${Math.floor(openCount / 1000)}k` : String(openCount);
+            openCountBadge.title = `Opened ${openCount} time${openCount === 1 ? '' : 's'}`;
+            openCountBadge.setAttribute('aria-label', `Opened ${openCount} times`);
+        } else {
+            openCountBadge.classList.add('is-empty');
+            openCountBadge.setAttribute('aria-hidden', 'true');
+        }
+        row.appendChild(openCountBadge);
+
         const noteBadge = document.createElement('span');
         noteBadge.className = 'bookmark-note-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();

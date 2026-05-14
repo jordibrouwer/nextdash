@@ -790,10 +790,11 @@ body[data-density-mode="dense"] .dashboard-grid {
     /* Dedicated column for ping (status); avoids sharing col with shortcut */
     --bookmark-status-col: minmax(0, max-content);
     --bookmark-shortcut-col: clamp(3.2ch, 4vw, 5ch);
+    --bookmark-opencount-col: clamp(1.8ch, 2.5vw, 2.4ch);
     --bookmark-pin-col: clamp(1ch, 2vw, 1.45ch);
     --bookmark-note-col: clamp(1ch, 2vw, 1.45ch);
     display: grid;
-    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) var(--bookmark-status-col) var(--bookmark-shortcut-col) var(--bookmark-note-col) var(--bookmark-pin-col);
+    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) var(--bookmark-status-col) var(--bookmark-shortcut-col) var(--bookmark-opencount-col) var(--bookmark-note-col) var(--bookmark-pin-col);
     grid-auto-rows: auto;
     align-items: center;
     gap: 0.6rem;
@@ -907,7 +908,7 @@ a.bookmark-open:hover {
 }
 
 .bookmark-pin-badge {
-    grid-column: 6;
+    grid-column: 7;
     width: auto;
     min-width: var(--bookmark-pin-col);
     text-align: center;
@@ -933,7 +934,7 @@ a.bookmark-open:hover {
 }
 
 .bookmark-note-badge {
-    grid-column: 5;
+    grid-column: 6;
     width: auto;
     min-width: var(--bookmark-note-col);
     text-align: center;
@@ -943,6 +944,35 @@ a.bookmark-open:hover {
 
 .bookmark-note-badge.is-empty {
     opacity: 0;
+}
+
+.bookmark-open-count {
+    grid-column: 5;
+    width: auto;
+    min-width: var(--bookmark-opencount-col);
+    text-align: right;
+    justify-self: end;
+    flex-shrink: 0;
+    font-size: calc(var(--font-size-controls) * 0.82);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+    opacity: 0.45;
+    transition: opacity 0.15s;
+    line-height: 1;
+}
+
+.bookmark-link:hover .bookmark-open-count:not(.is-empty) {
+    opacity: 0.8;
+}
+
+.bookmark-open-count.is-empty {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hide open-count badge in comfortable density — only show in compact/dense */
+body[data-density-mode="comfortable"] .bookmark-open-count {
+    display: none;
 }
 
 .bookmark-tags {
