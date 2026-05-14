@@ -754,6 +754,28 @@ body[data-density-mode="dense"] .dashboard-grid {
     user-select: none;
 }
 
+.category-title--renaming::before {
+    content: none;
+}
+
+.category-rename-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    color: inherit;
+    font: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    padding: 0;
+    margin: 0;
+    width: 12ch;
+    min-width: 4ch;
+    max-width: 28ch;
+    outline: none;
+    opacity: 1;
+}
+
 /* Bookmarks */
 .bookmarks-list {
     display: flex;

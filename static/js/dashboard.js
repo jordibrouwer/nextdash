@@ -2194,6 +2194,53 @@ class Dashboard {
         }
     }
 
+    _startCategoryRename(titleEl, nameSpan, category) {
+        if (titleEl.querySelector('.category-rename-input')) return;
+
+        const originalName = category.name;
+        titleEl.classList.add('category-title--renaming');
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'category-rename-input';
+        input.value = originalName;
+        input.setAttribute('aria-label', 'Rename category');
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        let done = false;
+
+        const commit = async () => {
+            if (done) return;
+            done = true;
+            titleEl.classList.remove('category-title--renaming');
+            const newName = input.value.trim();
+            input.replaceWith(nameSpan);
+            if (!newName || newName === originalName) {
+                nameSpan.textContent = originalName.toLowerCase();
+                return;
+            }
+            category.name = newName;
+            nameSpan.textContent = newName.toLowerCase();
+            await this.saveCategoryOrder();
+        };
+
+        const cancel = () => {
+            if (done) return;
+            done = true;
+            titleEl.classList.remove('category-title--renaming');
+            input.replaceWith(nameSpan);
+            nameSpan.textContent = originalName.toLowerCase();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        });
+        input.addEventListener('blur', commit);
+    }
+
     scheduleBookmarkOrderSave(options = {}) {
         if (this.pendingReorderSave) {
             clearTimeout(this.pendingReorderSave);
@@ -2292,6 +2339,10 @@ class Dashboard {
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'category-title-name';
+        nameSpan.textContent = category.name.toLowerCase();
+
         if (this.isUploadedCategoryIcon(categoryIcon)) {
             const iconImage = document.createElement('img');
             iconImage.src = `/data/icons/${categoryIcon}`;
@@ -2308,17 +2359,28 @@ class Dashboard {
             } catch (e) {
                 // ignore
             }
-            titleElement.appendChild(document.createTextNode(` ${category.name.toLowerCase()}`));
+            titleElement.appendChild(document.createTextNode(' '));
         } else {
             const textIcon = categoryIcon || '▣';
-            titleElement.textContent = `${textIcon} ${category.name.toLowerCase()}`;
+            titleElement.appendChild(document.createTextNode(`${textIcon} `));
         }
+        titleElement.appendChild(nameSpan);
+
         titleElement.addEventListener('click', () => {
             const isCollapsed = categoryDiv.getAttribute('data-collapsed') === 'true';
             categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
             this.collapsedCategories[collapsedKey] = !isCollapsed;
             this.saveCollapsedStates();
         });
+
+        if (!isSmartCollection) {
+            titleElement.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._startCategoryRename(titleElement, nameSpan, category);
+            });
+        }
+
         categoryDiv.appendChild(titleElement);
 
         // Bookmarks list
