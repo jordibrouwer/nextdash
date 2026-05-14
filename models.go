@@ -325,7 +325,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowFindersButton:           false,
 			ShowCommandsButton:          false,
 			ShowRecentButton:            false,
-			ShowTips:                    false,
+			ShowTips:                    true,
 			ShowSearchFlowBanner:        false,
 			ShowCheatSheetButton:        false,
 			ShowSearchButtonText:        true,
