@@ -116,6 +116,7 @@ class ConfigBookmarks {
         this.t = t; // Translation function
         this.bookmarkReorder = null;
         this.currentFilterCategory = '__all__';
+        this.currentSearchQuery = '';
         this.keyboardReorderHandler = null;
         this.selectedBookmarkIndexes = new Set();
         this.pendingIconUndo = null;
@@ -167,10 +168,11 @@ class ConfigBookmarks {
         }
 
         this.currentFilterCategory = options.filterCategory || this.currentFilterCategory;
+        this.currentSearchQuery = options.searchQuery !== undefined ? options.searchQuery : this.currentSearchQuery;
 
         container.innerHTML = '';
 
-        let scopedBookmarks = this.getScopedBookmarks(bookmarks, this.currentFilterCategory);
+        let scopedBookmarks = this.getScopedBookmarks(bookmarks, this.currentFilterCategory, this.currentSearchQuery);
 
         const sortOrder = options.sortOrder || 'default';
         if (sortOrder === 'name-az') {
@@ -293,36 +295,43 @@ class ConfigBookmarks {
         }
     }
 
-    getScopedBookmarks(bookmarks, filterCategory = '__all__') {
+    getScopedBookmarks(bookmarks, filterCategory = '__all__', searchQuery = '') {
         if (!Array.isArray(bookmarks)) {
             return [];
         }
 
-        if (filterCategory === '__all__') {
-            return bookmarks.map((bookmark, index) => ({ bookmark, index }));
-        }
+        let result;
 
-        if (filterCategory === '__none__') {
-            return bookmarks
+        if (filterCategory === '__all__') {
+            result = bookmarks.map((bookmark, index) => ({ bookmark, index }));
+        } else if (filterCategory === '__none__') {
+            result = bookmarks
                 .map((bookmark, index) => ({ bookmark, index }))
                 .filter(({ bookmark }) => this.isBookmarkUncategorized(bookmark));
-        }
-
-        if (filterCategory === '__missing_icon__') {
-            return bookmarks
+        } else if (filterCategory === '__missing_icon__') {
+            result = bookmarks
                 .map((bookmark, index) => ({ bookmark, index }))
                 .filter(({ bookmark }) => !bookmark.icon);
-        }
-
-        if (filterCategory === '__icon_failed__') {
-            return bookmarks
+        } else if (filterCategory === '__icon_failed__') {
+            result = bookmarks
                 .map((bookmark, index) => ({ bookmark, index }))
                 .filter(({ bookmark }) => bookmark.iconFetchState === 'failed');
+        } else {
+            result = bookmarks
+                .map((bookmark, index) => ({ bookmark, index }))
+                .filter(({ bookmark }) => bookmark.category === filterCategory);
         }
 
-        return bookmarks
-            .map((bookmark, index) => ({ bookmark, index }))
-            .filter(({ bookmark }) => bookmark.category === filterCategory);
+        const q = (searchQuery || '').trim().toLowerCase();
+        if (!q) return result;
+
+        return result.filter(({ bookmark }) => {
+            const name = (bookmark.name || '').toLowerCase();
+            const url = (bookmark.url || '').toLowerCase();
+            const tags = (bookmark.tags || []).join(' ').toLowerCase();
+            const note = (bookmark.note || '').toLowerCase();
+            return name.includes(q) || url.includes(q) || tags.includes(q) || note.includes(q);
+        });
     }
 
     /**

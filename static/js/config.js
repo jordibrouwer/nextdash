@@ -31,6 +31,7 @@ class ConfigManager {
         this.bookmarksPageCategories = []; // Categories for the bookmarks tab (read-only)
         this.currentBookmarksCategoryFilter = '__all__';
         this.currentBookmarksSort = 'default';
+        this.currentBookmarksSearch = '';
         this.settingsData = {
             currentPage: 'default',
             theme: 'cherry-graphite-dark',
@@ -698,6 +699,11 @@ class ConfigManager {
                 if (categoriesSelector) {
                     categoriesSelector.value = String(pid);
                 }
+                this.currentBookmarksSearch = '';
+                const searchEl = document.getElementById('bookmarks-search');
+                if (searchEl) searchEl.value = '';
+                const clearEl = document.getElementById('bookmarks-search-clear');
+                if (clearEl) clearEl.hidden = true;
                 await this.loadPageBookmarks(e.target.value);
                 await this.loadPageCategories(pid);
                 this.renderStructureWorkspace();
@@ -731,6 +737,33 @@ class ConfigManager {
             bookmarksSortSelector.addEventListener('change', (e) => {
                 this.currentBookmarksSort = e.target.value;
                 this.refreshBookmarksList();
+            });
+        }
+
+        const bookmarksSearchInput = document.getElementById('bookmarks-search');
+        const bookmarksSearchClear = document.getElementById('bookmarks-search-clear');
+        if (bookmarksSearchInput) {
+            bookmarksSearchInput.addEventListener('input', (e) => {
+                this.currentBookmarksSearch = e.target.value;
+                if (bookmarksSearchClear) bookmarksSearchClear.hidden = !e.target.value;
+                this.refreshBookmarksList();
+            });
+            bookmarksSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    bookmarksSearchInput.value = '';
+                    this.currentBookmarksSearch = '';
+                    if (bookmarksSearchClear) bookmarksSearchClear.hidden = true;
+                    this.refreshBookmarksList();
+                }
+            });
+        }
+        if (bookmarksSearchClear) {
+            bookmarksSearchClear.addEventListener('click', () => {
+                if (bookmarksSearchInput) bookmarksSearchInput.value = '';
+                this.currentBookmarksSearch = '';
+                bookmarksSearchClear.hidden = true;
+                this.refreshBookmarksList();
+                if (bookmarksSearchInput) bookmarksSearchInput.focus();
             });
         }
 
@@ -1134,7 +1167,7 @@ class ConfigManager {
         };
         const shouldIgnoreTarget = (target) => {
             if (!target || !target.id) return false;
-            return target.id === 'page-selector' || target.id === 'categories-page-selector' || target.id === 'bookmarks-category-filter' || target.id === 'packed-columns-checkbox';
+            return target.id === 'page-selector' || target.id === 'categories-page-selector' || target.id === 'bookmarks-category-filter' || target.id === 'packed-columns-checkbox' || target.id === 'bookmarks-search';
         };
         root.addEventListener('input', (event) => {
             if (this.suppressDirtyTracking) return;
@@ -2124,6 +2157,7 @@ class ConfigManager {
         this.bookmarks.render(this.bookmarksData, this.bookmarksPageCategories, {
             filterCategory: this.currentBookmarksCategoryFilter,
             sortOrder: this.currentBookmarksSort || 'default',
+            searchQuery: this.currentBookmarksSearch || '',
             skipFlush: options.skipFlush === true
         });
         this.validateBookmarkConflicts({ showToast: false });
