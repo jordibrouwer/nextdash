@@ -947,31 +947,6 @@ a.bookmark-open:hover {
 }
 
 .bookmark-open-count {
-    grid-column: 5;
-    width: auto;
-    min-width: var(--bookmark-opencount-col);
-    text-align: right;
-    justify-self: end;
-    flex-shrink: 0;
-    font-size: calc(var(--font-size-controls) * 0.82);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-tertiary);
-    opacity: 0.45;
-    transition: opacity 0.15s;
-    line-height: 1;
-}
-
-.bookmark-link:hover .bookmark-open-count:not(.is-empty) {
-    opacity: 0.8;
-}
-
-.bookmark-open-count.is-empty {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Hide open-count badge in comfortable density — only show in compact/dense */
-body[data-density-mode="comfortable"] .bookmark-open-count {
     display: none;
 }
 
