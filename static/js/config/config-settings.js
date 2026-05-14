@@ -1790,6 +1790,7 @@ class ConfigSettings {
             showCheatSheetButton: true,
             showRecentButton: true,
             showTips: true,
+            showSearchFlowBanner: true,
             showSearchButtonText: true,
             showFindersButtonText: true,
             showCommandsButtonText: true,

@@ -936,6 +936,7 @@ func (h *Handlers) Colors(w http.ResponseWriter, r *http.Request) {
 		ShowTitle                 bool
 		ShowDate                  bool
 		ShowConfigButton          bool
+		ShowHealthDashboard       bool
 		ShowSearchButton          bool
 		ShowFindersButton         bool
 		ShowCommandsButton        bool
@@ -974,7 +975,8 @@ func (h *Handlers) Colors(w http.ResponseWriter, r *http.Request) {
 		ShowBackgroundDots:        settings.ShowBackgroundDots,
 		ShowTitle:                 settings.ShowTitle,
 		ShowDate:                  settings.ShowDate,
-		ShowConfigButton:          settings.ShowConfigButton,
+		ShowConfigButton:          true,
+		ShowHealthDashboard:       settings.ShowHealthDashboard,
 		ShowSearchButton:          settings.ShowSearchButton,
 		ShowFindersButton:         settings.ShowFindersButton,
 		ShowCommandsButton:        settings.ShowCommandsButton,

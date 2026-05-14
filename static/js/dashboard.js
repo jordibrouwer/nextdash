@@ -4352,21 +4352,15 @@ class Dashboard {
     updateConfigButtonVisibility() {
         let configLink = document.querySelector('.config-link');
 
-        if (this.settings.showConfigButton) {
-            // Show config button - create if it doesn't exist
-            if (!configLink) {
-                configLink = document.createElement('div');
-                configLink.className = 'config-link';
-                configLink.innerHTML = `<a href="/config">${this.language.t('dashboard.config')}</a>`;
+        // Config button is always visible
+        if (!configLink) {
+            configLink = document.createElement('div');
+            configLink.className = 'config-link';
+            configLink.innerHTML = `<a href="/config">${this.language.t('dashboard.config')}</a>`;
 
-                // Add to header at the end (use safe header container)
-                const header = this.getHeaderContainer();
-                header.appendChild(configLink);
-            }
-        } else {
-            // Hide config button - remove if it exists
-            if (configLink) {
-                configLink.remove();
+            const headerActions = document.querySelector('.header-actions');
+            if (headerActions) {
+                headerActions.appendChild(configLink);
             }
         }
     }
@@ -4380,12 +4374,14 @@ class Dashboard {
                 healthLink.className = 'health-link';
                 healthLink.innerHTML = `<a href="/health">${this.language.t('dashboard.health')}</a>`;
 
-                const header = this.getHeaderContainer();
-                const configLink = header.querySelector('.config-link');
-                if (configLink) {
-                    header.insertBefore(healthLink, configLink);
-                } else {
-                    header.appendChild(healthLink);
+                const headerActions = document.querySelector('.header-actions');
+                if (headerActions) {
+                    const configLink = headerActions.querySelector('.config-link');
+                    if (configLink) {
+                        headerActions.insertBefore(healthLink, configLink);
+                    } else {
+                        headerActions.appendChild(healthLink);
+                    }
                 }
             }
         } else if (healthLink) {

@@ -2798,6 +2798,10 @@ class ConfigManager {
         const defaultSettings = this.settings.getDefaults();
         Object.assign(this.settingsData, defaultSettings);
         this.settingsData.onboardingCompleted = false;
+        try {
+            sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');
+            localStorage.removeItem('nextDashSearchFlowHintDismissedV1');
+        } catch { /* ignore */ }
         this.settingsData.currentPage = 1;
         document.getElementById('theme-select').value = this.settingsData.theme;
         document.getElementById('columns-input').value = this.settingsData.columnsPerRow;
