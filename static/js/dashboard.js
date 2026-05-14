@@ -614,28 +614,47 @@ class Dashboard {
         }
     }
 
-    showNotification(message, type = 'error') {
+    showNotification(message, type = 'error', { undoCallback = null, duration = 5000 } = {}) {
         const notification = document.getElementById('error-notification');
-        if (notification) {
-            notification.textContent = message;
-            notification.classList.remove('success');
-            notification.classList.remove('show');
-            if (type === 'success') {
-                notification.classList.add('success');
-            }
-            requestAnimationFrame(() => notification.classList.add('show'));
-            notification.setAttribute('aria-hidden', 'false');
+        if (!notification) return;
 
-            if (this.notificationTimeout) {
+        notification.classList.remove('show');
+        notification.innerHTML = '';
+
+        const textNode = document.createElement('span');
+        textNode.className = 'notification-text';
+        textNode.textContent = message;
+        notification.appendChild(textNode);
+
+        if (undoCallback) {
+            const undoBtn = document.createElement('button');
+            undoBtn.type = 'button';
+            undoBtn.className = 'notification-undo-btn';
+            undoBtn.textContent = 'Ongedaan maken';
+            undoBtn.addEventListener('click', () => {
                 clearTimeout(this.notificationTimeout);
-            }
-
-            this.notificationTimeout = setTimeout(() => {
                 notification.classList.remove('show');
-                notification.classList.remove('success');
                 notification.setAttribute('aria-hidden', 'true');
-            }, 5000);
+                undoCallback();
+            });
+            notification.appendChild(undoBtn);
         }
+
+        notification.classList.remove('success', 'has-undo');
+        if (type === 'success') notification.classList.add('success');
+        if (undoCallback) notification.classList.add('has-undo');
+
+        requestAnimationFrame(() => notification.classList.add('show'));
+        notification.setAttribute('aria-hidden', 'false');
+
+        if (this.notificationTimeout) {
+            clearTimeout(this.notificationTimeout);
+        }
+
+        this.notificationTimeout = setTimeout(() => {
+            notification.classList.remove('show', 'success', 'has-undo');
+            notification.setAttribute('aria-hidden', 'true');
+        }, duration);
     }
 
     showErrorNotification(message) {
@@ -3788,10 +3807,38 @@ class Dashboard {
         }
 
         this.ensureBookmarkMutationSnapshot();
+        const deletedBookmark = { ...bookmark };
+        const deletedIndex = bookmarkIndex;
         this.bookmarks.splice(bookmarkIndex, 1);
         this.inlineEditingBookmarkIndex = null;
         this.renderDashboard();
-        this.scheduleBookmarkOrderSave({ successMessage: 'Bookmark deleted.' });
+
+        if (this._pendingDeleteTimer) {
+            clearTimeout(this._pendingDeleteTimer);
+            this._pendingDeleteTimer = null;
+        }
+
+        this._pendingDeleteTimer = setTimeout(() => {
+            this._pendingDeleteTimer = null;
+            this.scheduleBookmarkOrderSave({ successMessage: 'Bookmark deleted.' });
+        }, 5000);
+
+        this.showNotification(
+            `"${String(deletedBookmark.name || deletedBookmark.url).slice(0, 40)}" verwijderd`,
+            'success',
+            {
+                duration: 5000,
+                undoCallback: () => {
+                    if (this._pendingDeleteTimer) {
+                        clearTimeout(this._pendingDeleteTimer);
+                        this._pendingDeleteTimer = null;
+                    }
+                    this.bookmarks.splice(deletedIndex, 0, deletedBookmark);
+                    this.pendingReorderSnapshot = null;
+                    this.renderDashboard();
+                }
+            }
+        );
     }
 
     createBookmarkElement(bookmark, categoryId, allowInlineEdit = true) {

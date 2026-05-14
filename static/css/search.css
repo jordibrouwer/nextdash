@@ -17,6 +17,37 @@
     z-index: 2001;
     font-size: var(--font-size-text);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.error-notification.has-undo {
+    max-width: 380px;
+}
+
+.notification-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-undo-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    border-radius: 0.2rem;
+    padding: 0.2rem 0.55rem;
+    font-size: var(--font-size-small);
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.notification-undo-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
 }
 
 .error-notification.show {
@@ -42,7 +73,7 @@
 }
 
 .error-notification.show::after {
-    animation: notification-timeout 3s linear forwards;
+    animation: notification-timeout 5s linear forwards;
 }
 
 @keyframes notification-timeout {
