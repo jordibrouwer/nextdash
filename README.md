@@ -1,74 +1,12 @@
-# 🚀 nextDash
+# nextDash
 
-**A lightweight, self-hosted bookmark dashboard for power users.**
-Featuring a minimalist, keyboard-first interface with extensive customization options. Based on ThinkDashboard by MatiasDesuu.
+**A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
 
----
-
-## ✨ Core Features
-
-### ⌨️ Power User Workflow
-- **Keyboard-Driven**: Navigate, switch pages, and open bookmarks entirely from the keyboard.
-- **Fuzzy Search**: Press `/` to quickly search all bookmarks with fuzzy matching.
-- **External Finders**: Use `?` followed by a shortcut (e.g., `?g`) to run searches on external engines.
-- **Finder Intelligence**: Finders now support tags, usage stats (count + last used), and top-finder suggestions directly in search.
-- **Command System**: Manage settings via the command bar with commands like `:theme`, `:layout`, or `:density`.
-
-### 🎨 Customization & Design
-- **Layout Presets**: Choose from multiple styles such as Default, Compact, Cards, Terminal-ish, Masonry, or Detailed List.
-- **Theme Engine**: 32+ built-in theme families, automatic Dark Mode, and an editor for custom themes.
-- **Font Presets**: Switch between Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, and System UI.
-- **UI Tweaks**: Customize everything from column widths (1–6) and fonts to background transparency and animations.
-- **Responsive & PWA**: Works on desktop, tablet and mobile. Installable as a PWA with optional HyprMode support.
-
-### 📊 Intelligence & Monitoring
-- **Smart Collections**: Dynamic sections for Recently Opened, Most Used and Stale Bookmarks (links you haven't used recently).
-- **Status Monitoring**: Real-time online/offline detection for services, including basic ping timings.
-- **Dead Link Auto-Healer**: Health view now suggests archive/redirect/title fixes and supports one-click apply.
-- **Metadata Extraction**: Automatically fetches page titles, descriptions and previews for added URLs.
-- **Bookmark Notes**: Add plain-text notes to bookmarks; they show on the dashboard, in hover previews, and can be edited from the `Ctrl+Shift+A` modal, inline edit, or the config detail panel.
-- **Organization**: Manage unlimited pages and organize bookmarks into collapsible categories.
-- **Usage Insights**: Config stats now highlights top usage patterns with direct jump/fix actions.
-
-### ⌨️ Keyboard Shortcuts
-
-#### Dashboard navigation and actions
-- `1-9` - Open the matching page tab.
-- `Shift + Left/Right` - Move between page tabs.
-- `Arrow Up/Down` - Move through bookmarks with keyboard focus.
-- `Arrow Left/Right` - Move horizontally through the bookmark grid.
-- `Enter` or `Space` - Open the selected bookmark.
-- `;` - Open inline edit for the highlighted bookmark row (or a Tab-focused bookmark link).
-- `Esc` - Clear keyboard selection (and undo the latest drag reorder when available).
-
-#### Search, finders, and help
-- `>` - Open search.
-- `:` - Open command mode.
-- `?` - Open finder mode.
-- `!` - Open the keyboard cheat sheet.
-- `*` - Open/close recent bookmarks.
-- `Ctrl + /` or `F1` - Open the keyboard cheat sheet.
-- Search supports live filter autocomplete for `category:`, `status:`, and `page:`.
-- `status:` values: `online`, `offline`, `checked`, `unchecked`, `pinned`, `unpinned`, `broken`, `ok`.
-- `page:` values: `current`, `all`, or a page number like `page:2`.
-
-#### Quick actions
-- `Ctrl + Shift + A` - Open the "new bookmark" modal.
-
-#### Config page shortcuts
-- `1-8` - Jump between config tabs.
-- `S` - Save changes.
-- `Alt + Up/Down` - Move selected bookmark in the config list.
-- `Ctrl + K` / `Cmd + K` - Open the config command palette.
-
-### 🖱️ Mouse gestures
-- **Drag handle (left strip)**: Drag a bookmark to reorder it inside the same category, or drop it into another category column to change category directly.
-- **Long press on bookmark row**: Press and hold for about 500ms (not on the drag strip) to open inline edit immediately.
-- **Hover preview cards**: Optional rich link previews on bookmark hover with configurable delay (100/150/250ms).
+Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard. Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 | ![1](screenshots/nextdash-1.png) | ![2](screenshots/nextdash-2.png) |
 |:---:|:---:|
@@ -76,26 +14,14 @@ Featuring a minimalist, keyboard-first interface with extensive customization op
 |:---:|:---:|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |:---:|:---:|
-| ![7](screenshots/nextdash-7.png) | 
----
-
-## Security and network exposure
-
-nextDash is built as a **personal or small-team dashboard on a trusted network**. It does **not** provide built-in user accounts, API keys, or other application-level access control. Data is stored on disk as configured by the instance; the HTTP API and UI assume that anyone who can open the URL is allowed to use the app.
-
-**Do not** publish the service directly on the public internet without additional protection. If the port is reachable from untrusted clients, they can read, change, or delete your bookmarks and settings like any local user of the app.
-
-**Preferred setups:**
-
-- **Private overlay network** — e.g. [Tailscale](https://tailscale.com/) or another mesh/VPN so your server and browsers share a private IP range and nextDash never gets a world-routable listener.
-- **Reverse proxy on a trusted edge** — Traefik, Caddy, nginx, or similar **inside** your home/lab/VPC, terminating TLS and adding **authentication** (HTTP basic auth, OAuth2 Proxy, SSO, etc.) before traffic reaches nextDash.
-- **Local-only** — bind to `127.0.0.1` and use SSH port forwarding or the same-machine browser when that fits your workflow.
+| ![7](screenshots/nextdash-7.png) | |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### Using Docker Compose (Recommended)
+### Docker Compose (recommended)
+
 ```yaml
 services:
   nextDash:
@@ -110,13 +36,11 @@ services:
     restart: unless-stopped
 ```
 
-Run with:
-
 ```sh
 docker-compose up -d
 ```
 
-Or build and run locally with Go:
+### Build from source
 
 ```sh
 go build -o nextDash && ./nextDash
@@ -124,32 +48,204 @@ go build -o nextDash && ./nextDash
 
 ---
 
-## 🧩 Browser Extension
+## Security
 
-This repository also includes the **nextDash Bookmark Saver** browser extension (`extension/`), which lets you save the current tab directly to a nextDash page.
+nextDash is built for **personal or small-team use on a trusted network**. There are no built-in user accounts or access control — anyone who can reach the URL can read and modify your data.
+
+**Do not expose nextDash directly to the public internet.** Recommended setups:
+
+- **Private overlay network** — [Tailscale](https://tailscale.com/) or another mesh VPN so nextDash never gets a public listener.
+- **Reverse proxy with auth** — Traefik, Caddy, or nginx inside your home/lab/VPC, with HTTP basic auth, OAuth2 Proxy, or SSO in front.
+- **Local-only** — bind to `127.0.0.1` and use SSH port forwarding or a same-machine browser.
+
+---
+
+## Features
+
+### Keyboard-first workflow
+
+- `>` — open search with fuzzy matching across all bookmarks
+- `?` — open finder mode; type `?g query` to search an external engine
+- `:` — open command mode (`:theme`, `:layout`, `:density`, `:note`, …)
+- `1–9` — jump directly to a page tab
+- `Shift + Left/Right` — cycle between page tabs
+- `Arrow Up/Down/Left/Right` — move through the bookmark grid
+- `Enter` / `Space` — open the focused bookmark
+- `;` — inline-edit the highlighted bookmark
+- `Ctrl + Shift + A` — open the new bookmark modal
+- `Esc` — clear selection or undo the latest drag reorder
+
+Config page shortcuts:
+
+- `1–8` — jump between config tabs
+- `S` — save changes
+- `Alt + Up/Down` — reorder the selected bookmark
+- `Ctrl/Cmd + K` — open the config command palette
+
+### Search filters
+
+Type these directly in the search bar:
+
+- `category:` — filter by category name
+- `status:online` / `status:offline` / `status:broken` / `status:ok`
+- `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
+- `page:current` / `page:all` / `page:2`
+- `tag:name` — filter by tag
+
+### Organisation
+
+- Unlimited pages and categories
+- Drag-and-drop reorder within and between categories (drag strip on the left)
+- Long-press a bookmark row (~500 ms) to open inline edit
+- Double-click a page tab to rename it
+- Double-click a category header to rename it
+- Collapsible categories with optional always-collapsed default
+- Tags on bookmarks with autocomplete; filter by tag in search and collections
+
+### Smart collections
+
+Dynamic bookmark groups that appear automatically:
+
+- **Today** — bookmarks matching your work/evening/weekend keyword sets
+- **Recently opened** — bookmarks you've opened lately
+- **Most used** — your highest open-count bookmarks
+- **Stale** — bookmarks you haven't visited in a while
+- **Tag collections** — one group per tag, shown when a tag has enough entries
+
+### Appearance
+
+- 32+ built-in theme families, dark and light variants
+- Custom theme editor
+- Auto dark mode
+- Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List
+- Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
+- Adjustable columns (1–6), font size, font weight, background opacity, and density
+- Hover preview cards with configurable delay
+- Background image or gradient support
+
+### Monitoring & health
+
+- Real-time online/offline status with ping timings per bookmark
+- Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
+- Favicon auto-refresh from the health view
+- Usage stats in the config: top patterns, open counts, last-used dates
+
+### Bookmarks
+
+- Metadata auto-fetch (title, description, preview image) when adding a URL
+- Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
+- Open-count badge tracking usage per bookmark
+- Pin bookmarks to keep them at the top
+- Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped
+- Export all bookmarks to CSV (Name, URL, Category, Page, Shortcut)
+- Full ZIP backup and restore (pages, bookmarks, categories, settings, themes)
+
+### Notifications
+
+- Toast notifications with undo support
+- Configurable toast duration
+
+### Localisation
+
+Full UI translations available for English, Dutch, German, and French.
+
+---
+
+## Mouse gestures
+
+| Gesture | Action |
+|---|---|
+| Drag the left strip of a bookmark | Reorder within category or move to another category |
+| Long press a bookmark row (~500 ms) | Open inline edit |
+| Hover over a bookmark | Show preview card (if enabled) |
+| Double-click a page tab | Rename the page |
+| Double-click a category header | Rename the category |
+
+---
+
+## Browser Extension
+
+The **nextDash Bookmark Saver** extension (`extension/`) lets you save the current browser tab directly to a nextDash page.
 
 ### Install (Chrome / Chromium)
+
 1. Open `chrome://extensions/`
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked**
-4. Select the `extension` folder from this repository
+4. Select the `extension/` folder from this repository
 
 ### First-time setup
+
 1. Click the extension icon
 2. Open the **Settings** tab
-3. Set your nextDash server URL (for example `http://localhost:8080`)
-4. Choose a default page and save settings
+3. Enter your nextDash server URL (e.g. `http://localhost:8080`)
+4. Choose a default page and save
 
-For full extension usage and development notes, see `extension/README.md`.
+See `extension/README.md` for full usage and development notes.
+
+---
+
+## Changelog
+
+### Unreleased
+
+- Config: Backup & Restore section moved above Advanced
+- Config: Backup & Restore and Advanced action rows now align buttons in a consistent grid
+- Dashboard: config link always visible regardless of the `showConfigButton` setting
+- Dashboard: health link visibility correctly controlled by `showHealthDashboard` setting
+- Defaults: search flow banner enabled by default for new installs
+
+### Recent
+
+**Tags & collections**
+- Tags on bookmarks with autocomplete input in the new-bookmark modal and the config detail panel
+- Tag search filter (`tag:name`) in the main search bar
+- Tag collections: automatic dynamic groups per tag, configurable minimum entry count
+
+**Smart collections**
+- Today, Recently Opened, Most Used, and Stale collections with per-page scope controls
+- Configurable keyword sets for Today collection (work, evening, weekend)
+
+**Bookmarks**
+- Open-count badge on bookmarks showing total opens
+- Tags input with autocomplete in the new bookmark modal
+- Search field in the config bookmarks list with clear button
+
+**Finders**
+- Finder use count shown in search results
+- Usage stats (count + last used) in the finder list
+
+**Notes**
+- `:note` command in the command bar to add or edit a bookmark note
+- Notes visible on the dashboard, in hover previews, and in the config detail panel
+
+**Pages & categories**
+- Double-click to rename page tabs
+- Double-click to rename category headers
+
+**Notifications**
+- Undo support on toast notifications
+- Configurable toast duration
+
+**Search**
+- Search flow banner above the action buttons explaining `>`, `:`, `?`, and `×`
+
+**Health**
+- Favicon refresh action directly from the health view
+- Dead-link suggestions with one-click apply (archive, redirect, title fix)
+
+**UI**
+- Improved tab layout for pages, categories, and finders in config
+- Refined button and container styles
 
 ---
 
 ## Contributing
 
-Contributions are welcome. Please open issues or pull requests for bugs, features or translations.
+Issues and pull requests are welcome — bugs, features, and translations alike.
 
 ---
 
 ## License
 
-This project is released under the MIT License.
+MIT
