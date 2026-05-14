@@ -1331,6 +1331,15 @@ class Dashboard {
             'Tip: <code>refresh</code> in health page re-scans all bookmarks',
             'Tip: check health page <code>stale</code> bookmarks you haven\'t used recently',
             'Tip: merge duplicate bookmarks in health page bulk actions',
+            'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly',
+            'Tip: double-click a page tab or category title to rename it inline',
+            'Tip: delete a bookmark and click <code>Ongedaan maken</code> in the toast to undo within 5s',
+            'Tip: hover a preview card and click the clipboard icon to copy the URL',
+            'Tip: compact/dense mode shows an open-count badge on each bookmark',
+            'Tip: use the search bar in config → bookmarks to filter by name, URL, tag, or note',
+            'Tip: the dark/light toggle button in the header flips the theme variant instantly',
+            'Tip: use <code>favicon</code> button in health view to refresh a bookmark\'s icon',
+            'Tip: add tags when creating a bookmark via <code>:new</code> — autocomplete suggests existing tags',
             this.language.t('dashboard.tipFaviconToggle'),
             this.language.t('dashboard.tipPackedColumns'),
             this.language.t('dashboard.tipHideShortcutPin'),
@@ -1524,7 +1533,9 @@ class Dashboard {
                     { keys: '← / →', description: 'Move horizontally through the bookmark grid' },
                     { keys: 'Enter / Space', description: 'Open the selected bookmark' },
                     { keys: ';', description: 'Open inline edit (arrow-highlighted row or Tab-focused link)' },
-                    { keys: 'Esc', description: 'Clear selection or undo the latest reorder' }
+                    { keys: 'Esc', description: 'Clear selection or undo the latest reorder' },
+                    { keys: 'Double-click page tab', description: 'Rename the page tab inline' },
+                    { keys: 'Double-click category title', description: 'Rename the category inline' }
                 ]
             },
             {
@@ -1532,11 +1543,13 @@ class Dashboard {
                 items: [
                     { keys: 'Left strip (handle)', description: 'Drag to reorder within a category or drop into another column' },
                     { keys: 'Long-press row', description: 'Hold ~500ms on the row, not on the strip, to open inline edit' },
-                    { keys: 'Hover row', description: 'Load preview metadata on demand when preview-on-hover is enabled' }
+                    { keys: 'Hover row', description: 'Load preview metadata on demand when preview-on-hover is enabled' },
+                    { keys: 'Copy icon (hover card)', description: 'Hover the preview card and click the clipboard icon to copy the URL' },
+                    { keys: 'Open count badge', description: 'Compact/dense mode shows a subtle open-count number per bookmark' }
                 ]
             },
             {
-                title: 'Dashboard: search',
+                title: 'Dashboard: search & commands',
                 items: [
                     { keys: '>', description: 'Open search' },
                     { keys: ':', description: 'Open command mode' },
@@ -1544,9 +1557,20 @@ class Dashboard {
                     { keys: '!', description: 'Open keyboard cheat sheet' },
                     { keys: '*', description: 'Open or close recent bookmarks' },
                     { keys: 'Ctrl + / or F1', description: 'Open keyboard cheat sheet' },
+                    { keys: ':note <query>', description: 'Edit the note of a bookmark directly from the command palette' },
+                    { keys: ':new', description: 'Open new-bookmark modal with tags, icon, page and category' },
                     { keys: 'category:<value>', description: 'Filter by category (example: category:work)' },
-                    { keys: 'status:<value>', description: 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)' },
+                    { keys: 'tag:<value>', description: 'Filter by tag (example: tag:dev)' },
+                    { keys: 'status:<value>', description: 'Filter by status (online/offline/pinned/broken/ok…)' },
                     { keys: 'page:<value>', description: 'Filter by page (current/all/number, e.g. page:2)' }
+                ]
+            },
+            {
+                title: 'Bookmark delete & undo',
+                items: [
+                    { keys: 'Delete (inline edit)', description: 'Removes the bookmark from the dashboard immediately' },
+                    { keys: 'Undo toast', description: '"Ongedaan maken" appears for 5 seconds — click to restore' },
+                    { keys: 'Auto-save', description: 'If undo is not clicked the deletion is persisted after 5 s' }
                 ]
             },
             {
@@ -1555,6 +1579,7 @@ class Dashboard {
                     { keys: 'health link', description: 'Visit the health dashboard to monitor all bookmarks' },
                     { keys: 'Filter pills', description: 'Click issue type (broken, duplicate, stale, etc.) to filter bookmarks' },
                     { keys: 'Search health', description: 'Type to find bookmarks by name, URL, category, or page' },
+                    { keys: 'favicon button', description: 'Re-fetch and store a fresh favicon for a bookmark directly in health view' },
                     { keys: 'refresh', description: 'Re-scan all bookmarks and detect latest issues' },
                     { keys: 'Bulk actions', description: 'Retest all checked, open broken links, or merge duplicates' }
                 ]
@@ -1565,7 +1590,9 @@ class Dashboard {
                     { keys: '1-8', description: 'Jump between config tabs' },
                     { keys: 'S', description: 'Save config changes' },
                     { keys: 'Alt + ↑ / ↓', description: 'Move selected bookmark in config lists' },
-                    { keys: 'Ctrl + Shift + A', description: 'Open new bookmark modal from dashboard' }
+                    { keys: 'Ctrl + Shift + A', description: 'Open new bookmark modal from dashboard' },
+                    { keys: 'Search bar (bookmarks)', description: 'Filter the config bookmark list by name, URL, tag, or note' },
+                    { keys: 'Dark/light toggle', description: 'Header button (if enabled) instantly flips the active theme variant' }
                 ]
             }
         ];
