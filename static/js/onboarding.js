@@ -157,6 +157,34 @@ class Onboarding {
                 ]
             },
             {
+                title: this.t('onboarding.collectionsStepTitle', 'Smart collections'),
+                body: this.t('onboarding.collectionsStepBody', 'nextDash can auto-group your bookmarks into dynamic sections. Enable the ones that suit your workflow — you can tweak them anytime in config.'),
+                selector: '#dashboard-layout',
+                placement: 'bottom',
+                fields: [
+                    {
+                        id: 'showSmartTodayCollection',
+                        type: 'radio',
+                        label: this.t('onboarding.collectionsShowTodayLabel', 'Today collection'),
+                        hint: this.t('onboarding.collectionsShowTodayHint', 'Shows bookmarks that match your time of day — work tools in the morning, leisure in the evening.'),
+                        options: [
+                            { value: 'true', label: this.t('onboarding.yes', 'Yes') },
+                            { value: 'false', label: this.t('onboarding.no', 'No') }
+                        ]
+                    },
+                    {
+                        id: 'showSmartMostUsedCollection',
+                        type: 'radio',
+                        label: this.t('onboarding.collectionsShowMostUsedLabel', 'Most used collection'),
+                        hint: this.t('onboarding.collectionsShowMostUsedHint', 'Shows your most opened bookmarks at a glance.'),
+                        options: [
+                            { value: 'true', label: this.t('onboarding.yes', 'Yes') },
+                            { value: 'false', label: this.t('onboarding.no', 'No') }
+                        ]
+                    }
+                ]
+            },
+            {
                 title: this.t('onboarding.keyboardBookmarksStepTitle', 'Bookmarks: keyboard'),
                 body: this.t(
                     'onboarding.keyboardBookmarksStepBody',
@@ -203,7 +231,9 @@ class Onboarding {
             weatherLocation: settings.weatherLocation || '',
             packedColumns: settings.packedColumns !== false,
             interleaveMode: settings.interleaveMode === true,
-            showTips: settings.showTips !== false
+            showTips: settings.showTips !== false,
+            showSmartTodayCollection: settings.showSmartTodayCollection === true,
+            showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true
         };
     }
 
@@ -379,7 +409,7 @@ class Onboarding {
     }
 
     parseFieldValue(fieldId, value) {
-        if (['openInNewTab', 'autoDarkMode', 'showWeatherWithDate', 'packedColumns', 'interleaveMode', 'showTips'].includes(fieldId)) {
+        if (['openInNewTab', 'autoDarkMode', 'showWeatherWithDate', 'packedColumns', 'interleaveMode', 'showTips', 'showSmartTodayCollection', 'showSmartMostUsedCollection'].includes(fieldId)) {
             return String(value) === 'true';
         }
         return value;
@@ -507,7 +537,9 @@ class Onboarding {
             weatherLocation: this.localSettings.weatherLocation,
             packedColumns: this.localSettings.packedColumns,
             interleaveMode: this.localSettings.interleaveMode,
-            showTips: this.localSettings.showTips
+            showTips: this.localSettings.showTips,
+            showSmartTodayCollection: this.localSettings.showSmartTodayCollection,
+            showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection
         });
 
         if (this.onApplySettings) {
