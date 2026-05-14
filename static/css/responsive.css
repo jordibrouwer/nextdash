@@ -571,12 +571,7 @@
         padding: 0.25rem 0.4rem;
         font-size: var(--font-size-controls);
     }
-    
-    .page-nav-btn::before,
-    .page-nav-btn::after {
-        margin: 0 0.125rem;
-    }
-    
+
     .config-link a {
         font-size: var(--font-size-text);
     }
@@ -776,12 +771,7 @@
         font-size: var(--font-size-controls);
         white-space: nowrap;
     }
-    
-    .page-nav-btn::before,
-    .page-nav-btn::after {
-        margin: 0 0.1rem;
-    }
-    
+
     .config-link a {
         font-size: var(--font-size-controls);
         white-space: nowrap;

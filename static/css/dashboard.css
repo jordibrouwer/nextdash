@@ -155,41 +155,34 @@ body {
     font-weight: var(--font-weight-semibold);
     background: transparent;
     border: none;
+    border-bottom: 2px solid transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     text-align: center;
     position: relative;
 }
 
-.page-nav-btn::before {
-    content: '[';
-    margin-right: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
+.page-nav-btn::before,
 .page-nav-btn::after {
-    content: ']';
-    margin-left: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    content: none;
 }
 
 .page-nav-btn:hover {
     color: var(--text-primary);
-    border-color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
 }
 
 .page-nav-btn.active {
-    background: transparent;
+    background: var(--background-secondary);
     color: var(--text-primary);
-    border-color: var(--text-primary);
+    border-bottom-color: var(--accent-success);
+    font-weight: var(--font-weight-bold);
 }
 
 .page-nav-btn.active::before,
 .page-nav-btn.active::after {
-    opacity: 1;
+    content: none;
 }
 
 .page-tab-rename-input {
