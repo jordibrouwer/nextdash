@@ -4042,6 +4042,8 @@ class Dashboard {
                 if (!preview || !openLink._previewHoverActive) return;
                 preview.note = bookmark.note || '';
                 preview.tags = Array.isArray(bookmark.tags) ? bookmark.tags.filter(Boolean) : [];
+                preview.openCount = Number(bookmark.openCount || 0);
+                preview.lastOpened = bookmark.lastOpened || null;
                 this.showBookmarkPreviewCard(preview, event);
             }, hoverDelay);
         });
@@ -4131,6 +4133,7 @@ class Dashboard {
                 <div class="bookmark-preview-card-note"></div>
                 <div class="bookmark-preview-card-tags"></div>
                 <div class="bookmark-preview-card-domain"></div>
+                <div class="bookmark-preview-card-usage"></div>
             </div>
         `;
         document.body.appendChild(card);
@@ -4186,6 +4189,32 @@ class Dashboard {
 
         domainEl.textContent = domain;
         domainEl.style.display = domain ? 'block' : 'none';
+
+        const usageEl = card.querySelector('.bookmark-preview-card-usage');
+        if (usageEl) {
+            const openCount = Number(preview?.openCount || 0);
+            const lastOpened = preview?.lastOpened || null;
+            if (openCount > 0) {
+                let lastText = '';
+                if (lastOpened) {
+                    const date = new Date(lastOpened);
+                    const now = new Date();
+                    const diffDays = Math.floor((now - date) / 86400000);
+                    if (diffDays === 0) lastText = 'today';
+                    else if (diffDays === 1) lastText = 'yesterday';
+                    else if (diffDays < 7) lastText = `${diffDays} days ago`;
+                    else if (diffDays < 30) lastText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`;
+                    else if (diffDays < 365) lastText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) === 1 ? '' : 's'} ago`;
+                    else lastText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) === 1 ? '' : 's'} ago`;
+                }
+                const countText = `opened ${openCount} time${openCount === 1 ? '' : 's'}`;
+                usageEl.textContent = lastText ? `${countText} · last ${lastText}` : countText;
+                usageEl.style.display = 'block';
+            } else {
+                usageEl.textContent = '';
+                usageEl.style.display = 'none';
+            }
+        }
 
         if (image) {
             imageEl.src = image;

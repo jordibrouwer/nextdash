@@ -1311,6 +1311,16 @@ body.no-animations .bookmarks-list.reorder-container .bookmark-drop-placeholder 
     white-space: nowrap;
 }
 
+.bookmark-preview-card-usage {
+    margin-top: 0.3rem;
+    font-size: calc(var(--font-size-controls) * 0.85);
+    color: var(--text-tertiary);
+    opacity: 0.75;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Keyboard navigation highlight */
 .bookmark-link.keyboard-selected {
     color: var(--text-primary);
