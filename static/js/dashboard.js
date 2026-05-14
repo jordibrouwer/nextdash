@@ -322,7 +322,7 @@ class Dashboard {
         this.initializeSwipeNavigation();
         this.initializeHyprMode();
         this.renderPageNavigation();
-        this.renderDashboard({ animate: true });
+        this.renderDashboard({ animate: false });
         this.setupPageShortcuts();
         this.setupReorderUndoShortcut();
         this.setupToolbarActions();
@@ -351,14 +351,10 @@ class Dashboard {
             }
         });
 
-        // Show body after everything is loaded and rendered
+        // Initialize follow-up UI immediately after first render (no extra frame delay).
         document.body.classList.remove('loading');
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                this.initializeOnboarding();
-                this.maybeShowWhatsNew();
-            });
-        });
+        this.initializeOnboarding();
+        this.maybeShowWhatsNew();
     }
 
     setupConfigStructureReloadListener() {
@@ -688,7 +684,7 @@ class Dashboard {
             if (this.searchComponent) {
                 this.updateSearchComponent();
             }
-            this.renderDashboard({ animate: true });
+            this.renderDashboard({ animate: false });
             
             // Reset keyboard navigation to first element when changing pages
             if (this.keyboardNavigation) {

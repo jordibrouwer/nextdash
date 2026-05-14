@@ -22,15 +22,8 @@
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
-    <style>
-        /* Prevent flash of unstyled content */
-        body.loading {
-            opacity: 0;
-            visibility: hidden;
-        }
-    </style>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-show-title="{{.ShowTitle}}">
+<body class="{{.Theme}} font-size-{{.FontSize}}" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-show-title="{{.ShowTitle}}">
     <!-- Container 1: Date, tabs, config button -->
     <div class="dashboard-section section-controls">
         <div class="container">
