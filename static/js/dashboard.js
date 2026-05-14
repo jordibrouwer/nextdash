@@ -2336,7 +2336,10 @@ class Dashboard {
         const todayBookmarks = this.getSmartStartTodayBookmarks(normalized);
 
         if (this.settings.showSmartTodayCollection !== false && pageAllowed(this.settings.smartTodayPageIds) && todayBookmarks.length > 0) {
-            const todayLabel = this.language?.t?.('dashboard.smartTodayCollection') || 'Today';
+            const translatedTodayLabel = this.language?.t?.('dashboard.smartTodayCollection');
+            const todayLabel = translatedTodayLabel && translatedTodayLabel !== 'dashboard.smartTodayCollection'
+                ? translatedTodayLabel
+                : 'Today';
             collections.push({
                 id: '__smart_today__',
                 name: `${todayLabel} (${todayBookmarks.length})`,
