@@ -1,5 +1,16 @@
 // Dashboard JavaScript
 
+// Animation timing constants — adjust here to change the overall animation tempo.
+const ANIM = Object.freeze({
+    BOOKMARK_STAGGER_STEP:  16,   // ms added per bookmark index during enter animation
+    CATEGORY_STAGGER_STEP:  28,   // ms added per category index during enter animation
+    BOOKMARK_ENTER_BASE:   240,   // ms base delay before first bookmark enter animation clears
+    CATEGORY_ENTER_BASE:   260,   // ms base delay before first category enter animation clears
+    PAGE_TRANSITION:       250,   // ms page-transition CSS class lifetime
+    BOOKMARK_MOVE_IN:      180,   // ms bookmark-move-in animation duration after reorder
+    STALE_FLASH:          2200,   // ms stale-bookmark highlight flash duration
+});
+
 class TagAutocomplete {
     constructor(input, getTagsFn) {
         this._input = input;
@@ -1878,7 +1889,7 @@ class Dashboard {
             columnBlocks.forEach((el, i) => {
                 if (animate) {
                     el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * 28) + 260;
+                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
                     setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
                 }
                 columns[i % colCount].appendChild(el);
@@ -1888,7 +1899,7 @@ class Dashboard {
             columnBlocks.forEach((el, i) => {
                 if (animate) {
                     el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * 28) + 260;
+                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
                     setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
                 }
                 container.appendChild(el);
@@ -1898,7 +1909,7 @@ class Dashboard {
         if (animate) {
             requestAnimationFrame(() => {
                 container.classList.add('page-transition');
-                setTimeout(() => container.classList.remove('page-transition'), 250);
+                setTimeout(() => container.classList.remove('page-transition'), ANIM.PAGE_TRANSITION);
             });
         }
 
@@ -2231,7 +2242,7 @@ class Dashboard {
         this.bookmarks = nextBookmarks;
         movedElements.forEach((element) => {
             element.classList.add('bookmark-move-in');
-            setTimeout(() => element.classList.remove('bookmark-move-in'), 180);
+            setTimeout(() => element.classList.remove('bookmark-move-in'), ANIM.BOOKMARK_MOVE_IN);
         });
         this.updateSearchComponent();
         if (this.statusMonitor) {
@@ -2500,7 +2511,7 @@ class Dashboard {
             if (animate) {
                 bookmarkElement.classList.add('animate-enter');
                 bookmarkElement.style.setProperty('--item-index', String(index));
-                const bookmarkEnterDelay = (index * 16) + 240;
+                const bookmarkEnterDelay = (index * ANIM.BOOKMARK_STAGGER_STEP) + ANIM.BOOKMARK_ENTER_BASE;
                 setTimeout(() => bookmarkElement.classList.remove('animate-enter'), bookmarkEnterDelay);
             }
             bookmarksList.appendChild(bookmarkElement);
@@ -2828,7 +2839,7 @@ class Dashboard {
         this.saveCollapsedStates();
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         el.classList.add('nextdash-stale-flash');
-        setTimeout(() => el.classList.remove('nextdash-stale-flash'), 2200);
+        setTimeout(() => el.classList.remove('nextdash-stale-flash'), ANIM.STALE_FLASH);
     }
 
     ensureBookmarkMutationSnapshot() {
