@@ -1,4 +1,6 @@
 (function () {
+    const STORAGE_KEY = 'nextdash_health_state';
+
     const healthState = {
         report: null,
         filter: 'all',
@@ -6,6 +8,28 @@
         query: '',
         language: null
     };
+
+    function saveState() {
+        try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                filter: healthState.filter,
+                sort: healthState.sort,
+                query: healthState.query
+            }));
+        } catch (e) { /* quota or private mode */ }
+    }
+
+    function restoreState() {
+        try {
+            const raw = sessionStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            if (filterOrder.includes(saved.filter)) healthState.filter = saved.filter;
+            const validSorts = ['score', 'status', 'last-checked', 'last-checked-desc', 'name'];
+            if (validSorts.includes(saved.sort)) healthState.sort = saved.sort;
+            if (typeof saved.query === 'string') healthState.query = saved.query;
+        } catch (e) { /* malformed JSON */ }
+    }
 
     const statusFallbacks = {
         broken: 'broken',
@@ -231,6 +255,7 @@
         document.querySelectorAll('[data-filter]').forEach((button) => {
             button.addEventListener('click', () => {
                 healthState.filter = button.getAttribute('data-filter') || 'all';
+                saveState();
                 render();
             });
         });
@@ -240,6 +265,7 @@
             sortSelect.value = healthState.sort;
             sortSelect.addEventListener('change', () => {
                 healthState.sort = sortSelect.value;
+                saveState();
                 render();
             });
         }
@@ -709,11 +735,16 @@
             });
         }
 
+        restoreState();
+
         const searchInput = document.getElementById('health-search');
         const refreshButton = document.getElementById('refresh-health-btn');
 
+        if (searchInput && healthState.query) searchInput.value = healthState.query;
+
         searchInput?.addEventListener('input', () => {
             healthState.query = searchInput.value.trim();
+            saveState();
             render();
         });
 
