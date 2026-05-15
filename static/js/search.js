@@ -282,6 +282,15 @@ class SearchComponent {
         if (key === ':') {
             e.preventDefault();
             window.dashboardInstance?.markInlineTipUsed?.('command_open');
+            const keyNav = window.dashboardInstance?.keyboardNavigation;
+            const selected = keyNav && typeof keyNav.getSelectedBookmark === 'function'
+                ? keyNav.getSelectedBookmark()
+                : null;
+            if (selected && selected.name) {
+                this.commandsComponent.contextBookmark = selected;
+                // Auto-expand the Bookmarks group so context commands are immediately visible
+                this.commandsComponent.expandedGroups.add('bookmarks');
+            }
             this.addToQuery(':');
             return;
         }

@@ -520,6 +520,27 @@ class KeyboardNavigation {
         });
     }
 
+    getSelectedBookmark() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return null;
+        const dash = this.dashboard;
+        if (!dash) return null;
+        const row = this.navigableElements[this.currentIndex];
+        const openLink = row && row.querySelector('a.bookmark-open');
+        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+        let bookmark = (Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0)
+            ? (dash.bookmarks || [])[bookmarkIndex]
+            : null;
+        if (!bookmark) {
+            const url = (openLink && openLink.href) || row.dataset.bookmarkUrl || '';
+            if (url) {
+                bookmark = (dash.bookmarks || []).find(b => b.url === url)
+                    || (dash.allBookmarks || []).find(b => b.url === url)
+                    || null;
+            }
+        }
+        return bookmark || null;
+    }
+
     selectCurrentElement() {
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];

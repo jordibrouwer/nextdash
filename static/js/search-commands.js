@@ -43,6 +43,9 @@ class SearchCommandsComponent {
         // Track which groups are expanded (none by default)
         this.expandedGroups = new Set();
 
+        // Bookmark pre-selected via keyboard when : was pressed; used to pre-fill context commands
+        this.contextBookmark = null;
+
         // Available commands
         this.availableCommands = {
             'new': this.handleNewCommand.bind(this),
@@ -116,6 +119,7 @@ class SearchCommandsComponent {
             this.removeCommandHandler.resetState();
         }
         this.expandedGroups.clear();
+        this.contextBookmark = null;
     }
 
     /**
@@ -179,6 +183,10 @@ class SearchCommandsComponent {
      * @returns {Array} Array of group headers and (if expanded) command rows
      */
     getAvailableCommands() {
+        // Commands that act on a specific bookmark and benefit from a pre-filled name
+        const bookmarkContextCmds = new Set(['remove', 'note']);
+        const ctxName = this.contextBookmark ? this.contextBookmark.name : null;
+
         const result = [];
         for (const group of this.commandGroups) {
             const isExpanded = this.expandedGroups.has(group.id);
@@ -192,10 +200,13 @@ class SearchCommandsComponent {
             if (isExpanded) {
                 for (const cmd of group.commands) {
                     if (this.availableCommands[cmd]) {
+                        const useCtx = ctxName && bookmarkContextCmds.has(cmd);
                         result.push({
-                            name: '',
+                            name: useCtx ? ctxName : '',
                             shortcut: `:${cmd.toUpperCase()}`,
-                            completion: `:${cmd.toUpperCase()} `,
+                            completion: useCtx
+                                ? `:${cmd.toUpperCase()} ${ctxName}`
+                                : `:${cmd.toUpperCase()} `,
                             type: 'command-completion',
                             groupId: group.id
                         });
