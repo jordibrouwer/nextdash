@@ -1225,6 +1225,7 @@ class ConfigManager {
             discardTopBtn.disabled = !this.isDirty;
             discardTopBtn.classList.toggle('is-visible', this.isDirty);
         }
+        document.body.classList.toggle('config-is-dirty', this.isDirty);
     }
 
     markDirty() {
