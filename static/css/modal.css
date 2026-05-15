@@ -71,7 +71,7 @@
 
 .modal-title {
     margin-right: 0.5rem;
-    color: var(--accent-success);
+    color: var(--text-primary);
 }
 
 .modal-body {

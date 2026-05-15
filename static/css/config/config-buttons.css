@@ -52,16 +52,15 @@
 }
 
 .btn-success.has-unsaved {
-    animation: savePulse 1.8s ease-in-out infinite;
+    animation: savePulse 4s ease-in-out infinite;
 }
 
 @keyframes savePulse {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    0%, 100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-warning) 0%, transparent);
     }
     50% {
-        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-warning) 18%, transparent);
     }
 }
 
@@ -69,14 +68,24 @@
     display: none;
     font-size: var(--font-size-controls);
     color: var(--accent-warning);
-    border: 1px dashed var(--accent-warning);
+    border: 1px solid var(--accent-warning);
     padding: 0.25rem 0.5rem;
     line-height: 1;
+    animation: unsavedFade 4s ease-in-out infinite;
 }
 
 .unsaved-indicator.is-visible {
     display: inline-flex;
     align-items: center;
+}
+
+@keyframes unsavedFade {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.55;
+    }
 }
 
 /* Disabled state */
