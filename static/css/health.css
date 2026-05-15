@@ -186,6 +186,28 @@
     opacity: 0.72;
 }
 
+.health-panel-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.health-sort-label {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.health-sort-select {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+}
+
 .health-issues {
     display: grid;
     gap: 12px;

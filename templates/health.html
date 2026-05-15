@@ -69,7 +69,17 @@
         <section class="health-issues-panel">
             <div class="health-panel-header">
                 <h2 data-i18n="health.issues">Issues</h2>
-                <span id="health-results-count" class="health-results-count"></span>
+                <div class="health-panel-header-right">
+                    <span id="health-results-count" class="health-results-count"></span>
+                    <label class="health-sort-label" for="health-sort-select" data-i18n="health.sortLabel">sort by</label>
+                    <select id="health-sort-select" class="health-sort-select">
+                        <option value="score" data-i18n="health.sortScore">score</option>
+                        <option value="status" data-i18n="health.sortStatus">status</option>
+                        <option value="last-checked" data-i18n="health.sortLastCheckedAsc">last checked ↑</option>
+                        <option value="last-checked-desc" data-i18n="health.sortLastCheckedDesc">last checked ↓</option>
+                        <option value="name" data-i18n="health.sortName">name</option>
+                    </select>
+                </div>
             </div>
             <div id="health-issues" class="health-issues"></div>
         </section>

@@ -2,6 +2,7 @@
     const healthState = {
         report: null,
         filter: 'all',
+        sort: 'score',
         query: '',
         language: null
     };
@@ -128,8 +129,33 @@
         `).join('');
     }
 
+    const statusRank = { broken: 0, duplicate: 1, unchecked: 2, stale: 3, unused: 4, 'missing-preview': 5, healthy: 6 };
+
+    function sortIssues(issues) {
+        const sorted = [...issues];
+        switch (healthState.sort) {
+            case 'last-checked':
+                sorted.sort((a, b) => (a.lastChecked || 0) - (b.lastChecked || 0));
+                break;
+            case 'last-checked-desc':
+                sorted.sort((a, b) => (b.lastChecked || 0) - (a.lastChecked || 0));
+                break;
+            case 'status':
+                sorted.sort((a, b) => (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) || a.name.localeCompare(b.name));
+                break;
+            case 'name':
+                sorted.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case 'score':
+            default:
+                sorted.sort((a, b) => a.score - b.score || (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) || a.name.localeCompare(b.name));
+                break;
+        }
+        return sorted;
+    }
+
     function renderIssues(report) {
-        const issues = (report?.issues || []).filter((issue) => matchesFilter(issue, healthState.filter) && matchesQuery(issue, healthState.query));
+        const issues = sortIssues((report?.issues || []).filter((issue) => matchesFilter(issue, healthState.filter) && matchesQuery(issue, healthState.query)));
 
         const resultsCount = document.getElementById('health-results-count');
         if (resultsCount) {
@@ -208,6 +234,15 @@
                 render();
             });
         });
+
+        const sortSelect = document.getElementById('health-sort-select');
+        if (sortSelect) {
+            sortSelect.value = healthState.sort;
+            sortSelect.addEventListener('change', () => {
+                healthState.sort = sortSelect.value;
+                render();
+            });
+        }
 
         document.querySelectorAll('[data-open-url]').forEach((button) => {
             button.addEventListener('click', () => {
