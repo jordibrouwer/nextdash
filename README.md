@@ -191,6 +191,40 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Search**
+- Match highlighting: matched characters shown in bold with an underline in both the shortcut and bookmark name
+- Filter autocomplete: typing `status:` now shows all known values (`online`, `offline`, `broken`, `ok`, `pinned`, `unpinned`, `checked`, `unchecked`) with descriptions; narrows as you type
+- Search history capped at 15 entries; oldest entries dropped automatically
+
+**Command bar**
+- Keyboard-navigate to a bookmark with ↑ ↓, then press `:` — the command bar opens with that bookmark as context
+- `:REMOVE` and `:NOTE` completions are pre-filled with the bookmark name
+- Deleting a bookmark via `:remove` now shows an undo toast with an 8-second window
+
+**Drag & drop**
+- Drop placeholder fades and scales in smoothly each time it moves to a new position
+- Empty categories show a dashed outline while dragging so you can still drop into them
+
+**Config — general tab**
+- Bookmarks card split into Display (icons, shortcuts, badges, preview) and Behavior (sorting, tab, collapse, shortcuts)
+- Language moved out of Appearance into a new Localization card together with date, time, and weather settings
+- Date/time/weather tree structure corrected: weather options are children of "Show weather", date format is a child of "Show date"
+- Smart Collections: each collection is now its own collapsible `<details>` block instead of a long flat list
+- Header & Buttons redesigned as a compact table: one row per button, Show and Label columns side by side
+- Backup & Restore and Reset moved outside the card grid as full-width sections
+- Card collapse state saved per session: only Appearance and Layout open by default; your state is restored on next visit
+
+**Config — UX**
+- Unsaved changes: sticky toolbar gets an amber bottom border when there are unsaved changes
+- Reset tooltip shows both values: "Reset to 14 (was 20)"
+- Config tab bar horizontally scrollable with fade-out gradient on narrow screens
+- Pages tab shows a hint explaining drag-reorder for pages
+
+**Dashboard**
+- Category collapse state stored per page (`pageId:categoryId`) — same-named categories on different pages no longer share state
+
+### Recent
+
 **Command palette & search — grouped UI**
 - Command palette (`:`) now shows commands in three collapsible groups: Bookmarks, View, Dashboard — no more long flat list
 - Search empty state shows Recent, Filters, and Finders as collapsible groups; Recent expands automatically when you have history
@@ -204,59 +238,16 @@ See `extension/README.md` for full usage and development notes.
 - Shortcut tooltip: "Press X to open" tooltip on bookmark hover when a shortcut is assigned; auto-hides when preview card is open
 - Hover preview card: shows open count and last-opened date; repositions automatically to stay fully within the viewport
 - Preview card via keyboard: press `[` on a keyboard-selected bookmark to toggle the preview card; navigating away closes it automatically
+- Copy URL via keyboard: `Ctrl + C` copies the URL of the keyboard-selected bookmark
 
 **Config**
 - Per-setting reset button (↺) appears when a value differs from its default; click to restore the default and mark the form dirty
 - Backup & Restore buttons show a spinner and loading label (Creating… / Importing… / Exporting…) during operations
-- Backup & Restore section moved above Advanced; action rows aligned in a consistent grid
 - Config link always visible; health link visibility controlled by the `showHealthDashboard` setting
 
 **Onboarding**
 - New step for smart collections: toggle Today and Most Used directly from the onboarding flow
 - Search flow banner enabled by default for new installs
-
-### Recent
-
-**Tags & collections**
-- Tags on bookmarks with autocomplete input in the new-bookmark modal and the config detail panel
-- Tag search filter (`tag:name`) in the main search bar
-- Tag collections: automatic dynamic groups per tag, configurable minimum entry count
-
-**Smart collections**
-- Today, Recently Opened, Most Used, and Stale collections with per-page scope controls
-- Configurable keyword sets for Today collection (work, evening, weekend)
-
-**Bookmarks**
-- Open-count badge on bookmarks showing total opens
-- Tags input with autocomplete in the new bookmark modal
-- Search field in the config bookmarks list with clear button
-
-**Finders**
-- Finder use count shown in search results
-- Usage stats (count + last used) in the finder list
-
-**Notes**
-- `:note` command in the command bar to add or edit a bookmark note
-- Notes visible on the dashboard, in hover previews, and in the config detail panel
-
-**Pages & categories**
-- Double-click to rename page tabs
-- Double-click to rename category headers
-
-**Notifications**
-- Undo support on toast notifications
-- Configurable toast duration
-
-**Search**
-- Search flow banner above the action buttons explaining `>`, `:`, `?`, and `×`
-
-**Health**
-- Favicon refresh action directly from the health view
-- Dead-link suggestions with one-click apply (archive, redirect, title fix)
-
-**UI**
-- Improved tab layout for pages, categories, and finders in config
-- Refined button and container styles
 
 ---
 
