@@ -23,6 +23,23 @@
     margin: 0;
 }
 
+.simple-tab-hint {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+.simple-tab-hint-handle {
+    display: inline-block;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    vertical-align: middle;
+    line-height: 1;
+    margin: 0 0.1em;
+}
+
 .simple-toolbar-right {
     display: flex;
     align-items: center;
