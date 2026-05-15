@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v5';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v6';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function buildHtml() {
