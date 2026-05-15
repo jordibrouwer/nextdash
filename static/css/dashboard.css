@@ -176,7 +176,7 @@ body {
 .page-nav-btn.active {
     background: var(--background-secondary);
     color: var(--text-primary);
-    border-bottom-color: var(--accent-success);
+    border-bottom-color: var(--accent-primary);
     font-weight: var(--font-weight-bold);
 }
 
