@@ -179,6 +179,38 @@
                                 <option value="bold">Bold</option>
                             </select>
                         </div>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item" id="theme-iconstyling-group">
+                                <label class="checkbox-label" for="theme-iconstyling-enable">
+                                    <input type="checkbox" id="theme-iconstyling-enable">
+                                    <span class="checkbox-text" data-i18n="config.iconStylingLabel">Favicon harmonization (per theme)</span>
+                                </label>
+                            </div>
+                            <div id="theme-iconstyling-controls" hidden>
+                                <div class="checkbox-tree-item checkbox-tree-child">
+                                    <span class="tree-symbol">├──</span>
+                                    <label for="theme-iconstyling-style" data-i18n="config.iconStylingStyleLabel">Style</label>
+                                    <select id="theme-iconstyling-style">
+                                        <option value="muted" data-i18n="config.iconStylingStyleMuted">Muted</option>
+                                        <option value="tinted" data-i18n="config.iconStylingStyleTinted">Tinted</option>
+                                        <option value="overlay" data-i18n="config.iconStylingStyleOverlay">Overlay</option>
+                                    </select>
+                                </div>
+                                <div class="checkbox-tree-item checkbox-tree-child">
+                                    <span class="tree-symbol">├──</span>
+                                    <label for="theme-iconstyling-intensity" data-i18n="config.iconStylingIntensityLabel">Intensity</label>
+                                    <input type="range" id="theme-iconstyling-intensity" min="0" max="1" step="0.05" value="0.5">
+                                </div>
+                                <div class="checkbox-tree-item checkbox-tree-child theme-iconstyling-preview-row">
+                                    <span class="tree-symbol">└──</span>
+                                    <div id="theme-iconstyling-preview" class="theme-icon-preview" aria-hidden="true">
+                                        <span class="preview-icon"></span>
+                                        <span class="preview-icon"></span>
+                                        <span class="preview-icon"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- 2. Layout: columns, preset, density, packed columns, title -->
@@ -240,36 +272,6 @@
                                     <input type="checkbox" id="show-icons-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showIcons">Show bookmark icons</span>
                                 </label>
-                            </div>
-                            <div class="checkbox-tree-item" id="theme-iconstyling-group">
-                                <label class="checkbox-label" for="theme-iconstyling-enable">
-                                    <input type="checkbox" id="theme-iconstyling-enable">
-                                    <span class="checkbox-text" data-i18n="config.iconStylingLabel">Favicon harmonization (per theme)</span>
-                                </label>
-                            </div>
-                            <div id="theme-iconstyling-controls" hidden>
-                                <div class="checkbox-tree-item checkbox-tree-child">
-                                    <span class="tree-symbol">├──</span>
-                                    <label for="theme-iconstyling-style" data-i18n="config.iconStylingStyleLabel">Style</label>
-                                    <select id="theme-iconstyling-style">
-                                        <option value="muted" data-i18n="config.iconStylingStyleMuted">Muted</option>
-                                        <option value="tinted" data-i18n="config.iconStylingStyleTinted">Tinted</option>
-                                        <option value="overlay" data-i18n="config.iconStylingStyleOverlay">Overlay</option>
-                                    </select>
-                                </div>
-                                <div class="checkbox-tree-item checkbox-tree-child">
-                                    <span class="tree-symbol">├──</span>
-                                    <label for="theme-iconstyling-intensity" data-i18n="config.iconStylingIntensityLabel">Intensity</label>
-                                    <input type="range" id="theme-iconstyling-intensity" min="0" max="1" step="0.05" value="0.5">
-                                </div>
-                                <div class="checkbox-tree-item checkbox-tree-child theme-iconstyling-preview-row">
-                                    <span class="tree-symbol">└──</span>
-                                    <div id="theme-iconstyling-preview" class="theme-icon-preview" aria-hidden="true">
-                                        <span class="preview-icon"></span>
-                                        <span class="preview-icon"></span>
-                                        <span class="preview-icon"></span>
-                                    </div>
-                                </div>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
