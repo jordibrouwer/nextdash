@@ -772,31 +772,23 @@ class Dashboard {
     }
 
     updateDocumentTitle() {
-        let title = 'Dashboard';
-        
-        if (this.settings && this.settings.enableCustomTitle) {
-            if (this.settings.customTitle && this.settings.customTitle.trim()) {
-                title = this.settings.customTitle.trim();
-                
-                // Add page name if enabled
-                if (this.settings.showPageInTitle && this.pages && this.currentPageId) {
-                    const currentPage = this.pages.find(p => p.id === this.currentPageId);
-                    if (currentPage && currentPage.name) {
-                        title += ' | ' + currentPage.name;
-                    }
-                }
+        const currentPage = this.pages && this.currentPageId
+            ? this.pages.find(p => p.id === this.currentPageId)
+            : null;
+        const pageName = currentPage?.name || '';
+
+        if (this.settings?.enableCustomTitle) {
+            const base = (this.settings.customTitle || '').trim();
+            if (base) {
+                document.title = this.settings.showPageInTitle && pageName
+                    ? `${pageName} — ${base}`
+                    : base;
             } else {
-                // Custom title is empty, show only page name if enabled
-                if (this.settings.showPageInTitle && this.pages && this.currentPageId) {
-                    const currentPage = this.pages.find(p => p.id === this.currentPageId);
-                    if (currentPage && currentPage.name) {
-                        title = currentPage.name;
-                    }
-                }
+                document.title = pageName || 'nextDash';
             }
+        } else {
+            document.title = pageName ? `${pageName} — nextDash` : 'nextDash';
         }
-        
-        document.title = title;
     }
 
     renderPageNavigation() {
