@@ -1792,12 +1792,24 @@ class ConfigSettings {
             return String(a) === String(b);
         };
 
+        const formatVal = (v) => {
+            if (typeof v === 'boolean') return v ? 'on' : 'off';
+            return String(v);
+        };
+
         const updateVisibility = () => {
-            const isDefault = valuesEqual(getElValue(), defaultValue);
+            const current = getElValue();
+            const isDefault = valuesEqual(current, defaultValue);
             btn.classList.toggle('setting-reset-btn--visible', !isDefault);
+            if (!isDefault) {
+                btn.title = `Reset to default: ${formatVal(defaultValue)} (was ${formatVal(current)})`;
+            } else {
+                btn.title = 'Reset to default';
+            }
         };
 
         btn.addEventListener('click', () => {
+            const previousValue = getElValue();
             if (el.type === 'checkbox') {
                 el.checked = defaultValue;
             } else {
@@ -1807,6 +1819,13 @@ class ConfigSettings {
             el.dispatchEvent(new Event('change', { bubbles: true }));
             updateVisibility();
             if (onReset) onReset(defaultValue);
+            const ui = window.configManager && window.configManager.ui;
+            if (ui && typeof ui.showNotification === 'function') {
+                ui.showNotification(
+                    `Reset to ${formatVal(defaultValue)} (was ${formatVal(previousValue)})`,
+                    'success'
+                );
+            }
         });
 
         el.parentElement.style.position = 'relative';
