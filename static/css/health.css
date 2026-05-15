@@ -62,12 +62,14 @@
     text-decoration: none;
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-semibold);
-    transition: color 0.3s ease;
-    color: var(--text-secondary);
+    color: var(--accent-primary);
+    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .back-link:hover {
-    color: var(--text-primary);
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
 }
 
 .back-link-button {
