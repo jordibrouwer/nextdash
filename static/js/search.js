@@ -486,10 +486,19 @@ class SearchComponent {
 
         if (currentToken.startsWith('status:')) {
             const value = currentToken.slice('status:'.length);
-            const statusValues = ['online', 'offline', 'checked', 'unchecked', 'pinned', 'unpinned', 'broken', 'ok'];
-            return statusValues
-                .filter((status) => status.startsWith(value))
-                .map((status) => toCompletion(`status:${status}`, `Status: ${status}`));
+            const statusEntries = [
+                ['online',    'Reachable bookmarks'],
+                ['offline',   'Unreachable bookmarks'],
+                ['broken',    'Broken / error response'],
+                ['ok',        'Online and not broken'],
+                ['pinned',    'Pinned bookmarks'],
+                ['unpinned',  'Not pinned'],
+                ['checked',   'Status check enabled'],
+                ['unchecked', 'Status check disabled'],
+            ];
+            return statusEntries
+                .filter(([status]) => status.startsWith(value))
+                .map(([status, desc]) => toCompletion(`status:${status}`, `status:${status} — ${desc}`));
         }
 
         if (currentToken.startsWith('page:')) {
@@ -597,7 +606,12 @@ class SearchComponent {
             const filters = parsed.filters;
             const hasFilters = Object.values(filters).some((value) => Boolean(value));
             
-            if (searchQuery.length === 0 && !hasFilters) {
+            const filterAutocompleteMatches = this.getFilterAutocompleteMatches(query);
+            if (searchQuery.length === 0 && !hasFilters && filterAutocompleteMatches.length > 0) {
+                // Query is a bare filter token being typed (e.g. "status:", "status:on") —
+                // show its completions instead of the empty state.
+                this.searchMatches = filterAutocompleteMatches;
+            } else if (searchQuery.length === 0 && !hasFilters) {
                 this.searchMatches = this.getEmptyStateMatches();
             } else if (searchQuery.length === 0 && hasFilters) {
                 this.searchMatches = this.bookmarks
