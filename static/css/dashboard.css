@@ -861,7 +861,8 @@ a.bookmark-open:hover {
     align-items: center;
     justify-content: flex-start;
     gap: 0.35rem;
-    min-width: 0;
+    min-width: 1.15em;
+    min-height: 1.15em;
     cursor: grab;
 }
 
