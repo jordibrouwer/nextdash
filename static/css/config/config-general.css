@@ -176,6 +176,10 @@ body.config-is-dirty .config-controls-wrapper {
 }
 
 .top-quick-action {
+    display: none;
+}
+
+.top-quick-action.is-visible {
     display: inline-flex;
 }
 
