@@ -30,6 +30,7 @@ class ConfigUI {
             const targetContent = document.querySelector(`[data-tab-content="${targetTab}"]`);
             if (targetButton) {
                 targetButton.classList.add('active');
+                this._scrollTabIntoView(targetButton);
             }
             if (targetContent) {
                 targetContent.classList.add('active');
@@ -80,8 +81,36 @@ class ConfigUI {
             button.addEventListener('click', () => {
                 const targetTab = button.getAttribute('data-tab');
                 switchToTab(targetTab);
+                this._scrollTabIntoView(button);
             });
         });
+
+        // Fade mask: remove when scrolled to the end
+        const tabBar = document.querySelector('.config-controls-wrapper .tabs');
+        if (tabBar) {
+            const updateMask = () => {
+                const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 2;
+                tabBar.toggleAttribute('data-scroll-end', atEnd);
+            };
+            tabBar.addEventListener('scroll', updateMask, { passive: true });
+            // Run once after layout so the initial state is correct
+            requestAnimationFrame(updateMask);
+        }
+    }
+
+    _scrollTabIntoView(button) {
+        if (!button) return;
+        const tabBar = button.closest('.tabs');
+        if (!tabBar) return;
+        const btnLeft = button.offsetLeft;
+        const btnRight = btnLeft + button.offsetWidth;
+        const barLeft = tabBar.scrollLeft;
+        const barRight = barLeft + tabBar.clientWidth;
+        if (btnLeft < barLeft) {
+            tabBar.scrollTo({ left: btnLeft - 8, behavior: 'smooth' });
+        } else if (btnRight > barRight) {
+            tabBar.scrollTo({ left: btnRight - tabBar.clientWidth + 8, behavior: 'smooth' });
+        }
     }
 
     /**

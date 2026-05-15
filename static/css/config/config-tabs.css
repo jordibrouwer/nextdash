@@ -9,6 +9,34 @@
     flex-wrap: wrap;
 }
 
+/* Config tab bar: single scrollable row, never wraps */
+.config-controls-wrapper .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    scroll-behavior: smooth;
+    /* Fade-out on right edge to hint at overflow */
+    mask-image: linear-gradient(to right, black calc(100% - 3rem), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 3rem), transparent 100%);
+}
+
+.config-controls-wrapper .tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* Reveal full right edge once scrolled to the end (JS sets data-scroll-end) */
+.config-controls-wrapper .tabs[data-scroll-end] {
+    mask-image: none;
+    -webkit-mask-image: none;
+}
+
+/* Prevent responsive.css from re-wrapping or stretching config tabs */
+.config-controls-wrapper .tab-button {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
 .tab-button {
     padding: 0.75rem 1.5rem;
     border: none;
