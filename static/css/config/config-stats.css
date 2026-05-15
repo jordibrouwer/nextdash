@@ -1,14 +1,31 @@
+.stats-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
 .stats-tab .stats-intro {
-    margin: 0 0 1rem;
+    margin: 0;
     opacity: 0.85;
+    font-size: var(--font-size-controls);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
 }
 
 .stats-block {
-    margin-bottom: 2rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    padding: 0.9rem 1rem;
 }
 
 .stats-block:last-child {
     margin-bottom: 0;
+}
+
+.stats-block .section-title {
+    margin: 0 0 0.55rem;
 }
 
 .stats-dl {
