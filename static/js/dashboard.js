@@ -4489,8 +4489,42 @@ class Dashboard {
                     }
                 }
             }
+            this.updateHealthBadge();
         } else if (healthLink) {
             healthLink.remove();
+        }
+    }
+
+    async updateHealthBadge() {
+        const anchor = document.querySelector('.health-link a');
+        if (!anchor) return;
+
+        try {
+            const response = await fetch('/api/bookmark-health');
+            if (!response.ok) return;
+            const data = await response.json();
+            const summary = data?.summary || {};
+            const broken = Number(summary.brokenCount || 0);
+            const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
+
+            const existing = anchor.querySelector('.health-badge');
+            if (existing) existing.remove();
+
+            if (broken > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'health-badge';
+                badge.textContent = broken > 99 ? '99+' : String(broken);
+                badge.title = `${broken} broken bookmark${broken !== 1 ? 's' : ''}`;
+                anchor.appendChild(badge);
+            } else if (warn > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'health-badge health-badge-warn';
+                badge.textContent = warn > 99 ? '99+' : String(warn);
+                badge.title = `${warn} bookmark${warn !== 1 ? 's' : ''} with warnings`;
+                anchor.appendChild(badge);
+            }
+        } catch (e) {
+            // Silently skip — badge is non-critical
         }
     }
 

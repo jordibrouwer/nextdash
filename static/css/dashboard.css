@@ -237,6 +237,28 @@ body {
     text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
 }
 
+.health-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1em;
+    height: 1.1em;
+    padding: 0 0.3em;
+    margin-left: 0.35em;
+    font-size: 0.72em;
+    font-weight: var(--font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    vertical-align: middle;
+    color: #fff;
+    background: var(--accent-error);
+}
+
+.health-badge-warn {
+    background: var(--accent-warning);
+    color: #000;
+}
+
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;
