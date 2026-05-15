@@ -179,15 +179,6 @@
                                 <option value="bold">Bold</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="language-select" data-i18n="config.languageLabel">Language:</label>
-                            <select id="language-select">
-                                <option value="en">English</option>
-                                <option value="nl">Nederlands</option>
-                                <option value="de">Deutsch</option>
-                                <option value="fr">Français</option>
-                            </select>
-                        </div>
                     </section>
 
                     <!-- 2. Layout: columns, preset, density, packed columns, title -->
@@ -239,26 +230,11 @@
                         </div>
                     </section>
 
-                    <!-- 3. Bookmarks: display & behavior of individual bookmarks -->
+                    <!-- 3. Bookmarks — Display -->
                     <section class="general-card" data-general-panel="bookmarks-display">
-                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks</h3>
-                        <p class="general-card-intro" data-i18n="config.generalBookmarksIntro">Display and behavior of individual bookmarks.</p>
-                        <div class="form-group">
-                            <label for="sort-method-select">Bookmark sorting:</label>
-                            <select id="sort-method-select">
-                                <option value="order">Manual order</option>
-                                <option value="az">A-Z</option>
-                                <option value="recent">Recently used</option>
-                                <option value="custom">Pinned first</option>
-                            </select>
-                        </div>
+                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks — Display</h3>
+                        <p class="general-card-intro">Icons, shortcuts, badges, and link preview appearance.</p>
                         <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="new-tab-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.openLinksInNewTab">Open links in new tab</span>
-                                </label>
-                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-icons-checkbox">
@@ -328,6 +304,29 @@
                                     <option value="250" data-i18n="config.linkPreviewDelaySlow">Calm (250ms)</option>
                                 </select>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- 4. Bookmarks — Behavior (incl. Navigation) -->
+                    <section class="general-card" data-general-panel="bookmarks-behavior">
+                        <h3 class="section-title">Bookmarks — Behavior</h3>
+                        <p class="general-card-intro">Sorting, tab behavior, categories, shortcuts, and page navigation.</p>
+                        <div class="form-group">
+                            <label for="sort-method-select">Bookmark sorting:</label>
+                            <select id="sort-method-select">
+                                <option value="order">Manual order</option>
+                                <option value="az">A-Z</option>
+                                <option value="recent">Recently used</option>
+                                <option value="custom">Pinned first</option>
+                            </select>
+                        </div>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="new-tab-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.openLinksInNewTab">Open links in new tab</span>
+                                </label>
+                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="always-collapse-categories-checkbox">
@@ -342,14 +341,6 @@
                                     <button type="button" id="global-shortcuts-info-btn" class="info-button" aria-label="Information about global shortcuts">ℹ</button>
                                 </label>
                             </div>
-                        </div>
-                    </section>
-
-                    <!-- 4. Navigation: page tabs -->
-                    <section class="general-card" data-general-panel="dashboard">
-                        <h3 class="section-title" data-i18n="config.generalNavigationTitle">Navigation</h3>
-                        <p class="general-card-intro" data-i18n="config.generalNavigationIntro">Page tabs and multi-page navigation.</p>
-                        <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-tabs-checkbox">
@@ -357,7 +348,8 @@
                                     <button type="button" id="show-page-tabs-info-btn" class="info-button" aria-label="Information about page tabs">ℹ</button>
                                 </label>
                             </div>
-                            <div class="checkbox-tree-item">
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-names-in-tabs-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPageNamesInTabs">Show page names in tabs</span>
@@ -367,9 +359,19 @@
                         </div>
                     </section>
 
-                    <section class="general-card" data-general-panel="date-weather">
-                        <h3 class="section-title" data-i18n="config.dateWeatherSection">Date & Weather</h3>
-                        <p class="general-card-intro" data-i18n="config.generalDateWeatherIntro">Datum/tijd weergave en weerbron op één plek.</p>
+                    <!-- 5. Localization: language, date/time, weather -->
+                    <section class="general-card" data-general-panel="localization">
+                        <h3 class="section-title">Localization</h3>
+                        <p class="general-card-intro">Language, date and time display, and weather source.</p>
+                        <div class="form-group">
+                            <label for="language-select" data-i18n="config.languageLabel">Language:</label>
+                            <select id="language-select">
+                                <option value="en">English</option>
+                                <option value="nl">Nederlands</option>
+                                <option value="de">Deutsch</option>
+                                <option value="fr">Français</option>
+                            </select>
+                        </div>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
@@ -377,13 +379,8 @@
                                     <span class="checkbox-text" data-i18n="config.showDate">Show date</span>
                                 </label>
                             </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-weather-with-date-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showWeatherWithDate">Show weather next to date</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
                                 <label for="date-format-select" data-i18n="config.dateFormatLabel">Date format:</label>
                                 <select id="date-format-select">
                                     <option value="short-slash" data-i18n="config.dateFormatShortSlashExample">28/05/2026</option>
@@ -408,8 +405,14 @@
                                     <option value="12h" data-i18n="config.timeFormat12h">12-hour AM/PM (01:35 PM)</option>
                                 </select>
                             </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-weather-with-date-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showWeatherWithDate">Show weather next to date</span>
+                                </label>
+                            </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
+                                <span class="tree-symbol">├──</span>
                                 <label for="weather-source-select" data-i18n="config.weatherSourceLabel">Location source:</label>
                                 <select id="weather-source-select">
                                     <option value="manual" data-i18n="config.weatherSourceManual">Manual location</option>
@@ -417,12 +420,12 @@
                                 </select>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
+                                <span class="tree-symbol">├──</span>
                                 <label for="weather-location-input" data-i18n="config.weatherLocationLabel">Weather location:</label>
                                 <input type="text" id="weather-location-input" data-i18n-placeholder="config.weatherLocationPlaceholder" placeholder="City name">
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
+                                <span class="tree-symbol">├──</span>
                                 <label for="weather-unit-select" data-i18n="config.weatherUnitLabel">Temperature unit:</label>
                                 <select id="weather-unit-select">
                                     <option value="celsius">Celsius (C)</option>
@@ -441,197 +444,200 @@
                         </div>
                     </section>
 
+                    <!-- 6. Smart Collections -->
                     <section class="general-card" data-general-panel="smart-collections">
                         <h3 class="section-title" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</h3>
-                        <p class="general-card-intro" data-i18n="config.generalSmartCollectionsIntro">Automatische verzamelingen op basis van gebruik en recency.</p>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
+                        <p class="general-card-intro" data-i18n="config.generalSmartCollectionsIntro">Automatic bookmark collections based on usage and recency.</p>
+
+                        <details class="smart-collection-group">
+                            <summary class="smart-collection-summary">
+                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
                                     <input type="checkbox" id="show-smart-today-collection-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showSmartTodayCollection">Show Smart: Today (Smart Start)</span>
-                                    <span class="smart-count-badge" id="smart-today-count-badge">0</span>
+                                    <span class="checkbox-text" data-i18n="config.showSmartTodayCollection">Smart: Today (Smart Start)</span>
                                 </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-today-pages-select" data-i18n="config.smartCollectionPagesLabel">Pages (multi-select, empty = all):</label>
-                                <select id="smart-today-pages-select" multiple size="4">
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-today-limit-select" data-i18n="config.smartCollectionVisibleItemsLabel">Visible items:</label>
-                                <select id="smart-today-limit-select">
-                                    <option value="5">5</option>
-                                    <option value="8">8</option>
-                                    <option value="10">10</option>
-                                    <option value="15">15</option>
-                                    <option value="30">30</option>
-                                    <option value="25">25</option>
-                                    <option value="0" title="May impact performance on very large bookmark sets">Unlimited</option>
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-today-work-keywords-input" data-i18n="config.smartTodayWorkKeywordsLabel">Work-hour keywords (comma-separated):</label>
-                                <input type="text" id="smart-today-work-keywords-input" data-i18n-placeholder="config.smartTodayWorkKeywordsPlaceholder" placeholder="calendar,mail,github,slack">
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-today-evening-keywords-input" data-i18n="config.smartTodayEveningKeywordsLabel">Evening keywords (comma-separated):</label>
-                                <input type="text" id="smart-today-evening-keywords-input" data-i18n-placeholder="config.smartTodayEveningKeywordsPlaceholder" placeholder="youtube,spotify,netflix">
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-today-weekend-keywords-input" data-i18n="config.smartTodayWeekendKeywordsLabel">Weekend keywords (comma-separated):</label>
-                                <input type="text" id="smart-today-weekend-keywords-input" data-i18n-placeholder="config.smartTodayWeekendKeywordsPlaceholder" placeholder="news,weather,maps">
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-smart-recent-collection-checkbox">
-                                    <span class="checkbox-text">Show Smart: Recently opened</span>
-                                    <span class="smart-count-badge" id="smart-recent-count-badge">0</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-recent-pages-select">Pages (multi-select, empty = all):</label>
-                                <select id="smart-recent-pages-select" multiple size="4">
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-recent-limit-select">Visible items:</label>
-                                <select id="smart-recent-limit-select">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="0" title="May impact performance on very large bookmark sets">Unlimited</option>
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-smart-stale-collection-checkbox">
-                                    <span class="checkbox-text">Show Smart: Stale bookmarks</span>
-                                    <span class="smart-count-badge" id="smart-stale-count-badge">0</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-stale-pages-select">Pages (multi-select, empty = all):</label>
-                                <select id="smart-stale-pages-select" multiple size="4">
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-stale-limit-select">Visible items:</label>
-                                <select id="smart-stale-limit-select">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="0" title="May impact performance on very large bookmark sets">Unlimited</option>
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-smart-most-used-collection-checkbox">
-                                    <span class="checkbox-text">Show Smart: Most used</span>
-                                    <span class="smart-count-badge" id="smart-most-used-count-badge">0</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-most-used-pages-select">Pages (multi-select, empty = all):</label>
-                                <select id="smart-most-used-pages-select" multiple size="4">
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="smart-most-used-limit-select">Visible items:</label>
-                                <select id="smart-most-used-limit-select">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="0" title="May impact performance on very large bookmark sets">Unlimited</option>
-                                </select>
-                            </div>
-                        </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-tag-collections-checkbox">
-                                    <span class="checkbox-text">Show Smart: Tag collections (one per tag)</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child" id="tag-collections-min-count-row" style="display:none">
-                                <span class="tree-symbol">└──</span>
-                                <label for="tag-collections-min-count">Minimum bookmarks per tag:</label>
-                                <div class="number-input-wrapper">
-                                    <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
-                                    <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
-                                    <button type="button" class="number-input-up" data-input="tag-collections-min-count">+</button>
+                                <span class="smart-count-badge" id="smart-today-count-badge">0</span>
+                            </summary>
+                            <div class="smart-collection-body">
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-today-pages-select" data-i18n="config.smartCollectionPagesLabel">Pages:</label>
+                                    <select id="smart-today-pages-select" multiple size="3"></select>
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-today-limit-select" data-i18n="config.smartCollectionVisibleItemsLabel">Visible items:</label>
+                                    <select id="smart-today-limit-select">
+                                        <option value="5">5</option>
+                                        <option value="8">8</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                        <option value="25">25</option>
+                                        <option value="30">30</option>
+                                        <option value="0">Unlimited</option>
+                                    </select>
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-today-work-keywords-input" data-i18n="config.smartTodayWorkKeywordsLabel">Work keywords:</label>
+                                    <input type="text" id="smart-today-work-keywords-input" data-i18n-placeholder="config.smartTodayWorkKeywordsPlaceholder" placeholder="calendar,mail,github,slack">
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-today-evening-keywords-input" data-i18n="config.smartTodayEveningKeywordsLabel">Evening keywords:</label>
+                                    <input type="text" id="smart-today-evening-keywords-input" data-i18n-placeholder="config.smartTodayEveningKeywordsPlaceholder" placeholder="youtube,spotify,netflix">
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-today-weekend-keywords-input" data-i18n="config.smartTodayWeekendKeywordsLabel">Weekend keywords:</label>
+                                    <input type="text" id="smart-today-weekend-keywords-input" data-i18n-placeholder="config.smartTodayWeekendKeywordsPlaceholder" placeholder="news,weather,maps">
                                 </div>
                             </div>
+                        </details>
+
+                        <details class="smart-collection-group">
+                            <summary class="smart-collection-summary">
+                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                    <input type="checkbox" id="show-smart-recent-collection-checkbox">
+                                    <span class="checkbox-text">Smart: Recently opened</span>
+                                </label>
+                                <span class="smart-count-badge" id="smart-recent-count-badge">0</span>
+                            </summary>
+                            <div class="smart-collection-body">
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-recent-pages-select">Pages:</label>
+                                    <select id="smart-recent-pages-select" multiple size="3"></select>
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-recent-limit-select">Visible items:</label>
+                                    <select id="smart-recent-limit-select">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="0">Unlimited</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="smart-collection-group">
+                            <summary class="smart-collection-summary">
+                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                    <input type="checkbox" id="show-smart-stale-collection-checkbox">
+                                    <span class="checkbox-text">Smart: Stale bookmarks</span>
+                                </label>
+                                <span class="smart-count-badge" id="smart-stale-count-badge">0</span>
+                            </summary>
+                            <div class="smart-collection-body">
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-stale-pages-select">Pages:</label>
+                                    <select id="smart-stale-pages-select" multiple size="3"></select>
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-stale-limit-select">Visible items:</label>
+                                    <select id="smart-stale-limit-select">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="0">Unlimited</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="smart-collection-group">
+                            <summary class="smart-collection-summary">
+                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                    <input type="checkbox" id="show-smart-most-used-collection-checkbox">
+                                    <span class="checkbox-text">Smart: Most used</span>
+                                </label>
+                                <span class="smart-count-badge" id="smart-most-used-count-badge">0</span>
+                            </summary>
+                            <div class="smart-collection-body">
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-most-used-pages-select">Pages:</label>
+                                    <select id="smart-most-used-pages-select" multiple size="3"></select>
+                                </div>
+                                <div class="checkbox-tree-item">
+                                    <label for="smart-most-used-limit-select">Visible items:</label>
+                                    <select id="smart-most-used-limit-select">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="0">Unlimited</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="smart-collection-group">
+                            <summary class="smart-collection-summary">
+                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                    <input type="checkbox" id="show-tag-collections-checkbox">
+                                    <span class="checkbox-text">Smart: Tag collections (one per tag)</span>
+                                </label>
+                            </summary>
+                            <div class="smart-collection-body">
+                                <div class="checkbox-tree-item">
+                                    <label for="tag-collections-min-count">Minimum bookmarks per tag:</label>
+                                    <div class="number-input-wrapper">
+                                        <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
+                                        <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
+                                        <button type="button" class="number-input-up" data-input="tag-collections-min-count">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                     </section>
 
-                    <!-- 5. Header & Buttons: all footer/header button visibility -->
+                    <!-- 7. Header & Buttons -->
                     <section class="general-card" data-general-panel="search-buttons">
                         <h3 class="section-title" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</h3>
-                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer and header.</p>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-search-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showSearchButton">Show search button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-search-button-text-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showButtonText">Show text next to the button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-finders-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showFindersButton">Show finders button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-finders-button-text-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showButtonText">Show text next to the button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-commands-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showCommandsButton">Show commands button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-commands-button-text-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showButtonText">Show text next to the button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-cheatsheet-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showCheatSheetButton">Show cheatsheet button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-recent-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showRecentButton">Show recent button</span>
-                                </label>
-                            </div>
+                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility and label display in the dashboard footer.</p>
+                        <table class="buttons-visibility-table">
+                            <thead>
+                                <tr>
+                                    <th>Button</th>
+                                    <th>Show</th>
+                                    <th>Label</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Search</td>
+                                    <td><input type="checkbox" id="show-search-button-checkbox"></td>
+                                    <td><input type="checkbox" id="show-search-button-text-checkbox"></td>
+                                </tr>
+                                <tr>
+                                    <td>Finders</td>
+                                    <td><input type="checkbox" id="show-finders-button-checkbox"></td>
+                                    <td><input type="checkbox" id="show-finders-button-text-checkbox"></td>
+                                </tr>
+                                <tr>
+                                    <td>Commands</td>
+                                    <td><input type="checkbox" id="show-commands-button-checkbox"></td>
+                                    <td><input type="checkbox" id="show-commands-button-text-checkbox"></td>
+                                </tr>
+                                <tr>
+                                    <td>Cheatsheet</td>
+                                    <td><input type="checkbox" id="show-cheatsheet-button-checkbox"></td>
+                                    <td>—</td>
+                                </tr>
+                                <tr>
+                                    <td>Recent</td>
+                                    <td><input type="checkbox" id="show-recent-button-checkbox"></td>
+                                    <td>—</td>
+                                </tr>
+                                <tr>
+                                    <td>Config</td>
+                                    <td><input type="checkbox" id="show-config-button-checkbox"></td>
+                                    <td>—</td>
+                                </tr>
+                                <tr>
+                                    <td>Health link <button type="button" id="show-health-dashboard-info-btn" class="info-button" aria-label="Information about health beta link">ℹ</button></td>
+                                    <td><input type="checkbox" id="show-health-dashboard-checkbox"></td>
+                                    <td>—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="checkbox-tree" style="margin-top:0.6rem">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-tips-checkbox">
@@ -639,23 +645,10 @@
                                     <button type="button" id="show-tips-info-btn" class="info-button" aria-label="Information about rotating tips">ℹ</button>
                                 </label>
                             </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-config-button-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showConfigButton">Show config button</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-health-dashboard-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showHealthDashboard">Show health beta link</span>
-                                    <button type="button" id="show-health-dashboard-info-btn" class="info-button" aria-label="Information about health beta link">ℹ</button>
-                                </label>
-                            </div>
                         </div>
                     </section>
 
-                    <!-- 8. Status & Diagnostics: network status + sync notifications -->
+                    <!-- 8. Diagnostics & Status -->
                     <section class="general-card" data-general-panel="status">
                         <h3 class="section-title" data-i18n="config.generalDiagnosticsTitle">Diagnostics & Status</h3>
                         <p class="general-card-intro" data-i18n="config.generalDiagnosticsIntro">Bookmark network status, health indicators, and sync notifications.</p>
@@ -706,7 +699,7 @@
                         </div>
                     </section>
 
-                    <!-- 9. Branding & Identity: favicon, font, custom title -->
+                    <!-- 9. Branding & Identity -->
                     <section class="general-card" data-general-panel="branding">
                         <h3 class="section-title" data-i18n="config.generalBrandingTitle">Branding & Identity</h3>
                         <p class="general-card-intro" data-i18n="config.generalBrandingIntro">Custom favicon, font, and browser title for this installation.</p>
@@ -742,7 +735,7 @@
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
+                                <span class="tree-symbol">├──</span>
                                 <label for="custom-title-input" data-i18n="config.customTitleLabel">Custom title:</label>
                                 <input type="text" id="custom-title-input" maxlength="100" aria-label="Custom dashboard title (max 100 characters)" data-i18n-placeholder="config.customTitlePlaceholder" placeholder="Enter custom title">
                             </div>
@@ -752,49 +745,6 @@
                                     <input type="checkbox" id="show-page-in-title-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPageInTitle">Show page name in title</span>
                                 </label>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="general-card" data-general-panel="backup-restore">
-                        <h3 class="section-title">Backup &amp; restore</h3>
-                        <p class="general-card-intro">Export or import your pages, bookmarks, categories, settings, and themes.</p>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.backupDescription">Export your data</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
-                                        <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.importDescription">Import your data</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
-                                        <input type="file" id="import-file" accept=".zip" style="display: none;">
-                                        <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
-                                    <div class="config-advanced-action-actions">
-                                        <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
-                                        <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </section>
@@ -886,19 +836,63 @@
                         </div>
                     </section>
 
-                    <section class="general-card reset-card" data-general-panel="reset">
-                        <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
-                        <p class="config-hint reset-danger-hint" data-i18n="config.resetSectionHint">
-                            Delete all pages, categories, bookmarks, finders and settings, then start from a clean dashboard.
-                        </p>
-                        <button id="reset-btn" type="button" class="btn btn-danger reset-danger-btn" data-i18n="config.resetAllDataButton">
-                            Reset all data and start over
-                        </button>
-                        <button id="reset-context-tips-btn" type="button" class="btn btn-secondary reset-context-tips-btn" data-i18n="config.resetContextTipsButton">
-                            Reset context tips
-                        </button>
-                    </section>
-                </div>
+                </div><!-- end .general-layout -->
+
+                <!-- Backup & Restore — full width -->
+                <section class="general-card general-card-wide" data-general-panel="backup-restore">
+                    <h3 class="section-title">Backup &amp; Restore</h3>
+                    <p class="general-card-intro">Export or import your pages, bookmarks, categories, settings, and themes.</p>
+                    <div class="general-actions-row">
+                        <div class="general-action-item">
+                            <p class="config-advanced-action-text" data-i18n="config.backupDescription">Export your data</p>
+                            <div class="general-action-buttons">
+                                <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
+                                <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
+                            </div>
+                        </div>
+                        <div class="general-action-item">
+                            <p class="config-advanced-action-text" data-i18n="config.importDescription">Import your data</p>
+                            <div class="general-action-buttons">
+                                <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
+                                <input type="file" id="import-file" accept=".zip" style="display: none;">
+                                <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
+                            </div>
+                        </div>
+                        <div class="general-action-item">
+                            <p class="config-advanced-action-text" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
+                            <div class="general-action-buttons">
+                                <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
+                                <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
+                            </div>
+                        </div>
+                        <div class="general-action-item">
+                            <p class="config-advanced-action-text" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
+                            <div class="general-action-buttons">
+                                <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reset — full width, danger zone -->
+                <section class="general-card general-card-wide reset-card" data-general-panel="reset">
+                    <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
+                    <p class="config-hint reset-danger-hint" data-i18n="config.resetSectionHint">
+                        Delete all pages, categories, bookmarks, finders and settings, then start from a clean dashboard.
+                    </p>
+                    <div class="general-actions-row">
+                        <div class="general-action-item">
+                            <button id="reset-btn" type="button" class="btn btn-danger reset-danger-btn" data-i18n="config.resetAllDataButton">
+                                Reset all data and start over
+                            </button>
+                        </div>
+                        <div class="general-action-item">
+                            <button id="reset-context-tips-btn" type="button" class="btn btn-secondary" data-i18n="config.resetContextTipsButton">
+                                Reset context tips
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
             </div>
 

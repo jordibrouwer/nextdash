@@ -1287,57 +1287,67 @@ class ConfigManager {
 
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
+        // Panels open by default; everything else starts collapsed.
+        const DEFAULT_OPEN = new Set(['basics', 'layout']);
 
-        let savedExpanded = null;
+        let saved = null;
         try {
             const raw = localStorage.getItem(storageKey);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                    savedExpanded = parsed;
+                    saved = parsed;
                 }
             }
         } catch {
-            savedExpanded = null;
+            saved = null;
         }
 
         const persistState = () => {
-            const cards = document.querySelectorAll('.general-card[data-general-panel]');
             const state = {};
-            cards.forEach((card) => {
+            document.querySelectorAll('.general-card[data-general-panel]').forEach((card) => {
                 const id = card.getAttribute('data-general-panel');
-                if (!id) return;
-                state[id] = !card.classList.contains('is-collapsed');
+                if (id) state[id] = !card.classList.contains('is-collapsed');
+            });
+            // Also persist smart-collection <details> open state under key 'sc:<id>'
+            document.querySelectorAll('.smart-collection-group[data-sc-id]').forEach((el) => {
+                state[`sc:${el.dataset.scId}`] = el.open;
             });
             try {
                 localStorage.setItem(storageKey, JSON.stringify(state));
-            } catch {
-                // ignore quota / private mode
-            }
+            } catch { /* ignore quota / private mode */ }
         };
+        // Expose so saveChanges can call it too
+        this._persistGeneralPanelState = persistState;
 
-        const cards = document.querySelectorAll('.general-card');
-        cards.forEach((card) => {
+        // Wire general-card collapse
+        document.querySelectorAll('.general-card').forEach((card) => {
             const title = card.querySelector('.section-title');
             if (!title) return;
             card.classList.add('is-collapsible');
             const panelId = card.getAttribute('data-general-panel');
             if (panelId) {
-                let expanded;
-                if (savedExpanded && Object.prototype.hasOwnProperty.call(savedExpanded, panelId)) {
-                    expanded = Boolean(savedExpanded[panelId]);
-                } else {
-                    // Fresh install / no saved state: start with all General cards expanded.
-                    expanded = true;
-                }
+                const expanded = saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                    ? Boolean(saved[panelId])
+                    : DEFAULT_OPEN.has(panelId);
                 card.classList.toggle('is-collapsed', !expanded);
             }
             title.addEventListener('click', () => {
                 card.classList.toggle('is-collapsed');
-                if (card.getAttribute('data-general-panel')) {
-                    persistState();
-                }
+                if (card.getAttribute('data-general-panel')) persistState();
             });
+        });
+
+        // Wire smart-collection <details> persistence
+        document.querySelectorAll('.smart-collection-group').forEach((el) => {
+            const id = el.querySelector('input[type="checkbox"]')?.id || '';
+            if (!id) return;
+            el.dataset.scId = id;
+            const savedOpen = saved && Object.prototype.hasOwnProperty.call(saved, `sc:${id}`)
+                ? Boolean(saved[`sc:${id}`])
+                : false; // all collapsed by default
+            el.open = savedOpen;
+            el.addEventListener('toggle', () => persistState());
         });
     }
 
@@ -2556,6 +2566,9 @@ class ConfigManager {
             this.undoSnapshot = null;
             this.savedSnapshot = this.captureUndoSnapshot();
             this.setDirtyState(false);
+            if (typeof this._persistGeneralPanelState === 'function') {
+                this._persistGeneralPanelState();
+            }
             this.refreshSmartCollectionCounters();
             try {
                 const allBookmarksResponse = await fetch('/api/bookmarks?all=true');

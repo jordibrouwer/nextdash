@@ -76,6 +76,151 @@
     margin-left: 0;
 }
 
+/* Full-width card outside the grid */
+.general-card-wide {
+    margin-top: 0.6rem;
+}
+
+/* Horizontal action row for Backup/Restore and Reset */
+.general-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    align-items: flex-start;
+}
+
+.general-action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.general-action-item .config-advanced-action-text {
+    margin: 0;
+}
+
+.general-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+/* Smart Collections collapsible groups */
+.smart-collection-group {
+    border: 1px solid var(--border-primary);
+    margin-bottom: 0.35rem;
+}
+
+.smart-collection-group[open] {
+    border-color: var(--text-tertiary);
+}
+
+.smart-collection-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.38rem 0.55rem;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.smart-collection-summary::-webkit-details-marker { display: none; }
+
+.smart-collection-summary::before {
+    content: '▸';
+    font-size: 0.7em;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.smart-collection-group[open] > .smart-collection-summary::before {
+    transform: rotate(90deg);
+}
+
+.smart-collection-toggle {
+    flex: 1;
+    cursor: default;
+}
+
+.smart-collection-body {
+    padding: 0.35rem 0.75rem 0.5rem;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.smart-collection-body .checkbox-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.18rem 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.smart-collection-body .checkbox-tree-item label {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.smart-collection-body .checkbox-tree-item input[type="text"],
+.smart-collection-body .checkbox-tree-item select {
+    flex: 1;
+    min-width: 80px;
+    font-size: var(--font-size-controls);
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+/* Button visibility table */
+.buttons-visibility-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-controls);
+}
+
+.buttons-visibility-table th {
+    text-align: left;
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal);
+    padding: 0.2rem 0.5rem 0.35rem 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.buttons-visibility-table td {
+    padding: 0.28rem 0.5rem 0.28rem 0;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    opacity: 0.9;
+}
+
+.buttons-visibility-table tr:last-child td {
+    border-bottom: none;
+}
+
+.buttons-visibility-table td:first-child {
+    width: 100%;
+}
+
+.buttons-visibility-table td:not(:first-child) {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.buttons-visibility-table th:not(:first-child) {
+    text-align: center;
+}
+
 .reset-card {
     border-color: var(--accent-error);
     box-shadow: inset 0 0 0 1px rgba(255, 0, 0, 0.08);
