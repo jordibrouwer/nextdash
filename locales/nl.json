@@ -192,6 +192,7 @@
         "bookmarksTab": "bladwijzers",
         "findersTab": "zoekers",
         "keyboardTab": "toetsen",
+        "backupsTab": "back-ups",
         "statsTab": "statistieken",
         "keyboardIntro": "Pas sneltoetsenbindingen aan. Klik op \"Rebind\" naast elke sneltoets en druk op de gewenste toets. Druk op Escape om te annuleren.",
         "keyboardEdit": "Opnieuw binden",

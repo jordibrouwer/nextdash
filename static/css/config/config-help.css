@@ -83,6 +83,7 @@ code {
 .help-signature {
     margin-top: 0.5rem;
     color: var(--text-secondary);
+    text-align: center;
 }
 
 @media (max-width: 1024px) {

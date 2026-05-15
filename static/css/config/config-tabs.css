@@ -9,6 +9,11 @@
     flex-wrap: wrap;
 }
 
+.tabs .tab-button {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
 /* Config tab bar: single scrollable row, never wraps */
 .config-controls-wrapper .tabs {
     flex-wrap: nowrap;
@@ -16,67 +21,44 @@
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
     scroll-behavior: smooth;
-    /* Fade-out on right edge to hint at overflow */
-    mask-image: linear-gradient(to right, black calc(100% - 3rem), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 3rem), transparent 100%);
 }
 
 .config-controls-wrapper .tabs::-webkit-scrollbar {
     display: none;
 }
 
-/* Reveal full right edge once scrolled to the end (JS sets data-scroll-end) */
-.config-controls-wrapper .tabs[data-scroll-end] {
-    mask-image: none;
-    -webkit-mask-image: none;
-}
-
-/* Prevent responsive.css from re-wrapping or stretching config tabs */
-.config-controls-wrapper .tab-button {
-    flex: 0 0 auto;
-    min-width: 0;
-}
-
 .tab-button {
-    padding: 0.75rem 1.5rem;
+    padding: 0.4rem 0.6rem;
     border: none;
+    border-bottom: 2px solid transparent;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     position: relative;
     text-transform: lowercase;
     letter-spacing: 0.05em;
+    text-align: center;
 }
 
-.tab-button::before {
-    content: '[';
-    margin-right: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
+.tab-button::before,
 .tab-button::after {
-    content: ']';
-    margin-left: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    content: none;
 }
 
 .tab-button:hover {
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
 }
 
 .tab-button.active {
+    background: var(--background-secondary);
     color: var(--text-primary);
-}
-
-.tab-button.active::before,
-.tab-button.active::after {
-    opacity: 1;
+    border-bottom-color: var(--accent-success);
+    font-weight: var(--font-weight-bold);
 }
 
 /* Tab Content */

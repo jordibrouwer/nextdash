@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css">
     <link rel="stylesheet" href="/static/css/config/config-tags.css">
     <link rel="stylesheet" href="/static/css/config/config-collections.css">
+    <link rel="stylesheet" href="/static/css/config/config-backups.css">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
     <link rel="stylesheet" href="/static/css/status.css">
@@ -71,6 +72,7 @@
                     <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
                     <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
                     <button class="tab-button" data-tab="collections">collections</button>
+                    <button class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
                     <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
                     <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
                 </div>
@@ -838,63 +840,26 @@
                         </div>
                     </section>
 
+                    <!-- Reset -->
+                    <section class="general-card general-card-danger" data-general-panel="reset">
+                        <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
+                        <p class="general-card-intro" data-i18n="config.resetSectionHint">Delete all pages, categories, bookmarks, finders and settings, then start from a clean dashboard.</p>
+                        <div class="backups-actions-row">
+                            <div class="backups-action-item">
+                                <div class="backups-action-buttons">
+                                    <button id="reset-btn" type="button" class="btn btn-danger" data-i18n="config.resetAllDataButton">Reset all data and start over</button>
+                                </div>
+                            </div>
+                            <div class="backups-action-item">
+                                <div class="backups-action-buttons">
+                                    <button id="reset-context-tips-btn" type="button" class="btn btn-secondary" data-i18n="config.resetContextTipsButton">Reset context tips</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                 </div><!-- end .general-layout -->
 
-                <!-- Backup & Restore — full width -->
-                <section class="general-card general-card-wide" data-general-panel="backup-restore">
-                    <h3 class="section-title">Backup &amp; Restore</h3>
-                    <p class="general-card-intro">Export or import your pages, bookmarks, categories, settings, and themes.</p>
-                    <div class="general-actions-row">
-                        <div class="general-action-item">
-                            <p class="config-advanced-action-text" data-i18n="config.backupDescription">Export your data</p>
-                            <div class="general-action-buttons">
-                                <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
-                                <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
-                            </div>
-                        </div>
-                        <div class="general-action-item">
-                            <p class="config-advanced-action-text" data-i18n="config.importDescription">Import your data</p>
-                            <div class="general-action-buttons">
-                                <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
-                                <input type="file" id="import-file" accept=".zip" style="display: none;">
-                                <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
-                            </div>
-                        </div>
-                        <div class="general-action-item">
-                            <p class="config-advanced-action-text" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
-                            <div class="general-action-buttons">
-                                <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
-                                <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
-                            </div>
-                        </div>
-                        <div class="general-action-item">
-                            <p class="config-advanced-action-text" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
-                            <div class="general-action-buttons">
-                                <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Reset — full width, danger zone -->
-                <section class="general-card general-card-wide reset-card" data-general-panel="reset">
-                    <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
-                    <p class="config-hint reset-danger-hint" data-i18n="config.resetSectionHint">
-                        Delete all pages, categories, bookmarks, finders and settings, then start from a clean dashboard.
-                    </p>
-                    <div class="general-actions-row">
-                        <div class="general-action-item">
-                            <button id="reset-btn" type="button" class="btn btn-danger reset-danger-btn" data-i18n="config.resetAllDataButton">
-                                Reset all data and start over
-                            </button>
-                        </div>
-                        <div class="general-action-item">
-                            <button id="reset-context-tips-btn" type="button" class="btn btn-secondary" data-i18n="config.resetContextTipsButton">
-                                Reset context tips
-                            </button>
-                        </div>
-                    </div>
-                </section>
             </div>
             </div>
 
@@ -1226,6 +1191,57 @@
                         <button type="button" id="col-edit-cancel" class="btn btn-secondary btn-small">Cancel</button>
                     </div>
                 </div>
+            </div>
+            </div>
+
+            <div class="tab-content" data-tab-content="backups">
+            <div class="backups-tab">
+                <div class="backups-tab-intro">
+                    <p>Back up and restore your entire dashboard — pages, categories, bookmarks, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
+                </div>
+
+                <div class="backups-section">
+                    <h3 class="section-title">ZIP Backup &amp; Restore</h3>
+                    <div class="backups-actions-row">
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
+                            <div class="backups-action-buttons">
+                                <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
+                                <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
+                            </div>
+                        </div>
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.importDescription">Import your data</p>
+                            <div class="backups-action-buttons">
+                                <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
+                                <input type="file" id="import-file" accept=".zip" style="display: none;">
+                                <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="backups-section">
+                    <h3 class="section-title">Import &amp; Export</h3>
+                    <div class="backups-actions-row">
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
+                            <p class="backups-action-hint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped.</p>
+                            <div class="backups-action-buttons">
+                                <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
+                                <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
+                            </div>
+                        </div>
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
+                            <p class="backups-action-hint">Downloads all bookmarks from all pages as a single CSV file (Name, URL, Category, Page, Shortcut). Opens in Excel, Google Sheets, or any text editor.</p>
+                            <div class="backups-action-buttons">
+                                <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             </div>
 

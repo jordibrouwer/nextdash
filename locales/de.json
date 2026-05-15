@@ -192,6 +192,7 @@
         "bookmarksTab": "lesezeichen",
         "findersTab": "finder",
         "keyboardTab": "tastatur",
+        "backupsTab": "Backups",
         "statsTab": "statistik",
         "keyboardIntro": "Tastaturkürzel anpassen. Klicken Sie auf \"Neu binden\" neben einem Kürzel und drücken Sie die gewünschte Taste. Drücken Sie Escape zum Abbrechen.",
         "keyboardEdit": "Neu binden",

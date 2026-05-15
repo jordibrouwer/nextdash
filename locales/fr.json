@@ -192,6 +192,7 @@
         "bookmarksTab": "favoris",
         "findersTab": "finders",
         "keyboardTab": "clavier",
+        "backupsTab": "sauvegardes",
         "statsTab": "statistiques",
         "keyboardIntro": "Personnalisez les raccourcis clavier. Cliquez sur \"Rebinder\" à côté d'un raccourci et appuyez sur la touche souhaitée. Appuyez sur Échap pour annuler.",
         "keyboardEdit": "Rebinder",

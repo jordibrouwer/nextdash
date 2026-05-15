@@ -192,6 +192,7 @@
         "bookmarksTab": "bookmarks",
         "findersTab": "finders",
         "keyboardTab": "keyboard",
+        "backupsTab": "backups",
         "statsTab": "stats",
         "keyboardIntro": "Customize keyboard shortcuts. Click \"Rebind\" next to any shortcut and press the key you want to use. Press Escape to cancel.",
         "keyboardEdit": "Rebind",
