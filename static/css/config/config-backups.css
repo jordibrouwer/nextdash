@@ -10,7 +10,7 @@
 }
 
 .backups-tab-intro {
-    padding: 0.75rem 1rem;
+    padding: var(--card-padding);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
 }
@@ -27,7 +27,7 @@
 .backups-section {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
-    padding: 0.9rem 1rem;
+    padding: var(--card-padding);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;

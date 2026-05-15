@@ -17,7 +17,7 @@
 .stats-block {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
-    padding: 0.9rem 1rem;
+    padding: var(--card-padding);
 }
 
 .stats-block:last-child {
