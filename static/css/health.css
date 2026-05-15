@@ -87,7 +87,6 @@
 
 .health-card {
     border: 1px solid var(--border-secondary);
-    border-radius: 20px;
     padding: 18px;
     background: var(--background-secondary);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
@@ -120,7 +119,6 @@
 .health-issues-panel,
 .health-duplicates-panel {
     border: 1px solid var(--border-secondary);
-    border-radius: 24px;
     background: var(--background-secondary);
     padding: 18px;
     margin-bottom: 18px;
@@ -139,7 +137,6 @@
 
 .health-search-wrap input {
     width: 100%;
-    border-radius: 14px;
     border: 1px solid var(--border-secondary);
     padding: 14px 16px;
     background: var(--background-primary);
@@ -156,7 +153,6 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border-radius: 999px;
     border: 1px solid var(--border-secondary);
     padding: 8px 12px;
     background: transparent;
@@ -165,7 +161,6 @@
 
 .health-pill span {
     padding: 2px 8px;
-    border-radius: 999px;
     background: rgba(127, 127, 127, 0.15);
 }
 
@@ -218,7 +213,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 14px;
     border: 1px solid var(--border-secondary);
-    border-radius: 18px;
     padding: 16px;
     background: var(--background-primary);
 }
@@ -246,7 +240,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
     font-weight: 900;
     background: rgba(127, 127, 127, 0.12);
 }
@@ -273,7 +266,6 @@
 .health-times span,
 .health-reasons span,
 .health-duplicate-items span {
-    border-radius: 999px;
     padding: 6px 10px;
     background: rgba(127, 127, 127, 0.12);
     font-size: 0.88rem;
@@ -287,7 +279,6 @@
 }
 
 .health-action {
-    border-radius: 12px;
     border: 1px solid var(--border-secondary);
     padding: 10px 14px;
     background: var(--background-secondary);
@@ -301,7 +292,6 @@
 
 .health-duplicate-group {
     border: 1px solid var(--border-secondary);
-    border-radius: 16px;
     padding: 14px;
     background: var(--background-primary);
     margin-bottom: 12px;
@@ -315,7 +305,6 @@
 
 .health-empty {
     padding: 18px;
-    border-radius: 16px;
     border: 1px dashed var(--border-secondary);
     opacity: 0.78;
 }
@@ -323,7 +312,6 @@
 .health-bulk-actions {
     margin: 24px 0;
     padding: 16px;
-    border-radius: 8px;
     background: var(--background-secondary);
     border: 1px solid var(--border-secondary);
 }
@@ -348,7 +336,6 @@
 
 .health-bulk-button {
     padding: 8px 14px;
-    border-radius: 6px;
     border: 1px solid var(--border-secondary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -391,7 +378,6 @@
     display: none;
     margin-top: 12px;
     padding: 10px 12px;
-    border-radius: 6px;
     background: var(--background-secondary);
     color: var(--text-secondary);
     font-size: 0.9rem;
