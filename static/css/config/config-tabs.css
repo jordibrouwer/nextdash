@@ -15,6 +15,26 @@
 }
 
 /* Config tab bar: single scrollable row, never wraps */
+.tabs-scroll-wrapper {
+    position: relative;
+}
+
+.tabs-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 3rem;
+    background: linear-gradient(to right, transparent, var(--background-primary));
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.tabs-scroll-wrapper.is-scrolled-end::after {
+    opacity: 0;
+}
+
 .config-controls-wrapper .tabs {
     flex-wrap: nowrap;
     overflow-x: auto;

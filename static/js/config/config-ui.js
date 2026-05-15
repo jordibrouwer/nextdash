@@ -85,15 +85,16 @@ class ConfigUI {
             });
         });
 
-        // Fade mask: remove when scrolled to the end
+        // Fade mask: toggle is-scrolled-end on wrapper when tabs are fully scrolled
         const tabBar = document.querySelector('.config-controls-wrapper .tabs');
-        if (tabBar) {
+        const tabWrapper = document.querySelector('.tabs-scroll-wrapper');
+        if (tabBar && tabWrapper) {
             const updateMask = () => {
                 const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 2;
-                tabBar.toggleAttribute('data-scroll-end', atEnd);
+                tabWrapper.classList.toggle('is-scrolled-end', atEnd);
             };
             tabBar.addEventListener('scroll', updateMask, { passive: true });
-            // Run once after layout so the initial state is correct
+            window.addEventListener('resize', updateMask, { passive: true });
             requestAnimationFrame(updateMask);
         }
     }
