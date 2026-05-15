@@ -1265,6 +1265,28 @@
                 </section>
 
                 <section class="stats-block">
+                    <h3 class="section-title">Shortcuts</h3>
+                    <div class="stats-shortcut-bar-wrap">
+                        <div class="stats-shortcut-bar">
+                            <div id="stats-shortcut-bar-fill" class="stats-shortcut-bar-fill"></div>
+                        </div>
+                        <span id="stats-shortcut-bar-label" class="stats-shortcut-bar-label"></span>
+                    </div>
+                    <h4 class="stats-subtitle">Top shortcuts by opens</h4>
+                    <div class="stats-table-wrap">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Shortcut</th>
+                                    <th>Bookmark</th>
+                                    <th>Opens</th>
+                                    <th>Page</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stats-shortcuts-body"></tbody>
+                        </table>
+                    </div>
+                </section>
 
                 <section class="stats-block">
                     <h3 class="section-title" data-i18n="config.statsOpensSection">Opens</h3>
@@ -1347,6 +1369,18 @@
                     <h3 class="section-title" data-i18n="config.statsInsightsSection">Personal usage insights</h3>
                     <p class="stats-muted" data-i18n="config.statsInsightsIntro">Quick interpretation of your usage patterns.</p>
                     <ul id="stats-insights-list" class="stats-insights-list"></ul>
+                </section>
+
+                <section class="stats-block">
+                    <h3 class="section-title">Conflicts &amp; duplicates</h3>
+                    <dl class="stats-dl">
+                        <div><dt>Duplicate URLs</dt><dd id="stats-duplicate-url-count">—</dd></div>
+                        <div><dt>Shortcut conflicts</dt><dd id="stats-shortcut-conflict-count">—</dd></div>
+                    </dl>
+                    <div id="stats-conflicts-detail" class="stats-conflicts-detail"></div>
+                    <div class="stats-conflicts-actions">
+                        <a href="/health" class="btn btn-secondary btn-small">Bekijk in Health</a>
+                    </div>
                 </section>
             </div>
             </div>

@@ -464,6 +464,8 @@ class ConfigStats {
 
         this.renderMostClickedTable(bookmarks, pages, locale);
         this.renderLatestAddedTable(bookmarks, pages, locale);
+        this.renderShortcutsBlock(bookmarks, pages);
+        this.renderConflictsBlock(bookmarks);
     }
 
     renderMostClickedTable(bookmarks, pages, locale) {
@@ -488,6 +490,83 @@ class ConfigStats {
                 this.formatWhen(b.lastOpened, locale)
             ]);
         });
+    }
+
+    renderShortcutsBlock(bookmarks, pages) {
+        const total = bookmarks.length;
+        const withSc = bookmarks.filter((b) => String(b?.shortcut || '').trim() !== '');
+        const pct = total > 0 ? Math.round((withSc.length / total) * 100) : 0;
+
+        const fill = document.getElementById('stats-shortcut-bar-fill');
+        const label = document.getElementById('stats-shortcut-bar-label');
+        if (fill) fill.style.width = `${pct}%`;
+        if (label) label.textContent = `${withSc.length} of ${total} bookmarks have a shortcut (${pct}%)`;
+
+        const tbodyId = 'stats-shortcuts-body';
+        this.clearTable(tbodyId);
+
+        const top = [...withSc]
+            .sort((a, b) => Number(b?.openCount || 0) - Number(a?.openCount || 0))
+            .slice(0, 20);
+
+        if (top.length === 0) {
+            this.appendRow(tbodyId, [this.t('config.statsNoData'), '', '', '']);
+            return;
+        }
+        top.forEach((b) => {
+            this.appendRow(tbodyId, [
+                String(b.shortcut || '—'),
+                String(b.name || '—'),
+                String(Number(b.openCount || 0)),
+                this.pageName(pages, b.pageId)
+            ]);
+        });
+    }
+
+    renderConflictsBlock(bookmarks) {
+        // Duplicate URLs: groups where more than one bookmark shares the same non-empty URL
+        const urlMap = new Map();
+        bookmarks.forEach((b) => {
+            const url = String(b?.url || '').trim().toLowerCase();
+            if (!url) return;
+            urlMap.set(url, (urlMap.get(url) || 0) + 1);
+        });
+        const duplicateUrlCount = [...urlMap.values()].filter((c) => c > 1).length;
+
+        // Shortcut conflicts: shortcuts (non-empty) assigned to more than one bookmark
+        const scMap = new Map();
+        bookmarks.forEach((b) => {
+            const sc = String(b?.shortcut || '').trim().toLowerCase();
+            if (!sc) return;
+            scMap.set(sc, (scMap.get(sc) || 0) + 1);
+        });
+        const conflictingShortcuts = [...scMap.entries()].filter(([, c]) => c > 1);
+        const shortcutConflictCount = conflictingShortcuts.length;
+
+        this.setText('stats-duplicate-url-count', String(duplicateUrlCount));
+        this.setText('stats-shortcut-conflict-count', String(shortcutConflictCount));
+
+        const detail = document.getElementById('stats-conflicts-detail');
+        if (!detail) return;
+        detail.textContent = '';
+
+        if (duplicateUrlCount === 0 && shortcutConflictCount === 0) {
+            const p = document.createElement('p');
+            p.className = 'stats-muted';
+            p.textContent = 'No conflicts found.';
+            detail.appendChild(p);
+            return;
+        }
+
+        if (conflictingShortcuts.length > 0) {
+            const p = document.createElement('p');
+            p.className = 'stats-muted';
+            p.style.marginTop = '0.75rem';
+            const labels = conflictingShortcuts.slice(0, 8).map(([sc, c]) => `${sc} (×${c})`).join(', ');
+            const more = conflictingShortcuts.length > 8 ? ` +${conflictingShortcuts.length - 8} more` : '';
+            p.textContent = `Conflicting shortcuts: ${labels}${more}`;
+            detail.appendChild(p);
+        }
     }
 
     renderLatestAddedTable(bookmarks, pages, locale) {

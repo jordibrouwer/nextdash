@@ -28,6 +28,33 @@
     margin: 0 0 0.55rem;
 }
 
+.stats-shortcut-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stats-shortcut-bar {
+    flex: 1 1 0;
+    height: 6px;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    overflow: hidden;
+}
+
+.stats-shortcut-bar-fill {
+    height: 100%;
+    background: var(--accent-primary);
+    transition: width 0.4s ease;
+}
+
+.stats-shortcut-bar-label {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
 .stats-dl {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -114,6 +141,10 @@
 
 .stats-insight-action {
     margin-left: 0.45rem;
+}
+
+.stats-conflicts-actions {
+    margin-top: 1rem;
 }
 
 .stats-charts-container {
