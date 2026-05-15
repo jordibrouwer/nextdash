@@ -419,10 +419,37 @@
 
     .health-header {
         flex-direction: column;
+        gap: 16px;
     }
 
     .header-links {
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .health-shell {
+        padding: 1.25rem 1rem;
+    }
+
+    .health-header {
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .health-header h1,
+    .health-header .title {
+        font-size: calc(var(--font-size-title) * 0.55);
+    }
+
+    .health-subtitle {
+        display: none;
+    }
+
+    .header-links {
+        gap: 0.75rem 1rem;
     }
 }
 
