@@ -405,6 +405,10 @@ class DragReorder {
             window.__dragReorderState.placeholder = placeholder;
         }
         this.placeholder = window.__dragReorderState.placeholder;
+        // Re-trigger the entry animation each time the placeholder moves.
+        this.placeholder.style.animation = 'none';
+        void this.placeholder.offsetWidth; // force reflow
+        this.placeholder.style.animation = '';
     }
 
     removePlaceholder() {

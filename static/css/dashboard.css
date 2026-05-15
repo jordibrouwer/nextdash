@@ -1167,7 +1167,20 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     border-radius: 4px;
     opacity: 0.65;
     background: color-mix(in srgb, var(--background-primary) 85%, var(--text-secondary) 15%);
-    transition: opacity 100ms ease;
+    animation: placeholderIn 120ms ease-out forwards;
+}
+
+@keyframes placeholderIn {
+    from {
+        opacity: 0;
+        transform: scaleY(0.4);
+        transform-origin: top center;
+    }
+    to {
+        opacity: 0.65;
+        transform: scaleY(1);
+        transform-origin: top center;
+    }
 }
 
 .bookmarks-list.reorder-container .bookmark-link.bookmark-move-in {
