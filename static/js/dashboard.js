@@ -2417,10 +2417,23 @@ class Dashboard {
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
         }
-        const collapsedKey = isSmartCollection ? `smart:${category.id}` : category.id;
-        const isCollapsed = this.settings.alwaysCollapseCategories
-            ? true
-            : (this.collapsedCategories[collapsedKey] || false);
+        const collapsedKey = isSmartCollection
+            ? `smart:${category.id}`
+            : `${this.currentPageId}:${category.id}`;
+        let isCollapsed;
+        if (this.settings.alwaysCollapseCategories) {
+            isCollapsed = true;
+        } else if (collapsedKey in this.collapsedCategories) {
+            isCollapsed = this.collapsedCategories[collapsedKey];
+        } else if (!isSmartCollection && category.id in this.collapsedCategories) {
+            // Migrate legacy bare-key entry to page-scoped key on first render
+            isCollapsed = this.collapsedCategories[category.id];
+            this.collapsedCategories[collapsedKey] = isCollapsed;
+            delete this.collapsedCategories[category.id];
+            this.saveCollapsedStates();
+        } else {
+            isCollapsed = false;
+        }
         categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'true' : 'false');
 
         // Category title
