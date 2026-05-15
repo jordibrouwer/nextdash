@@ -1214,14 +1214,14 @@ class SearchComponent {
     loadSearchHistory() {
         try {
             const stored = localStorage.getItem('dashboardSearchHistory');
-            return stored ? JSON.parse(stored).filter((entry) => typeof entry === 'string' && entry.trim()) : [];
+            return stored ? JSON.parse(stored).filter((entry) => typeof entry === 'string' && entry.trim()).slice(0, 15) : [];
         } catch (error) {
             return [];
         }
     }
 
     saveSearchHistory() {
-        localStorage.setItem('dashboardSearchHistory', JSON.stringify(this.searchHistory.slice(0, 20)));
+        localStorage.setItem('dashboardSearchHistory', JSON.stringify(this.searchHistory.slice(0, 15)));
     }
 
     recordSearchHistory(query) {
@@ -1230,7 +1230,7 @@ class SearchComponent {
             return;
         }
 
-        this.searchHistory = [cleanedQuery, ...this.searchHistory.filter((entry) => entry !== cleanedQuery)].slice(0, 20);
+        this.searchHistory = [cleanedQuery, ...this.searchHistory.filter((entry) => entry !== cleanedQuery)].slice(0, 15);
         this.saveSearchHistory();
     }
 
