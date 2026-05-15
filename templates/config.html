@@ -1094,11 +1094,13 @@
                                         </svg>Fetch favicon
                                     </button>
                                 </div>
+                                <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden>This URL already exists in another bookmark.</p>
                             </div>
 
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-shortcut" data-i18n="config.bookmarkShortcutPlaceholder">Shortcut</label>
                                 <input type="text" id="detail-shortcut" class="bookmark-detail-input bookmark-detail-shortcut" placeholder="ABC" maxlength="5" autocomplete="off">
+                                <p id="detail-shortcut-conflict-msg" class="bookmark-detail-conflict-msg" hidden>This shortcut is already in use.</p>
                             </div>
 
                             <div class="bookmark-detail-section">

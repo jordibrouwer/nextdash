@@ -1219,7 +1219,7 @@ class ConfigManager {
         }
         if (undoTopBtn) {
             undoTopBtn.disabled = !this.undoSnapshot;
-            undoTopBtn.classList.toggle('is-visible', this.isDirty);
+            undoTopBtn.classList.toggle('is-visible', !!this.undoSnapshot);
         }
         if (discardTopBtn) {
             discardTopBtn.disabled = !this.isDirty;
@@ -2709,6 +2709,34 @@ class ConfigManager {
                 }
             }
         });
+
+        // Also update the split-view detail panel when it's showing a conflicting bookmark.
+        const activeIdx = this.bookmarks?.activeDetailIndex ?? -1;
+        if (activeIdx >= 0) {
+            const detailUrl = document.getElementById('detail-url');
+            const detailUrlMsg = document.getElementById('detail-url-conflict-msg');
+            const detailShortcut = document.getElementById('detail-shortcut');
+            const detailShortcutMsg = document.getElementById('detail-shortcut-conflict-msg');
+            if (detailUrl) {
+                const isDupUrl = duplicateUrlIndexes.has(activeIdx);
+                detailUrl.classList.toggle('field-conflict', isDupUrl);
+                if (detailUrlMsg) detailUrlMsg.hidden = !isDupUrl;
+            }
+            if (detailShortcut) {
+                const hasBlockingShortcutConflict = duplicateShortcutIndexes.has(activeIdx);
+                const hasFinderWarning = finderConflictIndexes.has(activeIdx);
+                detailShortcut.classList.toggle('field-conflict', hasBlockingShortcutConflict);
+                detailShortcut.classList.toggle('field-warning', hasFinderWarning && !hasBlockingShortcutConflict);
+                if (detailShortcutMsg) detailShortcutMsg.hidden = !hasBlockingShortcutConflict;
+                if (hasBlockingShortcutConflict) {
+                    detailShortcut.title = 'Shortcut must be unique within this page.';
+                } else if (hasFinderWarning) {
+                    detailShortcut.title = 'Shortcut matches a finder shortcut.';
+                } else {
+                    detailShortcut.removeAttribute('title');
+                }
+            }
+        }
 
         const hasConflicts = duplicateUrlIndexes.size > 0 || duplicateShortcutIndexes.size > 0;
         if (hasConflicts && options.showToast) {

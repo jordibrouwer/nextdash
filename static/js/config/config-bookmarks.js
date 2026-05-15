@@ -458,14 +458,29 @@ class ConfigBookmarks {
         if (nameEl) nameEl.value = bookmark.name || '';
 
         const urlEl = document.getElementById('detail-url');
+        const urlConflictMsg = document.getElementById('detail-url-conflict-msg');
         if (urlEl) {
             urlEl.value = bookmark.url || '';
-            const isDup = bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === (bookmark.url || '').trim().toLowerCase());
-            urlEl.classList.toggle('field-conflict', isDup);
+            const normalizedUrl = (bookmark.url || '').trim().toLowerCase();
+            const isDupUrl = Boolean(normalizedUrl) && bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === normalizedUrl);
+            urlEl.classList.toggle('field-conflict', isDupUrl);
+            if (urlConflictMsg) urlConflictMsg.hidden = !isDupUrl;
         }
 
         const scEl = document.getElementById('detail-shortcut');
-        if (scEl) scEl.value = bookmark.shortcut || '';
+        const scConflictMsg = document.getElementById('detail-shortcut-conflict-msg');
+        if (scEl) {
+            scEl.value = bookmark.shortcut || '';
+            const normalizedSc = (bookmark.shortcut || '').trim().toUpperCase();
+            const isDupSc = Boolean(normalizedSc) && bookmarks.some((b, i) => i !== index && (b.shortcut || '').trim().toUpperCase() === normalizedSc);
+            scEl.classList.toggle('field-conflict', isDupSc);
+            if (scConflictMsg) scConflictMsg.hidden = !isDupSc;
+            if (isDupSc) {
+                scEl.title = 'Shortcut must be unique within this page.';
+            } else {
+                scEl.removeAttribute('title');
+            }
+        }
 
         const catEl = document.getElementById('detail-category');
         if (catEl) {
@@ -587,20 +602,30 @@ class ConfigBookmarks {
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
+        const urlConflictMsg = panel.querySelector('#detail-url-conflict-msg');
         if (urlEl) urlEl.addEventListener('input', (e) => {
             bookmark.url = e.target.value;
             const isDup = bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === e.target.value.trim().toLowerCase());
             urlEl.classList.toggle('field-conflict', isDup);
+            if (urlConflictMsg) urlConflictMsg.hidden = !isDup;
             if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
             this._syncRow(index, bookmark);
-            const policy = window.configManager?.settingsData?.faviconRefreshPolicy || 'on-save';
-            if (policy === 'on-save') this._scheduleDetailMetaRefresh(index, bookmark);
+            if (isDup) {
+                // Cancel any pending favicon fetch so it cannot overwrite the duplicate's data.
+                const key = `detail-${index}`;
+                const t = this.metadataTimers?.get(key);
+                if (t) { clearTimeout(t); this.metadataTimers.delete(key); }
+            } else {
+                const policy = window.configManager?.settingsData?.faviconRefreshPolicy || 'on-save';
+                if (policy === 'on-save') this._scheduleDetailMetaRefresh(index, bookmark);
+            }
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
         if (scEl) scEl.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
             bookmark.shortcut = e.target.value;
+            if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
