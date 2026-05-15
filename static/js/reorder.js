@@ -139,10 +139,11 @@ class DragReorder {
         this.removeAllPlaceholders();
         this.selected.classList.remove('is-idle');
         this.selected.classList.add('is-draggable');
-        
+        document.body.classList.add('bookmark-dragging');
+
         // Prevent scrolling on touch devices
         this.disablePageScroll();
-        
+
         // Prevent dropping anywhere else
         document.addEventListener('dragover', this.preventDrop, { passive: false });
     }
@@ -204,6 +205,7 @@ class DragReorder {
         this.selected = null;
         window.__dragReorderState.selected = null;
         this.dragStartMeta = null;
+        document.body.classList.remove('bookmark-dragging');
         // Call the onReorder callback with the new order
         if (this.onReorder && typeof this.onReorder === 'function') {
             this.onReorder(this.getNewOrder(), reorderDetails);
@@ -237,6 +239,7 @@ class DragReorder {
         this.selected.classList.add('is-draggable');
         this.disablePageScroll();
         this.touchDragActive = true;
+        document.body.classList.add('bookmark-dragging');
     }
 
     cancelTouchPress() {
@@ -330,6 +333,7 @@ class DragReorder {
         this.dragStartMeta = null;
         this.touchDragActive = false;
         this.cancelTouchPress();
+        document.body.classList.remove('bookmark-dragging');
         // Call the onReorder callback with the new order
         if (this.onReorder && typeof this.onReorder === 'function') {
             this.onReorder(this.getNewOrder(), reorderDetails);

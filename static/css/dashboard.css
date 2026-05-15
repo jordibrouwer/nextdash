@@ -778,6 +778,22 @@ body[data-density-mode="dense"] .dashboard-grid {
     min-height: 2rem;
 }
 
+body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collection="true"]):not(:has(.bookmark-link)) {
+    min-height: 3rem;
+    position: relative;
+}
+
+body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collection="true"]):not(:has(.bookmark-link))::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px dashed var(--text-secondary);
+    border-radius: 4px;
+    opacity: 0.45;
+    pointer-events: none;
+    animation: placeholderIn 120ms ease-out forwards;
+}
+
 .bookmark-link {
     --bookmark-lead-col: minmax(1.25rem, max-content);
     /* Dedicated column for ping (status); avoids sharing col with shortcut */
@@ -1200,7 +1216,8 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
 
 body.no-animations .bookmarks-list.reorder-container .bookmark-link,
 body.no-animations .bookmarks-list.reorder-container .bookmark-link.bookmark-move-in,
-body.no-animations .bookmarks-list.reorder-container .bookmark-drop-placeholder {
+body.no-animations .bookmarks-list.reorder-container .bookmark-drop-placeholder,
+body.no-animations .bookmarks-list.reorder-container::after {
     transition: none;
     animation: none;
 }
