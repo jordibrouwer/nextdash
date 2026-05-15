@@ -87,7 +87,7 @@
 
 .health-card {
     border: 1px solid var(--border-secondary);
-    padding: var(--card-padding);
+    padding: 18px;
     background: var(--background-secondary);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
 }
@@ -120,7 +120,7 @@
 .health-duplicates-panel {
     border: 1px solid var(--border-secondary);
     background: var(--background-secondary);
-    padding: var(--card-padding);
+    padding: 18px;
     margin-bottom: 18px;
 }
 
@@ -213,7 +213,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 14px;
     border: 1px solid var(--border-secondary);
-    padding: var(--card-padding);
+    padding: 16px;
     background: var(--background-primary);
 }
 
@@ -292,7 +292,7 @@
 
 .health-duplicate-group {
     border: 1px solid var(--border-secondary);
-    padding: var(--card-padding);
+    padding: 14px;
     background: var(--background-primary);
     margin-bottom: 12px;
 }
@@ -304,14 +304,14 @@
 }
 
 .health-empty {
-    padding: var(--card-padding);
+    padding: 18px;
     border: 1px dashed var(--border-secondary);
     opacity: 0.78;
 }
 
 .health-bulk-actions {
     margin: 24px 0;
-    padding: var(--card-padding);
+    padding: 16px;
     background: var(--background-secondary);
     border: 1px solid var(--border-secondary);
 }

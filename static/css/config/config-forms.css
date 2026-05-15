@@ -9,7 +9,7 @@
 .general-card {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
-    padding: var(--card-padding);
+    padding: 0.75rem 0.85rem;
 }
 
 .general-card.is-collapsible .section-title {
