@@ -348,32 +348,37 @@
 
         // Bulk action buttons
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
-            e.target.disabled = true;
-            e.target.textContent = t('health.retesting', 'retesting...');
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.classList.add('is-loading');
+            btn.textContent = t('health.retesting', 'retesting...');
             try {
                 const response = await fetch('/api/health/retest-all', { method: 'POST' });
                 if (response.ok) {
                     const result = await response.json();
                     showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
-                    // Reload report after delay
-                    setTimeout(async () => {
-                        await loadReport();
-                        render();
-                    }, 500);
+                    btn.textContent = t('health.retesting', 'reloading...');
+                    await loadReport();
+                    render();
                 } else {
                     showBulkStatus(t('health.retestFailed', 'Failed to retest all bookmarks'));
                 }
             } catch (error) {
                 showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
             } finally {
-                e.target.disabled = false;
-                e.target.textContent = t('health.retestAllChecked', 'Retest all checked');
+                btn.disabled = false;
+                btn.classList.remove('is-loading');
+                btn.textContent = originalText;
             }
         });
 
         document.getElementById('open-broken-btn')?.addEventListener('click', async (e) => {
-            e.target.disabled = true;
-            e.target.textContent = t('health.opening', 'opening...');
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.classList.add('is-loading');
+            btn.textContent = t('health.opening', 'opening...');
             try {
                 const response = await fetch('/api/health/open-broken', { method: 'POST' });
                 if (response.ok) {
@@ -389,8 +394,9 @@
             } catch (error) {
                 showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
             } finally {
-                e.target.disabled = false;
-                e.target.textContent = t('health.openBrokenLinks', 'Open broken links');
+                btn.disabled = false;
+                btn.classList.remove('is-loading');
+                btn.textContent = originalText;
             }
         });
 

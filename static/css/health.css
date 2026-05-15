@@ -374,6 +374,31 @@
     cursor: not-allowed;
 }
 
+.health-bulk-button.is-loading {
+    opacity: 0.7;
+    cursor: wait;
+    position: relative;
+    padding-left: 2.2rem;
+}
+
+.health-bulk-button.is-loading::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-top: -0.375rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: health-spin 0.6s linear infinite;
+}
+
+@keyframes health-spin {
+    to { transform: rotate(360deg); }
+}
+
 .health-bulk-status {
     display: none;
     margin-top: 12px;
