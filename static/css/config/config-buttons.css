@@ -79,6 +79,18 @@
     align-items: center;
 }
 
+/* Disabled state */
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: var(--background-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
+    transform: none;
+}
+
 /* Button loading state */
 .btn.btn-loading {
     opacity: 0.7;

@@ -121,8 +121,12 @@
 }
 
 .onboarding-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
+    pointer-events: none;
+    background: var(--background-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
 }
 
 .onboarding-highlight {
