@@ -44,6 +44,8 @@
 .tags-tab {
     display: flex;
     flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
     height: calc(100vh - 180px);
     min-height: 300px;
 }
@@ -54,7 +56,6 @@
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border-primary);
-    border-bottom: none;
     background: var(--background-primary);
     flex-shrink: 0;
 }
@@ -74,8 +75,6 @@
     gap: 0.4rem 0.6rem;
     padding: 0.85rem 0.75rem;
     border: 1px solid var(--border-primary);
-    border-top: none;
-    border-bottom: none;
     background: var(--background-secondary);
 }
 
@@ -254,7 +253,6 @@
     justify-content: center;
     flex: 1 1 0;
     border: 1px solid var(--border-primary);
-    border-top: none;
     padding: 2rem;
     text-align: center;
 }
