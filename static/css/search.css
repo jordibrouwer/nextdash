@@ -715,3 +715,13 @@ body.no-animations .error-notification.show::after {
     font-weight: var(--font-weight-bold);
     text-transform: uppercase;
 }
+
+/* Query match highlight in search results */
+mark.search-highlight {
+    background: transparent;
+    color: inherit;
+    font-weight: var(--font-weight-bold);
+    text-decoration: underline;
+    text-decoration-color: var(--text-secondary);
+    text-underline-offset: 2px;
+}

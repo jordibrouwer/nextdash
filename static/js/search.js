@@ -218,6 +218,21 @@ class SearchComponent {
         return map[currentTheme] || { enabled: false, style: 'muted', intensity: 0.5 };
     }
 
+    _highlightQuery(text, query) {
+        if (!query || !text) return this._escHtml(text || '');
+        const lc = text.toLowerCase();
+        const lcQ = query.toLowerCase();
+        const idx = lc.indexOf(lcQ);
+        if (idx === -1) return this._escHtml(text);
+        return this._escHtml(text.slice(0, idx))
+            + `<mark class="search-highlight">${this._escHtml(text.slice(idx, idx + query.length))}</mark>`
+            + this._escHtml(text.slice(idx + query.length));
+    }
+
+    _escHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     buildSearchBookmarkIconHtml(match) {
         if (!this.settings?.showIcons || match?.type !== 'bookmark') {
             return '';
@@ -596,25 +611,27 @@ class SearchComponent {
                 // Handle bookmark shortcuts
                 this.shortcuts.forEach((bookmark, shortcut) => {
                     if (shortcut.startsWith(searchQuery.toLowerCase()) && this.matchesAdvancedFilters(bookmark, filters)) {
-                        this.searchMatches.push({ shortcut, bookmark, type: 'bookmark' });
+                        this.searchMatches.push({ shortcut, bookmark, type: 'bookmark', query: searchQuery });
                     }
                 });
 
                 // Check if 'config' matches the current query
                 if ('config'.startsWith(searchQuery.toLowerCase()) && this.matchesAdvancedFilters({ category: 'config' }, filters)) {
-                    this.searchMatches.push({ 
-                        shortcut: 'config', 
-                        bookmark: { name: this.language ? this.language.t('dashboard.configuration') : 'Configuration', url: '/config' }, 
-                        type: 'config' 
+                    this.searchMatches.push({
+                        shortcut: 'config',
+                        bookmark: { name: this.language ? this.language.t('dashboard.configuration') : 'Configuration', url: '/config' },
+                        type: 'config',
+                        query: searchQuery
                     });
                 }
 
                 // Check if 'colors' matches the current query
                 if ('colors'.startsWith(searchQuery.toLowerCase()) && this.matchesAdvancedFilters({ category: 'colors' }, filters)) {
-                    this.searchMatches.push({ 
-                        shortcut: 'colors', 
-                        bookmark: { name: this.language ? this.language.t('dashboard.colorCustomization') : 'Theme Customization', url: '/colors' }, 
-                        type: 'colors' 
+                    this.searchMatches.push({
+                        shortcut: 'colors',
+                        bookmark: { name: this.language ? this.language.t('dashboard.colorCustomization') : 'Theme Customization', url: '/colors' },
+                        type: 'colors',
+                        query: searchQuery
                     });
                 }
 
@@ -935,18 +952,22 @@ class SearchComponent {
             let displayName;
             if (match.type === 'fuzzy') {
                 displayName = this.fuzzySearchComponent.highlightFuzzyMatch(match.name, match.query);
-            } else if (match.type === 'history') {
-                displayName = match.name;
-            } else if (match.type === 'saved-search') {
-                displayName = match.name;
+            } else if (match.type === 'history' || match.type === 'saved-search') {
+                displayName = this._escHtml(match.name);
+            } else if (match.type === 'bookmark' || match.type === 'config' || match.type === 'colors') {
+                displayName = this._highlightQuery(match.bookmark.name, match.query);
             } else {
-                displayName = (match.type === 'bookmark' || match.type === 'config' || match.type === 'colors') ? match.bookmark.name : match.name;
+                displayName = this._escHtml(match.name || '');
             }
-            
+
             // For fuzzy search, don't show shortcut span to avoid empty space
             let shortcutHtml = '';
             if (match.type !== 'fuzzy') {
-                shortcutHtml = `<span class="search-match-shortcut">${match.shortcut.toUpperCase()}</span>`;
+                const rawShortcut = match.shortcut.toUpperCase();
+                const highlightedShortcut = match.query
+                    ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
+                    : this._escHtml(rawShortcut);
+                shortcutHtml = `<span class="search-match-shortcut">${highlightedShortcut}</span>`;
             }
             const bookmarkIconHtml = this.buildSearchBookmarkIconHtml(match);
             
