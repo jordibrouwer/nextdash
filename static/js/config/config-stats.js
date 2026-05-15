@@ -465,6 +465,7 @@ class ConfigStats {
         this.renderMostClickedTable(bookmarks, pages, locale);
         this.renderLatestAddedTable(bookmarks, pages, locale);
         this.renderShortcutsBlock(bookmarks, pages);
+        this.renderCategoriesBlock(bookmarks, pages);
         this.renderConflictsBlock(bookmarks);
     }
 
@@ -520,6 +521,65 @@ class ConfigStats {
                 String(Number(b.openCount || 0)),
                 this.pageName(pages, b.pageId)
             ]);
+        });
+    }
+
+    renderCategoriesBlock(bookmarks, pages) {
+        const tbodyId = 'stats-categories-body';
+        this.clearTable(tbodyId);
+
+        if (!bookmarks.length) {
+            this.appendRow(tbodyId, [this.t('config.statsNoData'), '', '', '']);
+            return;
+        }
+
+        // Group by page+category combination
+        const map = new Map();
+        bookmarks.forEach((b) => {
+            const pageId = Number(b?.pageId) || 0;
+            const cat = String(b?.category || '').trim() || '(uncategorized)';
+            const key = `${pageId}::${cat}`;
+            const entry = map.get(key) || { pageId, cat, count: 0, opens: 0 };
+            entry.count += 1;
+            entry.opens += Number(b?.openCount || 0);
+            map.set(key, entry);
+        });
+
+        const rows = [...map.values()].sort((a, b) => b.opens - a.opens || b.count - a.count);
+        const maxOpens = rows[0]?.opens || 0;
+
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+
+        rows.forEach((row) => {
+            const tr = document.createElement('tr');
+
+            // Category cell with inline bar
+            const tdCat = document.createElement('td');
+            tdCat.style.cssText = 'position:relative; min-width:8rem;';
+            if (maxOpens > 0) {
+                const bar = document.createElement('span');
+                const pct = Math.round((row.opens / maxOpens) * 100);
+                bar.style.cssText = `position:absolute;inset:0;width:${pct}%;background:color-mix(in srgb,var(--accent-primary) 14%,transparent);pointer-events:none;`;
+                tdCat.appendChild(bar);
+            }
+            const label = document.createElement('span');
+            label.style.position = 'relative';
+            label.textContent = row.cat;
+            tdCat.appendChild(label);
+            tr.appendChild(tdCat);
+
+            [
+                this.pageName(pages, row.pageId),
+                String(row.count),
+                String(row.opens)
+            ].forEach((text) => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
         });
     }
 
