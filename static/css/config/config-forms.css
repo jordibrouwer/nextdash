@@ -15,16 +15,34 @@
 .general-card.is-collapsible .section-title {
     cursor: pointer;
     user-select: none;
-}
-
-.general-card.is-collapsible .section-title::after {
-    content: ' [-]';
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
     color: var(--text-secondary);
-    font-weight: var(--font-weight-normal);
+    transition: color 0.15s ease;
 }
 
-.general-card.is-collapsible.is-collapsed .section-title::after {
-    content: ' [+]';
+.general-card.is-collapsible .section-title:hover {
+    color: var(--text-primary);
+}
+
+.general-card.is-collapsible .section-title::before {
+    content: '−';
+    font-size: 1em;
+    font-weight: var(--font-weight-bold);
+    width: 1em;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--accent-primary);
+}
+
+.general-card.is-collapsible.is-collapsed .section-title {
+    color: var(--text-secondary);
+}
+
+.general-card.is-collapsible.is-collapsed .section-title::before {
+    content: '+';
 }
 
 .general-card.is-collapsible.is-collapsed > *:not(.section-title) {
