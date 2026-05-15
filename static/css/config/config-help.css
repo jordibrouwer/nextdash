@@ -71,6 +71,15 @@ code {
     margin-bottom: 0.5rem;
 }
 
+.help-subheading {
+    margin: 1rem 0 0.4rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .help-signature {
     margin-top: 0.5rem;
     color: var(--text-secondary);
