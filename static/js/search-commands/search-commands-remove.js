@@ -123,33 +123,61 @@ class SearchCommandRemove {
     }
 
     /**
-     * Remove a bookmark from the current page
+     * Remove a bookmark from the current page, with undo toast.
      * @param {Object} bookmark - The bookmark to remove
      */
     async removeBookmark(bookmark) {
-        try {
-            // Get current page ID from dashboard
-            const currentPageId = window.dashboardInstance ? window.dashboardInstance.currentPageId : 1;
+        const dash = window.dashboardInstance;
+        const currentPageId = dash ? dash.currentPageId : 1;
 
+        // Snapshot the full bookmark list before deleting so undo can restore it.
+        let snapshotBeforeDelete = null;
+        try {
+            const snapRes = await fetch(`/api/bookmarks?page=${currentPageId}`);
+            if (snapRes.ok) snapshotBeforeDelete = await snapRes.json();
+        } catch (_) { /* proceed without snapshot */ }
+
+        try {
             const response = await fetch('/api/bookmarks', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    page: currentPageId,
-                    bookmark: bookmark
-                })
+                body: JSON.stringify({ page: currentPageId, bookmark })
             });
 
-            if (response.ok) {
-                // Reset confirmation state
-                this.confirmationBookmark = null;
-                // Refresh the dashboard
-                if (window.dashboardInstance) {
-                    await window.dashboardInstance.loadAllBookmarks();
-                    await window.dashboardInstance.loadPageBookmarks(currentPageId);
-                }
-            } else {
+            if (!response.ok) {
                 console.error('Failed to delete bookmark');
+                return;
+            }
+
+            this.confirmationBookmark = null;
+
+            if (dash) {
+                await dash.loadAllBookmarks();
+                await dash.loadPageBookmarks(currentPageId);
+            }
+
+            const undoCallback = snapshotBeforeDelete ? async () => {
+                try {
+                    const restoreRes = await fetch(`/api/bookmarks?page=${currentPageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(snapshotBeforeDelete)
+                    });
+                    if (restoreRes.ok && dash) {
+                        await dash.loadAllBookmarks();
+                        await dash.loadPageBookmarks(currentPageId);
+                        dash.showNotification(
+                            (this.language ? this.language.t('others.undone') : null) || 'Undone.',
+                            'success'
+                        );
+                    }
+                } catch (_) { /* silent */ }
+            } : null;
+
+            const deletedName = bookmark.name || bookmark.url || 'Bookmark';
+            const message = `"${deletedName}" verwijderd`;
+            if (dash) {
+                dash.showNotification(message, 'success', { undoCallback, duration: 8000 });
             }
         } catch (error) {
             console.error('Error deleting bookmark:', error);
