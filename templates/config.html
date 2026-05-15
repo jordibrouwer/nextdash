@@ -1398,11 +1398,25 @@
 
                         <section id="help-whats-new" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageWhatsNewTitle">What&#39;s New</h3>
-                            <p class="help-intro" data-i18n="config.helpPageWhatsNewIntro">A short recap of recent dashboard and config changes.</p>
-                            <ul data-i18n="config.helpPageWhatsNewItems">
-                                <li>Config bookmarks now use a sticky controls bar, a sticky detail panel, and a dismissible bulk toolbar.</li>
-                                <li>Preview cards now close as soon as you open a bookmark link, and also dismiss on Enter or Space.</li>
-                                <li>The help page and the shared <strong>what&#39;s new</strong> modal stay synced with the latest dashboard and config updates.</li>
+                            <p class="help-intro">A short recap of the most recent changes.</p>
+                            <h4 class="help-subheading">Config</h4>
+                            <ul>
+                                <li><strong>Backups tab</strong> — ZIP backup, browser import, and CSV export now live in a dedicated Backups tab. Reset moved to the bottom of General.</li>
+                                <li><strong>Tab bar</strong> — Tabs spread full width. On narrow screens a fade gradient signals that more tabs are scrollable. Active tab underline follows your theme accent color.</li>
+                                <li><strong>Collapsible cards</strong> — Section titles show a colored <code>+</code> / <code>−</code> prefix; the whole title changes color on hover so it's clearly clickable.</li>
+                                <li><strong>General reorganized</strong> — "Show tips above buttons" and favicon harmonization moved to Appearance &amp; Style.</li>
+                            </ul>
+                            <h4 class="help-subheading">Health</h4>
+                            <ul>
+                                <li><strong>Sort issues</strong> — Issues can now be sorted by score, status, last checked (oldest or newest), or name via the dropdown in the Issues panel header.</li>
+                                <li><strong>Loading feedback</strong> — "Retest all" and "Open broken links" show a spinner and stay disabled until the full operation completes.</li>
+                            </ul>
+                            <h4 class="help-subheading">UI consistency</h4>
+                            <ul>
+                                <li><strong>Focus rings</strong> — Keyboard focus is now visible on all inputs, selects, buttons, and links across every page.</li>
+                                <li><strong>Disabled state</strong> — Disabled buttons show a distinct background and muted text instead of just a faint opacity.</li>
+                                <li><strong>Sharp corners</strong> — Health page buttons, cards, and badges now match the sharp style used throughout config.</li>
+                                <li><strong>Card padding</strong> — Consistent across config, health, backups, stats, and help via a single spacing token.</li>
                             </ul>
                         </section>
 
