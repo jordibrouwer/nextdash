@@ -1320,6 +1320,7 @@ class Dashboard {
             'Tip: <code>/</code> start fuzzy search',
             'Tip: <code>1-9</code> jump to page',
             'Tip: <code>,</code> page overview — see all pages with bookmark counts',
+            'Tip: <code>+</code> quick-add — naam | url | shortcut in één invoer',
             'Tip: <code>Shift+←/→</code> switch page',
             'Tip: <code>Enter</code> open selected bookmark',
             'Tip: <code>Space</code> open selected bookmark',
@@ -1648,6 +1649,155 @@ class Dashboard {
         });
     }
 
+    showOmnibox() {
+        if (document.getElementById('omnibox-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'omnibox-overlay';
+        overlay.className = 'omnibox-overlay';
+
+        const box = document.createElement('div');
+        box.className = 'omnibox-box';
+
+        const hint = document.createElement('span');
+        hint.className = 'omnibox-hint';
+        hint.textContent = 'naam | url | shortcut';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'omnibox-input';
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        input.placeholder = 'naam | url | shortcut';
+
+        const status = document.createElement('span');
+        status.className = 'omnibox-status';
+
+        box.appendChild(hint);
+        box.appendChild(input);
+        box.appendChild(status);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        const close = () => {
+            overlay.remove();
+            document.removeEventListener('keydown', onKey, true);
+        };
+
+        const submit = async () => {
+            const raw = input.value.trim();
+            if (!raw) { close(); return; }
+
+            const parts = raw.split('|').map(p => p.trim());
+            const name = parts[0] || '';
+            const url = parts[1] || '';
+            const shortcut = (parts[2] || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+
+            if (!name || !url) {
+                status.textContent = 'vul minimaal naam en url in';
+                status.classList.add('is-error');
+                input.focus();
+                return;
+            }
+
+            if (shortcut) {
+                const duplicate = (this.allBookmarks || []).some(
+                    b => (b.shortcut || '').toUpperCase() === shortcut
+                );
+                if (duplicate) {
+                    status.textContent = `shortcut "${shortcut}" bestaat al`;
+                    status.classList.add('is-error');
+                    input.focus();
+                    return;
+                }
+            }
+
+            let fullUrl = url;
+            if (!/^https?:\/\//i.test(url)) fullUrl = 'https://' + url;
+
+            status.textContent = 'favicon ophalen…';
+            status.classList.remove('is-error');
+            input.disabled = true;
+
+            let icon = '';
+            try {
+                const faviconUrl = (() => {
+                    try {
+                        const p = new URL(fullUrl);
+                        return (p.protocol === 'http:' || p.protocol === 'https:')
+                            ? `${p.protocol}//${p.host}/favicon.ico` : '';
+                    } catch { return ''; }
+                })();
+                if (faviconUrl) {
+                    const iconResp = await fetch('/api/icon/from-url', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: faviconUrl })
+                    });
+                    if (iconResp.ok) {
+                        const iconData = await iconResp.json();
+                        icon = iconData.icon || '';
+                    }
+                }
+            } catch { /* favicon is optional */ }
+
+            status.textContent = 'toevoegen…';
+
+            try {
+                const response = await fetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        page: this.currentPageId,
+                        bookmark: {
+                            name,
+                            url: fullUrl,
+                            shortcut,
+                            category: '',
+                            pinned: false,
+                            checkStatus: false,
+                            icon,
+                            createdAt: Date.now()
+                        }
+                    })
+                });
+                if (response.ok) {
+                    close();
+                    await this.loadPageBookmarks(this.currentPageId);
+                    this.showNotification(`"${name}" toegevoegd`, 'success');
+                } else if (response.status === 409) {
+                    status.textContent = 'URL bestaat al';
+                    status.classList.add('is-error');
+                    input.disabled = false;
+                    input.focus();
+                } else {
+                    status.textContent = 'toevoegen mislukt';
+                    status.classList.add('is-error');
+                    input.disabled = false;
+                    input.focus();
+                }
+            } catch {
+                status.textContent = 'netwerkfout';
+                status.classList.add('is-error');
+                input.disabled = false;
+                input.focus();
+            }
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+            else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); submit(); }
+        };
+
+        document.addEventListener('keydown', onKey, true);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-visible');
+            input.focus();
+        });
+    }
+
     getKeyboardCheatSheetItems() {
         return [
             {
@@ -1665,12 +1815,13 @@ class Dashboard {
             {
                 title: 'bookmarks',
                 items: [
+                    { keys: '+', description: 'Quick-add — naam | url | shortcut' },
+                    { keys: ';', description: 'Inline edit focused bookmark' },
                     { keys: '[', description: 'Toggle preview card on focused bookmark' },
                     { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark' },
-                    { keys: ';', description: 'Inline edit focused bookmark' },
                     { keys: 'Ctrl + Shift + A', description: 'New bookmark modal' },
                     { keys: 'Double-click title', description: 'Rename page tab or category' },
-                    { keys: 'Drag handle (left strip)', description: 'Reorder bookmark within / across categories' }
+                    { keys: 'Drag handle', description: 'Reorder within / across categories' }
                 ]
             },
             {
@@ -1681,15 +1832,15 @@ class Dashboard {
                     { keys: '?', description: 'Finders' },
                     { keys: '*', description: 'Recent bookmarks' },
                     { keys: ':new', description: 'Add bookmark via command' },
-                    { keys: ':note <query>', description: 'Edit note via command' },
+                    { keys: ':note', description: 'Edit note via command' },
                     { keys: 'category: / tag: / page:', description: 'Filter in search bar' }
                 ]
             },
             {
                 title: 'other',
                 items: [
-                    { keys: '! or Ctrl + / or F1', description: 'This cheat sheet' },
-                    { keys: 'Delete (inline edit)', description: 'Remove bookmark (undo toast for 5 s)' },
+                    { keys: '! or Ctrl + /', description: 'This cheat sheet' },
+                    { keys: 'Delete (inline edit)', description: 'Remove bookmark (undo toast 5 s)' },
                     { keys: '1–8 (config)', description: 'Jump between config tabs' },
                     { keys: 'S (config)', description: 'Save config' }
                 ]

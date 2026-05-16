@@ -332,6 +332,13 @@ class SearchComponent {
             return;
         }
 
+        // + opens the quick-add omnibox (never feeds into search)
+        if (e.key === '+') {
+            e.preventDefault();
+            window.dashboardInstance?.showOmnibox?.();
+            return;
+        }
+
         // Handle space key for commands
         if (key === ' ' && this.currentQuery.startsWith(':')) {
             e.preventDefault();

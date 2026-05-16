@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v9';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v10';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,29 +24,24 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
-                    ${section('dashboard — bookmarks', [
-                        ['bookmark flash', 'Subtiele ripple-animatie als je een bookmark opent — bevestiging dat de actie geregistreerd is.'],
-                        ['preview card', 'Hover-card toont nu ook de volledige URL, open-count en laatste open-datum.'],
-                        ['page overview', '<code>,</code> opent een overlay met alle pagina\'s en hun bookmark-aantallen — navigeer met ↑↓ of 1–9.'],
+                    ${section('dashboard — quick-add', [
+                        ['<code>+</code>', 'Omnibox: typ <code>naam | url | shortcut</code> en druk Enter. Favicon wordt automatisch opgehaald.'],
+                        ['+ / ! knoppen', 'Twee vaste knoppen rechtsonder: <code>+</code> opent de omnibox, <code>!</code> opent de cheatsheet.'],
                     ])}
-                    ${section('dashboard — cheatsheet', [
-                        ['? knop', 'Permanente knop rechtsonder opent de keyboard shortcut cheatsheet (optioneel in te schakelen via config).'],
-                        ['terminal-stijl', 'Cheatsheet is herontworpen: compacter, thema-kleurig, makkelijker te scannen.'],
+                    ${section('dashboard — navigatie', [
+                        ['<code>,</code>', 'Pagina-overzicht: alle pagina\'s met bookmark-aantallen — navigeer met ↑↓ of 1–9.'],
+                        ['preview card', 'Hover-kaart toont nu ook volledige URL, open-count en laatste open-datum.'],
+                        ['tabblad-titel', 'Browser-tab toont de actieve paginanaam, bijv. <em>Work — nextDash</em>.'],
                     ])}
                     ${section('config — bookmarks', [
-                        ['delete knop', 'Verwijdert het geselecteerde bookmark direct vanuit het side panel. Nieuwe (nog niet opgeslagen) bookmarks worden zonder bevestiging verwijderd.'],
-                        ['lege state', 'Side panel toont een lege state als er geen bookmark geselecteerd is — klik buiten een rij om te deselecteren.'],
+                        ['delete knop', 'Verwijder bookmark direct vanuit het detail-panel. Nieuwe bookmarks worden zonder bevestiging verwijderd.'],
+                        ['lege state', 'Side panel is leeg als er niets geselecteerd is — klik buiten een rij om te deselecteren.'],
                     ])}
-                    ${section('config — stats', [
-                        ['conflicts', 'Nieuw blok: toont dubbele URLs en conflicterende shortcuts, met een directe link naar Health.'],
-                        ['categories', 'Breakdown per categorie: welke categorieën de meeste opens hebben.'],
-                    ])}
-                    ${section('health', [
-                        ['filter &amp; sort', 'Actief filter, sortering en zoekterm blijven bewaard bij een page refresh (sessionStorage).'],
-                        ['badge', 'Health-link op het dashboard toont een rood (broken) of geel (warnings) badge-getal.'],
-                    ])}
-                    ${section('colors — themapreview', [
-                        ['live preview', 'Naast de kleurpickers staat een mini-kaart die direct meeverandert als je kleuren aanpast.'],
+                    ${section('config — stats &amp; health', [
+                        ['conflicts', 'Toont dubbele URLs en conflicterende shortcuts, met directe link naar Health.'],
+                        ['categorie-breakdown', 'Welke categorieën de meeste opens hebben.'],
+                        ['health badge', 'Health-link toont rood (broken) of geel (warnings) badge-getal.'],
+                        ['filter bewaard', 'Filter, sortering en zoekterm in Health blijven bewaard bij refresh.'],
                     ])}
                 </div>
             </div>

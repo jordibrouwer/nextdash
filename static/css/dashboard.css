@@ -1704,3 +1704,80 @@ body.no-animations .bookmark-inline-form {
     opacity: 1 !important;
 }
 
+/* ── Quick-add omnibox ──────────────────────────────────────────────────── */
+
+.omnibox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 4.5rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.omnibox-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.omnibox-box {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    padding: 0.5rem 0.75rem;
+    width: min(640px, 92vw);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+
+.omnibox-hint {
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.omnibox-hint::before {
+    content: '+';
+    color: var(--accent-primary);
+    margin-right: 0.4rem;
+    font-weight: var(--font-weight-bold);
+}
+
+.omnibox-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.9rem;
+    padding: 0;
+    caret-color: var(--accent-primary);
+}
+
+.omnibox-input::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
+.omnibox-status {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 5rem;
+    text-align: right;
+}
+
+.omnibox-status.is-error {
+    color: var(--accent-error);
+}
+
+
