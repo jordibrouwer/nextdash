@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v10';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v11';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,23 +24,25 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
+                    ${section('dashboard — inline editor', [
+                        ['pagina-veld', 'Verander de pagina van een bookmark in de inline editor. De rij animeert weg en de bookmark verschijnt op de doelpagina.'],
+                        ['category herlaad', 'Wissel van pagina → category-lijst laadt direct de categorieën van de doelpagina.'],
+                        ['preview card', 'Hover-kaart blijft altijd binnen de viewport — flipt automatisch als die buiten het scherm zou vallen.'],
+                    ])}
+                    ${section('config — bookmarks side panel', [
+                        ['pagina-veld', 'Kies een andere pagina → categorieën van die pagina worden direct geladen.'],
+                        ['→ Move knop', 'Bevestig de verplaatsing. Bookmark wordt opgeslagen in de gekozen pagina én categorie.'],
+                        ['delete knop', 'Verwijder bookmark direct vanuit het detail-panel. Nieuwe bookmarks zonder bevestiging.'],
+                        ['lege state', 'Panel is leeg als er niets geselecteerd is — klik buiten een rij om te deselecteren.'],
+                    ])}
                     ${section('dashboard — quick-add', [
                         ['<code>+</code>', 'Omnibox: typ <code>naam | url | shortcut</code> en druk Enter. Favicon wordt automatisch opgehaald.'],
                         ['+ / ! knoppen', 'Twee vaste knoppen rechtsonder: <code>+</code> opent de omnibox, <code>!</code> opent de cheatsheet.'],
                     ])}
-                    ${section('dashboard — navigatie', [
-                        ['<code>,</code>', 'Pagina-overzicht: alle pagina\'s met bookmark-aantallen — navigeer met ↑↓ of 1–9.'],
-                        ['preview card', 'Hover-kaart toont nu ook volledige URL, open-count en laatste open-datum.'],
-                        ['tabblad-titel', 'Browser-tab toont de actieve paginanaam, bijv. <em>Work — nextDash</em>.'],
-                    ])}
-                    ${section('config — bookmarks', [
-                        ['delete knop', 'Verwijder bookmark direct vanuit het detail-panel. Nieuwe bookmarks worden zonder bevestiging verwijderd.'],
-                        ['lege state', 'Side panel is leeg als er niets geselecteerd is — klik buiten een rij om te deselecteren.'],
-                    ])}
-                    ${section('config — stats &amp; health', [
-                        ['conflicts', 'Toont dubbele URLs en conflicterende shortcuts, met directe link naar Health.'],
-                        ['categorie-breakdown', 'Welke categorieën de meeste opens hebben.'],
+                    ${section('health &amp; stats', [
+                        ['keep first', 'Elke duplicaatgroep heeft een knop die duplicaten in één klik oplost.'],
                         ['health badge', 'Health-link toont rood (broken) of geel (warnings) badge-getal.'],
+                        ['conflicts', 'Stats-tab toont dubbele URLs en shortcut-conflicten met link naar Health.'],
                         ['filter bewaard', 'Filter, sortering en zoekterm in Health blijven bewaard bij refresh.'],
                     ])}
                 </div>

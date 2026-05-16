@@ -120,6 +120,8 @@ class ConfigManager {
 
     async init() {
         await this.loadData();
+        // Align categories page with bookmarks page before first render
+        this.currentCategoriesPageId = parseInt(this.currentPageId) || 1;
         await this.language.init(this.settingsData.language);
         if (typeof ConfigStats === 'function') {
             this.stats = new ConfigStats(this.language.t.bind(this.language));
@@ -154,8 +156,7 @@ class ConfigManager {
 
         const categoriesSelector = document.getElementById('categories-page-selector');
         if (categoriesSelector) {
-            this.currentCategoriesPageId = parseInt(this.currentPageId);
-            this.loadPageCategories(this.currentPageId);
+            this.loadPageCategories(this.currentCategoriesPageId);
         }
         this.savedSnapshot = this.captureUndoSnapshot();
         this.refreshSmartCollectionCounters();

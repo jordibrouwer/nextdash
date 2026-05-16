@@ -3723,6 +3723,7 @@ class Dashboard {
             const cats = isCurrentPage
                 ? (this.categories || [])
                 : await fetch(`/api/categories?page=${pageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
+            const prevValue = catSelect.value;
             catSelect.innerHTML = '';
             const empty = document.createElement('option');
             empty.value = '';
@@ -3732,6 +3733,8 @@ class Dashboard {
                 const o = document.createElement('option');
                 o.value = cat.id || '';
                 o.textContent = cat.name || cat.id || '';
+                // Preserve selection if same id exists on target page; otherwise leave unselected
+                if ((cat.id || '') === prevValue) o.selected = true;
                 catSelect.appendChild(o);
             });
         };
@@ -3843,8 +3846,11 @@ class Dashboard {
         const url = fields.urlInput.value.trim();
         const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
         const category = fields.catSelect.value;
-        const targetPageId = fields.pageSelect ? Number(fields.pageSelect.value) : Number(this.currentPageId);
-        const isPageMove = bookmarkRef.scope === 'current' && targetPageId !== Number(this.currentPageId);
+        const targetPageId = fields.pageSelect ? Number(fields.pageSelect.value) : null;
+        const isPageMove = bookmarkRef.scope === 'current'
+            && targetPageId !== null
+            && Number.isFinite(targetPageId)
+            && targetPageId !== Number(this.currentPageId);
 
         if (!name || !url) {
             this.showErrorNotification('Name and URL are required.');
@@ -3876,7 +3882,7 @@ class Dashboard {
             url,
             icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : bookmark.icon,
             shortcut,
-            category: isPageMove ? '' : category,
+            category,
             pinned: fields.pinInput.checked,
             checkStatus: fields.statusInput.checked,
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : (bookmark.note || ''),
@@ -3921,11 +3927,11 @@ class Dashboard {
             this.ensureBookmarkMutationSnapshot();
             this.bookmarks.splice(index, 1);
 
-            // Load target page, append bookmark with cleared category
+            // Load target page, append bookmark (keep chosen category, or clear if none chosen)
             const targetRes = await fetch(`/api/bookmarks?page=${targetPageId}`);
             if (!targetRes.ok) throw new Error('Failed to load target page.');
             const targetBookmarks = await targetRes.json();
-            targetBookmarks.push({ ...bookmarkState, category: '' });
+            targetBookmarks.push({ ...bookmarkState });
 
             // Save both pages
             await fetch(`/api/bookmarks?page=${this.currentPageId}`, {
@@ -3943,6 +3949,8 @@ class Dashboard {
             const targetName = targetPage?.name || String(targetPageId);
 
             this.inlineEditingBookmarkIndex = null;
+            // Reload current page so categories are fresh (config may have added new ones)
+            await this.loadPageBookmarks(this.currentPageId);
             this.renderDashboard();
             this.showNotification(`Moved to "${targetName}".`, 'success');
         } catch (err) {

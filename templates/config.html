@@ -1458,31 +1458,32 @@
                             <p class="help-intro">A short recap of the most recent changes.</p>
                             <h4 class="help-subheading">Dashboard</h4>
                             <ul>
-                                <li><strong>Bookmark flash</strong> — Subtiele ripple-animatie als je een bookmark opent — bevestiging dat de actie geregistreerd is.</li>
-                                <li><strong>Preview card uitgebreid</strong> — Hover-kaart toont nu ook de volledige URL, open-count en laatste open-datum.</li>
-                                <li><strong>Pagina-overzicht</strong> — Druk op <code>,</code> voor een overlay met alle pagina's en hun bookmark-aantallen. Navigeer met <code>↑/↓</code> of <code>1–9</code>, bevestig met <code>Enter</code>, sluit met <code>Esc</code> of <code>,</code>.</li>
-                                <li><strong>Cheatsheet knop</strong> — Permanente <code>?</code>-knop rechtsonder opent de keyboard shortcuts. In/uitschakelbaar via config → general → Buttons.</li>
-                                <li><strong>Cheatsheet herontworpen</strong> — Compacter, thema-kleurig (sleutels in accent-kleur, secties als <code>// naam</code>), makkelijker te scannen.</li>
-                                <li><strong>Tabblad-titel</strong> — Browser-tab toont de actieve paginanaam, bijv. <em>Work — nextDash</em>.</li>
+                                <li><strong>Preview card edge-detection</strong> — De hover-kaart blijft altijd binnen de viewport. Als de kaart buiten het scherm zou vallen wordt hij automatisch aan de andere kant van de cursor geplaatst.</li>
+                                <li><strong>Quick-add omnibox</strong> — Druk op <code>+</code> voor een compacte invoerbalk: typ <code>naam | url | shortcut</code> in één veld. Favicon wordt automatisch opgehaald bij opslaan.</li>
+                                <li><strong>Hoek-knoppen</strong> — <code>+</code> (quick-add) en <code>!</code> (cheatsheet) staan vast rechtsonder op het dashboard.</li>
                             </ul>
-                            <h4 class="help-subheading">Config — bookmarks</h4>
+                            <h4 class="help-subheading">Dashboard — inline editor</h4>
                             <ul>
-                                <li><strong>Delete vanuit side panel</strong> — Verwijder het geselecteerde bookmark direct via de prullenbak in het detail-panel. Nieuwe (niet opgeslagen) bookmarks worden zonder bevestigingsdialoog verwijderd.</li>
-                                <li><strong>Lege state</strong> — Het side panel toont een lege state als er geen bookmark geselecteerd is. Klik buiten een rij om te deselecteren.</li>
+                                <li><strong>Pagina-veld</strong> — Verander de pagina van een bookmark direct in de inline editor. De rij animeert weg en de bookmark verschijnt op de doelpagina na opslaan.</li>
+                                <li><strong>Category herlaad</strong> — Als je van pagina wisselt in de inline editor worden de categorieën van de doelpagina direct geladen in het category-veld.</li>
                             </ul>
-                            <h4 class="help-subheading">Config — stats</h4>
+                            <h4 class="help-subheading">Config — bookmarks side panel</h4>
                             <ul>
-                                <li><strong>Conflicts &amp; duplicates</strong> — Nieuw blok toont het aantal dubbele URLs en conflicterende shortcuts, met een directe link naar de Health-pagina.</li>
-                                <li><strong>Categorie-breakdown</strong> — Welke categorieën de meeste opens hebben, gesorteerd op gebruik.</li>
+                                <li><strong>Pagina-veld</strong> — Kies een andere pagina in het detail-panel; de categorielijst herlaadt direct met de categorieën van die pagina.</li>
+                                <li><strong>Verplaatsen via "→ Move"</strong> — Klik op de Move-knop om te bevestigen. De bookmark wordt verplaatst met de gekozen categorie.</li>
+                                <li><strong>Delete vanuit side panel</strong> — Verwijder het geselecteerde bookmark direct via de prullenbak. Nieuwe (niet opgeslagen) bookmarks worden zonder bevestiging verwijderd.</li>
+                                <li><strong>Lege state</strong> — Het panel is leeg als er niets geselecteerd is. Klik buiten een rij om te deselecteren.</li>
                             </ul>
                             <h4 class="help-subheading">Health</h4>
                             <ul>
+                                <li><strong>Duplicaten oplossen</strong> — Elke duplicaatgroep heeft een "keep first, remove rest"-knop die duplicaten in één klik oplost.</li>
                                 <li><strong>Filter &amp; sort bewaard</strong> — Actief filter, sortering en zoekterm blijven bewaard bij een page refresh (via sessionStorage).</li>
                                 <li><strong>Health badge</strong> — De health-link op het dashboard toont een rood (broken) of geel (warnings) badge-getal.</li>
                             </ul>
-                            <h4 class="help-subheading">Colors — themapreview</h4>
+                            <h4 class="help-subheading">Config — stats</h4>
                             <ul>
-                                <li><strong>Live preview</strong> — Naast de kleurpickers staat een mini-kaart die direct meeverandert als je kleuren aanpast.</li>
+                                <li><strong>Conflicts &amp; duplicates</strong> — Toont het aantal dubbele URLs en conflicterende shortcuts, met een directe link naar de Health-pagina.</li>
+                                <li><strong>Categorie-breakdown</strong> — Welke categorieën de meeste opens hebben, gesorteerd op gebruik.</li>
                             </ul>
                         </section>
 

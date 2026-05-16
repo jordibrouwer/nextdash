@@ -199,29 +199,26 @@ See `extension/README.md` for full usage and development notes.
 ### Newest
 
 **Dashboard — UX**
-- Page overview (`','`): overlay shows all pages with bookmark counts; navigate with `↑/↓` or `1–9`, jump with `Enter`, close with `Esc` or `,`
-- Bookmark flash: subtle ripple animation when opening a bookmark — visual confirmation the action was registered
-- Preview card extended: hover card now shows the full URL, open count, and last-opened date
-- Tab title: browser tab now shows the active page name, e.g. *Work — nextDash*
+- Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
+- Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
+- Corner buttons: `+` (quick-add) and `!` (cheatsheet) fixed in the bottom-right corner of the dashboard
 
-**Dashboard — cheatsheet**
-- Permanent `?` button in the bottom-right corner opens the keyboard shortcut cheat sheet (toggle in config → general → Buttons)
-- Cheatsheet redesigned: terminal-table style, accent-colored keys, `// section` headings, two-column layout — more scannable, fits one screen
+**Dashboard — inline editor**
+- Page field: change the page of a bookmark directly in the inline editor; the row animates out and the bookmark moves to the target page on save
+- Category reloads in real time when you switch page — shows the categories of the destination page before saving
 
-**Config — bookmarks**
-- Delete from side panel: trash button in the detail panel deletes the selected bookmark directly; new (unsaved) bookmarks skip the confirmation dialog
-- Empty state: side panel shows an empty state when no bookmark is selected; click outside a row to deselect
+**Config — bookmarks side panel**
+- Page field: select a different page in the detail panel; the category list reloads instantly to show the categories of that page
+- Click "→ Move" to confirm — bookmark is moved with the chosen category applied
+- Delete from side panel: trash button deletes directly; new (unsaved) bookmarks skip the confirmation dialog
+- Empty state: panel is blank when nothing is selected; click outside a row to deselect
+
+**Health**
+- Duplicate groups: each group has a "keep first, remove rest" button — resolves duplicates in one click
 
 **Config — stats**
 - Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page
 - Category breakdown: which categories have the most opens, sorted by usage
-
-**Health**
-- Filter, sort, and search state persist across page refreshes (sessionStorage)
-- Health badge on the dashboard header: red number for broken bookmarks, yellow for warnings
-
-**Colors**
-- Live theme preview card: mini card next to the color pickers updates in real time as you change colors
 
 ### Recent
 
