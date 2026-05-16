@@ -299,10 +299,50 @@
     margin-bottom: 12px;
 }
 
+.health-duplicate-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 10px;
+}
+
 .health-duplicate-url {
     font-weight: 700;
-    margin-bottom: 10px;
     word-break: break-all;
+    flex: 1;
+}
+
+.health-keep-first-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.health-duplicate-keep {
+    border-color: var(--accent-success) !important;
+    color: var(--accent-success) !important;
+}
+
+.health-duplicate-remove {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.health-duplicate-badge {
+    font-size: 0.7em;
+    padding: 1px 5px;
+    margin-left: 4px;
+    border: 1px solid currentColor;
+    vertical-align: middle;
+}
+
+.health-duplicate-badge.keep {
+    color: var(--accent-success);
+}
+
+.health-duplicate-badge.remove {
+    color: var(--accent-error);
+    text-decoration: none;
 }
 
 .health-empty {

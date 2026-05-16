@@ -239,16 +239,42 @@
             return `<div class="health-empty">${escapeHtml(t('health.noDuplicateGroups', 'No duplicate groups found.'))}</div>`;
         }
 
-        return groups.map((group) => `
-            <article class="health-duplicate-group">
-                <div class="health-duplicate-url">${escapeHtml(group.url)}</div>
+        const html = groups.map((group, idx) => `
+            <article class="health-duplicate-group" data-group-index="${idx}">
+                <div class="health-duplicate-header">
+                    <div class="health-duplicate-url">${escapeHtml(group.url)}</div>
+                    <button class="btn btn-small btn-danger health-keep-first-btn" data-group-index="${idx}" title="${escapeHtml(t('health.keepFirstTitle', 'Keep first, remove the rest'))}">
+                        ${escapeHtml(t('health.keepFirst', 'keep first'))}
+                    </button>
+                </div>
                 <div class="health-duplicate-items">
-                    ${(group.bookmarks || []).map((bookmark) => `
-                        <span>${escapeHtml(bookmark.name)} <em>${escapeHtml(t('health.pageLower', 'page'))} ${escapeHtml(bookmark.pageId)}</em></span>
+                    ${(group.bookmarks || []).map((bookmark, bIdx) => `
+                        <span class="${bIdx === 0 ? 'health-duplicate-keep' : 'health-duplicate-remove'}">
+                            ${escapeHtml(bookmark.name)}
+                            <em>${escapeHtml(t('health.pageLower', 'page'))} ${escapeHtml(String(bookmark.pageId))}</em>
+                            ${bIdx === 0 ? `<span class="health-duplicate-badge keep">${escapeHtml(t('health.keep', 'keep'))}</span>` : `<span class="health-duplicate-badge remove">${escapeHtml(t('health.remove', 'remove'))}</span>`}
+                        </span>
                     `).join('')}
                 </div>
             </article>
         `).join('');
+
+        return html;
+    }
+
+    function bindDuplicateActions() {
+        document.querySelectorAll('.health-keep-first-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const idx = parseInt(btn.getAttribute('data-group-index'), 10);
+                const group = healthState.report?.duplicateGroups?.[idx];
+                if (!group) return;
+
+                btn.disabled = true;
+                btn.textContent = t('health.removing', 'removing…');
+
+                await performMergeDuplicates(group);
+            });
+        });
     }
 
     function bindActions() {
@@ -713,6 +739,7 @@
         if (issuesEl) issuesEl.innerHTML = renderIssues(report);
         if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
         bindActions();
+        bindDuplicateActions();
     }
 
     async function loadReport() {
