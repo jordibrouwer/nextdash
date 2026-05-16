@@ -1506,19 +1506,20 @@ class Dashboard {
         const sections = this.getKeyboardCheatSheetItems();
         const html = `
             <div class="keyboard-cheat-sheet">
-                <p class="keyboard-cheat-sheet-intro">Keyboard shortcuts, bookmark mouse gestures, search, and quick actions.</p>
                 <div class="keyboard-cheat-sheet-grid">
                     ${sections.map((section) => `
                         <section class="keyboard-cheat-sheet-panel">
                             <h3 class="keyboard-cheat-sheet-section-title">${section.title}</h3>
-                            <div class="keyboard-cheat-sheet-list">
-                                ${section.items.map((shortcut) => `
-                                    <div class="keyboard-cheat-sheet-row">
-                                        <span class="keyboard-cheat-sheet-keys">${shortcut.keys}</span>
-                                        <span class="keyboard-cheat-sheet-description">${shortcut.description}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
+                            <table class="keyboard-cheat-sheet-table">
+                                <tbody>
+                                    ${section.items.map((shortcut) => `
+                                        <tr>
+                                            <td class="keyboard-cheat-sheet-keys">${shortcut.keys}</td>
+                                            <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </section>
                     `).join('')}
                 </div>
@@ -1526,12 +1527,12 @@ class Dashboard {
         `;
 
         window.AppModal.show({
-            title: 'Keyboard cheat sheet',
+            title: 'keyboard shortcuts',
             htmlMessage: html,
-            confirmText: 'Close',
+            confirmText: 'close',
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
-            modalMaxWidth: '1120px',
+            modalMaxWidth: '960px',
             modalWidth: '96vw'
         });
     }
@@ -1650,77 +1651,47 @@ class Dashboard {
     getKeyboardCheatSheetItems() {
         return [
             {
-                title: 'Dashboard: navigation',
+                title: 'navigation',
                 items: [
-                    { keys: '1-9', description: 'Open the matching page tab' },
-                    { keys: ',', description: 'Page overview — all pages with bookmark counts, navigate with ↑↓ or 1-9' },
-                    { keys: 'Shift + ← / →', description: 'Move between page tabs' },
-                    { keys: '↑ / ↓', description: 'Move through bookmarks with keyboard focus' },
-                    { keys: '← / →', description: 'Move horizontally through the bookmark grid' },
-                    { keys: 'Enter / Space', description: 'Open the selected bookmark' },
-                    { keys: '[', description: 'Toggle preview card on the keyboard-selected bookmark' },
-                    { keys: 'Ctrl + C', description: 'Copy the URL of the keyboard-selected bookmark to the clipboard' },
-                    { keys: ';', description: 'Open inline edit (arrow-highlighted row or Tab-focused link)' },
-                    { keys: 'Esc', description: 'Clear selection or undo the latest reorder' },
-                    { keys: 'Double-click page tab', description: 'Rename the page tab inline' },
-                    { keys: 'Double-click category title', description: 'Rename the category inline' }
+                    { keys: '1–9', description: 'Switch to page tab' },
+                    { keys: 'Shift + ← / →', description: 'Previous / next page' },
+                    { keys: ',', description: 'Page overview with bookmark counts' },
+                    { keys: '↑ / ↓', description: 'Move focus through bookmarks' },
+                    { keys: '← / →', description: 'Move horizontally in grid' },
+                    { keys: 'Enter / Space', description: 'Open focused bookmark' },
+                    { keys: 'Esc', description: 'Clear selection / close overlay' }
                 ]
             },
             {
-                title: 'Dashboard bookmarks (mouse)',
+                title: 'bookmarks',
                 items: [
-                    { keys: 'Left strip (handle)', description: 'Drag to reorder within a category or drop into another column' },
-                    { keys: 'Long-press row', description: 'Hold ~500ms on the row, not on the strip, to open inline edit' },
-                    { keys: 'Hover row', description: 'Load preview metadata on demand when preview-on-hover is enabled' },
-                    { keys: 'Copy icon (hover card)', description: 'Hover the preview card and click the clipboard icon to copy the URL' },
-                    { keys: 'Open count badge', description: 'Compact/dense mode shows a subtle open-count number per bookmark' }
+                    { keys: '[', description: 'Toggle preview card on focused bookmark' },
+                    { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark' },
+                    { keys: ';', description: 'Inline edit focused bookmark' },
+                    { keys: 'Ctrl + Shift + A', description: 'New bookmark modal' },
+                    { keys: 'Double-click title', description: 'Rename page tab or category' },
+                    { keys: 'Drag handle (left strip)', description: 'Reorder bookmark within / across categories' }
                 ]
             },
             {
-                title: 'Dashboard: search & commands',
+                title: 'search & commands',
                 items: [
                     { keys: '>', description: 'Open search' },
-                    { keys: ':', description: 'Open command mode' },
-                    { keys: '?', description: 'Open finders' },
-                    { keys: '!', description: 'Open keyboard cheat sheet' },
-                    { keys: '*', description: 'Open or close recent bookmarks' },
-                    { keys: 'Ctrl + / or F1', description: 'Open keyboard cheat sheet' },
-                    { keys: ':note <query>', description: 'Edit the note of a bookmark directly from the command palette' },
-                    { keys: ':new', description: 'Open new-bookmark modal with tags, icon, page and category' },
-                    { keys: 'category:<value>', description: 'Filter by category (example: category:work)' },
-                    { keys: 'tag:<value>', description: 'Filter by tag (example: tag:dev)' },
-                    { keys: 'status:<value>', description: 'Filter by status (online/offline/pinned/broken/ok…)' },
-                    { keys: 'page:<value>', description: 'Filter by page (current/all/number, e.g. page:2)' }
+                    { keys: ':', description: 'Command palette' },
+                    { keys: '?', description: 'Finders' },
+                    { keys: '*', description: 'Recent bookmarks' },
+                    { keys: ':new', description: 'Add bookmark via command' },
+                    { keys: ':note <query>', description: 'Edit note via command' },
+                    { keys: 'category: / tag: / page:', description: 'Filter in search bar' }
                 ]
             },
             {
-                title: 'Bookmark delete & undo',
+                title: 'other',
                 items: [
-                    { keys: 'Delete (inline edit)', description: 'Removes the bookmark from the dashboard immediately' },
-                    { keys: 'Undo toast', description: '"Ongedaan maken" appears for 5 seconds — click to restore' },
-                    { keys: 'Auto-save', description: 'If undo is not clicked the deletion is persisted after 5 s' }
-                ]
-            },
-            {
-                title: 'Health monitoring',
-                items: [
-                    { keys: 'health link', description: 'Visit the health dashboard to monitor all bookmarks' },
-                    { keys: 'Filter pills', description: 'Click issue type (broken, duplicate, stale, etc.) to filter bookmarks' },
-                    { keys: 'Search health', description: 'Type to find bookmarks by name, URL, category, or page' },
-                    { keys: 'favicon button', description: 'Re-fetch and store a fresh favicon for a bookmark directly in health view' },
-                    { keys: 'refresh', description: 'Re-scan all bookmarks and detect latest issues' },
-                    { keys: 'Bulk actions', description: 'Retest all checked, open broken links, or merge duplicates' }
-                ]
-            },
-            {
-                title: 'Config: quick actions',
-                items: [
-                    { keys: '1-8', description: 'Jump between config tabs' },
-                    { keys: 'S', description: 'Save config changes' },
-                    { keys: 'Alt + ↑ / ↓', description: 'Move selected bookmark in config lists' },
-                    { keys: 'Ctrl + Shift + A', description: 'Open new bookmark modal from dashboard' },
-                    { keys: 'Search bar (bookmarks)', description: 'Filter the config bookmark list by name, URL, tag, or note' },
-                    { keys: 'Dark/light toggle', description: 'Header button (if enabled) instantly flips the active theme variant' }
+                    { keys: '! or Ctrl + / or F1', description: 'This cheat sheet' },
+                    { keys: 'Delete (inline edit)', description: 'Remove bookmark (undo toast for 5 s)' },
+                    { keys: '1–8 (config)', description: 'Jump between config tabs' },
+                    { keys: 'S (config)', description: 'Save config' }
                 ]
             }
         ];
@@ -3182,9 +3153,18 @@ class Dashboard {
 
         openLink.addEventListener('click', (e) => {
             this.recordBookmarkOpened(bookmark);
+            row.classList.remove('bookmark-flash');
+            void row.offsetWidth;
+            row.classList.add('bookmark-flash');
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(bookmark.url);
+            }
+        });
+
+        row.addEventListener('animationend', (e) => {
+            if (e.animationName === 'bookmarkFlash') {
+                row.classList.remove('bookmark-flash');
             }
         });
 

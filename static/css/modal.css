@@ -38,8 +38,8 @@
 }
 
 .modal.keyboard-cheat-sheet-modal {
-    max-width: 820px;
-    width: min(90vw, 820px);
+    max-width: 960px;
+    width: min(96vw, 960px);
     margin: auto;
     max-height: 90vh;
     overflow: hidden;
@@ -228,98 +228,86 @@ body.no-animations .modal-button.danger.selected {
     cursor: not-allowed;
 }
 
+/* ── Keyboard cheat sheet: terminal-table style ─────────────────────────── */
+
 .keyboard-cheat-sheet {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
     width: 100%;
-    max-width: 100%;
 }
 
 .keyboard-cheat-sheet-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 2.5rem;
     width: 100%;
+    align-items: start;
 }
 
 .keyboard-cheat-sheet-panel {
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    padding: 0.75rem;
     min-width: 0;
-    overflow: visible;
+    padding-bottom: 1.1rem;
 }
 
 .keyboard-cheat-sheet-section-title {
-    margin: 0 0 0.55rem 0;
-    color: var(--accent-success);
-    font-size: 0.74rem;
+    margin: 0 0 0.35rem 0;
+    font-size: 0.7rem;
     font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
     letter-spacing: 0.06em;
+    text-transform: lowercase;
+    color: var(--text-tertiary);
 }
 
-.keyboard-cheat-sheet-intro {
-    color: var(--text-secondary);
-    font-size: 0.72rem;
-    line-height: 1.25;
+.keyboard-cheat-sheet-section-title::before {
+    content: '// ';
 }
 
-.keyboard-cheat-sheet-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+.keyboard-cheat-sheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
 }
 
-.keyboard-cheat-sheet-row {
-    display: grid;
-    grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
-    gap: 0.6rem;
-    align-items: start;
-    padding: 0.32rem 0;
-    border-top: 1px solid var(--border-primary);
+.keyboard-cheat-sheet-table td {
+    padding: 0.28rem 0;
+    border-bottom: 1px solid var(--border-primary);
+    vertical-align: top;
+    line-height: 1.35;
 }
 
-.keyboard-cheat-sheet-row:first-child {
-    border-top: 0;
-    padding-top: 0;
+.keyboard-cheat-sheet-table tr:last-child td {
+    border-bottom: none;
 }
 
 .keyboard-cheat-sheet-keys {
     font-family: "Source Code Pro", monospace;
-    font-size: 0.66rem;
+    font-size: 0.68rem;
     font-weight: var(--font-weight-bold);
-    color: var(--accent-success);
+    color: var(--accent-primary);
     white-space: normal;
     word-break: break-word;
+    padding-right: 1rem;
+    width: 42%;
 }
 
 .keyboard-cheat-sheet-description {
-    color: var(--text-primary);
-    font-size: 0.78rem;
-    line-height: 1.32;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
     min-width: 0;
     overflow-wrap: anywhere;
-}
-
-@media (max-width: 1100px) {
-    .keyboard-cheat-sheet-grid {
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-    }
+    width: 58%;
 }
 
 @media (max-width: 820px) {
     .keyboard-cheat-sheet-grid {
         grid-template-columns: 1fr;
+        gap: 0;
     }
 
     .modal.keyboard-cheat-sheet-modal {
-        width: min(96vw, 840px);
+        width: min(96vw, 960px);
         max-height: 86vh;
     }
 
-    .keyboard-cheat-sheet-row {
-        grid-template-columns: 6rem minmax(0, 1fr);
+    .keyboard-cheat-sheet-keys {
+        white-space: normal;
     }
 }

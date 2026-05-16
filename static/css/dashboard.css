@@ -1470,6 +1470,26 @@ body.no-animations .bookmarks-list.reorder-container::after {
     white-space: nowrap;
 }
 
+/* Bookmark open flash animation */
+@keyframes bookmarkFlash {
+    0%   { opacity: 0.55; }
+    100% { opacity: 0; }
+}
+
+.bookmark-link {
+    position: relative;
+}
+
+.bookmark-link.bookmark-flash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-primary);
+    opacity: 0;
+    pointer-events: none;
+    animation: bookmarkFlash 380ms ease-out forwards;
+}
+
 /* Keyboard navigation highlight */
 .bookmark-link.keyboard-selected {
     color: var(--text-primary);
