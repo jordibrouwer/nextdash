@@ -1189,6 +1189,18 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     margin-left: auto;
 }
 
+@keyframes bookmarkMoveOut {
+    0%   { opacity: 1; transform: translateX(0); }
+    60%  { opacity: 0.3; transform: translateX(18px); }
+    100% { opacity: 0; transform: translateX(32px); max-height: 0; padding: 0; margin: 0; }
+}
+
+.bookmark-move-out {
+    animation: bookmarkMoveOut 0.32s ease-in forwards;
+    overflow: hidden;
+    pointer-events: none;
+}
+
 .bookmark-inline-delete:hover {
     border-color: var(--text-primary);
     color: var(--text-primary);
@@ -1698,7 +1710,8 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 body.no-animations #dashboard-layout.page-transition,
 body.no-animations .category.animate-enter,
 body.no-animations .bookmark-link.animate-enter,
-body.no-animations .bookmark-inline-form {
+body.no-animations .bookmark-inline-form,
+body.no-animations .bookmark-move-out {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;

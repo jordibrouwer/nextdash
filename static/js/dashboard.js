@@ -3706,6 +3706,38 @@ class Dashboard {
         });
         form.appendChild(mkField('Category', catSelect));
 
+        const pageSelect = document.createElement('select');
+        pageSelect.className = 'bookmark-inline-select';
+        const currentPageId = Number(this.currentPageId);
+        (Array.isArray(this.pages) ? this.pages : []).forEach((page) => {
+            const o = document.createElement('option');
+            o.value = page.id;
+            o.textContent = page.name || String(page.id);
+            if (Number(page.id) === currentPageId) o.selected = true;
+            pageSelect.appendChild(o);
+        });
+        form.appendChild(mkField('Page', pageSelect));
+
+        const reloadCatSelectForPage = async (pageId) => {
+            const isCurrentPage = Number(pageId) === currentPageId;
+            const cats = isCurrentPage
+                ? (this.categories || [])
+                : await fetch(`/api/categories?page=${pageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
+            catSelect.innerHTML = '';
+            const empty = document.createElement('option');
+            empty.value = '';
+            empty.textContent = '—';
+            catSelect.appendChild(empty);
+            cats.forEach(cat => {
+                const o = document.createElement('option');
+                o.value = cat.id || '';
+                o.textContent = cat.name || cat.id || '';
+                catSelect.appendChild(o);
+            });
+        };
+
+        pageSelect.addEventListener('change', () => reloadCatSelectForPage(pageSelect.value));
+
         const pinInput = document.createElement('input');
         pinInput.type = 'checkbox';
         pinInput.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
@@ -3747,12 +3779,13 @@ class Dashboard {
                 iconUrlInput,
                 shortcutInput,
                 catSelect,
+                pageSelect,
                 pinInput,
                 statusInput,
                 noteInput,
                 tagsInput,
                 getPendingIcon: () => pendingIcon
-            });
+            }, row);
         });
 
         const cancelBtn = document.createElement('button');
@@ -3800,7 +3833,7 @@ class Dashboard {
         nameInput.select();
     }
 
-    async commitBookmarkInlineEdit(bookmarkRef, fields) {
+    async commitBookmarkInlineEdit(bookmarkRef, fields, row) {
         const bookmark = bookmarkRef?.bookmark;
         if (!bookmark || !bookmarkRef) {
             return;
@@ -3810,6 +3843,8 @@ class Dashboard {
         const url = fields.urlInput.value.trim();
         const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
         const category = fields.catSelect.value;
+        const targetPageId = fields.pageSelect ? Number(fields.pageSelect.value) : Number(this.currentPageId);
+        const isPageMove = bookmarkRef.scope === 'current' && targetPageId !== Number(this.currentPageId);
 
         if (!name || !url) {
             this.showErrorNotification('Name and URL are required.');
@@ -3841,12 +3876,17 @@ class Dashboard {
             url,
             icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : bookmark.icon,
             shortcut,
-            category,
+            category: isPageMove ? '' : category,
             pinned: fields.pinInput.checked,
             checkStatus: fields.statusInput.checked,
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : (bookmark.note || ''),
             tags: parsedTags
         };
+
+        if (isPageMove) {
+            await this._moveBookmarkToPage(bookmarkRef, nextBookmarkState, targetPageId, row);
+            return;
+        }
 
         if (bookmarkRef.scope === 'current') {
             this.ensureBookmarkMutationSnapshot();
@@ -3866,6 +3906,48 @@ class Dashboard {
         this.inlineEditingBookmarkIndex = null;
         await this.loadAllBookmarks();
         this.renderDashboard();
+    }
+
+    async _moveBookmarkToPage(bookmarkRef, bookmarkState, targetPageId, row) {
+        const index = bookmarkRef.index;
+        try {
+            // Animate row out before removing
+            if (row) {
+                row.classList.add('bookmark-move-out');
+                await new Promise(resolve => setTimeout(resolve, 320));
+            }
+
+            // Remove from current page
+            this.ensureBookmarkMutationSnapshot();
+            this.bookmarks.splice(index, 1);
+
+            // Load target page, append bookmark with cleared category
+            const targetRes = await fetch(`/api/bookmarks?page=${targetPageId}`);
+            if (!targetRes.ok) throw new Error('Failed to load target page.');
+            const targetBookmarks = await targetRes.json();
+            targetBookmarks.push({ ...bookmarkState, category: '' });
+
+            // Save both pages
+            await fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.bookmarks)
+            });
+            await fetch(`/api/bookmarks?page=${targetPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(targetBookmarks)
+            });
+
+            const targetPage = (Array.isArray(this.pages) ? this.pages : []).find(p => Number(p.id) === targetPageId);
+            const targetName = targetPage?.name || String(targetPageId);
+
+            this.inlineEditingBookmarkIndex = null;
+            this.renderDashboard();
+            this.showNotification(`Moved to "${targetName}".`, 'success');
+        } catch (err) {
+            this.showErrorNotification(err.message || 'Failed to move bookmark.');
+        }
     }
 
     hasShortcutConflict(shortcut, bookmarkRef) {
