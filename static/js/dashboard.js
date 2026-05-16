@@ -4567,20 +4567,28 @@ class Dashboard {
         const offsetX = 16;
         const offsetY = 18;
         const margin = 12;
+
+        const rect = card.getBoundingClientRect();
+        const width = rect.width || 360;
+        const height = rect.height || 140;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Prefer right of cursor; flip left if it would overflow right edge
         let left = clientX + offsetX;
+        if (left + width > vw - margin) {
+            left = clientX - width - offsetX;
+        }
+
+        // Prefer below cursor; flip above if it would overflow bottom edge
         let top = clientY + offsetY;
-        const width = card.offsetWidth || 320;
-        const height = card.offsetHeight || 140;
-
-        if (left + width > window.innerWidth - margin) {
-            left = clientX - width - 12;
-        }
-        if (top + height > window.innerHeight - margin) {
-            top = window.innerHeight - height - margin;
+        if (top + height > vh - margin) {
+            top = clientY - height - offsetY;
         }
 
-        left = Math.min(Math.max(margin, left), window.innerWidth - width - margin);
-        top = Math.min(Math.max(margin, top), window.innerHeight - height - margin);
+        // Final clamp so the card never goes off any edge
+        left = Math.min(Math.max(margin, left), vw - width - margin);
+        top = Math.min(Math.max(margin, top), vh - height - margin);
 
         card.style.left = `${left}px`;
         card.style.top = `${top}px`;
