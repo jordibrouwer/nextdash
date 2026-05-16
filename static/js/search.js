@@ -325,6 +325,13 @@ class SearchComponent {
             return;
         }
 
+        // , opens the page overview overlay (never feeds into search)
+        if (e.key === ',') {
+            e.preventDefault();
+            window.dashboardInstance?.showPageOverlay?.();
+            return;
+        }
+
         // Handle space key for commands
         if (key === ' ' && this.currentQuery.startsWith(':')) {
             e.preventDefault();
@@ -341,16 +348,16 @@ class SearchComponent {
 
         // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
         if (this.searchActive) {
-            if (!/^[A-Z0-9#\-]$/.test(key)) {
+            if (!/^[A-Z0-9\-]$/.test(key)) {
                 return;
             }
         } else {
             if (this.interleaveMode) {
-                if (!/^[A-Z0-9/#\-]$/.test(key)) {
+                if (!/^[A-Z0-9/\-]$/.test(key)) {
                     return;
                 }
             } else {
-                if (!/^[A-Z:/#\-]$/.test(key)) {
+                if (!/^[A-Z:/\-]$/.test(key)) {
                     return;
                 }
             }

@@ -1081,7 +1081,14 @@ class Dashboard {
                 this.showKeyboardCheatSheet();
                 return;
             }
-            
+
+            if (e.key === ',') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showPageOverlay();
+                return;
+            }
+
             // Check if a number key (1-9) was pressed
             const key = e.key;
             if (key === '>') this.markInlineTipUsed('search_open');
@@ -1312,6 +1319,7 @@ class Dashboard {
             'Tip: <code>:</code> open commands',
             'Tip: <code>/</code> start fuzzy search',
             'Tip: <code>1-9</code> jump to page',
+            'Tip: <code>,</code> page overview — see all pages with bookmark counts',
             'Tip: <code>Shift+←/→</code> switch page',
             'Tip: <code>Enter</code> open selected bookmark',
             'Tip: <code>Space</code> open selected bookmark',
@@ -1528,12 +1536,124 @@ class Dashboard {
         });
     }
 
+    showPageOverlay() {
+        if (document.getElementById('page-overview-overlay')) return;
+
+        const pages = Array.isArray(this.pages) ? this.pages : [];
+        if (pages.length === 0) return;
+
+        const allBookmarks = Array.isArray(this.allBookmarks) ? this.allBookmarks : [];
+
+        const overlay = document.createElement('div');
+        overlay.id = 'page-overview-overlay';
+        overlay.className = 'page-overview-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Page overview');
+
+        const panel = document.createElement('div');
+        panel.className = 'page-overview-panel';
+
+        const header = document.createElement('div');
+        header.className = 'page-overview-header';
+        header.textContent = 'Pages';
+        panel.appendChild(header);
+
+        const list = document.createElement('ul');
+        list.className = 'page-overview-list';
+
+        let focusedIndex = pages.findIndex(p => p.id === this.currentPageId);
+        if (focusedIndex < 0) focusedIndex = 0;
+
+        pages.forEach((page, idx) => {
+            const count = allBookmarks.filter(b => String(b.pageId) === String(page.id)).length;
+            const li = document.createElement('li');
+            li.className = 'page-overview-item' + (page.id === this.currentPageId ? ' is-current' : '');
+            li.setAttribute('data-idx', String(idx));
+            li.setAttribute('tabindex', '-1');
+
+            const numSpan = document.createElement('span');
+            numSpan.className = 'page-overview-num';
+            numSpan.textContent = String(idx + 1);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'page-overview-name';
+            nameSpan.textContent = page.name || `Page ${idx + 1}`;
+
+            const countSpan = document.createElement('span');
+            countSpan.className = 'page-overview-count';
+            countSpan.textContent = String(count);
+
+            li.appendChild(numSpan);
+            li.appendChild(nameSpan);
+            li.appendChild(countSpan);
+
+            li.addEventListener('click', () => {
+                close();
+                this.loadPageBookmarks(page.id);
+            });
+
+            list.appendChild(li);
+        });
+
+        panel.appendChild(list);
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
+
+        const items = () => list.querySelectorAll('.page-overview-item');
+
+        const setFocus = (idx) => {
+            focusedIndex = Math.max(0, Math.min(pages.length - 1, idx));
+            items().forEach((el, i) => el.classList.toggle('is-focused', i === focusedIndex));
+            items()[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+        };
+
+        const close = () => {
+            overlay.remove();
+            document.removeEventListener('keydown', onKey, true);
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape' || e.key === ',') {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            } else if (e.key === 'ArrowDown' || e.key === 'Tab') {
+                e.preventDefault();
+                setFocus(focusedIndex + 1);
+            } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+                e.preventDefault();
+                setFocus(focusedIndex - 1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const page = pages[focusedIndex];
+                if (page) { close(); this.loadPageBookmarks(page.id); }
+            } else if (e.key >= '1' && e.key <= '9') {
+                const idx = parseInt(e.key) - 1;
+                if (idx < pages.length) {
+                    e.preventDefault();
+                    close();
+                    this.loadPageBookmarks(pages[idx].id);
+                }
+            }
+        };
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', onKey, true);
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-visible');
+            setFocus(focusedIndex);
+        });
+    }
+
     getKeyboardCheatSheetItems() {
         return [
             {
                 title: 'Dashboard: navigation',
                 items: [
                     { keys: '1-9', description: 'Open the matching page tab' },
+                    { keys: ',', description: 'Page overview — all pages with bookmark counts, navigate with ↑↓ or 1-9' },
                     { keys: 'Shift + ← / →', description: 'Move between page tabs' },
                     { keys: '↑ / ↓', description: 'Move through bookmarks with keyboard focus' },
                     { keys: '← / →', description: 'Move horizontally through the bookmark grid' },
@@ -4063,25 +4183,44 @@ class Dashboard {
             .slice(0, 10);
     }
 
+    buildBookmarkTooltip(bookmark, previewTitle, previewDescription) {
+        const parts = [];
+        const title = previewTitle || bookmark.name || '';
+        if (title) parts.push(title);
+        if (previewDescription) parts.push(previewDescription);
+        const url = String(bookmark.url || '').trim();
+        if (url) parts.push(url);
+        const openCount = Number(bookmark.openCount || 0);
+        const lastOpened = bookmark.lastOpened || null;
+        if (openCount > 0) {
+            let usageLine = `Opened ${openCount}×`;
+            if (lastOpened) {
+                const diffDays = Math.floor((Date.now() - new Date(lastOpened)) / 86400000);
+                const ago = diffDays === 0 ? 'today'
+                    : diffDays === 1 ? 'yesterday'
+                    : diffDays < 7 ? `${diffDays} days ago`
+                    : diffDays < 30 ? `${Math.floor(diffDays / 7)}w ago`
+                    : diffDays < 365 ? `${Math.floor(diffDays / 30)}mo ago`
+                    : `${Math.floor(diffDays / 365)}y ago`;
+                usageLine += ` · last ${ago}`;
+            }
+            parts.push(usageLine);
+        }
+        return parts.join('\n');
+    }
+
     attachBookmarkPreviewBehavior(openLink, bookmark) {
         const initialTitle = bookmark.previewTitle || bookmark.name || '';
         const initialDescription = bookmark.previewDesc || '';
-        const fallbackTitle = `${initialTitle}${initialDescription ? `\n${initialDescription}` : ''}`;
 
         if (this.settings.showLinkPreviewCards === false) {
-            if (fallbackTitle) {
-                openLink.title = fallbackTitle;
-            }
-            if (openLink.title || openLink.dataset.previewLoaded === 'true') {
-                return;
-            }
+            openLink.title = this.buildBookmarkTooltip(bookmark, initialTitle, initialDescription);
+            if (openLink.dataset.previewLoaded === 'true') return;
             openLink.addEventListener('mouseenter', async () => {
                 if (openLink.dataset.previewLoaded === 'true') return;
                 const preview = await this.fetchBookmarkPreviewData(openLink, bookmark);
                 if (!preview) return;
-                const title = preview.title || bookmark.name || '';
-                const description = preview.description || '';
-                openLink.title = `${title}${description ? `\n${description}` : ''}`;
+                openLink.title = this.buildBookmarkTooltip(bookmark, preview.title || bookmark.name || '', preview.description || '');
             }, { once: true });
             return;
         }
@@ -4195,6 +4334,7 @@ class Dashboard {
                 <div class="bookmark-preview-card-description"></div>
                 <div class="bookmark-preview-card-note"></div>
                 <div class="bookmark-preview-card-tags"></div>
+                <div class="bookmark-preview-card-url"></div>
                 <div class="bookmark-preview-card-domain"></div>
                 <div class="bookmark-preview-card-usage"></div>
             </div>
@@ -4252,6 +4392,13 @@ class Dashboard {
 
         domainEl.textContent = domain;
         domainEl.style.display = domain ? 'block' : 'none';
+
+        const urlEl = card.querySelector('.bookmark-preview-card-url');
+        if (urlEl) {
+            const rawUrl = String(preview?.url || '').trim();
+            urlEl.textContent = rawUrl;
+            urlEl.style.display = rawUrl ? 'block' : 'none';
+        }
 
         const usageEl = card.querySelector('.bookmark-preview-card-usage');
         if (usageEl) {

@@ -1349,8 +1349,19 @@ body.no-animations .bookmarks-list.reorder-container::after {
     overflow: hidden;
 }
 
-.bookmark-preview-card-domain {
+.bookmark-preview-card-url {
     margin-top: 0.45rem;
+    font-size: calc(var(--font-size-controls) * 0.82);
+    color: var(--text-tertiary);
+    opacity: 0.75;
+    font-family: var(--font-family-mono, monospace);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.bookmark-preview-card-domain {
+    margin-top: 0.25rem;
     font-size: calc(var(--font-size-controls) * 0.9);
     color: var(--text-tertiary);
     text-overflow: ellipsis;
@@ -1366,6 +1377,97 @@ body.no-animations .bookmarks-list.reorder-container::after {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Page overview overlay */
+.page-overview-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.page-overview-overlay.is-visible {
+    opacity: 1;
+}
+
+.page-overview-panel {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    min-width: 280px;
+    max-width: min(480px, 92vw);
+    max-height: min(480px, 80vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.page-overview-header {
+    padding: 0.65rem 1rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border-primary);
+    flex-shrink: 0;
+}
+
+.page-overview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem 0;
+    overflow-y: auto;
+}
+
+.page-overview-item {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    font-size: var(--font-size-controls);
+    transition: background 0.1s ease;
+}
+
+.page-overview-item:hover,
+.page-overview-item.is-focused {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.page-overview-item.is-current .page-overview-name {
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.page-overview-num {
+    font-size: 0.78em;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.page-overview-name {
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-overview-count {
+    font-size: 0.82em;
+    color: var(--text-secondary);
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 /* Keyboard navigation highlight */
