@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v11';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v12';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,9 +24,12 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
+                    ${section('config — pagina\'s', [
+                        ['dropdowns', 'Na opslaan worden alle pagina-dropdowns (categories, bookmarks, settings) direct bijgewerkt — geen herlaad nodig.'],
+                    ])}
                     ${section('dashboard — inline editor', [
                         ['pagina-veld', 'Verander de pagina van een bookmark in de inline editor. De rij animeert weg en de bookmark verschijnt op de doelpagina.'],
-                        ['category herlaad', 'Wissel van pagina → category-lijst laadt direct de categorieën van de doelpagina.'],
+                        ['category herlaad', 'Wissel van pagina → category-lijst laadt direct de categorieën van de doelpagina. Eerste categorie wordt automatisch geselecteerd.'],
                         ['preview card', 'Hover-kaart blijft altijd binnen de viewport — flipt automatisch als die buiten het scherm zou vallen.'],
                     ])}
                     ${section('config — bookmarks side panel', [

@@ -198,6 +198,14 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Config — pages**
+- Page dropdowns refresh immediately after save — categories tab, bookmarks tab, and settings smart-page selectors all update without a page reload
+
+**Dashboard — inline editor**
+- Category auto-select on page switch: when switching to a different page the first available category is pre-selected, so bookmarks no longer land in "Others" by default
+
+### Recent
+
 **Dashboard — UX**
 - Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
 - Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
@@ -220,7 +228,7 @@ See `extension/README.md` for full usage and development notes.
 - Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page
 - Category breakdown: which categories have the most opens, sorted by usage
 
-### Recent
+### Older
 
 **Search**
 - Match highlighting: matched characters shown in bold with an underline in both the shortcut and bookmark name
