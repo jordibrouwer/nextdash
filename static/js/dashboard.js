@@ -3153,18 +3153,9 @@ class Dashboard {
 
         openLink.addEventListener('click', (e) => {
             this.recordBookmarkOpened(bookmark);
-            row.classList.remove('bookmark-flash');
-            void row.offsetWidth;
-            row.classList.add('bookmark-flash');
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(bookmark.url);
-            }
-        });
-
-        row.addEventListener('animationend', (e) => {
-            if (e.animationName === 'bookmarkFlash') {
-                row.classList.remove('bookmark-flash');
             }
         });
 
