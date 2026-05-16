@@ -68,6 +68,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `?` — open finder mode; type `?g query` to search an external engine
 - `:` — open command mode (`:theme`, `:layout`, `:density`, `:note`, …)
 - `1–9` — jump directly to a page tab
+- `,` — page overview: all pages with bookmark counts; navigate with `↑/↓` or `1–9`
 - `Shift + Left/Right` — cycle between page tabs
 - `Arrow Up/Down/Left/Right` — move through the bookmark grid
 - `Enter` / `Space` — open the focused bookmark
@@ -75,7 +76,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
 - `;` — inline-edit the highlighted bookmark
 - `Ctrl + Shift + A` — open the new bookmark modal
-- `Esc` — clear selection or undo the latest drag reorder
+- `! or Ctrl + /` — open keyboard cheat sheet
+- `Esc` — clear selection or close overlay
 
 Config page shortcuts:
 
@@ -129,12 +131,17 @@ Dynamic bookmark groups that appear automatically:
 
 - Real-time online/offline status with ping timings per bookmark
 - Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
+- Health badge on the dashboard header: red for broken bookmarks, yellow for warnings
+- Filter, sort, and search state in the health view persists across page refreshes (sessionStorage)
 - Favicon auto-refresh from the health view
 - Usage stats in the config: top patterns, open counts, last-used dates
+- Conflicts & duplicates block in stats: shows duplicate URL count and shortcut conflicts with a direct link to health
 
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
+- Hover preview card shows full URL, open count, and last-opened date
+- Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
 - Pin bookmarks to keep them at the top
@@ -191,63 +198,60 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Dashboard — UX**
+- Page overview (`','`): overlay shows all pages with bookmark counts; navigate with `↑/↓` or `1–9`, jump with `Enter`, close with `Esc` or `,`
+- Bookmark flash: subtle ripple animation when opening a bookmark — visual confirmation the action was registered
+- Preview card extended: hover card now shows the full URL, open count, and last-opened date
+- Tab title: browser tab now shows the active page name, e.g. *Work — nextDash*
+
+**Dashboard — cheatsheet**
+- Permanent `?` button in the bottom-right corner opens the keyboard shortcut cheat sheet (toggle in config → general → Buttons)
+- Cheatsheet redesigned: terminal-table style, accent-colored keys, `// section` headings, two-column layout — more scannable, fits one screen
+
+**Config — bookmarks**
+- Delete from side panel: trash button in the detail panel deletes the selected bookmark directly; new (unsaved) bookmarks skip the confirmation dialog
+- Empty state: side panel shows an empty state when no bookmark is selected; click outside a row to deselect
+
+**Config — stats**
+- Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page
+- Category breakdown: which categories have the most opens, sorted by usage
+
+**Health**
+- Filter, sort, and search state persist across page refreshes (sessionStorage)
+- Health badge on the dashboard header: red number for broken bookmarks, yellow for warnings
+
+**Colors**
+- Live theme preview card: mini card next to the color pickers updates in real time as you change colors
+
+### Recent
+
 **Search**
 - Match highlighting: matched characters shown in bold with an underline in both the shortcut and bookmark name
-- Filter autocomplete: typing `status:` now shows all known values (`online`, `offline`, `broken`, `ok`, `pinned`, `unpinned`, `checked`, `unchecked`) with descriptions; narrows as you type
+- Filter autocomplete: typing `status:` shows all known values with descriptions; narrows as you type
 - Search history capped at 15 entries; oldest entries dropped automatically
 
 **Command bar**
-- Keyboard-navigate to a bookmark with ↑ ↓, then press `:` — the command bar opens with that bookmark as context
+- Keyboard-navigate to a bookmark with `↑↓`, then press `:` — the command bar opens with that bookmark as context
 - `:REMOVE` and `:NOTE` completions are pre-filled with the bookmark name
-- Deleting a bookmark via `:remove` now shows an undo toast with an 8-second window
+- Deleting a bookmark via `:remove` shows an undo toast with an 8-second window
 
 **Drag & drop**
 - Drop placeholder fades and scales in smoothly each time it moves to a new position
 - Empty categories show a dashed outline while dragging so you can still drop into them
 
 **Config — general tab**
-- Bookmarks card split into Display (icons, shortcuts, badges, preview) and Behavior (sorting, tab, collapse, shortcuts)
-- Language moved out of Appearance into a new Localization card together with date, time, and weather settings
-- Date/time/weather tree structure corrected: weather options are children of "Show weather", date format is a child of "Show date"
-- Smart Collections: each collection is now its own collapsible `<details>` block instead of a long flat list
+- Bookmarks card split into Display and Behavior
+- Language moved into a new Localization card together with date, time, and weather settings
+- Smart Collections: each collection is its own collapsible block
 - Header & Buttons redesigned as a compact table: one row per button, Show and Label columns side by side
-- Backup & Restore and Reset moved outside the card grid as full-width sections
-- Card collapse state saved per session: only Appearance and Layout open by default; your state is restored on next visit
+- Card collapse state saved per session
 
 **Config — UX**
-- Unsaved changes: sticky toolbar gets an amber bottom border when there are unsaved changes
-- Reset tooltip shows both values: "Reset to 14 (was 20)"
+- Unsaved changes: sticky toolbar gets an amber bottom border
 - Config tab bar horizontally scrollable with fade-out gradient on narrow screens
-- Pages tab shows a hint explaining drag-reorder for pages
 
 **Dashboard**
 - Category collapse state stored per page (`pageId:categoryId`) — same-named categories on different pages no longer share state
-
-### Recent
-
-**Command palette & search — grouped UI**
-- Command palette (`:`) now shows commands in three collapsible groups: Bookmarks, View, Dashboard — no more long flat list
-- Search empty state shows Recent, Filters, and Finders as collapsible groups; Recent expands automatically when you have history
-- Navigate group headers with ↑ ↓ arrow keys or Tab; Enter or click to toggle open/closed
-- No-match state shows clickable hints: `:new <query>` to add as bookmark, `?FINDER <query>` to search externally
-
-**Dashboard UX**
-- Empty page state: terminal-style prompt with page name and keyboard shortcuts when a page has no bookmarks
-- Fresh install state: separate "No bookmarks yet" message with direct links to add or import
-- Page transition: smooth fade + slide animation when switching between page tabs
-- Shortcut tooltip: "Press X to open" tooltip on bookmark hover when a shortcut is assigned; auto-hides when preview card is open
-- Hover preview card: shows open count and last-opened date; repositions automatically to stay fully within the viewport
-- Preview card via keyboard: press `[` on a keyboard-selected bookmark to toggle the preview card; navigating away closes it automatically
-- Copy URL via keyboard: `Ctrl + C` copies the URL of the keyboard-selected bookmark
-
-**Config**
-- Per-setting reset button (↺) appears when a value differs from its default; click to restore the default and mark the form dirty
-- Backup & Restore buttons show a spinner and loading label (Creating… / Importing… / Exporting…) during operations
-- Config link always visible; health link visibility controlled by the `showHealthDashboard` setting
-
-**Onboarding**
-- New step for smart collections: toggle Today and Most Used directly from the onboarding flow
-- Search flow banner enabled by default for new installs
 
 ---
 
