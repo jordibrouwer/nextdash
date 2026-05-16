@@ -598,6 +598,7 @@ class ConfigBookmarks {
 
         if (nameEl) nameEl.addEventListener('input', (e) => {
             bookmark.name = e.target.value;
+            delete bookmark._isNew;
             this._syncRow(index, bookmark);
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
@@ -605,6 +606,7 @@ class ConfigBookmarks {
         const urlConflictMsg = panel.querySelector('#detail-url-conflict-msg');
         if (urlEl) urlEl.addEventListener('input', (e) => {
             bookmark.url = e.target.value;
+            delete bookmark._isNew;
             const isDup = bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === e.target.value.trim().toLowerCase());
             urlEl.classList.toggle('field-conflict', isDup);
             if (urlConflictMsg) urlConflictMsg.hidden = !isDup;
@@ -1109,7 +1111,8 @@ class ConfigBookmarks {
             category: preferredCategory,
             pinned: false,
             checkStatus: false,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            _isNew: true
         };
         bookmarks.push(newBookmark);
         return newBookmark;

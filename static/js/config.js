@@ -583,8 +583,8 @@ class ConfigManager {
                 if (activeIdx === null || activeIdx === undefined) return;
                 const activeBookmark = this.bookmarksData[activeIdx];
                 if (!activeBookmark) return;
-                const isUnsaved = !activeBookmark.url && !activeBookmark.name;
-                if (isUnsaved) {
+                if (activeBookmark._isNew) {
+                    // New unsaved bookmark — remove without confirmation
                     this.bookmarksData.splice(activeIdx, 1);
                     this.bookmarks.activeDetailIndex = null;
                     const formEl = document.getElementById('bookmark-detail-form');
@@ -596,6 +596,20 @@ class ConfigManager {
                 } else {
                     this.removeBookmark(activeIdx);
                 }
+            });
+        }
+
+        const bookmarksList = document.getElementById('bookmarks-list');
+        if (bookmarksList) {
+            bookmarksList.addEventListener('click', (e) => {
+                if (e.target.closest('.bookmark-item')) return;
+                if (this.bookmarks.activeDetailIndex === null) return;
+                this.bookmarks.activeDetailIndex = null;
+                document.querySelectorAll('.bookmark-item.is-selected-detail').forEach(el => el.classList.remove('is-selected-detail'));
+                const formEl = document.getElementById('bookmark-detail-form');
+                const emptyEl = document.getElementById('bookmark-detail-empty');
+                if (formEl) formEl.setAttribute('hidden', '');
+                if (emptyEl) emptyEl.style.display = '';
             });
         }
 
