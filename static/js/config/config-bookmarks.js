@@ -654,16 +654,20 @@ class ConfigBookmarks {
         if (pageEl) pageEl.addEventListener('change', async (e) => {
             const newPageId = Number(e.target.value);
             const currentPageId = Number(window.configManager?.currentPageId);
-            if (!newPageId || newPageId === currentPageId) return;
-            // Reset select optimistically; clear panel before move so refreshBookmarksList doesn't reopen it
-            e.target.value = currentPageId;
-            this.activeDetailIndex = null;
-            document.querySelectorAll('.bookmark-item.is-selected-detail').forEach(el => el.classList.remove('is-selected-detail'));
-            const formEl = document.getElementById('bookmark-detail-form');
-            const emptyEl = document.getElementById('bookmark-detail-empty');
-            if (formEl) formEl.setAttribute('hidden', '');
-            if (emptyEl) emptyEl.style.display = '';
-            await window.configManager.doMoveBookmark(index, newPageId);
+            // Reload categories for the selected page; don't move yet
+            const isCurrentPage = !newPageId || newPageId === currentPageId;
+            const cats = isCurrentPage
+                ? (window.configManager?.bookmarksPageCategories || [])
+                : await fetch(`/api/categories?page=${newPageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
+            if (catEl) {
+                catEl.innerHTML = `<option value="">${this.t('config.noCategory') || 'No category'}</option>`;
+                cats.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    catEl.appendChild(opt);
+                });
+            }
         }, { signal });
 
         if (pinEl) pinEl.addEventListener('change', (e) => {
@@ -710,8 +714,22 @@ class ConfigBookmarks {
 
         if (metaBtn) metaBtn.addEventListener('click', () => this._refreshDetailMeta(index, bookmark), { signal });
 
-        if (moveBtn) moveBtn.addEventListener('click', () => {
-            window.configManager.moveBookmark(this.activeDetailIndex ?? index);
+        if (moveBtn) moveBtn.addEventListener('click', async () => {
+            const selectedPageId = pageEl ? Number(pageEl.value) : null;
+            const selectedCategory = catEl ? catEl.value : '';
+            const currentPageId = Number(window.configManager?.currentPageId);
+            if (selectedPageId && selectedPageId !== currentPageId) {
+                const resolvedIndex = this.activeDetailIndex ?? index;
+                this.activeDetailIndex = null;
+                document.querySelectorAll('.bookmark-item.is-selected-detail').forEach(el => el.classList.remove('is-selected-detail'));
+                const formEl = document.getElementById('bookmark-detail-form');
+                const emptyEl = document.getElementById('bookmark-detail-empty');
+                if (formEl) formEl.setAttribute('hidden', '');
+                if (emptyEl) emptyEl.style.display = '';
+                await window.configManager.doMoveBookmark(resolvedIndex, selectedPageId, selectedCategory);
+            } else {
+                window.configManager.moveBookmark(this.activeDetailIndex ?? index);
+            }
         }, { signal });
 
         if (uploadBtn && fileInput) {

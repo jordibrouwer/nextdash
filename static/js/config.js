@@ -2041,7 +2041,7 @@ class ConfigManager {
         delete window.tempMoveBookmark;
     }
 
-    async doMoveBookmark(index, newPageId) {
+    async doMoveBookmark(index, newPageId, targetCategory) {
         const bookmark = this.bookmarksData[index];
         if (!bookmark) return;
 
@@ -2059,8 +2059,8 @@ class ConfigManager {
             // Load bookmarks from new page
             const newPageBookmarks = await this.data.loadBookmarksByPage(newPageId);
 
-            // Add bookmark with category cleared
-            const movedBookmark = { ...bookmark, category: '' };
+            // Use the explicitly chosen category, or clear it if none given
+            const movedBookmark = { ...bookmark, category: targetCategory || '' };
             newPageBookmarks.push(movedBookmark);
 
             // Save both pages
