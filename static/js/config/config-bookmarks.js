@@ -494,6 +494,20 @@ class ConfigBookmarks {
             });
         }
 
+        const pageEl = document.getElementById('detail-page');
+        if (pageEl) {
+            pageEl.innerHTML = '';
+            const pages = window.configManager?.pagesData || [];
+            const currentPageId = Number(window.configManager?.currentPageId);
+            pages.forEach(page => {
+                const opt = document.createElement('option');
+                opt.value = page.id;
+                opt.textContent = page.name;
+                if (Number(page.id) === currentPageId) opt.selected = true;
+                pageEl.appendChild(opt);
+            });
+        }
+
         const pinEl = document.getElementById('detail-pinned');
         if (pinEl) pinEl.checked = !!bookmark.pinned;
 
@@ -634,6 +648,22 @@ class ConfigBookmarks {
         if (catEl) catEl.addEventListener('change', (e) => {
             bookmark.category = e.target.value;
             if (window.configManager?.markDirty) window.configManager.markDirty();
+        }, { signal });
+
+        const pageEl = get('detail-page');
+        if (pageEl) pageEl.addEventListener('change', async (e) => {
+            const newPageId = Number(e.target.value);
+            const currentPageId = Number(window.configManager?.currentPageId);
+            if (!newPageId || newPageId === currentPageId) return;
+            // Reset select optimistically; clear panel before move so refreshBookmarksList doesn't reopen it
+            e.target.value = currentPageId;
+            this.activeDetailIndex = null;
+            document.querySelectorAll('.bookmark-item.is-selected-detail').forEach(el => el.classList.remove('is-selected-detail'));
+            const formEl = document.getElementById('bookmark-detail-form');
+            const emptyEl = document.getElementById('bookmark-detail-empty');
+            if (formEl) formEl.setAttribute('hidden', '');
+            if (emptyEl) emptyEl.style.display = '';
+            await window.configManager.doMoveBookmark(index, newPageId);
         }, { signal });
 
         if (pinEl) pinEl.addEventListener('change', (e) => {
