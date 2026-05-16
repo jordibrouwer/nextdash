@@ -2121,6 +2121,39 @@ class ConfigManager {
         }
     }
 
+    refreshPageDropdowns() {
+        const visiblePages = this.getVisiblePages();
+
+        // Bookmarks tab page selector
+        this.pages.renderPageSelector(visiblePages, this.currentPageId);
+        const pageSel = document.getElementById('page-selector');
+        if (pageSel && pageSel.__customSelectInstance) {
+            pageSel.__customSelectInstance.refresh();
+        }
+
+        // Categories tab page selector
+        const catSel = document.getElementById('categories-page-selector');
+        if (catSel) {
+            const wantCatPage = Number(this.currentCategoriesPageId);
+            catSel.innerHTML = '';
+            visiblePages.forEach(page => {
+                const opt = document.createElement('option');
+                opt.value = page.id;
+                opt.textContent = page.name;
+                if (Number(page.id) === wantCatPage) opt.selected = true;
+                catSel.appendChild(opt);
+            });
+            if (catSel.__customSelectInstance) {
+                catSel.__customSelectInstance.refresh();
+            }
+        }
+
+        // Settings tab smart-collection page selectors
+        if (this.settings && typeof this.settings.populateSmartPageSelectors === 'function') {
+            this.settings.populateSmartPageSelectors(this.pagesData, this.settingsData);
+        }
+    }
+
     refreshBookmarksFilterOptions() {
         const filterSelect = document.getElementById('bookmarks-category-filter');
         if (!filterSelect) {
@@ -2571,6 +2604,7 @@ class ConfigManager {
             }
 
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
+            this.refreshPageDropdowns();
             this.signalDashboardSettingsUpdated('settings-saved');
             if (duplicateUrls.length > 0) {
                 this.ui.showNotification('Configuration saved. Duplicate bookmark URLs detected.', 'warning');

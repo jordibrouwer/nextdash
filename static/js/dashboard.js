@@ -3729,14 +3729,18 @@ class Dashboard {
             empty.value = '';
             empty.textContent = '—';
             catSelect.appendChild(empty);
+            let matched = false;
             cats.forEach(cat => {
                 const o = document.createElement('option');
                 o.value = cat.id || '';
                 o.textContent = cat.name || cat.id || '';
-                // Preserve selection if same id exists on target page; otherwise leave unselected
-                if ((cat.id || '') === prevValue) o.selected = true;
+                if ((cat.id || '') === prevValue) { o.selected = true; matched = true; }
                 catSelect.appendChild(o);
             });
+            // No match from previous page — default to first real category so bookmark doesn't land in Others
+            if (!matched && cats.length > 0) {
+                catSelect.selectedIndex = 1;
+            }
         };
 
         pageSelect.addEventListener('change', () => reloadCatSelectForPage(pageSelect.value));
