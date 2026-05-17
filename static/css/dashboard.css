@@ -735,7 +735,7 @@ body[data-density-mode="dense"] .dashboard-grid {
     opacity: 0;
     transform: translateY(8px);
     animation: categoryEnter 220ms ease-out forwards;
-    animation-delay: calc(200ms + var(--stagger-index, 0) * 15ms);
+    animation-delay: calc(200ms + var(--stagger-index, 0) * 10ms);
 }
 
 @keyframes categoryEnter {
