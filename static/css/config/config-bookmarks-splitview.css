@@ -419,17 +419,13 @@
 }
 
 .bookmark-row-cat {
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-small);
     color: var(--text-secondary);
     white-space: nowrap;
     flex-shrink: 0;
-    opacity: 0.7;
-}
-
-.bookmark-row-cat::before {
-    content: '·';
-    margin-right: 0.3rem;
-    opacity: 0.5;
+    padding: 0 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
 }
 
 .bookmark-row-opens {
