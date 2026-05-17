@@ -1130,6 +1130,14 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     border-radius: 4px;
     background: var(--background-primary);
     color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bookmark-inline-input:focus,
+.bookmark-inline-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
 .bookmark-inline-actions {
