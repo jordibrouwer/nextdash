@@ -1852,7 +1852,8 @@ class Dashboard {
             {
                 title: 'bookmarks',
                 items: [
-                    { keys: '+', description: 'Quick-add — naam | url | shortcut' },
+                    { keys: '+', description: 'Quick-add — name | url | shortcut' },
+                    { keys: 'Ctrl + V', description: 'Paste a URL to open quick-add pre-filled (when no input focused)' },
                     { keys: ';', description: 'Inline edit focused bookmark' },
                     { keys: '[', description: 'Toggle preview card on focused bookmark' },
                     { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark' },
@@ -1870,6 +1871,7 @@ class Dashboard {
                     { keys: '*', description: 'Recent bookmarks' },
                     { keys: ':new', description: 'Add bookmark via command' },
                     { keys: ':note', description: 'Edit note via command' },
+                    { keys: ':history', description: 'Browse search history; :history clear wipes all' },
                     { keys: 'category: / tag: / page:', description: 'Filter in search bar' }
                 ]
             },
