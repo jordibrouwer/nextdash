@@ -24,29 +24,29 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
-                    ${section('config — pagina\'s', [
-                        ['dropdowns', 'Na opslaan worden alle pagina-dropdowns (categories, bookmarks, settings) direct bijgewerkt — geen herlaad nodig.'],
+                    ${section('config — pages', [
+                        ['dropdowns', 'After saving, all page dropdowns (categories, bookmarks, settings) update instantly — no reload needed.'],
                     ])}
                     ${section('dashboard — inline editor', [
-                        ['pagina-veld', 'Verander de pagina van een bookmark in de inline editor. De rij animeert weg en de bookmark verschijnt op de doelpagina.'],
-                        ['category herlaad', 'Wissel van pagina → category-lijst laadt direct de categorieën van de doelpagina. Eerste categorie wordt automatisch geselecteerd.'],
-                        ['preview card', 'Hover-kaart blijft altijd binnen de viewport — flipt automatisch als die buiten het scherm zou vallen.'],
+                        ['page field', 'Change the page of a bookmark in the inline editor. The row animates out and the bookmark appears on the target page.'],
+                        ['category reload', 'Switch page → category list immediately loads the categories of the target page. First category is auto-selected.'],
+                        ['preview card', 'Hover card always stays within the viewport — flips automatically if it would go off-screen.'],
                     ])}
                     ${section('config — bookmarks side panel', [
-                        ['pagina-veld', 'Kies een andere pagina → categorieën van die pagina worden direct geladen.'],
-                        ['→ Move knop', 'Bevestig de verplaatsing. Bookmark wordt opgeslagen in de gekozen pagina én categorie.'],
-                        ['delete knop', 'Verwijder bookmark direct vanuit het detail-panel. Nieuwe bookmarks zonder bevestiging.'],
-                        ['lege state', 'Panel is leeg als er niets geselecteerd is — klik buiten een rij om te deselecteren.'],
+                        ['page field', 'Choose a different page → categories for that page load immediately.'],
+                        ['→ Move button', 'Confirm the move. Bookmark is saved to the chosen page and category.'],
+                        ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
+                        ['empty state', 'Panel is empty when nothing is selected — click outside a row to deselect.'],
                     ])}
                     ${section('dashboard — quick-add', [
-                        ['<code>+</code>', 'Omnibox: typ <code>naam | url | shortcut</code> en druk Enter. Favicon wordt automatisch opgehaald.'],
-                        ['+ / ! knoppen', 'Twee vaste knoppen rechtsonder: <code>+</code> opent de omnibox, <code>!</code> opent de cheatsheet.'],
+                        ['<code>+</code>', 'Omnibox: type <code>name | url | shortcut</code> and press Enter. Favicon is fetched automatically.'],
+                        ['+ / ! buttons', 'Two fixed buttons bottom-right: <code>+</code> opens the omnibox, <code>!</code> opens the cheatsheet.'],
                     ])}
                     ${section('health &amp; stats', [
-                        ['keep first', 'Elke duplicaatgroep heeft een knop die duplicaten in één klik oplost.'],
-                        ['health badge', 'Health-link toont rood (broken) of geel (warnings) badge-getal.'],
-                        ['conflicts', 'Stats-tab toont dubbele URLs en shortcut-conflicten met link naar Health.'],
-                        ['filter bewaard', 'Filter, sortering en zoekterm in Health blijven bewaard bij refresh.'],
+                        ['keep first', 'Each duplicate group has a button that resolves duplicates in one click.'],
+                        ['health badge', 'Health link shows a red (broken) or yellow (warnings) badge count.'],
+                        ['conflicts', 'Stats tab shows duplicate URLs and shortcut conflicts with a link to Health.'],
+                        ['filter saved', 'Filter, sort order and search term in Health are preserved on refresh.'],
                     ])}
                 </div>
             </div>
