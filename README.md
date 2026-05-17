@@ -76,6 +76,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
 - `;` — inline-edit the highlighted bookmark
 - `Ctrl + Shift + A` — open the new bookmark modal
+- `Ctrl + V` / `Cmd + V` — paste a URL to open the quick-add modal pre-filled (when no input is focused)
 - `! or Ctrl + /` — open keyboard cheat sheet
 - `Esc` — clear selection or close overlay
 
@@ -90,6 +91,7 @@ Config page shortcuts:
 
 Type these directly in the search bar:
 
+- `:history` — browse recent searches; `:history clear` wipes all history
 - `category:` — filter by category name
 - `status:online` / `status:offline` / `status:broken` / `status:ok`
 - `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
@@ -198,22 +200,30 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Dashboard — paste to quick-add**
+- Paste a URL anywhere on the dashboard (Ctrl+V / Cmd+V) to open the quick-add modal with the URL pre-filled — works when no input is focused, no search is active, and the clipboard text is a valid URL
+- Toggle in config → general → Bookmarks → "Paste URL to quick-add bookmark" (on by default)
+
+**Search — history UI**
+- Open search with an empty query and recent searches appear immediately under a collapsible "Recent" group
+- Hover any history row to reveal a × button that removes only that entry, without closing search
+- `:history` command: browse search history from the command bar even with an active query
+- `:history clear` command: wipe the entire search history in one step
+
+**Dashboard — UI polish**
+- Bookmark rows stagger in on load with a 10 ms-per-row delay (capped at 200 ms base); page transitions stay snappy
+- Category lists show a dashed drop-target outline while a drag is in progress, making empty targets visible
+- Keyboard-selected bookmarks have a clear outline; inline-edit fields have a matching focus ring
+- Hover text color no longer conflicts with online/offline status color
+
+### Recent
+
 **Config — pages**
 - Page dropdowns refresh immediately after save — categories tab, bookmarks tab, and settings smart-page selectors all update without a page reload
 
 **Dashboard — inline editor**
 - Category auto-select on page switch: when switching to a different page the first available category is pre-selected, so bookmarks no longer land in "Others" by default
-
-### Recent
-
-**Dashboard — UX**
 - Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
-- Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
-- Corner buttons: `+` (quick-add) and `!` (cheatsheet) fixed in the bottom-right corner of the dashboard
-
-**Dashboard — inline editor**
-- Page field: change the page of a bookmark directly in the inline editor; the row animates out and the bookmark moves to the target page on save
-- Category reloads in real time when you switch page — shows the categories of the destination page before saving
 
 **Config — bookmarks side panel**
 - Page field: select a different page in the detail panel; the category list reloads instantly to show the categories of that page
@@ -223,6 +233,7 @@ See `extension/README.md` for full usage and development notes.
 
 **Health**
 - Duplicate groups: each group has a "keep first, remove rest" button — resolves duplicates in one click
+- Health link shows a red (broken) or yellow (warnings) badge count
 
 **Config — stats**
 - Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page

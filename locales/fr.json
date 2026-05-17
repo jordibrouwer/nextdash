@@ -436,6 +436,7 @@
         "includeFindersInSearchInfoTitle": "Informations sur les finders dans la recherche",
         "includeFindersInSearchInfoMessage": "Quand activé, les finders sont accessibles depuis la recherche principale.",
         "keepSearchOpenWhenEmpty": "Garder la recherche ouverte si vide",
+        "pasteUrlQuickAdd": "Coller une URL pour ajouter rapidement un marque-page",
         "keepSearchOpenWhenEmptyInfoTitle": "Informations sur la recherche ouverte",
         "keepSearchOpenWhenEmptyInfoMessage": "Quand activé, l'UI de recherche reste ouverte même sans requête.",
         "showTipsInfoTitle": "Informations sur les astuces rotatives",
