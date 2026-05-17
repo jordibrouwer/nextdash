@@ -54,7 +54,7 @@
     font-size: 1rem;
     line-height: 1;
     padding: 0.25rem;
-    border-radius: var(--border-radius-sm, 3px);
+    border-radius: var(--radius-sm);
     flex-shrink: 0;
     transition: color 0.15s, background 0.15s;
 }
@@ -75,7 +75,7 @@
     background: var(--background-primary);
     color: var(--text-primary);
     border: 1px solid var(--border-primary);
-    border-radius: var(--border-radius-sm, 3px);
+    border-radius: var(--radius-sm);
     padding: 0.6rem 0.75rem;
     font-family: inherit;
     font-size: var(--font-size-text);
@@ -121,7 +121,7 @@
 
 .note-cmd-btn {
     padding: 0.35rem 0.85rem;
-    border-radius: var(--border-radius-sm, 3px);
+    border-radius: var(--radius-sm);
     font-size: var(--font-size-text);
     font-family: inherit;
     cursor: pointer;
