@@ -37,7 +37,7 @@ class SearchCommandsComponent {
             {
                 id: 'dashboard',
                 label: 'Dashboard',
-                commands: ['buttons', 'tips', 'history']
+                commands: ['buttons', 'tips']
             }
         ];
         // Track which groups are expanded (none by default)
@@ -67,8 +67,7 @@ class SearchCommandsComponent {
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
-            'note': this.handleNoteCommand.bind(this),
-            'history': this.handleHistoryCommand.bind(this)
+            'note': this.handleNoteCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -997,42 +996,6 @@ class SearchCommandsComponent {
      */
     handleRemoveCommand(args, fullQuery) {
         return this.removeCommandHandler.handle(args, fullQuery);
-    }
-
-    handleHistoryCommand(args, fullQuery) {
-        const dashboard = window.dashboardInstance;
-        const searchComponent = dashboard ? dashboard.searchComponent : null;
-        if (!searchComponent) return [];
-
-        const sub = (args[0] || '').toLowerCase();
-
-        if (sub === 'clear') {
-            searchComponent.clearSearchHistory();
-            return [{ name: 'Search history cleared', shortcut: ':HISTORY', action: () => false, type: 'command' }];
-        }
-
-        const historyMatches = searchComponent.getSearchHistoryMatches();
-        if (historyMatches.length === 0) {
-            return [{ name: 'No search history yet', shortcut: ':HISTORY', action: () => false, type: 'command' }];
-        }
-
-        const rows = historyMatches.map((entry) => ({
-            name: entry.name,
-            shortcut: ':HISTORY',
-            completion: entry.completion,
-            type: 'history'
-        }));
-
-        if (!sub || 'clear'.startsWith(sub)) {
-            rows.push({
-                name: '',
-                shortcut: ':HISTORY',
-                completion: ':history clear ',
-                type: 'command-completion'
-            });
-        }
-
-        return rows;
     }
 }
 

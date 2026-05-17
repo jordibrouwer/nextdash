@@ -436,7 +436,6 @@
         "includeFindersInSearchInfoTitle": "Informationen zu Findern in Suche",
         "includeFindersInSearchInfoMessage": "Wenn aktiviert, können Finder direkt aus der Hauptsuche genutzt werden.\n\n• Finder-Kürzel eingeben (z. B. \"YT\") + Leertaste\n• Bei gleichem Kürzel wie Lesezeichen werden beide Optionen gezeigt",
         "keepSearchOpenWhenEmpty": "Suche geöffnet lassen, wenn leer",
-        "pasteUrlQuickAdd": "URL einfügen zum schnellen Hinzufügen eines Lesezeichens",
         "keepSearchOpenWhenEmptyInfoTitle": "Informationen zur offenen Suche",
         "keepSearchOpenWhenEmptyInfoMessage": "Wenn aktiviert, bleibt die Suchoberfläche auch bei leerer Anfrage offen.\n\n• Gut für Tastatur-Workflows\n• Kann unruhiger wirken",
         "showTipsInfoTitle": "Informationen zu rotierenden Tipps",

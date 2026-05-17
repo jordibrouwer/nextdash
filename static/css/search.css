@@ -385,37 +385,6 @@
     color: var(--accent-info, #60a5fa);
 }
 
-/* History entries */
-.search-match.history-entry .search-match-shortcut {
-    color: var(--text-tertiary);
-}
-
-.search-history-delete {
-    display: none;
-    flex-shrink: 0;
-    margin-left: auto;
-    padding: 0 0.3rem;
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: color 0.12s ease, opacity 0.12s ease;
-}
-
-.search-match.history-entry:hover .search-history-delete,
-.search-match.history-entry.keyboard-selected .search-history-delete {
-    display: flex;
-    align-items: center;
-}
-
-.search-history-delete:hover {
-    color: var(--accent-danger, #ef4444);
-    opacity: 1;
-}
-
 /* No-match state */
 .search-match.search-no-match-header {
     opacity: 0.5;

@@ -436,7 +436,6 @@
         "includeFindersInSearchInfoTitle": "Informatie over zoekers in zoeken opnemen",
         "includeFindersInSearchInfoMessage": "Wanneer ingeschakeld, kunt u zoekers rechtstreeks uit de hoofdzoeking benaderen.\n\n• Typ een zoekersnelkoppeling (bijv. \"YT\") en druk op spatie om automatisch over te schakelen naar zoekmodus.\n• Als een bladwijzer dezelfde snelkoppeling als een zoeker heeft, verschijnen beide opties ter selectie.",
         "keepSearchOpenWhenEmpty": "Zoeken open houden wanneer leeg",
-        "pasteUrlQuickAdd": "URL plakken om bladwijzer snel toe te voegen",
         "keepSearchOpenWhenEmptyInfoTitle": "Informatie over zoeken open houden",
         "keepSearchOpenWhenEmptyInfoMessage": "Wanneer ingeschakeld blijft de zoek-UI open, ook bij een lege query.\n\n• Fijn voor toetsenbord-workflows\n• Kan drukker ogen als je liever een rustige idle-state hebt",
         "showTipsInfoTitle": "Informatie over roterende tips",
