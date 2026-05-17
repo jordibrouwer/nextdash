@@ -379,9 +379,9 @@ class ConfigBookmarks {
             <span class="drag-handle js-drag-handle" title="Drag to reorder" onclick="event.stopPropagation()">&#10783;</span>
             <span class="bookmark-row-favicon">${faviconHtml}</span>
             <span class="bookmark-row-info">
-                <span class="bookmark-row-name">${this._escHtml(bookmark.name || '')}</span>
+                <span class="bookmark-row-name" title="${this._escHtml(bookmark.name || '')}">${this._escHtml(bookmark.name || '')}</span>
                 <span class="bookmark-row-meta">
-                    <span class="bookmark-row-url">${this._escHtml(urlDisplay)}</span>
+                    <span class="bookmark-row-url" title="${this._escHtml(bookmark.url || '')}">${this._escHtml(urlDisplay)}</span>
                     ${catName ? `<span class="bookmark-row-cat">${this._escHtml(catName)}</span>` : ''}
                     ${openCount > 0 ? `<span class="bookmark-row-opens">${openCount}×</span>` : ''}
                 </span>
@@ -544,9 +544,10 @@ class ConfigBookmarks {
         const metaSpan = row.querySelector('.bookmark-row-meta');
         const faviconSpan = row.querySelector('.bookmark-row-favicon');
         const badgesSpan = row.querySelector('.bookmark-row-badges');
-        if (nameSpan) nameSpan.textContent = bookmark.name || '';
+        if (nameSpan) { nameSpan.textContent = bookmark.name || ''; nameSpan.title = bookmark.name || ''; }
         if (urlSpan) {
             try { urlSpan.textContent = new URL(bookmark.url || '').hostname; } catch (e) { urlSpan.textContent = bookmark.url || ''; }
+            urlSpan.title = bookmark.url || '';
         }
         if (metaSpan) {
             const cats = window.configManager?.bookmarksPageCategories || [];
