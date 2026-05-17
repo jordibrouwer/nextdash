@@ -816,6 +816,13 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     animation: placeholderIn 120ms ease-out forwards;
 }
 
+/* Subtle highlight on all reorder containers while dragging */
+body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collection="true"]) {
+    border-radius: 4px;
+    outline: 1px dashed color-mix(in srgb, var(--text-secondary) 35%, transparent);
+    outline-offset: 4px;
+}
+
 .bookmark-link {
     --bookmark-lead-col: minmax(1.25rem, max-content);
     /* Dedicated column for ping (status); avoids sharing col with shortcut */
