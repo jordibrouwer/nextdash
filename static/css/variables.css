@@ -7,24 +7,6 @@
     --transition-slow: 0.5s ease;
 }
 
-/* Border Radius Scale */
-:root {
-    --radius-sm:   3px;
-    --radius-base: 4px;
-    --radius-md:   6px;
-    --radius-lg:   8px;
-    --radius-xl:   12px;
-    --radius-pill: 999px;
-}
-
-/* Box Shadow Scale */
-:root {
-    --shadow-sm:  0 2px 4px rgba(0, 0, 0, 0.10);
-    --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.18);
-    --shadow-lg:  0 10px 28px rgba(0, 0, 0, 0.28);
-    --shadow-xl:  0 16px 40px rgba(0, 0, 0, 0.35);
-}
-
 /* Common Animations */
 @keyframes fadeInStatus {
     from {

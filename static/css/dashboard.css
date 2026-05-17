@@ -401,13 +401,13 @@ body {
 .dashboard-grid.layout-cards .category {
     background: color-mix(in srgb, var(--background-primary) 92%, var(--text-secondary) 8%);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-xl);
+    border-radius: 10px;
     padding: 0.9rem;
 }
 
 .dashboard-grid.layout-cards .bookmark-link {
     border: 1px solid transparent;
-    border-radius: var(--radius-lg);
+    border-radius: 8px;
     padding: var(--cards-pad-block, 0.45rem) 0.55rem;
 }
 
@@ -520,7 +520,7 @@ body {
     border: 1px solid var(--border-primary);
     max-height: 14rem;
     overflow-y: auto;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .tag-ac-item {
@@ -633,12 +633,12 @@ body {
 .dashboard-grid.layout-widgets .category {
     background: color-mix(in srgb, var(--background-primary) 94%, var(--text-secondary) 6%);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-xl);
+    border-radius: 12px;
     padding: 1rem;
 }
 .dashboard-grid.layout-widgets .bookmark-link {
     padding: 0.6rem;
-    border-radius: var(--radius-lg);
+    border-radius: 8px;
     background: transparent;
 }
 
@@ -1331,10 +1331,10 @@ body.no-animations .bookmarks-list.reorder-container::after {
     width: min(360px, calc(100vw - 24px));
     max-height: min(360px, calc(100vh - 24px));
     overflow: hidden;
-    border-radius: var(--radius-xl);
+    border-radius: 12px;
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
     pointer-events: none;
 }
 
@@ -1432,7 +1432,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 .page-overview-header {
