@@ -421,12 +421,14 @@ class KeyboardNavigation {
         // Remove previous highlights
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
+            element.removeAttribute('aria-current');
         });
 
         // Highlight current element
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];
             currentElement.classList.add('keyboard-selected');
+            currentElement.setAttribute('aria-current', 'true');
 
             // Scroll into view if needed
             currentElement.scrollIntoView({
@@ -556,6 +558,7 @@ class KeyboardNavigation {
     clearSelection() {
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
+            element.removeAttribute('aria-current');
         });
         
         this.currentIndex = -1;

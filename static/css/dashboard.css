@@ -1514,7 +1514,10 @@ body.no-animations .bookmarks-list.reorder-container::after {
     color: var(--text-primary);
     transform: translateX(8px);
     position: relative;
-    overflow: visible; /* Allow the selector to be visible */
+    overflow: visible;
+    outline: 2px solid color-mix(in srgb, var(--text-primary) 40%, transparent);
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
 .bookmark-link.keyboard-selected::before {
