@@ -336,6 +336,7 @@ class Dashboard {
         this.renderDashboard({ animate: false });
         this.setupPageShortcuts();
         this.setupReorderUndoShortcut();
+        this.setupPasteToQuickAdd();
         this.setupToolbarActions();
         this.setupConfigStructureReloadListener();
 
@@ -511,6 +512,9 @@ class Dashboard {
             }
             if (typeof this.settings.showRecentButton === 'undefined') {
                 this.settings.showRecentButton = true;
+            }
+            if (typeof this.settings.pasteUrlQuickAdd === 'undefined') {
+                this.settings.pasteUrlQuickAdd = true;
             }
             if (typeof this.settings.showHealthDashboard === 'undefined') {
                 this.settings.showHealthDashboard = true;
@@ -1174,6 +1178,39 @@ class Dashboard {
         });
     }
 
+    setupPasteToQuickAdd() {
+        document.addEventListener('paste', (e) => {
+            if (this.settings?.pasteUrlQuickAdd === false) return;
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+            if (this.isModalOpen()) return;
+            if (this.searchComponent && this.searchComponent.isActive()) return;
+
+            const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            const trimmed = text.trim();
+            if (!/^https?:\/\/.+/i.test(trimmed)) return;
+
+            e.preventDefault();
+
+            const handler = this.searchComponent?.commandsComponent?.newCommandHandler;
+            if (!handler) return;
+
+            handler.openModal();
+
+            // Wait for modal DOM to be ready, then pre-fill URL and trigger favicon fetch
+            setTimeout(() => {
+                const urlInput = document.getElementById('new-bookmark-url');
+                if (urlInput) {
+                    urlInput.value = trimmed;
+                    urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    handler.autoFetchModalFaviconFromUrlField?.();
+                }
+                const nameInput = document.getElementById('new-bookmark-name');
+                if (nameInput) nameInput.focus();
+            }, 120);
+        });
+    }
+
     setupToolbarActions() {
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
@@ -1307,7 +1344,7 @@ class Dashboard {
             'Tip: <code>↑/↓</code> navigate bookmarks',
             'Tip: <code>;</code> edit bookmark (highlighted row or focused link)',
             'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet',
-            'Tip: <code>Ctrl+Shift+A</code> new bookmark',
+            'Tip: <code>Ctrl+Shift+A</code> new bookmark — or just paste a URL anywhere on the dashboard',
             'Tip: <code>[</code> preview card on keyboard-selected bookmark',
             'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark',
             'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'

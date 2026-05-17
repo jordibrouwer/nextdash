@@ -101,7 +101,8 @@ class ConfigManager {
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
             archivedPageIds: [],
-            faviconRefreshPolicy: 'on-save'
+            faviconRefreshPolicy: 'on-save',
+            pasteUrlQuickAdd: true
             ,themeIconStyling: {}
         };
         this.deviceSpecific = false;
@@ -226,6 +227,9 @@ class ConfigManager {
             }
             if (typeof this.settingsData.packedColumns === 'undefined') {
                 this.settingsData.packedColumns = true;
+            }
+            if (typeof this.settingsData.pasteUrlQuickAdd === 'undefined') {
+                this.settingsData.pasteUrlQuickAdd = true;
             }
             if (!this.settingsData.dateFormat) {
                 this.settingsData.dateFormat = 'short-slash';

@@ -622,6 +622,14 @@ class ConfigSettings {
             });
         }
 
+        const pasteUrlQuickAddCheckbox = document.getElementById('paste-url-quick-add-checkbox');
+        if (pasteUrlQuickAddCheckbox) {
+            pasteUrlQuickAddCheckbox.checked = settings.pasteUrlQuickAdd !== false;
+            pasteUrlQuickAddCheckbox.addEventListener('change', (e) => {
+                settings.pasteUrlQuickAdd = e.target.checked;
+            });
+        }
+
         // HyprMode checkbox
         const hyprModeCheckbox = document.getElementById('hypr-mode-checkbox');
         if (hyprModeCheckbox) {
@@ -1421,6 +1429,8 @@ class ConfigSettings {
         if (themeSelect) settings.theme = themeSelect.value;
         if (columnsInput) settings.columnsPerRow = parseInt(columnsInput.value);
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
+        const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
+        if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
         if (hyprModeCheckbox) settings.hyprMode = hyprModeCheckbox.checked;
         if (showTitleCheckbox) settings.showTitle = showTitleCheckbox.checked;
         if (showDateCheckbox) settings.showDate = showDateCheckbox.checked;
@@ -1827,6 +1837,15 @@ class ConfigSettings {
                 );
             }
         });
+
+        // Initialise element value from settings
+        if (el.type === 'checkbox') {
+            el.checked = typeof settings[key] === 'boolean' ? settings[key] : Boolean(defaultValue);
+        } else if (el.type === 'number') {
+            el.value = settings[key] ?? defaultValue;
+        } else {
+            if (settings[key] !== undefined) el.value = settings[key];
+        }
 
         el.parentElement.style.position = 'relative';
         el.insertAdjacentElement('afterend', btn);

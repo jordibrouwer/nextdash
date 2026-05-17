@@ -168,6 +168,7 @@ type Settings struct {
 	BackgroundGradient          string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
 	BackgroundImageUrl          string                           `json:"backgroundImageUrl"`          // URL used when type="image"
 	ThemeIconStyling            map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
+	PasteUrlQuickAdd            bool                             `json:"pasteUrlQuickAdd"`            // Enable paste URL to quick-add bookmark on dashboard
 }
 
 type ThemeIconStylingEntry struct {
