@@ -51,6 +51,13 @@
     }
 }
 
+/* Hover overrides: status color yields to text-primary on hover */
+.bookmark-link.status-online:hover,
+.bookmark-link.status-offline:hover,
+.bookmark-link.status-checking:hover {
+    color: var(--text-primary);
+}
+
 /* Optional: preserve bookmark row colors while still showing status state/ping */
 body.status-color-lock .bookmark-link.status-online,
 body.status-color-lock .bookmark-link.status-offline,
