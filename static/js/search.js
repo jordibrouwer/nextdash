@@ -1003,13 +1003,28 @@ class SearchComponent {
                 ? `<span class="search-match-use-count">${match.useCount}</span>`
                 : '';
 
+            const deleteHistoryHtml = match.type === 'history'
+                ? `<button class="search-history-delete" title="Remove from history" tabindex="-1">×</button>`
+                : '';
+
             matchElement.innerHTML = `
                 ${shortcutHtml}
                 ${bookmarkIconHtml}
                 <span class="search-match-name">${displayName}${match.meta ? `<span class="search-match-meta">${match.meta}</span>` : ''}</span>
                 ${finderUseBadge}
+                ${deleteHistoryHtml}
             `;
             
+            if (match.type === 'history') {
+                const deleteBtn = matchElement.querySelector('.search-history-delete');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteHistoryEntry(match.completion);
+                    });
+                }
+            }
+
             matchElement.addEventListener('click', () => {
                 if (match.type === 'config') {
                     this.openConfig();
@@ -1345,6 +1360,18 @@ class SearchComponent {
             completion: query,
             type: 'history'
         }));
+    }
+
+    deleteHistoryEntry(query) {
+        this.searchHistory = this.searchHistory.filter((entry) => entry !== query);
+        this.saveSearchHistory();
+        this.updateSearch();
+    }
+
+    clearSearchHistory() {
+        this.searchHistory = [];
+        this.saveSearchHistory();
+        this.updateSearch();
     }
 
     loadSavedSearches() {
