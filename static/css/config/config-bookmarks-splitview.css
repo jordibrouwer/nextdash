@@ -496,7 +496,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     padding: 3rem 1.5rem;
     color: var(--text-tertiary);
     font-size: var(--font-size-controls);
@@ -507,6 +507,38 @@
 .bookmark-detail-empty-icon {
     font-size: 1.5rem;
     opacity: 0.4;
+}
+
+.bookmark-detail-empty-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+}
+
+.bookmark-detail-empty-hints {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-align: left;
+    border-top: 1px solid var(--border-primary);
+    padding-top: 0.75rem;
+}
+
+.bookmark-detail-empty-hints li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+}
+
+.bookmark-detail-empty-hints kbd {
+    font-family: inherit;
+    font-size: var(--font-size-small);
+    opacity: 0.7;
+    flex-shrink: 0;
 }
 
 .bookmark-detail-form {
