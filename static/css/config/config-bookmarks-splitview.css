@@ -606,9 +606,12 @@
 
 .bookmark-detail-conflict-msg {
     margin: 0.25rem 0 0;
+    padding: 0.3rem 0.6rem;
     font-size: var(--font-size-small);
     color: var(--accent-warning);
     line-height: 1.4;
+    background: color-mix(in srgb, var(--accent-warning) 8%, var(--background-primary));
+    border-left: 2px solid var(--accent-warning);
 }
 
 .bookmark-detail-shortcut {
