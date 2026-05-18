@@ -557,6 +557,7 @@
         "archivedPages": "Archived pages",
         "bulkRefreshFavicons": "Refresh favicons",
         "archive": "Archive",
+        "archived": "archived",
         "restore": "Restore",
         "merge": "Merge",
         "selectBookmarksFirst": "Select bookmarks first.",

@@ -194,6 +194,25 @@
     border-bottom: none;
 }
 
+.page-item.is-archived {
+    opacity: 0.55;
+}
+
+.page-item.is-archived input {
+    color: var(--text-secondary);
+}
+
+.page-archived-badge {
+    font-size: var(--font-size-small, 0.75rem);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-primary);
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .finder-stats {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
