@@ -14,14 +14,14 @@ class ConfigPages {
      * @param {Array} pages
      * @param {Function} generateId - Function to generate ID from name
      */
-    render(pages, generateId) {
+    render(pages, generateId, isArchived) {
         const container = document.getElementById('pages-list');
         if (!container) return;
 
         container.innerHTML = '';
 
         pages.forEach((page, index) => {
-            const pageElement = this.createPageElement(page, index, pages, generateId);
+            const pageElement = this.createPageElement(page, index, pages, generateId, isArchived);
             container.appendChild(pageElement);
         });
     }
@@ -57,22 +57,25 @@ class ConfigPages {
      * @param {Function} generateId
      * @returns {HTMLElement}
      */
-    createPageElement(page, index, pages, generateId) {
+    createPageElement(page, index, pages, generateId, isArchived) {
         const div = document.createElement('div');
         div.className = 'page-item js-item is-idle';
         div.setAttribute('data-page-index', index);
         div.setAttribute('data-page-id', page.id); // Store the actual page ID
-        
+
         // Store reference to the actual page object
         div._pageRef = page;
-        
+
         const isDefaultPage = page.id === 1;
-        const removeButton = isDefaultPage 
+        const archived = typeof isArchived === 'function' ? isArchived(page.id) : false;
+        const removeButton = isDefaultPage
             ? `<button type="button" class="btn btn-danger" disabled title="${this.t('config.cannotRemoveDefaultPage')}">${this.t('config.remove')}</button>`
             : `<button type="button" class="btn btn-danger" onclick="configManager.removePage(${index})">${this.t('config.remove')}</button>`;
         const archiveButton = isDefaultPage
             ? ''
-            : `<button type="button" class="btn btn-secondary btn-small" onclick="configManager.archivePage(${index})">${this.t('config.archive')}</button>`;
+            : archived
+                ? `<button type="button" class="btn btn-secondary btn-small" onclick="configManager.restoreArchivedPage(${page.id})">${this.t('config.restore')}</button>`
+                : `<button type="button" class="btn btn-secondary btn-small" onclick="configManager.archivePage(${index})">${this.t('config.archive')}</button>`;
         
         div.innerHTML = `
             <span class="drag-handle js-drag-handle" title="Drag to reorder">⠿</span>

@@ -1559,7 +1559,7 @@ class ConfigManager {
     }
 
     renderConfig() {
-        this.pages.render(this.pagesData, this.generateId.bind(this));
+        this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
         if (this.settings && typeof this.settings.populateSmartPageSelectors === 'function') {
             this.settings.populateSmartPageSelectors(this.pagesData, this.settingsData);
         }
@@ -1585,6 +1585,9 @@ class ConfigManager {
                 if (Number(page.id) === wantCatPage) option.selected = true;
                 categoriesSelector.appendChild(option);
             });
+            if (categoriesSelector.__customSelectInstance) {
+                categoriesSelector.__customSelectInstance.refresh();
+            }
         }
 
         this.refreshBookmarksFilterOptions();
@@ -1681,7 +1684,7 @@ class ConfigManager {
             console.error('Error creating new page:', error);
         }
         
-        this.pages.render(this.pagesData, this.generateId.bind(this));
+        this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
         this.pages.renderPageSelector(this.pagesData, newPage.id);
         this.pages.initReorder(this.pagesData, (newPages) => {
             this.pagesData = newPages;
@@ -1705,7 +1708,9 @@ class ConfigManager {
                 if (Number(page.id) === Number(newPage.id)) option.selected = true;
                 categoriesSelector.appendChild(option);
             });
-            
+            if (categoriesSelector.__customSelectInstance) {
+                categoriesSelector.__customSelectInstance.refresh();
+            }
             this.currentCategoriesPageId = newPage.id;
             this.loadPageCategories(newPage.id);
         }
@@ -1782,7 +1787,7 @@ class ConfigManager {
                 this.originalPagesData.splice(origIndex, 1);
             }
             
-            this.pages.render(this.pagesData, this.generateId.bind(this));
+            this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
             this.pages.renderPageSelector(this.getVisiblePages(), 1);
             this.pages.initReorder(this.pagesData, (newPages) => {
                 this.pagesData = newPages;
@@ -1807,6 +1812,9 @@ class ConfigManager {
                     if (Number(p.id) === 1) option.selected = true;
                     categoriesSelector.appendChild(option);
                 });
+                if (categoriesSelector.__customSelectInstance) {
+                    categoriesSelector.__customSelectInstance.refresh();
+                }
             }
             await this.persistPagesStructureAndRefresh('page-removed');
             this.renderStructureWorkspace();

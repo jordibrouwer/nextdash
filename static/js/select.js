@@ -140,7 +140,8 @@ class CustomSelect {
         const spaceAbove = rect.top;
         const maxH = 250;
 
-        this.optionsContainer.style.width = `${rect.width}px`;
+        this.optionsContainer.style.minWidth = `${rect.width}px`;
+        this.optionsContainer.style.width = 'auto';
         this.optionsContainer.style.left = `${rect.left}px`;
 
         if (spaceBelow >= Math.min(maxH, 120) || spaceBelow >= spaceAbove) {
