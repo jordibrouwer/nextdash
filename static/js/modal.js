@@ -57,7 +57,7 @@ class Modal {
                 if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT') {
                     e.preventDefault();
                     const confirmBtn = this.modal.querySelector('.modal-button.danger, .modal-button:first-child');
-                    if (confirmBtn) confirmBtn.click();
+                    if (confirmBtn && confirmBtn !== e.target) confirmBtn.click();
                     return;
                 }
                 if (e.key === 'Tab') {
