@@ -1599,23 +1599,21 @@ class Dashboard {
         const sections = this.getKeyboardCheatSheetItems();
         const html = `
             <div class="keyboard-cheat-sheet">
-                <div class="keyboard-cheat-sheet-grid">
-                    ${sections.map((section) => `
-                        <section class="keyboard-cheat-sheet-panel">
-                            <h3 class="keyboard-cheat-sheet-section-title">${section.title}</h3>
-                            <table class="keyboard-cheat-sheet-table">
-                                <tbody>
-                                    ${section.items.map((shortcut) => `
-                                        <tr>
-                                            <td class="keyboard-cheat-sheet-keys">${shortcut.keys}</td>
-                                            <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </section>
-                    `).join('')}
-                </div>
+                ${sections.map((section, i) => `
+                    <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
+                        <summary class="cheat-sheet-group-title">${section.title}</summary>
+                        <table class="keyboard-cheat-sheet-table">
+                            <tbody>
+                                ${section.items.map((shortcut) => `
+                                    <tr>
+                                        <td class="keyboard-cheat-sheet-keys">${shortcut.keys}</td>
+                                        <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </details>
+                `).join('')}
             </div>
         `;
 
@@ -1625,8 +1623,6 @@ class Dashboard {
             confirmText: 'close',
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
-            modalMaxWidth: '960px',
-            modalWidth: '96vw'
         });
     }
 

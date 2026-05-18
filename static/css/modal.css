@@ -38,8 +38,8 @@
 }
 
 .modal.keyboard-cheat-sheet-modal {
-    max-width: 960px;
-    width: min(96vw, 960px);
+    max-width: 480px;
+    width: min(96vw, 480px);
     margin: auto;
     max-height: 90vh;
     overflow: hidden;
@@ -228,46 +228,64 @@ body.no-animations .modal-button.danger.selected {
     cursor: not-allowed;
 }
 
-/* ── Keyboard cheat sheet: terminal-table style ─────────────────────────── */
+/* ── Keyboard cheat sheet: accordion style ───────────────────────────────── */
 
 .keyboard-cheat-sheet {
     width: 100%;
 }
 
-.keyboard-cheat-sheet-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0 2.5rem;
-    width: 100%;
-    align-items: start;
+.cheat-sheet-group {
+    border-bottom: 1px solid var(--border-primary);
 }
 
-.keyboard-cheat-sheet-panel {
-    min-width: 0;
-    padding-bottom: 1.1rem;
+.cheat-sheet-group:last-child {
+    border-bottom: none;
 }
 
-.keyboard-cheat-sheet-section-title {
-    margin: 0 0 0.35rem 0;
+.cheat-sheet-group-title {
+    list-style: none;
+    cursor: pointer;
+    padding: 0.5rem 0;
     font-size: 0.7rem;
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.06em;
     text-transform: lowercase;
     color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
 }
 
-.keyboard-cheat-sheet-section-title::before {
-    content: '// ';
+.cheat-sheet-group-title::-webkit-details-marker {
+    display: none;
+}
+
+.cheat-sheet-group-title::before {
+    content: '▶';
+    font-size: 0.5rem;
+    color: var(--text-tertiary);
+    transition: transform 0.15s ease;
+    display: inline-block;
+}
+
+.cheat-sheet-group[open] .cheat-sheet-group-title::before {
+    transform: rotate(90deg);
+}
+
+.cheat-sheet-group-title:hover {
+    color: var(--text-secondary);
 }
 
 .keyboard-cheat-sheet-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+    margin-bottom: 0.5rem;
 }
 
 .keyboard-cheat-sheet-table td {
-    padding: 0.28rem 0;
+    padding: 0.22rem 0;
     border-bottom: 1px solid var(--border-primary);
     vertical-align: top;
     line-height: 1.35;
@@ -285,7 +303,7 @@ body.no-animations .modal-button.danger.selected {
     white-space: normal;
     word-break: break-word;
     padding-right: 1rem;
-    width: 42%;
+    width: 40%;
 }
 
 .keyboard-cheat-sheet-description {
@@ -293,21 +311,5 @@ body.no-animations .modal-button.danger.selected {
     font-size: 0.76rem;
     min-width: 0;
     overflow-wrap: anywhere;
-    width: 58%;
-}
-
-@media (max-width: 820px) {
-    .keyboard-cheat-sheet-grid {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-
-    .modal.keyboard-cheat-sheet-modal {
-        width: min(96vw, 960px);
-        max-height: 86vh;
-    }
-
-    .keyboard-cheat-sheet-keys {
-        white-space: normal;
-    }
+    width: 60%;
 }
