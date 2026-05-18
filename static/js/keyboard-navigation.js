@@ -576,11 +576,15 @@ class KeyboardNavigation {
         const url = (openLink && openLink.href) || row.dataset.bookmarkUrl || '';
         if (!url) return;
 
-        navigator.clipboard.writeText(url).then(() => {
+        const notify = () => {
             if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
-                this.dashboard.showNotification('URL copied', 'success', { duration: 2000 });
+                const msg = (this.dashboard.language && typeof this.dashboard.language.t === 'function')
+                    ? this.dashboard.language.t('dashboard.urlCopied')
+                    : 'URL copied';
+                this.dashboard.showNotification(msg, 'success', { duration: 2000 });
             }
-        }).catch(() => {
+        };
+        navigator.clipboard.writeText(url).then(notify).catch(() => {
             // Fallback for browsers without clipboard API permission
             const ta = document.createElement('textarea');
             ta.value = url;
@@ -590,9 +594,7 @@ class KeyboardNavigation {
             ta.select();
             try { document.execCommand('copy'); } catch { /* ignore */ }
             document.body.removeChild(ta);
-            if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
-                this.dashboard.showNotification('URL copied', 'success', { duration: 2000 });
-            }
+            notify();
         });
     }
 

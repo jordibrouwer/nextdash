@@ -1696,16 +1696,17 @@ class Dashboard {
         const box = document.createElement('div');
         box.className = 'omnibox-box';
 
+        const t = (key) => this.language && typeof this.language.t === 'function' ? this.language.t(key) : key.split('.').pop();
         const hint = document.createElement('span');
         hint.className = 'omnibox-hint';
-        hint.textContent = 'naam | url | shortcut';
+        hint.textContent = t('dashboard.quickAddHint');
 
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'omnibox-input';
         input.autocomplete = 'off';
         input.spellcheck = false;
-        input.placeholder = 'naam | url | shortcut';
+        input.placeholder = t('dashboard.quickAddHint');
 
         const status = document.createElement('span');
         status.className = 'omnibox-status';
@@ -1731,7 +1732,7 @@ class Dashboard {
             const shortcut = (parts[2] || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
 
             if (!name || !url) {
-                status.textContent = 'vul minimaal naam en url in';
+                status.textContent = t('dashboard.quickAddNameUrlRequired');
                 status.classList.add('is-error');
                 input.focus();
                 return;
@@ -1742,7 +1743,7 @@ class Dashboard {
                     b => (b.shortcut || '').toUpperCase() === shortcut
                 );
                 if (duplicate) {
-                    status.textContent = `shortcut "${shortcut}" bestaat al`;
+                    status.textContent = t('dashboard.quickAddShortcutExists').replace('{shortcut}', shortcut);
                     status.classList.add('is-error');
                     input.focus();
                     return;
@@ -1752,7 +1753,7 @@ class Dashboard {
             let fullUrl = url;
             if (!/^https?:\/\//i.test(url)) fullUrl = 'https://' + url;
 
-            status.textContent = 'favicon ophalen…';
+            status.textContent = t('dashboard.quickAddFetchingFavicon');
             status.classList.remove('is-error');
             input.disabled = true;
 
@@ -1778,7 +1779,7 @@ class Dashboard {
                 }
             } catch { /* favicon is optional */ }
 
-            status.textContent = 'toevoegen…';
+            status.textContent = t('dashboard.quickAddAdding');
 
             try {
                 const response = await fetch('/api/bookmarks/add', {
@@ -1801,20 +1802,20 @@ class Dashboard {
                 if (response.ok) {
                     close();
                     await this.loadPageBookmarks(this.currentPageId);
-                    this.showNotification(`"${name}" toegevoegd`, 'success');
+                    this.showNotification(t('dashboard.quickAddAdded').replace('{name}', name), 'success');
                 } else if (response.status === 409) {
-                    status.textContent = 'URL bestaat al';
+                    status.textContent = t('dashboard.quickAddUrlExists');
                     status.classList.add('is-error');
                     input.disabled = false;
                     input.focus();
                 } else {
-                    status.textContent = 'toevoegen mislukt';
+                    status.textContent = t('dashboard.quickAddAddFailed');
                     status.classList.add('is-error');
                     input.disabled = false;
                     input.focus();
                 }
             } catch {
-                status.textContent = 'netwerkfout';
+                status.textContent = t('dashboard.quickAddNetworkError');
                 status.classList.add('is-error');
                 input.disabled = false;
                 input.focus();
@@ -3593,7 +3594,7 @@ class Dashboard {
                 pendingIcon = existingIcon;
                 syncIconState();
                 iconFetchState.textContent = this.language.t('config.iconSet') || 'Icon set';
-                this.showNotification('Icon URL set.', 'success');
+                this.showNotification(this.language.t('dashboard.iconUrlSet') || 'Icon URL set.', 'success');
                 return;
             }
             setIconBtn.disabled = true;

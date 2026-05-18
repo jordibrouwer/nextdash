@@ -71,7 +71,18 @@
         "weatherCode.snow": "Schnee",
         "weatherCode.thunderstorm": "Gewitter",
         "weatherCode.unknown": "Unbekannt",
-        "smartTodayCollection": "Heute"
+        "smartTodayCollection": "Heute",
+        "urlCopied": "URL kopiert",
+        "quickAddHint": "Name | URL | Kürzel",
+        "quickAddNameUrlRequired": "Bitte mindestens Name und URL eingeben",
+        "quickAddFetchingFavicon": "Favicon abrufen…",
+        "quickAddAdding": "Hinzufügen…",
+        "quickAddAdded": "\"{name}\" hinzugefügt",
+        "quickAddUrlExists": "URL bereits vorhanden",
+        "quickAddAddFailed": "Hinzufügen fehlgeschlagen",
+        "quickAddNetworkError": "Netzwerkfehler",
+        "quickAddShortcutExists": "Kürzel \"{shortcut}\" bereits vergeben",
+        "iconUrlSet": "Symbol-URL gesetzt."
     },
     "health": {
         "pageTitle": "health beta",

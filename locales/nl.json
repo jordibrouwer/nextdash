@@ -71,7 +71,18 @@
         "weatherCode.snow": "Sneeuw",
         "weatherCode.thunderstorm": "Onweer",
         "weatherCode.unknown": "Onbekend",
-        "smartTodayCollection": "Vandaag"
+        "smartTodayCollection": "Vandaag",
+        "urlCopied": "URL gekopieerd",
+        "quickAddHint": "naam | url | shortcut",
+        "quickAddNameUrlRequired": "vul minimaal naam en url in",
+        "quickAddFetchingFavicon": "favicon ophalen…",
+        "quickAddAdding": "toevoegen…",
+        "quickAddAdded": "\"{name}\" toegevoegd",
+        "quickAddUrlExists": "URL bestaat al",
+        "quickAddAddFailed": "toevoegen mislukt",
+        "quickAddNetworkError": "netwerkfout",
+        "quickAddShortcutExists": "shortcut \"{shortcut}\" bestaat al",
+        "iconUrlSet": "Icoon-URL ingesteld."
     },
     "health": {
         "pageTitle": "health beta",
