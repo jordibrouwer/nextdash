@@ -59,6 +59,8 @@
 
 .page-selector-inline .page-selector {
     width: 100%;
+    max-width: none;
+    min-width: 0;
 }
 
 .bookmarks-filter-inline {
@@ -67,10 +69,14 @@
 
 .bookmarks-filter-inline .page-selector {
     width: 100%;
+    max-width: none;
+    min-width: 0;
 }
 
 .bookmarks-filter-inline #bookmarks-sort {
     width: 100%;
+    max-width: none;
+    min-width: 0;
 }
 
 #add-bookmark-btn,
