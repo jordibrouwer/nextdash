@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//go:embed static/* templates/*
+//go:embed static/* templates/* locales/*
 var embeddedFiles embed.FS
 
 func main() {
@@ -81,8 +81,9 @@ func main() {
 	// Data files (for uploaded favicons, etc.)
 	r.PathPrefix("/data/").Handler(http.StripPrefix("/data/", http.FileServer(http.Dir("data/"))))
 
-	// Locales files
-	r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.Dir("locales/"))))
+	// Locales files (embedded)
+	localesFS, _ := fs.Sub(embeddedFiles, "locales")
+	r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.FS(localesFS))))
 
 	// Static files with proper MIME type handling
 	staticFS, _ := fs.Sub(embeddedFiles, "static")
