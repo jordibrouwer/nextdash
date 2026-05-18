@@ -559,7 +559,7 @@ class ConfigSettings {
             const normalized = window.DashboardFont.normalizePresetId(settings.fontPreset);
             settings.fontPreset = normalized;
             fontPresetSelect.value = normalized;
-            fontPresetSelect.disabled = !!(settings.enableCustomFont && settings.customFontPath);
+            fontPresetSelect.disabled = false;
             fontPresetSelect.addEventListener('change', (e) => {
                 const v = window.DashboardFont.normalizePresetId(e.target.value);
                 settings.fontPreset = v;
@@ -820,26 +820,6 @@ class ConfigSettings {
             this.toggleCustomFaviconInput(settings.enableCustomFavicon);
         }
 
-        // Custom font input — font is always active when a path is set
-        const customFontInput = document.getElementById('custom-font-input');
-        if (customFontInput) {
-            customFontInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    try {
-                        const result = await window.ConfigFont.uploadFont(file);
-                        settings.customFontPath = result;
-                        settings.enableCustomFont = true;
-                        window.ConfigFont.applyFont(settings.customFontPath);
-                        const ps = document.getElementById('font-preset-select');
-                        if (ps) ps.disabled = true;
-                        await this.saveSettingsToServer(settings);
-                    } catch (error) {
-                        console.error('Error uploading font:', error);
-                    }
-                }
-            });
-        }
 
         // Show page in title checkbox
         const showPageInTitleCheckbox = document.getElementById('show-page-in-title-checkbox');
