@@ -165,7 +165,7 @@
 }
 
 .smart-collection-toggle {
-    flex: 1;
+    flex: 0 0 auto;
     cursor: default;
 }
 
@@ -207,7 +207,6 @@
 
 /* Button visibility table */
 .buttons-visibility-table {
-    width: 100%;
     border-collapse: collapse;
     font-size: var(--font-size-controls);
 }
@@ -232,7 +231,7 @@
 }
 
 .buttons-visibility-table td:first-child {
-    width: 100%;
+    padding-right: 1.5rem;
 }
 
 .buttons-visibility-table td:not(:first-child) {
@@ -465,7 +464,7 @@
 }
 
 .checkbox-tree-child .checkbox-label {
-    display: inline-flex !important;
+    display: inline-grid !important;
     white-space: normal;
 }
 
@@ -510,9 +509,10 @@
 }
 
 .checkbox-label {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 14px 1.4em auto auto;
     align-items: center;
-    gap: 0.5rem;
+    column-gap: 0.4rem;
     cursor: pointer;
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-normal);
@@ -520,22 +520,17 @@
     padding: 0;
 }
 
-/* Special layout for checkbox labels with info buttons to keep button with wrapped text */
-.checkbox-label:has(.info-button) {
-    display: block !important;
+.checkbox-label .checkbox-text {
+    grid-column: 3;
 }
 
-.checkbox-label:has(.info-button) input[type="checkbox"] {
-    display: inline-block;
-    vertical-align: middle;
+.checkbox-label .setting-reset-btn {
+    grid-column: 2;
+    margin-left: 0;
 }
 
-.checkbox-label:has(.info-button) .checkbox-text {
-    display: inline;
-}
-
-.checkbox-label:has(.info-button) .info-button {
-    display: inline;
+.checkbox-label .info-button {
+    grid-column: 4;
 }
 
 /* Override opacity for bookmark status toggle */
