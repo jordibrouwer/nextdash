@@ -239,6 +239,7 @@
     white-space: nowrap;
 }
 
+
 .buttons-visibility-table th:not(:first-child) {
     text-align: center;
 }
@@ -253,6 +254,15 @@
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
     line-height: 1.45;
+}
+
+.setting-reset-btn-placeholder {
+    display: inline-block;
+    width: 1.4em;
+    height: 1.4em;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .setting-reset-btn {
