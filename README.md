@@ -202,6 +202,7 @@ See `extension/README.md` for full usage and development notes.
 
 ### What's new (summary)
 
+- **Stats opens filter** — the three opens tables in config → stats can now be filtered by time window: Total, Last 30 days, or Last 7 days.
 - **Bulk feedback** — bulk delete, pin toggle, and move-to-page in config → bookmarks now show a toast with the number of affected bookmarks.
 - **Shared TagAutocomplete** — the tag autocomplete is now a single shared file (`tag-autocomplete.js`); the duplicate copies in dashboard and config-bookmarks have been removed.
 - **Reset fixed** — the reset button now correctly wipes all pages, bookmarks, categories, finders, and settings, including extra pages beyond page 1. Tags and collections are also cleared.

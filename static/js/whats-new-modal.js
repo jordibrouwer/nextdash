@@ -4,16 +4,20 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v19';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v20';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function buildHtml() {
         return `
             <div class="help-content">
                 <p class="help-intro">A short recap of the most recent changes.</p>
+                <h4 class="help-subheading">Config — stats</h4>
+                <ul>
+                    <li><strong>Opens filter</strong> — The three opens tables (top by count, most recently opened, most clicked) can now be filtered by time window: Total, Last 30 days, or Last 7 days.</li>
+                </ul>
                 <h4 class="help-subheading">Config — bookmarks</h4>
                 <ul>
-                    <li><strong>Bulk feedback</strong> — Bulk delete, pin toggle, and move-to-page now show a toast with the number of affected bookmarks ("3 bookmarks deleted", "5 bookmarks pinned").</li>
+                    <li><strong>Bulk feedback</strong> — Bulk delete, pin toggle, and move-to-page now show a toast with the number of affected bookmarks.</li>
                 </ul>
                 <h4 class="help-subheading">Codebase</h4>
                 <ul>
