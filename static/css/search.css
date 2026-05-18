@@ -578,6 +578,18 @@ body.no-animations .search-flow-hint-close {
     vertical-align: baseline;
 }
 
+.button-hint-link {
+    color: var(--accent-success);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.14em;
+}
+
+.button-hint-link:hover {
+    color: var(--text-primary);
+}
+
 body[data-show-tips="false"] .button-hint {
     display: none;
 }

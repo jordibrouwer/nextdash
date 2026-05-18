@@ -288,6 +288,8 @@ class Dashboard {
         this.pendingMetadataSave = null;
         this.notificationTimeout = null;
         this.tipRotationTimer = null;
+        this.backupTipTimer = null;
+        this.backupTipShown = false;
         this.tipRotationIndex = 0;
         this.tipPriorityIndex = 0;
         this.contextTipRotationIndex = 0;
@@ -339,6 +341,7 @@ class Dashboard {
         this.setupPasteToQuickAdd();
         this.setupToolbarActions();
         this.setupConfigStructureReloadListener();
+        this.scheduleBackupTip();
 
             // Initialize new features
             this.analytics = new BookmarkAnalytics(this);
@@ -1425,6 +1428,36 @@ class Dashboard {
             this.tipRotationTimer = setTimeout(run, delay);
         };
         run();
+    }
+
+    scheduleBackupTip() {
+        if (this.backupTipShown || this.backupTipTimer) {
+            return;
+        }
+
+        const hintEl = document.getElementById('button-hint-text');
+        if (!hintEl) {
+            return;
+        }
+
+        if (this.settings.showTips === false) {
+            return;
+        }
+
+        this.backupTipTimer = setTimeout(() => {
+            this.backupTipTimer = null;
+            if (this.backupTipShown) {
+                return;
+            }
+
+            const currentHintEl = document.getElementById('button-hint-text');
+            if (!currentHintEl || this.settings.showTips === false) {
+                return;
+            }
+
+            this.backupTipShown = true;
+            currentHintEl.innerHTML = 'Tip: maak een backup via <a class="button-hint-link" href="/config#backups">config -> backups</a>.';
+        }, 30000);
     }
 
     initializeSearchFlowHint() {
