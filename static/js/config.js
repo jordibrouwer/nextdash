@@ -2971,8 +2971,12 @@ class ConfigManager {
         try {
             sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');
             localStorage.removeItem('nextDashSearchFlowHintDismissedV1');
-            this.storage.clearDeviceSettings?.();
         } catch { /* ignore */ }
+        try {
+            this.storage.clearDeviceSettings();
+        } catch (error) {
+            console.warn('Could not clear device settings during reset:', error);
+        }
 
         this.isNavigatingAway = true;
         setTimeout(() => { window.location.href = '/'; }, 1000);
