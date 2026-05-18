@@ -1038,6 +1038,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundGradient:        "",
 			BackgroundImageUrl:        "",
 			ThemeIconStyling:          map[string]ThemeIconStylingEntry{},
+			PasteUrlQuickAdd:          true,
 		}
 	}
 
@@ -1168,6 +1169,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["backgroundImageUrl"]; !ok {
 			settings.BackgroundImageUrl = ""
+		}
+		if _, ok := rawSettings["pasteUrlQuickAdd"]; !ok {
+			settings.PasteUrlQuickAdd = true
 		}
 	}
 
