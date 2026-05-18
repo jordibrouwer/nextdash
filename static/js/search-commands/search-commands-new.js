@@ -311,7 +311,8 @@ class SearchCommandNew {
             }
         });
 
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        this._boundHandleKeyDown = this.handleKeyDown.bind(this);
+        document.addEventListener('keydown', this._boundHandleKeyDown);
 
         const pageSelect = document.getElementById('new-bookmark-page');
         if (pageSelect) {
@@ -421,11 +422,13 @@ class SearchCommandNew {
             this.createBookmark();
         });
 
+        this._modalCustomSelects = [];
         const selects = this.modal.querySelectorAll('select');
         selects.forEach(select => {
             if (typeof CustomSelect !== 'undefined') {
                 const instance = new CustomSelect(select);
                 select.__customSelectInstance = instance;
+                this._modalCustomSelects.push(instance);
             }
         });
 
@@ -481,6 +484,14 @@ class SearchCommandNew {
 
             if (this.keyboardBlockHandler) {
                 document.removeEventListener('keydown', this.keyboardBlockHandler, true);
+            }
+            if (this._boundHandleKeyDown) {
+                document.removeEventListener('keydown', this._boundHandleKeyDown);
+                this._boundHandleKeyDown = null;
+            }
+            if (this._modalCustomSelects) {
+                this._modalCustomSelects.forEach(cs => cs.destroy());
+                this._modalCustomSelects = [];
             }
 
             setTimeout(() => {

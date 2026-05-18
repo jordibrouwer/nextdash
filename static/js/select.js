@@ -286,13 +286,11 @@ class CustomSelect {
         });
 
         // Handle tab when open (close dropdown and allow normal tab navigation)
-        document.addEventListener('keydown', (e) => {
+        this._onKeyDown = (e) => {
             if (e.key === 'Tab' && this.isOpen) {
                 e.preventDefault();
                 this.close();
-                // Use setTimeout to ensure the dropdown is fully closed before moving focus
                 setTimeout(() => {
-                    // Find the next focusable element after the original select
                     const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
                     const allFocusable = Array.from(document.querySelectorAll(focusableElements));
                     const selectIndex = allFocusable.indexOf(this.originalSelect);
@@ -304,7 +302,8 @@ class CustomSelect {
             if (e.key === 'Escape' && this.isOpen) {
                 this.close();
             }
-        });
+        };
+        document.addEventListener('keydown', this._onKeyDown);
 
         // Update when original select changes programmatically
         this.originalSelect.addEventListener('change', () => {
@@ -313,11 +312,12 @@ class CustomSelect {
         });
 
         // Close when clicking outside (also allow clicking inside the detached optionsContainer)
-        document.addEventListener('click', (e) => {
+        this._onDocClick = (e) => {
             if (this.isOpen && !this.wrapper.contains(e.target) && !this.optionsContainer.contains(e.target)) {
                 this.close();
             }
-        });
+        };
+        document.addEventListener('click', this._onDocClick);
 
         // Reposition on scroll/resize so the detached container follows the trigger
         this._onScroll = () => { if (this.isOpen) this._repositionOptions(); };
@@ -333,6 +333,8 @@ class CustomSelect {
 
     // Destroy the custom select and restore original
     destroy() {
+        document.removeEventListener('keydown', this._onKeyDown);
+        document.removeEventListener('click', this._onDocClick);
         window.removeEventListener('scroll', this._onScroll, true);
         window.removeEventListener('resize', this._onScroll);
         this.optionsContainer.remove();

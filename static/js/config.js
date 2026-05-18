@@ -2388,6 +2388,10 @@ class ConfigManager {
         const targetId = Number(pageId);
         this.settingsData.archivedPageIds = this.getArchivedPageIds().filter((id) => id !== targetId);
         await this.settings.saveSettingsToServer(this.settingsData);
+        if (Number(this.currentPageId) === targetId || Number(this.currentCategoriesPageId) === targetId) {
+            await this.loadPageBookmarks(targetId);
+            await this.loadPageCategories(targetId);
+        }
         this.renderConfig();
         this.ui.showNotification(this.language.t('config.pageRestored') || 'Page restored.', 'success');
     }
