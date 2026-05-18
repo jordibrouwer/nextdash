@@ -82,7 +82,11 @@
         "quickAddAddFailed": "échec de l'ajout",
         "quickAddNetworkError": "erreur réseau",
         "quickAddShortcutExists": "le raccourci \"{shortcut}\" existe déjà",
-        "iconUrlSet": "URL de l'icône définie."
+        "iconUrlSet": "URL de l'icône définie.",
+        "featureSpotlightPasteTitle": "Collez une URL, enregistrez un favori instantanément",
+        "featureSpotlightPasteBody": "Copiez un lien et appuyez sur Ctrl+V sur le tableau de bord — le formulaire s'ouvre avec l'URL déjà remplie et la favicon récupérée automatiquement.",
+        "featureSpotlightPasteTry": "Essayer",
+        "featureSpotlightPasteClose": "Fermer"
     },
     "health": {
         "pageTitle": "health beta",

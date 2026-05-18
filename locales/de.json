@@ -82,7 +82,11 @@
         "quickAddAddFailed": "Hinzufügen fehlgeschlagen",
         "quickAddNetworkError": "Netzwerkfehler",
         "quickAddShortcutExists": "Kürzel \"{shortcut}\" bereits vergeben",
-        "iconUrlSet": "Symbol-URL gesetzt."
+        "iconUrlSet": "Symbol-URL gesetzt.",
+        "featureSpotlightPasteTitle": "URL einfügen, Lesezeichen sofort speichern",
+        "featureSpotlightPasteBody": "Kopiere einen Link und drücke Strg+V auf dem Dashboard — das Formular öffnet sich mit der URL bereits eingetragen und dem Favicon automatisch geladen.",
+        "featureSpotlightPasteTry": "Ausprobieren",
+        "featureSpotlightPasteClose": "Schließen"
     },
     "health": {
         "pageTitle": "health beta",

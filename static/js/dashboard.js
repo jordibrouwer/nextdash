@@ -370,6 +370,7 @@ class Dashboard {
         document.body.classList.remove('loading');
         this.initializeOnboarding();
         this.maybeShowWhatsNew();
+        this.maybeShowPasteSpotlight();
     }
 
     setupConfigStructureReloadListener() {
@@ -1274,6 +1275,21 @@ class Dashboard {
                 this.showKeyboardCheatSheet();
             }
         });
+    }
+
+    maybeShowPasteSpotlight() {
+        if (typeof window.FeatureSpotlight !== 'function') return;
+        if (this.onboardingStartedInSession) return;
+
+        const spotlight = new window.FeatureSpotlight({
+            language: this.language,
+            onTry: () => {
+                const handler = this.searchComponent?.commandsComponent?.newCommandHandler;
+                if (handler) handler.openModal();
+            },
+        });
+        spotlight.show(1400);
+        this.pasteSpotlight = spotlight;
     }
 
     maybeShowWhatsNew() {
