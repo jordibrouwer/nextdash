@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v12';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v13';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -38,9 +38,15 @@
                         ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
                         ['empty state', 'Panel is empty when nothing is selected — click outside a row to deselect.'],
                     ])}
-                    ${section('dashboard — quick-add', [
-                        ['<code>+</code>', 'Omnibox: type <code>name | url | shortcut</code> and press Enter. Favicon is fetched automatically.'],
-                        ['+ / ! buttons', 'Two fixed buttons bottom-right: <code>+</code> opens the omnibox, <code>!</code> opens the cheatsheet.'],
+                    ${section('dashboard — quick-add &amp; paste', [
+                        ['<code>+</code>', 'Quick-add omnibox: type <code>name | url | shortcut</code> and press Enter. Favicon is fetched automatically.'],
+                        ['Ctrl+V / Cmd+V', 'Paste a URL anywhere on the dashboard to open the quick-add modal with the URL pre-filled. Toggle in config → general → Bookmarks.'],
+                    ])}
+                    ${section('search — history', [
+                        ['↺ Recent', 'Open search (<code>&gt;</code>) with no query — recent searches appear immediately under a collapsible "Recent" group.'],
+                        ['× on hover', 'Hover a history row to reveal a × button that removes only that entry.'],
+                        ['<code>:history</code>', 'Browse search history from the command bar, even with an active query.'],
+                        ['<code>:history clear</code>', 'Wipe the entire search history in one step.'],
                     ])}
                     ${section('health &amp; stats', [
                         ['keep first', 'Each duplicate group has a button that resolves duplicates in one click.'],

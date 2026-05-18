@@ -172,7 +172,14 @@ class KeyboardNavigation {
                     }
                 }
                 break;
-            
+
+            case 'Delete':
+                if (this.currentIndex >= 0) {
+                    e.preventDefault();
+                    this.deleteCurrentBookmark();
+                }
+                break;
+
             case 'Escape':
                 e.preventDefault();
                 this.clearSelection();

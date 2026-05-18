@@ -75,7 +75,9 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `[` — toggle the preview card on the focused bookmark
 - `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
 - `;` — inline-edit the highlighted bookmark
-- `Ctrl + Shift + A` — open the new bookmark modal
+- `+` — open the quick-add omnibox — type `name | url | shortcut` in one line, favicon is fetched automatically
+- `Ctrl + V` / `Cmd + V` — paste a URL to open the quick-add modal pre-filled (when no input is focused)
+- `Ctrl + Shift + A` — open the full new-bookmark modal
 - `! or Ctrl + /` — open keyboard cheat sheet
 - `Esc` — clear selection or close overlay
 
