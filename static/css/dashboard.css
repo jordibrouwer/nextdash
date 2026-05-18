@@ -1145,6 +1145,24 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     flex-wrap: wrap;
     gap: 0.35rem;
     margin-top: 0.25rem;
+    align-items: center;
+}
+
+.bookmark-inline-hint {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.bookmark-inline-hint kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.68rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    color: var(--text-secondary);
 }
 
 .bookmark-inline-icon-actions {

@@ -3911,6 +3911,12 @@ class Dashboard {
         actions.appendChild(saveBtn);
         actions.appendChild(cancelBtn);
         actions.appendChild(deleteBtn);
+
+        const hint = document.createElement('span');
+        hint.className = 'bookmark-inline-hint';
+        hint.innerHTML = '<kbd>Ctrl+Enter</kbd> save &nbsp;·&nbsp; <kbd>Esc</kbd> cancel';
+        actions.appendChild(hint);
+
         form.appendChild(actions);
 
         form.addEventListener('keydown', (e) => {
