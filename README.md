@@ -71,6 +71,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `,` — page overview: all pages with bookmark counts; navigate with `↑/↓` or `1–9`
 - `Shift + Left/Right` — cycle between page tabs
 - `Arrow Up/Down/Left/Right` — move through the bookmark grid
+- `Tab` / `Shift+Tab` — step linearly through all bookmarks (when one is selected)
+- `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark
 - `[` — toggle the preview card on the focused bookmark
 - `Ctrl + C` — copy the URL of the focused bookmark to the clipboard

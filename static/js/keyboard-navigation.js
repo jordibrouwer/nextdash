@@ -6,7 +6,9 @@ class KeyboardNavigation {
         this.navigableElements = [];
         this.isEnabled = true;
         this.observer = null; // Store observer for cleanup
-        
+        this._gPressed = false;
+        this._gTimeout = null;
+
         this.init();
     }
 
@@ -85,6 +87,7 @@ class KeyboardNavigation {
             clearTimeout(this.updateTimeout);
             this.updateTimeout = null;
         }
+        this._clearGState();
     }
 
     scheduleUpdate() {
@@ -138,27 +141,48 @@ class KeyboardNavigation {
     handleKeyPress(e) {
         const key = e.key;
 
+        // G + 1–9: jump to nth category
+        if (this._gPressed && key >= '1' && key <= '9') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._clearGState();
+            this.jumpToCategory(parseInt(key, 10));
+            return;
+        }
+
+        // Tab / Shift+Tab: linear bookmark navigation (only when a bookmark is selected)
+        if (key === 'Tab' && this.currentIndex >= 0) {
+            e.preventDefault();
+            if (e.shiftKey) {
+                this.currentIndex = (this.currentIndex - 1 + this.navigableElements.length) % this.navigableElements.length;
+            } else {
+                this.currentIndex = (this.currentIndex + 1) % this.navigableElements.length;
+            }
+            this.highlightCurrentElement();
+            return;
+        }
+
         switch(key) {
             case 'ArrowDown':
                 e.preventDefault();
                 this.navigateDown();
                 break;
-            
+
             case 'ArrowUp':
                 e.preventDefault();
                 this.navigateUp();
                 break;
-            
+
             case 'ArrowRight':
                 e.preventDefault();
                 this.navigateRight();
                 break;
-            
+
             case 'ArrowLeft':
                 e.preventDefault();
                 this.navigateLeft();
                 break;
-            
+
             case 'Enter':
             case ' ': // Space key
                 e.preventDefault();
@@ -181,10 +205,53 @@ class KeyboardNavigation {
                 break;
 
             case 'Escape':
+                this._clearGState();
                 e.preventDefault();
                 this.clearSelection();
                 break;
+
+            case 'g':
+            case 'G':
+                if (this._gPressed) {
+                    // GG: jump to first bookmark
+                    e.preventDefault();
+                    this._clearGState();
+                    this.currentIndex = 0;
+                    this.highlightCurrentElement();
+                } else {
+                    e.preventDefault();
+                    this._gPressed = true;
+                    this._gTimeout = setTimeout(() => this._clearGState(), 1000);
+                }
+                break;
         }
+    }
+
+    _clearGState() {
+        this._gPressed = false;
+        if (this._gTimeout) {
+            clearTimeout(this._gTimeout);
+            this._gTimeout = null;
+        }
+    }
+
+    jumpToCategory(n) {
+        this.updateNavigableElements();
+        const categories = Array.from(
+            document.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])')
+        ).filter(el => el.getAttribute('data-collapsed') !== 'true');
+
+        const target = categories[n - 1];
+        if (!target) return;
+
+        const firstRow = target.querySelector('.bookmark-link[data-bookmark-index]');
+        if (!firstRow) return;
+
+        const idx = this.navigableElements.indexOf(firstRow);
+        if (idx === -1) return;
+
+        this.currentIndex = idx;
+        this.highlightCurrentElement();
     }
 
     navigateDown() {

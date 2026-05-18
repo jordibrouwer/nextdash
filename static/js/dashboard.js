@@ -1845,6 +1845,8 @@ class Dashboard {
                     { keys: ',', description: 'Page overview with bookmark counts' },
                     { keys: '↑ / ↓', description: 'Move focus through bookmarks' },
                     { keys: '← / →', description: 'Move horizontally in grid' },
+                    { keys: 'Tab / Shift+Tab', description: 'Step linearly through bookmarks' },
+                    { keys: 'G + 1–9', description: 'Jump to nth category' },
                     { keys: 'Enter / Space', description: 'Open focused bookmark' },
                     { keys: 'Esc', description: 'Clear selection / close overlay' }
                 ]
