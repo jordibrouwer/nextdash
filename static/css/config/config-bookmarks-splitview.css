@@ -43,7 +43,7 @@
 
 .bookmarks-list-controls-row {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1.5fr 1fr auto;
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
