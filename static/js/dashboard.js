@@ -5120,19 +5120,20 @@ class Dashboard {
         const weatherPart = this.formatWeatherText(this.weatherData);
 
         // Localized date/time line: prefer translation keys when available
-        const tplCombined = this.language?.t ? this.language.t('dashboard.dateTimeLine') : null;
-        const tplTimeOnly = this.language?.t ? this.language.t('dashboard.dateTimeOnly') : null;
+        const t = (key, fallback) => {
+            const val = this.language?.t ? this.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+        const tplCombined = t('dashboard.dateTimeLine', "It's {time} @ {date}");
+        const tplTimeOnly = t('dashboard.dateTimeOnly', "It's {time}");
 
         let dateTimeText = '';
         if (timePart && datePart) {
-            const raw = tplCombined || "It's {time} @ {date}";
-            dateTimeText = raw.replace('{time}', timePart).replace('{date}', datePart);
+            dateTimeText = tplCombined.replace('{time}', timePart).replace('{date}', datePart);
         } else if (timePart) {
-            const raw = tplTimeOnly || "It's {time}";
-            dateTimeText = raw.replace('{time}', timePart);
+            dateTimeText = tplTimeOnly.replace('{time}', timePart);
         } else if (datePart) {
-            // Fallback to showing just the date when time is disabled
-            const raw = this.language?.t ? this.language.t('dashboard.dateOnly') : null;
+            const raw = t('dashboard.dateOnly', null);
             dateTimeText = raw ? raw.replace('{date}', datePart) : datePart;
         }
 
