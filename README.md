@@ -202,6 +202,19 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Config — navigation**
+- Health link always visible in the config header, between "→ customize theme" and "← back to dashboard"
+- Health link pulses with your active theme colour; shows the same red (broken) / yellow (warning) badge as the dashboard header
+- Health page navigation reordered to match config style: refresh | ← back to config | ← back to dashboard
+
+**Config — pages**
+- Empty pages (no bookmarks) can now be deleted — previously the remove button failed silently
+
+**Dashboard**
+- Bookmark grid has enough bottom padding so the last rows are never hidden behind the floating action buttons
+
+### Recent
+
 **Config — pages (archive)**
 - Archive a page from the pages list — the row dims and shows an "archived" badge; archived pages are hidden from the dashboard
 - Restore a page with one click — the button switches between Archive and Restore automatically
@@ -211,7 +224,7 @@ See `extension/README.md` for full usage and development notes.
 - All checkboxes aligned in a 3-column layout: [checkbox] [↺ reset] [label] — rows without a reset button keep columns consistent
 - Settings that differ from their default show a ↺ button; click to restore
 
-### Recent
+### Older
 
 **Dashboard — navigation**
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is selected; wraps around

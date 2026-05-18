@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v15';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v16';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,6 +24,16 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
+                    ${section('config — navigation links', [
+                        ['config header', 'Health link is now always visible in the config header between "→ customize theme" and "← back to dashboard". It pulses with your theme colour and shows the same red/yellow badge as the dashboard.'],
+                        ['health page', 'Navigation links reordered to match the config style: <em>refresh</em> | <em>← back to config</em> | <em>← back to dashboard</em>.'],
+                    ])}
+                    ${section('config — pages (delete empty pages)', [
+                        ['remove button', 'Empty pages (no bookmarks) can now be deleted. Previously the delete failed silently because there was no bookmark file to remove.'],
+                    ])}
+                    ${section('dashboard — scroll clearance', [
+                        ['bottom padding', 'The bookmark grid now has enough bottom padding so the last bookmark rows are never hidden behind the floating action buttons.'],
+                    ])}
                     ${section('config — pages (archive)', [
                         ['archive button', 'Archive a page from the pages list. The row dims and shows an "archived" badge. Archived pages are hidden from the dashboard.'],
                         ['restore button', 'Click Restore on an archived page to bring it back. The button switches between Archive and Restore automatically.'],
