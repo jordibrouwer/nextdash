@@ -2941,12 +2941,23 @@ class ConfigManager {
             return;
         }
 
+        const resetBtn = document.getElementById('reset-btn');
+        const originalLabel = resetBtn?.textContent;
+        if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.textContent = tx('config.resetAllDataResetting', 'Resetting…');
+        }
+
         try {
             const response = await fetch('/api/reset', { method: 'POST' });
             if (!response.ok) throw new Error('Reset failed');
         } catch (error) {
             console.error('Error resetting all data:', error);
             this.ui.showNotification(tx('config.errorSavingConfig', 'Error saving configuration'), 'error');
+            if (resetBtn) {
+                resetBtn.disabled = false;
+                resetBtn.textContent = originalLabel;
+            }
             return;
         }
 

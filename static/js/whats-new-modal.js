@@ -55,6 +55,8 @@
             htmlMessage: buildHtml(),
             confirmText: 'close',
             showCancel: false,
+            modalMaxWidth: '600px',
+            modalWidth: '96vw',
         });
         try {
             localStorage.setItem(STORAGE_KEY, DASHBOARD_RELEASE);
