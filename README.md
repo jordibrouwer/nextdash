@@ -202,65 +202,66 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
-**Config — pages**
-- Page dropdowns refresh immediately after save — categories tab, bookmarks tab, and settings smart-page selectors all update without a page reload
+**Config — pages (archive)**
+- Archive a page from the pages list — the row dims and shows an "archived" badge; archived pages are hidden from the dashboard
+- Restore a page with one click — the button switches between Archive and Restore automatically
+- Page dropdowns refresh immediately after save — no page reload needed
 
-**Dashboard — inline editor**
-- Category auto-select on page switch: when switching to a different page the first available category is pre-selected, so bookmarks no longer land in "Others" by default
+**Config — general**
+- All checkboxes aligned in a 3-column layout: [checkbox] [↺ reset] [label] — rows without a reset button keep columns consistent
+- Settings that differ from their default show a ↺ button; click to restore
 
 ### Recent
 
-**Dashboard — UX**
-- Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
-- Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
-- Corner buttons: `+` (quick-add) and `!` (cheatsheet) fixed in the bottom-right corner of the dashboard
+**Dashboard — navigation**
+- `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is selected; wraps around
+- `G + 1–9` — jump to the nth visible, non-collapsed category and select its first bookmark
+- `GG` — jump to the very first bookmark on the page
 
-**Dashboard — inline editor**
-- Page field: change the page of a bookmark directly in the inline editor; the row animates out and the bookmark moves to the target page on save
-- Category reloads in real time when you switch page — shows the categories of the destination page before saving
+**Dashboard — quick-add & paste**
+- Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
+- Paste a URL (`Ctrl+V` / `Cmd+V`) anywhere on the dashboard to open the quick-add modal pre-filled; toggle in config → general → Bookmarks
+
+**Search — history**
+- Open search (`>`) with no query to see recent searches under a collapsible "Recent" group
+- Hover a history row and click × to remove only that entry
+- `:history` — browse search history from the command bar
+- `:history clear` — wipe the entire history in one step
 
 **Config — bookmarks side panel**
-- Page field: select a different page in the detail panel; the category list reloads instantly to show the categories of that page
+- Page field: select a different page; category list reloads instantly
 - Click "→ Move" to confirm — bookmark is moved with the chosen category applied
-- Delete from side panel: trash button deletes directly; new (unsaved) bookmarks skip the confirmation dialog
+- Delete from side panel: trash button deletes directly; new bookmarks skip confirmation
 - Empty state: panel is blank when nothing is selected; click outside a row to deselect
+
+**Config — pages**
+- Page dropdowns refresh immediately after save — categories tab, bookmarks tab, and settings smart-page selectors all update without a page reload
+
+### Older
+
+**Dashboard — UX**
+- Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
+- Corner buttons: `+` (quick-add) and `!` (cheatsheet) fixed in the bottom-right corner of the dashboard
 
 **Health**
 - Duplicate groups: each group has a "keep first, remove rest" button — resolves duplicates in one click
+- Health badge on the dashboard header: red for broken bookmarks, yellow for warnings
+- Filter, sort order and search term in Health are preserved on refresh (sessionStorage)
 
 **Config — stats**
 - Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page
 - Category breakdown: which categories have the most opens, sorted by usage
 
-### Older
-
 **Search**
-- Match highlighting: matched characters shown in bold with an underline in both the shortcut and bookmark name
-- Filter autocomplete: typing `status:` shows all known values with descriptions; narrows as you type
+- Match highlighting: matched characters shown in bold with an underline
+- Filter autocomplete: typing `status:` shows all known values; narrows as you type
 - Search history capped at 15 entries; oldest entries dropped automatically
-
-**Command bar**
-- Keyboard-navigate to a bookmark with `↑↓`, then press `:` — the command bar opens with that bookmark as context
-- `:REMOVE` and `:NOTE` completions are pre-filled with the bookmark name
-- Deleting a bookmark via `:remove` shows an undo toast with an 8-second window
-
-**Drag & drop**
-- Drop placeholder fades and scales in smoothly each time it moves to a new position
-- Empty categories show a dashed outline while dragging so you can still drop into them
 
 **Config — general tab**
 - Bookmarks card split into Display and Behavior
 - Language moved into a new Localization card together with date, time, and weather settings
 - Smart Collections: each collection is its own collapsible block
 - Header & Buttons redesigned as a compact table: one row per button, Show and Label columns side by side
-- Card collapse state saved per session
-
-**Config — UX**
-- Unsaved changes: sticky toolbar gets an amber bottom border
-- Config tab bar horizontally scrollable with fade-out gradient on narrow screens
-
-**Dashboard**
-- Category collapse state stored per page (`pageId:categoryId`) — same-named categories on different pages no longer share state
 
 ---
 

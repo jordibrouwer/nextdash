@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v14';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v15';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,19 +24,14 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
-                    ${section('config — pages', [
-                        ['dropdowns', 'After saving, all page dropdowns (categories, bookmarks, settings) update instantly — no reload needed.'],
+                    ${section('config — pages (archive)', [
+                        ['archive button', 'Archive a page from the pages list. The row dims and shows an "archived" badge. Archived pages are hidden from the dashboard.'],
+                        ['restore button', 'Click Restore on an archived page to bring it back. The button switches between Archive and Restore automatically.'],
+                        ['dropdowns', 'After saving, all page dropdowns update instantly — no reload needed.'],
                     ])}
-                    ${section('dashboard — inline editor', [
-                        ['page field', 'Change the page of a bookmark in the inline editor. The row animates out and the bookmark appears on the target page.'],
-                        ['category reload', 'Switch page → category list immediately loads the categories of the target page. First category is auto-selected.'],
-                        ['preview card', 'Hover card always stays within the viewport — flips automatically if it would go off-screen.'],
-                    ])}
-                    ${section('config — bookmarks side panel', [
-                        ['page field', 'Choose a different page → categories for that page load immediately.'],
-                        ['→ Move button', 'Confirm the move. Bookmark is saved to the chosen page and category.'],
-                        ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
-                        ['empty state', 'Panel is empty when nothing is selected — click outside a row to deselect.'],
+                    ${section('config — general (alignment)', [
+                        ['3-column layout', 'All checkboxes are now aligned in three columns: [checkbox] [↺ reset] [label]. Rows without a reset button leave the column empty so labels stay aligned.'],
+                        ['↺ reset buttons', 'Settings that differ from their default show a ↺ button between the checkbox and the label. Click to restore the default.'],
                     ])}
                     ${section('dashboard — navigation', [
                         ['Tab / Shift+Tab', 'Step linearly through all bookmarks when one is already selected. Wraps around.'],
@@ -53,11 +48,10 @@
                         ['<code>:history</code>', 'Browse search history from the command bar, even with an active query.'],
                         ['<code>:history clear</code>', 'Wipe the entire search history in one step.'],
                     ])}
-                    ${section('health &amp; stats', [
-                        ['keep first', 'Each duplicate group has a button that resolves duplicates in one click.'],
-                        ['health badge', 'Health link shows a red (broken) or yellow (warnings) badge count.'],
-                        ['conflicts', 'Stats tab shows duplicate URLs and shortcut conflicts with a link to Health.'],
-                        ['filter saved', 'Filter, sort order and search term in Health are preserved on refresh.'],
+                    ${section('config — bookmarks side panel', [
+                        ['page field', 'Choose a different page → categories for that page load immediately.'],
+                        ['→ Move button', 'Confirm the move. Bookmark is saved to the chosen page and category.'],
+                        ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
                     ])}
                 </div>
             </div>

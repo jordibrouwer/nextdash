@@ -1466,38 +1466,41 @@
                         <section id="help-whats-new" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageWhatsNewTitle">What&#39;s New</h3>
                             <p class="help-intro">A short recap of the most recent changes.</p>
-                            <h4 class="help-subheading">Config — pagina's</h4>
+                            <h4 class="help-subheading">Config — pages (archive)</h4>
                             <ul>
-                                <li><strong>Dropdowns direct bijgewerkt</strong> — Na opslaan worden alle pagina-dropdowns (categories-tab, bookmarks-tab, settings) direct bijgewerkt. Een nieuwe pagina is meteen zichtbaar zonder de pagina te herladen.</li>
+                                <li><strong>Archive a page</strong> — Click the Archive button next to a page to hide it from the dashboard. The row dims and shows an "archived" badge.</li>
+                                <li><strong>Restore a page</strong> — Click Restore on an archived page to make it active again. The button switches between Archive and Restore automatically.</li>
+                                <li><strong>Instant dropdown refresh</strong> — After saving, all page dropdowns (categories, bookmarks, settings) update without a page reload.</li>
                             </ul>
-                            <h4 class="help-subheading">Dashboard</h4>
+                            <h4 class="help-subheading">Config — general (alignment)</h4>
                             <ul>
-                                <li><strong>Preview card edge-detection</strong> — De hover-kaart blijft altijd binnen de viewport. Als de kaart buiten het scherm zou vallen wordt hij automatisch aan de andere kant van de cursor geplaatst.</li>
-                                <li><strong>Quick-add omnibox</strong> — Druk op <code>+</code> voor een compacte invoerbalk: typ <code>naam | url | shortcut</code> in één veld. Favicon wordt automatisch opgehaald bij opslaan.</li>
-                                <li><strong>Hoek-knoppen</strong> — <code>+</code> (quick-add) en <code>!</code> (cheatsheet) staan vast rechtsonder op het dashboard.</li>
+                                <li><strong>3-column checkbox layout</strong> — All checkboxes now align in three columns: [checkbox] [↺ reset] [label]. Rows without a reset button leave the column empty so labels stay consistent.</li>
+                                <li><strong>↺ reset buttons</strong> — Settings that differ from their default show a ↺ button. Click it to restore the default value.</li>
                             </ul>
-                            <h4 class="help-subheading">Dashboard — inline editor</h4>
+                            <h4 class="help-subheading">Dashboard — navigation</h4>
                             <ul>
-                                <li><strong>Pagina-veld</strong> — Verander de pagina van een bookmark direct in de inline editor. De rij animeert weg en de bookmark verschijnt op de doelpagina na opslaan.</li>
-                                <li><strong>Category herlaad</strong> — Als je van pagina wisselt worden de categorieën van de doelpagina direct geladen. De eerste categorie wordt automatisch geselecteerd zodat de bookmark niet in "Others" belandt.</li>
+                                <li><strong>Tab / Shift+Tab</strong> — Step linearly through all bookmarks when one is already selected. Wraps around at the end.</li>
+                                <li><strong>G + 1–9</strong> — Jump to the nth visible, non-collapsed category and select its first bookmark.</li>
+                                <li><strong>GG</strong> — Jump to the very first bookmark on the page.</li>
+                            </ul>
+                            <h4 class="help-subheading">Dashboard — quick-add &amp; paste</h4>
+                            <ul>
+                                <li><strong>Quick-add omnibox</strong> — Press <code>+</code> to open a compact bar; type <code>name | url | shortcut</code> in one field. Favicon is fetched automatically on save.</li>
+                                <li><strong>Paste a URL</strong> — Press <code>Ctrl+V</code> / <code>Cmd+V</code> anywhere on the dashboard to open the quick-add modal with the URL pre-filled. Toggle in config → general → Bookmarks.</li>
+                            </ul>
+                            <h4 class="help-subheading">Search — history</h4>
+                            <ul>
+                                <li><strong>Recent searches</strong> — Open search (<code>&gt;</code>) with no query to see recent searches under a collapsible "Recent" group.</li>
+                                <li><strong>Remove one entry</strong> — Hover a history row and click × to delete only that entry.</li>
+                                <li><strong><code>:history</code></strong> — Browse search history from the command bar, even with an active query.</li>
+                                <li><strong><code>:history clear</code></strong> — Wipe the entire search history in one step.</li>
                             </ul>
                             <h4 class="help-subheading">Config — bookmarks side panel</h4>
                             <ul>
-                                <li><strong>Pagina-veld</strong> — Kies een andere pagina in het detail-panel; de categorielijst herlaadt direct met de categorieën van die pagina.</li>
-                                <li><strong>Verplaatsen via "→ Move"</strong> — Klik op de Move-knop om te bevestigen. De bookmark wordt verplaatst met de gekozen categorie.</li>
-                                <li><strong>Delete vanuit side panel</strong> — Verwijder het geselecteerde bookmark direct via de prullenbak. Nieuwe (niet opgeslagen) bookmarks worden zonder bevestiging verwijderd.</li>
-                                <li><strong>Lege state</strong> — Het panel is leeg als er niets geselecteerd is. Klik buiten een rij om te deselecteren.</li>
-                            </ul>
-                            <h4 class="help-subheading">Health</h4>
-                            <ul>
-                                <li><strong>Duplicaten oplossen</strong> — Elke duplicaatgroep heeft een "keep first, remove rest"-knop die duplicaten in één klik oplost.</li>
-                                <li><strong>Filter &amp; sort bewaard</strong> — Actief filter, sortering en zoekterm blijven bewaard bij een page refresh (via sessionStorage).</li>
-                                <li><strong>Health badge</strong> — De health-link op het dashboard toont een rood (broken) of geel (warnings) badge-getal.</li>
-                            </ul>
-                            <h4 class="help-subheading">Config — stats</h4>
-                            <ul>
-                                <li><strong>Conflicts &amp; duplicates</strong> — Toont het aantal dubbele URLs en conflicterende shortcuts, met een directe link naar de Health-pagina.</li>
-                                <li><strong>Categorie-breakdown</strong> — Welke categorieën de meeste opens hebben, gesorteerd op gebruik.</li>
+                                <li><strong>Page field</strong> — Choose a different page; the category list reloads instantly.</li>
+                                <li><strong>→ Move button</strong> — Confirm the move. Bookmark is saved to the chosen page and category.</li>
+                                <li><strong>Delete from panel</strong> — Delete a bookmark directly from the detail panel. New bookmarks skip the confirmation dialog.</li>
+                                <li><strong>Empty state</strong> — Panel is blank when nothing is selected; click outside a row to deselect.</li>
                             </ul>
                         </section>
 
