@@ -91,7 +91,7 @@ class ConfigBookmarks {
             emptyState.innerHTML = `
                 <div class="empty-state-icon">📚</div>
                 <div class="empty-state-text">${this.t('config.noBookmarks') || 'No bookmarks in this category'}</div>
-                <div class="empty-state-subtext">Use "Add Bookmark" below, or restore a ZIP backup on the Backups tab.</div>
+                <div class="empty-state-subtext">${this.t('config.noBookmarksHint') || 'Use "Add Bookmark" below, or restore a ZIP backup on the Backups tab.'}</div>
                 <div class="empty-state-action">
                     <a class="btn btn-secondary btn-small" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
                 </div>

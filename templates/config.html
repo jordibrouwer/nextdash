@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="background-opacity-input">Background opacity</label>
+                            <label for="background-opacity-input" data-i18n="config.backgroundOpacityLabel">Background opacity</label>
                             <div class="control-slider">
                                 <input type="range" id="background-opacity-input" class="slider-input" min="0.65" max="1" step="0.01" value="1">
                                 <span id="background-opacity-value" class="slider-value">100%</span>
@@ -177,11 +177,11 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="font-weight-select">Font weight</label>
+                            <label for="font-weight-select" data-i18n="config.fontWeightLabel">Font weight:</label>
                             <select id="font-weight-select">
-                                <option value="normal">Normal</option>
-                                <option value="600">Semi-bold</option>
-                                <option value="bold">Bold</option>
+                                <option value="normal" data-i18n="config.fontWeightNormal">Normal</option>
+                                <option value="600" data-i18n="config.fontWeightSemiBold">Semi-bold</option>
+                                <option value="bold" data-i18n="config.fontWeightBold">Bold</option>
                             </select>
                         </div>
                         <div class="checkbox-tree">
@@ -220,7 +220,7 @@
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-tips-checkbox">
-                                    <span class="checkbox-text">Show tips above buttons</span>
+                                    <span class="checkbox-text" data-i18n="config.showTipsAboveButtons">Show tips above buttons</span>
                                     <button type="button" id="show-tips-info-btn" class="info-button" aria-label="Information about rotating tips">ℹ</button>
                                 </label>
                             </div>
@@ -242,21 +242,21 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="layout-preset-select">Layout preset:</label>
+                            <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
                             <select id="layout-preset-select"></select>
                         </div>
                         <p id="layout-preset-description" class="setting-description" aria-live="polite">
                             Kies uit meerdere weergaven: Default, Compact, Cards, Terminal-ish, Masonry (variabele kaarthoogtes), List (gedetailleerde rijen) en Widgets (blok-achtige modules).
                         </p>
                         <div class="form-group">
-                            <label for="density-mode-select">Density:</label>
+                            <label for="density-mode-select" data-i18n="config.densityLabel">Density:</label>
                             <select id="density-mode-select"></select>
                         </div>
                         <p id="density-mode-description" class="setting-description" aria-live="polite">
                             Density bepaalt tussenruimte en typografie: Comfortable, Compact, Dense of Auto (past zich aan op scherm/zoom).
                         </p>
                         <div class="setting-preview" role="status" aria-live="polite">
-                            <span class="setting-preview-label">Live preview:</span>
+                            <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
                             <span id="layout-density-preview-text">Voorbeeld: "Masonry + Compact" toont meer items met variabele kaarthoogtes; "List + Comfortable" toont uitgebreide rijen.</span>
                         </div>
                         <div class="checkbox-tree">
@@ -279,7 +279,7 @@
                     <!-- 3. Bookmarks — Display -->
                     <section class="general-card" data-general-panel="bookmarks-display">
                         <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks — Display</h3>
-                        <p class="general-card-intro">Icons, shortcuts, badges, and link preview appearance.</p>
+                        <p class="general-card-intro" data-i18n="config.generalBookmarksDisplayIntro">Icons, shortcuts, badges, and link preview appearance.</p>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
@@ -325,15 +325,15 @@
 
                     <!-- 4. Bookmarks — Behavior (incl. Navigation) -->
                     <section class="general-card" data-general-panel="bookmarks-behavior">
-                        <h3 class="section-title">Bookmarks — Behavior</h3>
-                        <p class="general-card-intro">Sorting, tab behavior, categories, shortcuts, and page navigation.</p>
+                        <h3 class="section-title" data-i18n="config.generalBookmarksBehaviorTitle">Bookmarks — Behavior</h3>
+                        <p class="general-card-intro" data-i18n="config.generalBookmarksBehaviorIntro">Sorting, tab behavior, categories, shortcuts, and page navigation.</p>
                         <div class="form-group">
-                            <label for="sort-method-select">Bookmark sorting:</label>
+                            <label for="sort-method-select" data-i18n="config.bookmarkSortingLabel">Bookmark sorting:</label>
                             <select id="sort-method-select">
-                                <option value="order">Manual order</option>
-                                <option value="az">A-Z</option>
-                                <option value="recent">Recently used</option>
-                                <option value="custom">Pinned first</option>
+                                <option value="order" data-i18n="config.sortMethodManual">Manual order</option>
+                                <option value="az" data-i18n="config.sortMethodAZ">A-Z</option>
+                                <option value="recent" data-i18n="config.sortMethodRecent">Recently used</option>
+                                <option value="custom" data-i18n="config.sortMethodPinned">Pinned first</option>
                             </select>
                         </div>
                         <div class="checkbox-tree">
@@ -346,7 +346,7 @@
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="paste-url-quick-add-checkbox">
-                                    <span class="checkbox-text">Paste URL to quick-add bookmark</span>
+                                    <span class="checkbox-text" data-i18n="config.pasteUrlQuickAdd">Paste URL to quick-add bookmark</span>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -383,8 +383,8 @@
 
                     <!-- 5. Localization: language, date/time, weather -->
                     <section class="general-card" data-general-panel="localization">
-                        <h3 class="section-title">Localization</h3>
-                        <p class="general-card-intro">Language, date and time display, and weather source.</p>
+                        <h3 class="section-title" data-i18n="config.localizationTitle">Localization</h3>
+                        <p class="general-card-intro" data-i18n="config.localizationIntro">Language, date and time display, and weather source.</p>
                         <div class="form-group">
                             <label for="language-select" data-i18n="config.languageLabel">Language:</label>
                             <select id="language-select">
@@ -450,17 +450,17 @@
                                 <span class="tree-symbol">├──</span>
                                 <label for="weather-unit-select" data-i18n="config.weatherUnitLabel">Temperature unit:</label>
                                 <select id="weather-unit-select">
-                                    <option value="celsius">Celsius (C)</option>
-                                    <option value="fahrenheit">Fahrenheit (F)</option>
+                                    <option value="celsius" data-i18n="config.weatherUnitCelsius">Celsius (°C)</option>
+                                    <option value="fahrenheit" data-i18n="config.weatherUnitFahrenheit">Fahrenheit (°F)</option>
                                 </select>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="weather-refresh-select" data-i18n="config.weatherRefreshLabel">Refresh interval:</label>
                                 <select id="weather-refresh-select">
-                                    <option value="10">10 min</option>
-                                    <option value="30">30 min</option>
-                                    <option value="60">60 min</option>
+                                    <option value="10" data-i18n="config.weatherRefresh10Min">10 min</option>
+                                    <option value="30" data-i18n="config.weatherRefresh30Min">30 min</option>
+                                    <option value="60" data-i18n="config.weatherRefresh60Min">60 min</option>
                                 </select>
                             </div>
                         </div>

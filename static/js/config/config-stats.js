@@ -648,7 +648,7 @@ class ConfigStats {
         if (duplicateUrlCount === 0 && shortcutConflictCount === 0) {
             const p = document.createElement('p');
             p.className = 'stats-muted';
-            p.textContent = 'No conflicts found.';
+            p.textContent = this.t('config.statsNoConflictsFound') || 'No conflicts found.';
             detail.appendChild(p);
             return;
         }
@@ -658,8 +658,12 @@ class ConfigStats {
             p.className = 'stats-muted';
             p.style.marginTop = '0.75rem';
             const labels = conflictingShortcuts.slice(0, 8).map(([sc, c]) => `${sc} (×${c})`).join(', ');
-            const more = conflictingShortcuts.length > 8 ? ` +${conflictingShortcuts.length - 8} more` : '';
-            p.textContent = `Conflicting shortcuts: ${labels}${more}`;
+            const moreCount = conflictingShortcuts.length - 8;
+            const more = conflictingShortcuts.length > 8
+                ? (this.t('config.statsConflictMore') || ' +{count} more').replace('{count}', moreCount)
+                : '';
+            const tpl = this.t('config.statsConflictingShortcuts') || 'Conflicting shortcuts: {labels}{more}';
+            p.textContent = tpl.replace('{labels}', labels).replace('{more}', more);
             detail.appendChild(p);
         }
     }
