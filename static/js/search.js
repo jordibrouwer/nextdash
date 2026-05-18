@@ -623,8 +623,20 @@ class SearchComponent {
             const filterAutocompleteMatches = this.getFilterAutocompleteMatches(query);
             if (searchQuery.length === 0 && !hasFilters && filterAutocompleteMatches.length > 0) {
                 // Query is a bare filter token being typed (e.g. "status:", "status:on") —
-                // show its completions instead of the empty state.
-                this.searchMatches = filterAutocompleteMatches;
+                // show its completions with a group header, consistent with the empty state.
+                // Reuse the same toggle state as the 'filters' empty-state group (defaultOpen=true)
+                const filtersIsExpanded = !this.emptyStateExpandedGroups.has('filters');
+                this.searchMatches = [
+                    {
+                        type: 'command-group-header',
+                        groupId: 'empty_filters',
+                        label: 'Filters',
+                        count: filterAutocompleteMatches.length,
+                        expanded: filtersIsExpanded,
+                        _emptyStateGroup: 'filters'
+                    },
+                    ...(filtersIsExpanded ? filterAutocompleteMatches : [])
+                ];
             } else if (searchQuery.length === 0 && !hasFilters) {
                 this.searchMatches = this.getEmptyStateMatches();
             } else if (searchQuery.length === 0 && hasFilters) {
@@ -1316,8 +1328,8 @@ class SearchComponent {
 
         for (const group of groups) {
             if (group.id === 'finders' && group.items.length === 0) continue;
-            // Recent is open by default when it has items, others start closed
-            const defaultOpen = group.id === 'recent' && group.items.length > 0;
+            // Recent and Filters are open by default when they have items
+            const defaultOpen = (group.id === 'recent' || group.id === 'filters') && group.items.length > 0;
             const toggled = this.emptyStateExpandedGroups.has(group.id);
             const isExpanded = toggled ? !defaultOpen : defaultOpen;
 
