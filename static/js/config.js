@@ -1467,8 +1467,7 @@ class ConfigManager {
             { parent: 'show-status-checkbox', children: ['show-ping-checkbox', 'show-status-loading-checkbox', 'skip-fast-ping-checkbox'] },
             { parent: 'enable-custom-title-checkbox', children: ['custom-title-input', 'show-page-in-title-checkbox'] },
             { parent: 'enable-fuzzy-suggestions-checkbox', children: ['fuzzy-suggestions-start-with-checkbox'] },
-            { parent: 'enable-custom-favicon-checkbox', children: ['custom-favicon-input'] },
-            { parent: 'enable-custom-font-checkbox', children: ['custom-font-input'] }
+            { parent: 'enable-custom-favicon-checkbox', children: ['custom-favicon-input'] }
         ];
 
         // Set up event listeners for each parent checkbox

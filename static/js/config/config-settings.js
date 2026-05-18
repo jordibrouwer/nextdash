@@ -559,7 +559,7 @@ class ConfigSettings {
             const normalized = window.DashboardFont.normalizePresetId(settings.fontPreset);
             settings.fontPreset = normalized;
             fontPresetSelect.value = normalized;
-            fontPresetSelect.disabled = !!settings.enableCustomFont;
+            fontPresetSelect.disabled = !!(settings.enableCustomFont && settings.customFontPath);
             fontPresetSelect.addEventListener('change', (e) => {
                 const v = window.DashboardFont.normalizePresetId(e.target.value);
                 settings.fontPreset = v;
@@ -820,32 +820,7 @@ class ConfigSettings {
             this.toggleCustomFaviconInput(settings.enableCustomFavicon);
         }
 
-        // Enable custom font checkbox
-        const enableCustomFontCheckbox = document.getElementById('enable-custom-font-checkbox');
-        if (enableCustomFontCheckbox) {
-            enableCustomFontCheckbox.checked = settings.enableCustomFont;
-            enableCustomFontCheckbox.addEventListener('change', async (e) => {
-                settings.enableCustomFont = e.target.checked;
-                this.toggleCustomFontInput(e.target.checked);
-                const presetSel = document.getElementById('font-preset-select');
-                if (presetSel) presetSel.disabled = e.target.checked;
-                if (e.target.checked && settings.customFontPath) {
-                    // Apply the font if enabled and path exists
-                    if (window.ConfigFont) {
-                        window.ConfigFont.applyFont(settings.customFontPath);
-                    }
-                } else if (!e.target.checked) {
-                    // Reset to default font
-                    if (window.ConfigFont) {
-                        window.ConfigFont.resetFont();
-                    }
-                    if (presetSel) presetSel.disabled = false;
-                }
-                await this.saveSettingsToServer(settings);
-            });
-        }
-
-        // Custom font input
+        // Custom font input — font is always active when a path is set
         const customFontInput = document.getElementById('custom-font-input');
         if (customFontInput) {
             customFontInput.addEventListener('change', async (e) => {
@@ -854,26 +829,16 @@ class ConfigSettings {
                     try {
                         const result = await window.ConfigFont.uploadFont(file);
                         settings.customFontPath = result;
-                        // Auto-enable checkbox when user uploads a file
-                        if (!settings.enableCustomFont) {
-                            settings.enableCustomFont = true;
-                            const checkbox = document.getElementById('enable-custom-font-checkbox');
-                            if (checkbox) checkbox.checked = true;
-                            this.toggleCustomFontInput(true);
-                        }
-                        // Apply the font immediately
+                        settings.enableCustomFont = true;
                         window.ConfigFont.applyFont(settings.customFontPath);
                         const ps = document.getElementById('font-preset-select');
                         if (ps) ps.disabled = true;
-                        // Always save to server regardless of device-specific settings
                         await this.saveSettingsToServer(settings);
                     } catch (error) {
                         console.error('Error uploading font:', error);
                     }
                 }
             });
-            // Initial visibility
-            this.toggleCustomFontInput(settings.enableCustomFont);
         }
 
         // Show page in title checkbox
@@ -1716,30 +1681,6 @@ class ConfigSettings {
      * Toggle visibility of custom font input based on checkbox state
      * @param {boolean} enabled - Whether custom font is enabled
      */
-    toggleCustomFontInput(enabled) {
-        // Find the checkbox
-        const checkbox = document.getElementById('enable-custom-font-checkbox');
-        if (!checkbox) return;
-        
-        // Find the parent item
-        const parentItem = checkbox.closest('.checkbox-tree-item');
-        if (!parentItem) return;
-        
-        // Find all sibling items after this one that are checkbox-tree-child
-        const siblings = Array.from(parentItem.parentNode.children);
-        const startIndex = siblings.indexOf(parentItem);
-        
-        for (let i = startIndex + 1; i < siblings.length; i++) {
-            const sibling = siblings[i];
-            if (sibling.classList.contains('checkbox-tree-child')) {
-                sibling.style.display = enabled ? 'block' : 'none';
-            } else {
-                // Stop at the first non-child item (assuming they are grouped)
-                break;
-            }
-        }
-    }
-
     toggleWeatherManualLocationInput(source) {
         const weatherLocationInput = document.getElementById('weather-location-input');
         if (!weatherLocationInput) return;
