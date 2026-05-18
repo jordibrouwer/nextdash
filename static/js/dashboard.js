@@ -428,6 +428,9 @@ class Dashboard {
     async refreshAfterConfigSettingsUpdate(payload = {}) {
         try {
             await this.loadData();
+            if (this.settings.language && this.settings.language !== this.language.currentLanguage) {
+                await this.language.loadTranslations(this.settings.language);
+            }
             this.applyVisualSettings();
             this.setupDOM();
             this.updateStatusMonitor();
