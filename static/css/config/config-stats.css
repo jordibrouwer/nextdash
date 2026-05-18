@@ -97,6 +97,33 @@
     font-weight: 600;
 }
 
+.stats-filter-bar {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.stats-filter-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.stats-filter-btn:hover {
+    color: var(--text-primary);
+}
+
+.stats-filter-btn.active {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: var(--background-primary);
+}
+
 .stats-table-wrap {
     overflow-x: auto;
     margin-bottom: 0.5rem;

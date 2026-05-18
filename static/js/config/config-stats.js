@@ -245,6 +245,73 @@ class ConfigStats {
         }
     }
 
+    filterBookmarksByWindow(bookmarks, days) {
+        if (!days) return bookmarks;
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        return bookmarks.filter((b) => Number(b?.lastOpened || 0) >= cutoff);
+    }
+
+    bindOpenFilterButtons(bookmarks, pages, locale) {
+        document.querySelectorAll('.stats-filter-btn').forEach((btn) => {
+            const fresh = btn.cloneNode(true);
+            btn.replaceWith(fresh);
+        });
+        const buttons = document.querySelectorAll('.stats-filter-btn');
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                buttons.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                const raw = btn.getAttribute('data-window');
+                const days = raw === 'all' ? null : Number(raw);
+                this.renderOpensTables(bookmarks, pages, locale, days);
+            });
+        });
+    }
+
+    renderOpensTables(bookmarks, pages, locale, days) {
+        const subset = this.filterBookmarksByWindow(bookmarks, days);
+
+        const top = [...subset]
+            .filter((b) => Number(b?.openCount || 0) > 0)
+            .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
+            .slice(0, 20);
+
+        this.clearTable('stats-top-opens-body');
+        if (top.length === 0) {
+            this.appendRow('stats-top-opens-body', [this.t('config.statsNoData'), '', '', '']);
+        } else {
+            top.forEach((b) => {
+                this.appendRow('stats-top-opens-body', [
+                    String(b.name || '—'),
+                    String(Number(b.openCount || 0)),
+                    this.pageName(pages, b.pageId),
+                    this.formatWhen(b.lastOpened, locale)
+                ]);
+            });
+        }
+
+        const recent = [...subset]
+            .filter((b) => Number(b?.lastOpened || 0) > 0)
+            .sort((a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0))
+            .slice(0, 20);
+
+        this.clearTable('stats-recent-opens-body');
+        if (recent.length === 0) {
+            this.appendRow('stats-recent-opens-body', [this.t('config.statsNoData'), '', '', '']);
+        } else {
+            recent.forEach((b) => {
+                this.appendRow('stats-recent-opens-body', [
+                    String(b.name || '—'),
+                    String(Number(b.openCount || 0)),
+                    this.pageName(pages, b.pageId),
+                    this.formatWhen(b.lastOpened, locale)
+                ]);
+            });
+        }
+
+        this.renderMostClickedTable(subset, pages, locale);
+    }
+
     refresh(manager) {
         this.lastManager = manager;
         const bookmarks = Array.isArray(manager.allBookmarksData) ? manager.allBookmarksData : [];
@@ -279,43 +346,12 @@ class ConfigStats {
         const avg = bookmarks.length > 0 ? (totalOpens / bookmarks.length) : 0;
         this.setText('stats-avg-opens', String(Math.round(avg * 10) / 10));
 
-        const top = [...bookmarks]
-            .filter((b) => Number(b?.openCount || 0) > 0)
-            .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
-            .slice(0, 20);
-
-        this.clearTable('stats-top-opens-body');
-        if (top.length === 0) {
-            this.appendRow('stats-top-opens-body', [this.t('config.statsNoData'), '', '', '']);
-        } else {
-            top.forEach((b) => {
-                this.appendRow('stats-top-opens-body', [
-                    String(b.name || '—'),
-                    String(Number(b.openCount || 0)),
-                    this.pageName(pages, b.pageId),
-                    this.formatWhen(b.lastOpened, locale)
-                ]);
-            });
-        }
-
-        const recent = [...bookmarks]
-            .filter((b) => Number(b?.lastOpened || 0) > 0)
-            .sort((a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0))
-            .slice(0, 20);
-
-        this.clearTable('stats-recent-opens-body');
-        if (recent.length === 0) {
-            this.appendRow('stats-recent-opens-body', [this.t('config.statsNoData'), '', '', '']);
-        } else {
-            recent.forEach((b) => {
-                this.appendRow('stats-recent-opens-body', [
-                    String(b.name || '—'),
-                    String(Number(b.openCount || 0)),
-                    this.pageName(pages, b.pageId),
-                    this.formatWhen(b.lastOpened, locale)
-                ]);
-            });
-        }
+        // Reset filter bar to "Total" and render opens tables
+        this.bindOpenFilterButtons(bookmarks, pages, locale);
+        document.querySelectorAll('.stats-filter-btn').forEach((b) => b.classList.remove('active'));
+        const totalBtn = document.querySelector('.stats-filter-btn[data-window="all"]');
+        if (totalBtn) totalBtn.classList.add('active');
+        this.renderOpensTables(bookmarks, pages, locale, null);
 
         const idxKnown = Object.prototype.hasOwnProperty.call(settings, 'searchIndexed');
         this.setText(
@@ -462,7 +498,6 @@ class ConfigStats {
         this.currentInsightContext = context;
         this.setInsights(insights.slice(0, 6));
 
-        this.renderMostClickedTable(bookmarks, pages, locale);
         this.renderLatestAddedTable(bookmarks, pages, locale);
         this.renderShortcutsBlock(bookmarks, pages);
         this.renderCategoriesBlock(bookmarks, pages);
