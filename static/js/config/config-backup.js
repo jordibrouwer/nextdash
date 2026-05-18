@@ -210,11 +210,28 @@ class ConfigBackup {
                 importFileEl.value = '';
             }
 
+            // Count pages and bookmarks in the ZIP for the preview
+            const bookmarkFiles = files.filter(f => f.startsWith('bookmarks-') && f.endsWith('.json'));
+            let totalBookmarks = 0;
+            for (const fileName of bookmarkFiles) {
+                try {
+                    const content = await zip.file(fileName).async('string');
+                    const parsed = JSON.parse(content);
+                    totalBookmarks += Array.isArray(parsed.bookmarks) ? parsed.bookmarks.length : 0;
+                } catch { /* skip unreadable files */ }
+            }
+            const pageCount = bookmarkFiles.length;
+
             let confirmed = false;
             if (window.AppModal) {
                 confirmed = await window.AppModal.confirm({
                     title: this.t('config.importConfirmTitle'),
-                    message: this.t('config.importConfirmMessage'),
+                    htmlMessage: `
+                        <p>${this.t('config.importConfirmMessage')}</p>
+                        <p style="margin-top:0.75rem;opacity:0.8;font-size:0.9em;">
+                            ${pageCount} page${pageCount !== 1 ? 's' : ''},
+                            ${totalBookmarks} bookmark${totalBookmarks !== 1 ? 's' : ''}
+                        </p>`,
                     confirmText: this.t('config.importConfirm'),
                     cancelText: this.t('config.cancelImport'),
                     confirmClass: 'danger'
