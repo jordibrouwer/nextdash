@@ -202,6 +202,8 @@ See `extension/README.md` for full usage and development notes.
 
 ### What's new (summary)
 
+- **Bulk feedback** — bulk delete, pin toggle, and move-to-page in config → bookmarks now show a toast with the number of affected bookmarks.
+- **Shared TagAutocomplete** — the tag autocomplete is now a single shared file (`tag-autocomplete.js`); the duplicate copies in dashboard and config-bookmarks have been removed.
 - **Reset fixed** — the reset button now correctly wipes all pages, bookmarks, categories, finders, and settings, including extra pages beyond page 1. Tags and collections are also cleared.
 - **Reset UX** — pressing Enter in the confirmation input triggers the reset; the app redirects to the dashboard 1 second after a successful reset.
 - **Context tips moved** — "Reset context tips" moved from the Reset section to Advanced in config → general, with a consistent description + button layout.
