@@ -242,6 +242,8 @@ type Store interface {
 	// Colors
 	GetColors() ColorTheme
 	SaveColors(colors ColorTheme)
+	// Reset
+	ResetAllData() error
 }
 
 type FileStore struct {
@@ -386,6 +388,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			FaviconRefreshPolicy:        "on-save",
 			OnboardingCompleted:         false,
 			PackedColumns:               true,
+			PasteUrlQuickAdd:            true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		os.WriteFile(fs.settingsFile, data, 0644)
@@ -930,6 +933,39 @@ func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) {
 
 	data, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
 	os.WriteFile(fileName, data, 0644)
+}
+
+func (fs *FileStore) ResetAllData() error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	// Delete all bookmarks-*.json files
+	entries, err := os.ReadDir(fs.dataDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasPrefix(entry.Name(), "bookmarks-") && strings.HasSuffix(entry.Name(), ".json") {
+			os.Remove(fmt.Sprintf("%s/%s", fs.dataDir, entry.Name()))
+		}
+	}
+
+	// Reset finders
+	os.WriteFile(fmt.Sprintf("%s/finders.json", fs.dataDir), []byte("[]"), 0644)
+
+	// Reset page order to just page 1
+	data, _ := json.MarshalIndent(PageOrder{Order: []int{1}}, "", "  ")
+	os.WriteFile(fs.pageOrderFile, data, 0644)
+
+	// Reset settings to defaults
+	os.Remove(fs.settingsFile)
+
+	// Re-initialize default files (creates bookmarks-1.json with defaults)
+	fs.initializeDefaultFiles()
+
+	return nil
 }
 
 func (fs *FileStore) DeletePage(pageID int) error {

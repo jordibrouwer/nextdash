@@ -2941,119 +2941,23 @@ class ConfigManager {
             return;
         }
 
-        const undoSnapshot = this.captureUndoSnapshot();
-        this.bookmarksData = resetDefaultBookmarks;
-        this.categoriesData = resetDefaultCategories;
-        this.pagesData = resetDefaultPage;
-        this.currentPageId = 1;
-        this.currentCategoriesPageId = 1;
-        this.findersData = [];
-
-        const defaultSettings = this.settings.getDefaults();
-        Object.assign(this.settingsData, defaultSettings);
-        this.settingsData.onboardingCompleted = false;
         try {
-            sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');
-            localStorage.removeItem('nextDashSearchFlowHintDismissedV1');
-        } catch { /* ignore */ }
-        this.settingsData.currentPage = 1;
-        document.getElementById('theme-select').value = this.settingsData.theme;
-        document.getElementById('columns-input').value = this.settingsData.columnsPerRow;
-        document.getElementById('font-size-select').value = this.settingsData.fontSize;
-        document.getElementById('new-tab-checkbox').checked = this.settingsData.openInNewTab;
-        document.getElementById('show-background-dots-checkbox').checked = this.settingsData.showBackgroundDots;
-        document.getElementById('show-title-checkbox').checked = this.settingsData.showTitle;
-        document.getElementById('show-date-checkbox').checked = this.settingsData.showDate;
-        const showLinkPreviewCardsCheckbox = document.getElementById('show-link-preview-cards-checkbox');
-        if (showLinkPreviewCardsCheckbox) showLinkPreviewCardsCheckbox.checked = this.settingsData.showLinkPreviewCards !== false;
-        const showTimeCheckbox = document.getElementById('show-time-checkbox');
-        if (showTimeCheckbox) showTimeCheckbox.checked = this.settingsData.showTime !== false;
-        const timeFormatSelect = document.getElementById('time-format-select');
-        if (timeFormatSelect) timeFormatSelect.value = this.settingsData.timeFormat === '12h' ? '12h' : '24h';
-        document.getElementById('show-config-button-checkbox').checked = this.settingsData.showConfigButton;
-        const showHealthDashboardCheckbox = document.getElementById('show-health-dashboard-checkbox');
-        if (showHealthDashboardCheckbox) showHealthDashboardCheckbox.checked = this.settingsData.showHealthDashboard !== false;
-        document.getElementById('show-search-button-checkbox').checked = this.settingsData.showSearchButton;
-        document.getElementById('show-finders-button-checkbox').checked = this.settingsData.showFindersButton;
-        document.getElementById('show-commands-button-checkbox').checked = this.settingsData.showCommandsButton;
-        document.getElementById('show-cheatsheet-button-checkbox').checked = this.settingsData.showCheatSheetButton;
-        const showTipsCheckbox = document.getElementById('show-tips-checkbox');
-        if (showTipsCheckbox) showTipsCheckbox.checked = this.settingsData.showTips !== false;
-        const showSearchFlowBannerCheckbox = document.getElementById('show-search-flow-banner-checkbox');
-        if (showSearchFlowBannerCheckbox) showSearchFlowBannerCheckbox.checked = this.settingsData.showSearchFlowBanner !== false;
-        const showSyncToastsCheckbox = document.getElementById('show-sync-toasts-checkbox');
-        if (showSyncToastsCheckbox) showSyncToastsCheckbox.checked = this.settingsData.showSyncToasts !== false;
-        document.getElementById('show-search-button-text-checkbox').checked = this.settingsData.showSearchButtonText;
-        document.getElementById('show-finders-button-text-checkbox').checked = this.settingsData.showFindersButtonText;
-        document.getElementById('show-commands-button-text-checkbox').checked = this.settingsData.showCommandsButtonText;
-        document.getElementById('include-finders-in-search-checkbox').checked = this.settingsData.includeFindersInSearch;
-        document.getElementById('interleave-mode-checkbox').checked = false;
-        document.getElementById('show-page-tabs-checkbox').checked = this.settingsData.showPageTabs;
-        const packedColumnsCheckbox = document.getElementById('packed-columns-checkbox');
-        if (packedColumnsCheckbox) packedColumnsCheckbox.checked = this.settingsData.packedColumns === true;
-        const smartRecentCheckbox = document.getElementById('show-smart-recent-collection-checkbox');
-        if (smartRecentCheckbox) smartRecentCheckbox.checked = this.settingsData.showSmartRecentCollection;
-        const smartTodayCheckbox = document.getElementById('show-smart-today-collection-checkbox');
-        if (smartTodayCheckbox) smartTodayCheckbox.checked = this.settingsData.showSmartTodayCollection !== false;
-        const smartStaleCheckbox = document.getElementById('show-smart-stale-collection-checkbox');
-        if (smartStaleCheckbox) smartStaleCheckbox.checked = this.settingsData.showSmartStaleCollection;
-        const smartMostUsedCheckbox = document.getElementById('show-smart-most-used-collection-checkbox');
-        if (smartMostUsedCheckbox) smartMostUsedCheckbox.checked = this.settingsData.showSmartMostUsedCollection === true;
-        const smartRecentInput = document.getElementById('smart-recent-pages-input');
-        if (smartRecentInput) smartRecentInput.value = '';
-        const smartTodayWorkKeywordsInput = document.getElementById('smart-today-work-keywords-input');
-        if (smartTodayWorkKeywordsInput) smartTodayWorkKeywordsInput.value = this.settingsData.smartTodayWorkKeywords || '';
-        const smartTodayEveningKeywordsInput = document.getElementById('smart-today-evening-keywords-input');
-        if (smartTodayEveningKeywordsInput) smartTodayEveningKeywordsInput.value = this.settingsData.smartTodayEveningKeywords || '';
-        const smartTodayWeekendKeywordsInput = document.getElementById('smart-today-weekend-keywords-input');
-        if (smartTodayWeekendKeywordsInput) smartTodayWeekendKeywordsInput.value = this.settingsData.smartTodayWeekendKeywords || '';
-        const smartStaleInput = document.getElementById('smart-stale-pages-input');
-        if (smartStaleInput) smartStaleInput.value = '';
-        document.getElementById('always-collapse-categories-checkbox').checked = this.settingsData.alwaysCollapseCategories;
-
-        try {
-            await this.data.savePages(this.pagesData);
-            await this.data.saveBookmarks(this.bookmarksData, 1);
-            await this.data.saveCategoriesByPage(this.categoriesData, 1);
-            await this.data.saveFinders(this.findersData);
-
-            if (this.deviceSpecific) {
-                const settingsToSave = { ...this.settingsData };
-                delete settingsToSave.enableCustomFavicon;
-                delete settingsToSave.customFaviconPath;
-                delete settingsToSave.enableCustomFont;
-                delete settingsToSave.customFontPath;
-                this.storage.saveDeviceSettings(settingsToSave);
-            } else {
-                await this.data.saveSettings(this.settingsData);
-            }
+            const response = await fetch('/api/reset', { method: 'POST' });
+            if (!response.ok) throw new Error('Reset failed');
         } catch (error) {
             console.error('Error resetting all data:', error);
             this.ui.showNotification(tx('config.errorSavingConfig', 'Error saving configuration'), 'error');
             return;
         }
 
-        this.setupDOM();
-        this.settings.applyTheme(this.settingsData.theme);
-        if (this.settings && typeof this.settings.reloadThemeCSS === 'function') {
-            this.settings.reloadThemeCSS();
-        }
-        this.pages.renderPageSelector(this.pagesData, this.currentPageId);
-        this.pages.renderCategoriesPageSelector(this.pagesData, this.currentCategoriesPageId);
-        this.refreshPageContextChips();
-        this.renderFinders();
-        this.renderConfig();
-        this.initReordering();
-        this.clearDirty();
-        this.undoSnapshot = null;
-        this.savedSnapshot = this.captureUndoSnapshot();
-        this.setDirtyState(false);
-        const resetSuccessMessage = tx('config.resetAllDataSuccess', 'All data reset. Start fresh.');
-        this.showUndoNotification(resetSuccessMessage, undoSnapshot);
-        this.ui.showNotification(resetSuccessMessage, 'success');
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 250);
+        try {
+            sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');
+            localStorage.removeItem('nextDashSearchFlowHintDismissedV1');
+            this.storage.clearDeviceSettings?.();
+        } catch { /* ignore */ }
+
+        this.isNavigatingAway = true;
+        setTimeout(() => { window.location.href = '/'; }, 1000);
     }
 
     generateId(text) {

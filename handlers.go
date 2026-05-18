@@ -873,6 +873,15 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
+func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
+	if err := h.store.ResetAllData(); err != nil {
+		http.Error(w, "Error resetting data", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
 func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
 	w.Header().Set("Content-Type", "application/json")

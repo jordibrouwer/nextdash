@@ -49,14 +49,20 @@ class Modal {
 
         // Close modal with Escape key and implement focus trap
         this.focusTrapHandler = (e) => {
-            if (e.key === 'Escape' && this.modal && this.modal.classList.contains('show')) {
-                this.hide();
-                return;
-            }
-            
-            // Focus trap: keep Tab within modal
-            if (e.key === 'Tab' && this.modal && this.modal.classList.contains('show')) {
-                this.handleTabKey(e);
+            if (this.modal && this.modal.classList.contains('show')) {
+                if (e.key === 'Escape') {
+                    this.hide();
+                    return;
+                }
+                if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                    const confirmBtn = this.modal.querySelector('.modal-button.danger, .modal-button:first-child');
+                    if (confirmBtn) confirmBtn.click();
+                    return;
+                }
+                if (e.key === 'Tab') {
+                    this.handleTabKey(e);
+                }
             }
         };
         

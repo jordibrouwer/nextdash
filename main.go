@@ -46,6 +46,7 @@ func main() {
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
 	r.HandleFunc("/api/pages/{id:[0-9]+}", handlers.DeletePage).Methods("DELETE")
+	r.HandleFunc("/api/reset", handlers.ResetAllData).Methods("POST")
 	r.HandleFunc("/api/settings", handlers.GetSettings).Methods("GET")
 	r.HandleFunc("/api/settings", handlers.SaveSettings).Methods("POST")
 	r.HandleFunc("/api/favicon", handlers.UploadFavicon).Methods("POST")
