@@ -1877,7 +1877,7 @@ class Dashboard {
                 title: 'other',
                 items: [
                     { keys: '! or Ctrl + /', description: 'This cheat sheet' },
-                    { keys: 'Delete (inline edit)', description: 'Remove bookmark (undo toast 5 s)' },
+                    { keys: 'Delete', description: 'Delete selected bookmark (confirm dialog, or Delete again inside inline edit)' },
                     { keys: '1–8 (config)', description: 'Jump between config tabs' },
                     { keys: 'S (config)', description: 'Save config' }
                 ]

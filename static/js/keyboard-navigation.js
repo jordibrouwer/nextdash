@@ -529,6 +529,16 @@ class KeyboardNavigation {
         });
     }
 
+    deleteCurrentBookmark() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const dash = this.dashboard;
+        if (!dash || typeof dash.deleteBookmarkAtIndexInline !== 'function') return;
+        const row = this.navigableElements[this.currentIndex];
+        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+        if (!Number.isFinite(bookmarkIndex) || bookmarkIndex < 0) return;
+        dash.deleteBookmarkAtIndexInline(bookmarkIndex);
+    }
+
     getSelectedBookmark() {
         if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return null;
         const dash = this.dashboard;
