@@ -1384,9 +1384,10 @@ class ConfigManager {
             card.classList.add('is-collapsible');
             const panelId = card.getAttribute('data-general-panel');
             if (panelId) {
-                const expanded = saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                const alwaysCollapsed = panelId === 'reset';
+                const expanded = !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
                     ? Boolean(saved[panelId])
-                    : DEFAULT_OPEN.has(panelId);
+                    : DEFAULT_OPEN.has(panelId));
                 card.classList.toggle('is-collapsed', !expanded);
             }
             title.addEventListener('click', () => {
