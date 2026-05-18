@@ -702,8 +702,10 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         if (typeof dashboard.showNotification === 'function') {
-            const onMsg = this.language ? this.language.t('config.packedColumnsSavedOn') : 'Tight columns on — saved.';
-            const offMsg = this.language ? this.language.t('config.packedColumnsSavedOff') : 'Tight columns off — saved.';
+            const _on = this.language ? this.language.t('config.packedColumnsSavedOn') : null;
+            const _off = this.language ? this.language.t('config.packedColumnsSavedOff') : null;
+            const onMsg = (_on && _on !== 'config.packedColumnsSavedOn') ? _on : 'Tight columns on — saved.';
+            const offMsg = (_off && _off !== 'config.packedColumnsSavedOff') ? _off : 'Tight columns off — saved.';
             dashboard.showNotification(enabled ? onMsg : offMsg, 'success');
         }
         return false;

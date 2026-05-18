@@ -774,7 +774,8 @@ class Dashboard {
     updatePageTitle(pageName) {
         const titleElement = document.querySelector('.title');
         if (titleElement) {
-            titleElement.textContent = pageName || this.language.t('dashboard.defaultPageTitle');
+            const defaultTitle = this.language.t('dashboard.defaultPageTitle');
+            titleElement.textContent = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
         }
     }
 
@@ -1395,11 +1396,13 @@ class Dashboard {
             'Tip: the dark/light toggle button in the header flips the theme variant instantly',
             'Tip: use <code>favicon</code> button in health view to refresh a bookmark\'s icon',
             'Tip: add tags when creating a bookmark via <code>:new</code> — autocomplete suggests existing tags',
-            this.language.t('dashboard.tipFaviconToggle'),
-            this.language.t('dashboard.tipPackedColumns'),
-            this.language.t('dashboard.tipHideShortcutPin'),
-            this.language.t('dashboard.tipDisableTips'),
-            this.language.t('dashboard.tipDisableTipsAlt')
+            ...[
+                ['dashboard.tipFaviconToggle', null],
+                ['dashboard.tipPackedColumns', null],
+                ['dashboard.tipHideShortcutPin', null],
+                ['dashboard.tipDisableTips', null],
+                ['dashboard.tipDisableTipsAlt', null],
+            ].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean)
         ];
 
         let normalCounter = 0;
@@ -2157,7 +2160,8 @@ class Dashboard {
         // Handle bookmarks without category
         const uncategorizedBookmarks = groupedBookmarks[''] || [];
         if (uncategorizedBookmarks.length > 0) {
-            const uncategorizedCategory = { id: '', name: this.language.t('dashboard.uncategorized') };
+            const _unc = this.language.t('dashboard.uncategorized');
+            const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
             const categoryElement = this.createCategoryElement(uncategorizedCategory, this.sortBookmarks(uncategorizedBookmarks));
             columnBlocks.push(categoryElement);
         }
@@ -4897,7 +4901,8 @@ class Dashboard {
         if (!configLink) {
             configLink = document.createElement('div');
             configLink.className = 'config-link';
-            configLink.innerHTML = `<a href="/config">${this.language.t('dashboard.config')}</a>`;
+            const configLabel = this.language.t('dashboard.config');
+            configLink.innerHTML = `<a href="/config">${configLabel !== 'dashboard.config' ? configLabel : 'config'}</a>`;
 
             const headerActions = document.querySelector('.header-actions');
             if (headerActions) {
@@ -4913,7 +4918,8 @@ class Dashboard {
             if (!healthLink) {
                 healthLink = document.createElement('div');
                 healthLink.className = 'health-link';
-                healthLink.innerHTML = `<a href="/health">${this.language.t('dashboard.health')}</a>`;
+                const healthLabel = this.language.t('dashboard.health');
+                healthLink.innerHTML = `<a href="/health">${healthLabel !== 'dashboard.health' ? healthLabel : 'health'}</a>`;
 
                 const headerActions = document.querySelector('.header-actions');
                 if (headerActions) {

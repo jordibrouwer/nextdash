@@ -578,9 +578,9 @@ class KeyboardNavigation {
 
         const notify = () => {
             if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
-                const msg = (this.dashboard.language && typeof this.dashboard.language.t === 'function')
-                    ? this.dashboard.language.t('dashboard.urlCopied')
-                    : 'URL copied';
+                const _v = (this.dashboard.language && typeof this.dashboard.language.t === 'function')
+                    ? this.dashboard.language.t('dashboard.urlCopied') : null;
+                const msg = (_v && _v !== 'dashboard.urlCopied') ? _v : 'URL copied';
                 this.dashboard.showNotification(msg, 'success', { duration: 2000 });
             }
         };

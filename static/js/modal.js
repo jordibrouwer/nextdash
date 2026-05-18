@@ -89,13 +89,19 @@ class Modal {
         }
     }
 
+    _t(key, fallback) {
+        if (!this.language) return fallback;
+        const val = this.language.t(key);
+        return val !== key ? val : fallback;
+    }
+
     show(options) {
         const {
-            title = this.language ? this.language.t('dashboard.confirmTitle') : 'Confirm',
-            message = this.language ? this.language.t('dashboard.confirmMessage') : 'Are you sure?',
+            title = this._t('dashboard.confirmTitle', 'Confirm'),
+            message = this._t('dashboard.confirmMessage', 'Are you sure?'),
             htmlMessage = null,
-            confirmText = this.language ? this.language.t('dashboard.confirmTitle') : 'Confirm',
-            cancelText = this.language ? this.language.t('dashboard.cancel') : 'Cancel',
+            confirmText = this._t('dashboard.confirmTitle', 'Confirm'),
+            cancelText = this._t('dashboard.cancel', 'Cancel'),
             confirmClass = '',
             onConfirm = () => {},
             onCancel = () => {},
@@ -233,7 +239,7 @@ class Modal {
             this.show({
                 ...options,
                 showCancel: false,
-                confirmText: options.confirmText || (this.language ? this.language.t('dashboard.ok') : 'OK'),
+                confirmText: options.confirmText || this._t('dashboard.ok', 'OK'),
                 onConfirm: () => resolve(true)
             });
         });
