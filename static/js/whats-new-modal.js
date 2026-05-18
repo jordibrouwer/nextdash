@@ -7,32 +7,20 @@
     const DASHBOARD_RELEASE = '2026.05-dashboard-release-v18';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
-    function section(title, rows) {
-        const rowsHtml = rows.map(([key, desc]) => `
-            <tr>
-                <td class="keyboard-cheat-sheet-keys">${key}</td>
-                <td class="keyboard-cheat-sheet-description">${desc}</td>
-            </tr>`).join('');
-        return `
-            <section class="keyboard-cheat-sheet-panel">
-                <h3 class="keyboard-cheat-sheet-section-title">${title}</h3>
-                <table class="keyboard-cheat-sheet-table"><tbody>${rowsHtml}</tbody></table>
-            </section>`;
-    }
-
     function buildHtml() {
         return `
-            <div class="keyboard-cheat-sheet">
-                <div class="keyboard-cheat-sheet-grid">
-                    ${section('config — reset', [
-                        ['full reset', 'The reset button now correctly wipes <em>all</em> pages, bookmarks, categories, finders, and settings — including extra pages beyond page 1. Tags (stored in bookmarks) and collections (stored in settings) are also cleared.'],
-                        ['Enter to confirm', 'Pressing Enter in the confirmation input now triggers the reset — no need to click the button.'],
-                        ['redirect', 'After a successful reset the app navigates to the dashboard after 1 second so you start fresh immediately.'],
-                    ])}
-                    ${section('config — advanced', [
-                        ['context tips', '"Reset context tips" has moved from the Reset section to Advanced. It now matches the description + button layout used by other Advanced actions.'],
-                    ])}
-                </div>
+            <div class="help-content">
+                <p class="help-intro">A short recap of the most recent changes.</p>
+                <h4 class="help-subheading">Config — reset</h4>
+                <ul>
+                    <li><strong>Full reset</strong> — The reset button now correctly wipes all pages, bookmarks, categories, finders, and settings — including extra pages beyond page 1. Tags and collections are also cleared.</li>
+                    <li><strong>Enter to confirm</strong> — Pressing Enter in the confirmation input triggers the reset — no need to click the button.</li>
+                    <li><strong>Redirect after reset</strong> — After a successful reset the app navigates to the dashboard after 1 second so you start fresh immediately.</li>
+                </ul>
+                <h4 class="help-subheading">Config — advanced</h4>
+                <ul>
+                    <li><strong>Context tips moved</strong> — "Reset context tips" has moved from the Reset section to Advanced, with a description matching the layout of other Advanced actions.</li>
+                </ul>
             </div>
         `;
     }
@@ -67,9 +55,6 @@
             htmlMessage: buildHtml(),
             confirmText: 'close',
             showCancel: false,
-            modalClass: 'keyboard-cheat-sheet-modal',
-            modalMaxWidth: '960px',
-            modalWidth: '96vw'
         });
         try {
             localStorage.setItem(STORAGE_KEY, DASHBOARD_RELEASE);
