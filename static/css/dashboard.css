@@ -42,7 +42,7 @@ body {
 
 .dashboard-section.section-content {
     padding-top: 0;
-    padding-bottom: 3rem; /* Increased to make room for search button */
+    padding-bottom: 8rem;
 }
 
 .container {
