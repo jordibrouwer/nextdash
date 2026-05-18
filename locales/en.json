@@ -84,7 +84,7 @@
         "quickAddShortcutExists": "shortcut \"{shortcut}\" already exists",
         "iconUrlSet": "Icon URL set.",
         "featureSpotlightPasteTitle": "Paste a URL, save a bookmark instantly",
-        "featureSpotlightPasteBody": "Copy any link and press Ctrl+V anywhere on the dashboard — the bookmark form opens with the URL pre-filled and the favicon fetched automatically.",
+        "featureSpotlightPasteBody": "Copy any link and press <kbd>Ctrl+V</kbd> anywhere on the dashboard — the bookmark form opens with the URL pre-filled and the favicon fetched automatically.",
         "featureSpotlightPasteTry": "Try it",
         "featureSpotlightPasteClose": "Close"
     },

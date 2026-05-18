@@ -54,13 +54,14 @@
                 </div>`;
 
             el.querySelector('.feature-spotlight-title').textContent = title;
-            el.querySelector('.feature-spotlight-text').textContent  = body;
+            el.querySelector('.feature-spotlight-text').innerHTML = body;
             el.querySelector('.feature-spotlight-try').textContent   = tryLbl;
             el.querySelector('.feature-spotlight-close').textContent = closeLbl;
 
             el.querySelector('.feature-spotlight-try').addEventListener('click', () => {
-                this._dismiss();
                 if (typeof this.onTry === 'function') this.onTry();
+                // Dismiss after a short delay so the modal is visibly open first
+                setTimeout(() => this._dismiss(), 120);
             });
 
             el.querySelector('.feature-spotlight-close').addEventListener('click', () => {

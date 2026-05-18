@@ -84,7 +84,7 @@
         "quickAddShortcutExists": "le raccourci \"{shortcut}\" existe déjà",
         "iconUrlSet": "URL de l'icône définie.",
         "featureSpotlightPasteTitle": "Collez une URL, enregistrez un favori instantanément",
-        "featureSpotlightPasteBody": "Copiez un lien et appuyez sur Ctrl+V sur le tableau de bord — le formulaire s'ouvre avec l'URL déjà remplie et la favicon récupérée automatiquement.",
+        "featureSpotlightPasteBody": "Copiez un lien et appuyez sur <kbd>Ctrl+V</kbd> sur le tableau de bord — le formulaire s'ouvre avec l'URL déjà remplie et la favicon récupérée automatiquement.",
         "featureSpotlightPasteTry": "Essayer",
         "featureSpotlightPasteClose": "Fermer"
     },

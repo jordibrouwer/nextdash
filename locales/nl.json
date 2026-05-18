@@ -84,7 +84,7 @@
         "quickAddShortcutExists": "shortcut \"{shortcut}\" bestaat al",
         "iconUrlSet": "Icoon-URL ingesteld.",
         "featureSpotlightPasteTitle": "Plak een URL, sla direct een bladwijzer op",
-        "featureSpotlightPasteBody": "Kopieer een link en druk op Ctrl+V op het dashboard — het formulier opent met de URL al ingevuld en de favicon automatisch opgehaald.",
+        "featureSpotlightPasteBody": "Kopieer een link en druk op <kbd>Ctrl+V</kbd> op het dashboard — het formulier opent met de URL al ingevuld en de favicon automatisch opgehaald.",
         "featureSpotlightPasteTry": "Probeer het",
         "featureSpotlightPasteClose": "Sluiten"
     },

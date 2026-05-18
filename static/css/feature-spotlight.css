@@ -121,22 +121,20 @@
 
 .feature-spotlight-close {
     flex-shrink: 0;
-    padding: 0.28rem 0.75rem;
+    padding: 0.28rem 0.25rem;
     font-size: var(--font-size-small, 0.72rem);
     font-family: inherit;
     font-weight: 400;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     background: none;
-    border: 1px solid var(--border-primary);
-    border-radius: 0.25rem;
+    border: none;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease;
     white-space: nowrap;
 }
 
 .feature-spotlight-close:hover {
-    color: var(--text-primary);
-    border-color: var(--text-secondary);
+    color: var(--text-secondary);
 }
 
 @media (max-width: 575px) {
