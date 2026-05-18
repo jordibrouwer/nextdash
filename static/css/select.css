@@ -3,7 +3,12 @@
 .custom-select-wrapper {
     position: relative;
     display: inline-block;
+    min-width: 0;
+}
+
+.page-selector-wrapper .custom-select-wrapper {
     min-width: 200px;
+    width: 100%;
 }
 
 .custom-select {
