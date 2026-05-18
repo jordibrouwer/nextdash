@@ -450,6 +450,9 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 		return []Bookmark{}
 	}
 
+	if pageWithBookmarks.Bookmarks == nil {
+		return []Bookmark{}
+	}
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
 	}
@@ -710,6 +713,9 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 		return []Category{}
 	}
 
+	if pageWithBookmarks.Categories == nil {
+		return []Category{}
+	}
 	return pageWithBookmarks.Categories
 }
 
@@ -932,9 +938,12 @@ func (fs *FileStore) DeletePage(pageID int) error {
 
 	fs.ensureDataDir()
 
-	// Delete bookmarks-{pageID}.json
+	// Delete bookmarks-{pageID}.json (file may not exist if the page had no bookmarks)
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
-	return os.Remove(filePath)
+	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 func (fs *FileStore) GetSettings() Settings {

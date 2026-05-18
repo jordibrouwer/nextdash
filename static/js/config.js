@@ -1797,8 +1797,15 @@ class ConfigManager {
             return;
         }
         
-        const pageBookmarks = await this.data.loadBookmarksByPage(page.id);
-        const pageCategories = await this.data.loadCategoriesByPage(page.id);
+        let pageBookmarks = [], pageCategories = [];
+        try {
+            [pageBookmarks, pageCategories] = await Promise.all([
+                this.data.loadBookmarksByPage(page.id),
+                this.data.loadCategoriesByPage(page.id),
+            ]);
+        } catch (e) { /* ignore — show modal with 0 counts */ }
+        pageBookmarks = Array.isArray(pageBookmarks) ? pageBookmarks : [];
+        pageCategories = Array.isArray(pageCategories) ? pageCategories : [];
         const confirmed = await window.AppModal.danger({
             title: this.language.t('config.removePageTitle'),
             message: `${this.language.t('config.removePageMessage').replace('{pageName}', page.name)}\n\nImpact: ${pageCategories.length} categories, ${pageBookmarks.length} bookmarks.`,
