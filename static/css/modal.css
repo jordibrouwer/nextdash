@@ -297,7 +297,7 @@ body.no-animations .modal-button.danger.selected {
 
 .keyboard-cheat-sheet-keys {
     font-family: "Source Code Pro", monospace;
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     font-weight: var(--font-weight-bold);
     color: var(--accent-primary);
     white-space: normal;
@@ -308,7 +308,7 @@ body.no-animations .modal-button.danger.selected {
 
 .keyboard-cheat-sheet-description {
     color: var(--text-secondary);
-    font-size: 0.76rem;
+    font-size: 0.875rem;
     min-width: 0;
     overflow-wrap: anywhere;
     width: 60%;
