@@ -200,88 +200,13 @@ See `extension/README.md` for full usage and development notes.
 
 ## Changelog
 
-### Newest
+### What's new (summary)
 
-**Localisation**
-- Language change in config → general now applies instantly on both the config page and the dashboard — no page reload needed
-- All UI text falls back to English when translations are not yet loaded, preventing raw translation keys from appearing as visible text
-- Invalid JSON in the English, Dutch, and German locale files has been repaired — all translations now load correctly
+- **Reset fixed** — the reset button now correctly wipes all pages, bookmarks, categories, finders, and settings, including extra pages beyond page 1. Tags and collections are also cleared.
+- **Reset UX** — pressing Enter in the confirmation input triggers the reset; the app redirects to the dashboard 1 second after a successful reset.
+- **Context tips moved** — "Reset context tips" moved from the Reset section to Advanced in config → general, with a consistent description + button layout.
 
-### Recent
-
-**Config — navigation**
-- Health link always visible in the config header, between "→ customize theme" and "← back to dashboard"
-- Health link pulses with your active theme colour; shows the same red (broken) / yellow (warning) badge as the dashboard header
-- Health page navigation reordered to match config style: refresh | ← back to config | ← back to dashboard
-
-**Config — pages**
-- Empty pages (no bookmarks) can now be deleted — previously the remove button failed silently
-
-**Dashboard**
-- Bookmark grid has enough bottom padding so the last rows are never hidden behind the floating action buttons
-
-### Older
-
-**Config — pages (archive)**
-- Archive a page from the pages list — the row dims and shows an "archived" badge; archived pages are hidden from the dashboard
-- Restore a page with one click — the button switches between Archive and Restore automatically
-- Page dropdowns refresh immediately after save — no page reload needed
-
-**Config — general**
-- All checkboxes aligned in a 3-column layout: [checkbox] [↺ reset] [label] — rows without a reset button keep columns consistent
-- Settings that differ from their default show a ↺ button; click to restore
-
-### Older
-
-**Dashboard — navigation**
-- `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is selected; wraps around
-- `G + 1–9` — jump to the nth visible, non-collapsed category and select its first bookmark
-- `GG` — jump to the very first bookmark on the page
-
-**Dashboard — quick-add & paste**
-- Quick-add omnibox: press `+` to open a compact inline bar — type `name | url | shortcut` in one field, favicon is fetched automatically on save
-- Paste a URL (`Ctrl+V` / `Cmd+V`) anywhere on the dashboard to open the quick-add modal pre-filled; toggle in config → general → Bookmarks
-
-**Search — history**
-- Open search (`>`) with no query to see recent searches under a collapsible "Recent" group
-- Hover a history row and click × to remove only that entry
-- `:history` — browse search history from the command bar
-- `:history clear` — wipe the entire history in one step
-
-**Config — bookmarks side panel**
-- Page field: select a different page; category list reloads instantly
-- Click "→ Move" to confirm — bookmark is moved with the chosen category applied
-- Delete from side panel: trash button deletes directly; new bookmarks skip confirmation
-- Empty state: panel is blank when nothing is selected; click outside a row to deselect
-
-**Config — pages**
-- Page dropdowns refresh immediately after save — categories tab, bookmarks tab, and settings smart-page selectors all update without a page reload
-
-### Older
-
-**Dashboard — UX**
-- Preview card edge-detection: hover card always stays within the viewport — flips to the opposite side of the cursor when it would overflow any edge
-- Corner buttons: `+` (quick-add) and `!` (cheatsheet) fixed in the bottom-right corner of the dashboard
-
-**Health**
-- Duplicate groups: each group has a "keep first, remove rest" button — resolves duplicates in one click
-- Health badge on the dashboard header: red for broken bookmarks, yellow for warnings
-- Filter, sort order and search term in Health are preserved on refresh (sessionStorage)
-
-**Config — stats**
-- Conflicts & duplicates block: shows duplicate URL count and shortcut conflicts with a direct link to the health page
-- Category breakdown: which categories have the most opens, sorted by usage
-
-**Search**
-- Match highlighting: matched characters shown in bold with an underline
-- Filter autocomplete: typing `status:` shows all known values; narrows as you type
-- Search history capped at 15 entries; oldest entries dropped automatically
-
-**Config — general tab**
-- Bookmarks card split into Display and Behavior
-- Language moved into a new Localization card together with date, time, and weather settings
-- Smart Collections: each collection is its own collapsible block
-- Header & Buttons redesigned as a compact table: one row per button, Show and Label columns side by side
+For the full history and older notes see the in-app "What's new" modal (open via the config Advanced link or the dashboard prompt).
 
 ---
 

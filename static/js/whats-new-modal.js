@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v17';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v18';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,49 +24,13 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
-                    ${section('localisation — language &amp; translations', [
-                        ['language selector', 'Changing language in config → general now applies instantly on both the config page and the dashboard — no page reload needed.'],
-                        ['i18n robustness', 'All UI text falls back to English when translations are not yet loaded, preventing raw translation keys (like &ldquo;dashboard.config&rdquo;) from appearing as visible text.'],
-                        ['locale files', 'Invalid JSON in the English, Dutch, and German locale files has been repaired. All translations now load correctly.'],
+                    ${section('config — reset', [
+                        ['full reset', 'The reset button now correctly wipes <em>all</em> pages, bookmarks, categories, finders, and settings — including extra pages beyond page 1. Tags (stored in bookmarks) and collections (stored in settings) are also cleared.'],
+                        ['Enter to confirm', 'Pressing Enter in the confirmation input now triggers the reset — no need to click the button.'],
+                        ['redirect', 'After a successful reset the app navigates to the dashboard after 1 second so you start fresh immediately.'],
                     ])}
-                    ${section('config — navigation links', [
-                        ['config header', 'Health link is now always visible in the config header between "→ customize theme" and "← back to dashboard". It pulses with your theme colour and shows the same red/yellow badge as the dashboard.'],
-                        ['health page', 'Navigation links reordered to match the config style: <em>refresh</em> | <em>← back to config</em> | <em>← back to dashboard</em>.'],
-                    ])}
-                    ${section('config — pages (delete empty pages)', [
-                        ['remove button', 'Empty pages (no bookmarks) can now be deleted. Previously the delete failed silently because there was no bookmark file to remove.'],
-                    ])}
-                    ${section('dashboard — scroll clearance', [
-                        ['bottom padding', 'The bookmark grid now has enough bottom padding so the last bookmark rows are never hidden behind the floating action buttons.'],
-                    ])}
-                    ${section('config — pages (archive)', [
-                        ['archive button', 'Archive a page from the pages list. The row dims and shows an "archived" badge. Archived pages are hidden from the dashboard.'],
-                        ['restore button', 'Click Restore on an archived page to bring it back. The button switches between Archive and Restore automatically.'],
-                        ['dropdowns', 'After saving, all page dropdowns update instantly — no reload needed.'],
-                    ])}
-                    ${section('config — general (alignment)', [
-                        ['3-column layout', 'All checkboxes are now aligned in three columns: [checkbox] [↺ reset] [label]. Rows without a reset button leave the column empty so labels stay aligned.'],
-                        ['↺ reset buttons', 'Settings that differ from their default show a ↺ button between the checkbox and the label. Click to restore the default.'],
-                    ])}
-                    ${section('dashboard — navigation', [
-                        ['Tab / Shift+Tab', 'Step linearly through all bookmarks when one is already selected. Wraps around.'],
-                        ['G + 1–9', 'Jump to the nth visible, non-collapsed category and select its first bookmark.'],
-                        ['GG', 'Jump to the very first bookmark on the page.'],
-                    ])}
-                    ${section('dashboard — quick-add &amp; paste', [
-                        ['<code>+</code>', 'Quick-add omnibox: type <code>name | url | shortcut</code> and press Enter. Favicon is fetched automatically.'],
-                        ['Ctrl+V / Cmd+V', 'Paste a URL anywhere on the dashboard to open the quick-add modal with the URL pre-filled. Toggle in config → general → Bookmarks.'],
-                    ])}
-                    ${section('search — history', [
-                        ['↺ Recent', 'Open search (<code>&gt;</code>) with no query — recent searches appear immediately under a collapsible "Recent" group.'],
-                        ['× on hover', 'Hover a history row to reveal a × button that removes only that entry.'],
-                        ['<code>:history</code>', 'Browse search history from the command bar, even with an active query.'],
-                        ['<code>:history clear</code>', 'Wipe the entire search history in one step.'],
-                    ])}
-                    ${section('config — bookmarks side panel', [
-                        ['page field', 'Choose a different page → categories for that page load immediately.'],
-                        ['→ Move button', 'Confirm the move. Bookmark is saved to the chosen page and category.'],
-                        ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
+                    ${section('config — advanced', [
+                        ['context tips', '"Reset context tips" has moved from the Reset section to Advanced. It now matches the description + button layout used by other Advanced actions.'],
                     ])}
                 </div>
             </div>
