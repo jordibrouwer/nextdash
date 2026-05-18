@@ -89,7 +89,7 @@
         "kicker": "vue d'ensemble",
         "title": "health beta",
         "subtitle": "Trouvez les liens cassés, doublons, favoris obsolètes et métadonnées manquantes au même endroit.",
-        "backToDashboard": "← tableau de bord",
+        "backToDashboard": "← retour au tableau de bord",
         "refresh": "actualiser",
         "refreshing": "actualisation...",
         "filterBookmarks": "Filtrer les favoris",

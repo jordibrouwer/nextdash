@@ -89,7 +89,7 @@
         "kicker": "overview",
         "title": "health beta",
         "subtitle": "Find broken links, duplicates, stale bookmarks, and missing metadata in one place.",
-        "backToDashboard": "← dashboard",
+        "backToDashboard": "← back to dashboard",
         "refresh": "refresh",
         "refreshing": "refreshing...",
         "filterBookmarks": "Filter bookmarks",
