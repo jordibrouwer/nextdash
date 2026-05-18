@@ -805,7 +805,7 @@ class SearchCommandsComponent {
             }];
         }
         const cap = 45;
-        return stale.slice(0, cap).map((bookmark, i) => ({
+        const rows = stale.slice(0, cap).map((bookmark, i) => ({
             name: bookmark.name,
             shortcut: bookmark.shortcut && String(bookmark.shortcut).trim()
                 ? String(bookmark.shortcut).trim()
@@ -813,6 +813,15 @@ class SearchCommandsComponent {
             bookmark,
             type: 'bookmark'
         }));
+        if (stale.length > cap) {
+            rows.push({
+                name: `Showing ${cap} of ${stale.length} — visit health page for full list`,
+                shortcut: '→',
+                type: 'command',
+                action: () => { window.location.href = '/health'; return true; }
+            });
+        }
+        return rows;
     }
 
     handleStaleCommand(args, fullQuery) {
