@@ -1165,6 +1165,13 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     color: var(--text-secondary);
 }
 
+.bookmark-inline-conflict {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--accent-error);
+    margin-top: 0.2rem;
+}
+
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;

@@ -114,6 +114,13 @@
     text-align: center;
 }
 
+.nbm-conflict-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--accent-error);
+    margin-top: 0.2rem;
+}
+
 .nbm-file-label {
     cursor: pointer;
 }

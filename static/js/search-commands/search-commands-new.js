@@ -127,6 +127,7 @@ class SearchCommandNew {
                             <div class="nbm-col nbm-col-narrow">
                                 <label class="nbm-label" for="new-bookmark-shortcut">${t('config.bookmarkShortcutPlaceholder', 'Shortcut')}</label>
                                 <input type="text" id="new-bookmark-shortcut" name="shortcut" class="nbm-input nbm-shortcut" maxlength="5" autocomplete="off">
+                                <span id="new-bookmark-shortcut-conflict" class="nbm-conflict-hint" hidden>Shortcut already in use</span>
                             </div>
                         </div>
                         <div class="nbm-section">
@@ -323,8 +324,16 @@ class SearchCommandNew {
         }
 
         const shortcutInput = document.getElementById('new-bookmark-shortcut');
+        const shortcutConflictHint = document.getElementById('new-bookmark-shortcut-conflict');
         shortcutInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+            const val = e.target.value;
+            if (shortcutConflictHint) {
+                const dash = window.dashboardInstance;
+                const allBookmarks = dash ? (dash.allBookmarks || dash.bookmarks || []) : [];
+                const conflict = val && allBookmarks.some((b) => String(b?.shortcut || '').trim().toUpperCase() === val);
+                shortcutConflictHint.hidden = !conflict;
+            }
         });
 
         const statusCheckbox = document.getElementById('new-bookmark-status');

@@ -3674,10 +3674,18 @@ class Dashboard {
         shortcutInput.className = 'bookmark-inline-input';
         shortcutInput.maxLength = 5;
         shortcutInput.value = (bookmark.shortcut || '').toUpperCase();
+        const shortcutConflictHint = document.createElement('span');
+        shortcutConflictHint.className = 'bookmark-inline-conflict';
+        shortcutConflictHint.hidden = true;
+        shortcutConflictHint.textContent = 'Shortcut already in use';
         shortcutInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+            const conflict = e.target.value && this.hasShortcutConflict(e.target.value, bookmarkRef);
+            shortcutConflictHint.hidden = !conflict;
         });
-        form.appendChild(mkField('Shortcut', shortcutInput));
+        const shortcutField = mkField('Shortcut', shortcutInput);
+        shortcutField.appendChild(shortcutConflictHint);
+        form.appendChild(shortcutField);
 
         const catSelect = document.createElement('select');
         catSelect.className = 'bookmark-inline-select';
