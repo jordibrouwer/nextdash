@@ -202,6 +202,13 @@ See `extension/README.md` for full usage and development notes.
 
 ### Newest
 
+**Localisation**
+- Language change in config → general now applies instantly on both the config page and the dashboard — no page reload needed
+- All UI text falls back to English when translations are not yet loaded, preventing raw translation keys from appearing as visible text
+- Invalid JSON in the English, Dutch, and German locale files has been repaired — all translations now load correctly
+
+### Recent
+
 **Config — navigation**
 - Health link always visible in the config header, between "→ customize theme" and "← back to dashboard"
 - Health link pulses with your active theme colour; shows the same red (broken) / yellow (warning) badge as the dashboard header
@@ -213,7 +220,7 @@ See `extension/README.md` for full usage and development notes.
 **Dashboard**
 - Bookmark grid has enough bottom padding so the last rows are never hidden behind the floating action buttons
 
-### Recent
+### Older
 
 **Config — pages (archive)**
 - Archive a page from the pages list — the row dims and shows an "archived" badge; archived pages are hidden from the dashboard

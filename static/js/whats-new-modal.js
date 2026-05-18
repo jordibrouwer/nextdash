@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v16';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v17';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -24,6 +24,11 @@
         return `
             <div class="keyboard-cheat-sheet">
                 <div class="keyboard-cheat-sheet-grid">
+                    ${section('localisation — language &amp; translations', [
+                        ['language selector', 'Changing language in config → general now applies instantly on both the config page and the dashboard — no page reload needed.'],
+                        ['i18n robustness', 'All UI text falls back to English when translations are not yet loaded, preventing raw translation keys (like &ldquo;dashboard.config&rdquo;) from appearing as visible text.'],
+                        ['locale files', 'Invalid JSON in the English, Dutch, and German locale files has been repaired. All translations now load correctly.'],
+                    ])}
                     ${section('config — navigation links', [
                         ['config header', 'Health link is now always visible in the config header between "→ customize theme" and "← back to dashboard". It pulses with your theme colour and shows the same red/yellow badge as the dashboard.'],
                         ['health page', 'Navigation links reordered to match the config style: <em>refresh</em> | <em>← back to config</em> | <em>← back to dashboard</em>.'],
