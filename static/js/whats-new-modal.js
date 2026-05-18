@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v13';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v14';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function section(title, rows) {
@@ -37,6 +37,11 @@
                         ['→ Move button', 'Confirm the move. Bookmark is saved to the chosen page and category.'],
                         ['delete button', 'Delete a bookmark directly from the detail panel. New bookmarks are removed without confirmation.'],
                         ['empty state', 'Panel is empty when nothing is selected — click outside a row to deselect.'],
+                    ])}
+                    ${section('dashboard — navigation', [
+                        ['Tab / Shift+Tab', 'Step linearly through all bookmarks when one is already selected. Wraps around.'],
+                        ['G + 1–9', 'Jump to the nth visible, non-collapsed category and select its first bookmark.'],
+                        ['GG', 'Jump to the very first bookmark on the page.'],
                     ])}
                     ${section('dashboard — quick-add &amp; paste', [
                         ['<code>+</code>', 'Quick-add omnibox: type <code>name | url | shortcut</code> and press Enter. Favicon is fetched automatically.'],
