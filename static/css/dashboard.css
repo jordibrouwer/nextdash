@@ -814,6 +814,22 @@ body.no-animations .category-chevron {
     transition: none;
 }
 
+.smart-collection-title {
+    color: var(--accent-success);
+}
+
+.smart-collection-title .category-chevron {
+    color: var(--accent-success);
+}
+
+.smart-collection-empty {
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    padding: 0.25rem 0;
+    font-style: italic;
+}
+
 .category-rename-input {
     background: transparent;
     border: none;

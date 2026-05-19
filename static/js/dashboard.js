@@ -2673,7 +2673,7 @@ class Dashboard {
 
         // Category title
         const titleElement = document.createElement('h2');
-        titleElement.className = 'category-title';
+        titleElement.className = isSmartCollection ? 'category-title smart-collection-title' : 'category-title';
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
@@ -2745,6 +2745,21 @@ class Dashboard {
             }
             bookmarksList.appendChild(bookmarkElement);
         });
+
+        if (isSmartCollection && bookmarks.length === 0) {
+            const t = (key, fallback) => this.language?.t?.(key) || fallback;
+            const emptyMessages = {
+                '__smart_today__':     t('dashboard.smartEmptyToday',    'No bookmarks scheduled for today'),
+                '__smart_recent__':    t('dashboard.smartEmptyRecent',   'No bookmarks opened recently'),
+                '__smart_stale__':     t('dashboard.smartEmptyStale',    'No stale bookmarks'),
+                '__smart_most_used__': t('dashboard.smartEmptyMostUsed', 'No bookmarks opened yet'),
+            };
+            const msg = emptyMessages[category.id] || t('dashboard.smartEmptyGeneric', 'No bookmarks');
+            const emptyEl = document.createElement('div');
+            emptyEl.className = 'smart-collection-empty';
+            emptyEl.textContent = msg;
+            bookmarksList.appendChild(emptyEl);
+        }
 
         categoryDiv.appendChild(bookmarksList);
         return categoryDiv;
