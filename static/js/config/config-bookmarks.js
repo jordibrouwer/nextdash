@@ -83,6 +83,9 @@ class ConfigBookmarks {
         } else if (sortOrder === 'opens-desc') {
             scopedBookmarks = [...scopedBookmarks].sort((a, b) =>
                 (Number(b.bookmark.openCount) || 0) - (Number(a.bookmark.openCount) || 0));
+        } else if (sortOrder === 'last-opened-desc') {
+            scopedBookmarks = [...scopedBookmarks].sort((a, b) =>
+                (Number(b.bookmark.lastOpened) || 0) - (Number(a.bookmark.lastOpened) || 0));
         }
 
         if (scopedBookmarks.length === 0) {
@@ -251,6 +254,8 @@ class ConfigBookmarks {
             return cat ? cat.name : '';
         })();
         const openCount = Number(bookmark.openCount || 0);
+        const lastOpened = bookmark.lastOpened ? new Date(bookmark.lastOpened) : null;
+        const lastOpenedStr = lastOpened ? lastOpened.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '';
 
         const pinBadge = bookmark.pinned
             ? `<span class="bookmark-row-badge is-active" title="Pinned"><svg viewBox="0 0 24 24"><path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"/></svg></span>`
@@ -278,7 +283,7 @@ class ConfigBookmarks {
                 <span class="bookmark-row-meta">
                     <span class="bookmark-row-url" title="${this._escHtml(bookmark.url || '')}">${this._escHtml(urlDisplay)}</span>
                     ${catName ? `<span class="bookmark-row-cat">${this._escHtml(catName)}</span>` : ''}
-                    ${openCount > 0 ? `<span class="bookmark-row-opens">${openCount}×</span>` : ''}
+                    ${openCount > 0 ? `<span class="bookmark-row-opens">${openCount}×${lastOpenedStr ? `<span class="bookmark-row-last-opened">${lastOpenedStr}</span>` : ''}</span>` : ''}
                 </span>
             </span>
             <span class="bookmark-row-badges">${pinBadge}${statusBadge}${noteBadge}${tagsBadge}</span>
@@ -449,6 +454,8 @@ class ConfigBookmarks {
             const cat = cats.find(c => c.id === bookmark.category);
             const catName = cat ? cat.name : '';
             const openCount = Number(bookmark.openCount || 0);
+            const lastOpened = bookmark.lastOpened ? new Date(bookmark.lastOpened) : null;
+            const lastOpenedStr = lastOpened ? lastOpened.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '';
             if (catSpan) {
                 catSpan.textContent = catName;
                 catSpan.style.display = catName ? '' : 'none';
@@ -460,8 +467,13 @@ class ConfigBookmarks {
             }
             let opensSpan = metaSpan.querySelector('.bookmark-row-opens');
             if (opensSpan) {
-                opensSpan.textContent = openCount > 0 ? `${openCount}×` : '';
-                opensSpan.style.display = openCount > 0 ? '' : 'none';
+                if (openCount > 0) {
+                    opensSpan.innerHTML = `${openCount}×${lastOpenedStr ? `<span class="bookmark-row-last-opened">${lastOpenedStr}</span>` : ''}`;
+                    opensSpan.style.display = '';
+                } else {
+                    opensSpan.innerHTML = '';
+                    opensSpan.style.display = 'none';
+                }
             }
         }
         if (faviconSpan) {

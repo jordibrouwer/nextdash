@@ -452,6 +452,11 @@
     opacity: 0.5;
 }
 
+.bookmark-row-last-opened {
+    margin-left: 0.35rem;
+    opacity: 0.75;
+}
+
 /* Badges (pin, status, note) */
 .bookmark-row-badges {
     flex-shrink: 0;
