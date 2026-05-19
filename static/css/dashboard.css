@@ -787,6 +787,33 @@ body.no-animations .category[data-collapsed="true"] .bookmarks-list {
     content: none;
 }
 
+.category-chevron {
+    display: inline-block;
+    margin-left: 0.4em;
+    font-size: 0.7em;
+    opacity: 0.35;
+    transition: transform 200ms ease, opacity 150ms ease;
+    transform: rotate(0deg);
+    vertical-align: 0.05em;
+    pointer-events: none;
+}
+
+.category-chevron::after {
+    content: '▾';
+}
+
+.category-title:hover .category-chevron {
+    opacity: 0.7;
+}
+
+.category[data-collapsed="true"] .category-chevron {
+    transform: rotate(-90deg);
+}
+
+body.no-animations .category-chevron {
+    transition: none;
+}
+
 .category-rename-input {
     background: transparent;
     border: none;

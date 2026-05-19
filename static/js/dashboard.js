@@ -2704,6 +2704,11 @@ class Dashboard {
         }
         titleElement.appendChild(nameSpan);
 
+        const chevron = document.createElement('span');
+        chevron.className = 'category-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        titleElement.appendChild(chevron);
+
         titleElement.addEventListener('click', () => {
             const isCollapsed = categoryDiv.getAttribute('data-collapsed') === 'true';
             categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
