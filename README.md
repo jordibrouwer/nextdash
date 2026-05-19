@@ -202,9 +202,26 @@ See `extension/README.md` for full usage and development notes.
 
 ### What's new (summary)
 
-- **Last opened date/time** — each bookmark row in config → bookmarks now shows the date and time it was last opened, next to the open count.
-- **Sort by last opened** — the sort dropdown in config → bookmarks now includes a "Last opened" option to sort bookmarks by most recently opened.
-- **Help footer simplified** — the help page footer now shows only a link to [jordibrw.nl](https://jordibrw.nl).
+**Search**
+- **Search mode badge** — the search bar now shows a coloured badge for the active input mode: SEARCH, CMD, FIND, or FUZZY.
+- **Filter group in search** — filter autocomplete suggestions (`category:`, `status:`, `page:`, `tag:`) are grouped under a collapsible "Filters" header, separate from bookmark results.
+- **Search empty state** — opening search with an empty query now shows helpful groups (Recent, Filters, Finders) immediately.
+
+**Dashboard**
+- **Category collapse animation** — categories fold and unfold with a smooth height transition.
+- **Collapse chevron** — a chevron is always visible next to each category name and rotates when collapsed.
+- **Smart collection accent** — smart collection headers are tinted with the accent colour to distinguish them from regular categories.
+- **Smart collection empty state** — smart collections with no matching bookmarks now show a contextual message.
+- **Focus indicators** — keyboard focus rings are consistently styled across bookmarks, category headers, and search items.
+
+**Quick-add**
+- **Loading states** — spinner on icon preview during favicon fetch; Save button shows a loading state while saving.
+- **Clear icon button** — a × button next to the icon preview lets you reset to the default favicon without closing the form.
+
+**Config / general**
+- **Show icons on by default** — bookmark icons are now enabled by default for new users.
+- **Last opened date/time** — each bookmark row in config → bookmarks now shows the date and time it was last opened.
+- **Sort by last opened** — the sort dropdown in config → bookmarks now includes a "Last opened" option.
 
 For the full history and older notes see the in-app "What's new" modal (open via the config Advanced link or the dashboard prompt).
 
