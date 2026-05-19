@@ -19,6 +19,7 @@
         "searchModeCommand": "CMD",
         "searchModeFinder": "FIND",
         "searchModeFuzzy": "FUZZY",
+        "filtersGroupLabel": "Filtres",
         "searchCursor": "_",
         "searchButton": "rechercher",
         "recentBookmarksButton": "récents",

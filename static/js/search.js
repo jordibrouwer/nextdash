@@ -749,15 +749,31 @@ class SearchComponent {
             const raw = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
             const filterAutocompleteMatches = this.getFilterAutocompleteMatches(raw);
             if (filterAutocompleteMatches.length > 0) {
+                const tLabel = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
+                const filtersIsExpanded = !this.emptyStateExpandedGroups.has('inline_filters');
+                const filterHeader = {
+                    type: 'command-group-header',
+                    groupId: 'inline_filters',
+                    label: tLabel('dashboard.filtersGroupLabel', 'Filters'),
+                    count: filterAutocompleteMatches.length,
+                    expanded: filtersIsExpanded,
+                    _emptyStateGroup: 'inline_filters'
+                };
                 const seen = new Set();
-                this.searchMatches = [...filterAutocompleteMatches, ...this.searchMatches].filter((match) => {
+                const dedupedFilters = filterAutocompleteMatches.filter((match) => {
                     const key = `${match.type}|${match.completion || match.shortcut || ''}|${match.name || ''}`;
-                    if (seen.has(key)) {
-                        return false;
-                    }
+                    if (seen.has(key)) return false;
                     seen.add(key);
                     return true;
                 });
+                const filtersWithHeader = filtersIsExpanded
+                    ? [filterHeader, ...dedupedFilters]
+                    : [filterHeader];
+                const bookmarkMatches = this.searchMatches.filter((match) => {
+                    const key = `${match.type}|${match.completion || match.shortcut || ''}|${match.name || ''}`;
+                    return !seen.has(key);
+                });
+                this.searchMatches = [...filtersWithHeader, ...bookmarkMatches];
             }
         }
 
@@ -1009,7 +1025,7 @@ class SearchComponent {
             const historyClass = match.type === 'history' ? ' history-entry' : '';
             const savedClass = match.type === 'saved-search' ? ' saved-search-entry' : '';
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
-            const groupChildClass = match.groupId ? ' command-group-child' : '';
+            const groupChildClass = (match.groupId || match.type === 'filter-completion') ? ' command-group-child' : '';
             matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + groupChildClass;
             
             // Get the display name based on match type
