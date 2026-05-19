@@ -1107,6 +1107,7 @@ html[data-theme="light"] body {
     
     /* Accent Colors */
     --accent-success: ` + colors.Light.AccentSuccess + `;
+    --accent-primary: ` + colors.Light.AccentSuccess + `;
     --accent-warning: ` + colors.Light.AccentWarning + `;
     --accent-error: ` + colors.Light.AccentError + `;
 }
@@ -1130,6 +1131,7 @@ html[data-theme="dark"] body {
     
     /* Accent Colors */
     --accent-success: ` + colors.Dark.AccentSuccess + `;
+    --accent-primary: ` + colors.Dark.AccentSuccess + `;
     --accent-warning: ` + colors.Dark.AccentWarning + `;
     --accent-error: ` + colors.Dark.AccentError + `;
 }
@@ -1157,6 +1159,7 @@ html[data-theme="` + themeID + `"] body {
     
     /* Accent Colors */
     --accent-success: ` + themeColors.AccentSuccess + `;
+    --accent-primary: ` + themeColors.AccentSuccess + `;
     --accent-warning: ` + themeColors.AccentWarning + `;
     --accent-error: ` + themeColors.AccentError + `;
 }
@@ -1185,6 +1188,7 @@ html[data-theme="` + themeID + `"] body {
     --border-primary: ` + themeColors.BorderPrimary + `;
     --border-secondary: ` + themeColors.BorderSecondary + `;
     --accent-success: ` + themeColors.AccentSuccess + `;
+    --accent-primary: ` + themeColors.AccentSuccess + `;
     --accent-warning: ` + themeColors.AccentWarning + `;
     --accent-error: ` + themeColors.AccentError + `;
 }

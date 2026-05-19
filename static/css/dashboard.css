@@ -815,11 +815,11 @@ body.no-animations .category-chevron {
 }
 
 .smart-collection-title {
-    color: var(--accent-success);
+    color: var(--accent-primary);
 }
 
 .smart-collection-title .category-chevron {
-    color: var(--accent-success);
+    color: var(--accent-primary);
 }
 
 .smart-collection-empty {
