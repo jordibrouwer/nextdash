@@ -776,8 +776,9 @@ class SearchComponent {
         const searchElement = document.getElementById('shortcut-search');
         const queryElement = document.getElementById('search-query');
         const mobileInput = document.getElementById('search-input-mobile');
-        
+
         if (searchElement && queryElement) {
+            this.updateModeIndicator();
             queryElement.textContent = this.currentQuery;
             // Auto-scroll to the right to keep the cursor position visible
             queryElement.scrollLeft = queryElement.scrollWidth;
@@ -873,10 +874,33 @@ class SearchComponent {
         this.justCompleted = false; // Reset flag
     }
 
+    updateModeIndicator() {
+        const prefix = document.querySelector('.search-prefix');
+        if (!prefix) return;
+        const q = this.currentQuery;
+        let mode, label;
+        if (q.startsWith(':')) {
+            mode = 'command';
+            label = this.language ? this.language.t('dashboard.searchModeCommand', 'CMD') : 'CMD';
+        } else if (q.startsWith('?')) {
+            mode = 'finder';
+            label = this.language ? this.language.t('dashboard.searchModeFinder', 'FIND') : 'FIND';
+        } else if (q.startsWith('/') && this.interleaveMode) {
+            mode = 'fuzzy';
+            label = this.language ? this.language.t('dashboard.searchModeFuzzy', 'FUZZY') : 'FUZZY';
+        } else {
+            mode = 'search';
+            label = this.language ? this.language.t('dashboard.searchModeSearch', 'SEARCH') : 'SEARCH';
+        }
+        prefix.dataset.mode = mode;
+        prefix.textContent = label;
+    }
+
     renderSearchMatches() {
         const matchesContainer = document.getElementById('search-matches');
         if (!matchesContainer) return;
 
+        this.updateModeIndicator();
         matchesContainer.innerHTML = '';
         this.matchElements = []; // Reset element references
         this.selectableMatches = [];

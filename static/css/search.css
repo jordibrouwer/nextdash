@@ -150,6 +150,41 @@
     font-family: var(--font-family-main);
     margin-right: 0.5rem;
     color: var(--accent-success);
+    font-size: 0.65em;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent-success) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-success) 35%, transparent);
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.search-prefix[data-mode="command"] {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.search-prefix[data-mode="finder"] {
+    color: var(--accent-secondary);
+    background: color-mix(in srgb, var(--accent-secondary) 15%, transparent);
+    border-color: color-mix(in srgb, var(--accent-secondary) 35%, transparent);
+}
+
+.search-prefix[data-mode="fuzzy"] {
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--text-secondary) 25%, transparent);
+}
+
+.search-prefix[data-mode="search"],
+.search-prefix:not([data-mode]) {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 15%, transparent);
+    border-color: color-mix(in srgb, var(--accent-success) 35%, transparent);
 }
 
 .search-query {
