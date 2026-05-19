@@ -580,6 +580,7 @@
         "newFinderPrefix": "Nouveau finder",
         "addNewBookmark": "Créer un nouveau favori",
         "create": "Créer",
+        "saving": "Enregistrement…",
         "bookmarkCreated": "Favori créé avec succès !",
         "errorCreatingBookmark": "Erreur lors de la création du favori",
         "page": "Page",

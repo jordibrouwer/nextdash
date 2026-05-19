@@ -1217,6 +1217,10 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     margin-top: 0.2rem;
 }
 
+.bookmark-inline-conflict[hidden] {
+    display: none;
+}
+
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;

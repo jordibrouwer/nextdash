@@ -187,6 +187,26 @@ textarea.quick-add-input {
     padding-top: 0.1rem;
 }
 
+.quick-add-icon-preview.is-fetching {
+    position: relative;
+}
+
+.quick-add-icon-preview.is-fetching::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    margin: auto;
+    border: 2px solid var(--text-tertiary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: btnSpinnerRotate 0.65s linear infinite;
+}
+
 .quick-add-footer {
     display: flex;
     gap: 0.5rem;

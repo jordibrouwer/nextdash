@@ -127,10 +127,13 @@ class QuickAddWidget {
                 this.dashboard.showNotification(this.t('config.urlRequiredShort', 'URL required.'), 'error');
                 return;
             }
+            iconFetchBtn.classList.add('btn-loading');
             iconFetchBtn.disabled = true;
-            this.setQuickAddIconState(this.t('config.iconFetching', 'Fetching...'));
+            this.setIconFetchingState(true);
             const fetchedIcon = await this.fetchAndAssignFaviconForUrl(urlValue);
+            iconFetchBtn.classList.remove('btn-loading');
             iconFetchBtn.disabled = false;
+            this.setIconFetchingState(false);
             if (!fetchedIcon) {
                 this.setQuickAddIconState(this.t('config.iconNotFound', 'Not found'));
                 this.dashboard.showNotification(this.t('config.faviconFetchFailed', 'Favicon fetch failed.'), 'error');
@@ -222,9 +225,15 @@ class QuickAddWidget {
         const pageId = Number(this.container.querySelector('.quick-add-page')?.value) || Number(this.dashboard.currentPageId) || 1;
         const iconFile = this.container.querySelector('.quick-add-icon-file')?.files?.[0];
         const iconUrl = (this.container.querySelector('.quick-add-icon-url')?.value || '').trim();
+
+        const submitBtn = this.container.querySelector('.quick-add-submit');
+        const originalText = submitBtn?.textContent;
+        this.setSubmittingState(true, submitBtn);
+
         const icon = await this.resolveIconValue(iconFile, iconUrl);
 
         if (icon === null) {
+            this.setSubmittingState(false, submitBtn, originalText);
             return;
         }
 
@@ -256,12 +265,15 @@ class QuickAddWidget {
                 this.setQuickAddIconState('');
                 this.dashboard.showNotification(this.t('config.bookmarkCreated', 'Bookmark created!'), 'success');
             } else if (response.status === 409) {
+                this.setSubmittingState(false, submitBtn, originalText);
                 this.dashboard.showNotification(this.t('config.duplicateBookmarkUrl', 'Duplicate bookmark URL.'), 'error');
             } else {
+                this.setSubmittingState(false, submitBtn, originalText);
                 this.dashboard.showNotification(this.t('config.errorCreatingBookmark', 'Failed to add bookmark.'), 'error');
             }
         } catch (error) {
             console.error('Error adding bookmark:', error);
+            this.setSubmittingState(false, submitBtn, originalText);
             this.dashboard.showNotification(this.t('config.errorCreatingBookmark', 'Error adding bookmark'), 'error');
         }
     }
@@ -386,9 +398,10 @@ class QuickAddWidget {
                 return;
             }
             this._autoFetchInFlight = true;
-            this.setQuickAddIconState(this.t('config.iconFetching', 'Fetching...'));
+            this.setIconFetchingState(true);
             const icon = await this.fetchAndAssignFaviconForUrl(urlValue);
             this._autoFetchInFlight = false;
+            this.setIconFetchingState(false);
             if (!icon) {
                 this.setQuickAddIconState(this.t('config.iconNotFound', 'Not found'));
                 return;
@@ -399,6 +412,29 @@ class QuickAddWidget {
             this.syncQuickAddIconPreview(icon);
             this.setQuickAddIconState(this.t('config.iconFound', 'Found'));
         }, 250);
+    }
+
+    setIconFetchingState(fetching) {
+        const previewEl = this.container?.querySelector('.quick-add-icon-preview');
+        if (previewEl) {
+            previewEl.classList.toggle('is-fetching', fetching);
+        }
+        if (fetching) {
+            this.setQuickAddIconState(this.t('config.iconFetching', 'Fetching...'));
+        }
+    }
+
+    setSubmittingState(submitting, btn, originalText) {
+        if (!btn) return;
+        if (submitting) {
+            btn.classList.add('btn-loading');
+            btn.disabled = true;
+            btn.textContent = this.t('config.saving', 'Saving…');
+        } else {
+            btn.classList.remove('btn-loading');
+            btn.disabled = false;
+            if (originalText) btn.textContent = originalText;
+        }
     }
 
     setQuickAddIconState(text) {

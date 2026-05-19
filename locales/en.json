@@ -580,6 +580,7 @@
         "newFinderPrefix": "New Finder",
         "addNewBookmark": "Create New Bookmark",
         "create": "Create",
+        "saving": "Saving…",
         "bookmarkCreated": "Bookmark created successfully!",
         "errorCreatingBookmark": "Error creating bookmark",
         "page": "Page",

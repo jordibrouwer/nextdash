@@ -4017,11 +4017,9 @@ class Dashboard {
         const original = bookmarkRef.original || {};
         const originalUrl = String(original.url || '').trim();
         const originalName = String(original.name || '').trim();
-        const originalShortcut = String(original.shortcut || '').trim().toUpperCase();
         const candidateUrl = String(candidate.url || '').trim();
         const candidateName = String(candidate.name || '').trim();
-        const candidateShortcut = String(candidate.shortcut || '').trim().toUpperCase();
-        return originalUrl === candidateUrl && originalName === candidateName && originalShortcut === candidateShortcut;
+        return originalUrl === candidateUrl && originalName === candidateName;
     }
 
     async uploadBookmarkIconFromUrl(iconUrl) {
