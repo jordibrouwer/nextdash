@@ -1344,16 +1344,17 @@ class SearchComponent {
     }
 
     getEmptyStateMatches() {
+        const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
         const result = [];
         const historyMatches = this.getSearchHistoryMatches();
         const savedMatches = this.getSavedSearchMatches();
         const recentItems = [...historyMatches, ...savedMatches];
 
         const filterItems = [
-            { shortcut: '↳', name: 'Filter by category (example: category:work)', completion: 'category: ', type: 'filter-completion' },
-            { shortcut: '↳', name: 'Filter by status (online/offline/pinned/broken…)', completion: 'status: ', type: 'filter-completion' },
-            { shortcut: '↳', name: 'Filter by page (current/all/number)', completion: 'page: ', type: 'filter-completion' },
-            { shortcut: '↳', name: 'Filter by tag (example: tag:work)', completion: 'tag: ', type: 'filter-completion' }
+            { shortcut: '↳', name: t('dashboard.filterByCategory', 'Filter by category (example: category:work)'), completion: 'category: ', type: 'filter-completion' },
+            { shortcut: '↳', name: t('dashboard.filterByStatus', 'Filter by status (online/offline/pinned/broken…)'), completion: 'status: ', type: 'filter-completion' },
+            { shortcut: '↳', name: t('dashboard.filterByPage', 'Filter by page (current/all/number)'), completion: 'page: ', type: 'filter-completion' },
+            { shortcut: '↳', name: t('dashboard.filterByTag', 'Filter by tag (example: tag:work)'), completion: 'tag: ', type: 'filter-completion' }
         ];
 
         const finderItems = this.settings.includeFindersInSearch
@@ -1361,14 +1362,13 @@ class SearchComponent {
             : [];
 
         const groups = [
-            { id: 'recent', label: 'Recent', items: recentItems },
-            { id: 'filters', label: 'Filters', items: filterItems },
-            { id: 'finders', label: 'Finders', items: finderItems }
+            { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: recentItems },
+            { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems },
+            { id: 'finders', label: t('dashboard.emptyStateFindersLabel', 'Finders'), items: finderItems }
         ];
 
         for (const group of groups) {
-            if (group.id === 'finders' && group.items.length === 0) continue;
-            // Recent and Filters are open by default when they have items
+            if (group.items.length === 0) continue;
             const defaultOpen = (group.id === 'recent' || group.id === 'filters') && group.items.length > 0;
             const toggled = this.emptyStateExpandedGroups.has(group.id);
             const isExpanded = toggled ? !defaultOpen : defaultOpen;
