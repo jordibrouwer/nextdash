@@ -208,11 +208,16 @@ See `extension/README.md` for full usage and development notes.
 - **Search empty state** — opening search with an empty query now shows helpful groups (Recent, Filters, Finders) immediately.
 
 **Dashboard**
+- **Keyboard selection highlight** — the selected bookmark row gets a subtle accent-tinted background and a left accent bar; no layout shift.
 - **Category collapse animation** — categories fold and unfold with a smooth height transition.
 - **Collapse chevron** — a chevron is always visible next to each category name and rotates when collapsed.
 - **Smart collection accent** — smart collection headers are tinted with the accent colour to distinguish them from regular categories.
 - **Smart collection empty state** — smart collections with no matching bookmarks now show a contextual message.
 - **Focus indicators** — keyboard focus rings are consistently styled across bookmarks, category headers, and search items.
+- **Compact bookmark rows** — status (ping), pin, and note badges are now inline chips next to the bookmark name; the grid uses only three columns (icon · name · shortcut) so names are never truncated by empty column tracks.
+- **Column layout** — categories use `fit-content` width so columns don't stretch into unused space; column gaps reduced from `3rem` to `1.5rem`.
+- **Status check spinner** — the "checking status" indicator is now a small spinning icon fixed in the bottom-right corner instead of a text string in the header.
+- **Health badge** — the broken/warning count next to the health link is now a superscript pill badge positioned above the link text.
 
 **Quick-add**
 - **Loading states** — spinner on icon preview during favicon fetch; Save button shows a loading state while saving.
