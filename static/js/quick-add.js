@@ -65,6 +65,7 @@ class QuickAddWidget {
                             <label class="quick-add-label">${this.t('config.icon', 'Icon')}</label>
                             <div class="quick-add-icon-row">
                                 <div class="quick-add-icon-preview"><span class="quick-add-icon-preview-empty">—</span></div>
+                                <button type="button" class="quick-add-icon-clear" hidden aria-label="${this.t('config.clearIcon', 'Clear icon')}">✕</button>
                                 <input type="text" class="quick-add-input quick-add-icon-url" placeholder="${this.t('config.iconUrlOptional', 'Icon URL (optional)')}">
                                 <input type="file" class="quick-add-icon-file" accept="image/*,.ico,.svg,.webp">
                             </div>
@@ -117,10 +118,17 @@ class QuickAddWidget {
         const iconUrlInput = this.container?.querySelector('.quick-add-icon-url');
         const urlInput = this.container?.querySelector('.quick-add-url');
         const iconFetchBtn = this.container?.querySelector('.quick-add-icon-fetch');
+        const iconClearBtn = this.container?.querySelector('.quick-add-icon-clear');
         iconFileInput?.addEventListener('change', () => this.syncQuickAddIconPreview(''));
         iconUrlInput?.addEventListener('input', () => this.syncQuickAddIconPreview(''));
         iconUrlInput?.addEventListener('blur', () => this.autoFetchQuickAddFavicon());
         urlInput?.addEventListener('blur', () => this.autoFetchQuickAddFavicon());
+        iconClearBtn?.addEventListener('click', () => {
+            if (iconUrlInput) iconUrlInput.value = '';
+            if (iconFileInput) iconFileInput.value = '';
+            this.syncQuickAddIconPreview('');
+            this.setQuickAddIconState('');
+        });
         iconFetchBtn?.addEventListener('click', async () => {
             const urlValue = (this.container?.querySelector('.quick-add-url')?.value || '').trim();
             if (!urlValue) {
@@ -337,11 +345,14 @@ class QuickAddWidget {
     syncQuickAddIconPreview(icon) {
         const previewEl = this.container?.querySelector('.quick-add-icon-preview');
         if (!previewEl) return;
-        if (icon) {
+        const hasIcon = Boolean(icon);
+        if (hasIcon) {
             previewEl.innerHTML = `<img src="/data/icons/${icon}" alt="">`;
         } else {
             previewEl.innerHTML = `<span class="quick-add-icon-preview-empty">—</span>`;
         }
+        const clearBtn = this.container?.querySelector('.quick-add-icon-clear');
+        if (clearBtn) clearBtn.hidden = !hasIcon;
     }
 
     deriveFaviconFromBookmarkUrl(bookmarkUrl) {

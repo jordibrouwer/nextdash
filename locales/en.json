@@ -655,6 +655,7 @@
         "iconUrlInvalid": "Icon URL invalid.",
         "quickAddBookmark": "Quick add",
         "iconUrlOptional": "Icon URL (opt)",
+        "clearIcon": "Clear icon",
         "addBookmarkShort": "Add",
         "urlLabelShort": "URL",
         "pinnedShort": "Pinned",

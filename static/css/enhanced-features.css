@@ -180,6 +180,32 @@ textarea.quick-add-input {
     min-width: 0;
 }
 
+.quick-add-icon-clear {
+    flex-shrink: 0;
+    width: 1.4rem;
+    height: 1.4rem;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-tertiary);
+    border-radius: 3px;
+    font-size: 0.65rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.quick-add-icon-clear:hover {
+    color: var(--accent-error);
+    border-color: var(--accent-error);
+}
+
+.quick-add-icon-clear[hidden] {
+    display: none;
+}
+
 .quick-add-icon-state {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
