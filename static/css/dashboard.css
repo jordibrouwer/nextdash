@@ -225,6 +225,7 @@ body {
 
 .health-link a {
     animation: healthLinkShimmer 3s ease-in-out infinite;
+    position: relative;
 }
 
 .health-link a:hover,
@@ -238,20 +239,24 @@ body {
 }
 
 .health-badge {
+    position: absolute;
+    top: -0.6em;
+    right: -0.8em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.1em;
-    height: 1.1em;
+    min-width: 1.3em;
+    height: 1.3em;
     padding: 0 0.3em;
-    margin-left: 0.35em;
-    font-size: 0.72em;
+    font-size: 0.58em;
     font-weight: var(--font-weight-bold);
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    vertical-align: middle;
+    border-radius: 999px;
     color: #fff;
     background: var(--accent-error);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .health-badge-warn {
