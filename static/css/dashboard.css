@@ -262,7 +262,8 @@ body {
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    gap: 3rem;
+    row-gap: 3rem;
+    column-gap: 1.5rem;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     width: 100%;
     max-width: 100%;
@@ -307,6 +308,14 @@ body {
     grid-template-columns: repeat(6, 1fr);
 }
 
+.dashboard-grid.columns-3 .category,
+.dashboard-grid.columns-4 .category,
+.dashboard-grid.columns-5 .category,
+.dashboard-grid.columns-6 .category {
+    width: fit-content;
+    max-width: 100%;
+}
+
 /* Packed columns: vertical stacks per column (round-robin), less vertical gap than CSS grid rows */
 .dashboard-grid.packed-columns {
     display: flex;
@@ -339,11 +348,13 @@ body {
 
 /* Layout presets */
 .dashboard-grid.layout-default {
-    gap: 3rem;
+    row-gap: 3rem;
+    column-gap: 1.5rem;
 }
 
 .dashboard-grid.layout-compact {
-    gap: 1.5rem;
+    row-gap: 1.5rem;
+    column-gap: 1rem;
 }
 
 .dashboard-grid.layout-compact .category {
@@ -429,36 +440,15 @@ body {
 }
 
 .dashboard-grid.layout-terminal {
-    gap: 2rem;
+    row-gap: 2rem;
+    column-gap: 1.5rem;
 }
 
-/* Note badge for bookmarks */
+/* Note badge tooltip */
 .bookmark-note-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1em;
-    height: 1em;
-    opacity: 0.9;
-    flex: 0 0 auto;
     position: relative;
+    pointer-events: auto;
     cursor: default;
-    transition: color 0.15s ease;
-}
-
-.bookmark-note-badge:hover {
-    color: var(--text-primary);
-}
-
-.bookmark-note-badge svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .bookmark-note-badge[data-note-tooltip]::after {
@@ -560,8 +550,6 @@ body {
 .dashboard-grid.layout-terminal .bookmark-link {
     font-family: "Source Code Pro", monospace;
     letter-spacing: 0.01em;
-    --bookmark-shortcut-col: clamp(3.2ch, 4vw, 4.5ch);
-    --bookmark-pin-col: clamp(0.9ch, 1.8vw, 1.2ch);
     gap: 0.35rem;
     padding-left: 1rem;
     white-space: nowrap;
@@ -593,7 +581,6 @@ body {
 
 .dashboard-grid.layout-terminal .bookmark-shortcut {
     width: auto;
-    min-width: var(--bookmark-shortcut-col);
 }
 
 /* New layout presets: masonry, list, widgets */
@@ -711,10 +698,6 @@ body[data-density-mode="dense"] .dashboard-grid {
 }
 /* 'auto' leaves variables to layout + responsive CSS to decide */
 
-.dashboard-grid.layout-terminal .bookmark-pin-badge {
-    width: auto;
-    min-width: var(--bookmark-pin-col);
-}
 
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
@@ -886,14 +869,8 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
 
 .bookmark-link {
     --bookmark-lead-col: minmax(1.25rem, max-content);
-    /* Dedicated column for ping (status); avoids sharing col with shortcut */
-    --bookmark-status-col: minmax(0, max-content);
-    --bookmark-shortcut-col: clamp(3.2ch, 4vw, 5ch);
-    --bookmark-opencount-col: clamp(1.8ch, 2.5vw, 2.4ch);
-    --bookmark-pin-col: clamp(1ch, 2vw, 1.45ch);
-    --bookmark-note-col: clamp(1ch, 2vw, 1.45ch);
     display: grid;
-    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) var(--bookmark-status-col) var(--bookmark-shortcut-col) var(--bookmark-opencount-col) var(--bookmark-note-col) var(--bookmark-pin-col);
+    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) max-content;
     grid-auto-rows: auto;
     align-items: center;
     gap: 0.6rem;
@@ -951,6 +928,7 @@ a.bookmark-open {
     min-width: 0;
     display: flex;
     align-items: center;
+    gap: 0.3rem;
     color: inherit;
     text-decoration: none;
     overflow: hidden;
@@ -1008,43 +986,54 @@ a.bookmark-open:hover {
     user-select: none;
 }
 
-.bookmark-pin-badge {
-    grid-column: 7;
-    width: auto;
-    min-width: var(--bookmark-pin-col);
-    text-align: center;
-    justify-self: center;
+/* Inline badge — shared base for pin, note, status */
+.bookmark-superscript-badge {
     flex-shrink: 0;
-    font-size: var(--font-size-controls);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+    padding: 0.18em 0.38em;
+    border-radius: 3px;
+    background: var(--background-secondary);
     color: var(--text-tertiary);
+    border: 1px solid var(--border-secondary);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 120ms ease;
 }
 
 .bookmark-pin-badge svg {
-    width: 0.95rem;
-    height: 0.95rem;
+    width: 0.7rem;
+    height: 0.7rem;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.8;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     display: inline-block;
 }
 
 .bookmark-pin-badge.is-empty {
-    opacity: 0;
+    display: none;
 }
 
-.bookmark-note-badge {
-    grid-column: 6;
-    width: auto;
-    min-width: var(--bookmark-note-col);
-    text-align: center;
-    justify-self: center;
-    color: var(--text-tertiary);
+.bookmark-note-badge svg {
+    width: 0.7rem;
+    height: 0.7rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: inline-block;
 }
 
 .bookmark-note-badge.is-empty {
-    opacity: 0;
+    display: none;
 }
 
 .bookmark-open-count {
@@ -1073,15 +1062,14 @@ a.bookmark-open:hover {
 }
 
 .bookmark-shortcut {
-    grid-column: 4;
-    width: auto;
-    min-width: var(--bookmark-shortcut-col);
+    grid-column: 3;
     text-align: right;
     justify-self: end;
+    white-space: nowrap;
 }
 
 .bookmark-shortcut.is-empty {
-    opacity: 0;
+    display: none;
 }
 
 
@@ -1098,6 +1086,14 @@ a.bookmark-open:hover {
     display: block;
     padding: 0.35rem 0;
     min-height: 0;
+}
+
+.bookmark-link.bookmark-inline-editing.keyboard-selected {
+    background: none;
+}
+
+.bookmark-link.bookmark-inline-editing.keyboard-selected::before {
+    display: none;
 }
 
 /*
@@ -1698,50 +1694,14 @@ body[data-show-note-icon="false"] .bookmark-note-badge {
     display: none;
 }
 
-/* Collapse shortcut column (track stays for grid stability; items stay on columns 4–5) */
-body[data-show-shortcuts="false"] .bookmark-link {
-    --bookmark-shortcut-col: 0ch;
-    gap: 0.45rem;
-}
-
-/* Collapse pin column */
-body[data-show-pin-icon="false"] .bookmark-link {
-    --bookmark-pin-col: 0ch;
-    gap: 0.45rem;
-}
-
-/* Collapse note column */
-body[data-show-note-icon="false"] .bookmark-link {
-    --bookmark-note-col: 0ch;
-    gap: 0.45rem;
-}
-
-/* Collapse both columns */
-body[data-show-shortcuts="false"][data-show-pin-icon="false"] .bookmark-link {
-    --bookmark-shortcut-col: 0ch;
-    --bookmark-pin-col: 0ch;
-    gap: 0.35rem;
-}
-
 /* Terminal layout variants */
-body[data-show-shortcuts="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    --bookmark-shortcut-col: 0ch;
-    gap: 0.28rem;
-}
-
-body[data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    --bookmark-pin-col: 0ch;
-    gap: 0.28rem;
-}
-
+body[data-show-shortcuts="false"] .dashboard-grid.layout-terminal .bookmark-link,
+body[data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link,
 body[data-show-note-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    --bookmark-note-col: 0ch;
     gap: 0.28rem;
 }
 
 body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    --bookmark-shortcut-col: 0ch;
-    --bookmark-pin-col: 0ch;
     gap: 0.24rem;
 }
 

@@ -75,34 +75,29 @@ body.no-animations .bookmark-link.status-transition-flash {
     animation: none !important;
 }
 
-/* Status text (ping time) — column 3 in dashboard six-column grid */
+/* Status text (ping time) — inline badge inside a.bookmark-open */
 .status-text {
-    grid-column: 3;
-    justify-self: end;
-    align-self: center;
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-normal);
-    margin-left: 0;
-    margin-right: 0;
-    opacity: 0.8;
+    opacity: 0.9;
     transition: opacity 0.3s ease;
-    white-space: nowrap;
     color: var(--text-secondary);
 }
 
 /* Online status ping time */
 .bookmark-link.status-online .status-text {
     color: var(--accent-success);
+    border-color: color-mix(in srgb, var(--accent-success) 30%, transparent);
 }
 
 /* Offline status text */
 .bookmark-link.status-offline .status-text {
     color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 30%, transparent);
 }
 
 /* Checking status text */
 .bookmark-link.status-checking .status-text {
     color: var(--accent-warning);
+    border-color: color-mix(in srgb, var(--accent-warning) 30%, transparent);
 }
 
 /* Status indicator dots - HIDDEN */

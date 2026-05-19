@@ -240,18 +240,20 @@ class StatusMonitor {
             }, 260);
         }
 
-        // Update or create status text element
+        // Update or create status text element (badge inside a.bookmark-open)
+        const openLink = bookmarkElement.querySelector('a.bookmark-open');
         let statusElement = bookmarkElement.querySelector('.status-text');
-        
-        // Get shortcut element to insert status text before it
-        const shortcutElement = bookmarkElement.querySelector('.bookmark-shortcut');
-        
+
         if (!statusElement && text && this.settings.showPing) {
             statusElement = document.createElement('span');
-            statusElement.className = 'status-text';
-            // Insert before shortcut if it exists, otherwise append
-            if (shortcutElement) {
-                bookmarkElement.insertBefore(statusElement, shortcutElement);
+            statusElement.className = 'status-text bookmark-superscript-badge';
+            if (openLink) {
+                const firstBadge = openLink.querySelector('.bookmark-pin-badge, .bookmark-note-badge');
+                if (firstBadge) {
+                    openLink.insertBefore(statusElement, firstBadge);
+                } else {
+                    openLink.appendChild(statusElement);
+                }
             } else {
                 bookmarkElement.appendChild(statusElement);
             }
@@ -260,7 +262,7 @@ class StatusMonitor {
         if (statusElement) {
             if (text && this.settings.showPing) {
                 statusElement.textContent = text;
-                statusElement.style.display = 'inline';
+                statusElement.style.display = 'inline-flex';
             } else {
                 statusElement.style.display = 'none';
             }

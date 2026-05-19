@@ -3345,7 +3345,7 @@ class Dashboard {
         row.appendChild(shortcutSpan);
 
         const pinBadge = document.createElement('span');
-        pinBadge.className = 'bookmark-pin-badge';
+        pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
         const showPinIcon = this.settings.showPinIcon === true;
         if (showPinIcon && bookmark.pinned) {
             pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
@@ -3357,7 +3357,7 @@ class Dashboard {
             pinBadge.classList.add('is-empty');
             pinBadge.setAttribute('aria-hidden', 'true');
         }
-        row.appendChild(pinBadge);
+        openLink.appendChild(pinBadge);
 
         const openCountBadge = document.createElement('span');
         openCountBadge.className = 'bookmark-open-count';
@@ -3373,7 +3373,7 @@ class Dashboard {
         row.appendChild(openCountBadge);
 
         const noteBadge = document.createElement('span');
-        noteBadge.className = 'bookmark-note-badge';
+        noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
         if (hasNote) {
             const label = this.language.t('bookmark.hasNote') || 'Has note';
@@ -3387,7 +3387,7 @@ class Dashboard {
             noteBadge.classList.add('is-empty');
             noteBadge.setAttribute('aria-hidden', 'true');
         }
-        row.appendChild(noteBadge);
+        openLink.appendChild(noteBadge);
 
         if (allowInlineEdit && bookmarkRef) {
             const ac = new AbortController();
