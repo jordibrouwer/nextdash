@@ -954,6 +954,7 @@ a.bookmark-open {
     color: inherit;
     text-decoration: none;
     overflow: hidden;
+    outline: none;
 }
 
 a.bookmark-open:hover {
@@ -1610,20 +1611,20 @@ body.no-animations .bookmarks-list.reorder-container::after {
 /* Keyboard navigation highlight */
 .bookmark-link.keyboard-selected {
     color: var(--text-primary);
-    transform: translateX(8px);
     position: relative;
-    overflow: visible;
-    outline: 2px solid color-mix(in srgb, var(--text-primary) 40%, transparent);
-    outline-offset: 2px;
-    border-radius: 2px;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-radius: 4px;
 }
 
 .bookmark-link.keyboard-selected::before {
-    content: '>';
+    content: '';
     position: absolute;
-    left: -1.5rem;
-    font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-primary);
+    border-radius: 4px 0 0 4px;
 }
 
 .bookmark-shortcut {
