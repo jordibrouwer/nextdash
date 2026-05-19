@@ -1625,6 +1625,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     width: 3px;
     background: var(--accent-primary);
     border-radius: 4px 0 0 4px;
+    z-index: 1;
 }
 
 .bookmark-shortcut {
