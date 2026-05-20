@@ -1409,7 +1409,11 @@ class Dashboard {
         }
 
         closeButton.onclick = async () => {
-            hintEl.hidden = true;
+            hintEl.classList.add('dismissing');
+            setTimeout(() => {
+                hintEl.hidden = true;
+                hintEl.classList.remove('dismissing');
+            }, 220);
             this.settings.showSearchFlowBanner = false;
             document.body.setAttribute('data-show-search-flow-banner', 'false');
             try {

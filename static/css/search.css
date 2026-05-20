@@ -507,33 +507,44 @@
 }
 
 .search-flow-hint {
-    position: relative;
-    flex: 1 1 100%;
-    min-width: 0;
-    max-width: 100%;
+    /* Absolutely positioned above the button row — not in flex flow, so
+       dismissing it causes zero layout shift to the buttons below. */
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    padding: 0.7rem 0.95rem;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
+    padding: 0.4rem 0.7rem;
+
     font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    letter-spacing: 0.02em;
-    background: color-mix(in srgb, var(--background-primary) 82%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 82%, transparent);
-    border-radius: 999px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.45rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
     animation: searchFlowHintEnter 260ms ease-out both;
 }
 
 .search-flow-hint[hidden] {
     display: none !important;
+}
+
+/* Triggered by JS before setting hidden — lets the transition play first */
+.search-flow-hint.dismissing {
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
 }
 
 .search-flow-hint-text {
@@ -543,41 +554,43 @@
 .search-flow-chip {
     display: inline-block;
     min-width: 1.8ch;
-    padding: 0.08rem 0.4rem;
-    margin: 0 0.15rem;
+    padding: 0.08rem 0.35rem;
+    margin: 0 0.12rem;
     border: 1px solid var(--border-primary);
-    border-radius: 999px;
-    background: var(--background-secondary);
+    border-radius: 0.25rem;
+    background: var(--background-primary);
     color: var(--accent-success);
     font-family: var(--font-family-main);
-    font-size: 0.9em;
+    font-size: 0.88em;
     line-height: 1.2;
     vertical-align: middle;
+    font-weight: var(--font-weight-semibold);
 }
 
 .search-flow-hint-close {
     flex: 0 0 auto;
-    width: 1.9rem;
-    height: 1.9rem;
-    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--background-secondary) 86%, transparent);
-    color: var(--text-primary);
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--text-tertiary);
     font: inherit;
+    font-size: 0.9rem;
     line-height: 1;
     cursor: pointer;
-    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
 .search-flow-hint-close:hover {
-    transform: scale(1.05);
-    background: var(--background-secondary);
-    border-color: var(--accent-success);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
 }
 
 .search-flow-hint-close:active {
-    transform: scale(0.96);
+    opacity: 0.7;
 }
 
 @keyframes searchFlowHintEnter {
@@ -593,6 +606,7 @@
 
 body.no-animations .search-flow-hint {
     animation: none !important;
+    transition: none !important;
 }
 
 body.no-animations .search-flow-hint-close {
