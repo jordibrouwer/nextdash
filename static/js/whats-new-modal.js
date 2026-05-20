@@ -4,35 +4,44 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v22';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v23';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function buildHtml() {
         return `
             <div class="help-content">
                 <p class="help-intro">A short recap of the most recent changes.</p>
+                <h4 class="help-subheading">UI & discoverability</h4>
+                <ul>
+                    <li><strong>Search mode chips</strong> — The search overlay now shows <em>&gt; search</em> · <em>: commands</em> · <em>? finders</em> chips at the bottom. Click any chip to switch mode; the active chip is highlighted in the mode's accent colour.</li>
+                    <li><strong>Button tooltips</strong> — Hovering over the search, commands, finders, recent, or cheatsheet buttons shows a small tooltip with the corresponding keyboard shortcut. Not shown on touch devices.</li>
+                    <li><strong>Search-flow hint</strong> — The hint banner is now positioned above the button bar without affecting button layout when dismissed. Visual style updated to match the app's borders and background.</li>
+                    <li><strong>Mobile header</strong> — On small screens the header stays as a single horizontal row. The date/time widget is hidden to free vertical space for bookmarks.</li>
+                    <li><strong>Content area width</strong> — Main content now uses <code>min(88%, 1600px)</code> instead of 80%, giving more grid space on laptop screens and capping neatly on ultra-wide monitors.</li>
+                    <li><strong>Config nav links</strong> — The "back to dashboard", "health", and "customize theme" links in the config header now use the same text colour as the equivalent links on the dashboard.</li>
+                </ul>
                 <h4 class="help-subheading">Search</h4>
                 <ul>
-                    <li><strong>Mode badge</strong> — The search bar now shows a coloured badge indicating the active input mode: <em>SEARCH</em>, <em>CMD</em>, <em>FIND</em>, or <em>FUZZY</em>.</li>
-                    <li><strong>Filter group</strong> — Filter autocomplete suggestions (category:, status:, page:, tag:) are now grouped under a collapsible "Filters" header, separate from bookmark results.</li>
-                    <li><strong>Empty state</strong> — Opening search with an empty query now shows helpful groups (Recent, Filters, Finders) even before you type.</li>
+                    <li><strong>Mode badge</strong> — The search bar shows a coloured badge for the active input mode: <em>SEARCH</em>, <em>CMD</em>, <em>FIND</em>, or <em>FUZZY</em>.</li>
+                    <li><strong>Filter group</strong> — Filter autocomplete suggestions (category:, status:, page:, tag:) are grouped under a collapsible "Filters" header, separate from bookmark results.</li>
+                    <li><strong>Empty state</strong> — Opening search with an empty query shows helpful groups (Recent, Filters, Finders) immediately.</li>
                 </ul>
                 <h4 class="help-subheading">Dashboard</h4>
                 <ul>
-                    <li><strong>Category collapse animation</strong> — Categories now fold and unfold with a smooth height transition instead of snapping instantly.</li>
-                    <li><strong>Collapse chevron</strong> — A subtle chevron arrow is always visible next to each category name, rotating when collapsed to make the affordance clear.</li>
-                    <li><strong>Smart collection headers</strong> — Smart collection headers (Today, Recently opened, Most used, Stale) are now tinted with the accent colour so they stand out from regular categories.</li>
-                    <li><strong>Smart collection empty state</strong> — When a smart collection has no items it now shows a contextual message instead of an empty area.</li>
-                    <li><strong>Focus indicators</strong> — Keyboard focus rings are now consistently styled across bookmarks, category headers, and search result items.</li>
+                    <li><strong>Category collapse animation</strong> — Categories fold and unfold with a smooth height transition.</li>
+                    <li><strong>Collapse chevron</strong> — A chevron is always visible next to each category name and rotates when collapsed.</li>
+                    <li><strong>Smart collection headers</strong> — Tinted with the accent colour to stand out from regular categories.</li>
+                    <li><strong>Smart collection empty state</strong> — Shows a contextual message when a smart collection has no matching items.</li>
+                    <li><strong>Focus indicators</strong> — Keyboard focus rings are consistently styled across bookmarks, category headers, and search items.</li>
                 </ul>
                 <h4 class="help-subheading">Quick-add</h4>
                 <ul>
-                    <li><strong>Loading states</strong> — A spinner appears on the icon preview while the favicon is being fetched, and the Save button shows a loading state while the bookmark is being saved.</li>
-                    <li><strong>Clear icon button</strong> — A × button appears next to the icon preview after an icon is set, letting you reset to the default favicon without closing the form.</li>
+                    <li><strong>Loading states</strong> — Spinner on the icon preview during favicon fetch; Save button shows a loading state while saving.</li>
+                    <li><strong>Clear icon button</strong> — A × button next to the icon preview lets you reset to the default favicon without closing the form.</li>
                 </ul>
                 <h4 class="help-subheading">Config — bookmarks</h4>
                 <ul>
-                    <li><strong>Last opened date/time</strong> — Each bookmark row now shows the date and time it was last opened, next to the open count.</li>
+                    <li><strong>Last opened date/time</strong> — Each bookmark row now shows the date and time it was last opened.</li>
                     <li><strong>Sort by last opened</strong> — The sort dropdown now includes a "Last opened" option.</li>
                     <li><strong>Show icons on by default</strong> — Bookmark icons are now enabled by default for new users.</li>
                 </ul>

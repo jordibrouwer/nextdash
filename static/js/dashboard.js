@@ -1824,6 +1824,7 @@ class Dashboard {
                     { keys: ':', description: 'Command palette' },
                     { keys: '?', description: 'Finders' },
                     { keys: '*', description: 'Recent bookmarks' },
+                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the bottom of the search overlay to switch mode' },
                     { keys: ':new', description: 'Add bookmark via command' },
                     { keys: ':note', description: 'Edit note via command' },
                     { keys: 'category: / tag: / page:', description: 'Filter in search bar' }

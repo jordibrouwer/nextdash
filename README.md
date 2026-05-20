@@ -202,6 +202,14 @@ See `extension/README.md` for full usage and development notes.
 
 ### What's new (summary)
 
+**UI & discoverability**
+- **Search mode chips** — the search overlay now shows `> search` · `: commands` · `? finders` chips at the bottom. Click any chip to switch mode; the active chip is highlighted in the mode's accent colour.
+- **Button tooltips** — hovering over the search/commands/finders/recent/cheatsheet buttons shows a small tooltip with the corresponding keyboard shortcut. Tooltips are suppressed on touch devices.
+- **Search-flow hint redesigned** — the banner above the button bar is now positioned absolutely so dismissing it no longer shifts the buttons. Visual style updated to match the app's border/background tokens (no more blur or pill shape).
+- **Mobile header** — on small screens the header stays as a single horizontal row; the date/time widget is hidden to free vertical space.
+- **Content area width** — switched from a fixed 80 % to `min(88 %, 1600 px)`, giving ~115 px of extra grid width on a 1440 px screen and capping cleanly at 1600 px on ultra-wide monitors.
+- **Config nav links** — "back to dashboard", "health", and "customize theme" links in the config header now use the same text colour as the equivalent links on the dashboard.
+
 **Search**
 - **Search mode badge** — the search bar now shows a coloured badge for the active input mode: SEARCH, CMD, FIND, or FUZZY.
 - **Filter group in search** — filter autocomplete suggestions (`category:`, `status:`, `page:`, `tag:`) are grouped under a collapsible "Filters" header, separate from bookmark results.
