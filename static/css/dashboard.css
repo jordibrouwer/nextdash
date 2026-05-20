@@ -313,10 +313,10 @@ body {
     grid-template-columns: repeat(6, 1fr);
 }
 
-.dashboard-grid.columns-3 .category,
-.dashboard-grid.columns-4 .category,
-.dashboard-grid.columns-5 .category,
-.dashboard-grid.columns-6 .category {
+.dashboard-grid.columns-3:not(.packed-columns) .category,
+.dashboard-grid.columns-4:not(.packed-columns) .category,
+.dashboard-grid.columns-5:not(.packed-columns) .category,
+.dashboard-grid.columns-6:not(.packed-columns) .category {
     width: fit-content;
     max-width: 100%;
 }
@@ -612,6 +612,7 @@ body {
     display: block;
 }
 .dashboard-grid.layout-list .bookmark-link {
+    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) max-content;
     padding: 0.6rem 0.4rem;
     border-bottom: 1px solid var(--border-primary);
 }
@@ -838,11 +839,15 @@ body.no-animations .category-chevron {
 
 /* Bookmarks */
 .bookmarks-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 0; /* Allow flex items to shrink below content size */
+    display: grid;
+    grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
+    row-gap: 0.5rem;
+    min-width: 0;
     min-height: 2rem;
+}
+
+.bookmarks-list > * {
+    grid-column: 1 / -1;
 }
 
 .category[data-collapsed="true"] .bookmarks-list {
@@ -875,10 +880,11 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
 .bookmark-link {
     --bookmark-lead-col: minmax(1.25rem, max-content);
     display: grid;
-    grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) max-content;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
     grid-auto-rows: auto;
     align-items: center;
-    gap: 0.6rem;
+    column-gap: 0.6rem;
     text-decoration: none;
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
@@ -886,7 +892,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     position: relative;
     padding: 0.5rem 0;
     color: var(--text-primary);
-    max-width: 100%; /* Ensure bookmark doesn't exceed parent width */
+    max-width: 100%;
     min-height: 1.9rem;
 }
 
