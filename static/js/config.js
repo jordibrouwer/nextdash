@@ -681,6 +681,32 @@ class ConfigManager {
 
         const bulkMovePageBtn = document.getElementById('bulk-move-page-btn');
         const bulkPageSelect = document.getElementById('bulk-page-select');
+        const bulkMoveCategorySelect = document.getElementById('bulk-move-category-select');
+        if (bulkPageSelect && bulkMoveCategorySelect) {
+            bulkPageSelect.addEventListener('change', async () => {
+                const targetPageId = Number(bulkPageSelect.value || 0);
+                bulkMoveCategorySelect.innerHTML = '';
+                if (!targetPageId) {
+                    bulkMoveCategorySelect.disabled = true;
+                    return;
+                }
+                const currentPageId = Number(this.currentPageId) || 1;
+                const cats = targetPageId === currentPageId
+                    ? (this.bookmarksPageCategories || [])
+                    : await fetch(`/api/categories?page=${targetPageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No category';
+                bulkMoveCategorySelect.appendChild(emptyOpt);
+                cats.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    bulkMoveCategorySelect.appendChild(opt);
+                });
+                bulkMoveCategorySelect.disabled = false;
+            });
+        }
         if (bulkMovePageBtn && bulkPageSelect) {
             bulkMovePageBtn.addEventListener('click', async () => {
                 const targetPageId = Number(bulkPageSelect.value || 0);
@@ -688,7 +714,8 @@ class ConfigManager {
                     this.ui.showNotification('Select a target page first.', 'info');
                     return;
                 }
-                await this.bulkMoveBookmarksToPage(targetPageId);
+                const targetCategory = bulkMoveCategorySelect ? bulkMoveCategorySelect.value : '';
+                await this.bulkMoveBookmarksToPage(targetPageId, targetCategory);
             });
         }
 
@@ -2135,7 +2162,7 @@ class ConfigManager {
         }
     }
 
-    async bulkMoveBookmarksToPage(newPageId) {
+    async bulkMoveBookmarksToPage(newPageId, targetCategory = '') {
         const currentPageId = Number(this.currentPageId) || 1;
         if (newPageId === currentPageId) {
             this.ui.showNotification(this.language.t('config.bookmarkAlreadyHere'), 'info');
@@ -2162,7 +2189,7 @@ class ConfigManager {
 
         try {
             const targetBookmarks = await this.data.loadBookmarksByPage(newPageId);
-            const movedBookmarks = bookmarksToMove.map((bookmark) => ({ ...bookmark, category: '' }));
+            const movedBookmarks = bookmarksToMove.map((bookmark) => ({ ...bookmark, category: targetCategory }));
             const updatedTargetBookmarks = [...targetBookmarks, ...movedBookmarks];
 
             await this.data.saveBookmarks(remainingBookmarks, currentPageId);

@@ -999,7 +999,8 @@
                             </div>
                             <div class="bulk-toolbar-divider"></div>
                             <div class="bulk-toolbar-group">
-                                <select id="bulk-page-select" class="bulk-select"></select>
+                                <select id="bulk-page-select" class="bulk-select" data-no-custom></select>
+                                <select id="bulk-move-category-select" class="bulk-select" disabled data-no-custom></select>
                                 <button type="button" id="bulk-move-page-btn" class="btn btn-secondary btn-small">Move</button>
                             </div>
                             <div class="bulk-toolbar-divider"></div>
@@ -1099,11 +1100,6 @@
                                 <select id="detail-category" class="bookmark-detail-select" data-no-custom>
                                     <option value="">No category</option>
                                 </select>
-                            </div>
-
-                            <div class="bookmark-detail-section">
-                                <label class="bookmark-detail-label" for="detail-page">Page</label>
-                                <select id="detail-page" class="bookmark-detail-select" data-no-custom></select>
                             </div>
 
                             <div class="bookmark-detail-section">
