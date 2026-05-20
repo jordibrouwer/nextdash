@@ -1243,11 +1243,11 @@ class Dashboard {
     }
 
     initializeButtonTipsRotation() {
+        this.initializeSearchFlowHint();
         const hintEl = document.getElementById('button-hint-text');
         if (!hintEl) {
             return;
         }
-        this.initializeSearchFlowHint();
         if (this.tipRotationTimer) {
             clearTimeout(this.tipRotationTimer);
             this.tipRotationTimer = null;

@@ -643,6 +643,50 @@ body[data-show-tips="false"] .button-hint {
     display: none;
 }
 
+/* Custom tooltips on search buttons — appear above on hover */
+.search-button[data-tooltip] {
+    position: relative;
+}
+
+.search-button[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    padding: 0.2rem 0.5rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.3rem;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    font-weight: var(--font-weight-normal);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 1001;
+}
+
+.search-button[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* No tooltips on touch — hover doesn't exist there */
+@media (pointer: coarse) {
+    .search-button[data-tooltip]::after {
+        display: none;
+    }
+}
+
+body.no-animations .search-button[data-tooltip]::after {
+    transition: none !important;
+}
+
 /* Search Button */
 .search-button {
     /* Button styling */
