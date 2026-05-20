@@ -136,15 +136,13 @@ body.config-is-dirty .config-controls-wrapper {
     text-decoration: none;
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-semibold);
-    color: var(--accent-primary);
-    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    transition: color 0.15s ease, border-color 0.15s ease;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
     position: relative;
 }
 
 .back-link:hover {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
+    color: var(--text-primary);
 }
 
 .health-badge {
@@ -187,7 +185,7 @@ body.config-is-dirty .config-controls-wrapper {
 .header-links a[href="/health"]:hover {
     animation: none;
     text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
-    color: var(--accent-primary);
+    color: var(--text-primary);
 }
 
 .nav-links {
