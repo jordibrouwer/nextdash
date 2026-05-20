@@ -759,3 +759,73 @@ mark.search-highlight {
     text-decoration-color: var(--text-secondary);
     text-underline-offset: 2px;
 }
+
+/* Search mode tabs — shown at the bottom of the search container */
+.search-mode-tabs {
+    display: flex;
+    gap: 0.4rem;
+    padding-top: 0.6rem;
+    margin-top: 0.4rem;
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+    flex-shrink: 0;
+}
+
+.search-mode-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.9);
+    cursor: pointer;
+    transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.search-mode-tab:hover {
+    color: var(--text-secondary);
+    border-color: var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent);
+}
+
+.search-mode-tab-key {
+    font-weight: var(--font-weight-bold);
+    font-size: 1em;
+    line-height: 1;
+}
+
+/* Active states — match the search-prefix badge colours */
+.search-mode-tab.active[data-mode="search"] {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-success) 35%, transparent);
+}
+
+.search-mode-tab.active[data-mode="command"] {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.search-mode-tab.active[data-mode="finder"] {
+    color: var(--accent-secondary);
+    background: color-mix(in srgb, var(--accent-secondary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-secondary) 35%, transparent);
+}
+
+/* Hide on mobile extra-small to save vertical space */
+@media (max-width: 479px) {
+    .search-mode-tabs {
+        display: none;
+    }
+}
+
+body.no-animations .search-mode-tab {
+    transition: none !important;
+}

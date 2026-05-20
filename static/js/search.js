@@ -205,6 +205,26 @@ class SearchComponent {
             });
         }
 
+        // Mode tab click handlers
+        document.querySelectorAll('.search-mode-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const mode = tab.dataset.mode;
+                if (mode === 'command') {
+                    window.dashboardInstance?.markInlineTipUsed?.('command_open');
+                    this.currentQuery = ':';
+                    this.commandsComponent.resetState();
+                } else if (mode === 'finder') {
+                    window.dashboardInstance?.markInlineTipUsed?.('finder_open');
+                    this.currentQuery = '?';
+                } else {
+                    this.currentQuery = '';
+                    this.commandsComponent.resetState();
+                }
+                this.updateSearch();
+            });
+        });
+
         document.addEventListener('theme-changed', () => {
             if (this.searchActive) {
                 this.renderSearchMatches();
@@ -910,6 +930,11 @@ class SearchComponent {
         }
         prefix.dataset.mode = mode;
         prefix.textContent = label;
+
+        // Sync mode tab active state
+        document.querySelectorAll('.search-mode-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.mode === mode);
+        });
     }
 
     renderSearchMatches() {
