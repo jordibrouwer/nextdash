@@ -3858,6 +3858,13 @@ class Dashboard {
             }
         });
 
+        const rowRect = row.getBoundingClientRect();
+        const formExpectedWidth = Math.max(rowRect.width, Math.min(420, window.innerWidth * 0.9));
+        const rightOverflow = (rowRect.left + formExpectedWidth) - (window.innerWidth - 8);
+        if (rightOverflow > 0) {
+            form.style.marginLeft = `-${Math.ceil(rightOverflow)}px`;
+        }
+
         row.appendChild(form);
         this.destroyCategoryReorderInstances();
         this.initializeCategoryReorder();
