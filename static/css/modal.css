@@ -45,8 +45,9 @@
 }
 
 .modal.whats-new-modal .modal-body {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(90vh - 8rem);
     padding-right: 0.25rem;
 }
 
@@ -62,8 +63,9 @@
 }
 
 .modal.keyboard-cheat-sheet-modal .modal-body {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(90vh - 8.25rem);
     padding-right: 0.25rem;
 }
 
