@@ -1084,7 +1084,7 @@ a.bookmark-open:hover {
     display: block;
     padding: 0.35rem 0;
     min-height: 0;
-    min-width: 300px;
+    min-width: 0;
 }
 
 .bookmark-link.bookmark-inline-editing.keyboard-selected {
@@ -1125,6 +1125,10 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     z-index: 8;
 }
 
+body.bookmark-inline-edit-active .category .bookmarks-list {
+    overflow: visible;
+}
+
 @media (prefers-reduced-motion: reduce) {
     body.bookmark-inline-edit-active .dashboard-section.section-controls,
     body.bookmark-inline-edit-active .dashboard-section.section-title,
@@ -1140,7 +1144,8 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
 
 .bookmark-inline-form {
     width: 100%;
-    max-width: 100%;
+    min-width: min(420px, 90vw);
+    max-width: none;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
