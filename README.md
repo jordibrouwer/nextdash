@@ -202,6 +202,15 @@ See `extension/README.md` for full usage and development notes.
 
 ### What's new (summary)
 
+**Dashboard buttons**
+- **Labels removed** — the footer buttons now show only their key symbol (`: ? > * !`). Hover a button to see its name and shortcut as a tooltip.
+- **Button order** — the button bar is now ordered: `: commands` · `? finders` · `> search` · `* recent` · `! cheatsheet` (cheatsheet rightmost, recent second-to-last).
+- **Config label toggle removed** — the per-button "Label" column in config → Header & Buttons has been removed.
+
+**Config**
+- **Tab bar spacing** — the config tab buttons reduce their horizontal padding as the window narrows so all tabs stay fully visible without overlapping.
+- **Scrollable modals** — the What's new and Keyboard cheatsheet modals now scroll correctly when their content exceeds the viewport height.
+
 **UI & discoverability**
 - **Search mode chips** — the search overlay now shows `> search` · `: commands` · `? finders` chips at the bottom. Click any chip to switch mode; the active chip is highlighted in the mode's accent colour.
 - **Button tooltips** — hovering over the search/commands/finders/recent/cheatsheet buttons shows a small tooltip with the corresponding keyboard shortcut. Tooltips are suppressed on touch devices.

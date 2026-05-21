@@ -4,13 +4,24 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v23';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v24';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function buildHtml() {
         return `
             <div class="help-content">
                 <p class="help-intro">A short recap of the most recent changes.</p>
+                <h4 class="help-subheading">Dashboard buttons</h4>
+                <ul>
+                    <li><strong>Labels removed</strong> — The footer buttons now show only their key symbol (<code>:</code> <code>?</code> <code>&gt;</code> <code>*</code> <code>!</code>). Hover a button to see its name as a tooltip.</li>
+                    <li><strong>Button order</strong> — The button bar is now ordered: <em>: commands</em> · <em>? finders</em> · <em>&gt; search</em> · <em>* recent</em> · <em>! cheatsheet</em> (cheatsheet rightmost).</li>
+                    <li><strong>Config label toggle removed</strong> — The per-button "Label" column in config → Header & Buttons has been removed now that labels are gone.</li>
+                </ul>
+                <h4 class="help-subheading">Config</h4>
+                <ul>
+                    <li><strong>Tab bar spacing</strong> — The config tab buttons reduce their horizontal padding as the window narrows so all tabs stay visible without overlapping.</li>
+                    <li><strong>Scrollable modals</strong> — The What's new and Keyboard cheatsheet modals now scroll correctly on small screens.</li>
+                </ul>
                 <h4 class="help-subheading">UI & discoverability</h4>
                 <ul>
                     <li><strong>Search mode chips</strong> — The search overlay now shows <em>&gt; search</em> · <em>: commands</em> · <em>? finders</em> chips at the bottom. Click any chip to switch mode; the active chip is highlighted in the mode's accent colour.</li>
