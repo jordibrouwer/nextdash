@@ -10,8 +10,8 @@
 }
 
 .tabs .tab-button {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: min-content;
 }
 
 /* Config tab bar: single scrollable row, never wraps */
@@ -48,7 +48,7 @@
 }
 
 .tab-button {
-    padding: 0.4rem 0.6rem;
+    padding: 0.4rem clamp(0.2rem, 1.2vw, 0.6rem);
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
@@ -62,6 +62,7 @@
     text-transform: lowercase;
     letter-spacing: 0.05em;
     text-align: center;
+    white-space: nowrap;
 }
 
 .tab-button::before,
