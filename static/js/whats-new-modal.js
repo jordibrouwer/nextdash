@@ -81,6 +81,7 @@
             showCancel: false,
             modalMaxWidth: '600px',
             modalWidth: '96vw',
+            modalClass: 'whats-new-modal',
         });
         try {
             localStorage.setItem(STORAGE_KEY, DASHBOARD_RELEASE);
