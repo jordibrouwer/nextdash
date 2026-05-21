@@ -280,7 +280,6 @@
         getTheme: getTheme,
         getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,
-        getButtonTextSettings: getButtonTextSettings,
         applyTheme: applyTheme,
         onThemeChange: function(cb) {
             if (typeof cb !== 'function') return function() {};
