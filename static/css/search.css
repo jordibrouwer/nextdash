@@ -742,10 +742,6 @@ body.no-animations .search-button[data-tooltip]::after {
     font-size: var(--font-size-category);
 }
 
-.search-button-text {
-    letter-spacing: 0.03em;
-}
-
 #search-button .search-button-icon {
     color: var(--accent-primary);
 }
@@ -754,13 +750,6 @@ body.no-animations .search-button[data-tooltip]::after {
 .shortcut-search.show ~ .button-container {
     opacity: 0;
     pointer-events: none;
-}
-
-/* Hide button text based on settings */
-body[data-show-search-button-text="false"] #search-button .search-button-text,
-body[data-show-finders-button-text="false"] #finders-button .search-button-text,
-body[data-show-commands-button-text="false"] #commands-button .search-button-text {
-    display: none;
 }
 
 /* Preserve transforms when animations are disabled */

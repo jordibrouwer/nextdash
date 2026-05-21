@@ -122,51 +122,12 @@
     }
     
     /**
-     * Gets the button text visibility settings
-     * @returns {Object} Object with showSearchButtonText, showFindersButtonText, showCommandsButtonText
-     */
-    function getButtonTextSettings() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let settings = {
-            showSearchButtonText: true,
-            showFindersButtonText: true,
-            showCommandsButtonText: true
-        };
-
-        if (deviceSpecific) {
-            const dashboardSettings = localStorage.getItem('dashboardSettings');
-            if (dashboardSettings) {
-                try {
-                    const parsed = JSON.parse(dashboardSettings);
-                    settings.showSearchButtonText = parsed.showSearchButtonText !== false;
-                    settings.showFindersButtonText = parsed.showFindersButtonText !== false;
-                    settings.showCommandsButtonText = parsed.showCommandsButtonText !== false;
-                } catch (e) {
-                    console.error('Error parsing dashboard settings:', e);
-                }
-            }
-        } else {
-            // Use server-side settings from html element data attributes
-            const searchAttr = document.documentElement.getAttribute('data-show-search-button-text');
-            const findersAttr = document.documentElement.getAttribute('data-show-finders-button-text');
-            const commandsAttr = document.documentElement.getAttribute('data-show-commands-button-text');
-            
-            if (searchAttr !== null) settings.showSearchButtonText = searchAttr === 'true';
-            if (findersAttr !== null) settings.showFindersButtonText = findersAttr === 'true';
-            if (commandsAttr !== null) settings.showCommandsButtonText = commandsAttr === 'true';
-        }
-
-        return settings;
-    }
-    
-    /**
      * Applies critical theme styles to prevent FOUC
      * @param {string} theme - The theme to apply ('dark' or 'light')
      * @param {boolean} showBackgroundDots - Whether to show background dots
      * @param {string} fontSize - The font size to apply ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
-     * @param {Object} buttonTextSettings - Button text visibility settings
      */
-    function applyTheme(theme, showBackgroundDots = true, fontSize = 'm', buttonTextSettings = {}) {
+    function applyTheme(theme, showBackgroundDots = true, fontSize = 'm') {
         // Remove existing FOUC prevention style if present
         const existingStyle = document.head.querySelector('style[data-fouc-prevention]');
         if (existingStyle) {
@@ -175,72 +136,22 @@
         
         // Set data-theme on html element
         document.documentElement.setAttribute('data-theme', theme);
-        
-        // Set button text attributes on html element immediately
-        document.documentElement.setAttribute('data-show-search-button-text', buttonTextSettings.showSearchButtonText);
-        document.documentElement.setAttribute('data-show-finders-button-text', buttonTextSettings.showFindersButtonText);
-        document.documentElement.setAttribute('data-show-commands-button-text', buttonTextSettings.showCommandsButtonText);
-        
+
         // Create and inject critical CSS using CSS variables
         const style = document.createElement('style');
         style.setAttribute('data-fouc-prevention', 'true');
         
-        const backgroundImage = showBackgroundDots 
+        const backgroundImage = showBackgroundDots
             ? 'background-image: radial-gradient(var(--background-dots) 1px, transparent 1px) !important; background-size: 15px 15px !important;'
             : 'background-image: none !important;';
-        
-        // Build responsive button flex rules based on actual settings
-        let searchButtonFlex = '';
-        let findersButtonFlex = '';
-        let commandsButtonFlex = '';
-        
-        if (buttonTextSettings.showSearchButtonText) {
-            searchButtonFlex = `
-                body[data-show-search-button-text="true"] #search-button,
-                html[data-show-search-button-text="true"] #search-button {
-                    flex: 1 !important;
-                }`;
-        }
-        
-        if (buttonTextSettings.showFindersButtonText) {
-            findersButtonFlex = `
-                body[data-show-finders-button-text="true"] #finders-button,
-                html[data-show-finders-button-text="true"] #finders-button {
-                    flex: 1 !important;
-                }`;
-        }
-        
-        if (buttonTextSettings.showCommandsButtonText) {
-            commandsButtonFlex = `
-                body[data-show-commands-button-text="true"] #commands-button,
-                html[data-show-commands-button-text="true"] #commands-button {
-                    flex: 1 !important;
-                }`;
-        }
-        
+
         style.textContent = `
-            body { 
+            body {
                 background-color: var(--background-primary) !important;
                 color: var(--text-primary) !important;
                 ${backgroundImage}
             }
-            
-            /* Hide button text based on settings immediately */
-            body[data-show-search-button-text="false"] #search-button .search-button-text,
-            html[data-show-search-button-text="false"] #search-button .search-button-text {
-                display: none !important;
-            }
-            
-            body[data-show-finders-button-text="false"] #finders-button .search-button-text,
-            html[data-show-finders-button-text="false"] #finders-button .search-button-text {
-                display: none !important;
-            }
-            
-            body[data-show-commands-button-text="false"] #commands-button .search-button-text,
-            html[data-show-commands-button-text="false"] #commands-button .search-button-text {
-                display: none !important;
-            }
-            
+
             /* Critical responsive styles to prevent FOUC on mobile */
             @media (max-width: 760px) {
                 .button-container {
@@ -254,10 +165,7 @@
                 .commands-button {
                     flex: none !important;
                 }
-                ${searchButtonFlex}
-                ${findersButtonFlex}
-                ${commandsButtonFlex}
-                
+
                 .search-container {
                     max-width: 320px !important;
                     width: 95% !important;
@@ -346,35 +254,14 @@
             document.body.classList.remove('font-size-xs', 'font-size-s', 'font-size-sm', 'font-size-m', 'font-size-lg', 'font-size-l', 'font-size-xl');
             document.body.classList.add(`font-size-${fontSize}`);
             
-            // Apply button text settings to body
-            if (buttonTextSettings) {
-                document.body.setAttribute('data-show-search-button-text', buttonTextSettings.showSearchButtonText);
-                document.body.setAttribute('data-show-finders-button-text', buttonTextSettings.showFindersButtonText);
-                document.body.setAttribute('data-show-commands-button-text', buttonTextSettings.showCommandsButtonText);
-            }
         }
     }
-    
+
     // Apply theme and fontSize immediately
     const theme = getTheme();
     const showBackgroundDots = getShowBackgroundDots();
     const fontSize = getFontSize();
-    const buttonTextSettings = getButtonTextSettings();
-    applyTheme(theme, showBackgroundDots, fontSize, buttonTextSettings);
-    
-    // Apply button text settings to body to prevent layout shift
-    if (document.body) {
-        document.body.setAttribute('data-show-search-button-text', buttonTextSettings.showSearchButtonText);
-        document.body.setAttribute('data-show-finders-button-text', buttonTextSettings.showFindersButtonText);
-        document.body.setAttribute('data-show-commands-button-text', buttonTextSettings.showCommandsButtonText);
-    } else {
-        // If body doesn't exist yet, wait for DOM and apply
-        document.addEventListener('DOMContentLoaded', function() {
-            document.body.setAttribute('data-show-search-button-text', buttonTextSettings.showSearchButtonText);
-            document.body.setAttribute('data-show-finders-button-text', buttonTextSettings.showFindersButtonText);
-            document.body.setAttribute('data-show-commands-button-text', buttonTextSettings.showCommandsButtonText);
-        });
-    }
+    applyTheme(theme, showBackgroundDots, fontSize);
     
     document.addEventListener('DOMContentLoaded', function() {
         if (!window.DashboardFont || typeof window.DashboardFont.applyMainFont !== 'function') {

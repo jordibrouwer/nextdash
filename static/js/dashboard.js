@@ -841,9 +841,6 @@ class Dashboard {
         document.body.setAttribute('data-show-finders-button', this.settings.showFindersButton);
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
-        document.body.setAttribute('data-show-search-button-text', this.settings.showSearchButtonText);
-        document.body.setAttribute('data-show-finders-button-text', this.settings.showFindersButtonText);
-        document.body.setAttribute('data-show-commands-button-text', this.settings.showCommandsButtonText);
         document.body.setAttribute('data-show-tips', this.settings.showTips !== false);
         document.body.setAttribute('data-show-search-flow-banner', this.settings.showSearchFlowBanner !== false);
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);

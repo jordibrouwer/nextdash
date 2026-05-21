@@ -960,9 +960,7 @@ class ConfigSettings {
             showSearchButtonCheckbox.checked = settings.showSearchButton;
             showSearchButtonCheckbox.addEventListener('change', (e) => {
                 settings.showSearchButton = e.target.checked;
-                this.setDependentControlState(['show-search-button-text-checkbox'], e.target.checked);
             });
-            this.setDependentControlState(['show-search-button-text-checkbox'], showSearchButtonCheckbox.checked);
         }
 
         // Show finders button checkbox
@@ -971,9 +969,7 @@ class ConfigSettings {
             showFindersButtonCheckbox.checked = settings.showFindersButton;
             showFindersButtonCheckbox.addEventListener('change', (e) => {
                 settings.showFindersButton = e.target.checked;
-                this.setDependentControlState(['show-finders-button-text-checkbox'], e.target.checked);
             });
-            this.setDependentControlState(['show-finders-button-text-checkbox'], showFindersButtonCheckbox.checked);
         }
 
         // Show commands button checkbox
@@ -982,9 +978,7 @@ class ConfigSettings {
             showCommandsButtonCheckbox.checked = settings.showCommandsButton;
             showCommandsButtonCheckbox.addEventListener('change', (e) => {
                 settings.showCommandsButton = e.target.checked;
-                this.setDependentControlState(['show-commands-button-text-checkbox'], e.target.checked);
             });
-            this.setDependentControlState(['show-commands-button-text-checkbox'], showCommandsButtonCheckbox.checked);
         }
 
         // Show cheatsheet button checkbox
@@ -1009,33 +1003,6 @@ class ConfigSettings {
             showTipsCheckbox.checked = settings.showTips !== false;
             showTipsCheckbox.addEventListener('change', (e) => {
                 settings.showTips = e.target.checked;
-            });
-        }
-
-        // Show search button text checkbox
-        const showSearchButtonTextCheckbox = document.getElementById('show-search-button-text-checkbox');
-        if (showSearchButtonTextCheckbox) {
-            showSearchButtonTextCheckbox.checked = settings.showSearchButtonText !== false;
-            showSearchButtonTextCheckbox.addEventListener('change', (e) => {
-                settings.showSearchButtonText = e.target.checked;
-            });
-        }
-
-        // Show finders button text checkbox
-        const showFindersButtonTextCheckbox = document.getElementById('show-finders-button-text-checkbox');
-        if (showFindersButtonTextCheckbox) {
-            showFindersButtonTextCheckbox.checked = settings.showFindersButtonText !== false;
-            showFindersButtonTextCheckbox.addEventListener('change', (e) => {
-                settings.showFindersButtonText = e.target.checked;
-            });
-        }
-
-        // Show commands button text checkbox
-        const showCommandsButtonTextCheckbox = document.getElementById('show-commands-button-text-checkbox');
-        if (showCommandsButtonTextCheckbox) {
-            showCommandsButtonTextCheckbox.checked = settings.showCommandsButtonText !== false;
-            showCommandsButtonTextCheckbox.addEventListener('change', (e) => {
-                settings.showCommandsButtonText = e.target.checked;
             });
         }
 
@@ -1326,9 +1293,6 @@ class ConfigSettings {
         const showCheatSheetButtonCheckbox = document.getElementById('show-cheatsheet-button-checkbox');
         const showRecentButtonCheckbox = document.getElementById('show-recent-button-checkbox');
         const showTipsCheckbox = document.getElementById('show-tips-checkbox');
-        const showSearchButtonTextCheckbox = document.getElementById('show-search-button-text-checkbox');
-        const showFindersButtonTextCheckbox = document.getElementById('show-finders-button-text-checkbox');
-        const showCommandsButtonTextCheckbox = document.getElementById('show-commands-button-text-checkbox');
         const includeFindersInSearchCheckbox = document.getElementById('include-finders-in-search-checkbox');
         const showStatusCheckbox = document.getElementById('show-status-checkbox');
         const colorizeStatusCheckbox = document.getElementById('colorize-status-checkbox');
@@ -1389,9 +1353,6 @@ class ConfigSettings {
         if (showCheatSheetButtonCheckbox) settings.showCheatSheetButton = showCheatSheetButtonCheckbox.checked;
         if (showRecentButtonCheckbox) settings.showRecentButton = showRecentButtonCheckbox.checked;
         if (showTipsCheckbox) settings.showTips = showTipsCheckbox.checked;
-        if (showSearchButtonTextCheckbox) settings.showSearchButtonText = showSearchButtonTextCheckbox.checked;
-        if (showFindersButtonTextCheckbox) settings.showFindersButtonText = showFindersButtonTextCheckbox.checked;
-        if (showCommandsButtonTextCheckbox) settings.showCommandsButtonText = showCommandsButtonTextCheckbox.checked;
         if (includeFindersInSearchCheckbox) settings.includeFindersInSearch = includeFindersInSearchCheckbox.checked;
         if (animationsEnabledCheckbox) settings.animationsEnabled = animationsEnabledCheckbox.checked;
         if (showSyncToastsCheckbox) settings.showSyncToasts = showSyncToastsCheckbox.checked;
@@ -1853,9 +1814,6 @@ class ConfigSettings {
             showRecentButton: true,
             showTips: true,
             showSearchFlowBanner: true,
-            showSearchButtonText: true,
-            showFindersButtonText: true,
-            showCommandsButtonText: true,
             showStatus: false,
             colorizeStatus: true,
             showPing: false,

@@ -1489,9 +1489,6 @@ class ConfigManager {
     setupCascadingCheckboxes() {
         // Define parent-child relationships for checkboxes
         const cascadingPairs = [
-            { parent: 'show-search-button-checkbox', children: ['show-search-button-text-checkbox'] },
-            { parent: 'show-finders-button-checkbox', children: ['show-finders-button-text-checkbox'] },
-            { parent: 'show-commands-button-checkbox', children: ['show-commands-button-text-checkbox'] },
             { parent: 'show-status-checkbox', children: ['show-ping-checkbox', 'show-status-loading-checkbox', 'skip-fast-ping-checkbox'] },
             { parent: 'enable-custom-title-checkbox', children: ['custom-title-input', 'show-page-in-title-checkbox'] },
             { parent: 'enable-fuzzy-suggestions-checkbox', children: ['fuzzy-suggestions-start-with-checkbox'] },
