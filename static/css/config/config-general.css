@@ -9,33 +9,19 @@ body {
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: var(--font-size-text);
+    overflow-x: hidden;
+    width: 100%;
 }
 
 /* Config Sections - Same system as dashboard */
 .config-section {
     padding: 0;
-    max-width: 80%;
     width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Optional: Set a reasonable max width for ultra-wide screens */
-@media (min-width: 1920px) {
-    .config-section {
-        max-width: 70%;
-    }
-}
-
-@media (min-width: 2560px) {
-    .config-section {
-        max-width: 60%;
-    }
 }
 
 .config-section.section-header {
     padding-top: 2rem;
-    padding-bottom: 0;
+    padding-bottom: 1.5rem;
 }
 
 .config-section.section-controls {
@@ -64,9 +50,10 @@ body.config-is-dirty .config-controls-wrapper {
 }
 
 .container {
+    max-width: min(88%, 1600px);
     width: 100%;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 1rem;
 }
 
 /* Config breadcrumb */
@@ -135,6 +122,7 @@ body.config-is-dirty .config-controls-wrapper {
 .back-link {
     text-decoration: none;
     font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
     color: var(--text-secondary);
     transition: color 0.15s ease;
@@ -234,15 +222,11 @@ body.config-is-dirty .config-controls-wrapper {
     gap: 3rem;
 }
 
-/* Config sections inside tabs - these should take full width of their parent */
+/* Config sections inside tabs - full width of their parent */
 .tab-content .config-section,
 .config-main .config-section {
     border: none;
     padding: 0;
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    align-items: center;
 }
 
 .config-section h2 {
