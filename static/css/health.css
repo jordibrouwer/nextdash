@@ -1,21 +1,13 @@
+body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
 .health-shell {
-    max-width: 80%;
+    max-width: min(88%, 1600px);
     width: 100%;
     margin: 0 auto;
-    padding: 2rem;
-}
-
-/* Optional: Set a reasonable max width for ultra-wide screens */
-@media (min-width: 1920px) {
-    .health-shell {
-        max-width: 70%;
-    }
-}
-
-@media (min-width: 2560px) {
-    .health-shell {
-        max-width: 60%;
-    }
+    padding: 2rem 1rem;
 }
 
 .health-header {
@@ -61,15 +53,14 @@
 .back-link {
     text-decoration: none;
     font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
-    color: var(--accent-primary);
-    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    transition: color 0.15s ease, border-color 0.15s ease;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
 }
 
 .back-link:hover {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
+    color: var(--text-primary);
 }
 
 .back-link-button {
