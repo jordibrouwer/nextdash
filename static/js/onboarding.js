@@ -243,26 +243,34 @@ class Onboarding {
         }
         const overlay = document.createElement('div');
         overlay.className = 'onboarding-overlay';
-        overlay.innerHTML = `
-            <div class="onboarding-card" role="dialog" aria-modal="true" aria-live="polite">
-                <div class="onboarding-progress"></div>
-                <h3 class="onboarding-title"></h3>
-                <p class="onboarding-body"></p>
-                <div class="onboarding-fields"></div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn onboarding-back">${this.t('onboarding.back', 'Back')}</button>
-                    <button type="button" class="onboarding-btn onboarding-skip">${this.t('onboarding.skip', 'Skip')}</button>
-                    <button type="button" class="onboarding-btn onboarding-secondary" hidden></button>
-                    <button type="button" class="onboarding-btn onboarding-next">${this.t('onboarding.next', 'Next')}</button>
-                </div>
-            </div>
-        `;
         document.body.appendChild(overlay);
         this.overlay = overlay;
 
-        overlay.querySelector('.onboarding-back').addEventListener('click', () => this.prevStep());
-        overlay.querySelector('.onboarding-skip').addEventListener('click', () => this.finish());
-        overlay.querySelector('.onboarding-next').addEventListener('click', () => this.nextStep());
+        // Card is appended directly to body so it sits above the highlighted element
+        // (highlight z-index 2201, card z-index 2202).
+        const card = document.createElement('div');
+        card.className = 'onboarding-card';
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-modal', 'true');
+        card.setAttribute('aria-live', 'polite');
+        card.innerHTML = `
+            <div class="onboarding-progress"></div>
+            <h3 class="onboarding-title"></h3>
+            <p class="onboarding-body"></p>
+            <div class="onboarding-fields"></div>
+            <div class="onboarding-actions">
+                <button type="button" class="onboarding-btn onboarding-back">${this.t('onboarding.back', 'Back')}</button>
+                <button type="button" class="onboarding-btn onboarding-skip">${this.t('onboarding.skip', 'Skip')}</button>
+                <button type="button" class="onboarding-btn onboarding-secondary" hidden></button>
+                <button type="button" class="onboarding-btn onboarding-next">${this.t('onboarding.next', 'Next')}</button>
+            </div>
+        `;
+        document.body.appendChild(card);
+        this.card = card;
+
+        card.querySelector('.onboarding-back').addEventListener('click', () => this.prevStep());
+        card.querySelector('.onboarding-skip').addEventListener('click', () => this.finish());
+        card.querySelector('.onboarding-next').addEventListener('click', () => this.nextStep());
 
         this.keyHandler = (e) => {
             if (e.key === 'Escape') {
@@ -275,17 +283,17 @@ class Onboarding {
     showStep(index) {
         this.currentStep = Math.max(0, Math.min(index, this.steps.length - 1));
         const step = this.steps[this.currentStep];
-        if (!this.overlay || !step) {
+        if (!this.overlay || !this.card || !step) {
             return;
         }
 
-        const title = this.overlay.querySelector('.onboarding-title');
-        const body = this.overlay.querySelector('.onboarding-body');
-        const progress = this.overlay.querySelector('.onboarding-progress');
-        const fields = this.overlay.querySelector('.onboarding-fields');
-        const back = this.overlay.querySelector('.onboarding-back');
-        const next = this.overlay.querySelector('.onboarding-next');
-        const secondary = this.overlay.querySelector('.onboarding-secondary');
+        const title = this.card.querySelector('.onboarding-title');
+        const body = this.card.querySelector('.onboarding-body');
+        const progress = this.card.querySelector('.onboarding-progress');
+        const fields = this.card.querySelector('.onboarding-fields');
+        const back = this.card.querySelector('.onboarding-back');
+        const next = this.card.querySelector('.onboarding-next');
+        const secondary = this.card.querySelector('.onboarding-secondary');
 
         title.textContent = step.title;
         body.textContent = step.body;
@@ -431,7 +439,7 @@ class Onboarding {
     collectCurrentStepInputs() {
         const step = this.steps[this.currentStep];
         if (!step || !Array.isArray(step.fields) || !this.overlay) return;
-        const fieldsContainer = this.overlay.querySelector('.onboarding-fields');
+        const fieldsContainer = this.card.querySelector('.onboarding-fields');
         if (!fieldsContainer) return;
 
         step.fields.forEach((field) => {
@@ -450,28 +458,28 @@ class Onboarding {
     }
 
     positionCard(step) {
-        if (!this.overlay) return;
-        const card = this.overlay.querySelector('.onboarding-card');
-        if (!card) return;
+        if (!this.overlay || !this.card) return;
+        const card = this.card;
 
-        // Mobile keeps default bottom placement for stability.
-        if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches) {
-            this.overlay.classList.remove('onboarding-overlay-floating');
+        const resetToDefault = () => {
             card.style.removeProperty('top');
             card.style.removeProperty('left');
+            card.style.removeProperty('bottom');
+            card.style.removeProperty('transform');
+        };
+
+        // Mobile: use CSS default (bottom-center).
+        if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches) {
+            resetToDefault();
             return;
         }
 
         const target = step && step.selector ? document.querySelector(step.selector) : null;
         const placement = step && step.placement ? step.placement : 'bottom';
         if (!target || (placement !== 'top' && placement !== 'bottom')) {
-            this.overlay.classList.remove('onboarding-overlay-floating');
-            card.style.removeProperty('top');
-            card.style.removeProperty('left');
+            resetToDefault();
             return;
         }
-
-        this.overlay.classList.add('onboarding-overlay-floating');
 
         const viewportPadding = 16;
         const gap = 12;
@@ -490,6 +498,8 @@ class Onboarding {
 
         card.style.left = `${Math.round(left)}px`;
         card.style.top = `${Math.round(top)}px`;
+        card.style.bottom = 'auto';
+        card.style.transform = 'none';
     }
 
     highlight(selector) {
@@ -559,6 +569,10 @@ class Onboarding {
         if (this.highlightedElement) {
             this.highlightedElement.classList.remove('onboarding-highlight');
             this.highlightedElement = null;
+        }
+        if (this.card) {
+            this.card.remove();
+            this.card = null;
         }
         if (this.overlay) {
             this.overlay.remove();

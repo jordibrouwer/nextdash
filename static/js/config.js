@@ -539,6 +539,18 @@ class ConfigManager {
             });
         }
 
+        const resetTourNotificationBtn = document.getElementById('reset-tour-notification-btn');
+        if (resetTourNotificationBtn) {
+            resetTourNotificationBtn.addEventListener('click', () => {
+                try {
+                    localStorage.removeItem('nextdash:feature-tour-spotlight-v1');
+                } catch {
+                    // ignore
+                }
+                this.ui.showNotification('Rondleiding melding gereset — verschijnt opnieuw bij de volgende paginalading.', 'success');
+            });
+        }
+
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 
         this.settings.attachSettingResetButtons(this.settingsData, () => this.markDirty());

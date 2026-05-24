@@ -200,7 +200,24 @@ See `extension/README.md` for full usage and development notes.
 
 ## Changelog
 
-### What's new (summary)
+### v2026.05 — May 2026
+
+**Onboarding & feature tour**
+- **Interactive feature tour** — an 8-step guided tour walks new users through search, commands, finders, columns, smart collections and bookmark management. Launch it from the tour spotlight or from Config → Advanced at any time.
+- **Tour spotlight notification** — appears once, 2 seconds after onboarding completes, inviting new users to start the tour. Dismissible; restart any time from Config → Advanced → Reset notification.
+- **Animated search flow hint** — on first load the `>` `:` `?` `!` hint above the footer buttons wipes in segment by segment with a spring pop on the accent characters, then auto-dismisses. Shown only once per browser.
+
+**Buttons & discoverability**
+- **Finders & Commands buttons on by default** — new installations now show both buttons immediately, without needing to enable them in config.
+- **Tips above buttons restored** — the rotating tip element was missing from the HTML; tips now render correctly when enabled in config.
+
+**Translations (i18n)**
+- **Feature tour fully translated** — all 8 step titles, body text, field labels, options and navigation buttons are translated into EN / NL / DE / FR with English as the fallback.
+- **Hardcoded Dutch strings removed** — undo button label, backup tip, tour spotlight and config tour section are now resolved from translation keys for all supported languages.
+
+---
+
+### v2026.04 — April 2026
 
 **Dashboard buttons**
 - **Labels removed** — the footer buttons now show only their key symbol (`: ? > * !`). Hover a button to see its name and shortcut as a tooltip.

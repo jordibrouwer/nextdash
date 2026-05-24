@@ -325,8 +325,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowConfigButton:            false,
 			ShowHealthDashboard:         false,
 			ShowSearchButton:            true,
-			ShowFindersButton:           false,
-			ShowCommandsButton:          false,
+			ShowFindersButton:           true,
+			ShowCommandsButton:          true,
 			ShowRecentButton:            false,
 			ShowTips:                    true,
 			ShowSearchFlowBanner:        true,
@@ -392,6 +392,16 @@ func (fs *FileStore) initializeDefaultFiles() {
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		os.WriteFile(fs.settingsFile, data, 0644)
+	}
+
+	// Initialize default finders if file doesn't exist
+	findersFile := fmt.Sprintf("%s/finders.json", fs.dataDir)
+	if _, err := os.Stat(findersFile); os.IsNotExist(err) {
+		defaultFinders := []Finder{
+			{Name: "DuckDuckGo", SearchUrl: "https://duckduckgo.com/?q=%s", Shortcut: "du"},
+		}
+		data, _ := json.MarshalIndent(defaultFinders, "", "  ")
+		os.WriteFile(findersFile, data, 0644)
 	}
 
 	// Initialize colors if file doesn't exist
@@ -1011,7 +1021,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
 			ShowSearchButton:          true,
-			ShowFindersButton:         false,
+			ShowFindersButton:         true,
 			ShowCommandsButton:        true,
 			ShowRecentButton:          true,
 			ShowTips:                  false,
@@ -1109,6 +1119,12 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showRecentButton"]; !ok {
 			settings.ShowRecentButton = true
+		}
+		if _, ok := rawSettings["showFindersButton"]; !ok {
+			settings.ShowFindersButton = true
+		}
+		if _, ok := rawSettings["showCommandsButton"]; !ok {
+			settings.ShowCommandsButton = true
 		}
 		if _, ok := rawSettings["showHealthDashboard"]; !ok {
 			settings.ShowHealthDashboard = true

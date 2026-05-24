@@ -51,6 +51,93 @@
     padding-right: 0.25rem;
 }
 
+/* ── What's New release blocks ─────────────────────────────────── */
+.wn-release {
+    margin-bottom: 1.75rem;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--accent-primary);
+}
+.wn-release:last-child { margin-bottom: 0; }
+
+.wn-release-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin-bottom: 0.9rem;
+}
+.wn-release-tag {
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--accent-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 38%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    padding: 0.1rem 0.42rem;
+}
+.wn-release-date {
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+}
+
+.wn-section { margin-bottom: 0.9rem; }
+.wn-section:last-child { margin-bottom: 0; }
+
+.wn-section-title {
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 0.45rem;
+    letter-spacing: 0.01em;
+}
+
+.wn-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.45rem;
+}
+.wn-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    line-height: 1.55;
+}
+.wn-item-text {
+    flex: 1;
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+}
+.wn-item-text strong { color: var(--text-primary); }
+.wn-item-text code {
+    font-family: var(--font-family-main);
+    font-size: 0.88em;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    padding: 0.05rem 0.28rem;
+    color: var(--text-primary);
+}
+.wn-badge {
+    flex-shrink: 0;
+    font-size: 0.68em;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.12rem 0.38rem;
+    border: 1px solid;
+    margin-top: 0.18rem;
+    white-space: nowrap;
+}
+.wn-badge-new {
+    color: var(--accent-success);
+    border-color: color-mix(in srgb, var(--accent-success) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-success) 9%, transparent);
+}
+.wn-badge-fix {
+    color: var(--text-tertiary);
+    border-color: var(--border-primary);
+    background: var(--background-secondary);
+}
+
 .modal.keyboard-cheat-sheet-modal {
     max-width: 480px;
     width: min(96vw, 480px);

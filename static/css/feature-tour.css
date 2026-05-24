@@ -1,10 +1,9 @@
-.onboarding-overlay {
+.feature-tour-overlay {
     position: fixed;
     inset: 0;
-    /* Tinted scrim + blur: reads clearly as a separate layer from the dashboard (not a generic dim). */
     background: linear-gradient(
         168deg,
-        color-mix(in srgb, var(--accent-success) 18%, rgba(0, 0, 0, 0.08)) 0%,
+        color-mix(in srgb, var(--accent-primary) 18%, rgba(0, 0, 0, 0.08)) 0%,
         rgba(0, 0, 0, 0.38) 42%,
         color-mix(in srgb, var(--background-secondary) 35%, rgba(0, 0, 0, 0.5)) 100%
     );
@@ -14,17 +13,17 @@
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .onboarding-overlay {
+    .feature-tour-overlay {
         background: linear-gradient(
             168deg,
-            color-mix(in srgb, var(--accent-success) 14%, rgba(0, 0, 0, 0.42)) 0%,
+            color-mix(in srgb, var(--accent-primary) 14%, rgba(0, 0, 0, 0.42)) 0%,
             rgba(0, 0, 0, 0.52) 100%
         );
     }
 }
 
 /* Card is a direct child of body so it sits above the highlighted element (z-index 2201) */
-.onboarding-card {
+.feature-tour-card {
     position: fixed;
     z-index: 2202;
     bottom: 1rem;
@@ -36,75 +35,75 @@
     color: var(--text-primary);
     padding: 1rem;
     box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--accent-success) 22%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent),
         0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
-.onboarding-progress {
+.feature-tour-progress {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
     margin-bottom: 0.35rem;
 }
 
-.onboarding-title {
+.feature-tour-title {
     font-size: var(--font-size-category);
     margin-bottom: 0.35rem;
 }
 
-.onboarding-body {
+.feature-tour-body {
     color: var(--text-secondary);
     margin-bottom: 0.75rem;
 }
 
-.onboarding-fields {
+.feature-tour-fields {
     margin-bottom: 0.75rem;
     display: grid;
     gap: 0.65rem;
 }
 
-.onboarding-field {
+.feature-tour-field {
     display: grid;
     gap: 0.3rem;
 }
 
-.onboarding-field-label {
+.feature-tour-field-label {
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
 }
 
-.onboarding-input {
+.feature-tour-input {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
     padding: 0.35rem 0.5rem;
 }
 
-.onboarding-fieldset {
+.feature-tour-fieldset {
     border: 1px solid var(--border-primary);
     padding: 0.45rem 0.6rem;
     display: grid;
     gap: 0.35rem;
 }
 
-.onboarding-radio-option {
+.feature-tour-radio-option {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     color: var(--text-primary);
 }
 
-.onboarding-field-hint {
+.feature-tour-field-hint {
     color: var(--text-tertiary);
     font-size: var(--font-size-controls);
 }
 
-.onboarding-actions {
+.feature-tour-actions {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
 }
 
-.onboarding-btn {
+.feature-tour-btn {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -112,7 +111,7 @@
     cursor: pointer;
 }
 
-.onboarding-btn:disabled {
+.feature-tour-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
@@ -121,14 +120,36 @@
     color: var(--text-secondary);
 }
 
-.onboarding-highlight {
+.feature-tour-highlight {
     position: relative;
     z-index: 2201;
-    box-shadow: 0 0 0 2px var(--accent-success), 0 0 0 6px color-mix(in srgb, var(--accent-success) 18%, transparent);
+    box-shadow: 0 0 0 2px var(--accent-primary), 0 0 0 6px color-mix(in srgb, var(--accent-primary) 18%, transparent);
 }
 
 @media (max-width: 768px) {
-    .onboarding-highlight {
-        box-shadow: 0 0 0 1px var(--accent-success), 0 0 0 3px color-mix(in srgb, var(--accent-success) 14%, transparent);
+    .feature-tour-highlight {
+        box-shadow: 0 0 0 1px var(--accent-primary), 0 0 0 3px color-mix(in srgb, var(--accent-primary) 14%, transparent);
     }
+}
+
+/* Elevate the header and button bar above the overlay so highlighted
+   elements are crisp and interactive — their parent stacking contexts
+   (z-index 1000 / no position) would otherwise keep them painted below
+   the overlay's backdrop-filter blur. */
+body[data-tour-active="true"] .header-top {
+    position: relative;
+    z-index: 2201;
+    pointer-events: none;
+}
+
+body[data-tour-active="true"] .button-container {
+    z-index: 2201;
+    pointer-events: none;
+}
+
+/* Force commands, finders and search buttons visible during the tour */
+body[data-tour-active="true"] .commands-button,
+body[data-tour-active="true"] .finders-button,
+body[data-tour-active="true"] #search-button {
+    display: flex !important;
 }

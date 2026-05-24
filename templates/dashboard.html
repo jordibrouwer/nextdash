@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/onboarding.css">
+    <link rel="stylesheet" href="/static/css/feature-tour.css">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
@@ -98,18 +99,18 @@
 
     <!-- Search and Finders Buttons -->
     <div class="button-container">
-        <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite">
-            <span class="search-flow-hint-text">Search flow: <span class="search-flow-chip">&gt;</span> search · <span class="search-flow-chip">:</span> commands · <span class="search-flow-chip">?</span> finders</span>
-            <button type="button" id="search-flow-hint-close" class="search-flow-hint-close" aria-label="Dismiss search flow hint">×</button>
+        <div id="button-hint-text" class="button-hint" aria-live="polite"></div>
+        <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
+            <span class="search-flow-hint-text"><span class="sfh-seg search-flow-chip">&gt;</span><span class="sfh-seg">&thinsp;search&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">:</span><span class="sfh-seg">&thinsp;commands&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">?</span><span class="sfh-seg">&thinsp;finders&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">!</span><span class="sfh-seg">&thinsp;shortcuts</span></span>
         </div>
+        <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
+            <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+        </button>
         <button id="commands-button" class="search-button commands-button" aria-label="Open commands" data-tooltip=": commands">
             <span class="search-button-icon">:</span>
         </button>
         <button id="finders-button" class="search-button finders-button" aria-label="Open finders" data-tooltip="? finders">
             <span class="search-button-icon">?</span>
-        </button>
-        <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
-            <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
         </button>
         <button id="recent-bookmarks-button" class="search-button recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
             <span class="search-button-icon">*</span>
@@ -139,6 +140,7 @@
     <script src="/static/js/hypr-mode.js"></script>
     <script src="/static/js/reorder.js"></script>
     <script src="/static/js/onboarding.js"></script>
+    <script src="/static/js/feature-tour.js"></script>
     <script src="/static/js/feature-spotlight.js"></script>
     <script src="/static/js/weather.js"></script>
     <script src="/static/js/tag-autocomplete.js"></script>

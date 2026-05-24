@@ -113,7 +113,7 @@ class Dashboard {
             showHealthDashboard: true,
             showRecentButton: true,
             showTips: false,
-            showSearchFlowBanner: true,
+
             showSyncToasts: false,
             showCheatSheetButton: true,
             showStatus: false,
@@ -267,8 +267,9 @@ class Dashboard {
         // Initialize follow-up UI immediately after first render (no extra frame delay).
         document.body.classList.remove('loading');
         this.initializeOnboarding();
+        this.initializeFeatureTour();
         this.maybeShowWhatsNew();
-        this.maybeShowPasteSpotlight();
+        this.maybeShowTourSpotlight();
     }
 
     setupConfigStructureReloadListener() {
@@ -427,9 +428,7 @@ class Dashboard {
             if (typeof this.settings.showTips === 'undefined') {
                 this.settings.showTips = false;
             }
-            if (typeof this.settings.showSearchFlowBanner === 'undefined') {
-                this.settings.showSearchFlowBanner = true;
-            }
+
             if (typeof this.settings.showLinkPreviewCards === 'undefined') {
                 this.settings.showLinkPreviewCards = true;
             }
@@ -550,7 +549,7 @@ class Dashboard {
             const undoBtn = document.createElement('button');
             undoBtn.type = 'button';
             undoBtn.className = 'notification-undo-btn';
-            undoBtn.textContent = 'Ongedaan maken';
+            undoBtn.textContent = this.language ? this.language.t('dashboard.undo') : 'Undo';
             undoBtn.addEventListener('click', () => {
                 clearTimeout(this.notificationTimeout);
                 notification.classList.remove('show');
@@ -842,7 +841,7 @@ class Dashboard {
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
         document.body.setAttribute('data-show-tips', this.settings.showTips !== false);
-        document.body.setAttribute('data-show-search-flow-banner', this.settings.showSearchFlowBanner !== false);
+
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
         document.body.setAttribute('data-show-note-icon', this.settings.showNoteIcon === false ? 'false' : 'true');
@@ -1224,19 +1223,122 @@ class Dashboard {
                 dash.renderDashboard();
                 dash.updateSearchComponent();
                 dash.onboardingStartedInSession = false;
+                dash.maybeShowTourSpotlight();
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
                 await dash.saveSettings();
-                dash.onboardingStartedInSession = false;
                 setTimeout(() => dash.maybeShowWhatsNew(), 0);
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
+        if (this.onboardingStartedInSession) {
+            try {
+                localStorage.removeItem('nextdash:feature-tour-spotlight-v1');
+                localStorage.removeItem('nextdash:search-flow-hint-v1');
+            } catch {}
+        }
         onboarding.maybeStart();
         if (!this.onboardingStartedInSession) {
             this.maybeShowWhatsNew();
         }
+    }
+
+    initializeFeatureTour() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('tour')) {
+            params.delete('tour');
+            const clean = params.toString();
+            history.replaceState(null, '', clean ? `?${clean}` : window.location.pathname);
+            this.startFeatureTour();
+        }
+    }
+
+    startFeatureTour(onFinish) {
+        if (typeof window.FeatureTour !== 'function') return;
+        if (this.featureTour) this.featureTour.finish?.();
+        const dash = this;
+        this.featureTour = new window.FeatureTour({
+            settings: dash.settings,
+            language: dash.language,
+            onApplySettings: (nextSettings) => {
+                dash.settings = nextSettings;
+                dash.setupDOM();
+                dash.renderPageNavigation();
+                dash.renderDashboard();
+                dash.updateSearchComponent();
+            },
+            onPersist: async () => {
+                await dash.saveSettings();
+                if (typeof onFinish === 'function') onFinish();
+            }
+        });
+        this.featureTour.start();
+    }
+
+    maybeShowTourSpotlight() {
+        const STORAGE_KEY = 'nextdash:feature-tour-spotlight-v1';
+        const showPasteAfterDelay = () => setTimeout(() => this.maybeShowPasteSpotlight(), 2000);
+
+        let alreadySeen = false;
+        try {
+            alreadySeen = !!localStorage.getItem(STORAGE_KEY);
+        } catch {
+            this.maybeShowPasteSpotlight();
+            return;
+        }
+
+        if (alreadySeen || this.onboardingStartedInSession) {
+            this.maybeShowPasteSpotlight();
+            return;
+        }
+
+        const _t = (key, fallback) => (this.language ? this.language.t('dashboard.' + key) : null) || fallback;
+        const spotlightTitle = _t('tourSpotlightTitle', 'Discover search, finders and commands');
+        const el = document.createElement('div');
+        el.className = 'feature-spotlight';
+        el.setAttribute('role', 'complementary');
+        el.setAttribute('aria-label', _t('tourSpotlightAriaLabel', 'Discover nextDash features'));
+        el.innerHTML = `
+            <div class="feature-spotlight-stripe"></div>
+            <div class="feature-spotlight-body">
+                <div class="feature-spotlight-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                    </svg>
+                </div>
+                <div class="feature-spotlight-content">
+                    <p class="feature-spotlight-title"></p>
+                    <p class="feature-spotlight-text"></p>
+                </div>
+            </div>
+            <div class="feature-spotlight-actions">
+                <button class="feature-spotlight-try" type="button"></button>
+                <button class="feature-spotlight-close" type="button"></button>
+            </div>
+        `;
+        el.querySelector('.feature-spotlight-title').textContent = spotlightTitle;
+        el.querySelector('.feature-spotlight-text').textContent = _t('tourSpotlightBody', 'Follow a short interactive tour to learn the most powerful features of nextDash.');
+        el.querySelector('.feature-spotlight-try').textContent = _t('tourSpotlightStart', 'Start tour');
+        el.querySelector('.feature-spotlight-close').textContent = _t('tourSpotlightLater', 'Later');
+        document.body.appendChild(el);
+
+        const dismiss = () => {
+            try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
+            el.classList.remove('show');
+        };
+
+        el.querySelector('.feature-spotlight-try').addEventListener('click', () => {
+            dismiss();
+            this.startFeatureTour(showPasteAfterDelay);
+        });
+        el.querySelector('.feature-spotlight-close').addEventListener('click', () => {
+            dismiss();
+            showPasteAfterDelay();
+        });
+
+        setTimeout(() => { if (el) el.classList.add('show'); }, 2000);
     }
 
     initializeButtonTipsRotation() {
@@ -1303,7 +1405,7 @@ class Dashboard {
             'Tip: merge duplicate bookmarks in health page bulk actions',
             'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly',
             'Tip: double-click a page tab or category title to rename it inline',
-            'Tip: delete a bookmark and click <code>Ongedaan maken</code> in the toast to undo within 5s',
+            ...[['dashboard.tipUndoDelete', null]].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean),
             'Tip: hover a preview card and click the clipboard icon to copy the URL',
             'Tip: compact/dense mode shows an open-count badge on each bookmark',
             'Tip: use the search bar in config → bookmarks to filter by name, URL, tag, or note',
@@ -1373,55 +1475,29 @@ class Dashboard {
             }
 
             this.backupTipShown = true;
-            currentHintEl.innerHTML = 'Tip: maak een backup via <a class="button-hint-link" href="/config#backups">config -> backups</a>.';
+            currentHintEl.innerHTML = this.language ? this.language.t('dashboard.tipBackup') : 'Tip: create a backup via <a class="button-hint-link" href="/config#backups">config → backups</a>.';
         }, 30000);
     }
 
     initializeSearchFlowHint() {
         const hintEl = document.getElementById('search-flow-hint');
-        const closeButton = document.getElementById('search-flow-hint-close');
-        if (!hintEl || !closeButton) {
-            return;
-        }
+        if (!hintEl) return;
+
+        const storageKey = 'nextdash:search-flow-hint-v1';
+        try {
+            if (localStorage.getItem(storageKey)) return;
+        } catch {}
 
         hintEl.hidden = false;
+        try { localStorage.setItem(storageKey, '1'); } catch {}
 
-        if (this.settings.showSearchFlowBanner === false) {
-            hintEl.hidden = true;
-            return;
-        }
-
-        const storageKey = 'nextDashSearchFlowHintDismissedV2';
-        const legacyStorageKey = 'nextDashSearchFlowHintDismissedV1';
-        try {
-            if (localStorage.getItem(storageKey) === 'true') {
-                hintEl.hidden = true;
-                return;
-            }
-            if (localStorage.getItem(legacyStorageKey) === 'true') {
-                localStorage.removeItem(legacyStorageKey);
-            }
-        } catch {
-            // Ignore localStorage errors.
-        }
-
-        closeButton.onclick = async () => {
+        // CSS handles the staggered wipe animation on .sfh-seg spans.
+        // Last segment delay is 2.22s + 0.3s duration; dismiss after segments + reading time.
+        setTimeout(() => {
             hintEl.classList.add('dismissing');
-            setTimeout(() => {
-                hintEl.hidden = true;
-                hintEl.classList.remove('dismissing');
-            }, 220);
-            this.settings.showSearchFlowBanner = false;
-            document.body.setAttribute('data-show-search-flow-banner', 'false');
-            try {
-                sessionStorage.setItem(storageKey, 'true');
-            } catch {
-                // Ignore localStorage errors.
-            }
-            await this.saveSettings();
-        };
+            setTimeout(() => { hintEl.hidden = true; }, 500);
+        }, 6200);
     }
-
     getInlineTipUsageState() {
         try {
             const raw = localStorage.getItem(this.inlineTipUsageStorageKey);
