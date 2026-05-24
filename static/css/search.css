@@ -715,6 +715,7 @@ body.no-animations .search-button[data-tooltip]::after {
 }
 
 .search-button-icon {
+    display: inline-block; /* required for transform to work on <span> */
     color: color-mix(in srgb, var(--accent-primary) 85%, var(--text-secondary));
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-category);
@@ -722,6 +723,32 @@ body.no-animations .search-button[data-tooltip]::after {
 
 #search-button .search-button-icon {
     color: var(--accent-primary);
+}
+
+/* ── Periodic attention pulse on search / commands / finders icons ───────
+   Total cycle = 10.8 s: 0.8 s of motion (0 – 7.4 %), then 10 s idle.
+   The three icons are staggered 3.6 s apart so they pulse one by one.   */
+@keyframes btnIconPulse {
+    0%    { transform: scale(1);    text-shadow: none; }
+    3.7%  { transform: scale(1.5);  text-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 55%, transparent); }
+    5.6%  { transform: scale(0.88); text-shadow: none; }
+    7.4%  { transform: scale(1);    text-shadow: none; }
+    100%  { transform: scale(1);    text-shadow: none; }
+}
+
+#search-button .search-button-icon,
+.commands-button .search-button-icon,
+.finders-button .search-button-icon {
+    animation: btnIconPulse 10.8s ease-in-out infinite;
+}
+#search-button .search-button-icon    { animation-delay: 1s;   }
+.commands-button .search-button-icon  { animation-delay: 4.6s; }
+.finders-button .search-button-icon   { animation-delay: 8.2s; }
+
+body.no-animations #search-button .search-button-icon,
+body.no-animations .commands-button .search-button-icon,
+body.no-animations .finders-button .search-button-icon {
+    animation: none !important;
 }
 
 /* Hide buttons when search is active */
