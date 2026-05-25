@@ -1254,164 +1254,279 @@
             </div>
 
             <div class="tab-content" data-tab-content="stats">
-            <div class="stats-tab">
-                <p class="stats-intro" data-i18n="config.statsIntro">Overview from all pages (read-only).</p>
+            <div class="stats-page-intro">
+                <p data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Open the tab again after saving to refresh. Use the index on the left to jump to any section.</p>
+            </div>
+            <div class="stats-layout">
 
-                <section class="stats-block">
-                    <h3 class="section-title" data-i18n="config.statsLibrarySection">Library</h3>
-                    <dl class="stats-dl">
-                        <div><dt data-i18n="config.statsPages">Pages</dt><dd id="stats-pages-count">0</dd></div>
-                        <div><dt data-i18n="config.statsCategories">Categories (slots)</dt><dd id="stats-categories-count">0</dd></div>
-                        <div><dt data-i18n="config.statsBookmarksTotal">Bookmarks total</dt><dd id="stats-bookmarks-total">0</dd></div>
-                        <div><dt data-i18n="config.statsWithUrl">With URL</dt><dd id="stats-with-url">0</dd></div>
-                        <div><dt data-i18n="config.statsWithoutUrl">Without URL</dt><dd id="stats-without-url">0</dd></div>
-                        <div><dt data-i18n="config.statsWithShortcut">With shortcut</dt><dd id="stats-with-shortcut">0</dd></div>
-                        <div><dt data-i18n="config.statsWithoutShortcut">Without shortcut</dt><dd id="stats-without-shortcut">0</dd></div>
-                    </dl>
-                </section>
+                <aside class="stats-index">
+                    <h3 class="section-title" data-i18n="config.statsIndexTitle">quick links</h3>
+                    <ul class="stats-index-list">
+                        <li><a href="#stats-overview" data-i18n="config.statsNavOverview">overview</a></li>
+                        <li><a href="#stats-score" data-i18n="config.statsNavScore">cleanup score</a></li>
+                        <li><a href="#stats-activity" data-i18n="config.statsNavActivity">activity</a></li>
+                        <li><a href="#stats-top" data-i18n="config.statsNavTop">top bookmarks</a></li>
+                        <li><a href="#stats-pages" data-i18n="config.statsNavPages">pages</a></li>
+                        <li><a href="#stats-categories" data-i18n="config.statsNavCategories">categories</a></li>
+                        <li><a href="#stats-shortcuts" data-i18n="config.statsNavShortcuts">shortcuts</a></li>
+                        <li><a href="#stats-rot" data-i18n="config.statsNavRot">rot &amp; cleanup</a></li>
+                        <li><a href="#stats-conflicts" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</a></li>
+                        <li><a href="#stats-search" data-i18n="config.statsNavSearch">search &amp; status</a></li>
+                    </ul>
+                </aside>
 
-                <section class="stats-block">
-                    <h3 class="section-title">Shortcuts</h3>
-                    <div class="stats-shortcut-bar-wrap">
-                        <div class="stats-shortcut-bar">
-                            <div id="stats-shortcut-bar-fill" class="stats-shortcut-bar-fill"></div>
+                <div class="stats-content">
+
+                    <section id="stats-overview" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavOverview">overview</h3>
+                            <button type="button" class="info-button" id="stats-overview-info-btn">ℹ</button>
                         </div>
-                        <span id="stats-shortcut-bar-label" class="stats-shortcut-bar-label"></span>
-                    </div>
-                    <h4 class="stats-subtitle">Top shortcuts by opens</h4>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Shortcut</th>
-                                    <th>Bookmark</th>
-                                    <th>Opens</th>
-                                    <th>Page</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-shortcuts-body"></tbody>
-                        </table>
-                    </div>
-                </section>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsPages">Pages</dt><dd id="stats-pages-count">0</dd></div>
+                            <div><dt data-i18n="config.statsCategories">Categories</dt><dd id="stats-categories-count">0</dd></div>
+                            <div><dt data-i18n="config.statsBookmarksTotal">Bookmarks total</dt><dd id="stats-bookmarks-total">0</dd></div>
+                            <div><dt data-i18n="config.statsWithUrl">With URL</dt><dd id="stats-with-url">0</dd></div>
+                            <div><dt data-i18n="config.statsWithoutUrl">Without URL</dt><dd id="stats-without-url">0</dd></div>
+                            <div><dt data-i18n="config.statsWithShortcut">With shortcut</dt><dd id="stats-with-shortcut">0</dd></div>
+                            <div><dt data-i18n="config.statsWithoutShortcut">Without shortcut</dt><dd id="stats-without-shortcut">0</dd></div>
+                            <div><dt data-i18n="config.statsAvgOpensLabel">Avg opens / bookmark</dt><dd id="stats-avg-opens">0</dd></div>
+                        </dl>
+                    </section>
 
-                <section class="stats-block">
-                    <h3 class="section-title" data-i18n="config.statsOpensSection">Opens</h3>
-                    <p class="stats-muted" data-i18n="config.statsNeverOpenedLabel">Never opened (no opens, no last-opened)</p>
-                    <p class="stats-big" id="stats-never-opened">0</p>
+                    <section id="stats-score" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavScore">cleanup score</h3>
+                            <button type="button" class="info-button" id="stats-score-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-score-wrap">
+                            <div class="stats-score-display">
+                                <span id="stats-score-value" class="stats-score-number">—</span>
+                                <span class="stats-score-denom">/ 100</span>
+                            </div>
+                            <div class="stats-score-bar-outer">
+                                <div class="stats-score-bar"><div id="stats-score-bar-fill" class="stats-score-bar-fill"></div></div>
+                            </div>
+                        </div>
+                        <ul id="stats-score-detail" class="stats-score-detail"></ul>
+                    </section>
 
-                    <div class="stats-filter-bar">
-                        <button type="button" class="stats-filter-btn active" data-window="all">Total</button>
-                        <button type="button" class="stats-filter-btn" data-window="30">Last 30 days</button>
-                        <button type="button" class="stats-filter-btn" data-window="7">Last 7 days</button>
-                    </div>
+                    <section id="stats-activity" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavActivity">activity</h3>
+                            <button type="button" class="info-button" id="stats-activity-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-period-bar" data-section="activity">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn active" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                            <button type="button" class="stats-period-btn" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
+                        </div>
+                        <div class="stats-activity-row">
+                            <span class="stats-muted" data-i18n="config.statsActivityOpensInPeriod">Opens in period:</span> <strong id="stats-activity-total">—</strong>
+                            <span class="stats-activity-sep">·</span>
+                            <span class="stats-muted" data-i18n="config.statsActivityActive">Active bookmarks:</span> <strong id="stats-activity-active">—</strong>
+                        </div>
+                        <div id="stats-sparkline" class="stats-sparkline-wrap"></div>
+                        <p class="stats-sparkline-hint" data-i18n="config.statsSparklineHint">Bookmarks last opened per bucket within the selected period.</p>
+                    </section>
 
-                    <h4 class="stats-subtitle" data-i18n="config.statsTopOpens">Top 20 by open count</h4>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
+                    <section id="stats-top" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavTop">top bookmarks</h3>
+                            <button type="button" class="info-button" id="stats-top-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-period-bar" data-section="top">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                            <button type="button" class="stats-period-btn active" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubMostOpened">most opened</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th>#</th>
                                     <th data-i18n="config.statsColName">Name</th>
                                     <th data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColLastOpened">Last opened</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-top-opens-body"></tbody>
-                        </table>
-                    </div>
-
-                    <h4 class="stats-subtitle" data-i18n="config.statsRecentOpens">20 most recently opened</h4>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
+                                </tr></thead>
+                                <tbody id="stats-top-opens-body"></tbody>
+                            </table>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubRecentlyOpened">most recently opened</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
                                     <th data-i18n="config.statsColName">Name</th>
                                     <th data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColLastOpened">Last opened</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-recent-opens-body"></tbody>
-                        </table>
-                    </div>
+                                </tr></thead>
+                                <tbody id="stats-recent-opens-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
 
-                    <h4 class="stats-subtitle" data-i18n="config.statsChartMostClicked">Top 20 most clicked</h4>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="config.statsColName">Name</th>
+                    <section id="stats-pages" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavPages">pages</h3>
+                            <button type="button" class="info-button" id="stats-pages-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-period-bar" data-section="pages">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                            <button type="button" class="stats-period-btn active" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
+                        </div>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColPage">Page</th>
+                                    <th data-i18n="config.statsColBookmarks">Bookmarks</th>
+                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-i18n="config.statsColNeverOpened">Never opened</th>
+                                </tr></thead>
+                                <tbody id="stats-pages-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="stats-categories" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavCategories">categories</h3>
+                            <button type="button" class="info-button" id="stats-categories-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-period-bar" data-section="categories">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                            <button type="button" class="stats-period-btn active" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
+                        </div>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColCategory">Category</th>
+                                    <th data-i18n="config.statsColPage">Page</th>
+                                    <th data-i18n="config.statsColBookmarks">Bookmarks</th>
+                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                </tr></thead>
+                                <tbody id="stats-categories-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="stats-shortcuts" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavShortcuts">shortcuts</h3>
+                            <button type="button" class="info-button" id="stats-shortcuts-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-shortcut-bar-wrap">
+                            <div class="stats-shortcut-bar">
+                                <div id="stats-shortcut-bar-fill" class="stats-shortcut-bar-fill"></div>
+                            </div>
+                            <span id="stats-shortcut-bar-label" class="stats-shortcut-bar-label"></span>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubTopShortcuts">top shortcuts by opens</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColShortcut">Shortcut</th>
+                                    <th data-i18n="config.statsColBookmark">Bookmark</th>
                                     <th data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
-                                    <th data-i18n="config.statsColLastOpened">Last opened</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-most-clicked-body"></tbody>
-                        </table>
-                    </div>
+                                </tr></thead>
+                                <tbody id="stats-shortcuts-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
 
-                    <h4 class="stats-subtitle" data-i18n="config.statsChartLatestAdded">Latest added</h4>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
+                    <section id="stats-rot" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavRot">rot &amp; cleanup</h3>
+                            <button type="button" class="info-button" id="stats-rot-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-period-bar" data-section="rot">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn active" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                        </div>
+                        <div class="stats-rot-grid">
+                            <div class="stats-rot-card">
+                                <div id="stats-never-opened" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsRotNeverOpenedLabel">never opened</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-stale-count" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsRotStaleLabel">stale in period</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-recently-added-count" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsRotAddedLabel">added in period</div>
+                            </div>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubNeverOpened">never opened</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
                                     <th data-i18n="config.statsColName">Name</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColCategory">Category</th>
                                     <th data-i18n="config.statsColAdded">Added</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-latest-added-body"></tbody>
-                        </table>
-                    </div>
-                </section>
+                                </tr></thead>
+                                <tbody id="stats-never-opened-body"></tbody>
+                            </table>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubStale">stale (no opens in selected period)</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColName">Name</th>
+                                    <th data-i18n="config.statsColPage">Page</th>
+                                    <th data-i18n="config.statsColOpensTotal">Opens total</th>
+                                    <th data-i18n="config.statsColLastOpened">Last opened</th>
+                                </tr></thead>
+                                <tbody id="stats-stale-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
 
-                <section class="stats-block">
-                    <h3 class="section-title">Categories</h3>
-                    <p class="stats-muted">Opens per category, across all pages.</p>
-                    <div class="stats-table-wrap">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Category</th>
-                                    <th>Page</th>
-                                    <th>Bookmarks</th>
-                                    <th>Opens</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-categories-body"></tbody>
-                        </table>
-                    </div>
-                </section>
+                    <section id="stats-conflicts" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</h3>
+                            <button type="button" class="info-button" id="stats-conflicts-info-btn">ℹ</button>
+                        </div>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsDuplicateUrls">Duplicate URLs</dt><dd id="stats-duplicate-url-count">—</dd></div>
+                            <div><dt data-i18n="config.statsShortcutConflicts">Shortcut conflicts</dt><dd id="stats-shortcut-conflict-count">—</dd></div>
+                        </dl>
+                        <div id="stats-conflicts-detail" class="stats-conflicts-detail"></div>
+                        <div class="stats-conflicts-actions">
+                            <a href="/health" class="btn btn-secondary btn-small" data-i18n="config.statsOpenInHealth">Open in Health</a>
+                        </div>
+                    </section>
 
-                <section class="stats-block">
-                    <h3 class="section-title" data-i18n="config.statsSearchSection">Search &amp; status</h3>
-                    <dl class="stats-dl">
-                        <div><dt data-i18n="config.statsSearchIndexed">Search index built</dt><dd id="stats-search-indexed">—</dd></div>
-                        <div><dt data-i18n="config.statsInterleave">Interleave search mode</dt><dd id="stats-interleave">—</dd></div>
-                        <div><dt data-i18n="config.statsFuzzy">Fuzzy suggestions</dt><dd id="stats-fuzzy">—</dd></div>
-                        <div><dt data-i18n="config.statsShowStatus">Status monitor enabled</dt><dd id="stats-show-status">—</dd></div>
-                        <div><dt data-i18n="config.statsStatusCheckBookmarks">Bookmarks with status check</dt><dd id="stats-status-check-count">0</dd></div>
-                    </dl>
-                </section>
+                    <section id="stats-search" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavSearch">search &amp; status</h3>
+                            <button type="button" class="info-button" id="stats-search-info-btn">ℹ</button>
+                        </div>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsSearchIndexed">Search index built</dt><dd id="stats-search-indexed">—</dd></div>
+                            <div><dt data-i18n="config.statsInterleave">Interleave search mode</dt><dd id="stats-interleave">—</dd></div>
+                            <div><dt data-i18n="config.statsFuzzy">Fuzzy suggestions</dt><dd id="stats-fuzzy">—</dd></div>
+                            <div><dt data-i18n="config.statsShowStatus">Status monitor enabled</dt><dd id="stats-show-status">—</dd></div>
+                            <div><dt data-i18n="config.statsStatusCheckBookmarks">Bookmarks with status check</dt><dd id="stats-status-check-count">0</dd></div>
+                        </dl>
+                    </section>
 
-                <section class="stats-block">
-                    <h3 class="section-title" data-i18n="config.statsInsightsSection">Personal usage insights</h3>
-                    <p class="stats-muted" data-i18n="config.statsInsightsIntro">Quick interpretation of your usage patterns.</p>
-                    <ul id="stats-insights-list" class="stats-insights-list"></ul>
-                </section>
-
-                <section class="stats-block">
-                    <h3 class="section-title">Conflicts &amp; duplicates</h3>
-                    <dl class="stats-dl">
-                        <div><dt>Duplicate URLs</dt><dd id="stats-duplicate-url-count">—</dd></div>
-                        <div><dt>Shortcut conflicts</dt><dd id="stats-shortcut-conflict-count">—</dd></div>
-                    </dl>
-                    <div id="stats-conflicts-detail" class="stats-conflicts-detail"></div>
-                    <div class="stats-conflicts-actions">
-                        <a href="/health" class="btn btn-secondary btn-small">Bekijk in Health</a>
-                    </div>
-                </section>
+                </div>
             </div>
             </div>
 

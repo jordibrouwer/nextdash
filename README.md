@@ -223,6 +223,16 @@ See `extension/README.md` for full usage and development notes.
 - **Feature tour fully translated** — all 8 step titles, body text, field labels, options and navigation buttons are translated into EN / NL / DE / FR with English as the fallback.
 - **Hardcoded Dutch strings removed** — undo button label, backup tip, tour spotlight and config tour section are now resolved from translation keys for all supported languages.
 
+**Stats insights dashboard**
+- **Two-column layout with index navigation** — the Stats tab is now a full insights dashboard. A sticky index on the left lets you jump to any of the 10 sections; a scrollspy keeps the active link highlighted as you scroll.
+- **Per-section time period buttons** — activity, top bookmarks, pages, categories, and rot & cleanup each have their own week / month / 3 months / 6 months / all-time selector that re-renders only that section.
+- **Activity sparkline** — an SVG bar chart shows when bookmarks were last opened, bucketed to fit the chosen period.
+- **Cleanup score** — a 0–100 health score with a colour bar. Penalties are explained line-by-line: never-opened, stale 90+ days, duplicate URLs, and shortcut conflicts.
+- **Rot & cleanup section** — summary cards for never-opened, stale, and recently-added counts, plus full tables for deeper review.
+- **Info buttons on every section** — click the ℹ next to any section title for a plain-English explanation of what the data shows and how it is calculated.
+- **Intro text block** — a brief description at the top of the tab explains the read-only nature of the data and how to refresh it.
+- **Fully translated** — all text on the Stats tab (section titles, table headers, labels, period buttons, score messages, info modals) is now resolved from i18n keys in EN / NL / DE / FR.
+
 ---
 
 ### v2026.04 — April 2026

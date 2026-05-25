@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v26';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v27';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -70,6 +70,19 @@
                     items: [
                         { badge: 'new', text: '<strong>Feature tour fully translated</strong> — all 8 step titles, body text, field labels, options and navigation buttons are translated into EN / NL / DE / FR with English as the fallback.' },
                         { badge: 'fix', text: '<strong>Hardcoded Dutch strings removed</strong> — undo button label, backup tip, tour spotlight and config tour section are now resolved from translation keys for all supported languages.' },
+                    ]
+                },
+                {
+                    title: 'Stats insights dashboard',
+                    items: [
+                        { badge: 'new', text: '<strong>Two-column layout with index navigation</strong> — the Stats tab is now a full insights dashboard. A sticky index on the left lets you jump to any of the 10 sections; a scrollspy keeps the active link highlighted as you scroll.' },
+                        { badge: 'new', text: '<strong>Per-section time period buttons</strong> — activity, top bookmarks, pages, categories, and rot & cleanup each have their own week / month / 3 months / 6 months / all-time period selector that re-renders only that section.' },
+                        { badge: 'new', text: '<strong>Activity sparkline</strong> — an SVG bar chart shows when bookmarks were last opened, bucketed to fit the chosen period.' },
+                        { badge: 'new', text: '<strong>Cleanup score</strong> — a 0–100 health score with a colour bar. Penalties are explained line-by-line: never-opened, stale 90+ days, duplicate URLs, and shortcut conflicts.' },
+                        { badge: 'new', text: '<strong>Rot & cleanup section</strong> — summary cards for never-opened, stale, and recently-added counts, plus full tables for deeper review.' },
+                        { badge: 'new', text: '<strong>Info buttons on every section</strong> — click the <em>ℹ</em> next to any section title for a plain-English explanation of what the data shows and how it is calculated.' },
+                        { badge: 'new', text: '<strong>Intro text block</strong> — a brief description at the top of the tab explains the read-only nature of the data and how to refresh it.' },
+                        { badge: 'new', text: '<strong>Fully translated</strong> — all text on the Stats tab (section titles, table headers, labels, period buttons, score messages, info modals) is now resolved from i18n keys in EN / NL / DE / FR.' },
                     ]
                 },
             ]),
