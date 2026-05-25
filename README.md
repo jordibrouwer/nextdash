@@ -202,6 +202,14 @@ See `extension/README.md` for full usage and development notes.
 
 ### v2026.05 — May 2026
 
+**Glass-effect config & health**
+- **Transparent card backgrounds** — all panels, cards, toolbars and list containers on the Config and Health pages now use a 75 % transparent background so the dot pattern shows through, consistent with the dashboard aesthetic.
+- **Save/Discard bar transparent** — the sticky action bar above the tab strip (Save, Undo, Discard) is now fully transparent; the tab strip itself keeps its solid background.
+- **What's new link removed from Help tab** — the "Show what's new" button in Config → Help has been removed; the modal still auto-opens on first visit and is reachable from the dashboard prompt.
+
+**Button animations**
+- **Pulsing glow on Search & Commands icons** — the search (`>`) and commands (`:`) footer buttons have a subtle repeating glow animation to help new users discover them.
+
 **Onboarding & feature tour**
 - **Interactive feature tour** — an 8-step guided tour walks new users through search, commands, finders, columns, smart collections and bookmark management. Launch it from the tour spotlight or from Config → Advanced at any time.
 - **Tour spotlight notification** — appears once, 2 seconds after onboarding completes, inviting new users to start the tour. Dismissible; restart any time from Config → Advanced → Reset notification.

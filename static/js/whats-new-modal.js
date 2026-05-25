@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v25';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v26';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -36,6 +36,20 @@
         return `<div class="wn-content">` + [
 
             release('v2026.05', 'May 2026', [
+                {
+                    title: 'Glass-effect config & health',
+                    items: [
+                        { badge: 'new', text: '<strong>Transparent card backgrounds</strong> — all panels, cards, toolbars and list containers on the Config and Health pages now use a 75 % transparent background so the dot pattern shows through, matching the dashboard look.' },
+                        { badge: 'new', text: '<strong>Save/Discard bar transparent</strong> — the sticky action bar above the tab strip (Save, Undo, Discard buttons) is now fully transparent; the tab strip itself keeps its solid background.' },
+                        { badge: 'fix', text: '<strong>What\'s new link removed from Help tab</strong> — the "Show what\'s new" button in Config → Help has been removed; the modal still auto-opens on first visit and can be reached from the dashboard prompt.' },
+                    ]
+                },
+                {
+                    title: 'Button animations',
+                    items: [
+                        { badge: 'new', text: '<strong>Pulsing glow on Search & Commands icons</strong> — the search (<code>&gt;</code>) and commands (<code>:</code>) footer buttons have a subtle repeating glow animation to help new users discover them faster.' },
+                    ]
+                },
                 {
                     title: 'Onboarding & feature tour',
                     items: [
