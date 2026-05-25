@@ -75,12 +75,14 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark
 - `[` — toggle the preview card on the focused bookmark
-- `Ctrl + C` — copy the URL of the focused bookmark to the clipboard
+- `Ctrl + C` — copy the URL of the focused bookmark to the clipboard (flashes the row green)
+- `Shift + M` — open the *Move to…* quick-move popover for the focused bookmark
 - `;` — inline-edit the highlighted bookmark
 - `+` — open the quick-add omnibox — type `name | url | shortcut` in one line, favicon is fetched automatically
 - `Ctrl + V` / `Cmd + V` — paste a URL to open the quick-add modal pre-filled (when no input is focused)
 - `Ctrl + Shift + A` — open the full new-bookmark modal
 - `! or Ctrl + /` — open keyboard cheat sheet
+- `:goto <url-or-domain>` — navigate directly to a URL or domain (e.g. `:goto github.com`)
 - `Esc` — clear selection or close overlay
 
 Config page shortcuts:
@@ -125,11 +127,13 @@ Dynamic bookmark groups that appear automatically:
 - 32+ built-in theme families, dark and light variants
 - Custom theme editor
 - Auto dark mode
-- Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List
+- Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
+- Launcher view: toggle via FAB button (⊞); icon size configurable (small / normal / large)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Hover preview cards with configurable delay
 - Background image or gradient support
+- Clickable date/time header showing a week-overview popover; optional calendar URL link
 
 ### Monitoring & health
 
@@ -199,6 +203,31 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### v2026.05.1 — May 2026
+
+**Launcher view**
+- **Launcher layout preset** — a new *Launcher* layout shows large favicon tiles (48 px icons) grouped in horizontal category rows. Toggle instantly with the FAB button (⊞) in the bottom-right corner; the previous layout is restored when you toggle back.
+- **Launcher icon size** — choose Small / Normal / Large in Config → Appearance.
+- **Launcher tile animations** — tiles dim while search is active; clicking a tile plays a scale-pulse animation.
+
+**Date header & calendar**
+- **Clickable date/time** — click the date/time header to open a mini week-overview popover with ISO week number, all 7 days, and today highlighted.
+- **Calendar URL setting** — set your calendar URL in Config → Appearance. The link only shows in the popover when a URL is configured; hidden by default.
+
+**Keyboard shortcuts**
+- **Shift+M — quick move** — press Shift+M on a keyboard-selected bookmark to open a *Move to…* popover. Choose any category on the current page or move the bookmark to another page entirely. Arrow keys navigate, Enter confirms, Escape cancels.
+- **Ctrl+C row flash** — copying a bookmark URL now flashes the bookmark row with a green tint so the action is visible in any layout, including the launcher.
+
+**Search & commands**
+- **:goto command** — type `:goto <url-or-domain>` to navigate directly. Full `https://` URLs open as-is; bare domains like `github.com` get the scheme prepended.
+- **Recent searches in empty state** — opening `>` search without typing shows your last 5 searches as clickable chips. Collapsed by default.
+- **Fuzzy search ranking** — results are now scored: exact name match → name-prefix → word-boundary prefix → substring. Searching `yt` now ranks `YT` and `YouTube` above bookmarks where `yt` appears mid-word.
+
+**Dashboard polish**
+- **Category collapse animation** — replaced the `max-height` hack with `grid-template-rows: 1fr ↔ 0fr`. Collapse and expand are now smooth and proportional regardless of how many bookmarks a category contains.
+
+---
 
 ### v2026.05 — May 2026
 

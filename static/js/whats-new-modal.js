@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v27';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v28';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -34,6 +34,45 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + [
+
+            release('v2026.05.1', 'May 2026', [
+                {
+                    title: 'Launcher view',
+                    items: [
+                        { badge: 'new', text: '<strong>Launcher layout preset</strong> — a new <em>Launcher</em> layout shows large favicon tiles (48 px icons) grouped in horizontal category rows, inspired by app launchers. Toggle instantly via the FAB button (⊞) in the bottom-right corner.' },
+                        { badge: 'new', text: '<strong>Launcher icon size</strong> — choose Small / Normal / Large icon size for launcher tiles in Config → Appearance.' },
+                        { badge: 'new', text: '<strong>Launcher tile animations</strong> — tiles dim to 15 % while search is active so matches stand out; clicking a tile plays a brief scale-pulse animation.' },
+                    ]
+                },
+                {
+                    title: 'Date header & calendar',
+                    items: [
+                        { badge: 'new', text: '<strong>Clickable date/time</strong> — click the date/time in the header to open a mini week-overview popover showing ISO week number, all 7 days with today highlighted, and an optional calendar link.' },
+                        { badge: 'new', text: '<strong>Calendar URL setting</strong> — set your calendar URL in Config → Appearance. The link only appears in the popover when a URL is configured (hidden by default).' },
+                    ]
+                },
+                {
+                    title: 'Keyboard shortcuts',
+                    items: [
+                        { badge: 'new', text: '<strong>Shift+M — quick move</strong> — press Shift+M on a keyboard-selected bookmark to open a <em>Move to…</em> popover listing all categories on the current page and all other pages. Arrow keys navigate the list, Enter confirms, Escape cancels.' },
+                        { badge: 'new', text: '<strong>Ctrl+C row flash</strong> — copying a bookmark URL (Ctrl+C) now flashes the bookmark row with a green tint in addition to showing the toast, so the action is visible even in dense or launcher views.' },
+                    ]
+                },
+                {
+                    title: 'Search & commands',
+                    items: [
+                        { badge: 'new', text: '<strong>:goto command</strong> — type <code>:goto &lt;url-or-domain&gt;</code> to navigate directly. Full URLs (<code>https://…</code>) open as-is; bare domains like <code>github.com</code> get <code>https://</code> prepended automatically.' },
+                        { badge: 'new', text: '<strong>Recent searches in empty state</strong> — opening the <code>&gt;</code> search without typing shows your last 5 searches as clickable chips. Collapsed by default; click the group header to expand.' },
+                        { badge: 'fix', text: '<strong>Fuzzy search ranking</strong> — results are now scored and sorted: exact match → name-prefix match → word-boundary prefix → substring. Searching "yt" now puts "YT" and "YouTube" above bookmarks that merely contain "yt" somewhere in the middle.' },
+                    ]
+                },
+                {
+                    title: 'Dashboard polish',
+                    items: [
+                        { badge: 'fix', text: '<strong>Category collapse animation</strong> — replaced the <code>max-height</code> transition (which was instant-open / slow-close on large categories) with a <code>grid-template-rows: 1fr ↔ 0fr</code> technique — smooth and proportional regardless of content height.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05', 'May 2026', [
                 {
