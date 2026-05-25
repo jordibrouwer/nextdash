@@ -34,14 +34,13 @@ body {
 }
 
 .config-controls-wrapper {
-    background: var(--background-primary);
+    background: transparent;
     border-bottom: 2px solid transparent;
     transition: border-color 0.25s ease, background 0.25s ease;
 }
 
 body.config-is-dirty .config-controls-wrapper {
     border-bottom-color: var(--accent-warning);
-    background: color-mix(in srgb, var(--accent-warning) 4%, var(--background-primary));
 }
 
 .config-section.section-content {
@@ -91,7 +90,7 @@ body.config-is-dirty .config-controls-wrapper {
     align-items: center;
     padding: 1rem 0;
     margin-bottom: 0;
-    background: var(--background-primary);
+    background: transparent;
 }
 
 /* Header */

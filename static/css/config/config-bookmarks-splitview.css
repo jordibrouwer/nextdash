@@ -36,7 +36,7 @@
 
 /* Controls balk: page + filter + add knop */
 .bookmarks-list-controls {
-    background: var(--background-primary);
+    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
     border-bottom: 1px solid var(--border-primary);
     flex-shrink: 0;
 }

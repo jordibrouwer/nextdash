@@ -81,7 +81,7 @@ body {
 .health-card {
     border: 1px solid var(--border-secondary);
     padding: 18px;
-    background: var(--background-secondary);
+    background: color-mix(in srgb, var(--background-secondary) 25%, transparent);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
 }
 
@@ -112,7 +112,7 @@ body {
 .health-issues-panel,
 .health-duplicates-panel {
     border: 1px solid var(--border-secondary);
-    background: var(--background-secondary);
+    background: color-mix(in srgb, var(--background-secondary) 25%, transparent);
     padding: 18px;
     margin-bottom: 18px;
 }
