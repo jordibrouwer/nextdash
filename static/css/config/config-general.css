@@ -90,7 +90,7 @@ body.config-is-dirty .config-controls-wrapper {
     align-items: center;
     padding: 1rem 0;
     margin-bottom: 0;
-    background: transparent;
+    background: var(--background-primary);
 }
 
 /* Header */
