@@ -79,6 +79,17 @@ class ConfigLanguage {
             }
             element.placeholder = translation;
         });
+
+        // Handle data-i18n-tooltip
+        const tooltipElements = document.querySelectorAll('[data-i18n-tooltip]');
+        tooltipElements.forEach(element => {
+            const key = element.getAttribute('data-i18n-tooltip');
+            const translation = this.t(key);
+            if (translation === key) {
+                return;
+            }
+            element.setAttribute('data-tooltip', translation);
+        });
     }
 
     /**

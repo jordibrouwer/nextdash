@@ -718,6 +718,30 @@ class SearchCommandsComponent {
         }
         const scope = (args[0] || '').toLowerCase();
 
+        // Direct URL/domain navigation: :goto <url-or-domain>
+        const rawTarget = args.join(' ').trim();
+        if (rawTarget && rawTarget !== 'all' && !('all'.startsWith(rawTarget))) {
+            const isUrl = /^https?:\/\//i.test(rawTarget);
+            const isDomain = /^[a-z0-9-]+\.[a-z]{2,}/i.test(rawTarget);
+            if (isUrl || isDomain) {
+                const href = isUrl ? rawTarget : `https://${rawTarget}`;
+                const openInNewTab = dashboard.settings?.openInNewTab !== false;
+                return [{
+                    name: `Navigate to ${rawTarget}`,
+                    shortcut: ':GOTO',
+                    type: 'command',
+                    action: () => {
+                        if (openInNewTab) {
+                            window.open(href, '_blank', 'noopener,noreferrer');
+                        } else {
+                            window.location.href = href;
+                        }
+                        return true;
+                    }
+                }];
+            }
+        }
+
         if (scope === 'all') {
             const withUrl = (dashboard.allBookmarks || []).filter((b) => b && String(b.url || '').trim());
             if (withUrl.length === 0) {

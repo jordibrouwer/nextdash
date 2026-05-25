@@ -881,3 +881,40 @@ mark.search-highlight {
 body.no-animations .search-mode-tab {
     transition: none !important;
 }
+
+/* ─── Recent search chips ────────────────────────────────────── */
+.search-history-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.4rem 1.25rem 0.5rem;
+}
+
+.search-history-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-family: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 18ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.search-history-chip:hover {
+    background: var(--hover-bg, rgba(255,255,255,0.08));
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+body.no-animations .search-history-chip {
+    transition: none !important;
+}

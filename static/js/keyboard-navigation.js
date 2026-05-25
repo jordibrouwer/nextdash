@@ -150,6 +150,14 @@ class KeyboardNavigation {
             return;
         }
 
+        // Shift+M: open quick-move popover
+        if (e.shiftKey && key === 'M' && this.currentIndex >= 0) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openMovePopoverForCurrent();
+            return;
+        }
+
         // Tab / Shift+Tab: linear bookmark navigation (only when a bookmark is selected)
         if (key === 'Tab' && this.currentIndex >= 0) {
             e.preventDefault();
@@ -576,7 +584,15 @@ class KeyboardNavigation {
         const url = (openLink && openLink.href) || row.dataset.bookmarkUrl || '';
         if (!url) return;
 
+        const flashRow = () => {
+            row.classList.remove('bookmark-copy-flash');
+            void row.offsetWidth; // force reflow to restart animation
+            row.classList.add('bookmark-copy-flash');
+            row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+        };
+
         const notify = () => {
+            flashRow();
             if (this.dashboard && typeof this.dashboard.showNotification === 'function') {
                 const _v = (this.dashboard.language && typeof this.dashboard.language.t === 'function')
                     ? this.dashboard.language.t('dashboard.urlCopied') : null;
@@ -652,6 +668,17 @@ class KeyboardNavigation {
     }
 
     // Public methods
+    openMovePopoverForCurrent() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const dash = this.dashboard;
+        if (!dash || typeof dash.showMovePopover !== 'function') return;
+        const row = this.navigableElements[this.currentIndex];
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark || !row) return;
+        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+        dash.showMovePopover(row, bookmark, bookmarkIndex);
+    }
+
     enable() {
         this.isEnabled = true;
     }

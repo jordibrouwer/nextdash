@@ -80,6 +80,166 @@ body {
 .date-time-line {
     font-size: calc(var(--font-size-controls) * 1.3); /* slightly smaller */
     color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 4px;
+    transition: opacity 0.12s ease;
+}
+.date-time-line:hover {
+    opacity: 0.75;
+}
+
+/* ─── Date popover ───────────────────────────────────────────── */
+.date-popover {
+    position: fixed;
+    z-index: 9000;
+    background: var(--bg-secondary, rgba(18, 18, 24, 0.92));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 12px;
+    padding: 0.85rem 1rem 0.7rem;
+    min-width: 210px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    animation: datePopoverIn 0.15s ease forwards;
+}
+
+@keyframes datePopoverIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.date-popover-week-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.45;
+    margin-bottom: 0.55rem;
+}
+
+.date-popover-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+}
+
+.date-popover-col-label {
+    font-size: 0.62rem;
+    opacity: 0.45;
+    padding-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.date-popover-day {
+    font-size: 0.78rem;
+    font-weight: var(--font-weight-semibold, 600);
+    padding: 0.3rem 0;
+    border-radius: 6px;
+    line-height: 1;
+}
+
+.date-popover-day.is-weekend {
+    opacity: 0.45;
+}
+
+.date-popover-day.is-today {
+    background: var(--accent-color, rgba(255,255,255,0.18));
+    color: var(--accent-text, var(--text-primary));
+    opacity: 1;
+}
+
+.date-popover-footer {
+    margin-top: 0.7rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--border-color, rgba(255,255,255,0.07));
+    text-align: center;
+}
+
+.date-popover-cal-link {
+    font-size: 0.68rem;
+    opacity: 0.55;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: opacity 0.1s ease;
+}
+.date-popover-cal-link:hover {
+    opacity: 0.85;
+    text-decoration: underline;
+}
+
+/* ─── Move popover ───────────────────────────────────────────── */
+.move-popover {
+    position: fixed;
+    z-index: 9000;
+    background: var(--bg-secondary, rgba(18, 18, 24, 0.95));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 10px;
+    padding: 0.4rem 0 0.4rem;
+    min-width: 200px;
+    max-width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    animation: datePopoverIn 0.13s ease forwards;
+}
+
+.move-popover-header {
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.45;
+    padding: 0.35rem 0.85rem 0.55rem;
+}
+
+.move-popover-section-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.35;
+    padding: 0.55rem 0.85rem 0.2rem;
+}
+
+.move-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.42rem 0.85rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 0 0.3rem;
+    transition: background 0.08s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.move-popover-item.is-focused {
+    background: var(--hover-bg, rgba(255,255,255,0.09));
+}
+
+.move-popover-item.is-current {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.move-popover-check {
+    width: 0.9rem;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    text-align: center;
+}
+
+.move-popover-divider {
+    height: 1px;
+    background: var(--border-color, rgba(255,255,255,0.07));
+    margin: 0.35rem 0.85rem;
 }
 
 .date-weather-line {
@@ -672,6 +832,227 @@ body[data-layout-preset="widgets"] .dashboard-grid {
     --card-padding: 1rem;
     --dashboard-font-size: 15px;
 }
+body[data-layout-preset="launcher"] .dashboard-grid {
+    --gap: 0.4rem;
+    --card-padding: 0.5rem;
+    --dashboard-font-size: 14px;
+}
+
+/* ─── Launcher layout preset ─────────────────────────────────── */
+.dashboard-grid.layout-launcher,
+.dashboard-grid.layout-launcher.packed-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* With packed-columns: dissolve .dashboard-column wrappers so     */
+/* category-sections participate directly in the launcher flex     */
+.layout-launcher.packed-columns .dashboard-column {
+    display: contents;
+}
+
+.layout-launcher .category {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0;
+}
+
+.layout-launcher .category-title {
+    text-align: left;
+    white-space: nowrap;
+    padding: 0;
+    cursor: default;
+}
+
+.layout-launcher .bookmarks-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.layout-launcher .bookmark-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 88px;
+    padding: 0.65rem 0.5rem 0.5rem;
+    border-radius: 10px;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.1s ease;
+    /* prevent subgrid/grid-row from base styles bleeding in */
+    grid-template-columns: none;
+    min-height: 0;
+    white-space: normal;
+}
+.layout-launcher .bookmark-link:hover {
+    background: var(--hover-bg, rgba(255,255,255,0.07));
+    transform: translateY(-2px);
+}
+
+/* Stretched-link: transparent ::before overlay covers the whole tile so
+   clicking the icon or anywhere on the tile triggers the <a> */
+.layout-launcher .bookmark-open::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    z-index: 1;
+}
+
+.layout-launcher .bookmark-reorder-handle,
+.layout-launcher .bookmark-shortcut,
+.layout-launcher .bookmark-note-badge,
+.layout-launcher .bookmark-pin-badge,
+.layout-launcher .bookmark-open-count { display: none !important; }
+
+.layout-launcher .bookmark-lead {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 48px;
+    width: 48px;
+    flex-shrink: 0;
+}
+.layout-launcher .bookmark-icon-slot {
+    display: flex;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.layout-launcher .bookmark-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.layout-launcher .bookmark-open {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    overflow: visible;
+    min-width: 0;
+    flex: 0 0 auto;
+}
+.layout-launcher .bookmark-text {
+    font-size: 0.7rem;
+    text-align: center;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+}
+
+/* ─── Launcher icon sizes ─────────────────────────────────────── */
+body[data-launcher-icon-size="small"] .layout-launcher .bookmark-link { width: 68px; }
+body[data-launcher-icon-size="small"] .layout-launcher .bookmark-lead { min-height: 32px; width: 32px; }
+body[data-launcher-icon-size="small"] .layout-launcher .bookmark-icon-slot { width: 32px; height: 32px; }
+body[data-launcher-icon-size="small"] .layout-launcher .bookmark-icon { width: 32px; height: 32px; }
+
+body[data-launcher-icon-size="large"] .layout-launcher .bookmark-link { width: 108px; }
+body[data-launcher-icon-size="large"] .layout-launcher .bookmark-lead { min-height: 64px; width: 64px; }
+body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon-slot { width: 64px; height: 64px; }
+body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 64px; height: 64px; }
+
+/* ─── Launcher dim (search filter) ───────────────────────────── */
+.layout-launcher .bookmark-link.launcher-dim {
+    opacity: 0.15;
+    filter: grayscale(1);
+    transition: opacity 0.18s ease, filter 0.18s ease;
+    pointer-events: none;
+}
+.layout-launcher .bookmark-link:not(.launcher-dim) {
+    transition: opacity 0.18s ease, filter 0.18s ease;
+}
+
+/* ─── Launcher FAB ────────────────────────────────────────────── */
+.launcher-toggle-btn[data-tooltip] {
+    position: fixed;
+}
+.launcher-toggle-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    white-space: nowrap;
+    padding: 0.2rem 0.5rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.3rem;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    font-weight: var(--font-weight-normal);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 1001;
+}
+.launcher-toggle-btn[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+@media (pointer: coarse) {
+    .launcher-toggle-btn[data-tooltip]::after {
+        display: none;
+    }
+}
+
+.launcher-toggle-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 500;
+    padding: 0.62rem 0.92rem;
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-normal);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 0.65rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.launcher-toggle-btn .launcher-toggle-icon {
+    color: color-mix(in srgb, var(--accent-primary) 85%, var(--text-secondary));
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-category);
+}
+.launcher-toggle-btn:hover {
+    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+}
+.launcher-toggle-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+.launcher-toggle-btn.is-active {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+.launcher-toggle-btn.is-active .launcher-toggle-icon {
+    color: var(--accent-primary);
+}
 
 /* Density overrides (can be combined with layout presets) */
 body[data-density-mode="comfortable"] .dashboard-grid {
@@ -736,22 +1117,33 @@ body[data-density-mode="dense"] .dashboard-grid {
     content: '// ';
 }
 
-.category .bookmarks-list {
+/* ─── Category collapse — grid-template-rows transition ──────── */
+.category-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 260ms ease;
+}
+
+.category[data-collapsed="true"] .category-body {
+    grid-template-rows: 0fr;
+}
+
+.category-body > .bookmarks-list {
+    min-height: 0;          /* required: lets the grid row shrink below content height */
     overflow: hidden;
-    max-height: 2000px;
-    transition: max-height 220ms ease, opacity 180ms ease;
     opacity: 1;
+    transition: opacity 200ms ease;
 }
 
-.category[data-collapsed="true"] .bookmarks-list {
-    max-height: 0;
+.category[data-collapsed="true"] .category-body > .bookmarks-list {
     opacity: 0;
-    transition: max-height 200ms ease, opacity 150ms ease;
 }
 
-body.no-animations .category .bookmarks-list,
-body.no-animations .category[data-collapsed="true"] .bookmarks-list {
-    transition: none;
+body.no-animations .category-body {
+    transition: none !important;
+}
+body.no-animations .category-body > .bookmarks-list {
+    transition: none !important;
 }
 
 .category-title {
@@ -835,10 +1227,6 @@ body.no-animations .category-chevron {
 
 .bookmarks-list > * {
     grid-column: 1 / -1;
-}
-
-.category[data-collapsed="true"] .bookmarks-list {
-    min-height: 0;
 }
 
 body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collection="true"]):not(:has(.bookmark-link)) {
@@ -1606,6 +1994,43 @@ body.no-animations .bookmarks-list.reorder-container::after {
     opacity: 0;
     pointer-events: none;
     animation: bookmarkFlash 380ms ease-out forwards;
+}
+
+/* Copy-URL row flash */
+@keyframes bookmarkCopyFlash {
+    0%   { opacity: 0.45; }
+    100% { opacity: 0; }
+}
+
+.bookmark-link.bookmark-copy-flash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--color-success, #4caf7d);
+    opacity: 0;
+    pointer-events: none;
+    animation: bookmarkCopyFlash 500ms ease-out forwards;
+}
+
+body.no-animations .bookmark-link.bookmark-copy-flash::after {
+    animation: none;
+}
+
+/* Launcher scale-pulse on open */
+@keyframes bookmarkPulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(0.95); }
+    70%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.layout-launcher .bookmark-link.bookmark-pulse {
+    animation: bookmarkPulse 260ms ease-out forwards;
+}
+
+body.no-animations .layout-launcher .bookmark-link.bookmark-pulse {
+    animation: none;
 }
 
 /* Keyboard navigation highlight */

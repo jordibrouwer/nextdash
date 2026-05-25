@@ -97,11 +97,17 @@ class SearchComponent {
         const mobileInput = document.getElementById('search-input-mobile');
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
-                const value = e.target.value.toUpperCase();
+                const raw = e.target.value;
+                // In command mode preserve original case for URLs; otherwise uppercase
+                const inCommandMode = this.currentQuery.startsWith(':');
+                const value = inCommandMode ? raw : raw.toUpperCase();
                 if (value.length > this.currentQuery.length) {
                     // Character added
                     const newChar = value[value.length - 1];
-                    if (/^[A-Z0-9: \?/#]$/.test(newChar)) {
+                    const allowed = inCommandMode
+                        ? /^[\x20-\x7E]$/.test(newChar)  // any printable ASCII in command mode
+                        : /^[A-Z0-9: \?/#\.\-_]$/.test(newChar);
+                    if (allowed) {
                         this.addToQuery(newChar);
                     }
                 } else if (value.length < this.currentQuery.length) {
@@ -373,9 +379,17 @@ class SearchComponent {
             return;
         }
 
+        // In command mode allow all printable characters (needed for URLs: dots, slashes, underscores, etc.)
+        // Use e.key directly to preserve original case for URL paths.
+        if (this.currentQuery.startsWith(':') && e.key.length === 1) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
         // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
         if (this.searchActive) {
-            if (!/^[A-Z0-9\-]$/.test(key)) {
+            if (!/^[A-Z0-9\-\._]$/.test(key)) {
                 return;
             }
         } else {
@@ -641,7 +655,7 @@ class SearchComponent {
             const hasFilters = Object.values(filters).some((value) => Boolean(value));
             
             const filterAutocompleteMatches = this.getFilterAutocompleteMatches(query);
-            if (searchQuery.length === 0 && !hasFilters && filterAutocompleteMatches.length > 0) {
+            if (searchQuery.length === 0 && !hasFilters && filterAutocompleteMatches.length > 0 && query.length > 0) {
                 // Query is a bare filter token being typed (e.g. "status:", "status:on") —
                 // show its completions with a group header, consistent with the empty state.
                 // Reuse the same toggle state as the 'filters' empty-state group (defaultOpen=true)
@@ -805,6 +819,18 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
         }
         this.renderSearchMatches();
+        this._dispatchLauncherFilter();
+    }
+
+    _dispatchLauncherFilter() {
+        const urls = new Set(
+            this.searchMatches
+                .filter(m => m.type === 'bookmark' && m.bookmark && m.bookmark.url)
+                .map(m => m.bookmark.url)
+        );
+        document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', {
+            detail: { active: this.currentQuery.length > 0, urls }
+        }));
     }
 
     showSearch() {
@@ -847,6 +873,7 @@ class SearchComponent {
     closeSearch() {
         this.searchActive = false;
         this.emptyStateExpandedGroups.clear();
+        document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
         const searchElement = document.getElementById('shortcut-search');
         const mobileInput = document.getElementById('search-input-mobile');
@@ -1036,6 +1063,29 @@ class SearchComponent {
                 });
                 fragment.appendChild(headerEl);
                 this.matchElements.push(headerEl);
+                this.selectableMatches.push(match);
+                return;
+            }
+
+            // Chip strip for history items
+            if (match.type === 'history-chips') {
+                const chipRow = document.createElement('div');
+                chipRow.className = 'search-history-chip-row command-group-child';
+                match.queries.forEach((q) => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'search-history-chip';
+                    chip.textContent = q;
+                    chip.addEventListener('click', () => {
+                        this.currentQuery = q;
+                        this.updateSearch();
+                        this.selectedMatchIndex = 0;
+                        this.updateSelectionHighlight();
+                    });
+                    chipRow.appendChild(chip);
+                });
+                fragment.appendChild(chipRow);
+                this.matchElements.push(chipRow);
                 this.selectableMatches.push(match);
                 return;
             }
@@ -1394,15 +1444,17 @@ class SearchComponent {
 
         for (const group of groups) {
             if (group.items.length === 0) continue;
-            const defaultOpen = (group.id === 'recent' || group.id === 'filters') && group.items.length > 0;
+            const defaultOpen = group.id === 'recent' && group.items.length > 0;
             const toggled = this.emptyStateExpandedGroups.has(group.id);
             const isExpanded = toggled ? !defaultOpen : defaultOpen;
 
+            const displayCount = group.items.reduce((n, item) =>
+                n + (item._chipCount != null ? item._chipCount : 1), 0);
             result.push({
                 type: 'command-group-header',
                 groupId: `empty_${group.id}`,
                 label: group.label,
-                count: group.items.length,
+                count: displayCount,
                 expanded: isExpanded,
                 _emptyStateGroup: group.id
             });
@@ -1416,12 +1468,13 @@ class SearchComponent {
     }
 
     getSearchHistoryMatches() {
-        return this.searchHistory.map((query) => ({
-            name: query,
-            shortcut: '↺',
-            completion: query,
-            type: 'history'
-        }));
+        const recent = this.searchHistory.slice(0, 5);
+        if (recent.length === 0) return [];
+        return [{
+            type: 'history-chips',
+            queries: recent,
+            _chipCount: recent.length
+        }];
     }
 
     loadSavedSearches() {

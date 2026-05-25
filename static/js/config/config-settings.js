@@ -452,7 +452,8 @@ class ConfigSettings {
                     widgets: 'Widgets / Modules',
                     compact: 'Compact',
                     cards: 'Cards',
-                    default: 'Default'
+                    default: 'Default',
+                    launcher: 'Launcher'
                 };
                 layoutPresetSelect.innerHTML = presets.map((preset) => {
                     const label = LABEL_MAP[preset] || (preset.charAt(0).toUpperCase() + preset.slice(1));
@@ -506,6 +507,25 @@ class ConfigSettings {
                 if (callbacks.onPackedColumnsChange) {
                     await callbacks.onPackedColumnsChange(settings.packedColumns === true);
                 }
+            });
+        }
+
+        const launcherIconSizeSelect = document.getElementById('launcher-icon-size-select');
+        if (launcherIconSizeSelect) {
+            const validSizes = ['small', 'normal', 'large'];
+            launcherIconSizeSelect.value = validSizes.includes(settings.launcherIconSize) ? settings.launcherIconSize : 'normal';
+            launcherIconSizeSelect.addEventListener('change', (e) => {
+                settings.launcherIconSize = e.target.value;
+                if (callbacks.onLauncherIconSizeChange) callbacks.onLauncherIconSizeChange(settings.launcherIconSize);
+            });
+        }
+
+        const calendarUrlInput = document.getElementById('calendar-url-input');
+        if (calendarUrlInput) {
+            calendarUrlInput.value = settings.calendarUrl || '';
+            calendarUrlInput.addEventListener('input', (e) => {
+                settings.calendarUrl = e.target.value.trim();
+                if (callbacks.onCalendarUrlChange) callbacks.onCalendarUrlChange(settings.calendarUrl);
             });
         }
 
@@ -1423,6 +1443,14 @@ class ConfigSettings {
         }
         const packedColumnsCheckbox = document.getElementById('packed-columns-checkbox');
         if (packedColumnsCheckbox) settings.packedColumns = packedColumnsCheckbox.checked;
+        const launcherIconSizeSelectUI = document.getElementById('launcher-icon-size-select');
+        if (launcherIconSizeSelectUI) {
+            settings.launcherIconSize = ['small', 'normal', 'large'].includes(launcherIconSizeSelectUI.value)
+                ? launcherIconSizeSelectUI.value
+                : 'normal';
+        }
+        const calendarUrlInputUI = document.getElementById('calendar-url-input');
+        if (calendarUrlInputUI) settings.calendarUrl = calendarUrlInputUI.value.trim();
         const showIconsCheckbox = document.getElementById('show-icons-checkbox');
         const showLinkPreviewCardsCheckbox = document.getElementById('show-link-preview-cards-checkbox');
         const linkPreviewHoverDelaySelect = document.getElementById('link-preview-hover-delay-select');

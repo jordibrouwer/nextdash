@@ -10,54 +10,103 @@ class FuzzySearchComponent {
     }
 
     /**
-     * Fuzzy match: checks if query is contained in text (case-insensitive)
-     * @param {string} query - The search query
-     * @param {string} text - The text to search in
-     * @returns {boolean} True if text contains query
+     * Scores a bookmark against a query.
+     *
+     * Tiers (higher = better):
+     *   1000  exact name match
+     *    700  name starts with query            ("yt" → "YT", "yt-dlp")
+     *    500  a word inside the name starts with query  ("yt" → "YouTube", "My YT Page")
+     *    300  query appears as a substring anywhere in the name
+     *      0  no match
+     *
+     * Within each tier a ratio bonus (0-99) is added:
+     *   (queryLength / nameLength) * 99  — shorter names rank first for the same query.
+     *
+     * @param {string} query  - lower-cased query
+     * @param {string} name   - lower-cased bookmark name
+     * @returns {number}  score ≥ 1 if matched, 0 if no match
      */
-    fuzzyMatch(query, text) {
-        query = query.toLowerCase();
-        text = text.toLowerCase();
-        return text.includes(query);
+    scoreMatch(query, name) {
+        if (!name || !query) return 0;
+
+        const ratio = Math.min((query.length / name.length) * 99, 99);
+
+        // Tier 1: exact
+        if (name === query) return 1000 + ratio;
+
+        // Tier 2: name prefix
+        if (name.startsWith(query)) return 700 + ratio;
+
+        // Tier 3: word-boundary prefix — any word inside the name starts with query
+        const words = name.split(/[\s\-_./()|+,]+/);
+        if (words.some(w => w.length > 0 && w.startsWith(query))) return 500 + ratio;
+
+        // Tier 4: substring anywhere in the name
+        if (name.includes(query)) return 300 + ratio;
+
+        return 0;
     }
 
     /**
-     * Handle fuzzy search query
+     * Fuzzy match: checks if query is contained in text (case-insensitive).
+     * Kept for backwards compatibility with callers outside this file.
+     */
+    fuzzyMatch(query, text) {
+        return text.toLowerCase().includes(query.toLowerCase());
+    }
+
+    /**
+     * Handle fuzzy search query — returns results sorted by relevance score.
      * @param {string} query - The search query (without the '/' prefix)
-     * @returns {Array} Array of match objects with name and action
+     * @returns {Array} Array of match objects sorted best-first
      */
     handleFuzzy(query) {
-        if (!query.trim()) {
-            // No matches if no query - wait for user input
-            return [];
+        if (!query.trim()) return [];
+
+        const q = query.toLowerCase();
+
+        const scored = [];
+        for (const bookmark of this.bookmarks) {
+            const score = this.scoreMatch(q, (bookmark.name || '').toLowerCase());
+            if (score > 0) scored.push({ bookmark, score });
         }
 
-        const matches = this.bookmarks.filter(bookmark => this.fuzzyMatch(query, bookmark.name));
-        return matches.map(bookmark => ({
+        scored.sort((a, b) => b.score - a.score);
+
+        return scored.map(({ bookmark }) => ({
             name: bookmark.name,
             shortcut: '',
             action: () => this.openBookmarkCallback(bookmark),
             type: 'fuzzy',
-            bookmark: bookmark,
-            query: query
+            bookmark,
+            query
         }));
     }
 
     /**
-     * Highlights the matching substring in fuzzy search results
-     * @param {string} name - The bookmark name
-     * @param {string} query - The fuzzy search query (without '/')
-     * @returns {string} HTML string with highlighted matching substring
+     * Highlights the best matching substring in fuzzy search results.
+     * Prefers highlighting the earliest word-boundary match over a random substring.
+     * @param {string} name  - The bookmark name (original casing)
+     * @param {string} query - The fuzzy search query
+     * @returns {string} HTML string with highlighted match
      */
     highlightFuzzyMatch(name, query) {
         if (!query) return name;
         const lowerName = name.toLowerCase();
         const lowerQuery = query.toLowerCase();
-        const index = lowerName.indexOf(lowerQuery);
-        if (index === -1) return name;
-        const before = name.substring(0, index);
-        const highlighted = name.substring(index, index + query.length);
-        const after = name.substring(index + query.length);
+
+        // Prefer highlighting from a word boundary
+        const wordBoundaryIdx = lowerName.search(
+            new RegExp(`(?:^|[\\s\\-_./()|+,])${lowerQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+        );
+        const matchIdx = wordBoundaryIdx >= 0
+            ? lowerName.indexOf(lowerQuery, wordBoundaryIdx)
+            : lowerName.indexOf(lowerQuery);
+
+        if (matchIdx === -1) return name;
+        const before = name.substring(0, matchIdx);
+        const highlighted = name.substring(matchIdx, matchIdx + query.length);
+        const after = name.substring(matchIdx + query.length);
         return `${before}<span class="fuzzy-highlight">${highlighted}</span>${after}`;
     }
 }

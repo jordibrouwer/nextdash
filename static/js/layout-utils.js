@@ -1,6 +1,6 @@
 // Shared layout preset helpers for dashboard and config
 (function initLayoutUtils() {
-    const PRESETS = ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets'];
+    const PRESETS = ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
 
     function getLayoutPresets() {
         return [...PRESETS];

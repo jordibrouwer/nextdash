@@ -137,6 +137,8 @@ type Settings struct {
 	LayoutPreset                string                           `json:"layoutPreset"`                // Dashboard layout preset
 	DensityMode                 string                           `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense
 	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
+	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
+	CalendarUrl                 string                           `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
 	BackgroundOpacity           float64                          `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
 	FontWeight                  string                           `json:"fontWeight"`                  // Font weight: normal, 600, bold
 	FontPreset                  string                           `json:"fontPreset"`                  // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -388,6 +390,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			FaviconRefreshPolicy:        "on-save",
 			OnboardingCompleted:         false,
 			PackedColumns:               true,
+			LauncherIconSize:            "normal",
 			PasteUrlQuickAdd:            true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
@@ -1185,6 +1188,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
+		}
+		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
+			settings.LauncherIconSize = "normal"
 		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"

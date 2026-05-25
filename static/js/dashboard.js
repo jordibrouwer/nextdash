@@ -819,6 +819,10 @@ class Dashboard {
             grid.style.gridTemplateColumns = `repeat(${colCount}, minmax(0, 1fr))`;
         }
 
+        if (typeof this._syncLauncherBtn === 'function') {
+            this._syncLauncherBtn();
+        }
+
         return { grid, colCount, packed };
     }
 
@@ -1138,6 +1142,40 @@ class Dashboard {
                 this.toggleRecentBookmarksModal();
             });
         }
+
+        // Launcher view FAB
+        const launcherBtn = document.getElementById('launcher-toggle-btn');
+        if (launcherBtn) {
+            this._syncLauncherBtn = () => {
+                launcherBtn.classList.toggle('is-active', this.settings.layoutPreset === 'launcher');
+            };
+            this._syncLauncherBtn();
+            launcherBtn.addEventListener('click', () => {
+                if (this.settings.layoutPreset === 'launcher') {
+                    const prev = localStorage.getItem('nextdash:prevLayout') || 'default';
+                    window.LayoutUtils.applyLayoutPreset(this.settings, prev, { syncDashboard: true, saveDashboard: true });
+                } else {
+                    localStorage.setItem('nextdash:prevLayout', this.settings.layoutPreset || 'default');
+                    window.LayoutUtils.applyLayoutPreset(this.settings, 'launcher', { syncDashboard: true, saveDashboard: true });
+                }
+                this._syncLauncherBtn();
+            });
+        }
+
+        // Launcher tile dimming: dim non-matching tiles when search is active
+        document.addEventListener('nextdash:launcher-filter', (e) => {
+            const grid = document.getElementById('dashboard-layout');
+            if (!grid || !grid.classList.contains('layout-launcher')) return;
+            const { active, urls } = e.detail;
+            grid.querySelectorAll('.bookmark-link').forEach(tile => {
+                const href = tile.querySelector('a.bookmark-open')?.href || '';
+                if (!active || urls.size === 0) {
+                    tile.classList.remove('launcher-dim');
+                } else {
+                    tile.classList.toggle('launcher-dim', !urls.has(href));
+                }
+            });
+        });
 
         document.addEventListener('keydown', (e) => {
             const isTypingContext = Boolean(
@@ -1960,6 +1998,9 @@ class Dashboard {
         const weight = this.settings.fontWeight || 'normal';
         document.body.style.setProperty('--dashboard-font-weight', weight);
         document.body.style.fontWeight = weight;
+
+        const iconSize = this.settings.launcherIconSize || 'normal';
+        document.body.setAttribute('data-launcher-icon-size', iconSize);
 
         this.applyBackground();
     }
@@ -2839,7 +2880,10 @@ class Dashboard {
             bookmarksList.appendChild(emptyEl);
         }
 
-        categoryDiv.appendChild(bookmarksList);
+        const categoryBody = document.createElement('div');
+        categoryBody.className = 'category-body';
+        categoryBody.appendChild(bookmarksList);
+        categoryDiv.appendChild(categoryBody);
         return categoryDiv;
     }
 
@@ -3392,6 +3436,12 @@ class Dashboard {
 
         openLink.addEventListener('click', (e) => {
             this.recordBookmarkOpened(bookmark);
+            if (document.getElementById('dashboard-layout')?.classList.contains('layout-launcher')) {
+                row.classList.remove('bookmark-pulse');
+                void row.offsetWidth; // force reflow so re-clicking restarts the animation
+                row.classList.add('bookmark-pulse');
+                row.addEventListener('animationend', () => row.classList.remove('bookmark-pulse'), { once: true });
+            }
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(bookmark.url);
@@ -5178,6 +5228,11 @@ class Dashboard {
             const dateTimeLine = document.createElement('div');
             dateTimeLine.className = 'date-time-line';
             dateTimeLine.textContent = dateTimeText;
+            dateTimeLine.setAttribute('role', 'button');
+            dateTimeLine.setAttribute('tabindex', '0');
+            dateTimeLine.setAttribute('aria-haspopup', 'dialog');
+            dateTimeLine.addEventListener('click', () => this.showDatePopover());
+            dateTimeLine.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.showDatePopover(); } });
             dateElement.appendChild(dateTimeLine);
         }
         if (weatherPart) {
@@ -5187,6 +5242,266 @@ class Dashboard {
             weatherLine.innerHTML = `<span class="weather-icon" aria-hidden="true">${weatherIcon}</span><span class="weather-text">${weatherPart}</span>`;
             dateElement.appendChild(weatherLine);
         }
+    }
+
+    showMovePopover(anchorEl, bookmark, bookmarkIndex) {
+        const existing = document.getElementById('move-popover');
+        if (existing) { existing.remove(); return; }
+
+        const t = (key, fallback) => {
+            const val = this.language?.t ? this.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+
+        const realCategories = (this.categories || []).filter(c => !c.isSmartCollection);
+        const otherPages = (this.pages || []).filter(p => String(p.id) !== String(this.currentPageId));
+        const currentCategoryId = String(bookmark.category ?? '').trim();
+
+        const pop = document.createElement('div');
+        pop.id = 'move-popover';
+        pop.className = 'move-popover';
+        pop.setAttribute('role', 'listbox');
+        pop.setAttribute('aria-label', t('dashboard.movePopoverTitle', 'Move to…'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = t('dashboard.movePopoverTitle', 'Move to…');
+        pop.appendChild(header);
+
+        const items = [];
+
+        if (realCategories.length > 0) {
+            const catLabel = document.createElement('div');
+            catLabel.className = 'move-popover-section-label';
+            catLabel.textContent = t('dashboard.movePopoverCategorySection', 'Category');
+            pop.appendChild(catLabel);
+
+            realCategories.forEach(cat => {
+                const isCurrent = String(cat.id) === currentCategoryId;
+                const item = document.createElement('div');
+                item.className = 'move-popover-item' + (isCurrent ? ' is-current' : '');
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-type', 'category');
+                item.setAttribute('data-id', String(cat.id));
+                item.setAttribute('aria-selected', String(isCurrent));
+
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                check.textContent = isCurrent ? '✓' : '';
+                item.appendChild(check);
+
+                const label = document.createElement('span');
+                label.textContent = cat.name;
+                item.appendChild(label);
+
+                pop.appendChild(item);
+                items.push(item);
+            });
+        }
+
+        if (otherPages.length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'move-popover-divider';
+            pop.appendChild(divider);
+
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'move-popover-section-label';
+            pageLabel.textContent = t('dashboard.movePopoverPageSection', 'Page');
+            pop.appendChild(pageLabel);
+
+            otherPages.forEach(page => {
+                const item = document.createElement('div');
+                item.className = 'move-popover-item';
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-type', 'page');
+                item.setAttribute('data-id', String(page.id));
+                item.setAttribute('aria-selected', 'false');
+
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                check.textContent = '';
+                item.appendChild(check);
+
+                const label = document.createElement('span');
+                label.textContent = page.name;
+                item.appendChild(label);
+
+                pop.appendChild(item);
+                items.push(item);
+            });
+        }
+
+        if (items.length === 0) return;
+
+        // Position: try right of row, fall back to left
+        const rect = anchorEl.getBoundingClientRect();
+        const vpW = window.innerWidth;
+        const vpH = window.innerHeight;
+        const popW = 220;
+        let left = rect.right + 8;
+        if (left + popW > vpW - 8) left = rect.left - popW - 8;
+        if (left < 8) left = 8;
+        pop.style.cssText = `left:${left}px;top:${rect.top}px;`;
+        document.body.appendChild(pop);
+        const popH = pop.offsetHeight;
+        const top = Math.min(rect.top, vpH - popH - 8);
+        pop.style.top = `${Math.max(8, top)}px`;
+
+        let focusedIdx = items.findIndex(i => i.classList.contains('is-current'));
+        if (focusedIdx < 0) focusedIdx = 0;
+
+        const setFocus = (idx) => {
+            items.forEach((el, i) => el.classList.toggle('is-focused', i === idx));
+            focusedIdx = idx;
+            items[idx]?.scrollIntoView({ block: 'nearest' });
+        };
+        setFocus(focusedIdx);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('keydown', onKey, true);
+            document.removeEventListener('click', onOutside);
+        };
+
+        const confirm = (item) => {
+            const type = item.getAttribute('data-type');
+            const id = item.getAttribute('data-id');
+            close();
+            if (type === 'category') {
+                this._quickMoveToCategory(bookmark, id);
+            } else if (type === 'page') {
+                const bookmarkRef = { index: bookmarkIndex, scope: 'current' };
+                this._moveBookmarkToPage(bookmarkRef, { ...bookmark }, Number(id), anchorEl);
+            }
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
+            if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) confirm(items[focusedIdx]); return; }
+        };
+
+        items.forEach((item, idx) => {
+            item.addEventListener('mouseenter', () => setFocus(idx));
+            item.addEventListener('click', () => confirm(item));
+        });
+
+        document.addEventListener('keydown', onKey, true);
+        setTimeout(() => {
+            const onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+            document.addEventListener('click', onOutside);
+        }, 0);
+    }
+
+    _quickMoveToCategory(bookmark, categoryId) {
+        const cat = (this.categories || []).find(c => String(c.id) === String(categoryId));
+        const catName = cat?.name || categoryId;
+        this.ensureBookmarkMutationSnapshot();
+        bookmark.category = categoryId;
+        this.scheduleBookmarkOrderSave();
+        this.renderDashboard();
+        const t = (key, fallback) => {
+            const val = this.language?.t ? this.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+        this.showNotification(
+            t('dashboard.movedToCategory', 'Moved to "{name}"').replace('{name}', catName),
+            'success', { duration: 2500 }
+        );
+    }
+
+    showDatePopover() {
+        const existing = document.getElementById('date-popover');
+        if (existing) { existing.remove(); return; }
+
+        const dateEl = document.getElementById('date-element');
+        if (!dateEl) return;
+        const rect = dateEl.getBoundingClientRect();
+        const now = new Date();
+
+        const isoWeek = (d) => {
+            const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+            const jan1 = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+            return Math.ceil((((tmp - jan1) / 86400000) + 1) / 7);
+        };
+
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+        weekStart.setHours(0, 0, 0, 0);
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(weekStart);
+            d.setDate(weekStart.getDate() + i);
+            return d;
+        });
+
+        const locale = this.settings?.language || navigator.language || 'en';
+        const dayFmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+        const dayLabels = days.map(d => dayFmt.format(d).slice(0, 2));
+
+        const t = (key, fallback) => {
+            const val = this.language?.t ? this.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+
+        const pop = document.createElement('div');
+        pop.id = 'date-popover';
+        pop.className = 'date-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', t('dashboard.weekOverviewLabel', 'Week overview'));
+        pop.style.cssText = `position:fixed;top:${rect.bottom + 8}px;left:${rect.left}px;`;
+
+        const weekLabel = document.createElement('div');
+        weekLabel.className = 'date-popover-week-label';
+        weekLabel.textContent = `${t('dashboard.weekLabel', 'Week')} ${isoWeek(now)}  ·  ${now.getFullYear()}`;
+        pop.appendChild(weekLabel);
+
+        const grid = document.createElement('div');
+        grid.className = 'date-popover-grid';
+        dayLabels.forEach(lbl => {
+            const el = document.createElement('span');
+            el.className = 'date-popover-col-label';
+            el.textContent = lbl;
+            grid.appendChild(el);
+        });
+        days.forEach(d => {
+            const el = document.createElement('span');
+            el.className = 'date-popover-day';
+            if (d.toDateString() === now.toDateString()) el.classList.add('is-today');
+            if (d.getDay() === 0 || d.getDay() === 6) el.classList.add('is-weekend');
+            el.textContent = d.getDate();
+            grid.appendChild(el);
+        });
+        pop.appendChild(grid);
+
+        const calendarUrl = this.settings?.calendarUrl?.trim();
+        if (calendarUrl) {
+            const footer = document.createElement('div');
+            footer.className = 'date-popover-footer';
+            const calLink = document.createElement('a');
+            calLink.className = 'date-popover-cal-link';
+            calLink.href = calendarUrl;
+            calLink.target = '_blank';
+            calLink.rel = 'noopener noreferrer';
+            calLink.textContent = t('dashboard.openCalendar', 'Open calendar →');
+            footer.appendChild(calLink);
+            pop.appendChild(footer);
+        }
+
+        document.body.appendChild(pop);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', outside);
+            document.removeEventListener('keydown', onKey);
+        };
+        const outside = (e) => { if (!pop.contains(e.target) && !dateEl.contains(e.target)) close(); };
+        const onKey = (e) => { if (e.key === 'Escape') close(); };
+        setTimeout(() => {
+            document.addEventListener('click', outside);
+            document.addEventListener('keydown', onKey);
+        }, 0);
     }
 
     formatWeatherText(weatherData) {

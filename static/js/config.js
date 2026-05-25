@@ -471,6 +471,25 @@ class ConfigManager {
             onStatusVisibilityChange: () => {
                 this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
             },
+            onLauncherIconSizeChange: async () => {
+                this.settings.updateFromUI(this.settingsData);
+                if (this.deviceSpecific) {
+                    const settingsToSave = { ...this.settingsData };
+                    delete settingsToSave.enableCustomFavicon;
+                    delete settingsToSave.customFaviconPath;
+                    delete settingsToSave.enableCustomFont;
+                    delete settingsToSave.customFontPath;
+                    this.storage.saveDeviceSettings(settingsToSave);
+                } else {
+                    await this.settings.saveSettingsToServer(this.settingsData);
+                }
+                this.signalDashboardSettingsUpdated('settings-updated');
+            },
+            onCalendarUrlChange: async () => {
+                this.settings.updateFromUI(this.settingsData);
+                await this.settings.saveSettingsToServer(this.settingsData);
+                this.signalDashboardSettingsUpdated('settings-updated');
+            },
             onPackedColumnsChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
                 let ok = true;
