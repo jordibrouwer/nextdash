@@ -1423,7 +1423,6 @@ class SearchComponent {
         const result = [];
         const historyMatches = this.getSearchHistoryMatches();
         const savedMatches = this.getSavedSearchMatches();
-        const recentItems = [...historyMatches, ...savedMatches];
 
         const filterItems = [
             { shortcut: '↳', name: t('dashboard.filterByCategory', 'Filter by category (example: category:work)'), completion: 'category: ', type: 'filter-completion' },
@@ -1437,14 +1436,15 @@ class SearchComponent {
             : [];
 
         const groups = [
-            { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: recentItems },
-            { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems },
-            { id: 'finders', label: t('dashboard.emptyStateFindersLabel', 'Finders'), items: finderItems }
+            { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
+            { id: 'saved', label: t('dashboard.emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
+            { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },
+            { id: 'finders', label: t('dashboard.emptyStateFindersLabel', 'Finders'), items: finderItems, defaultOpen: false }
         ];
 
         for (const group of groups) {
             if (group.items.length === 0) continue;
-            const defaultOpen = group.id === 'recent' && group.items.length > 0;
+            const defaultOpen = group.defaultOpen;
             const toggled = this.emptyStateExpandedGroups.has(group.id);
             const isExpanded = toggled ? !defaultOpen : defaultOpen;
 

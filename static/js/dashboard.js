@@ -1612,6 +1612,9 @@ class Dashboard {
         const sections = this.getKeyboardCheatSheetItems();
         const html = `
             <div class="keyboard-cheat-sheet">
+                <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
+                       placeholder="filter shortcuts…" autocomplete="off" spellcheck="false"
+                       aria-label="Filter shortcuts">
                 ${sections.map((section, i) => `
                     <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
                         <summary class="cheat-sheet-group-title">${section.title}</summary>
@@ -1636,6 +1639,32 @@ class Dashboard {
             confirmText: 'close',
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
+        });
+
+        const filterInput = document.getElementById('cheat-sheet-filter');
+        if (!filterInput) return;
+
+        setTimeout(() => filterInput.focus(), 60);
+
+        filterInput.addEventListener('input', () => {
+            const q = filterInput.value.toLowerCase().trim();
+            const groups = document.querySelectorAll('.cheat-sheet-group');
+            groups.forEach((group, i) => {
+                const rows = group.querySelectorAll('tr');
+                let visible = 0;
+                rows.forEach(row => {
+                    const match = !q || row.textContent.toLowerCase().includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                if (q) {
+                    group.hidden = visible === 0;
+                    if (visible > 0) group.open = true;
+                } else {
+                    group.hidden = false;
+                    group.open = i === 0;
+                }
+            });
         });
     }
 
@@ -1908,10 +1937,10 @@ class Dashboard {
                     { keys: '1–9', description: 'Switch to page tab' },
                     { keys: 'Shift + ← / →', description: 'Previous / next page' },
                     { keys: ',', description: 'Page overview with bookmark counts' },
-                    { keys: '↑ / ↓', description: 'Move focus through bookmarks' },
-                    { keys: '← / →', description: 'Move horizontally in grid' },
-                    { keys: 'Tab / Shift+Tab', description: 'Step linearly through bookmarks' },
-                    { keys: 'G + 1–9', description: 'Jump to nth category' },
+                    { keys: '↑ / ↓', description: 'Move focus up / down through bookmarks' },
+                    { keys: '← / →', description: 'Move focus left / right in grid' },
+                    { keys: 'Tab / Shift+Tab', description: 'Step linearly through all bookmarks' },
+                    { keys: 'G + 1–9', description: 'Jump to first bookmark in nth category' },
                     { keys: 'Enter / Space', description: 'Open focused bookmark' },
                     { keys: 'Esc', description: 'Clear selection / close overlay' }
                 ]
@@ -1919,35 +1948,49 @@ class Dashboard {
             {
                 title: 'bookmarks',
                 items: [
-                    { keys: '+', description: 'Quick-add — naam | url | shortcut' },
-                    { keys: ';', description: 'Inline edit focused bookmark' },
-                    { keys: '[', description: 'Toggle preview card on focused bookmark' },
-                    { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark' },
-                    { keys: 'Ctrl + Shift + A', description: 'New bookmark modal' },
-                    { keys: 'Double-click title', description: 'Rename page tab or category' },
-                    { keys: 'Drag handle', description: 'Reorder within / across categories' }
+                    { keys: '+', description: 'Quick-add — type name | url | shortcut in one line' },
+                    { keys: 'Ctrl + V', description: 'Paste a URL to open the new-bookmark modal pre-filled' },
+                    { keys: 'Ctrl + Shift + A', description: 'Open full new-bookmark modal' },
+                    { keys: ';', description: 'Inline-edit focused bookmark' },
+                    { keys: 'Shift + M', description: 'Quick-move focused bookmark — choose category or page' },
+                    { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark (row flashes green)' },
+                    { keys: '[', description: 'Toggle hover preview card on focused bookmark' },
+                    { keys: 'Delete', description: 'Delete focused bookmark (confirm, or Delete again in inline edit)' },
+                    { keys: 'Double-click title', description: 'Rename page tab or category header' },
+                    { keys: 'Drag handle', description: 'Reorder within or across categories' }
                 ]
             },
             {
                 title: 'search & commands',
                 items: [
-                    { keys: '>', description: 'Open search' },
+                    { keys: '>', description: 'Open search — type to filter bookmarks by name' },
+                    { keys: '/', description: 'Fuzzy search — results ranked by prefix / word-boundary / substring' },
                     { keys: ':', description: 'Command palette' },
-                    { keys: '?', description: 'Finders' },
-                    { keys: '*', description: 'Recent bookmarks' },
-                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the bottom of the search overlay to switch mode' },
-                    { keys: ':new', description: 'Add bookmark via command' },
-                    { keys: ':note', description: 'Edit note via command' },
-                    { keys: 'category: / tag: / page:', description: 'Filter in search bar' }
+                    { keys: '?', description: 'Finders — e.g. ?g query to search Google' },
+                    { keys: '*', description: 'Recent bookmarks panel' },
+                    { keys: 'category: / tag: / page: / status:', description: 'Filter results directly in the search bar' },
+                    { keys: ':goto <url or domain>', description: 'Navigate to a URL or bare domain (e.g. :goto github.com)' },
+                    { keys: ':new', description: 'Open new-bookmark modal' },
+                    { keys: ':note', description: 'Edit note of focused bookmark' },
+                    { keys: ':remove', description: 'Delete focused bookmark via command' },
+                    { keys: ':sort <method>', description: 'Change sort order — order / az / recent / custom' },
+                    { keys: ':layout <preset>', description: 'Switch layout — default / compact / cards / masonry / list / launcher …' },
+                    { keys: ':theme <name>', description: 'Switch colour theme' },
+                    { keys: ':density <mode>', description: 'Change density — comfortable / compact / dense' },
+                    { keys: ':columns <n>', description: 'Set number of columns (1–6)' },
+                    { keys: ':save / :saved', description: 'Save current search query / show saved searches' },
+                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the bottom of the search overlay to switch mode' }
                 ]
             },
             {
                 title: 'other',
                 items: [
-                    { keys: '! or Ctrl + /', description: 'This cheat sheet' },
-                    { keys: 'Delete', description: 'Delete selected bookmark (confirm dialog, or Delete again inside inline edit)' },
-                    { keys: '1–8 (config)', description: 'Jump between config tabs' },
-                    { keys: 'S (config)', description: 'Save config' }
+                    { keys: '! or F1 or Ctrl + /', description: 'This cheat sheet' },
+                    { keys: 'Ctrl + V (dashboard)', description: 'Paste URL anywhere on the dashboard to quick-add a bookmark' },
+                    { keys: '1–8 (config page)', description: 'Jump between config tabs' },
+                    { keys: 'S (config page)', description: 'Save config changes' },
+                    { keys: 'Alt + ↑ / ↓ (config page)', description: 'Reorder selected bookmark' },
+                    { keys: 'Ctrl/Cmd + K (config page)', description: 'Open config command palette' }
                 ]
             }
         ];
@@ -3177,8 +3220,9 @@ class Dashboard {
         return this.bookmarks;
     }
 
-    getStaleBookmarksList() {
-        const staleWindowMs = 30 * 24 * 60 * 60 * 1000;
+    getStaleBookmarksList(days) {
+        const effectiveDays = (days && days > 0) ? days : 30;
+        const staleWindowMs = effectiveDays * 24 * 60 * 60 * 1000;
         const now = Date.now();
         const source = this.getSmartCollectionSourceBookmarks();
         if (!Array.isArray(source)) {

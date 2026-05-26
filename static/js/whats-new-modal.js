@@ -72,6 +72,14 @@
                         { badge: 'fix', text: '<strong>Category collapse animation</strong> — replaced the <code>max-height</code> transition (which was instant-open / slow-close on large categories) with a <code>grid-template-rows: 1fr ↔ 0fr</code> technique — smooth and proportional regardless of content height.' },
                     ]
                 },
+                {
+                    title: 'Keyboard cheat sheet expanded',
+                    items: [
+                        { badge: 'new', text: '<strong>Full commands reference</strong> — the cheat sheet (<kbd>!</kbd> / <kbd>F1</kbd>) now lists all search commands: <code>:goto</code> <code>:layout</code> <code>:theme</code> <code>:density</code> <code>:columns</code> <code>:sort</code> <code>:remove</code> <code>:save</code> <code>:saved</code> and more.' },
+                        { badge: 'new', text: '<strong>Fuzzy mode documented</strong> — the <code>/</code> search prefix and its ranked scoring (prefix → word-boundary → substring) are now described in the cheat sheet.' },
+                        { badge: 'new', text: '<strong>Config shortcuts listed</strong> — <kbd>Alt+↑/↓</kbd> to reorder and <kbd>Ctrl/Cmd+K</kbd> for the config command palette are now included.' },
+                    ]
+                },
             ]),
 
             release('v2026.05', 'May 2026', [

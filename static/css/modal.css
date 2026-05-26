@@ -336,6 +336,28 @@ body.no-animations .modal-button.danger.selected {
     width: 100%;
 }
 
+.cheat-sheet-filter {
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.82rem;
+    margin-bottom: 0.75rem;
+    outline: none;
+    padding: 0.35rem 0.65rem;
+    transition: border-color 0.12s;
+}
+.cheat-sheet-filter:focus {
+    border-color: var(--accent-primary);
+}
+.cheat-sheet-filter::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.65;
+}
+
 .cheat-sheet-group {
     border-bottom: 1px solid var(--border-primary);
 }

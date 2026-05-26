@@ -21,6 +21,7 @@
         "searchModeFuzzy": "FUZZY",
         "filtersGroupLabel": "Filtres",
         "emptyStateRecentLabel": "Récent",
+        "emptyStateSavedLabel": "Recherches sauvegardées",
         "emptyStateFindersLabel": "Moteurs de recherche",
         "filterByCategory": "Filtrer par catégorie (exemple : category:travail)",
         "filterByStatus": "Filtrer par statut (online/offline/épinglé/cassé…)",

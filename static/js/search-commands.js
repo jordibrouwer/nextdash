@@ -27,7 +27,7 @@ class SearchCommandsComponent {
             {
                 id: 'bookmarks',
                 label: 'Bookmarks',
-                commands: ['new', 'remove', 'note', 'save', 'saved', 'sort', 'stale', 'duplicates', 'goto']
+                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'sort', 'open', 'stale', 'duplicates', 'goto']
             },
             {
                 id: 'view',
@@ -67,7 +67,11 @@ class SearchCommandsComponent {
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
-            'note': this.handleNoteCommand.bind(this)
+            'note': this.handleNoteCommand.bind(this),
+            'pin': this.handlePinCommand.bind(this),
+            'unpin': this.handlePinCommand.bind(this),
+            'tag': this.handleTagCommand.bind(this),
+            'open': this.handleOpenCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -147,6 +151,7 @@ class SearchCommandsComponent {
         if (potentialCommand === 'favicon') potentialCommand = 'favicons';
         if (potentialCommand === 'duplicate') potentialCommand = 'duplicates';
         if (potentialCommand === 'previews') potentialCommand = 'preview';
+        if (potentialCommand === 'unpin') potentialCommand = 'pin';
 
         // Check if it's a complete command
         if (this.availableCommands[potentialCommand]) {
@@ -229,6 +234,181 @@ class SearchCommandsComponent {
 
     handleNoteCommand(args, fullQuery) {
         return this.noteCommandHandler.handle(args, this.currentBookmarks, this.allBookmarks);
+    }
+
+    // ─── :pin / :unpin ────────────────────────────────────────────────────────
+
+    handlePinCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const isUnpin = fullQuery.trimStart().startsWith(':unpin');
+        const ctx = this.contextBookmark;
+
+        if (!ctx) {
+            return [{
+                name: isUnpin ? 'No bookmark selected — navigate to one first' : 'No bookmark selected — navigate to one first',
+                shortcut: isUnpin ? ':UNPIN' : ':PIN',
+                action: () => true,
+                type: 'command'
+            }];
+        }
+
+        const currentlyPinned = Boolean(ctx.pinned);
+        const willPin = isUnpin ? false : !currentlyPinned;
+        const label = willPin ? `Pin "${ctx.name}"` : `Unpin "${ctx.name}"`;
+
+        return [{
+            name: label,
+            shortcut: isUnpin ? ':UNPIN' : ':PIN',
+            type: 'command',
+            action: () => {
+                ctx.pinned = willPin;
+                this._persistBookmarkField(ctx, { pinned: willPin });
+                dashboard.showNotification(willPin ? `Pinned "${ctx.name}".` : `Unpinned "${ctx.name}".`, 'success');
+                return true;
+            }
+        }];
+    }
+
+    // ─── :tag ─────────────────────────────────────────────────────────────────
+
+    handleTagCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const ctx = this.contextBookmark;
+        const tagName = args.join(' ').trim().toLowerCase();
+
+        if (!ctx) {
+            return [{
+                name: 'No bookmark selected — navigate to one first',
+                shortcut: ':TAG',
+                action: () => true,
+                type: 'command'
+            }];
+        }
+
+        if (!tagName) {
+            const existing = Array.isArray(ctx.tags) && ctx.tags.length
+                ? ctx.tags.map(t => `#${t}`).join(' ')
+                : 'none';
+            return [{
+                name: `"${ctx.name}" — tags: ${existing}`,
+                shortcut: ':TAG',
+                completion: ':tag ',
+                type: 'command-completion'
+            }];
+        }
+
+        const tags = Array.isArray(ctx.tags) ? [...ctx.tags] : [];
+        const idx = tags.indexOf(tagName);
+        let newTags;
+        let label;
+        if (idx >= 0) {
+            newTags = tags.filter((_, i) => i !== idx);
+            label = `Remove tag "#${tagName}" from "${ctx.name}"`;
+        } else {
+            newTags = [...tags, tagName];
+            label = `Add tag "#${tagName}" to "${ctx.name}"`;
+        }
+
+        return [{
+            name: label,
+            shortcut: ':TAG',
+            type: 'command',
+            action: () => {
+                ctx.tags = newTags;
+                this._persistBookmarkField(ctx, { tags: newTags });
+                dashboard.showNotification(idx >= 0 ? `Tag "#${tagName}" removed.` : `Tag "#${tagName}" added.`, 'success');
+                return true;
+            }
+        }];
+    }
+
+    // ─── :open ────────────────────────────────────────────────────────────────
+
+    handleOpenCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const scope = (args[0] || '').toLowerCase();
+
+        if (!scope) {
+            return [{
+                name: '',
+                shortcut: ':OPEN',
+                completion: ':open all ',
+                type: 'command-completion'
+            }];
+        }
+
+        if (scope !== 'all') return [];
+
+        const bookmarks = (dashboard.bookmarks || []).filter(b => b && String(b.url || '').trim());
+        if (bookmarks.length === 0) {
+            return [{ name: 'No bookmarks on this page', shortcut: ':OPEN', action: () => true, type: 'command' }];
+        }
+
+        const cap = 15;
+        const rows = [];
+
+        if (bookmarks.length <= cap) {
+            rows.push({
+                name: `Open all ${bookmarks.length} bookmark${bookmarks.length !== 1 ? 's' : ''} (${bookmarks.length} new tab${bookmarks.length !== 1 ? 's' : ''})`,
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => {
+                    bookmarks.forEach(b => window.open(b.url, '_blank'));
+                    return true;
+                }
+            });
+        } else {
+            rows.push({
+                name: `Open first ${cap} of ${bookmarks.length} bookmarks (${cap} new tabs)`,
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => {
+                    bookmarks.slice(0, cap).forEach(b => window.open(b.url, '_blank'));
+                    return true;
+                }
+            });
+            rows.push({
+                name: `Open all ${bookmarks.length} bookmarks (${bookmarks.length} new tabs)`,
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => {
+                    bookmarks.forEach(b => window.open(b.url, '_blank'));
+                    return true;
+                }
+            });
+        }
+        return rows;
+    }
+
+    // ─── persist helper ───────────────────────────────────────────────────────
+
+    async _persistBookmarkField(bookmark, updates) {
+        const dash = window.dashboardInstance;
+        if (!dash) return;
+        const pageId = Number(bookmark.pageId || bookmark.pageID || dash.currentPageId);
+        if (!pageId) return;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) return;
+            const bookmarks = await res.json();
+            const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
+            if (idx >= 0) Object.assign(bookmarks[idx], updates);
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookmarks)
+            });
+            if (dash.bookmarks && Number(dash.currentPageId) === pageId) {
+                const localIdx = dash.bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
+                if (localIdx >= 0) Object.assign(dash.bookmarks[localIdx], updates);
+            }
+            if (typeof dash.renderDashboard === 'function') dash.renderDashboard();
+        } catch (e) {
+            // ignore
+        }
     }
 
     /**
@@ -816,13 +996,14 @@ class SearchCommandsComponent {
         return [];
     }
 
-    getStaleBookmarkPaletteRows(dashboard) {
+    getStaleBookmarkPaletteRows(dashboard, days) {
         const stale = typeof dashboard.getStaleBookmarksList === 'function'
-            ? dashboard.getStaleBookmarksList()
+            ? dashboard.getStaleBookmarksList(days)
             : [];
+        const windowLabel = days ? `${days} days` : '30 days';
         if (stale.length === 0) {
             return [{
-                name: 'No stale bookmarks in scope',
+                name: `No stale bookmarks in the last ${windowLabel}`,
                 shortcut: ':STALE',
                 type: 'command',
                 action: () => true
@@ -855,6 +1036,13 @@ class SearchCommandsComponent {
         }
         const a0 = (args[0] || '').toLowerCase();
 
+        // :stale <days> — numeric custom window
+        const parsedDays = a0 ? parseInt(a0, 10) : NaN;
+        if (!isNaN(parsedDays) && parsedDays > 0) {
+            // If user typed a number, show list with that custom window
+            return this.getStaleBookmarkPaletteRows(dashboard, parsedDays);
+        }
+
         if (a0 === 'list') {
             return this.getStaleBookmarkPaletteRows(dashboard);
         }
@@ -886,6 +1074,12 @@ class SearchCommandsComponent {
                 name: '',
                 shortcut: ':STALE',
                 completion: ':stale list ',
+                type: 'command-completion'
+            },
+            {
+                name: '',
+                shortcut: ':STALE',
+                completion: ':stale 30 ',
                 type: 'command-completion'
             }
         ];

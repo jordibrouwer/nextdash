@@ -64,32 +64,49 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 ### Keyboard-first workflow
 
-- `>` — open search with fuzzy matching across all bookmarks
-- `?` — open finder mode; type `?g query` to search an external engine
-- `:` — open command mode (`:theme`, `:layout`, `:density`, `:note`, …)
+**Navigation**
 - `1–9` — jump directly to a page tab
-- `,` — page overview: all pages with bookmark counts; navigate with `↑/↓` or `1–9`
-- `Shift + Left/Right` — cycle between page tabs
-- `Arrow Up/Down/Left/Right` — move through the bookmark grid
-- `Tab` / `Shift+Tab` — step linearly through all bookmarks (when one is selected)
+- `Shift + ←/→` — cycle between page tabs
+- `,` — page overview: all pages with bookmark counts
+- `↑/↓/←/→` — move focus through the bookmark grid
+- `Tab` / `Shift+Tab` — step linearly through all bookmarks
 - `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark
-- `[` — toggle the preview card on the focused bookmark
-- `Ctrl + C` — copy the URL of the focused bookmark to the clipboard (flashes the row green)
-- `Shift + M` — open the *Move to…* quick-move popover for the focused bookmark
-- `;` — inline-edit the highlighted bookmark
-- `+` — open the quick-add omnibox — type `name | url | shortcut` in one line, favicon is fetched automatically
-- `Ctrl + V` / `Cmd + V` — paste a URL to open the quick-add modal pre-filled (when no input is focused)
-- `Ctrl + Shift + A` — open the full new-bookmark modal
-- `! or Ctrl + /` — open keyboard cheat sheet
-- `:goto <url-or-domain>` — navigate directly to a URL or domain (e.g. `:goto github.com`)
 - `Esc` — clear selection or close overlay
 
-Config page shortcuts:
+**Bookmarks**
+- `+` — quick-add omnibox: type `name | url | shortcut` in one line
+- `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled
+- `Ctrl + Shift + A` — open the full new-bookmark modal
+- `;` — inline-edit the focused bookmark
+- `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
+- `Ctrl + C` — copy the URL of the focused bookmark (row flashes green)
+- `[` — toggle the hover preview card on the focused bookmark
+- `Delete` — delete the focused bookmark
 
+**Search & commands**
+- `>` — open search (fuzzy bookmark filter)
+- `/` — fuzzy search; results scored by prefix → word-boundary → substring
+- `:` — command palette
+- `?` — finders (e.g. `?g query` to search Google)
+- `*` — recent bookmarks panel
+- `! or F1 or Ctrl+/` — keyboard cheat sheet
+- `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
+- `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
+- `:new` — open new-bookmark modal
+- `:note` — edit the note of the focused bookmark
+- `:remove` — delete the focused bookmark
+- `:sort <method>` — `order` / `az` / `recent` / `custom`
+- `:layout <preset>` — `default` / `compact` / `cards` / `masonry` / `list` / `launcher` …
+- `:theme <name>` — switch colour theme
+- `:density <mode>` — `comfortable` / `compact` / `dense`
+- `:columns <n>` — set column count (1–6)
+- `:save` / `:saved` — save current query / show saved searches
+
+**Config page**
 - `1–8` — jump between config tabs
 - `S` — save changes
-- `Alt + Up/Down` — reorder the selected bookmark
+- `Alt + ↑/↓` — reorder the selected bookmark
 - `Ctrl/Cmd + K` — open the config command palette
 
 ### Search filters

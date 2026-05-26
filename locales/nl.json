@@ -21,6 +21,7 @@
         "searchModeFuzzy": "FUZZY",
         "filtersGroupLabel": "Filters",
         "emptyStateRecentLabel": "Recent",
+        "emptyStateSavedLabel": "Opgeslagen zoekopdrachten",
         "emptyStateFindersLabel": "Zoekmachines",
         "filterByCategory": "Filter op categorie (voorbeeld: category:werk)",
         "filterByStatus": "Filter op status (online/offline/vastgemaakt/kapot…)",

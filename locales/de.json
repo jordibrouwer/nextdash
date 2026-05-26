@@ -21,6 +21,7 @@
         "searchModeFuzzy": "FUZZY",
         "filtersGroupLabel": "Filter",
         "emptyStateRecentLabel": "Zuletzt",
+        "emptyStateSavedLabel": "Gespeicherte Suchen",
         "emptyStateFindersLabel": "Suchmaschinen",
         "filterByCategory": "Nach Kategorie filtern (Beispiel: category:arbeit)",
         "filterByStatus": "Nach Status filtern (online/offline/angeheftet/defekt…)",

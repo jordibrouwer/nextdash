@@ -56,7 +56,21 @@ class FuzzySearchComponent {
     }
 
     /**
+     * Extracts the host from a URL string for secondary-field matching.
+     * @param {string} url
+     * @returns {string|null}
+     */
+    _extractDomain(url) {
+        if (!url) return null;
+        const m = url.match(/^https?:\/\/([^/?#]+)/i);
+        if (m) return m[1];
+        // bare domain or path — return the part before the first slash
+        return url.split('/')[0] || null;
+    }
+
+    /**
      * Handle fuzzy search query — returns results sorted by relevance score.
+     * Also searches URL domain, tags and note as secondary fields (lower score).
      * @param {string} query - The search query (without the '/' prefix)
      * @returns {Array} Array of match objects sorted best-first
      */
@@ -67,19 +81,59 @@ class FuzzySearchComponent {
 
         const scored = [];
         for (const bookmark of this.bookmarks) {
-            const score = this.scoreMatch(q, (bookmark.name || '').toLowerCase());
-            if (score > 0) scored.push({ bookmark, score });
+            const name = (bookmark.name || '').toLowerCase();
+            let score = this.scoreMatch(q, name);
+            let meta = null;
+
+            if (score === 0) {
+                // Secondary: URL domain (scores scaled to 60-300 to stay below name matches)
+                const domain = this._extractDomain((bookmark.url || '').toLowerCase());
+                if (domain) {
+                    const urlScore = this.scoreMatch(q, domain);
+                    if (urlScore > 0) {
+                        score = Math.max(1, Math.floor(urlScore * 0.3));
+                        meta = bookmark.url;
+                    }
+                }
+            }
+
+            if (score === 0) {
+                // Secondary: tags (scores scaled to 50-250)
+                const tags = Array.isArray(bookmark.tags) ? bookmark.tags : [];
+                for (const tag of tags) {
+                    const tagScore = this.scoreMatch(q, tag.toLowerCase());
+                    if (tagScore > 0) {
+                        score = Math.max(1, Math.floor(tagScore * 0.25));
+                        meta = `#${tag}`;
+                        break;
+                    }
+                }
+            }
+
+            if (score === 0) {
+                // Secondary: note substring (flat score of 40)
+                const note = (bookmark.note || '').toLowerCase();
+                if (note && note.includes(q)) {
+                    score = 40;
+                    meta = bookmark.note.length > 60
+                        ? bookmark.note.substring(0, 60) + '…'
+                        : bookmark.note;
+                }
+            }
+
+            if (score > 0) scored.push({ bookmark, score, meta });
         }
 
         scored.sort((a, b) => b.score - a.score);
 
-        return scored.map(({ bookmark }) => ({
+        return scored.map(({ bookmark, meta }) => ({
             name: bookmark.name,
             shortcut: '',
             action: () => this.openBookmarkCallback(bookmark),
             type: 'fuzzy',
             bookmark,
-            query
+            query,
+            meta
         }));
     }
 
