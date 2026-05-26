@@ -289,6 +289,11 @@ body {
     margin-left: auto;
 }
 
+.bookmark-link.find-hidden {
+    display: none;
+}
+
+/* ── Page navigation ─────────────────────────────────────────────────────── */
 .page-navigation {
     display: flex;
     flex-wrap: wrap;
@@ -330,6 +335,105 @@ body {
 .page-nav-btn.active::before,
 .page-nav-btn.active::after {
     content: none;
+}
+
+.page-tab-icon {
+    margin-right: 0.2em;
+    font-style: normal;
+    line-height: 1;
+}
+
+.page-tab-dot {
+    display: inline-block;
+    width: 0.45em;
+    height: 0.45em;
+    border-radius: 50%;
+    margin-right: 0.35em;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Page-tab edit popover */
+.page-tab-popover {
+    position: fixed;
+    top: 2.8rem;
+    z-index: 1100;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.65rem;
+    padding: 0.6rem 0.7rem;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 12rem;
+}
+
+.page-tab-popover-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.page-tab-popover-icon {
+    width: 2.6rem;
+    text-align: center;
+    font-size: 1.1em;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    color: var(--text-primary);
+    padding: 0.2rem 0.3rem;
+    outline: none;
+}
+.page-tab-popover-icon:focus { border-color: var(--accent-primary); }
+
+.page-tab-popover-name {
+    flex: 1;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    padding: 0.2rem 0.4rem;
+    outline: none;
+}
+.page-tab-popover-name:focus { border-color: var(--accent-primary); }
+
+.page-tab-color-swatches {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.page-tab-color-swatch {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: border-color 0.12s, transform 0.12s;
+}
+.page-tab-color-swatch:hover { transform: scale(1.2); }
+.page-tab-color-swatch.selected { border-color: var(--accent-primary); }
+.page-tab-color-swatch.swatch-none {
+    border: 2px solid var(--border-primary);
+    background: var(--background-primary) !important;
+    position: relative;
+}
+.page-tab-color-swatch.swatch-none::after {
+    content: '✕';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    line-height: 1;
+    pointer-events: none;
 }
 
 .page-tab-rename-input {
@@ -1053,6 +1157,86 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 .launcher-toggle-btn.is-active .launcher-toggle-icon {
     color: var(--accent-primary);
 }
+
+/* ─── What's new FAB ──────────────────────────────────────────────────────── */
+.whats-new-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    z-index: 500;
+    padding: 0.62rem 0.72rem;
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.65rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.whats-new-btn-icon {
+    display: block;
+    flex-shrink: 0;
+}
+.whats-new-btn:hover {
+    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+}
+.whats-new-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+/* Tooltip */
+.whats-new-btn[data-tooltip] {
+    position: fixed;
+}
+.whats-new-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    white-space: nowrap;
+    padding: 0.2rem 0.5rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.3rem;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    font-weight: var(--font-weight-normal);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 1001;
+}
+.whats-new-btn[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+@media (pointer: coarse) {
+    .whats-new-btn[data-tooltip]::after {
+        display: none;
+    }
+}
+/* When button bar is bottom-left: star goes to bottom-right */
+body[data-button-position="bottom-left"] .whats-new-btn {
+    left: auto;
+    right: 1.5rem;
+}
+body[data-button-position="bottom-left"] .whats-new-btn[data-tooltip]::after {
+    left: auto;
+    right: 0;
+}
+/* In bottom-right dock mode: keep star at bottom-left (default) */
 
 /* Density overrides (can be combined with layout presets) */
 body[data-density-mode="comfortable"] .dashboard-grid {

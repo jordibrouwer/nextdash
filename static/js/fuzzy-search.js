@@ -74,13 +74,13 @@ class FuzzySearchComponent {
      * @param {string} query - The search query (without the '/' prefix)
      * @returns {Array} Array of match objects sorted best-first
      */
-    handleFuzzy(query) {
+    handleFuzzy(query, bookmarks = null) {
         if (!query.trim()) return [];
 
         const q = query.toLowerCase();
 
         const scored = [];
-        for (const bookmark of this.bookmarks) {
+        for (const bookmark of (bookmarks || this.bookmarks)) {
             const name = (bookmark.name || '').toLowerCase();
             let score = this.scoreMatch(q, name);
             let meta = null;

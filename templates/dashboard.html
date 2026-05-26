@@ -103,27 +103,41 @@
         <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
             <span class="search-flow-hint-text"><span class="sfh-seg search-flow-chip">&gt;</span><span class="sfh-seg">&thinsp;search&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">:</span><span class="sfh-seg">&thinsp;commands&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">?</span><span class="sfh-seg">&thinsp;finders&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">!</span><span class="sfh-seg">&thinsp;shortcuts</span></span>
         </div>
-        <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
-            <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
-        </button>
-        <button id="commands-button" class="search-button commands-button" aria-label="Open commands" data-tooltip=": commands">
-            <span class="search-button-icon">:</span>
-        </button>
-        <button id="finders-button" class="search-button finders-button" aria-label="Open finders" data-tooltip="? finders">
-            <span class="search-button-icon">?</span>
-        </button>
-        <button id="recent-bookmarks-button" class="search-button recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
-            <span class="search-button-icon">*</span>
-        </button>
-        <button id="help-button" class="search-button help-button" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
-            <span class="search-button-icon">!</span>
-        </button>
+        <div class="btn-group btn-group-primary">
+            <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
+                <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+            </button>
+            <button id="commands-button" class="search-button commands-button" aria-label="Open commands" data-tooltip=": commands">
+                <span class="search-button-icon">:</span>
+            </button>
+            <button id="finders-button" class="search-button finders-button" aria-label="Open finders" data-tooltip="? finders">
+                <span class="search-button-icon">?</span>
+            </button>
+        </div>
+        <div class="btn-group btn-group-secondary">
+            <button id="recent-bookmarks-button" class="search-button recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
+                <span class="search-button-icon">*</span>
+            </button>
+            <button id="help-button" class="search-button help-button" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
+                <span class="search-button-icon">!</span>
+            </button>
+            <button class="search-button dock-layout-btn" aria-label="Toggle launcher view" data-tooltip="⊞ launcher">
+                <span class="search-button-icon">⊞</span>
+            </button>
+        </div>
     </div>
 
     <!-- Launcher view toggle FAB -->
     <button id="launcher-toggle-btn" class="launcher-toggle-btn"
             data-i18n-tooltip="config.launcherToggleLabel" data-tooltip="launcher view">
         <span class="launcher-toggle-icon">&#8862;</span>
+    </button>
+
+    <!-- What's new FAB (opposite corner from button bar) -->
+    <button id="whats-new-btn" class="whats-new-btn" aria-label="What's new" data-tooltip="what's new">
+        <svg class="whats-new-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
     </button>
 
     <script src="/static/js/modal.js"></script>

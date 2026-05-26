@@ -712,57 +712,112 @@ class Dashboard {
             if (page.id === this.currentPageId) {
                 pageBtn.classList.add('active');
             }
-            // Show page number or name based on settings
-            pageBtn.textContent = this.settings.showPageNamesInTabs ? page.name : (index + 1).toString();
+            this._renderPageTabContent(pageBtn, page, index);
             pageBtn.addEventListener('click', () => {
-                // Update all buttons
-                container.querySelectorAll('.page-nav-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
+                container.querySelectorAll('.page-nav-btn').forEach(btn => btn.classList.remove('active'));
                 pageBtn.classList.add('active');
-
-                // Load bookmarks for selected page
                 this.loadPageBookmarks(page.id);
-                // Update title
                 this.updatePageTitle(page.name);
                 this.markInlineTipUsed('page_switch');
             });
             pageBtn.addEventListener('dblclick', (e) => {
                 e.preventDefault();
-                this._startPageTabRename(pageBtn, page);
+                this._startPageTabRename(pageBtn, page, index);
             });
             container.appendChild(pageBtn);
         });
     }
 
-    _startPageTabRename(btn, page) {
-        if (btn.querySelector('.page-tab-rename-input')) return;
+    _renderPageTabContent(btn, page, index) {
+        btn.innerHTML = '';
+        if (page.icon) {
+            const iconEl = document.createElement('span');
+            iconEl.className = 'page-tab-icon';
+            iconEl.textContent = page.icon;
+            btn.appendChild(iconEl);
+        }
+        if (page.color) {
+            const dot = document.createElement('span');
+            dot.className = 'page-tab-dot';
+            dot.style.background = page.color;
+            btn.appendChild(dot);
+        }
+        const label = document.createElement('span');
+        label.className = 'page-tab-label';
+        label.textContent = this.settings.showPageNamesInTabs ? page.name : (index + 1).toString();
+        btn.appendChild(label);
+    }
 
-        const originalLabel = btn.textContent;
-        btn.textContent = '';
+    _startPageTabRename(btn, page, index) {
+        if (btn.querySelector('.page-tab-popover')) return;
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'page-tab-rename-input';
-        input.value = page.name;
-        input.setAttribute('aria-label', 'Rename page');
-        btn.appendChild(input);
-        input.focus();
-        input.select();
+        const PAGE_COLORS = [
+            null,
+            '#e05252', '#e08852', '#d4bf4a', '#4cac6b',
+            '#5285e0', '#8b5fe0', '#e052a8', '#52c8e0'
+        ];
+
+        // Build popover
+        const popover = document.createElement('div');
+        popover.className = 'page-tab-popover';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'page-tab-popover-name';
+        nameInput.value = page.name;
+        nameInput.placeholder = 'Page name';
+
+        const iconInput = document.createElement('input');
+        iconInput.type = 'text';
+        iconInput.className = 'page-tab-popover-icon';
+        iconInput.value = page.icon || '';
+        iconInput.placeholder = '📌';
+        iconInput.maxLength = 4;
+
+        const swatches = document.createElement('div');
+        swatches.className = 'page-tab-color-swatches';
+        PAGE_COLORS.forEach(color => {
+            const sw = document.createElement('button');
+            sw.type = 'button';
+            sw.className = 'page-tab-color-swatch' + (page.color === color ? ' selected' : '');
+            sw.style.background = color || 'transparent';
+            if (!color) sw.classList.add('swatch-none');
+            sw.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                swatches.querySelectorAll('.page-tab-color-swatch').forEach(s => s.classList.remove('selected'));
+                sw.classList.add('selected');
+                page.color = color;
+            });
+            swatches.appendChild(sw);
+        });
+
+        const row = document.createElement('div');
+        row.className = 'page-tab-popover-row';
+        row.appendChild(iconInput);
+        row.appendChild(nameInput);
+
+        popover.appendChild(row);
+        popover.appendChild(swatches);
+
+        // Position below btn
+        const btnRect = btn.getBoundingClientRect();
+        popover.style.left = btnRect.left + 'px';
+        document.body.appendChild(popover);
+
+        nameInput.focus();
+        nameInput.select();
 
         let done = false;
-
         const commit = async () => {
             if (done) return;
             done = true;
-            const newName = input.value.trim();
-            if (btn.contains(input)) btn.removeChild(input);
-            if (!newName || newName === page.name) {
-                btn.textContent = originalLabel;
-                return;
-            }
+            popover.remove();
+            const newName = nameInput.value.trim();
+            const newIcon = iconInput.value.trim();
+            if (!newName) { this._renderPageTabContent(btn, page, index); return; }
             page.name = newName;
-            btn.textContent = this.settings.showPageNamesInTabs ? newName : originalLabel;
+            page.icon = newIcon || undefined;
+            this._renderPageTabContent(btn, page, index);
             this.updatePageTitle(newName);
             try {
                 await fetch('/api/pages', {
@@ -772,19 +827,30 @@ class Dashboard {
                 });
             } catch (e) { /* ignore */ }
         };
-
         const cancel = () => {
             if (done) return;
             done = true;
-            if (btn.contains(input)) btn.removeChild(input);
-            btn.textContent = originalLabel;
+            popover.remove();
+            this._renderPageTabContent(btn, page, index);
         };
 
-        input.addEventListener('keydown', (e) => {
+        nameInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); commit(); }
             else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
         });
-        input.addEventListener('blur', commit);
+        iconInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); nameInput.focus(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        });
+
+        // Close on outside click
+        const onOutside = (e) => {
+            if (!popover.contains(e.target) && e.target !== btn) {
+                document.removeEventListener('mousedown', onOutside);
+                commit();
+            }
+        };
+        setTimeout(() => document.addEventListener('mousedown', onOutside), 0);
     }
 
     shouldPackDashboardColumns() {
@@ -845,6 +911,8 @@ class Dashboard {
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
         document.body.setAttribute('data-show-tips', this.settings.showTips !== false);
+        document.body.setAttribute('data-button-position', this.settings.buttonBarPosition || 'bottom');
+        document.body.setAttribute('data-show-dock-layout-btn', this.settings.showDockLayoutSelector !== false ? 'true' : 'false');
 
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
@@ -896,7 +964,7 @@ class Dashboard {
         const bookmarksForSearch = this.settings.globalShortcuts ? this.allBookmarks : this.bookmarks;
         
         if (window.SearchComponent) {
-            this.searchComponent = new window.SearchComponent(bookmarksForSearch, this.bookmarks, this.allBookmarks, this.settings, this.language, this.finders);
+            this.searchComponent = new window.SearchComponent(bookmarksForSearch, this.bookmarks, this.allBookmarks, this.settings, this.language, this.finders, this.pages);
         } else {
             console.warn('SearchComponent not found. Make sure search.js is loaded.');
         }
@@ -907,8 +975,25 @@ class Dashboard {
         if (this.searchComponent) {
             // Use all bookmarks if global shortcuts is enabled, otherwise just current page
             const bookmarksForSearch = this.settings.globalShortcuts ? this.allBookmarks : this.bookmarks;
-            this.searchComponent.updateData(bookmarksForSearch, this.bookmarks, this.allBookmarks, this.settings, this.language, this.finders);
+            this.searchComponent.updateData(bookmarksForSearch, this.bookmarks, this.allBookmarks, this.settings, this.language, this.finders, this.pages);
         }
+    }
+
+    applyFindFilter(query) {
+        this._findFilter = query || '';
+        const layout = document.getElementById('dashboard-layout');
+
+        if (!this._findFilter) {
+            layout?.querySelectorAll('.bookmark-link').forEach(t => t.classList.remove('find-hidden'));
+            return;
+        }
+
+        const q = this._findFilter.toLowerCase();
+        layout?.querySelectorAll('.bookmark-link').forEach(tile => {
+            const name = (tile.querySelector('.bookmark-name')?.textContent || '').toLowerCase();
+            const url  = (tile.getAttribute('data-bookmark-url') || '').toLowerCase();
+            tile.classList.toggle('find-hidden', !name.includes(q) && !url.includes(q));
+        });
     }
 
     initializeStatusMonitor() {
@@ -1065,19 +1150,11 @@ class Dashboard {
 
     setupReorderUndoShortcut() {
         document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape' || !this.pendingReorderSnapshot) {
-                return;
-            }
+            if (e.key !== 'Escape') return;
+            if (this.isModalOpen()) return;
+            if (this.searchComponent && this.searchComponent.isActive()) return;
 
-            if (this.isModalOpen()) {
-                return;
-            }
-
-            // Do not interfere with shortcut search behavior
-            if (this.searchComponent && this.searchComponent.isActive()) {
-                return;
-            }
-
+            if (!this.pendingReorderSnapshot) return;
             e.preventDefault();
             e.stopPropagation();
             this.undoPendingReorder();
@@ -1143,11 +1220,14 @@ class Dashboard {
             });
         }
 
-        // Launcher view FAB
+        // Launcher view FAB (standalone — zichtbaar in bottom-modus)
         const launcherBtn = document.getElementById('launcher-toggle-btn');
         if (launcherBtn) {
             this._syncLauncherBtn = () => {
-                launcherBtn.classList.toggle('is-active', this.settings.layoutPreset === 'launcher');
+                const isLauncher = this.settings.layoutPreset === 'launcher';
+                launcherBtn.classList.toggle('is-active', isLauncher);
+                const dockBtn = document.querySelector('.dock-layout-btn');
+                if (dockBtn) dockBtn.classList.toggle('is-active', isLauncher);
             };
             this._syncLauncherBtn();
             launcherBtn.addEventListener('click', () => {
@@ -1162,7 +1242,34 @@ class Dashboard {
             });
         }
 
+        // What's new FAB (opposite corner from button bar)
+        const whatsNewBtn = document.getElementById('whats-new-btn');
+        if (whatsNewBtn) {
+            whatsNewBtn.addEventListener('click', () => {
+                window.openWhatsNewModal?.({ force: true });
+            });
+        }
+
+        // Dock layout-selector (zichtbaar in side-dock modus)
+        const dockLayoutBtn = document.querySelector('.dock-layout-btn');
+        if (dockLayoutBtn) {
+            dockLayoutBtn.addEventListener('click', () => {
+                if (this.settings.layoutPreset === 'launcher') {
+                    const prev = localStorage.getItem('nextdash:prevLayout') || 'default';
+                    window.LayoutUtils.applyLayoutPreset(this.settings, prev, { syncDashboard: true, saveDashboard: true });
+                } else {
+                    localStorage.setItem('nextdash:prevLayout', this.settings.layoutPreset || 'default');
+                    window.LayoutUtils.applyLayoutPreset(this.settings, 'launcher', { syncDashboard: true, saveDashboard: true });
+                }
+                this._syncLauncherBtn?.();
+            });
+        }
+
         // Launcher tile dimming: dim non-matching tiles when search is active
+        document.addEventListener('nextdash:find', (e) => {
+            this.applyFindFilter(e.detail.query);
+        });
+
         document.addEventListener('nextdash:launcher-filter', (e) => {
             const grid = document.getElementById('dashboard-layout');
             if (!grid || !grid.classList.contains('layout-launcher')) return;
@@ -1956,36 +2063,60 @@ class Dashboard {
                     { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark (row flashes green)' },
                     { keys: '[', description: 'Toggle hover preview card on focused bookmark' },
                     { keys: 'Delete', description: 'Delete focused bookmark (confirm, or Delete again in inline edit)' },
-                    { keys: 'Double-click title', description: 'Rename page tab or category header' },
+                    { keys: 'Double-click page tab', description: 'Rename page tab — also set emoji icon and colour dot' },
+                    { keys: 'Double-click category', description: 'Rename category header' },
                     { keys: 'Drag handle', description: 'Reorder within or across categories' }
                 ]
             },
             {
-                title: 'search & commands',
+                title: 'search modes',
                 items: [
-                    { keys: '>', description: 'Open search — type to filter bookmarks by name' },
-                    { keys: '/', description: 'Fuzzy search — results ranked by prefix / word-boundary / substring' },
-                    { keys: ':', description: 'Command palette' },
+                    { keys: '>', description: 'Regular search — filter bookmarks on current page by name' },
+                    { keys: '/', description: 'Fuzzy search — ranked: exact → prefix → word-boundary → substring; also matches URL, tags and note' },
+                    { keys: '@', description: 'Global search — fuzzy search across all pages at once; result shows page name as context' },
+                    { keys: ':', description: 'Command palette — type a command name to run it' },
                     { keys: '?', description: 'Finders — e.g. ?g query to search Google' },
                     { keys: '*', description: 'Recent bookmarks panel' },
-                    { keys: 'category: / tag: / page: / status:', description: 'Filter results directly in the search bar' },
-                    { keys: ':goto <url or domain>', description: 'Navigate to a URL or bare domain (e.g. :goto github.com)' },
+                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly' },
+                    { keys: 'category: / tag: / page: / status:', description: 'Filter results by field directly in the search bar' }
+                ]
+            },
+            {
+                title: 'commands — bookmarks',
+                items: [
                     { keys: ':new', description: 'Open new-bookmark modal' },
-                    { keys: ':note', description: 'Edit note of focused bookmark' },
-                    { keys: ':remove', description: 'Delete focused bookmark via command' },
-                    { keys: ':sort <method>', description: 'Change sort order — order / az / recent / custom' },
-                    { keys: ':layout <preset>', description: 'Switch layout — default / compact / cards / masonry / list / launcher …' },
+                    { keys: ':note', description: 'Edit note on the focused bookmark' },
+                    { keys: ':pin / :unpin', description: 'Toggle pin flag on the focused bookmark' },
+                    { keys: ':tag <name>', description: 'Add or remove a tag on the focused bookmark; omit name to see current tags' },
+                    { keys: ':remove', description: 'Delete the focused bookmark' },
+                    { keys: ':find <text>', description: 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL' },
+                    { keys: ':open all', description: 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)' },
+                    { keys: ':goto <url or domain>', description: 'Navigate directly — full URLs open as-is, bare domains get https:// prepended' },
+                    { keys: ':duplicates', description: 'Find bookmarks with duplicate URLs across all pages' },
+                    { keys: ':stale <days>', description: 'Show bookmarks not opened in <days> days (default 30)' },
+                    { keys: ':save / :saved', description: 'Save the current search query / show saved searches' }
+                ]
+            },
+            {
+                title: 'commands — appearance',
+                items: [
+                    { keys: ':layout <preset>', description: 'Switch layout — default / compact / cards / masonry / list / launcher' },
                     { keys: ':theme <name>', description: 'Switch colour theme' },
                     { keys: ':density <mode>', description: 'Change density — comfortable / compact / dense' },
                     { keys: ':columns <n>', description: 'Set number of columns (1–6)' },
-                    { keys: ':save / :saved', description: 'Save current search query / show saved searches' },
-                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the bottom of the search overlay to switch mode' }
+                    { keys: ':fontsize <size>', description: 'Change font size' },
+                    { keys: ':favicons on/off', description: 'Toggle bookmark icons' },
+                    { keys: ':preview on/off', description: 'Toggle hover preview cards' },
+                    { keys: ':packed on/off', description: 'Toggle packed (variable-width) columns' },
+                    { keys: ':buttonbar <position>', description: 'Move the button bar — bottom (default) / bottom-left / bottom-right' },
+                    { keys: ':sort <method>', description: 'Change sort order — order / az / recent / custom' }
                 ]
             },
             {
                 title: 'other',
                 items: [
                     { keys: '! or F1 or Ctrl + /', description: 'This cheat sheet' },
+                    { keys: '★ (corner button)', description: 'Open what\'s new release notes' },
                     { keys: 'Ctrl + V (dashboard)', description: 'Paste URL anywhere on the dashboard to quick-add a bookmark' },
                     { keys: '1–8 (config page)', description: 'Jump between config tabs' },
                     { keys: 'S (config page)', description: 'Save config changes' },

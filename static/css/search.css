@@ -504,6 +504,8 @@
     line-height: 1.5;
     color: var(--text-secondary);
     overflow-wrap: break-word;
+    background: var(--background-primary);
+    border-radius: 0.4rem;
 }
 
 .search-flow-hint {
@@ -716,13 +718,9 @@ body.no-animations .search-button[data-tooltip]::after {
 
 .search-button-icon {
     display: inline-block; /* required for transform to work on <span> */
-    color: color-mix(in srgb, var(--accent-primary) 85%, var(--text-secondary));
+    color: var(--accent-primary);
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-category);
-}
-
-#search-button .search-button-icon {
-    color: var(--accent-primary);
 }
 
 /* ── Periodic attention pulse on search / commands / finders icons ───────
@@ -775,6 +773,127 @@ body.no-animations .search-button:active {
 body.no-animations .search-match:hover,
 body.no-animations .search-match.keyboard-selected {
     transform: none !important;
+}
+
+/* ─── Btn-group wrappers ──────────────────────────────────────────────────── */
+/* In bottom-modus: transparant voor de bestaande flex-layout van .button-container */
+.btn-group {
+    display: contents;
+}
+
+/* dock-layout-btn: verborgen in bottom-modus, zichtbaar in side-dock */
+.dock-layout-btn {
+    display: none;
+}
+
+/* ─── Side-dock: gedeeld (left + right) ──────────────────────────────────── */
+body[data-button-position="bottom-left"] .button-container,
+body[data-button-position="bottom-right"] .button-container {
+    flex-direction: row;
+    align-items: flex-end;
+    width: auto;
+    padding: 0;
+    gap: 0.35rem;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    left: unset;
+    transform: none;
+    bottom: 1.5rem;
+}
+
+body[data-button-position="bottom-left"] .btn-group,
+body[data-button-position="bottom-right"] .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+
+/* dock-layout-btn zichtbaar in side-dock */
+body[data-button-position="bottom-left"] .dock-layout-btn,
+body[data-button-position="bottom-right"] .dock-layout-btn {
+    display: flex;
+}
+
+/* Standalone launcher-FAB verbergen in side-dock */
+body[data-button-position="bottom-left"] #launcher-toggle-btn,
+body[data-button-position="bottom-right"] #launcher-toggle-btn {
+    display: none;
+}
+
+/* search-flow-hint past niet in de dock */
+body[data-button-position="bottom-left"] .search-flow-hint,
+body[data-button-position="bottom-right"] .search-flow-hint {
+    display: none !important;
+}
+
+/* Tips: loskoppelen van de dock-container, gecentreerd weergeven */
+body[data-button-position="bottom-left"] .button-hint,
+body[data-button-position="bottom-right"] .button-hint {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(52rem, calc(100vw - 2.5rem));
+    flex: none;
+    z-index: 1000;
+}
+
+/* ─── Rechter-dock ───────────────────────────────────────────────────────── */
+body[data-button-position="bottom-right"] .button-container {
+    right: 1rem;
+}
+body[data-button-position="bottom-right"] .btn-group-secondary { order: 0; }
+body[data-button-position="bottom-right"] .btn-group-primary   { order: 1; }
+
+/* ─── Linker-dock ────────────────────────────────────────────────────────── */
+body[data-button-position="bottom-left"] .button-container {
+    left: 1rem;
+}
+body[data-button-position="bottom-left"] .btn-group-primary   { order: 0; }
+body[data-button-position="bottom-left"] .btn-group-secondary { order: 1; }
+
+/* ─── Tooltips richting omdraaien in side-dock ───────────────────────────── */
+body[data-button-position="bottom-left"] .search-button[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    transform: translateY(-50%);
+}
+body[data-button-position="bottom-right"] .search-button[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    right: calc(100% + 8px);
+    left: auto;
+    transform: translateY(-50%);
+}
+
+/* ─── Layout-selector config toggle ─────────────────────────────────────── */
+body[data-show-dock-layout-btn="false"] .dock-layout-btn {
+    display: none !important;
+}
+
+/* ─── Hover-richting: weg van de rand ────────────────────────────────────── */
+body[data-button-position="bottom-right"] .search-button:hover {
+    transform: translateX(-2px);
+}
+body[data-button-position="bottom-left"] .search-button:hover {
+    transform: translateX(2px);
+}
+body[data-button-position="bottom-right"] .search-button:active,
+body[data-button-position="bottom-left"] .search-button:active {
+    transform: translateX(0);
+}
+
+/* dock-layout-btn active state — zelfde als launcher FAB .is-active */
+.dock-layout-btn.is-active {
+    background: var(--accent-color, rgba(255,255,255,0.25));
+    color: var(--accent-text, #fff);
+    border-color: var(--accent-primary);
 }
 
 /* Ensure button container remains centered when animations are disabled */

@@ -90,6 +90,17 @@
             <main class="config-main">
             <div class="tab-content active" data-tab-content="general">
             <div>
+                <div class="general-tab-intro">
+                    <p>Manage all dashboard settings from this page — appearance, layout, bookmarks, search, smart collections, and more. Changes are saved immediately and reflected on the dashboard without a page reload.</p>
+                    <div class="general-tab-intro-support">
+                        <span class="general-tab-intro-support-label">nextDash is free and open-source.</span>
+                        <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn">
+                            <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
+                            Support me on Ko-fi
+                        </a>
+                    </div>
+                </div>
+
                 <div class="general-layout">
                     <!-- 1. Appearance & Style: theme, background, font, animations -->
                     <section class="general-card" data-general-panel="basics">
@@ -666,6 +677,20 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div class="form-group" style="margin-top:1rem">
+                            <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
+                            <select id="button-bar-position-select">
+                                <option value="bottom"       data-i18n="config.buttonBarPositionBottom">Center-bottom (default)</option>
+                                <option value="bottom-left"  data-i18n="config.buttonBarPositionLeft">Bottom-left corner</option>
+                                <option value="bottom-right" data-i18n="config.buttonBarPositionRight">Bottom-right corner</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="dock-layout-selector-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-dock-layout-selector-checkbox">
+                                <span data-i18n="config.showDockLayoutSelector">Show layout selector in dock</span>
+                            </label>
+                        </div>
                     </section>
 
                     <!-- 8. Diagnostics & Status -->
@@ -1811,5 +1836,16 @@
     <script src="/static/js/config/config-quick-add.js"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/config.js"></script>
+
+    <!-- Ko-fi support widget -->
+    <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+    <script>
+        kofiWidgetOverlay.draw('jordibrw', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Support me',
+            'floating-chat.donateButton.background-color': '#323842',
+            'floating-chat.donateButton.text-color': '#fff'
+        });
+    </script>
 </body>
 </html>

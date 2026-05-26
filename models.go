@@ -60,8 +60,10 @@ type Category struct {
 }
 
 type Page struct {
-	ID   int    `json:"id"`   // Numeric ID matching the file number (bookmarks-1.json = id: 1)
-	Name string `json:"name"` // Editable page name
+	ID    int    `json:"id"`             // Numeric ID matching the file number (bookmarks-1.json = id: 1)
+	Name  string `json:"name"`           // Editable page name
+	Icon  string `json:"icon,omitempty"` // Optional emoji icon shown in the tab
+	Color string `json:"color,omitempty"` // Optional accent color (hex) for the tab indicator
 }
 
 type PageWithBookmarks struct {
@@ -139,6 +141,8 @@ type Settings struct {
 	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
 	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
 	CalendarUrl                 string                           `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
+	ButtonBarPosition           string                           `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right
+	ShowDockLayoutSelector      bool                             `json:"showDockLayoutSelector"`      // Show layout selector button in side-dock
 	BackgroundOpacity           float64                          `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
 	FontWeight                  string                           `json:"fontWeight"`                  // Font weight: normal, 600, bold
 	FontPreset                  string                           `json:"fontPreset"`                  // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -391,6 +395,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OnboardingCompleted:         false,
 			PackedColumns:               true,
 			LauncherIconSize:            "normal",
+			ButtonBarPosition:           "bottom",
+			ShowDockLayoutSelector:      true,
 			PasteUrlQuickAdd:            true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
@@ -1192,6 +1198,12 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"
 		}
+		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right") {
+			settings.ButtonBarPosition = "bottom"
+		}
+		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {
+			settings.ShowDockLayoutSelector = true
+		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"
 		}
@@ -1345,6 +1357,26 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"sunflower-ink-light":   {Name: "Sunflower Ink [light]", TextPrimary: "#713F12", TextSecondary: "#854D0E", TextTertiary: "#A16207", BackgroundPrimary: "#FFFBEB", BackgroundSecondary: "#FEF3C7", BackgroundDots: "#FDE68A", BackgroundModal: "rgba(255, 251, 235, 0.92)", BorderPrimary: "#FCD34D", BorderSecondary: "#FBBF24", AccentSuccess: "#15803D", AccentWarning: "#B45309", AccentError: "#B91C1C"},
 		"volcanic-ash-dark":     {Name: "Volcanic Ash [dark]", TextPrimary: "#FFE4E6", TextSecondary: "#FDA4AF", TextTertiary: "#FB7185", BackgroundPrimary: "#1B1415", BackgroundSecondary: "#2A1C1E", BackgroundDots: "#3F272A", BackgroundModal: "rgba(27, 20, 21, 0.88)", BorderPrimary: "#B91C1C", BorderSecondary: "#7F1D1D", AccentSuccess: "#4ADE80", AccentWarning: "#F59E0B", AccentError: "#F43F5E"},
 		"volcanic-ash-light":    {Name: "Volcanic Ash [light]", TextPrimary: "#7F1D1D", TextSecondary: "#991B1B", TextTertiary: "#B91C1C", BackgroundPrimary: "#FFF7F7", BackgroundSecondary: "#FFE4E6", BackgroundDots: "#FECDD3", BackgroundModal: "rgba(255, 247, 247, 0.92)", BorderPrimary: "#FDA4AF", BorderSecondary: "#FB7185", AccentSuccess: "#15803D", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Terminal Amber: classic phosphor-amber terminal aesthetic ──────────
+		"terminal-amber-dark":  {Name: "Terminal Amber [dark]", TextPrimary: "#FFD080", TextSecondary: "#FFB830", TextTertiary: "#C88A00", BackgroundPrimary: "#0A0800", BackgroundSecondary: "#140F00", BackgroundDots: "#1F1600", BackgroundModal: "rgba(10, 8, 0, 0.90)", BorderPrimary: "#6B4C00", BorderSecondary: "#4A3500", AccentSuccess: "#FFB830", AccentWarning: "#FF8C00", AccentError: "#FF5555"},
+		"terminal-amber-light": {Name: "Terminal Amber [light]", TextPrimary: "#5C3B00", TextSecondary: "#8B5E00", TextTertiary: "#A87A00", BackgroundPrimary: "#FFFCF0", BackgroundSecondary: "#FFF5D0", BackgroundDots: "#FFE8A0", BackgroundModal: "rgba(255, 252, 240, 0.92)", BorderPrimary: "#E8C860", BorderSecondary: "#DDB820", AccentSuccess: "#5C3B00", AccentWarning: "#B45309", AccentError: "#B91C1C"},
+
+		// ── Dusk Horizon: muted indigo-navy atmospheric sky gradient ──────────
+		"dusk-horizon-dark":  {Name: "Dusk Horizon [dark]", TextPrimary: "#E8EAF6", TextSecondary: "#B0BAD4", TextTertiary: "#7B8BA6", BackgroundPrimary: "#0D0F1A", BackgroundSecondary: "#141728", BackgroundDots: "#1E2440", BackgroundModal: "rgba(13, 15, 26, 0.88)", BorderPrimary: "#3D4878", BorderSecondary: "#272D55", AccentSuccess: "#7C9BF8", AccentWarning: "#F59E0B", AccentError: "#FB7185"},
+		"dusk-horizon-light": {Name: "Dusk Horizon [light]", TextPrimary: "#1A1F4E", TextSecondary: "#3A4580", TextTertiary: "#5A68A8", BackgroundPrimary: "#F5F6FF", BackgroundSecondary: "#EAEDFF", BackgroundDots: "#D8DCFF", BackgroundModal: "rgba(245, 246, 255, 0.92)", BorderPrimary: "#BCC4F0", BorderSecondary: "#9AA8E8", AccentSuccess: "#4158C8", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Moss & Stone: desaturated earthy olive-grey organic palette ───────
+		"moss-stone-dark":  {Name: "Moss & Stone [dark]", TextPrimary: "#D4CFBC", TextSecondary: "#A8A48C", TextTertiary: "#756E58", BackgroundPrimary: "#131210", BackgroundSecondary: "#1E1C17", BackgroundDots: "#2A2820", BackgroundModal: "rgba(19, 18, 16, 0.88)", BorderPrimary: "#4A4535", BorderSecondary: "#36332A", AccentSuccess: "#8FAE7A", AccentWarning: "#C49A3C", AccentError: "#C46A50"},
+		"moss-stone-light": {Name: "Moss & Stone [light]", TextPrimary: "#2C2A20", TextSecondary: "#5A5640", TextTertiary: "#7A7558", BackgroundPrimary: "#F7F5EE", BackgroundSecondary: "#EEEBE0", BackgroundDots: "#E0DDD0", BackgroundModal: "rgba(247, 245, 238, 0.92)", BorderPrimary: "#C8C3A8", BorderSecondary: "#B0AA90", AccentSuccess: "#4A7038", AccentWarning: "#9A6B1A", AccentError: "#923020"},
+
+		// ── Candy Pop: vibrant bubblegum pink with electric cyan accents ──────
+		"candy-pop-dark":  {Name: "Candy Pop [dark]", TextPrimary: "#FFE8F8", TextSecondary: "#FFB3E8", TextTertiary: "#FF6AC8", BackgroundPrimary: "#190C1F", BackgroundSecondary: "#240F2D", BackgroundDots: "#3A1A48", BackgroundModal: "rgba(25, 12, 31, 0.90)", BorderPrimary: "#CC2299", BorderSecondary: "#8B1566", AccentSuccess: "#00E8CC", AccentWarning: "#F59E0B", AccentError: "#FF3366"},
+		"candy-pop-light": {Name: "Candy Pop [light]", TextPrimary: "#5C0044", TextSecondary: "#880066", TextTertiary: "#AA0088", BackgroundPrimary: "#FFF2FF", BackgroundSecondary: "#FFE4FF", BackgroundDots: "#FFD0FF", BackgroundModal: "rgba(255, 242, 255, 0.92)", BorderPrimary: "#EE88DD", BorderSecondary: "#DD66CC", AccentSuccess: "#0891B2", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Midnight Ink: near-pure black with icy silver-blue accents ────────
+		"midnight-ink-dark":  {Name: "Midnight Ink [dark]", TextPrimary: "#F8FAFC", TextSecondary: "#B8C4D4", TextTertiary: "#6B7A8E", BackgroundPrimary: "#000204", BackgroundSecondary: "#070C12", BackgroundDots: "#0E1620", BackgroundModal: "rgba(0, 2, 4, 0.92)", BorderPrimary: "#1A2B3C", BorderSecondary: "#0F1D28", AccentSuccess: "#C8DCF4", AccentWarning: "#F0B050", AccentError: "#F07080"},
+		"midnight-ink-light": {Name: "Midnight Ink [light]", TextPrimary: "#080C14", TextSecondary: "#1A2540", TextTertiary: "#3A4A5C", BackgroundPrimary: "#F8FAFD", BackgroundSecondary: "#EEF2F8", BackgroundDots: "#DDE4EF", BackgroundModal: "rgba(248, 250, 253, 0.92)", BorderPrimary: "#B8C8DC", BorderSecondary: "#8CA0B8", AccentSuccess: "#1E3A5F", AccentWarning: "#B45309", AccentError: "#B91C1C"},
 	}
 }
 

@@ -27,12 +27,12 @@ class SearchCommandsComponent {
             {
                 id: 'bookmarks',
                 label: 'Bookmarks',
-                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'sort', 'open', 'stale', 'duplicates', 'goto']
+                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'sort', 'open', 'stale', 'duplicates', 'goto', 'find']
             },
             {
                 id: 'view',
                 label: 'View',
-                commands: ['theme', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons']
+                commands: ['theme', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons', 'buttonbar']
             },
             {
                 id: 'dashboard',
@@ -64,6 +64,7 @@ class SearchCommandsComponent {
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
             'packed': this.handlePackedColumnsCommand.bind(this),
+            'buttonbar': this.handleButtonBarCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
@@ -71,7 +72,8 @@ class SearchCommandsComponent {
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
             'tag': this.handleTagCommand.bind(this),
-            'open': this.handleOpenCommand.bind(this)
+            'open': this.handleOpenCommand.bind(this),
+            'find': this.handleFindCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -555,6 +557,39 @@ class SearchCommandsComponent {
         }));
     }
 
+    handleButtonBarCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const positions = [
+            { value: 'bottom',       label: 'bottom — centered (default)' },
+            { value: 'bottom-right', label: 'bottom-right — corner dock' },
+            { value: 'bottom-left',  label: 'bottom-left — corner dock' },
+        ];
+
+        const current = dashboard.settings.buttonBarPosition || 'bottom';
+        const arg = (args[0] || '').toLowerCase();
+
+        if (!arg) {
+            return positions.map(p => ({
+                name: p.label + (p.value === current ? ' ✓' : ''),
+                shortcut: ':BUTTONBAR',
+                action: () => this.applyButtonBarPosition(dashboard, p.value),
+                type: 'command'
+            }));
+        }
+
+        const matches = positions.filter(p => p.value.startsWith(arg) || p.label.toLowerCase().includes(arg));
+        if (matches.length === 0) return [];
+
+        return matches.map(p => ({
+            name: p.label + (p.value === current ? ' ✓' : ''),
+            shortcut: ':BUTTONBAR',
+            action: () => this.applyButtonBarPosition(dashboard, p.value),
+            type: 'command'
+        }));
+    }
+
     handleButtonsCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
@@ -803,6 +838,18 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
 
+        return false;
+    }
+
+    applyButtonBarPosition(dashboard, position) {
+        const valid = ['bottom', 'bottom-left', 'bottom-right'];
+        dashboard.settings.buttonBarPosition = valid.includes(position) ? position : 'bottom';
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
         return false;
     }
 
@@ -1225,6 +1272,36 @@ class SearchCommandsComponent {
      */
     handleRemoveCommand(args, fullQuery) {
         return this.removeCommandHandler.handle(args, fullQuery);
+    }
+
+    /**
+     * Handle the :find command
+     * Filters bookmark tiles on the current page live; Escape clears the filter.
+     * @param {Array} args - Arguments after 'find'
+     * @returns {Array} Single action row or prompt
+     */
+    handleFindCommand(args) {
+        const query = args.join(' ').trim();
+        const t = (key, fb) => this.language ? (this.language.t(key) || fb) : fb;
+
+        if (!query) {
+            return [{
+                name: t('dashboard.findCommandHint', 'Type text to highlight matching bookmarks on this page'),
+                shortcut: ':FIND',
+                type: 'command-completion',
+                completion: ':find '
+            }];
+        }
+
+        return [{
+            name: `"${query}"`,
+            shortcut: ':FIND',
+            action: () => {
+                document.dispatchEvent(new CustomEvent('nextdash:find', { detail: { query } }));
+                return false;
+            },
+            type: 'command'
+        }];
     }
 }
 

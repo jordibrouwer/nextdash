@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v28';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v30';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -32,8 +32,79 @@
         `;
     }
 
+    function buildIntroHtml() {
+        return `
+            <div class="wn-intro">
+                <p class="wn-intro-text">nextDash is a personal project I build and maintain in my spare time. Every release takes many hours of design, coding and testing — if you enjoy using it, a small contribution means a lot and helps keep the project going.</p>
+                <a class="wn-kofi-btn" href="https://ko-fi.com/Z8Z81Z2KIP" target="_blank" rel="noopener">
+                    <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
+                    Support me on Ko-fi
+                </a>
+            </div>
+        `;
+    }
+
     function buildHtml() {
-        return `<div class="wn-content">` + [
+        return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.05.3', 'May 2026', [
+                {
+                    title: 'Button bar position',
+                    items: [
+                        { badge: 'new', text: '<strong>Corner dock mode</strong> — move the button bar to the bottom-left or bottom-right corner via Config → General → Header & Buttons. In dock mode the buttons become a compact 2-column widget: primary actions (<code>&gt;</code> <code>:</code> <code>?</code>) in one column, secondary actions (<code>!</code> <code>*</code> <code>⊞</code>) in the other.' },
+                        { badge: 'new', text: '<strong>:buttonbar command</strong> — switch button bar position from the command palette: <code>:buttonbar bottom</code> / <code>:buttonbar bottom-right</code> / <code>:buttonbar bottom-left</code>. Current position is marked with ✓.' },
+                        { badge: 'new', text: '<strong>Launcher selector in dock</strong> — in corner dock mode the standalone launcher FAB (⊞) is replaced by an integrated button inside the dock. Toggle via Config → General → Show layout selector in dock.' },
+                    ]
+                },
+                {
+                    title: 'Search',
+                    items: [
+                        { badge: 'new', text: '<strong>@ global search</strong> — type <code>@</code> to fuzzy-search across <em>all pages at once</em>. Each result shows the page name as context so you can tell at a glance where the bookmark lives.' },
+                        { badge: 'new', text: '<strong>:find &lt;text&gt;</strong> — filter bookmark tiles on the current page directly from the command palette. Tiles whose name or URL don\'t match are hidden; clear the filter by running <code>:find</code> with no argument.' },
+                    ]
+                },
+                {
+                    title: 'Page customisation',
+                    items: [
+                        { badge: 'new', text: '<strong>Page emoji icon</strong> — double-click any page tab on the dashboard to open a popover where you can set an emoji icon for that page. The icon appears inside the tab alongside the page name.' },
+                        { badge: 'new', text: '<strong>Page colour dot</strong> — choose one of 8 accent colours (or none) for each page in the same popover. A small colour dot appears in the page tab for quick visual identification.' },
+                    ]
+                },
+                {
+                    title: 'What\'s new star button',
+                    items: [
+                        { badge: 'new', text: '<strong>★ FAB button</strong> — a star button appears in the corner opposite the button bar (bottom-left by default; bottom-right when the bar is docked left). Click it at any time to open these release notes.' },
+                        { badge: 'new', text: '<strong>What\'s new group in search</strong> — when new release notes are unread, a <em>What\'s New</em> group appears in the <code>&gt;</code> search empty state. Clicking the item opens this modal and the group disappears (also hides after 7 days).' },
+                    ]
+                },
+                {
+                    title: 'Cheat sheet & themes',
+                    items: [
+                        { badge: 'new', text: '<strong>Cheat sheet restructured</strong> — the keyboard cheat sheet now has 6 sections: navigation, bookmarks, search modes (including <code>@</code>), commands — bookmarks, commands — appearance (with <code>:buttonbar</code> <code>:fontsize</code> <code>:favicons</code> <code>:preview</code> <code>:packed</code>), and other.' },
+                        { badge: 'new', text: '<strong>5 new themes</strong> — Terminal Amber (phosphor-amber terminal look), Dusk Horizon (muted indigo-navy), Moss & Stone (desaturated earthy olive-grey), Candy Pop (vivid bubblegum pink + electric cyan), Midnight Ink (near-pure black with icy silver-blue). Each available in dark and light variants.' },
+                    ]
+                },
+            ]),
+
+            release('v2026.05.2', 'May 2026', [
+                {
+                    title: 'Search & commands',
+                    items: [
+                        { badge: 'new', text: '<strong>Fuzzy search on URL, note & tags</strong> — the <code>/</code> fuzzy mode now also matches against a bookmark\'s URL domain, tags, and note text when the name doesn\'t match. Secondary-field matches rank below name matches and show a small context snippet.' },
+                        { badge: 'new', text: '<strong>Saved searches as separate group</strong> — opening the <code>&gt;</code> search bar now shows <em>Recent</em> (last 5 queries) and <em>Saved searches</em> as two distinct collapsed groups. Saved searches are collapsed by default so they don\'t obscure recent history.' },
+                        { badge: 'new', text: '<strong>:open all</strong> — new command that opens every bookmark on the current page in new tabs. Shows a safe cap (first 15) and an "open all" option when the page has more.' },
+                        { badge: 'new', text: '<strong>:pin / :unpin</strong> — toggle the pin flag on the keyboard-selected bookmark directly from the command palette, without opening Config.' },
+                        { badge: 'new', text: '<strong>:tag &lt;tagname&gt;</strong> — add or remove a tag on the selected bookmark from the command palette. Typing <code>:tag</code> without a name shows the bookmark\'s current tags.' },
+                        { badge: 'new', text: '<strong>:stale &lt;days&gt;</strong> — the stale command now accepts a custom day window: <code>:stale 7</code>, <code>:stale 90</code> etc. Default remains 30 days when called without an argument.' },
+                    ]
+                },
+                {
+                    title: 'Keyboard cheat sheet',
+                    items: [
+                        { badge: 'new', text: '<strong>Searchable cheat sheet</strong> — a filter input at the top of the cheat sheet (<kbd>!</kbd> / <kbd>F1</kbd>) lets you type to instantly narrow down the ~30 shortcut rows. Matching sections expand automatically; sections with no matches are hidden.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.1', 'May 2026', [
                 {

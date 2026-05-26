@@ -85,22 +85,29 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Delete` — delete the focused bookmark
 
 **Search & commands**
-- `>` — open search (fuzzy bookmark filter)
-- `/` — fuzzy search; results scored by prefix → word-boundary → substring
+- `>` — open search; empty state shows recent queries and saved searches as separate groups
+- `/` — fuzzy search; ranked by prefix → word-boundary → substring; also matches URL domain, tags, and note text
 - `:` — command palette
 - `?` — finders (e.g. `?g query` to search Google)
 - `*` — recent bookmarks panel
-- `! or F1 or Ctrl+/` — keyboard cheat sheet
+- `! or F1 or Ctrl+/` — keyboard cheat sheet (filterable with a type-to-search input)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
 - `:new` — open new-bookmark modal
 - `:note` — edit the note of the focused bookmark
+- `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
+- `:tag <tagname>` — add or remove a tag on the selected bookmark
+- `:open all` — open all bookmarks on the current page in new tabs
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — `order` / `az` / `recent` / `custom`
+- `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
 - `:layout <preset>` — `default` / `compact` / `cards` / `masonry` / `list` / `launcher` …
 - `:theme <name>` — switch colour theme
 - `:density <mode>` — `comfortable` / `compact` / `dense`
 - `:columns <n>` — set column count (1–6)
+- `@` — global search across all pages at once; each result shows the page name as context
+- `:find <text>` — hide tiles whose name or URL don't match; clear with `:find`
+- `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right`
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config page**
@@ -124,7 +131,7 @@ Type these directly in the search bar:
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left)
 - Long-press a bookmark row (~500 ms) to open inline edit
-- Double-click a page tab to rename it
+- Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it
 - Collapsible categories with optional always-collapsed default
 - Tags on bookmarks with autocomplete; filter by tag in search and collections
@@ -141,11 +148,13 @@ Dynamic bookmark groups that appear automatically:
 
 ### Appearance
 
-- 32+ built-in theme families, dark and light variants
+- 37+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink)
 - Custom theme editor
 - Auto dark mode
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
-- Launcher view: toggle via FAB button (⊞); icon size configurable (small / normal / large)
+- Launcher view: toggle via FAB button (⊞) or `:layout launcher`; icon size configurable (small / normal / large)
+- Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
+- ★ What's New star button in the corner opposite the button bar — always visible, opens release notes
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Hover preview cards with configurable delay
@@ -220,6 +229,45 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### v2026.05.3 — May 2026
+
+**Button bar position**
+- **Corner dock mode** — move the button bar to the bottom-left or bottom-right corner via Config → General → Header & Buttons. In dock mode the buttons become a compact 2-column widget: primary actions (`>` `:` `?`) in one column, secondary actions (`!` `*` `⊞`) in the other. The standalone launcher FAB is replaced by the `⊞` button inside the dock.
+- **:buttonbar command** — change button bar position from the command palette: `:buttonbar bottom` / `:buttonbar bottom-right` / `:buttonbar bottom-left`. Current position is shown with ✓.
+
+**Search**
+- **@ global search** — type `@` to fuzzy-search across all pages at once. Each result shows the page name as context so you know where the bookmark lives without switching pages.
+- **:find \<text\>** — filter bookmark tiles on the current page from the command palette. Tiles whose name or URL don't match are hidden in place. Run `:find` with no argument to clear the filter.
+
+**Page customisation**
+- **Page emoji icon** — double-click any page tab on the dashboard to open a popover where you can give the page an emoji icon, displayed inside the tab alongside the page name.
+- **Page colour dot** — choose one of 8 accent colours (or none) for each page in the same popover. A small colour dot appears in the tab for quick visual identification.
+
+**What's new improvements**
+- **★ FAB button** — a star button is always visible in the corner opposite the button bar. Click it at any time to open the release notes modal.
+- **What's new group in search** — when release notes are unread, a *What's New* group appears in the `>` search empty state. Clicking the item opens the modal and the group disappears (also hides automatically after 7 days).
+
+**Cheat sheet & themes**
+- **Cheat sheet restructured** — 6 sections: navigation, bookmarks, search modes (including `@`), commands — bookmarks, commands — appearance (`:buttonbar` `:fontsize` `:favicons` `:preview` `:packed`), and other.
+- **5 new themes** — Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, and Midnight Ink, each in dark and light variants. Brings the total to 37+ built-in theme families.
+
+---
+
+### v2026.05.2 — May 2026
+
+**Search & commands**
+- **Fuzzy search on URL, note & tags** — the `/` fuzzy mode now also matches against a bookmark's URL domain, tags, and note. Secondary-field results rank below name matches and show a small context snippet (URL, `#tag`, or note excerpt).
+- **Saved searches as separate group** — opening the `>` search bar now shows *Recent* (last 5 queries) and *Saved searches* as two distinct groups. Saved searches are collapsed by default.
+- **:open all** — opens all bookmarks on the current page in new tabs. Shows a "first 15" safe option plus "open all" when the page has more bookmarks.
+- **:pin / :unpin** — toggle the pin flag on the keyboard-selected bookmark from the command palette without opening Config.
+- **:tag \<tagname\>** — add or remove a tag on the selected bookmark. Typing `:tag` alone shows the bookmark's current tags.
+- **:stale \[days\]** — accepts a custom day window: `:stale 7`, `:stale 90` etc. Default remains 30 days.
+
+**Keyboard cheat sheet**
+- **Searchable cheat sheet** — a filter input at the top of the `!` / `F1` cheat sheet lets you type to instantly narrow the shortcut list. Matching sections expand automatically; empty sections are hidden.
+
+---
 
 ### v2026.05.1 — May 2026
 

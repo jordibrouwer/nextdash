@@ -510,9 +510,14 @@ class Onboarding {
         if (!selector) {
             return;
         }
-        const element = document.querySelector(selector);
+        let element = document.querySelector(selector);
         if (!element) {
             return;
+        }
+        // Als het element verborgen is (bijv. button-hint in side-dock modus),
+        // val terug op de button-container zelf.
+        if (element.offsetParent === null && element.id === 'button-hint-text') {
+            element = document.querySelector('.button-container') || element;
         }
         element.classList.add('onboarding-highlight');
         this.highlightedElement = element;

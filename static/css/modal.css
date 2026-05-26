@@ -51,6 +51,59 @@
     padding-right: 0.25rem;
 }
 
+/* ── What's New intro block ─────────────────────────────────────── */
+.wn-intro {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 30%, transparent);
+    flex-wrap: wrap;
+}
+
+.wn-intro-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.wn-kofi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    background: color-mix(in srgb, var(--accent-primary) 13%, transparent);
+    color: var(--accent-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 32%, transparent);
+    border-radius: 0.4rem;
+    text-decoration: none;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-normal);
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.wn-kofi-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    transform: translateY(-1px);
+}
+
+.wn-kofi-btn:active {
+    transform: translateY(0);
+}
+
+.wn-kofi-icon {
+    flex-shrink: 0;
+}
+
 /* ── What's New release blocks ─────────────────────────────────── */
 .wn-release {
     margin-bottom: 1.75rem;

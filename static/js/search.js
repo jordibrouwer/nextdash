@@ -1,12 +1,13 @@
 // Search Component JavaScript
 class SearchComponent {
-    constructor(bookmarksForSearch, currentBookmarks, allBookmarks, settings = {}, language = null, finders = []) {
+    constructor(bookmarksForSearch, currentBookmarks, allBookmarks, settings = {}, language = null, finders = [], pages = []) {
         this.bookmarks = bookmarksForSearch;
         this.currentBookmarks = currentBookmarks;
         this.allBookmarks = allBookmarks;
         this.settings = settings;
         this.language = language;
         this.finders = finders;
+        this.pages = pages || [];
         this.currentPageId = settings.currentPage || 1;
         this.shortcuts = new Map();
         this.currentQuery = '';
@@ -58,13 +59,14 @@ class SearchComponent {
         this.preventScrollHandler = null;
     }
 
-    updateData(bookmarksForSearch, currentBookmarks, allBookmarks, settings, language = null, finders = []) {
+    updateData(bookmarksForSearch, currentBookmarks, allBookmarks, settings, language = null, finders = [], pages = []) {
         this.bookmarks = bookmarksForSearch;
         this.currentBookmarks = currentBookmarks;
         this.allBookmarks = allBookmarks;
         this.settings = settings;
         this.language = language || this.language;
         this.finders = finders;
+        this.pages = pages || this.pages || [];
         this.commandsComponent.setLanguage(this.language);
         this.commandsComponent.setBookmarks(this.currentBookmarks, this.allBookmarks);
         this.findersComponent.setLanguage(this.language);
@@ -75,6 +77,12 @@ class SearchComponent {
         this.currentPageId = settings.currentPage || this.currentPageId || 1;
         this.savedSearches = this.loadSavedSearches();
         this.buildShortcutsMap();
+    }
+
+    _getPageName(pageId) {
+        if (!pageId || !Array.isArray(this.pages)) return null;
+        const page = this.pages.find(p => p.id === pageId);
+        return page ? page.name : null;
     }
 
     buildShortcutsMap() {
@@ -343,6 +351,13 @@ class SearchComponent {
             return;
         }
 
+        // Handle @ key to start global search
+        if (e.key === '@') {
+            e.preventDefault();
+            this.addToQuery('@');
+            return;
+        }
+
         // Handle ? key to start finders
         if (key === '?') {
             e.preventDefault();
@@ -365,15 +380,8 @@ class SearchComponent {
             return;
         }
 
-        // Handle space key for commands
-        if (key === ' ' && this.currentQuery.startsWith(':')) {
-            e.preventDefault();
-            this.addToQuery(' ');
-            return;
-        }
-
-        // Handle space key for finders
-        if (key === ' ' && this.currentQuery.startsWith('?')) {
+        // Handle space key for commands, finders, and global search
+        if (key === ' ' && (this.currentQuery.startsWith(':') || this.currentQuery.startsWith('?') || this.currentQuery.startsWith('@'))) {
             e.preventDefault();
             this.addToQuery(' ');
             return;
@@ -382,6 +390,13 @@ class SearchComponent {
         // In command mode allow all printable characters (needed for URLs: dots, slashes, underscores, etc.)
         // Use e.key directly to preserve original case for URL paths.
         if (this.currentQuery.startsWith(':') && e.key.length === 1) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
+        // In global-search mode allow all printable characters
+        if (this.currentQuery.startsWith('@') && e.key.length === 1) {
             e.preventDefault();
             this.addToQuery(e.key);
             return;
@@ -640,7 +655,29 @@ class SearchComponent {
         // Find matching shortcuts
         this.searchMatches = [];
 
-        if (this.currentQuery.startsWith(':')) {
+        if (this.currentQuery.startsWith('@')) {
+            // Handle global search across all pages
+            const query = this.currentQuery.slice(1).trim();
+            if (!query) {
+                const t = (key, fb) => this.language ? (this.language.t(key) || fb) : fb;
+                this.searchMatches = [{
+                    type: 'command-group-header',
+                    groupId: 'global-hint',
+                    label: t('dashboard.globalSearchHint', 'Search across all pages — type to start'),
+                    count: 0,
+                    expanded: false
+                }];
+            } else {
+                const results = this.fuzzySearchComponent.handleFuzzy(query, this.allBookmarks);
+                this.searchMatches = results.map(m => {
+                    const pageName = this._getPageName(m.bookmark && m.bookmark.pageId);
+                    const isCurrentPage = m.bookmark && m.bookmark.pageId === this.currentPageId;
+                    const pageMeta = (pageName && !isCurrentPage) ? pageName : null;
+                    const combinedMeta = [pageMeta, m.meta].filter(Boolean).join(' · ') || null;
+                    return { ...m, meta: combinedMeta, type: 'global-search' };
+                });
+            }
+        } else if (this.currentQuery.startsWith(':')) {
             // Handle commands
             this.searchMatches = this.commandsComponent.handleCommand(this.currentQuery);
         } else if (this.currentQuery.startsWith('?')) {
@@ -948,6 +985,9 @@ class SearchComponent {
         } else if (q.startsWith('?')) {
             mode = 'finder';
             label = this.language ? this.language.t('dashboard.searchModeFinder', 'FIND') : 'FIND';
+        } else if (q.startsWith('@')) {
+            mode = 'global';
+            label = this.language ? this.language.t('dashboard.searchModeGlobal', 'ALL') : 'ALL';
         } else if (q.startsWith('/') && this.interleaveMode) {
             mode = 'fuzzy';
             label = this.language ? this.language.t('dashboard.searchModeFuzzy', 'FUZZY') : 'FUZZY';
@@ -1096,16 +1136,16 @@ class SearchComponent {
             const configClass = (match.type === 'config' || match.type === 'colors') ? ' config-entry' : '';
             const commandClass = (match.type === 'command' || match.type === 'command-completion') ? ' command-entry' : '';
             const finderClass = (match.type === 'finder' || match.type === 'finder-completion') ? ' finder-entry' : '';
-            const fuzzyClass = match.type === 'fuzzy' ? ' fuzzy-entry' : '';
+            const fuzzyClass = (match.type === 'fuzzy' || match.type === 'global-search') ? ' fuzzy-entry' : '';
             const historyClass = match.type === 'history' ? ' history-entry' : '';
             const savedClass = match.type === 'saved-search' ? ' saved-search-entry' : '';
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
             const groupChildClass = (match.groupId || match.type === 'filter-completion') ? ' command-group-child' : '';
             matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + groupChildClass;
-            
+
             // Get the display name based on match type
             let displayName;
-            if (match.type === 'fuzzy') {
+            if (match.type === 'fuzzy' || match.type === 'global-search') {
                 displayName = this.fuzzySearchComponent.highlightFuzzyMatch(match.name, match.query);
             } else if (match.type === 'history' || match.type === 'saved-search') {
                 displayName = this._escHtml(match.name);
@@ -1115,9 +1155,9 @@ class SearchComponent {
                 displayName = this._escHtml(match.name || '');
             }
 
-            // For fuzzy search, don't show shortcut span to avoid empty space
+            // For fuzzy/global search, don't show shortcut span to avoid empty space
             let shortcutHtml = '';
-            if (match.type !== 'fuzzy') {
+            if (match.type !== 'fuzzy' && match.type !== 'global-search') {
                 const rawShortcut = match.shortcut.toUpperCase();
                 const highlightedShortcut = match.query
                     ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
@@ -1171,7 +1211,7 @@ class SearchComponent {
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
                     this.justCompleted = true; // Prevent immediate execution
-                } else if (match.type === 'fuzzy') {
+                } else if (match.type === 'fuzzy' || match.type === 'global-search') {
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
                     this.closeSearch();
