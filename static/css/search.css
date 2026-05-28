@@ -539,13 +539,21 @@
     transform: translateY(-8px);
 }
 
-.search-flow-chip {
+.search-flow-chip,
+kbd.search-flow-chip {
     display: inline-block;
     margin: 0 0.05rem;
     color: var(--accent-primary);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
     text-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.search-flow-hint .sfh-seg-label {
+    margin-left: 0.15em;
 }
 
 /* Each text segment wipes in left-to-right via clip-path — no extra chars, no fade */
@@ -555,7 +563,8 @@
 }
 
 /* Chip chars get an extra scale-bounce on top of the wipe */
-.sfh-seg.search-flow-chip {
+.sfh-seg.search-flow-chip,
+.sfh-seg kbd.search-flow-chip {
     animation: sfhWipe 0.3s cubic-bezier(0.22, 1, 0.36, 1) both,
                sfhPop  0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }

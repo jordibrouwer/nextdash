@@ -94,3 +94,62 @@ async function persistLastSaveContext(serverUrl, pageId, category) {
     }
   });
 }
+
+async function buildDashboardDeepLink(serverUrl, pageId) {
+  const base = normalizeServerUrl(serverUrl);
+  if (!base) return `${base}/`;
+  try {
+    const pages = await loadPagesList(serverUrl);
+    const idx = pages.findIndex((p) => String(p.id) === String(pageId));
+    if (idx >= 0) {
+      return `${base}/#${idx + 1}`;
+    }
+  } catch (e) {
+    console.error('buildDashboardDeepLink:', e);
+  }
+  return `${base}/`;
+}
+
+/**
+ * Notify open nextDash tabs (same server URL) so the dashboard can toast + refresh.
+ */
+async function notifyDashboardBookmarkSaved(serverUrl, pageId, bookmarkName, toastMessage) {
+  const base = normalizeServerUrl(serverUrl);
+  if (!base || typeof chrome.tabs?.query !== 'function' || typeof chrome.scripting?.executeScript !== 'function') {
+    return;
+  }
+  const hash = await buildDashboardDeepLink(serverUrl, pageId);
+  const message = toastMessage || (bookmarkName
+    ? `"${String(bookmarkName).slice(0, 80)}" saved to nextDash`
+    : 'Bookmark saved to nextDash');
+  let tabs = [];
+  try {
+    tabs = await chrome.tabs.query({});
+  } catch (e) {
+    return;
+  }
+  const matching = tabs.filter((tab) => {
+    if (!tab.id || !tab.url) return false;
+    try {
+      const tabOrigin = new URL(tab.url).origin;
+      const serverOrigin = new URL(base).origin;
+      return tabOrigin === serverOrigin && tab.url.startsWith(base);
+    } catch {
+      return false;
+    }
+  });
+  const payload = { message, pageId: String(pageId), hash };
+  await Promise.all(matching.map(async (tab) => {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (detail) => {
+          window.dispatchEvent(new CustomEvent('nextdash:bookmark-saved', { detail }));
+        },
+        args: [payload]
+      });
+    } catch (e) {
+      // Tab may not allow injection (chrome://, etc.)
+    }
+  }));
+}

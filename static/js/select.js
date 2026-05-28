@@ -39,10 +39,31 @@ class CustomSelect {
         
         this.trigger.appendChild(selectedText);
         this.trigger.appendChild(arrow);
+
+        const selectId = this.originalSelect.id || `custom-select-${Math.random().toString(36).slice(2, 9)}`;
+        if (!this.originalSelect.id) {
+            this.originalSelect.id = selectId;
+        }
+        const listboxId = `${selectId}-listbox`;
+        this.trigger.setAttribute('role', 'combobox');
+        this.trigger.setAttribute('aria-haspopup', 'listbox');
+        this.trigger.setAttribute('aria-controls', listboxId);
+        this.trigger.setAttribute('aria-expanded', 'false');
+        const labelEl = document.querySelector(`label[for="${selectId}"]`);
+        if (labelEl) {
+            if (!labelEl.id) {
+                labelEl.id = `${selectId}-label`;
+            }
+            this.trigger.setAttribute('aria-labelledby', labelEl.id);
+        } else if (this.originalSelect.getAttribute('aria-label')) {
+            this.trigger.setAttribute('aria-label', this.originalSelect.getAttribute('aria-label'));
+        }
         
         // Create options container
         this.optionsContainer = document.createElement('div');
         this.optionsContainer.className = 'custom-select-options';
+        this.optionsContainer.id = listboxId;
+        this.optionsContainer.setAttribute('role', 'listbox');
 
         this.populateOptions();
 
@@ -70,6 +91,8 @@ class CustomSelect {
         Array.from(this.originalSelect.options).forEach((option, index) => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'custom-select-option';
+            optionDiv.setAttribute('role', 'option');
+            optionDiv.setAttribute('aria-selected', option.selected ? 'true' : 'false');
             optionDiv.textContent = option.textContent;
             optionDiv.dataset.value = option.value;
             optionDiv.dataset.index = index;
@@ -113,12 +136,17 @@ class CustomSelect {
     updateSelectedOption() {
         const options = this.optionsContainer.querySelectorAll('.custom-select-option');
         options.forEach((option, index) => {
-            if (index === this.originalSelect.selectedIndex) {
+            const isSelected = index === this.originalSelect.selectedIndex;
+            if (isSelected) {
                 option.classList.add('selected');
             } else {
                 option.classList.remove('selected');
             }
+            option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
         });
+        if (this.trigger) {
+            this.trigger.setAttribute('aria-expanded', this.isOpen ? 'true' : 'false');
+        }
     }
 
     highlightOption(index) {
@@ -161,6 +189,7 @@ class CustomSelect {
         if (this.isOpen) return;
 
         this.isOpen = true;
+        this.trigger.setAttribute('aria-expanded', 'true');
         this.wrapper.querySelector('.custom-select').classList.add('open');
         this.optionsContainer.classList.add('is-open');
 
@@ -194,6 +223,7 @@ class CustomSelect {
         if (!this.isOpen) return;
 
         this.isOpen = false;
+        this.trigger.setAttribute('aria-expanded', 'false');
         this.wrapper.querySelector('.custom-select').classList.remove('open');
         this.optionsContainer.classList.remove('is-open');
 

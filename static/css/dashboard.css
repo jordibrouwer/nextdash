@@ -477,6 +477,10 @@ body {
 .health-link a {
     animation: healthLinkShimmer 3s ease-in-out infinite;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35em;
 }
 
 .health-link a:hover,
@@ -508,6 +512,17 @@ body {
     background: var(--accent-error);
     pointer-events: none;
     z-index: 1;
+}
+
+.health-badge--labeled {
+    position: static;
+    min-width: 0;
+    height: auto;
+    padding: 0.1em 0.45em;
+    font-size: 0.72em;
+    font-weight: var(--font-weight-black);
+    text-transform: lowercase;
+    white-space: nowrap;
 }
 
 .health-badge-warn {
@@ -1732,6 +1747,12 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-inline-form {
+        animation: none;
     }
 }
 

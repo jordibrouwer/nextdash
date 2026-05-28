@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v30';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v31';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -46,6 +46,60 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.05.4', 'May 2026', [
+                {
+                    title: 'UX & discoverability',
+                    items: [
+                        { badge: 'new', text: '<strong>Rich keyboard tooltips</strong> — on desktop, hovering footer buttons shows the action name plus shortcuts (e.g. <kbd>&gt;</kbd> search, <kbd>Ctrl+Shift+A</kbd> for quick-add). Hidden on touch devices.' },
+                        { badge: 'new', text: '<strong>Search-flow hint with labels</strong> — the first-run hint above the button bar shows key chips plus text labels (search · commands · finders · bookmark); includes a swipe-between-pages hint on mobile.' },
+                        { badge: 'new', text: '<strong>Mobile bottom bar</strong> — short text labels under footer icon buttons; a mini status line on small screens shows date · current page · health summary.' },
+                        { badge: 'new', text: '<strong>Post-setup wizard</strong> — after onboarding, empty libraries get a 3-step guide: open <em>config → pages</em>, add your first bookmark (quick-add or <em>config → bookmarks</em>), then finish.' },
+                        { badge: 'new', text: '<strong>Tips auto-expire</strong> — rotating footer tips turn off automatically 7 days after onboarding (still configurable in General).' },
+                        { badge: 'new', text: '<strong>Skeleton loading</strong> — dashboard, config, health, and colors show shimmer placeholders while data loads instead of a blank flash.' },
+                    ]
+                },
+                {
+                    title: 'Health (beta)',
+                    items: [
+                        { badge: 'new', text: '<strong>Bulk open confirmation</strong> — <em>Open broken links</em> asks for confirmation with the total broken count and a per-batch limit (default 10, max 25).' },
+                        { badge: 'new', text: '<strong>Health badge on dashboard</strong> — the health link shows a text pill like <em>3 broken</em> (or a warning count), not only a number; refreshes when you return to the tab.' },
+                    ]
+                },
+                {
+                    title: 'Browser extension',
+                    items: [
+                        { badge: 'new', text: '<strong>Save success panel</strong> — the popup stays open after save with an <em>Open in nextDash</em> deep link to the right page (<code>#tab</code>).' },
+                        { badge: 'new', text: '<strong>Dashboard toast</strong> — if the dashboard tab is open on the same server, a success notification appears and bookmarks refresh.' },
+                        { badge: 'new', text: '<strong>Extension UI translated</strong> — popup strings in EN / NL / DE / FR; language follows nextDash server settings when configured.' },
+                    ]
+                },
+                {
+                    title: 'Accessibility',
+                    items: [
+                        { badge: 'new', text: '<strong>Modal semantics</strong> — global confirm/delete modals use <code>role="dialog"</code>, <code>aria-modal</code>, and labelled titles (aligned with quick-add).' },
+                        { badge: 'new', text: '<strong>Config tab list</strong> — <code>role="tablist"</code> / <code>aria-selected</code> on config tabs.' },
+                        { badge: 'new', text: '<strong>Skip links</strong> — “Skip to main content” on dashboard and config.' },
+                        { badge: 'new', text: '<strong>Custom selects</strong> — combobox/listbox ARIA on styled <code>&lt;select&gt;</code> widgets.' },
+                        { badge: 'new', text: '<strong>prefers-reduced-motion</strong> — inline-edit reveal animation respects reduced motion.' },
+                    ]
+                },
+                {
+                    title: 'Config polish',
+                    items: [
+                        { badge: 'new', text: '<strong>Sticky save bar</strong> — save / unsaved / undo / discard stay visible while scrolling config.' },
+                        { badge: 'new', text: '<strong>Autosave for low-risk fields</strong> — language, theme, and similar toggles save without a full Save click.' },
+                        { badge: 'new', text: '<strong>General tab intro</strong> — short explanation at the top of General; <em>backups</em> tab routing fixed; page <code>lang</code> matches your language.' },
+                        { badge: 'fix', text: '<strong>Ko-fi overlay removed</strong> — floating support button removed from the config page (intro link in General remains).' },
+                    ]
+                },
+                {
+                    title: 'Translations',
+                    items: [
+                        { badge: 'new', text: '<strong>DE / FR coverage</strong> — new dashboard strings (skip link, health confirm, swipe hint, tooltips, post-setup wizard, and more) added for German and French.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.3', 'May 2026', [
                 {

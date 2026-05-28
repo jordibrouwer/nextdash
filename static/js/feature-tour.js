@@ -48,6 +48,12 @@ class FeatureTour {
                 placement: 'top'
             },
             {
+                title: this._t('stepPagesOverviewTitle', 'All pages at a glance'),
+                body: this._t('stepPagesOverviewBody', 'Press "," or tap the pages button to see every page with bookmark counts — handy when you have many pages.'),
+                selector: '#page-overview-header-btn',
+                placement: 'bottom'
+            },
+            {
                 title: this._t('step5Title', 'Columns and favicons'),
                 body: this._t('step5Body', 'Set the number of columns that fits your screen. Favicons are the website icons next to each bookmark — handy for quick recognition.'),
                 fields: [

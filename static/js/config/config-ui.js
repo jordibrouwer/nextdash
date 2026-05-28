@@ -18,11 +18,33 @@ class ConfigUI {
     initTabs() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
+        const tabsContainer = document.querySelector('.config-controls-wrapper .tabs');
+
+        if (tabsContainer) {
+            tabsContainer.setAttribute('role', 'tablist');
+        }
+
+        tabButtons.forEach((button) => {
+            const targetTab = button.getAttribute('data-tab');
+            if (!targetTab) return;
+            button.setAttribute('role', 'tab');
+            button.setAttribute('type', 'button');
+            const panelId = `config-tab-panel-${targetTab}`;
+            const targetContent = document.querySelector(`[data-tab-content="${targetTab}"]`);
+            if (targetContent) {
+                targetContent.id = panelId;
+                targetContent.setAttribute('role', 'tabpanel');
+                button.setAttribute('aria-controls', panelId);
+            }
+        });
 
         // Function to switch to a specific tab
         const switchToTab = (targetTab) => {
             // Remove active class from all buttons and contents
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
             tabContents.forEach(content => content.classList.remove('active'));
 
             // Add active class to target button and corresponding content
@@ -30,6 +52,7 @@ class ConfigUI {
             const targetContent = document.querySelector(`[data-tab-content="${targetTab}"]`);
             if (targetButton) {
                 targetButton.classList.add('active');
+                targetButton.setAttribute('aria-selected', 'true');
                 this._scrollTabIntoView(targetButton);
             }
             if (targetContent) {
@@ -63,7 +86,7 @@ class ConfigUI {
 
     // Check initial hash and switch to corresponding tab
     const initialHash = window.location.hash.substring(1);
-    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'keyboard', 'stats', 'help'];
+    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
     if (validTabs.includes(initialHash)) {
         switchToTab(initialHash);
     } else {

@@ -1,0 +1,172 @@
+/* Shared skeleton placeholders while body.loading */
+
+body.loading {
+    overflow-x: hidden;
+}
+
+.skeleton-root {
+    display: none;
+    pointer-events: none;
+    user-select: none;
+}
+
+body.loading .skeleton-root {
+    display: block;
+}
+
+body.loading .skeleton-dashboard.skeleton-root,
+body.loading .skeleton-health-summary.skeleton-root,
+body.loading .skeleton-colors-grid.skeleton-root {
+    display: grid;
+}
+
+body.loading .skeleton-hide-while-loading {
+    visibility: hidden !important;
+}
+
+body.loading #config-main > :not([data-skeleton-root]),
+body.loading .colors-main > :not([data-skeleton-root]) {
+    visibility: hidden;
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--text-secondary, #888) 12%, transparent) 0%,
+        color-mix(in srgb, var(--text-secondary, #888) 22%, transparent) 50%,
+        color-mix(in srgb, var(--text-secondary, #888) 12%, transparent) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.2s ease-in-out infinite;
+    border-radius: 2px;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.skeleton-line {
+    height: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-line--sm {
+    height: 0.65rem;
+    width: 40%;
+}
+
+.skeleton-line--title {
+    height: 1.1rem;
+    width: 55%;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-line--wide {
+    width: 85%;
+}
+
+.skeleton-line--pill {
+    height: 1.5rem;
+    width: 4.5rem;
+    border-radius: 999px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+/* Dashboard */
+.skeleton-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    padding: 0.25rem 0;
+}
+
+.skeleton-dashboard-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.skeleton-bookmark-row {
+    height: 1.35rem;
+    width: 100%;
+}
+
+.skeleton-bookmark-row--short {
+    width: 72%;
+}
+
+/* Config */
+.skeleton-config-panel {
+    padding: 0.5rem 0 2rem;
+}
+
+.skeleton-config-cards {
+    display: grid;
+    gap: 1rem;
+    max-width: 720px;
+}
+
+.skeleton-config-card {
+    border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
+    padding: 1rem;
+    min-height: 5rem;
+}
+
+/* Health */
+.skeleton-health-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.skeleton-health-card {
+    min-height: 4.5rem;
+    border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
+    padding: 0.75rem;
+}
+
+.skeleton-health-issues {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skeleton-health-row {
+    height: 2.75rem;
+    width: 100%;
+}
+
+/* Colors */
+.skeleton-colors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.skeleton-colors-group {
+    min-height: 8rem;
+    border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
+    padding: 0.75rem;
+}
+
+.skeleton-header-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+        animation: none;
+        background: color-mix(in srgb, var(--text-secondary, #888) 18%, transparent);
+    }
+}

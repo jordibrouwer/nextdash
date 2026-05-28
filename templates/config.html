@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,19 +24,16 @@
     <link rel="stylesheet" href="/static/css/select.css">
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
+    <link rel="stylesheet" href="/static/css/config-save-sticky.css">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
-    <style>
-        /* Prevent flash of unstyled content */
-        body.loading {
-            opacity: 0;
-            visibility: hidden;
-        }
-    </style>
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+    <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
     <!-- Contenedor 1: Title y nav links -->
     <div class="config-section section-header">
         <div class="container">
@@ -73,7 +70,7 @@
                     <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
                     <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
                     <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
-                    <button class="tab-button" data-tab="collections">collections</button>
+                    <button class="tab-button" data-tab="collections" data-i18n="config.collectionsTab">collections</button>
                     <button class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
                     <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
                     <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
@@ -87,11 +84,30 @@
     <div class="config-section section-content">
         <div class="container">
             <div id="config-breadcrumb" class="config-breadcrumb" aria-label="Location"></div>
-            <main class="config-main">
+            <main id="config-main" class="config-main" tabindex="-1" aria-busy="true">
+            <div class="skeleton-root skeleton-config-panel" data-skeleton-root aria-hidden="true">
+                <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
+                <div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div>
+                <div class="skeleton-config-cards">
+                    <div class="skeleton-config-card">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div>
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div>
+                        <div class="skeleton-shimmer skeleton-line"></div>
+                    </div>
+                    <div class="skeleton-config-card">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div>
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div>
+                    </div>
+                    <div class="skeleton-config-card">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div>
+                        <div class="skeleton-shimmer skeleton-line"></div>
+                    </div>
+                </div>
+            </div>
             <div class="tab-content active" data-tab-content="general">
             <div>
                 <div class="general-tab-intro">
-                    <p>Manage all dashboard settings from this page — appearance, layout, bookmarks, search, smart collections, and more. Changes are saved immediately and reflected on the dashboard without a page reload.</p>
+                    <p data-i18n="config.generalTabIntro">Manage all dashboard settings from this page — appearance, layout, bookmarks, search, smart collections, and more. Click Save to apply changes; the dashboard updates without a full page reload.</p>
                     <div class="general-tab-intro-support">
                         <span class="general-tab-intro-support-label">nextDash is free and open-source.</span>
                         <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn">
@@ -1835,7 +1851,18 @@
     <script src="/static/js/search-commands/search-commands-new.js"></script>
     <script src="/static/js/config/config-quick-add.js"></script>
     <!-- Main config orchestrator -->
+    <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/config.js"></script>
+
+    <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
+        <div class="config-save-sticky-inner">
+            <span class="config-save-sticky-hint" data-i18n="config.unsavedStickyHint">You have unsaved changes</span>
+            <div class="config-save-sticky-actions">
+                <button type="button" id="save-btn-sticky" class="btn btn-success" data-i18n="config.saveShort">Save</button>
+                <button type="button" id="discard-sticky-btn" class="btn btn-danger btn-small" data-i18n="config.discardShort">Discard</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

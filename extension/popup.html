@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>nextDash Bookmark Saver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,62 +14,67 @@
         <div id="confirmation" class="confirmation hidden">
             <p id="confirmation-text"></p>
             <div class="confirmation-buttons">
-                <button id="confirm-yes">Yes</button>
-                <button id="confirm-no">No</button>
+                <button id="confirm-yes" type="button" data-i18n="btnConfirmYes">Yes</button>
+                <button id="confirm-no" type="button" data-i18n="btnConfirmNo">No</button>
             </div>
         </div>
         <div class="tabs">
-            <button class="tab-button active" data-tab="save">Save</button>
-            <button class="tab-button" data-tab="settings">Settings</button>
+            <button class="tab-button active" type="button" data-tab="save" data-i18n="tabSave">Save</button>
+            <button class="tab-button" type="button" data-tab="settings" data-i18n="tabSettings">Settings</button>
         </div>
         <div id="save-tab" class="tab-content active">
-            <h2>Save Bookmark</h2>
+            <h2 data-i18n="saveTitle">Save Bookmark</h2>
             <form id="save-form" class="save-form">
-                <label for="bookmark-name">Name:</label>
+                <label for="bookmark-name" data-i18n="labelName">Name:</label>
                 <input type="text" id="bookmark-name" required>
-                
-                <label for="bookmark-url">URL:</label>
+
+                <label for="bookmark-url" data-i18n="labelUrl">URL:</label>
                 <input type="text" id="bookmark-url" required autocomplete="off" spellcheck="false">
                 <p id="url-guard-msg" class="url-guard-msg hidden" role="status"></p>
-                
-                <label for="bookmark-tags">Tags (optional, comma-separated):</label>
-                <input type="text" id="bookmark-tags" placeholder="work, personal, dev">
 
-                <label for="bookmark-note">Note (optional):</label>
-                <textarea id="bookmark-note" rows="3" placeholder="Optional note"></textarea>
-                
-                <label for="page-select">Page:</label>
+                <label for="bookmark-tags" data-i18n="labelTags">Tags (optional, comma-separated):</label>
+                <input type="text" id="bookmark-tags" data-i18n-placeholder="tagsPlaceholder" placeholder="work, personal, dev">
+
+                <label for="bookmark-note" data-i18n="labelNote">Note (optional):</label>
+                <textarea id="bookmark-note" rows="3" data-i18n-placeholder="notePlaceholder" placeholder="Optional note"></textarea>
+
+                <label for="page-select" data-i18n="labelPage">Page:</label>
                 <select id="page-select"></select>
-                
-                <label for="category-select">Category:</label>
+
+                <label for="category-select" data-i18n="labelCategory">Category:</label>
                 <select id="category-select"></select>
-                
-                <button type="submit">Save Bookmark</button>
+
+                <button type="submit" class="btn-primary" data-i18n="btnSaveBookmark">Save Bookmark</button>
             </form>
+            <div id="save-success-panel" class="save-success-panel hidden" role="status">
+                <p id="save-success-text" class="save-success-text" data-i18n="saveSuccess">Bookmark saved.</p>
+                <a id="open-nextdash-link" class="btn-open-dash" href="#" target="_blank" rel="noopener noreferrer" data-i18n="openInNextdash">Open in nextDash</a>
+            </div>
         </div>
         <div id="settings-tab" class="tab-content">
-            <h2>Settings</h2>
+            <h2 data-i18n="settingsTitle">Settings</h2>
             <form id="settings-form">
-                <label for="server-url">nextDash URL:</label>
+                <label for="server-url" data-i18n="labelServerUrl">nextDash URL:</label>
                 <div class="input-with-button">
-                    <input type="url" id="server-url" placeholder="http://localhost:8080" required>
-                    <button type="button" id="reload-pages-btn" title="Reload Pages">⟳</button>
+                    <input type="url" id="server-url" data-i18n-placeholder="serverUrlPlaceholder" placeholder="http://localhost:8080" required>
+                    <button type="button" id="reload-pages-btn" data-i18n-title="reloadPagesTitle" title="Reload Pages">⟳</button>
                 </div>
-                <label for="default-page">Default Page:</label>
+                <label for="default-page" data-i18n="labelDefaultPage">Default Page:</label>
                 <select id="default-page"></select>
-                
-                <label for="default-category">Default Category:</label>
+
+                <label for="default-category" data-i18n="labelDefaultCategory">Default Category:</label>
                 <select id="default-category"></select>
-                
+
                 <div class="button-group">
-                    <button type="submit">Save Settings</button>
-                    <button type="button" id="reset-settings-btn">Reset Settings</button>
+                    <button type="submit" data-i18n="btnSaveSettings">Save Settings</button>
+                    <button type="button" id="reset-settings-btn" data-i18n="btnResetSettings">Reset Settings</button>
                 </div>
             </form>
         </div>
     </div>
     <div id="message" class="message"></div>
     <script src="save-common.js"></script>
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

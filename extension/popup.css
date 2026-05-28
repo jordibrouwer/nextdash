@@ -15,7 +15,7 @@
   --accent-error: #FF0055;
 
   /* Font */
-  --font-family-main: 'Courier New', monospace;
+  --font-family-main: 'Source Code Pro', 'Courier New', monospace;
   --font-size-text: 14px;
   --font-size-title: 18px;
   --font-weight-normal: 400;
@@ -273,4 +273,57 @@ button:hover {
 
 .button-group button {
   flex: 1;
+}
+
+.btn-primary,
+button[type="submit"].btn-primary {
+  width: 100%;
+  margin-top: var(--padding-medium);
+  background: var(--accent-success);
+  color: #000;
+  font-weight: var(--font-weight-black);
+  border: none;
+}
+
+.save-success-panel {
+  margin-top: var(--padding-medium);
+  padding: var(--padding-medium);
+  border: var(--border-width) solid var(--accent-success);
+  background: color-mix(in srgb, var(--accent-success) 8%, var(--background-secondary));
+}
+
+.save-success-panel.hidden,
+.save-form.hidden,
+.hidden {
+  display: none !important;
+}
+
+.save-success-text {
+  margin-bottom: var(--padding-small);
+  color: var(--accent-success);
+}
+
+.btn-open-dash {
+  display: block;
+  text-align: center;
+  padding: var(--padding-small);
+  border: var(--border-width) solid var(--accent-success);
+  color: var(--accent-success);
+  text-decoration: none;
+  text-transform: lowercase;
+  font-weight: var(--font-weight-black);
+}
+
+.btn-open-dash:hover {
+  background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+}
+
+.url-guard-msg {
+  font-size: 0.8em;
+  color: var(--accent-error);
+  margin-top: 4px;
+}
+
+.url-guard-msg.hidden {
+  display: none;
 }

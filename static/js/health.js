@@ -426,20 +426,59 @@
         });
 
         document.getElementById('open-broken-btn')?.addEventListener('click', async (e) => {
-            const btn = e.target;
+            const btn = e.currentTarget || e.target;
+            const OPEN_BROKEN_MAX = 10;
+            const totalBroken = Number(healthState.report?.summary?.brokenCount || 0)
+                || (healthState.report?.issues || []).filter((issue) => issue.status === 'broken').length;
+
+            if (totalBroken === 0) {
+                showBulkStatus(t('health.noBrokenLinks', 'No broken links to open.'));
+                return;
+            }
+
+            const openCount = Math.min(totalBroken, OPEN_BROKEN_MAX);
+            const confirmMessage = t(
+                'health.openBrokenConfirm',
+                'Open {count} broken link(s) in new tabs? (max {max} at a time; {total} total broken.)',
+                { count: openCount, max: OPEN_BROKEN_MAX, total: totalBroken }
+            );
+
+            let confirmed = true;
+            if (window.AppModal && typeof window.AppModal.confirm === 'function') {
+                confirmed = await window.AppModal.confirm({
+                    title: t('health.openBrokenTitle', 'Open broken links'),
+                    message: confirmMessage,
+                    confirmText: t('health.openBrokenConfirmBtn', 'Open links'),
+                    cancelText: t('health.cancel', 'Cancel'),
+                    confirmClass: 'danger'
+                });
+            } else if (!window.confirm(confirmMessage)) {
+                confirmed = false;
+            }
+            if (!confirmed) return;
+
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.classList.add('is-loading');
             btn.textContent = t('health.opening', 'opening...');
             try {
-                const response = await fetch('/api/health/open-broken', { method: 'POST' });
+                const response = await fetch('/api/health/open-broken', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: OPEN_BROKEN_MAX })
+                });
                 if (response.ok) {
                     const result = await response.json();
                     const urls = result.urls || [];
                     urls.forEach((url) => {
                         window.open(url, '_blank', 'noopener');
                     });
-                    showBulkStatus(t('health.openedBrokenLinks', 'Opened {count} broken links', { count: urls.length }));
+                    let statusMsg = t('health.openedBrokenLinks', 'Opened {count} broken links', { count: urls.length });
+                    const remaining = Math.max(0, (result.totalBroken || totalBroken) - urls.length);
+                    if (remaining > 0) {
+                        statusMsg += ' ' + t('health.openBrokenRemaining', '({remaining} more in health view.)', { remaining });
+                    }
+                    showBulkStatus(statusMsg);
                 } else {
                     showBulkStatus(t('health.openBrokenFailed', 'Failed to open broken links'));
                 }
@@ -789,7 +828,11 @@
 
         await loadReport();
         render();
-        document.body.classList.remove('loading');
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
+        }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -799,7 +842,11 @@
             if (summary) {
                 summary.innerHTML = `<div class="health-empty">${escapeHtml(t('health.loadFailed', 'Unable to load the health report.'))}</div>`;
             }
-            document.body.classList.remove('loading');
+            if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+                window.SkeletonLoading.finish();
+            } else {
+                document.body.classList.remove('loading');
+            }
         });
     });
 })();

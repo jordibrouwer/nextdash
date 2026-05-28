@@ -16,8 +16,8 @@ class Modal {
         }
 
         const modalHTML = `
-            <div id="app-modal" class="modal-overlay">
-                <div class="modal">
+            <div id="app-modal" class="modal-overlay" role="presentation">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
                     <div class="modal-header">
                         <span class="modal-title" id="modal-title"></span>
                     </div>
@@ -33,6 +33,7 @@ class Modal {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         this.modal = document.getElementById('app-modal');
         this.modalPanel = this.modal.querySelector('.modal');
+        this.modal.setAttribute('aria-hidden', 'true');
     }
 
     setupEventListeners() {
@@ -176,6 +177,7 @@ class Modal {
         }
 
         this.modal.classList.add('show');
+        this.modal.setAttribute('aria-hidden', 'false');
         
         // Store the element that triggered the modal so we can return focus
         this.previouslyFocusedElement = document.activeElement;
@@ -201,6 +203,7 @@ class Modal {
     hide() {
         if (this.modal) {
             this.modal.classList.remove('show');
+            this.modal.setAttribute('aria-hidden', 'true');
             if (this.activeModalClasses.length > 0) {
                 this.modalPanel.classList.remove(...this.activeModalClasses);
             }

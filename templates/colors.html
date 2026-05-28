@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,16 +16,10 @@
     <link rel="stylesheet" href="/static/css/status.css">
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
-    <style>
-        /* Prevent flash of unstyled content */
-        body.loading {
-            opacity: 0;
-            visibility: hidden;
-        }
-    </style>
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
     <!-- Contenedor 1: Title y nav links -->
@@ -62,7 +56,12 @@
     <!-- Contenedor 3: Contenido de la página -->
     <div class="config-section section-content">
         <div class="container">
-            <main class="config-main">
+            <main class="config-main colors-main">
+            <div class="skeleton-root skeleton-colors-grid" data-skeleton-root aria-hidden="true">
+                <div class="skeleton-colors-group"><div class="skeleton-shimmer skeleton-line skeleton-line--title"></div><div class="skeleton-shimmer skeleton-line"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+                <div class="skeleton-colors-group"><div class="skeleton-shimmer skeleton-line skeleton-line--title"></div><div class="skeleton-shimmer skeleton-line"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+                <div class="skeleton-colors-group"><div class="skeleton-shimmer skeleton-line skeleton-line--title"></div><div class="skeleton-shimmer skeleton-line"></div></div>
+            </div>
             <div class="tab-content" data-tab-content="dark">
             <div class="config-section">
                 <div class="colors-grid">
@@ -438,6 +437,7 @@
     <script src="/static/js/select.js"></script>
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/config/config-custom-themes.js"></script>
+    <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/colors.js"></script>
 
     <script>

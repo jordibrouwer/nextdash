@@ -72,6 +72,7 @@ async function quickSaveBookmark(name, url) {
       return { ok: false, reason: 'http' };
     }
     await persistLastSaveContext(serverUrl, pageId, category);
+    await notifyDashboardBookmarkSaved(serverUrl, pageId, name);
     flashBadge('+', '#00FF9C');
     return { ok: true };
   } catch (e) {

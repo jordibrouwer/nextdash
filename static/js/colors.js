@@ -539,10 +539,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Show body after everything is loaded and rendered
-        document.body.classList.remove('loading');
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
+        }
     }).catch(() => {
-        // Show body even if there's an error
-        document.body.classList.remove('loading');
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
+        }
     });
     
     // Save button

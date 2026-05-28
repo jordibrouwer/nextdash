@@ -153,7 +153,11 @@ class ConfigManager {
         }
 
 
-        document.body.classList.remove('loading');
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
+        }
 
         const categoriesSelector = document.getElementById('categories-page-selector');
         if (categoriesSelector) {
@@ -920,6 +924,8 @@ class ConfigManager {
         }
         this.setupStructureAutoSyncListeners();
         this.setupDirtyTracking();
+        this.setupAutosaveLowRiskFields();
+        this.setupStickySaveBar();
         this.setupNavigationGuards();
         this.updateHealthBadge();
         // Initialize theme icon styling controls
@@ -1016,18 +1022,22 @@ class ConfigManager {
             const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
+            const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
+            const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
+            const appendBadge = (count, type) => {
+                const badge = document.createElement('span');
+                const n = count > 99 ? '99+' : String(count);
+                const isBroken = type === 'broken';
+                badge.className = isBroken
+                    ? 'health-badge health-badge--labeled'
+                    : 'health-badge health-badge-warn health-badge--labeled';
+                badge.textContent = `${n} ${isBroken ? brokenLabel : warnLabel}`;
+                anchor.appendChild(badge);
+            };
             if (broken > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'health-badge';
-                badge.textContent = broken > 99 ? '99+' : String(broken);
-                badge.title = `${broken} broken bookmark${broken !== 1 ? 's' : ''}`;
-                anchor.appendChild(badge);
+                appendBadge(broken, 'broken');
             } else if (warn > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'health-badge health-badge-warn';
-                badge.textContent = warn > 99 ? '99+' : String(warn);
-                badge.title = `${warn} bookmark${warn !== 1 ? 's' : ''} with warnings`;
-                anchor.appendChild(badge);
+                appendBadge(warn, 'warn');
             }
         } catch (e) {
             // Non-critical — silently skip
@@ -1324,6 +1334,67 @@ class ConfigManager {
         this.setDirtyState(false);
     }
 
+    flashSavedIndicator() {
+        const saveStatus = document.getElementById('save-status-indicator');
+        if (!saveStatus) return;
+        saveStatus.textContent = this.language?.t('config.allSaved') || 'All saved ✓';
+        saveStatus.classList.remove('is-hidden', 'is-unsaved');
+        saveStatus.classList.add('is-saved-flash');
+        clearTimeout(this._savedFlashTimer);
+        this._savedFlashTimer = setTimeout(() => {
+            saveStatus.classList.remove('is-saved-flash');
+            if (!this.isDirty) {
+                saveStatus.textContent = this.language?.t('config.savedShort') || 'Saved';
+            }
+        }, 1500);
+    }
+
+    setupAutosaveLowRiskFields() {
+        const selector = [
+            '#show-tips-checkbox',
+            '#show-config-button-checkbox',
+            '#show-health-dashboard-checkbox',
+            '#show-recent-button-checkbox',
+            '#animations-enabled-checkbox',
+            '#include-finders-in-search-checkbox',
+            '#interleave-mode-checkbox',
+            '#global-shortcuts-checkbox',
+            '#show-sync-toasts-checkbox'
+        ].join(', ');
+        let debounceTimer = null;
+        document.querySelectorAll(selector).forEach((el) => {
+            el.addEventListener('change', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(async () => {
+                    if (!this.settings?.updateFromUI) return;
+                    this.suppressDirtyTracking = true;
+                    this.settings.updateFromUI(this.settingsData);
+                    const ok = await this.settings.saveSettingsToServer(this.settingsData);
+                    this.suppressDirtyTracking = false;
+                    if (ok) {
+                        this.flashSavedIndicator();
+                        this.signalDashboardSettingsUpdated('settings-autosave');
+                    }
+                }, 450);
+            });
+        });
+    }
+
+    setupStickySaveBar() {
+        const sticky = document.getElementById('config-save-sticky');
+        const saveSticky = document.getElementById('save-btn-sticky');
+        const discardSticky = document.getElementById('discard-sticky-btn');
+        saveSticky?.addEventListener('click', () => this.saveChanges());
+        discardSticky?.addEventListener('click', () => this.discardChanges());
+        if (!sticky) return;
+        const onScroll = () => {
+            sticky.classList.toggle('is-scroll-active', window.scrollY > 100 && this.isDirty);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        this._stickySaveScrollHandler = onScroll;
+        onScroll();
+    }
+
     setDirtyState(isDirty) {
         this.isDirty = isDirty === true;
         const saveBtn = document.getElementById('save-btn');
@@ -1351,6 +1422,9 @@ class ConfigManager {
             discardTopBtn.classList.toggle('is-visible', this.isDirty);
         }
         document.body.classList.toggle('config-is-dirty', this.isDirty);
+        if (this._stickySaveScrollHandler) {
+            this._stickySaveScrollHandler();
+        }
     }
 
     markDirty() {
@@ -2738,6 +2812,7 @@ class ConfigManager {
                 this.ui.showNotification(this.language.t('config.configSaved'), 'success');
             }
             this.clearDirty();
+            this.flashSavedIndicator();
             this.undoSnapshot = null;
             this.savedSnapshot = this.captureUndoSnapshot();
             this.setDirtyState(false);

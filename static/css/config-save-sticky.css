@@ -1,0 +1,44 @@
+.config-save-sticky {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 800;
+    padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--bg-primary, #0a0a0a) 92%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--text-secondary) 25%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+body.config-is-dirty .config-save-sticky.is-scroll-active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.config-save-sticky-inner {
+    max-width: min(88%, 1600px);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.config-save-sticky-hint {
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+}
+
+.config-save-sticky-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

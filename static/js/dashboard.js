@@ -220,8 +220,23 @@ class Dashboard {
         return svg;
     }
 
+    areRotatingTipsEnabled() {
+        if (window.TipsPolicy && typeof window.TipsPolicy.shouldShowRotatingTips === 'function') {
+            return window.TipsPolicy.shouldShowRotatingTips(this.settings);
+        }
+        return this.settings.showTips !== false;
+    }
+
+    isCoarsePointer() {
+        return window.matchMedia('(hover: none) and (pointer: coarse)').matches
+            || window.matchMedia('(max-width: 768px)').matches;
+    }
+
     async init() {
         await this.loadData();
+        if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
+            await window.TipsPolicy.applyExpiry(this);
+        }
         this.applyVisualSettings();
         this.initializeAutoDarkMode();
         this.loadCollapsedStates();
@@ -237,8 +252,13 @@ class Dashboard {
         this.setupPageShortcuts();
         this.setupReorderUndoShortcut();
         this.setupPasteToQuickAdd();
+        if (typeof QuickAddWidget === 'function') {
+            this.quickAddWidget = new QuickAddWidget(this);
+        }
         this.setupToolbarActions();
+        this.setupHeaderEnhancements();
         this.setupConfigStructureReloadListener();
+        this.setupExtensionBookmarkSavedListener();
         this.scheduleBackupTip();
 
             // Initialize new features
@@ -261,15 +281,47 @@ class Dashboard {
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.renderDateWeatherLine();
+                this.updateHealthBadge();
             }
         });
 
         // Initialize follow-up UI immediately after first render (no extra frame delay).
-        document.body.classList.remove('loading');
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
+        }
+        this.updateMiniStatusLine();
         this.initializeOnboarding();
+        this.maybeShowPostSetupWizard();
         this.initializeFeatureTour();
         this.maybeShowWhatsNew();
         this.maybeShowTourSpotlight();
+    }
+
+    setupExtensionBookmarkSavedListener() {
+        window.addEventListener('nextdash:bookmark-saved', async (event) => {
+            const detail = event.detail || {};
+            const fallback = this.language?.t('dashboard.extensionBookmarkSaved')
+                || 'Bookmark saved from extension';
+            const message = detail.message || fallback;
+            this.showNotification(message, 'success', { duration: 6000 });
+
+            const pageId = detail.pageId != null ? String(detail.pageId) : null;
+            if (pageId && pageId !== String(this.currentPageId)) {
+                const targetPage = this.pages.find((p) => String(p.id) === pageId);
+                if (targetPage) {
+                    await this.loadPageBookmarks(targetPage.id);
+                }
+            } else if (pageId) {
+                await this.loadPageBookmarks(this.currentPageId);
+            } else {
+                await this.loadAllBookmarks();
+            }
+            this.buildSearchIndex();
+            this.renderDashboard({ animate: false });
+            this.updateHealthBadge();
+        });
     }
 
     setupConfigStructureReloadListener() {
@@ -614,6 +666,7 @@ class Dashboard {
             if (page) {
                 this.updatePageTitle(page.name);
             }
+            this.updateMiniStatusLine();
             
             // Update document title with page name if enabled
             this.updateDocumentTitle();
@@ -726,6 +779,7 @@ class Dashboard {
             });
             container.appendChild(pageBtn);
         });
+        this.updateMiniStatusLine();
     }
 
     _renderPageTabContent(btn, page, index) {
@@ -910,7 +964,7 @@ class Dashboard {
         document.body.setAttribute('data-show-finders-button', this.settings.showFindersButton);
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
-        document.body.setAttribute('data-show-tips', this.settings.showTips !== false);
+        document.body.setAttribute('data-show-tips', this.areRotatingTipsEnabled());
         document.body.setAttribute('data-button-position', this.settings.buttonBarPosition || 'bottom');
         document.body.setAttribute('data-show-dock-layout-btn', this.settings.showDockLayoutSelector !== false ? 'true' : 'false');
 
@@ -1194,7 +1248,217 @@ class Dashboard {
         });
     }
 
+    setupHeaderEnhancements() {
+        document.getElementById('page-overview-header-btn')?.addEventListener('click', () => {
+            this.showPageOverlay();
+        });
+        document.getElementById('quick-add-toolbar-btn')?.addEventListener('click', () => {
+            if (this.quickAddWidget) {
+                this.quickAddWidget.open();
+            } else {
+                this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+            }
+        });
+    }
+
+    updateMiniStatusLine() {
+        const el = document.getElementById('dashboard-mini-status');
+        if (!el) return;
+        const dateLine = document.querySelector('.date-time-line')?.textContent?.trim() || '';
+        const page = this.pages.find((p) => p.id === this.currentPageId);
+        const pageName = page?.name || '';
+        const badge = document.querySelector('.health-link a .health-badge');
+        const parts = [];
+        if (dateLine) parts.push(dateLine);
+        if (pageName) parts.push(pageName);
+        if (badge) {
+            const badgeText = badge.textContent.trim();
+            if (badgeText) parts.push(badgeText);
+        }
+        if (!parts.length) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+        el.hidden = false;
+        el.textContent = parts.join(' · ');
+    }
+
+    openEmptyStateAdd() {
+        if (this.quickAddWidget) {
+            this.quickAddWidget.open();
+            return;
+        }
+        this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+    }
+
+    buildEmptyStateAddLabel() {
+        if (this.isCoarsePointer()) {
+            return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + below to add a bookmark';
+        }
+        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + below or Ctrl+Shift+A';
+    }
+
+    maybeShowPostSetupWizard() {
+        if (typeof window.PostSetupWizard !== 'function') {
+            this.maybeShowFirstBookmarkGuide();
+            return;
+        }
+        const wizard = new window.PostSetupWizard({
+            dashboard: this,
+            language: this.language
+        });
+        if (wizard.shouldStart()) {
+            wizard.start();
+            return;
+        }
+        this.maybeShowFirstBookmarkGuide();
+    }
+
+    maybeShowFirstBookmarkGuide() {
+        const storageKey = 'nextdash-first-bookmark-guide-v1';
+        try {
+            if (localStorage.getItem(storageKey)) return;
+        } catch { return; }
+        const hasAny = (Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0)
+            || (Array.isArray(this.bookmarks) && this.bookmarks.length > 0);
+        if (hasAny) return;
+        if (!this.settings?.onboardingCompleted) return;
+
+        const msg = this.language?.t('dashboard.firstBookmarkGuide')
+            || 'Add your first bookmark with + below, or set up pages in config → pages.';
+        this.showNotification(msg, 'info', { duration: 10000 });
+        try {
+            localStorage.setItem(storageKey, '1');
+        } catch { /* ignore */ }
+        setTimeout(() => {
+            const btn = document.getElementById('quick-add-toolbar-btn');
+            if (btn) btn.classList.add('first-bookmark-pulse');
+            setTimeout(() => btn?.classList.remove('first-bookmark-pulse'), 4000);
+        }, 400);
+    }
+
+    createHealthCountBadge(count, type) {
+        const badge = document.createElement('span');
+        const n = count > 99 ? '99+' : String(count);
+        const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
+        const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
+        const isBroken = type === 'broken';
+        badge.className = isBroken
+            ? 'health-badge health-badge--labeled'
+            : 'health-badge health-badge-warn health-badge--labeled';
+        badge.textContent = `${n} ${isBroken ? brokenLabel : warnLabel}`;
+        const ariaKey = isBroken ? 'dashboard.healthBrokenAria' : 'dashboard.healthWarnAria';
+        const ariaFallback = isBroken ? '{count} broken bookmarks' : '{count} bookmarks with warnings';
+        const ariaTemplate = this.language?.t(ariaKey) || ariaFallback;
+        badge.setAttribute('aria-label', ariaTemplate.replace('{count}', n));
+        return badge;
+    }
+
+    setupToolbarKbdTooltips() {
+        if (this.isCoarsePointer()) return;
+
+        let tip = document.getElementById('toolbar-kbd-tooltip');
+        if (!tip) {
+            tip = document.createElement('div');
+            tip.id = 'toolbar-kbd-tooltip';
+            tip.className = 'toolbar-kbd-tooltip';
+            tip.setAttribute('role', 'tooltip');
+            tip.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(tip);
+        }
+
+        const formatKeys = (keysList) => {
+            const SF = window.ShortcutFormat;
+            if (!SF || typeof SF.keysToHtml !== 'function') {
+                return keysList.map((k) => `<kbd>${k}</kbd>`).join('<span class="kbd-sep">+</span>');
+            }
+            return keysList.map((k) => SF.keysToHtml(k)).join('<span class="kbd-sep">·</span>');
+        };
+
+        const defs = [
+            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+', 'Ctrl+Shift+A'] },
+            { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
+            { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
+            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
+            { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'Ctrl+/'] },
+            { selector: '.dock-layout-btn', labelKey: 'dashboard.tooltipLauncher', keys: ['⊞'] }
+        ];
+
+        const toolbarButtons = [];
+        const defByButton = new Map();
+
+        defs.forEach((def) => {
+            const btn = def.id ? document.getElementById(def.id) : document.querySelector(def.selector);
+            if (!btn) return;
+            toolbarButtons.push(btn);
+            defByButton.set(btn, def);
+            btn.removeAttribute('data-tooltip');
+        });
+
+        const hide = () => {
+            tip.classList.remove('is-visible');
+            tip.setAttribute('aria-hidden', 'true');
+            tip.removeAttribute('data-for');
+        };
+
+        const show = (btn, labelKey, keys) => {
+            const label = this.language?.t(labelKey) || labelKey;
+            tip.replaceChildren();
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'toolbar-kbd-tooltip-label';
+            labelSpan.textContent = label;
+            const keysSpan = document.createElement('span');
+            keysSpan.className = 'toolbar-kbd-tooltip-keys';
+            keysSpan.innerHTML = formatKeys(keys);
+            tip.append(labelSpan, keysSpan);
+            const rect = btn.getBoundingClientRect();
+            tip.classList.add('is-visible');
+            tip.setAttribute('aria-hidden', 'false');
+            tip.dataset.for = btn.id || 'toolbar-btn';
+            tip.style.left = `${rect.left + rect.width / 2}px`;
+            tip.style.top = `${rect.top}px`;
+        };
+
+        const syncToolbarKbdTooltip = () => {
+            const hoveredBtn = toolbarButtons.find((btn) => btn.matches(':hover'));
+            if (hoveredBtn) {
+                const def = defByButton.get(hoveredBtn);
+                if (def) show(hoveredBtn, def.labelKey, def.keys);
+                return;
+            }
+            const focusedBtn = toolbarButtons.find((btn) => btn.matches(':focus-visible'));
+            if (focusedBtn) {
+                const def = defByButton.get(focusedBtn);
+                if (def) show(focusedBtn, def.labelKey, def.keys);
+                return;
+            }
+            hide();
+        };
+
+        if (this._toolbarKbdTooltipSync) {
+            document.removeEventListener('pointermove', this._toolbarKbdTooltipSync);
+            document.removeEventListener('focusin', this._toolbarKbdTooltipSync);
+            document.removeEventListener('focusout', this._toolbarKbdTooltipSync);
+        }
+        this._toolbarKbdTooltipSync = syncToolbarKbdTooltip;
+        document.addEventListener('pointermove', syncToolbarKbdTooltip, { passive: true });
+        document.addEventListener('focusin', syncToolbarKbdTooltip);
+        document.addEventListener('focusout', syncToolbarKbdTooltip);
+
+        if (!this._toolbarKbdTooltipDocBound) {
+            this._toolbarKbdTooltipDocBound = true;
+            window.addEventListener('scroll', hide, { passive: true, capture: true });
+            window.addEventListener('blur', hide);
+        }
+
+        hide();
+        syncToolbarKbdTooltip();
+    }
+
     setupToolbarActions() {
+        this.setupToolbarKbdTooltips();
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
             helpButton.addEventListener('click', () => {
@@ -1372,8 +1636,17 @@ class Dashboard {
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
+                dash.settings.showTips = true;
+                if (window.TipsPolicy && typeof window.TipsPolicy.startPromoPeriod === 'function') {
+                    window.TipsPolicy.startPromoPeriod();
+                }
+                document.body.setAttribute('data-show-tips', 'true');
                 await dash.saveSettings();
-                setTimeout(() => dash.maybeShowWhatsNew(), 0);
+                dash.initializeButtonTipsRotation();
+                setTimeout(() => {
+                    dash.maybeShowPostSetupWizard();
+                    dash.maybeShowWhatsNew();
+                }, 0);
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
@@ -1497,7 +1770,7 @@ class Dashboard {
             this.tipRotationTimer = null;
         }
 
-        const tipsEnabled = this.settings.showTips !== false;
+        const tipsEnabled = this.areRotatingTipsEnabled();
         document.body.setAttribute('data-show-tips', tipsEnabled);
         if (!tipsEnabled) {
             return;
@@ -1604,7 +1877,7 @@ class Dashboard {
             return;
         }
 
-        if (this.settings.showTips === false) {
+        if (!this.areRotatingTipsEnabled()) {
             return;
         }
 
@@ -1615,7 +1888,7 @@ class Dashboard {
             }
 
             const currentHintEl = document.getElementById('button-hint-text');
-            if (!currentHintEl || this.settings.showTips === false) {
+            if (!currentHintEl || !this.areRotatingTipsEnabled()) {
                 return;
             }
 
@@ -1628,7 +1901,11 @@ class Dashboard {
         const hintEl = document.getElementById('search-flow-hint');
         if (!hintEl) return;
 
-        const storageKey = 'nextdash:search-flow-hint-v1';
+        if (this.isCoarsePointer()) {
+            hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
+        }
+
+        const storageKey = 'nextdash:search-flow-hint-v2';
         try {
             if (localStorage.getItem(storageKey)) return;
         } catch {}
@@ -1717,11 +1994,18 @@ class Dashboard {
         }
 
         const sections = this.getKeyboardCheatSheetItems();
+        const formatKeys = (keys) => {
+            if (window.ShortcutFormat && typeof window.ShortcutFormat.keysToHtml === 'function') {
+                return window.ShortcutFormat.keysToHtml(keys);
+            }
+            return keys;
+        };
+        const filterPlaceholder = this.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter shortcuts…';
         const html = `
             <div class="keyboard-cheat-sheet">
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
-                       placeholder="filter shortcuts…" autocomplete="off" spellcheck="false"
-                       aria-label="Filter shortcuts">
+                       placeholder="${filterPlaceholder}" autocomplete="off" spellcheck="false"
+                       aria-label="${filterPlaceholder}">
                 ${sections.map((section, i) => `
                     <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
                         <summary class="cheat-sheet-group-title">${section.title}</summary>
@@ -1729,7 +2013,7 @@ class Dashboard {
                             <tbody>
                                 ${section.items.map((shortcut) => `
                                     <tr>
-                                        <td class="keyboard-cheat-sheet-keys">${shortcut.keys}</td>
+                                        <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
                                         <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
                                     </tr>
                                 `).join('')}
@@ -1741,9 +2025,9 @@ class Dashboard {
         `;
 
         window.AppModal.show({
-            title: 'keyboard shortcuts',
+            title: this.language?.t('dashboard.cheatsheetTitle') || 'keyboard shortcuts',
             htmlMessage: html,
-            confirmText: 'close',
+            confirmText: this.language?.t('dashboard.cheatsheetClose') || 'close',
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
         });
@@ -2276,20 +2560,25 @@ class Dashboard {
             const currentPage = this.pages.find(p => p.id === this.currentPageId);
             const pageName = currentPage ? currentPage.name : '';
 
+            const addLabel = this.buildEmptyStateAddLabel();
+            const emptyPageText = this.language?.t('dashboard.emptyPage') || 'This page is empty';
+            const searchLabel = this.language?.t('dashboard.searchLabel') || 'Search';
+            const commandNewLabel = this.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
+
             if (hasBookmarksOnOtherPages) {
                 container.innerHTML = `
                     <div class="empty-state empty-state--page">
                         <div class="empty-state-label">// ${pageName}</div>
-                        <div class="empty-state-text">This page is empty</div>
+                        <div class="empty-state-text" data-i18n="dashboard.emptyPage">${emptyPageText}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn" id="empty-state-new-bookmark" type="button"><kbd>Ctrl+Shift+A</kbd> New bookmark</button>
-                            <button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> Search</button>
-                            <button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> Add via command</button>
+                            <button class="empty-state-action-btn" id="empty-state-new-bookmark" type="button">${addLabel}</button>
+                            <button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
+                            <button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>
                         </div>
                     </div>
                 `;
                 container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
-                    this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+                    this.openEmptyStateAdd();
                 });
                 container.querySelector('#empty-state-search')?.addEventListener('click', () => {
                     this.searchComponent?.openSearchInterface();
@@ -2303,20 +2592,22 @@ class Dashboard {
                     }
                 });
             } else {
+                const freshText = this.language?.t('dashboard.emptyFresh') || 'No bookmarks yet';
                 container.innerHTML = `
                     <div class="empty-state empty-state--fresh">
-                        <div class="empty-state-text">No bookmarks yet</div>
+                        <div class="empty-state-text" data-i18n="dashboard.emptyFresh">${freshText}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn" id="empty-state-new-bookmark-fresh" type="button"><kbd>Ctrl+Shift+A</kbd> New bookmark</button>
-                            <button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> Search</button>
+                            <button class="empty-state-action-btn" id="empty-state-new-bookmark-fresh" type="button">${addLabel}</button>
+                            <button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
                         </div>
                         <div class="empty-state-action">
+                            <a class="btn btn-secondary" href="/config#pages" data-i18n="dashboard.emptyStateSetupPages">Set up pages in config</a>
                             <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
                         </div>
                     </div>
                 `;
                 container.querySelector('#empty-state-new-bookmark-fresh')?.addEventListener('click', () => {
-                    this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+                    this.openEmptyStateAdd();
                 });
                 container.querySelector('#empty-state-search-fresh')?.addEventListener('click', () => {
                     this.searchComponent?.openSearchInterface();
@@ -5208,18 +5499,11 @@ class Dashboard {
             if (existing) existing.remove();
 
             if (broken > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'health-badge';
-                badge.textContent = broken > 99 ? '99+' : String(broken);
-                badge.title = `${broken} broken bookmark${broken !== 1 ? 's' : ''}`;
-                anchor.appendChild(badge);
+                anchor.appendChild(this.createHealthCountBadge(broken, 'broken'));
             } else if (warn > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'health-badge health-badge-warn';
-                badge.textContent = warn > 99 ? '99+' : String(warn);
-                badge.title = `${warn} bookmark${warn !== 1 ? 's' : ''} with warnings`;
-                anchor.appendChild(badge);
+                anchor.appendChild(this.createHealthCountBadge(warn, 'warn'));
             }
+            this.updateMiniStatusLine();
         } catch (e) {
             // Silently skip — badge is non-critical
         }

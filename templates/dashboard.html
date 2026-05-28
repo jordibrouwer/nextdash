@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="/static/css/select.css">
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/feature-tour.css">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css">
@@ -26,17 +28,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}}" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-show-title="{{.ShowTitle}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-show-title="{{.ShowTitle}}">
+    <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <!-- Container 1: Date, tabs, config button -->
     <div class="dashboard-section section-controls">
         <div class="container">
             <div class="header-top">
-                <div id="date-element" class="date"></div>
-                <div id="status-loading-indicator" class="status-loading-indicator">
-                    <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
-                    <span class="status-loading-dots"></span>
+                <div class="header-top-primary skeleton-hide-while-loading">
+                    <div id="date-element" class="date"></div>
+                    <div id="dashboard-mini-status" class="dashboard-mini-status" aria-live="polite"></div>
+                    <div id="status-loading-indicator" class="status-loading-indicator">
+                        <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
+                        <span class="status-loading-dots"></span>
+                    </div>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions skeleton-hide-while-loading">
+                    <button type="button" id="page-overview-header-btn" class="page-overview-header-btn" data-i18n="dashboard.pagesOverview">pages</button>
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
@@ -54,7 +61,7 @@
     <!-- Container 2: Title -->
     <div class="dashboard-section section-title">
         <div class="container">
-            <div class="title-wrapper">
+            <div class="title-wrapper skeleton-hide-while-loading">
                 <h1 class="title"></h1>
             </div>
         </div>
@@ -63,7 +70,28 @@
     <!-- Container 3: Bookmarks -->
     <div class="dashboard-section section-content">
         <div class="container">
-            <main id="dashboard-layout" class="dashboard-grid">
+            <main id="dashboard-layout" class="dashboard-grid" tabindex="-1" aria-busy="true">
+                <div class="skeleton-root skeleton-dashboard" data-skeleton-root aria-hidden="true">
+                    <div class="skeleton-dashboard-col">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row skeleton-bookmark-row--short"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row skeleton-bookmark-row--short"></div>
+                    </div>
+                    <div class="skeleton-dashboard-col">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row skeleton-bookmark-row--short"></div>
+                    </div>
+                    <div class="skeleton-dashboard-col">
+                        <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row skeleton-bookmark-row--short"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                        <div class="skeleton-shimmer skeleton-bookmark-row"></div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -101,28 +129,38 @@
     <div class="button-container">
         <div id="button-hint-text" class="button-hint" aria-live="polite"></div>
         <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
-            <span class="search-flow-hint-text"><span class="sfh-seg search-flow-chip">&gt;</span><span class="sfh-seg">&thinsp;search&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">:</span><span class="sfh-seg">&thinsp;commands&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">?</span><span class="sfh-seg">&thinsp;finders&thinsp;</span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg search-flow-chip">!</span><span class="sfh-seg">&thinsp;shortcuts</span></span>
+            <span class="search-flow-hint-text"><span class="sfh-seg"><kbd class="search-flow-chip">&gt;</kbd><span class="sfh-seg-label" data-i18n="dashboard.searchLabel">search</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">:</kbd><span class="sfh-seg-label" data-i18n="dashboard.commandsLabel">commands</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">?</kbd><span class="sfh-seg-label" data-i18n="dashboard.findersLabel">finders</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">+</kbd><span class="sfh-seg-label" data-i18n="dashboard.addBookmarkShort">bookmark</span></span><span class="sfh-seg sfh-seg-swipe hidden">&nbsp;·&nbsp;</span><span class="sfh-seg sfh-seg-swipe hidden" data-i18n="dashboard.swipePagesHint">swipe pages</span></span>
         </div>
         <div class="btn-group btn-group-primary">
-            <button id="search-button" class="search-button" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
+            <button id="quick-add-toolbar-btn" type="button" class="search-button search-button-labeled search-button--add" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark" data-tooltip="+ bookmark">
+                <span class="search-button-icon">+</span>
+                <span class="search-button-label" data-i18n="dashboard.addBookmarkShort">bookmark</span>
+            </button>
+            <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
                 <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+                <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
             </button>
-            <button id="commands-button" class="search-button commands-button" aria-label="Open commands" data-tooltip=": commands">
+            <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" aria-label="Open commands" data-tooltip=": commands">
                 <span class="search-button-icon">:</span>
+                <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
             </button>
-            <button id="finders-button" class="search-button finders-button" aria-label="Open finders" data-tooltip="? finders">
+            <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" aria-label="Open finders" data-tooltip="? finders">
                 <span class="search-button-icon">?</span>
+                <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
             </button>
         </div>
         <div class="btn-group btn-group-secondary">
-            <button id="recent-bookmarks-button" class="search-button recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
+            <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
                 <span class="search-button-icon">*</span>
+                <span class="search-button-label" data-i18n="dashboard.recentLabel">recent</span>
             </button>
-            <button id="help-button" class="search-button help-button" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
+            <button id="help-button" type="button" class="search-button search-button-labeled help-button" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
                 <span class="search-button-icon">!</span>
+                <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
             </button>
-            <button class="search-button dock-layout-btn" aria-label="Toggle launcher view" data-tooltip="⊞ launcher">
+            <button type="button" class="search-button search-button-labeled dock-layout-btn" aria-label="Toggle launcher view" data-tooltip="⊞ launcher">
                 <span class="search-button-icon">⊞</span>
+                <span class="search-button-label" data-i18n="dashboard.launcherLabel">launcher</span>
             </button>
         </div>
     </div>
@@ -140,6 +178,7 @@
         </svg>
     </button>
 
+    <script src="/static/js/tips-policy.js"></script>
     <script src="/static/js/modal.js"></script>
     <script src="/static/js/whats-new-modal.js"></script>
     <script src="/static/js/layout-utils.js"></script>
@@ -164,6 +203,10 @@
     <script src="/static/js/feature-spotlight.js"></script>
     <script src="/static/js/weather.js"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
+    <script src="/static/js/quick-add.js"></script>
+    <script src="/static/js/skeleton-loading.js"></script>
+    <script src="/static/js/shortcut-format.js"></script>
+    <script src="/static/js/post-setup-wizard.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/analytics.js"></script>
     <script>

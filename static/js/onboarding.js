@@ -231,7 +231,7 @@ class Onboarding {
             weatherLocation: settings.weatherLocation || '',
             packedColumns: settings.packedColumns !== false,
             interleaveMode: settings.interleaveMode === true,
-            showTips: settings.showTips !== false,
+            showTips: settings.onboardingCompleted ? (settings.showTips !== false) : true,
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true
         };

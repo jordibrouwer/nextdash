@@ -31,8 +31,7 @@ function updateUrlGuard(url) {
         form.classList.remove('save-form-disabled');
     } else {
         msg.classList.remove('hidden');
-        msg.textContent =
-            'Only http(s) pages can be saved (not browser internals, extension pages, or file://).';
+        msg.textContent = extT('urlGuardInvalid', msg.textContent);
         form.classList.add('save-form-disabled');
     }
 }
@@ -58,7 +57,9 @@ function handleConfirmationClick(event) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    await initExtensionI18n();
+
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -163,7 +164,7 @@ async function loadPages(providedServerUrl) {
     }
 
     if (!serverUrl) {
-        showMessage('Please set the nextDash URL in settings first.', 'info');
+        showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'info');
         return;
     }
 
@@ -173,7 +174,7 @@ async function loadPages(providedServerUrl) {
 
         const pages = await response.json();
         if (!pages.length) {
-            showMessage('No pages returned from server.', 'error');
+            showMessage(extT('msgNoPages', 'No pages returned from server.'), 'error');
             return;
         }
 
@@ -223,7 +224,7 @@ async function loadPages(providedServerUrl) {
         hideMessage();
     } catch (error) {
         console.error('Error loading pages:', error);
-        showMessage('Failed to load pages. Check your server URL.', 'error');
+        showMessage(extT('msgFailedPages', 'Failed to load pages. Check your server URL.'), 'error');
     }
 }
 
@@ -261,7 +262,7 @@ async function loadCategoriesForSettings(pageId) {
         categorySelect.innerHTML = '';
 
         // Add default empty option
-        const defaultOption = new Option('No Category', '');
+        const defaultOption = new Option(extT('noCategory', 'No Category'), '');
         categorySelect.appendChild(defaultOption);
 
         categories.forEach(category => {
@@ -292,7 +293,7 @@ async function loadCategories(pageId) {
         categorySelect.innerHTML = '';
 
         // Add default empty option
-        const defaultOption = new Option('No Category', '');
+        const defaultOption = new Option(extT('noCategory', 'No Category'), '');
         categorySelect.appendChild(defaultOption);
 
         categories.forEach(category => {
@@ -312,7 +313,7 @@ async function saveBookmark(event) {
     const serverUrl = settings.serverUrl;
 
     if (!serverUrl) {
-        showMessage('Please set the nextDash URL in settings first.', 'error');
+        showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'error');
         return;
     }
 
@@ -325,7 +326,7 @@ async function saveBookmark(event) {
     const tags = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
 
     if (!isBookmarkableUrl(url)) {
-        showMessage('This URL cannot be saved. Use a normal http(s) page.', 'error');
+        showMessage(extT('msgUrlNotSavable', 'This URL cannot be saved. Use a normal http(s) page.'), 'error');
         return;
     }
 
@@ -336,7 +337,7 @@ async function saveBookmark(event) {
             const bookmarks = await bookmarksResponse.json();
             const duplicate = bookmarks.find(bookmark => bookmark.url === url);
             if (duplicate) {
-                showConfirmation(`This URL already exists in this page as <strong>"${duplicate.name}"</strong>.<br><span class="highlight">Do you want to save it anyway?</span>`, async () => {
+                showConfirmation(extT('msgDuplicateConfirm', '', { name: duplicate.name }), async () => {
                     await performSave(serverUrl, pageId, name, url, category, note, tags);
                 });
                 return; // Wait for confirmation
@@ -364,7 +365,41 @@ async function saveSettings(event) {
         defaultCategory: defaultCategory
     });
 
-    showMessage('Settings saved!', 'success');
+    try {
+        const res = await fetch(new URL('/api/settings', serverUrl));
+        if (res.ok) {
+            const settings = await res.json();
+            if (settings.language) {
+                await chrome.storage.sync.set({ extensionLocale: settings.language });
+                await initExtensionI18n();
+            }
+        }
+    } catch (e) {
+        // keep current locale
+    }
+
+    showMessage(extT('msgSettingsSaved', 'Settings saved!'), 'success');
+}
+
+async function showSaveSuccess(serverUrl, pageId, bookmarkName) {
+    const panel = document.getElementById('save-success-panel');
+    const text = document.getElementById('save-success-text');
+    const link = document.getElementById('open-nextdash-link');
+    const form = document.getElementById('save-form');
+    hideMessage();
+    if (form) form.classList.add('hidden');
+    if (text) {
+        text.textContent = bookmarkName
+            ? extT('saveSuccessNamed', '"{name}" saved to nextDash.', { name: bookmarkName })
+            : extT('saveSuccess', 'Bookmark saved to nextDash.');
+    }
+    if (panel) panel.classList.remove('hidden');
+    if (link) {
+        link.textContent = extT('openInNextdash', 'Open in nextDash');
+        buildDashboardDeepLink(serverUrl, pageId).then((href) => {
+            link.href = href;
+        });
+    }
 }
 
 async function performSave(serverUrl, pageId, name, url, category, note, tags) {
@@ -373,11 +408,14 @@ async function performSave(serverUrl, pageId, name, url, category, note, tags) {
         if (!response.ok) throw new Error('Failed to save bookmark');
 
         await persistLastSaveContext(serverUrl, pageId, category);
-        showMessage('Bookmark saved successfully!', 'success');
-        setTimeout(() => window.close(), 1000);
+        const toastMessage = name
+            ? extT('notifySavedNamed', '"{name}" saved to nextDash', { name: String(name).slice(0, 80) })
+            : extT('notifySaved', 'Bookmark saved to nextDash');
+        await notifyDashboardBookmarkSaved(serverUrl, pageId, name, toastMessage);
+        showSaveSuccess(serverUrl, pageId, name);
     } catch (error) {
         console.error('Error saving bookmark:', error);
-        showMessage('Failed to save bookmark. Check console for details.', 'error');
+        showMessage(extT('msgFailedSave', 'Failed to save bookmark. Check console for details.'), 'error');
     }
 }
 
@@ -394,5 +432,5 @@ async function resetSettings() {
     document.getElementById('page-select').innerHTML = '';
     document.getElementById('category-select').innerHTML = '';
     
-    showMessage('Settings reset!', 'info');
+    showMessage(extT('msgSettingsReset', 'Settings reset!'), 'info');
 }

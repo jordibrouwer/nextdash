@@ -1795,7 +1795,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// OpenBroken returns a list of broken bookmark URLs for client-side opening
+// OpenBroken returns broken bookmark URLs for client-side opening.
+// Optional JSON body: { "limit": N } (default 10, max 25).
 func (h *Handlers) OpenBroken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -1803,6 +1804,22 @@ func (h *Handlers) OpenBroken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
+	const defaultLimit = 10
+	const maxLimit = 25
+	limit := defaultLimit
+
+	var req struct {
+		Limit int `json:"limit"`
+	}
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil && req.Limit > 0 {
+			limit = req.Limit
+			if limit > maxLimit {
+				limit = maxLimit
+			}
+		}
+	}
 
 	pages := h.store.GetPages()
 	var brokenURLs []string
@@ -1816,10 +1833,17 @@ func (h *Handlers) OpenBroken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	totalBroken := len(brokenURLs)
+	if limit > 0 && len(brokenURLs) > limit {
+		brokenURLs = brokenURLs[:limit]
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"count": len(brokenURLs),
-		"urls":  brokenURLs,
+		"count":       len(brokenURLs),
+		"totalBroken": totalBroken,
+		"limit":       limit,
+		"urls":        brokenURLs,
 	})
 }
 

@@ -165,7 +165,7 @@ Dynamic bookmark groups that appear automatically:
 
 - Real-time online/offline status with ping timings per bookmark
 - Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
-- Health badge on the dashboard header: red for broken bookmarks, yellow for warnings
+- Health badge on the dashboard header: text pill (e.g. `3 broken`) with red/yellow styling; bulk open broken links asks for confirmation with a per-batch limit
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage)
 - Favicon auto-refresh from the health view
 - Usage stats in the config: top patterns, open counts, last-used dates
@@ -229,6 +229,43 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### v2026.05.4 — May 2026
+
+**UX & discoverability**
+- **Rich keyboard tooltips** — on desktop, hovering footer buttons shows the action name plus shortcuts in `<kbd>` chips (e.g. `>` search, `Ctrl+Shift+A` for quick-add). Hidden on touch devices.
+- **Search-flow hint with labels** — the first-run hint above the button bar uses `<kbd>` chips plus text labels (search · commands · finders · bookmark); includes a swipe-between-pages hint on mobile.
+- **Mobile bottom bar** — short text labels under footer icon buttons; a mini status line on small screens shows date · current page · health summary.
+- **Post-setup wizard** — after onboarding, empty libraries get a 3-step guide: open **config → pages**, add your first bookmark (quick-add or **config → bookmarks**), then finish.
+- **Tips auto-expire** — rotating footer tips turn off automatically 7 days after onboarding (still configurable in General).
+- **Skeleton loading** — dashboard, config, health, and colors show shimmer placeholders while data loads instead of a blank flash.
+
+**Health (beta)**
+- **Bulk open confirmation** — *Open broken links* asks for confirmation with the total broken count and a per-batch limit (default 10, max 25).
+- **Health badge on dashboard** — the health link shows a text pill like *3 broken* (or a warning count), not only a number; refreshes when you return to the tab.
+
+**Browser extension**
+- **Save success panel** — the popup stays open after save with an *Open in nextDash* deep link to the right page (`#tab`).
+- **Dashboard toast** — if the dashboard tab is open on the same server, a success notification appears and bookmarks refresh.
+- **Extension UI translated** — popup strings in EN / NL / DE / FR; language follows nextDash server settings when configured.
+
+**Accessibility**
+- **Modal semantics** — global confirm/delete modals use `role="dialog"`, `aria-modal`, and labelled titles (aligned with quick-add).
+- **Config tab list** — `role="tablist"` / `aria-selected` on config tabs.
+- **Skip links** — “Skip to main content” on dashboard and config.
+- **Custom selects** — combobox/listbox ARIA on styled `<select>` widgets.
+- **prefers-reduced-motion** — inline-edit reveal animation respects reduced motion.
+
+**Config polish**
+- **Sticky save bar** — save / unsaved / undo / discard stay visible while scrolling config.
+- **Autosave for low-risk fields** — language, theme, and similar toggles save without a full Save click.
+- **General tab intro** — short explanation at the top of General; *backups* tab routing fixed; page `lang` matches your language.
+- **Ko-fi overlay removed** — floating support button removed from the config page (intro link in General remains).
+
+**Translations**
+- **DE / FR coverage** — new dashboard strings (skip link, health confirm, swipe hint, tooltips, post-setup wizard, and more) added for German and French.
+
+---
 
 ### v2026.05.3 — May 2026
 

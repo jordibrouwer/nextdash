@@ -13,15 +13,10 @@
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/health.css">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
-    <style>
-        body.loading {
-            opacity: 0;
-            visibility: hidden;
-        }
-    </style>
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
     <div class="health-shell">
@@ -38,7 +33,14 @@
             </div>
         </header>
 
-        <section class="health-summary" id="health-summary"></section>
+        <section class="health-summary" id="health-summary">
+            <div class="skeleton-root skeleton-health-summary" data-skeleton-root aria-hidden="true">
+                <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+                <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+                <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+                <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
+            </div>
+        </section>
 
         <section class="health-filters">
             <div class="health-search-wrap">
@@ -81,7 +83,15 @@
                     </select>
                 </div>
             </div>
-            <div id="health-issues" class="health-issues"></div>
+            <div id="health-issues" class="health-issues">
+                <div class="skeleton-root skeleton-health-issues" data-skeleton-root aria-hidden="true">
+                    <div class="skeleton-shimmer skeleton-health-row"></div>
+                    <div class="skeleton-shimmer skeleton-health-row"></div>
+                    <div class="skeleton-shimmer skeleton-health-row"></div>
+                    <div class="skeleton-shimmer skeleton-health-row"></div>
+                    <div class="skeleton-shimmer skeleton-health-row"></div>
+                </div>
+            </div>
         </section>
 
         <section class="health-duplicates-panel">
@@ -92,7 +102,9 @@
         </section>
     </div>
 
+    <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/config/config-language.js"></script>
+    <script src="/static/js/modal.js"></script>
     <script src="/static/js/health.js"></script>
 </body>
 </html>
