@@ -595,6 +595,7 @@ class SearchCommandsComponent {
         if (!dashboard) return [];
 
         const buttons = {
+            add: 'showAddBookmarkButton',
             commands: 'showCommandsButton',
             recent: 'showRecentButton',
             finders: 'showFindersButton',

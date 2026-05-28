@@ -116,6 +116,7 @@ class Dashboard {
 
             showSyncToasts: false,
             showCheatSheetButton: true,
+            showAddBookmarkButton: true,
             showStatus: false,
             colorizeStatus: true,
             showPing: false,
@@ -476,6 +477,9 @@ class Dashboard {
             }
             if (typeof this.settings.showHealthDashboard === 'undefined') {
                 this.settings.showHealthDashboard = true;
+            }
+            if (typeof this.settings.showAddBookmarkButton === 'undefined') {
+                this.settings.showAddBookmarkButton = true;
             }
             if (typeof this.settings.showTips === 'undefined') {
                 this.settings.showTips = false;
@@ -960,6 +964,7 @@ class Dashboard {
         document.body.setAttribute('data-show-config-button', this.settings.showConfigButton);
         document.body.setAttribute('data-show-health-dashboard', this.settings.showHealthDashboard !== false);
         document.body.setAttribute('data-show-cheatsheet-button', this.settings.showCheatSheetButton !== false);
+        document.body.setAttribute('data-show-add-bookmark-button', this.settings.showAddBookmarkButton !== false);
         document.body.setAttribute('data-show-search-button', this.settings.showSearchButton);
         document.body.setAttribute('data-show-finders-button', this.settings.showFindersButton);
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);

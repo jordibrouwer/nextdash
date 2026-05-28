@@ -552,6 +552,8 @@
         "uploadFontLabel": "Schriftart hochladen:",
         "chooseFile": "Datei wählen",
         "showSearchButton": "Suchschaltfläche anzeigen",
+        "showAddBookmarkButton": "Schaltfläche Lesezeichen hinzufügen (+) anzeigen",
+        "addBookmarkButtonLabel": "Lesezeichen hinzufügen",
         "showFindersButton": "Finder-Schaltfläche anzeigen",
         "showCommandsButton": "Befehls-Schaltfläche anzeigen",
         "showCheatSheetButton": "Cheatsheet-Schaltfläche anzeigen",

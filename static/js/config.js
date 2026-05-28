@@ -50,6 +50,7 @@ class ConfigManager {
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
             showCheatSheetButton: true,
+            showAddBookmarkButton: true,
             showRecentButton: true,
             showHealthDashboard: true,
             showTips: false,

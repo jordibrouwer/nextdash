@@ -1000,6 +1000,14 @@ class ConfigSettings {
             });
         }
 
+        const showAddBookmarkButtonCheckbox = document.getElementById('show-add-bookmark-button-checkbox');
+        if (showAddBookmarkButtonCheckbox) {
+            showAddBookmarkButtonCheckbox.checked = settings.showAddBookmarkButton !== false;
+            showAddBookmarkButtonCheckbox.addEventListener('change', (e) => {
+                settings.showAddBookmarkButton = e.target.checked;
+            });
+        }
+
         // Show search button checkbox
         const showSearchButtonCheckbox = document.getElementById('show-search-button-checkbox');
         if (showSearchButtonCheckbox) {
@@ -1333,6 +1341,7 @@ class ConfigSettings {
         const timeFormatSelect = document.getElementById('time-format-select');
         const showConfigButtonCheckbox = document.getElementById('show-config-button-checkbox');
         const showHealthDashboardCheckbox = document.getElementById('show-health-dashboard-checkbox');
+        const showAddBookmarkButtonCheckbox = document.getElementById('show-add-bookmark-button-checkbox');
         const showSearchButtonCheckbox = document.getElementById('show-search-button-checkbox');
         const showFindersButtonCheckbox = document.getElementById('show-finders-button-checkbox');
         const showCommandsButtonCheckbox = document.getElementById('show-commands-button-checkbox');
@@ -1393,6 +1402,7 @@ class ConfigSettings {
         if (timeFormatSelect) settings.timeFormat = timeFormatSelect.value === '12h' ? '12h' : '24h';
         if (showConfigButtonCheckbox) settings.showConfigButton = showConfigButtonCheckbox.checked;
         if (showHealthDashboardCheckbox) settings.showHealthDashboard = showHealthDashboardCheckbox.checked;
+        if (showAddBookmarkButtonCheckbox) settings.showAddBookmarkButton = showAddBookmarkButtonCheckbox.checked;
         if (showSearchButtonCheckbox) settings.showSearchButton = showSearchButtonCheckbox.checked;
         if (showFindersButtonCheckbox) settings.showFindersButton = showFindersButtonCheckbox.checked;
         if (showCommandsButtonCheckbox) settings.showCommandsButton = showCommandsButtonCheckbox.checked;
@@ -1834,6 +1844,7 @@ class ConfigSettings {
         watch('show-page-names-in-tabs-checkbox', 'showPageNamesInTabs');
         watch('always-collapse-categories-checkbox', 'alwaysCollapseCategories');
         watch('global-shortcuts-checkbox', 'globalShortcuts');
+        watch('show-add-bookmark-button-checkbox', 'showAddBookmarkButton');
         watch('show-search-button-checkbox', 'showSearchButton');
         watch('show-finders-button-checkbox', 'showFindersButton');
         watch('show-commands-button-checkbox', 'showCommandsButton');
@@ -1870,6 +1881,7 @@ class ConfigSettings {
             showConfigButton: true,
             showHealthDashboard: true,
             showSearchButton: true,
+            showAddBookmarkButton: true,
             showFindersButton: true,
             showCommandsButton: true,
             showCheatSheetButton: true,

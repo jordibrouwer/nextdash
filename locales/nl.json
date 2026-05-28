@@ -559,6 +559,8 @@
         "uploadFontLabel": "Lettertype uploaden:",
         "chooseFile": "Bestand kiezen",
         "showSearchButton": "Zoekenknop weergeven",
+        "showAddBookmarkButton": "Knop bladwijzer toevoegen (+) weergeven",
+        "addBookmarkButtonLabel": "Bladwijzer toevoegen",
         "showFindersButton": "Zoekerknop weergeven",
         "showCommandsButton": "Opdrachtknop weergeven",
         "showCheatSheetButton": "Cheatsheetknop weergeven",

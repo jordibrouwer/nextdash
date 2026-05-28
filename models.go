@@ -96,6 +96,7 @@ type Settings struct {
 	ShowConfigButton            bool                             `json:"showConfigButton"`
 	ShowHealthDashboard         bool                             `json:"showHealthDashboard"`
 	ShowSearchButton            bool                             `json:"showSearchButton"`
+	ShowAddBookmarkButton       bool                             `json:"showAddBookmarkButton"`
 	ShowFindersButton           bool                             `json:"showFindersButton"`
 	ShowCommandsButton          bool                             `json:"showCommandsButton"`
 	ShowRecentButton            bool                             `json:"showRecentButton"`
@@ -331,6 +332,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowConfigButton:            false,
 			ShowHealthDashboard:         false,
 			ShowSearchButton:            true,
+			ShowAddBookmarkButton:       true,
 			ShowFindersButton:           true,
 			ShowCommandsButton:          true,
 			ShowRecentButton:            false,
@@ -1030,6 +1032,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
 			ShowSearchButton:          true,
+			ShowAddBookmarkButton:     true,
 			ShowFindersButton:         true,
 			ShowCommandsButton:        true,
 			ShowRecentButton:          true,
@@ -1128,6 +1131,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showRecentButton"]; !ok {
 			settings.ShowRecentButton = true
+		}
+		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
+			settings.ShowAddBookmarkButton = true
 		}
 		if _, ok := rawSettings["showFindersButton"]; !ok {
 			settings.ShowFindersButton = true

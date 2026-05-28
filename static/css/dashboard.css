@@ -2293,6 +2293,11 @@ body[data-show-cheatsheet-button="false"] .help-button {
     display: none;
 }
 
+/* Hide add bookmark button when showAddBookmarkButton is false */
+body[data-show-add-bookmark-button="false"] #quick-add-toolbar-btn {
+    display: none;
+}
+
 /* Hide search button when showSearchButton is false */
 body[data-show-search-button="false"] #search-button {
     display: none;

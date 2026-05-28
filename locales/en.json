@@ -558,6 +558,8 @@
         "uploadFontLabel": "Upload font:",
         "chooseFile": "Choose File",
         "showSearchButton": "Show search button",
+        "showAddBookmarkButton": "Show add bookmark button (+)",
+        "addBookmarkButtonLabel": "Add bookmark",
         "showFindersButton": "Show finders button",
         "showCommandsButton": "Show commands button",
         "showCheatSheetButton": "Show cheatsheet button",
