@@ -116,6 +116,16 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Alt + ↑/↓` — reorder the selected bookmark
 - `Ctrl/Cmd + K` — open the config command palette
 
+#### Config → General (for self-hosters)
+
+**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks) live under **Essentials**. Power features (smart collections, status monitor, branding, search behaviour, backups) are under **Advanced**. Use the section links at the top of Advanced to jump, or click **Show all sections on one page** to view everything at once.
+
+**ℹ info buttons** — Click the small ℹ next to any setting label for a short explanation in your current language (EN / NL / DE / FR). No need to leave the page or search the README for what a toggle does.
+
+**Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon.
+
+In-app help: Config → Help tab → *General settings* (same content, translated).
+
 ### Search filters
 
 Type these directly in the search bar:
@@ -229,6 +239,30 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### v2026.05.5 — May 2026
+
+**Config → General**
+- **ℹ info buttons** — click ℹ next to any setting label in General for a short explanation in your current language (EN / NL / DE / FR). Essentials and Advanced each cover dozens of options.
+- **Essentials / Advanced layers** — everyday options (language, appearance, layout, bookmarks) under **Essentials**; power features (smart collections, status, branding, backups) under **Advanced**. Sticky section links at the top of Advanced; *Show all sections on one page* reveals everything at once.
+- **Layer intro hints** — short guidance at the top of Essentials and Advanced explains what lives in each layer and points you to ℹ for detail.
+- **Layout & smart collections i18n** — layout preset descriptions and smart-collection UI strings are fully translated (no more hardcoded Dutch in the template).
+- **Tuning wizard** — after first-run onboarding, an optional one-time 3-step guide on the dashboard: **language** → **theme** → **browser extension**. Choices save immediately; skip anytime.
+
+**Branding & PWA**
+- **Dynamic web app manifest** — `/manifest.webmanifest` reads your custom title and favicon from settings, so “Add to Home Screen” / installed PWAs match your branding — not only the browser tab.
+- **Apple web-app meta** — matching `apple-mobile-web-app-title`, touch icon, and theme colour on dashboard, config, health, and colors.
+
+**Accessibility**
+- **Bookmark grid semantics** — the dashboard bookmark area uses `role="grid"` with `row` / `gridcell` on each tile; categories are `rowgroup` with labelled headers.
+- **Focus on bookmark tiles** — roving `tabIndex` on the open link pairs with clearer `:focus-visible` rings; keyboard-selected rows show an accent outline on the link (launcher layout included).
+- **Selection & labels** — arrow-key selection sets `aria-selected`; open links include the shortcut in `aria-label` when one is set.
+
+**Polish & docs**
+- **Unified toasts** — dashboard, config, and colors share the same toast component for success, errors, and undo — consistent placement and styling.
+- **Help & README for self-hosters** — Config → Help → *General settings* and the README document Essentials vs Advanced, ℹ buttons, and branding/PWA in plain language.
+
+---
 
 ### v2026.05.4 — May 2026
 

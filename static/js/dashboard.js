@@ -589,7 +589,17 @@ class Dashboard {
         }
     }
 
-    showNotification(message, type = 'error', { undoCallback = null, duration = 5000 } = {}) {
+    showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {
+        if (window.AppNotification) {
+            const opts = { duration: durationMs ?? duration };
+            const undo = undoCallback || onAction;
+            if (undo) {
+                opts.onAction = undo;
+                opts.actionLabel = actionLabel || (this.language ? this.language.t('dashboard.undo') : 'Undo');
+            }
+            window.AppNotification.show(message, type, opts);
+            return;
+        }
         const notification = document.getElementById('error-notification');
         if (!notification) return;
 
@@ -936,6 +946,11 @@ class Dashboard {
         const packedClass = packed ? ' packed-columns' : '';
 
         grid.className = `dashboard-grid columns-${colCount} layout-${this.settings.layoutPreset || 'default'} density-${this.settings.densityMode || 'compact'}${packedClass}`;
+        grid.setAttribute('role', 'grid');
+        grid.setAttribute(
+            'aria-label',
+            this.language?.t('dashboard.bookmarksGridLabel') || 'Bookmarks'
+        );
         grid.style.setProperty('--packed-columns', String(colCount));
         if (packed) {
             grid.style.removeProperty('grid-template-columns');
@@ -1304,7 +1319,17 @@ class Dashboard {
         return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + below or Ctrl+Shift+A';
     }
 
+    maybeShowPostInstallTuning() {
+        if (typeof window.PostInstallTuningWizard !== 'function') return false;
+        const tuning = new window.PostInstallTuningWizard({
+            dashboard: this,
+            language: this.language
+        });
+        return tuning.start();
+    }
+
     maybeShowPostSetupWizard() {
+        if (this.maybeShowPostInstallTuning()) return;
         if (typeof window.PostSetupWizard !== 'function') {
             this.maybeShowFirstBookmarkGuide();
             return;
@@ -3231,6 +3256,7 @@ class Dashboard {
             categoryDiv.classList.add('animate-enter');
         }
         categoryDiv.setAttribute('data-category-id', category.id || '');
+        categoryDiv.setAttribute('role', 'rowgroup');
         const isSmartCollection = category.isSmartCollection === true;
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
@@ -3257,6 +3283,9 @@ class Dashboard {
         // Category title
         const titleElement = document.createElement('h2');
         titleElement.className = isSmartCollection ? 'category-title smart-collection-title' : 'category-title';
+        const titleDomId = `category-title-${String(category.id || 'uncategorized').replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+        titleElement.id = titleDomId;
+        categoryDiv.setAttribute('aria-labelledby', titleDomId);
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
@@ -3314,6 +3343,7 @@ class Dashboard {
         bookmarksList.className = 'bookmarks-list';
         bookmarksList.setAttribute('data-category-id', category.id || '');
         bookmarksList.setAttribute('data-bookmarks-list', 'true');
+        bookmarksList.setAttribute('role', 'presentation');
         if (isSmartCollection) {
             bookmarksList.setAttribute('data-smart-collection', 'true');
         }
@@ -3837,6 +3867,7 @@ class Dashboard {
         row.classList.remove('bookmark-inline-editing');
         row.innerHTML = '';
         row.className = 'bookmark-link reorder-item is-idle';
+        row.setAttribute('role', 'row');
         row.setAttribute('data-bookmark-url', bookmark.url || '');
         if (bookmarkIndex >= 0) {
             row.setAttribute('data-bookmark-index', String(bookmarkIndex));
@@ -3847,6 +3878,7 @@ class Dashboard {
 
         const lead = document.createElement('div');
         lead.className = 'bookmark-lead';
+        lead.setAttribute('role', 'gridcell');
         const reorderHandle = document.createElement('div');
         reorderHandle.className = 'bookmark-reorder-handle';
         reorderHandle.setAttribute('aria-label', 'Drag to reorder');
@@ -3892,6 +3924,7 @@ class Dashboard {
         const openLink = document.createElement('a');
         openLink.className = 'bookmark-open';
         openLink.href = bookmark.url || '#';
+        openLink.setAttribute('role', 'gridcell');
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
         const textSpan = document.createElement('span');
@@ -3924,6 +3957,7 @@ class Dashboard {
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
+        shortcutSpan.setAttribute('role', 'gridcell');
         const showShortcuts = this.settings.showShortcuts !== false;
         const shortcutText = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
             ? String(bookmark.shortcut).toUpperCase()
@@ -3934,6 +3968,14 @@ class Dashboard {
             shortcutSpan.setAttribute('aria-hidden', 'true');
         } else {
             shortcutSpan.dataset.shortcut = shortcutText;
+        }
+        {
+            let linkLabel = bookmark.name || bookmark.url || 'Bookmark';
+            if (shortcutText) {
+                const shortcutPrefix = this.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
+                linkLabel = `${linkLabel}, ${shortcutPrefix} ${shortcutText}`;
+            }
+            openLink.setAttribute('aria-label', linkLabel);
         }
         row.appendChild(shortcutSpan);
 

@@ -2246,6 +2246,27 @@ body.no-animations .layout-launcher .bookmark-link.bookmark-pulse {
     border-radius: 4px;
 }
 
+a.bookmark-open:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.bookmark-link.keyboard-selected a.bookmark-open {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.layout-launcher .bookmark-link.keyboard-selected,
+.layout-launcher .bookmark-link:focus-within {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
 .bookmark-link.keyboard-selected::before {
     content: '';
     position: absolute;

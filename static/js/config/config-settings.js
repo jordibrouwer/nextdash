@@ -184,53 +184,43 @@ class ConfigSettings {
     }
 
     updateLayoutDensityPreview(layoutPreset, densityMode) {
-        const layoutMap = {
-            default: {
-                description: 'Balanced spacing and single-line bookmark rows.',
-                label: 'Default'
-            },
-            compact: {
-                description: 'Reduced gaps and padding for tighter columns.',
-                label: 'Compact'
-            },
-            cards: {
-                description: 'Card containers with room for two-line bookmark titles.',
-                label: 'Cards'
-            },
-            terminal: {
-                description: 'Monospace, single-line rows with terminal style cues.',
-                label: 'Terminal-ish'
-            }
+        const cfg = (suffix, fallback = '') => {
+            const flat = this.language?.translations?.config?.[suffix];
+            if (typeof flat === 'string') return flat;
+            const key = `config.${suffix}`;
+            const v = this.language?.t?.(key);
+            return v && v !== key ? v : fallback;
         };
-        const densityMap = {
-            comfortable: {
-                description: 'Larger row height and calmer spacing.',
-                label: 'Comfortable'
-            },
-            compact: {
-                description: 'Compact rows with balanced readability and information density.',
-                label: 'Compact'
-            },
-            dense: {
-                description: 'Most efficient row height for high bookmark counts.',
-                label: 'Dense'
-            }
-        };
+        const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
+            || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
+        const densityModes = ['comfortable', 'compact', 'dense', 'auto'];
+        const layoutKey = layoutPresets.includes(layoutPreset) ? layoutPreset : 'default';
+        const densityKey = densityModes.includes(densityMode) ? densityMode : 'compact';
 
-        const layoutMeta = layoutMap[layoutPreset] || layoutMap.default;
-        const densityMeta = densityMap[densityMode] || densityMap.compact;
         const layoutDescription = document.getElementById('layout-preset-description');
         const densityDescription = document.getElementById('density-mode-description');
         const previewText = document.getElementById('layout-density-preview-text');
 
+        const layoutDesc = cfg(`layoutPresetDesc.${layoutKey}`, '');
+        const densityDesc = cfg(`densityDesc.${densityKey}`, '');
+        const layoutLabel = cfg(`layoutPresetName.${layoutKey}`, layoutKey);
+        const densityLabel = cfg(`densityName.${densityKey}`, densityKey);
+
         if (layoutDescription) {
-            layoutDescription.textContent = layoutMeta.description;
+            layoutDescription.textContent = layoutDesc || cfg('layoutPresetDescIntro', '');
         }
         if (densityDescription) {
-            densityDescription.textContent = densityMeta.description;
+            densityDescription.textContent = densityDesc || cfg('densityDescIntro', '');
         }
         if (previewText) {
-            previewText.textContent = `${layoutMeta.label} + ${densityMeta.label}: ${layoutMeta.description.toLowerCase()}`;
+            const template = cfg(
+                'layoutDensityPreview',
+                '{layout} + {density}: {detail}'
+            );
+            previewText.textContent = template
+                .replace('{layout}', layoutLabel)
+                .replace('{density}', densityLabel)
+                .replace('{detail}', (layoutDesc || '').toLowerCase());
         }
     }
 

@@ -67,6 +67,13 @@
     line-height: 1.45;
 }
 
+.general-layer-intro-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
 .general-advanced-nav {
     display: flex;
     flex-wrap: wrap;

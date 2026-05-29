@@ -411,16 +411,17 @@ window.switchToTheme = switchToTheme;
 
 // Show notification
 function showNotification(message, type = 'info') {
+    if (window.AppNotification) {
+        window.AppNotification.show(message, type, { durationMs: 3000 });
+        return;
+    }
     const notification = document.getElementById('notification');
     const notificationMessage = document.getElementById('notification-message');
-    
+    if (!notification || !notificationMessage) return;
     notificationMessage.textContent = message;
     notification.className = `notification notification-${type}`;
     notification.classList.add('show');
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
+    setTimeout(() => notification.classList.remove('show'), 3000);
 }
 
 // Add custom theme

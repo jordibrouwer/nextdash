@@ -30,6 +30,7 @@ func main() {
 	r := mux.NewRouter()
 
 	// Routes
+	r.HandleFunc("/manifest.webmanifest", handlers.WebAppManifest).Methods("GET")
 	r.HandleFunc("/", handlers.Dashboard).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthPage).Methods("GET")
 	r.HandleFunc("/config", handlers.Config).Methods("GET")

@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v31';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v32';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
     function release(tag, date, sections) {
@@ -46,6 +46,41 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.05.5', 'May 2026', [
+                {
+                    title: 'Config → General',
+                    items: [
+                        { badge: 'new', text: '<strong>ℹ info buttons</strong> — click ℹ next to any setting label in General for a short explanation in your current language (EN / NL / DE / FR). Essentials and Advanced each have dozens of covered options.' },
+                        { badge: 'new', text: '<strong>Essentials / Advanced layers</strong> — everyday options (language, appearance, layout, bookmarks) under <em>Essentials</em>; power features (smart collections, status, branding, backups) under <em>Advanced</em>. Sticky section links at the top of Advanced; <em>Show all sections on one page</em> reveals everything at once.' },
+                        { badge: 'new', text: '<strong>Layer intro hints</strong> — short guidance at the top of Essentials and Advanced explains what lives in each layer and points you to ℹ for detail.' },
+                        { badge: 'new', text: '<strong>Layout &amp; smart collections i18n</strong> — layout preset descriptions and smart-collection UI strings are fully translated (no more hardcoded Dutch in the template).' },
+                        { badge: 'new', text: '<strong>Tuning wizard</strong> — after first-run onboarding, an optional one-time 3-step guide on the dashboard: <strong>language</strong> → <strong>theme</strong> → <strong>browser extension</strong>. Choices save immediately; skip anytime.' },
+                    ]
+                },
+                {
+                    title: 'Branding & PWA',
+                    items: [
+                        { badge: 'new', text: '<strong>Dynamic web app manifest</strong> — <code>/manifest.webmanifest</code> reads your custom title and favicon from settings, so “Add to Home Screen” / installed PWAs match your branding — not only the browser tab.' },
+                        { badge: 'new', text: '<strong>Apple web-app meta</strong> — matching <code>apple-mobile-web-app-title</code>, touch icon, and theme colour on dashboard, config, health, and colors.' },
+                    ]
+                },
+                {
+                    title: 'Accessibility',
+                    items: [
+                        { badge: 'new', text: '<strong>Bookmark grid semantics</strong> — the dashboard bookmark area uses <code>role="grid"</code> with <code>row</code> / <code>gridcell</code> on each tile; categories are <code>rowgroup</code> with labelled headers.' },
+                        { badge: 'new', text: '<strong>Focus on bookmark tiles</strong> — roving <code>tabIndex</code> on the open link now pairs with clearer <code>:focus-visible</code> rings; keyboard-selected rows show an accent outline on the link (launcher layout included).' },
+                        { badge: 'new', text: '<strong>Selection &amp; labels</strong> — arrow-key selection sets <code>aria-selected</code>; open links include the shortcut in <code>aria-label</code> when one is set.' },
+                    ]
+                },
+                {
+                    title: 'Polish & docs',
+                    items: [
+                        { badge: 'new', text: '<strong>Unified toasts</strong> — dashboard, config, and colors share the same toast component for success, errors, and undo — consistent placement and styling.' },
+                        { badge: 'new', text: '<strong>Help &amp; README for self-hosters</strong> — Config → Help → <em>General settings</em> and the README now document Essentials vs Advanced, ℹ buttons, and branding/PWA in plain language.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.4', 'May 2026', [
                 {

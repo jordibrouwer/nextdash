@@ -157,7 +157,6 @@ class ConfigManager {
         }
         this.renderConfig();
         this.initReordering();
-        
         if (typeof initCustomSelects === 'function') {
             setTimeout(() => {
                 initCustomSelects();

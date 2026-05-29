@@ -97,6 +97,14 @@ class ConfigLanguage {
             if (translation === key) return;
             element.setAttribute('aria-label', translation);
         });
+
+        const mgr = window.configManager;
+        if (mgr?.settings && mgr.settingsData) {
+            mgr.settings.updateLayoutDensityPreview(
+                mgr.settingsData.layoutPreset || 'default',
+                mgr.settingsData.densityMode || 'compact'
+            );
+        }
     }
 
     /**

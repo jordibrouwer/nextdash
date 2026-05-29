@@ -198,6 +198,261 @@ class PostSetupWizard {
     }
 }
 
+/**
+ * One-time tuning wizard after onboarding: language, theme, browser extension.
+ */
+class PostInstallTuningWizard {
+    constructor({ dashboard, language }) {
+        this.dashboard = dashboard;
+        this.language = language;
+        this.storageKey = 'nextdash-post-tuning-wizard-v1';
+        this.currentStep = 0;
+        this.overlay = null;
+        this.card = null;
+        this.fieldsHost = null;
+    }
+
+    t(key, fallback, vars) {
+        const raw = this.language && typeof this.language.t === 'function'
+            ? this.language.t(key)
+            : key;
+        let text = raw && raw !== key ? raw : (fallback || key);
+        if (vars) {
+            Object.entries(vars).forEach(([k, v]) => {
+                text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+            });
+        }
+        return text;
+    }
+
+    shouldStart() {
+        if (!this.dashboard?.settings?.onboardingCompleted) return false;
+        try {
+            if (localStorage.getItem(this.storageKey)) return false;
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    getSteps() {
+        return [
+            {
+                id: 'language',
+                title: this.t('postTuning.languageTitle', 'Choose your language'),
+                body: this.t('postTuning.languageBody', 'Pick the language for the dashboard and config. You can change this anytime under Config → General.'),
+                primary: this.t('postTuning.saveContinue', 'Save & continue'),
+                secondary: this.t('postTuning.openConfig', 'Open in config'),
+                secondaryAction: () => {
+                    this.markSeen();
+                    window.location.href = '/config#general';
+                }
+            },
+            {
+                id: 'theme',
+                title: this.t('postTuning.themeTitle', 'Pick a theme'),
+                body: this.t('postTuning.themeBody', 'Choose a starting theme. Customize colors later via Config or /colors.'),
+                primary: this.t('postTuning.saveContinue', 'Save & continue'),
+                secondary: this.t('postTuning.openAppearance', 'Open appearance in config'),
+                secondaryAction: () => {
+                    this.markSeen();
+                    window.location.href = '/config#general';
+                }
+            },
+            {
+                id: 'extension',
+                title: this.t('postTuning.extensionTitle', 'Save bookmarks from your browser'),
+                body: this.t('postTuning.extensionBody', 'Install the nextDash browser extension to add the current tab as a bookmark without leaving the page.'),
+                primary: this.t('postTuning.openHelp', 'How to install'),
+                primaryAction: () => {
+                    this.markSeen();
+                    window.location.href = '/config#help';
+                },
+                secondary: this.t('postTuning.finish', 'Finish'),
+                secondaryAction: () => this.finish(),
+                showSkip: false
+            }
+        ];
+    }
+
+    start() {
+        if (!this.shouldStart()) return false;
+        this.steps = this.getSteps();
+        this.render();
+        this.showStep(0);
+        return true;
+    }
+
+    render() {
+        const overlay = document.createElement('div');
+        overlay.className = 'post-setup-overlay onboarding-overlay';
+        document.body.appendChild(overlay);
+        this.overlay = overlay;
+
+        const card = document.createElement('div');
+        card.className = 'post-setup-card onboarding-card post-tuning-card';
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-modal', 'true');
+        card.innerHTML = `
+            <div class="onboarding-progress post-setup-progress"></div>
+            <h3 class="onboarding-title post-setup-title"></h3>
+            <p class="onboarding-body post-setup-body"></p>
+            <div class="post-tuning-fields"></div>
+            <div class="onboarding-actions post-setup-actions">
+                <button type="button" class="onboarding-btn post-setup-skip"></button>
+                <button type="button" class="onboarding-btn onboarding-secondary post-setup-secondary"></button>
+                <button type="button" class="onboarding-btn onboarding-next post-setup-primary"></button>
+            </div>
+        `;
+        document.body.appendChild(card);
+        this.card = card;
+        this.fieldsHost = card.querySelector('.post-tuning-fields');
+
+        card.querySelector('.post-setup-skip').addEventListener('click', () => this.finish());
+        document.addEventListener('keydown', this._onKeydown = (e) => {
+            if (e.key === 'Escape') this.finish();
+        });
+    }
+
+    renderFields(step) {
+        if (!this.fieldsHost) return;
+        this.fieldsHost.innerHTML = '';
+        const settings = this.dashboard.settings || {};
+
+        if (step.id === 'language') {
+            const label = document.createElement('label');
+            label.className = 'post-tuning-label';
+            label.textContent = this.t('postTuning.languageLabel', 'Language');
+            const select = document.createElement('select');
+            select.id = 'post-tuning-language';
+            [['en', 'English'], ['nl', 'Nederlands'], ['de', 'Deutsch'], ['fr', 'Français']].forEach(([value, name]) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = name;
+                if ((settings.language || 'en') === value) opt.selected = true;
+                select.appendChild(opt);
+            });
+            this.fieldsHost.append(label, select);
+            return;
+        }
+
+        if (step.id === 'theme') {
+            const label = document.createElement('label');
+            label.className = 'post-tuning-label';
+            label.textContent = this.t('postTuning.themeLabel', 'Theme');
+            const select = document.createElement('select');
+            select.id = 'post-tuning-theme';
+            const themes = [
+                ['dark', this.t('dashboard.darkTheme', 'Dark')],
+                ['light', this.t('dashboard.lightTheme', 'Light')]
+            ];
+            themes.forEach(([value, name]) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = name;
+                if ((settings.theme || 'dark') === value) opt.selected = true;
+                select.appendChild(opt);
+            });
+            this.fieldsHost.append(label, select);
+        }
+    }
+
+    async applyStepSettings(step) {
+        const dash = this.dashboard;
+        if (!dash?.settings) return;
+        if (step.id === 'language') {
+            const sel = document.getElementById('post-tuning-language');
+            if (sel) {
+                dash.settings.language = sel.value;
+                if (dash.language?.loadTranslations) {
+                    await dash.language.loadTranslations(sel.value);
+                    dash.language.applyTranslations?.();
+                }
+            }
+        }
+        if (step.id === 'theme') {
+            const sel = document.getElementById('post-tuning-theme');
+            if (sel) {
+                dash.settings.theme = sel.value;
+                dash.applyTheme?.(sel.value);
+            }
+        }
+        if (typeof dash.saveSettings === 'function') {
+            await dash.saveSettings();
+        }
+    }
+
+    showStep(index) {
+        this.currentStep = Math.max(0, Math.min(index, this.steps.length - 1));
+        const step = this.steps[this.currentStep];
+        if (!this.card || !step) return;
+
+        this.card.querySelector('.post-setup-progress').textContent =
+            `${this.currentStep + 1}/${this.steps.length}`;
+        this.card.querySelector('.post-setup-title').textContent = step.title;
+        this.card.querySelector('.post-setup-body').textContent = step.body;
+        this.renderFields(step);
+
+        const skip = this.card.querySelector('.post-setup-skip');
+        skip.textContent = this.t('postTuning.skip', 'Skip');
+        skip.hidden = step.showSkip === false;
+
+        const primary = this.card.querySelector('.post-setup-primary');
+        primary.textContent = step.primary;
+        primary.onclick = async () => {
+            await this.applyStepSettings(step);
+            if (step.primaryAction) {
+                step.primaryAction();
+                return;
+            }
+            this.nextStep();
+        };
+
+        const secondary = this.card.querySelector('.post-setup-secondary');
+        if (step.secondary && step.secondaryAction) {
+            secondary.hidden = false;
+            secondary.textContent = step.secondary;
+            secondary.onclick = () => step.secondaryAction();
+        } else {
+            secondary.hidden = true;
+        }
+    }
+
+    nextStep() {
+        if (this.currentStep >= this.steps.length - 1) {
+            this.finish();
+            return;
+        }
+        this.showStep(this.currentStep + 1);
+    }
+
+    markSeen() {
+        try {
+            localStorage.setItem(this.storageKey, '1');
+        } catch { /* ignore */ }
+    }
+
+    close() {
+        if (this.overlay) {
+            this.overlay.remove();
+            this.overlay = null;
+        }
+        if (this.card) {
+            this.card.remove();
+            this.card = null;
+        }
+        if (this._onKeydown) {
+            document.removeEventListener('keydown', this._onKeydown);
+        }
+    }
+
+    finish() {
+        this.markSeen();
+        this.close();
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.PostSetupWizard = PostSetupWizard;
+    window.PostInstallTuningWizard = PostInstallTuningWizard;
 }

@@ -7,6 +7,16 @@
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/theme-loader.js"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
+    <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
+    <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -70,7 +80,7 @@
     <!-- Container 3: Bookmarks -->
     <div class="dashboard-section section-content">
         <div class="container">
-            <main id="dashboard-layout" class="dashboard-grid" tabindex="-1" aria-busy="true">
+            <main id="dashboard-layout" class="dashboard-grid" tabindex="-1" aria-busy="true" role="grid" aria-label="Bookmarks">
                 <div class="skeleton-root skeleton-dashboard" data-skeleton-root aria-hidden="true">
                     <div class="skeleton-dashboard-col">
                         <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
@@ -207,6 +217,7 @@
     <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/shortcut-format.js"></script>
     <script src="/static/js/post-setup-wizard.js"></script>
+    <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/analytics.js"></script>
     <script>

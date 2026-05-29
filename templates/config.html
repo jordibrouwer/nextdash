@@ -7,6 +7,11 @@
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/theme-loader.js"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
+    <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/config.css">
@@ -125,8 +130,14 @@
                     </div>
                     <a href="#" id="general-layer-show-all" class="general-layer-show-all" data-i18n="config.generalLayerShowAll">Show all sections on one page</a>
                 </div>
-                <p id="general-layer-intro-essentials" class="general-layer-intro" data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</p>
-                <p id="general-layer-intro-advanced" class="general-layer-intro" hidden data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</p>
+                <p id="general-layer-intro-essentials" class="general-layer-intro">
+                    <span data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</span>
+                    <span class="general-layer-intro-hint" data-i18n="config.generalEssentialsHint">Tip: use ℹ next to a setting for help. Switch to Advanced for power features, or show all sections below.</span>
+                </p>
+                <p id="general-layer-intro-advanced" class="general-layer-intro" hidden>
+                    <span data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</span>
+                    <span class="general-layer-intro-hint" data-i18n="config.generalAdvancedHint">Use the section links above to jump. Essentials covers everyday options.</span>
+                </p>
                 <nav id="general-advanced-nav" class="general-advanced-nav" hidden aria-label="Advanced sections">
                     <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance</a>
                     <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks</a>
@@ -280,7 +291,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-tips-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showTipsAboveButtons">Show tips above buttons</span>
-                                    <button type="button" id="show-tips-info-btn" class="info-button" aria-label="Information about rotating tips">ℹ</button>
+                                    <button type="button" id="show-tips-info-btn" class="info-button" data-i18n-aria="config.showTipsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
@@ -305,27 +316,23 @@
                             <button type="button" id="layout-preset-info-btn" class="info-button" data-i18n-aria="config.layoutPresetInfoTitle">ℹ</button>
                             <select id="layout-preset-select"></select>
                         </div>
-                        <p id="layout-preset-description" class="setting-description" aria-live="polite">
-                            Kies uit meerdere weergaven: Default, Compact, Cards, Terminal-ish, Masonry (variabele kaarthoogtes), List (gedetailleerde rijen) en Widgets (blok-achtige modules).
-                        </p>
+                        <p id="layout-preset-description" class="setting-description" aria-live="polite"></p>
                         <div class="form-group">
                             <label for="density-mode-select" data-i18n="config.densityLabel">Density:</label>
                             <button type="button" id="density-mode-info-btn" class="info-button" data-i18n-aria="config.densityModeInfoTitle">ℹ</button>
                             <select id="density-mode-select"></select>
                         </div>
-                        <p id="density-mode-description" class="setting-description" aria-live="polite">
-                            Density bepaalt tussenruimte en typografie: Comfortable, Compact, Dense of Auto (past zich aan op scherm/zoom).
-                        </p>
+                        <p id="density-mode-description" class="setting-description" aria-live="polite"></p>
                         <div class="setting-preview" role="status" aria-live="polite">
                             <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
-                            <span id="layout-density-preview-text">Voorbeeld: "Masonry + Compact" toont meer items met variabele kaarthoogtes; "List + Comfortable" toont uitgebreide rijen.</span>
+                            <span id="layout-density-preview-text"></span>
                         </div>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label" for="packed-columns-checkbox">
                                     <input type="checkbox" id="packed-columns-checkbox">
                                     <span class="checkbox-text" data-i18n="config.packedColumns">Tight column stack (fill vertical space)</span>
-                                    <button type="button" id="packed-columns-info-btn" class="info-button" aria-label="Information about tight column stack">ℹ</button>
+                                    <button type="button" id="packed-columns-info-btn" class="info-button" data-i18n-aria="config.packedColumnsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -441,21 +448,21 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="always-collapse-categories-checkbox">
                                     <span class="checkbox-text" data-i18n="config.alwaysCollapseCategories">Always collapse categories</span>
-                                    <button type="button" id="always-collapse-categories-info-btn" class="info-button" aria-label="Information about always collapse categories">ℹ</button>
+                                    <button type="button" id="always-collapse-categories-info-btn" class="info-button" data-i18n-aria="config.alwaysCollapseCategoriesInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="global-shortcuts-checkbox">
                                     <span class="checkbox-text" data-i18n="config.globalShortcuts">Use shortcuts from all pages</span>
-                                    <button type="button" id="global-shortcuts-info-btn" class="info-button" aria-label="Information about global shortcuts">ℹ</button>
+                                    <button type="button" id="global-shortcuts-info-btn" class="info-button" data-i18n-aria="config.globalShortcutsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-tabs-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPageTabs">Show page tabs</span>
-                                    <button type="button" id="show-page-tabs-info-btn" class="info-button" aria-label="Information about page tabs">ℹ</button>
+                                    <button type="button" id="show-page-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageTabsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -463,7 +470,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-names-in-tabs-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPageNamesInTabs">Show page names in tabs</span>
-                                    <button type="button" id="show-page-names-in-tabs-info-btn" class="info-button" aria-label="Information about showing page names in tabs">ℹ</button>
+                                    <button type="button" id="show-page-names-in-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageNamesInTabsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
@@ -591,7 +598,7 @@
                                         <option value="15">15</option>
                                         <option value="25">25</option>
                                         <option value="30">30</option>
-                                        <option value="0">Unlimited</option>
+                                        <option value="0" data-i18n="config.smartCollectionUnlimited">Unlimited</option>
                                     </select>
                                 </div>
                                 <div class="checkbox-tree-item">
@@ -613,23 +620,23 @@
                             <summary class="smart-collection-summary">
                                 <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
                                     <input type="checkbox" id="show-smart-recent-collection-checkbox">
-                                    <span class="checkbox-text">Smart: Recently opened</span>
+                                    <span class="checkbox-text" data-i18n="config.showSmartRecentCollection">Smart: Recently opened</span>
                                 </label>
                                 <span class="smart-count-badge" id="smart-recent-count-badge">0</span>
                             </summary>
                             <div class="smart-collection-body">
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-recent-pages-select">Pages:</label>
+                                    <label for="smart-recent-pages-select" data-i18n="config.smartCollectionPagesLabel">Pages:</label>
                                     <select id="smart-recent-pages-select" multiple size="3"></select>
                                 </div>
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-recent-limit-select">Visible items:</label>
+                                    <label for="smart-recent-limit-select" data-i18n="config.smartCollectionVisibleItemsLabel">Visible items:</label>
                                     <select id="smart-recent-limit-select">
                                         <option value="10">10</option>
                                         <option value="25">25</option>
                                         <option value="50">50</option>
                                         <option value="100">100</option>
-                                        <option value="0">Unlimited</option>
+                                        <option value="0" data-i18n="config.smartCollectionUnlimited">Unlimited</option>
                                     </select>
                                 </div>
                             </div>
@@ -639,23 +646,23 @@
                             <summary class="smart-collection-summary">
                                 <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
                                     <input type="checkbox" id="show-smart-stale-collection-checkbox">
-                                    <span class="checkbox-text">Smart: Stale bookmarks</span>
+                                    <span class="checkbox-text" data-i18n="config.showSmartStaleCollection">Smart: Stale bookmarks</span>
                                 </label>
                                 <span class="smart-count-badge" id="smart-stale-count-badge">0</span>
                             </summary>
                             <div class="smart-collection-body">
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-stale-pages-select">Pages:</label>
+                                    <label for="smart-stale-pages-select" data-i18n="config.smartCollectionPagesLabel">Pages:</label>
                                     <select id="smart-stale-pages-select" multiple size="3"></select>
                                 </div>
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-stale-limit-select">Visible items:</label>
+                                    <label for="smart-stale-limit-select" data-i18n="config.smartCollectionVisibleItemsLabel">Visible items:</label>
                                     <select id="smart-stale-limit-select">
                                         <option value="10">10</option>
                                         <option value="25">25</option>
                                         <option value="50">50</option>
                                         <option value="100">100</option>
-                                        <option value="0">Unlimited</option>
+                                        <option value="0" data-i18n="config.smartCollectionUnlimited">Unlimited</option>
                                     </select>
                                 </div>
                             </div>
@@ -665,23 +672,23 @@
                             <summary class="smart-collection-summary">
                                 <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
                                     <input type="checkbox" id="show-smart-most-used-collection-checkbox">
-                                    <span class="checkbox-text">Smart: Most used</span>
+                                    <span class="checkbox-text" data-i18n="config.showSmartMostUsedCollection">Smart: Most used</span>
                                 </label>
                                 <span class="smart-count-badge" id="smart-most-used-count-badge">0</span>
                             </summary>
                             <div class="smart-collection-body">
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-most-used-pages-select">Pages:</label>
+                                    <label for="smart-most-used-pages-select" data-i18n="config.smartCollectionPagesLabel">Pages:</label>
                                     <select id="smart-most-used-pages-select" multiple size="3"></select>
                                 </div>
                                 <div class="checkbox-tree-item">
-                                    <label for="smart-most-used-limit-select">Visible items:</label>
+                                    <label for="smart-most-used-limit-select" data-i18n="config.smartCollectionVisibleItemsLabel">Visible items:</label>
                                     <select id="smart-most-used-limit-select">
                                         <option value="10">10</option>
                                         <option value="25">25</option>
                                         <option value="50">50</option>
                                         <option value="100">100</option>
-                                        <option value="0">Unlimited</option>
+                                        <option value="0" data-i18n="config.smartCollectionUnlimited">Unlimited</option>
                                     </select>
                                 </div>
                             </div>
@@ -691,12 +698,12 @@
                             <summary class="smart-collection-summary">
                                 <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
                                     <input type="checkbox" id="show-tag-collections-checkbox">
-                                    <span class="checkbox-text">Smart: Tag collections (one per tag)</span>
+                                    <span class="checkbox-text" data-i18n="config.showTagCollections">Smart: Tag collections (one per tag)</span>
                                 </label>
                             </summary>
                             <div class="smart-collection-body">
                                 <div class="checkbox-tree-item">
-                                    <label for="tag-collections-min-count">Minimum bookmarks per tag:</label>
+                                    <label for="tag-collections-min-count" data-i18n="config.tagCollectionsMinCount">Minimum bookmarks per tag:</label>
                                     <div class="number-input-wrapper">
                                         <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
                                         <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
@@ -750,7 +757,7 @@
                                 <tr>
                                     <td>
                                         <span data-i18n="config.healthLinkButtonLabel">Health link</span>
-                                        <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n="config.showHealthDashboardInfoTitle" aria-label="Health beta link information">ℹ</button>
+                                        <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
                                     </td>
                                     <td><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
                                 </tr>
@@ -785,7 +792,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-status-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showBookmarkStatus">Show bookmark status (online/offline)</span>
-                                    <button type="button" id="show-status-info-btn" class="info-button" aria-label="Information about bookmark status">ℹ</button>
+                                    <button type="button" id="show-status-info-btn" class="info-button" data-i18n-aria="config.showBookmarkStatusInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -817,14 +824,14 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="skip-fast-ping-checkbox">
                                     <span class="checkbox-text" data-i18n="config.skipFastPing">Skip fast ping check</span>
-                                    <button type="button" id="skip-fast-ping-info-btn" class="info-button" aria-label="Information about skip fast ping">ℹ</button>
+                                    <button type="button" id="skip-fast-ping-info-btn" class="info-button" data-i18n-aria="config.skipFastPingInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-sync-toasts-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSyncToasts">Show sync notifications</span>
-                                    <button type="button" id="show-sync-toasts-info-btn" class="info-button" aria-label="Information about sync notifications">ℹ</button>
+                                    <button type="button" id="show-sync-toasts-info-btn" class="info-button" data-i18n-aria="config.showSyncToastsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
@@ -880,7 +887,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="hypr-mode-checkbox">
                                     <span class="checkbox-text" data-i18n="config.hyprMode">HyprMode (Launcher mode for PWA)</span>
-                                    <button type="button" id="hypr-mode-info-btn" class="info-button" aria-label="Information about HyprMode">ℹ</button>
+                                    <button type="button" id="hypr-mode-info-btn" class="info-button" data-i18n-aria="config.hyprModeInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -894,28 +901,28 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="keep-search-open-when-empty-checkbox">
                                     <span class="checkbox-text" data-i18n="config.keepSearchOpenWhenEmpty">Keep search open when empty</span>
-                                    <button type="button" id="keep-search-open-when-empty-info-btn" class="info-button" aria-label="Information about keeping search open">ℹ</button>
+                                    <button type="button" id="keep-search-open-when-empty-info-btn" class="info-button" data-i18n-aria="config.keepSearchOpenWhenEmptyInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="interleave-mode-checkbox">
                                     <span class="checkbox-text" data-i18n="config.interleaveMode">Switch Search Mode</span>
-                                    <button type="button" id="interleave-mode-info-btn" class="info-button" aria-label="Information about Search Mode">ℹ</button>
+                                    <button type="button" id="interleave-mode-info-btn" class="info-button" data-i18n-aria="config.interleaveModeInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-search-flow-banner-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSearchFlowBanner">Show search flow banner</span>
-                                    <button type="button" id="show-search-flow-banner-info-btn" class="info-button" aria-label="Information about search flow banner">ℹ</button>
+                                    <button type="button" id="show-search-flow-banner-info-btn" class="info-button" data-i18n-aria="config.showSearchFlowBannerInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="enable-fuzzy-suggestions-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showFuzzySuggestions">Show fuzzy suggestions in search</span>
-                                    <button type="button" id="fuzzy-suggestions-info-btn" class="info-button" aria-label="Information about Fuzzy Suggestions">ℹ</button>
+                                    <button type="button" id="fuzzy-suggestions-info-btn" class="info-button" data-i18n-aria="config.fuzzySuggestionsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -930,7 +937,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="include-finders-in-search-checkbox">
                                     <span class="checkbox-text" data-i18n="config.includeFindersInSearch">Include finders in search</span>
-                                    <button type="button" id="include-finders-in-search-info-btn" class="info-button" aria-label="Information about Finders in Search">ℹ</button>
+                                    <button type="button" id="include-finders-in-search-info-btn" class="info-button" data-i18n-aria="config.includeFindersInSearchInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -1345,14 +1352,14 @@
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
                             <div class="backups-action-buttons">
-                                <button type="button" id="backup-info-btn" class="info-button" aria-label="Information about Backup">ℹ</button>
+                                <button type="button" id="backup-info-btn" class="info-button" data-i18n-aria="config.backupInfoTitle">ℹ</button>
                                 <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.importDescription">Import your data</p>
                             <div class="backups-action-buttons">
-                                <button type="button" id="import-info-btn" class="info-button" aria-label="Information about Import">ℹ</button>
+                                <button type="button" id="import-info-btn" class="info-button" data-i18n-aria="config.importInfoTitle">ℹ</button>
                                 <input type="file" id="import-file" accept=".zip" style="display: none;">
                                 <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
                             </div>
@@ -1713,6 +1720,13 @@
                             </ul>
                         </section>
 
+                        <section id="help-config-general" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageConfigGeneralTitle">Config → General</h3>
+                            <ul data-i18n="config.helpPageConfigGeneralItems">
+                                <li>General settings use Essentials and Advanced layers.</li>
+                            </ul>
+                        </section>
+
                         <section id="help-navigation" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageNavigationTitle">Navigation</h3>
                             <ul data-i18n="config.helpPageNavigationItems">
@@ -1907,6 +1921,7 @@
     <script src="/static/js/hypr-mode.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
+    <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/config/config-ui.js"></script>
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>

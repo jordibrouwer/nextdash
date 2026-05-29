@@ -201,12 +201,14 @@ class ConfigUI {
      * @param {string} type - Type of notification ('success' or 'error')
      */
     showNotification(message, type = 'success', options = {}) {
+        if (window.AppNotification) {
+            window.AppNotification.show(message, type, options);
+            return;
+        }
         const notification = document.getElementById('notification');
         const notificationMessage = document.getElementById('notification-message');
         const notificationAction = document.getElementById('notification-action');
-        
         if (!notification || !notificationMessage) return;
-
         notificationMessage.textContent = message;
         notification.className = `notification ${type}`;
         notification.classList.add('show');
@@ -214,31 +216,27 @@ class ConfigUI {
             notificationAction.hidden = true;
             notificationAction.textContent = '';
             notificationAction.onclick = null;
+            if (options && typeof options.onAction === 'function') {
+                notificationAction.hidden = false;
+                notificationAction.textContent = options.actionLabel || 'Undo';
+                notificationAction.onclick = () => {
+                    options.onAction();
+                    this.hideNotification();
+                };
+            }
         }
-
-        if (options && typeof options.onAction === 'function' && notificationAction) {
-            notificationAction.hidden = false;
-            notificationAction.textContent = options.actionLabel || 'Undo';
-            notificationAction.onclick = () => {
-                options.onAction();
-                this.hideNotification();
-            };
-        }
-
-        if (this.notificationTimeout) {
-            clearTimeout(this.notificationTimeout);
-            this.notificationTimeout = null;
-        }
-
+        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
         if (!options.persist) {
             const duration = Number.isFinite(Number(options.durationMs)) ? Number(options.durationMs) : 3000;
-            this.notificationTimeout = setTimeout(() => {
-                this.hideNotification();
-            }, duration);
+            this.notificationTimeout = setTimeout(() => this.hideNotification(), duration);
         }
     }
 
     hideNotification() {
+        if (window.AppNotification) {
+            window.AppNotification.hide();
+            return;
+        }
         const notification = document.getElementById('notification');
         const notificationAction = document.getElementById('notification-action');
         if (!notification) return;
