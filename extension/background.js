@@ -1,4 +1,4 @@
-importScripts('save-common.js');
+importScripts('save-common.js', 'i18n.js');
 
 const BADGE_MS = 3500;
 
@@ -10,16 +10,20 @@ function flashBadge(text, color) {
   }, BADGE_MS);
 }
 
-function installContextMenus() {
+async function installContextMenus() {
+  await initExtensionI18nBackground();
+  const savePageTitle = extT('contextMenuSavePage', 'Save page to nextDash');
+  const saveLinkTitle = extT('contextMenuSaveLink', 'Save link to nextDash');
+
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: 'nextdash-save-page',
-      title: 'Save page to nextDash',
+      title: savePageTitle,
       contexts: ['page']
     });
     chrome.contextMenus.create({
       id: 'nextdash-save-link',
-      title: 'Save link to nextDash',
+      title: saveLinkTitle,
       contexts: ['link']
     });
   });
@@ -31,6 +35,12 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onStartup.addListener(() => {
   installContextMenus();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.extensionLocale) {
+    installContextMenus();
+  }
 });
 
 async function quickSaveBookmark(name, url) {

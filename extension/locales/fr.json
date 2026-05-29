@@ -35,5 +35,7 @@
   "msgSettingsReset": "Paramètres réinitialisés !",
   "msgDuplicateConfirm": "Cette URL existe déjà sur cette page sous <strong>\"{name}\"</strong>.<br><span class=\"highlight\">Enregistrer quand même ?</span>",
   "notifySaved": "Favori enregistré dans nextDash",
-  "notifySavedNamed": "\"{name}\" enregistré dans nextDash"
+  "notifySavedNamed": "\"{name}\" enregistré dans nextDash",
+  "contextMenuSavePage": "Enregistrer la page dans nextDash",
+  "contextMenuSaveLink": "Enregistrer le lien dans nextDash"
 }

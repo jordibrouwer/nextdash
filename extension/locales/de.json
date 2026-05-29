@@ -35,5 +35,7 @@
   "msgSettingsReset": "Einstellungen zurückgesetzt!",
   "msgDuplicateConfirm": "Diese URL existiert auf dieser Seite bereits als <strong>\"{name}\"</strong>.<br><span class=\"highlight\">Trotzdem speichern?</span>",
   "notifySaved": "Lesezeichen in nextDash gespeichert",
-  "notifySavedNamed": "\"{name}\" in nextDash gespeichert"
+  "notifySavedNamed": "\"{name}\" in nextDash gespeichert",
+  "contextMenuSavePage": "Seite in nextDash speichern",
+  "contextMenuSaveLink": "Link in nextDash speichern"
 }

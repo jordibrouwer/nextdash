@@ -35,5 +35,7 @@
   "msgSettingsReset": "Instellingen gereset!",
   "msgDuplicateConfirm": "Deze URL bestaat al op deze pagina als <strong>\"{name}\"</strong>.<br><span class=\"highlight\">Toch opslaan?</span>",
   "notifySaved": "Bladwijzer opgeslagen in nextDash",
-  "notifySavedNamed": "\"{name}\" opgeslagen in nextDash"
+  "notifySavedNamed": "\"{name}\" opgeslagen in nextDash",
+  "contextMenuSavePage": "Pagina opslaan in nextDash",
+  "contextMenuSaveLink": "Link opslaan in nextDash"
 }

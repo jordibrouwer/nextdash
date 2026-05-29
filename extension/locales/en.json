@@ -35,5 +35,7 @@
   "msgSettingsReset": "Settings reset!",
   "msgDuplicateConfirm": "This URL already exists in this page as <strong>\"{name}\"</strong>.<br><span class=\"highlight\">Do you want to save it anyway?</span>",
   "notifySaved": "Bookmark saved to nextDash",
-  "notifySavedNamed": "\"{name}\" saved to nextDash"
+  "notifySavedNamed": "\"{name}\" saved to nextDash",
+  "contextMenuSavePage": "Save page to nextDash",
+  "contextMenuSaveLink": "Save link to nextDash"
 }

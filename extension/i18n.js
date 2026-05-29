@@ -26,7 +26,7 @@ async function extLoadLocaleFile(lang) {
     return res.json();
 }
 
-async function initExtensionI18n() {
+async function resolveExtensionLang() {
     const stored = await chrome.storage.sync.get(['extensionLocale', 'serverUrl']);
     let lang = stored.extensionLocale;
 
@@ -44,24 +44,40 @@ async function initExtensionI18n() {
         }
     }
 
-    if (!lang && typeof chrome.i18n !== 'undefined' && chrome.i18n.getUILanguage) {
+    if (!lang && typeof chrome !== 'undefined' && chrome.i18n?.getUILanguage) {
         lang = chrome.i18n.getUILanguage();
     }
-    if (!lang) {
+    if (!lang && typeof navigator !== 'undefined' && navigator.language) {
         lang = navigator.language;
     }
 
-    extLang = extNormalizeLang(lang);
+    return extNormalizeLang(lang || 'en');
+}
 
+async function loadExtensionLocale(lang) {
+    const normalized = extNormalizeLang(lang);
     try {
-        extStrings = await extLoadLocaleFile(extLang);
+        extStrings = await extLoadLocaleFile(normalized);
+        extLang = normalized;
     } catch (e) {
         extStrings = await extLoadLocaleFile('en');
         extLang = 'en';
     }
+    return extLang;
+}
 
-    document.documentElement.lang = extLang;
-    applyExtensionI18n();
+/** Service worker / background — no DOM. */
+async function initExtensionI18nBackground() {
+    const lang = await resolveExtensionLang();
+    return loadExtensionLocale(lang);
+}
+
+async function initExtensionI18n() {
+    await initExtensionI18nBackground();
+    if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.lang = extLang;
+        applyExtensionI18n();
+    }
 }
 
 function applyExtensionI18n() {
