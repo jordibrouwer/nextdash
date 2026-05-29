@@ -2326,93 +2326,87 @@ class Dashboard {
     }
 
     getKeyboardCheatSheetItems() {
+        const t = (key, fallback) => {
+            if (!this.language?.t) return fallback;
+            const fullKey = `dashboard.cheatsheet.${key}`;
+            const value = this.language.t(fullKey);
+            return value !== fullKey ? value : fallback;
+        };
+        const item = (keys, key, fallback) => ({ keys, description: t(key, fallback) });
+        const section = (titleKey, titleFallback, items) => ({
+            title: t(titleKey, titleFallback),
+            items,
+        });
+
         return [
-            {
-                title: 'navigation',
-                items: [
-                    { keys: '1–9', description: 'Switch to page tab' },
-                    { keys: 'Shift + ← / →', description: 'Previous / next page' },
-                    { keys: ',', description: 'Page overview with bookmark counts' },
-                    { keys: '↑ / ↓', description: 'Move focus up / down through bookmarks' },
-                    { keys: '← / →', description: 'Move focus left / right in grid' },
-                    { keys: 'Tab / Shift+Tab', description: 'Step linearly through all bookmarks' },
-                    { keys: 'G + 1–9', description: 'Jump to first bookmark in nth category' },
-                    { keys: 'Enter / Space', description: 'Open focused bookmark' },
-                    { keys: 'Esc', description: 'Clear selection / close overlay' }
-                ]
-            },
-            {
-                title: 'bookmarks',
-                items: [
-                    { keys: '+', description: 'Quick-add — type name | url | shortcut in one line' },
-                    { keys: 'Ctrl + V', description: 'Paste a URL to open the new-bookmark modal pre-filled' },
-                    { keys: 'Ctrl + Shift + A', description: 'Open full new-bookmark modal' },
-                    { keys: ';', description: 'Inline-edit focused bookmark' },
-                    { keys: 'Shift + M', description: 'Quick-move focused bookmark — choose category or page' },
-                    { keys: 'Ctrl + C', description: 'Copy URL of focused bookmark (row flashes green)' },
-                    { keys: '[', description: 'Toggle hover preview card on focused bookmark' },
-                    { keys: 'Delete', description: 'Delete focused bookmark (confirm, or Delete again in inline edit)' },
-                    { keys: 'Double-click page tab', description: 'Rename page tab — also set emoji icon and colour dot' },
-                    { keys: 'Double-click category', description: 'Rename category header' },
-                    { keys: 'Drag handle', description: 'Reorder within or across categories' }
-                ]
-            },
-            {
-                title: 'search modes',
-                items: [
-                    { keys: '>', description: 'Regular search — filter bookmarks on current page by name' },
-                    { keys: '/', description: 'Fuzzy search — ranked: exact → prefix → word-boundary → substring; also matches URL, tags and note' },
-                    { keys: '@', description: 'Global search — fuzzy search across all pages at once; result shows page name as context' },
-                    { keys: ':', description: 'Command palette — type a command name to run it' },
-                    { keys: '?', description: 'Finders — e.g. ?g query to search Google' },
-                    { keys: '*', description: 'Recent bookmarks panel' },
-                    { keys: 'mode chips', description: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly' },
-                    { keys: 'category: / tag: / page: / status:', description: 'Filter results by field directly in the search bar' }
-                ]
-            },
-            {
-                title: 'commands — bookmarks',
-                items: [
-                    { keys: ':new', description: 'Open new-bookmark modal' },
-                    { keys: ':note', description: 'Edit note on the focused bookmark' },
-                    { keys: ':pin / :unpin', description: 'Toggle pin flag on the focused bookmark' },
-                    { keys: ':tag <name>', description: 'Add or remove a tag on the focused bookmark; omit name to see current tags' },
-                    { keys: ':remove', description: 'Delete the focused bookmark' },
-                    { keys: ':find <text>', description: 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL' },
-                    { keys: ':open all', description: 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)' },
-                    { keys: ':goto <url or domain>', description: 'Navigate directly — full URLs open as-is, bare domains get https:// prepended' },
-                    { keys: ':duplicates', description: 'Find bookmarks with duplicate URLs across all pages' },
-                    { keys: ':stale <days>', description: 'Show bookmarks not opened in <days> days (default 30)' },
-                    { keys: ':save / :saved', description: 'Save the current search query / show saved searches' }
-                ]
-            },
-            {
-                title: 'commands — appearance',
-                items: [
-                    { keys: ':layout <preset>', description: 'Switch layout — default / compact / cards / masonry / list / launcher' },
-                    { keys: ':theme <name>', description: 'Switch colour theme' },
-                    { keys: ':density <mode>', description: 'Change density — comfortable / compact / dense' },
-                    { keys: ':columns <n>', description: 'Set number of columns (1–6)' },
-                    { keys: ':fontsize <size>', description: 'Change font size' },
-                    { keys: ':favicons on/off', description: 'Toggle bookmark icons' },
-                    { keys: ':preview on/off', description: 'Toggle hover preview cards' },
-                    { keys: ':packed on/off', description: 'Toggle packed (variable-width) columns' },
-                    { keys: ':buttonbar <position>', description: 'Move the button bar — bottom (default) / bottom-left / bottom-right' },
-                    { keys: ':sort <method>', description: 'Change sort order — order / az / recent / custom' }
-                ]
-            },
-            {
-                title: 'other',
-                items: [
-                    { keys: '! or F1 or Ctrl + /', description: 'This cheat sheet' },
-                    { keys: '★ (corner button)', description: 'Open what\'s new release notes' },
-                    { keys: 'Ctrl + V (dashboard)', description: 'Paste URL anywhere on the dashboard to quick-add a bookmark' },
-                    { keys: '1–8 (config page)', description: 'Jump between config tabs' },
-                    { keys: 'S (config page)', description: 'Save config changes' },
-                    { keys: 'Alt + ↑ / ↓ (config page)', description: 'Reorder selected bookmark' },
-                    { keys: 'Ctrl/Cmd + K (config page)', description: 'Open config command palette' }
-                ]
-            }
+            section('sectionNavigation', 'Navigation', [
+                item('1–9', 'navPageTab', 'Switch to page tab'),
+                item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
+                item(',', 'navPageOverview', 'Page overview with bookmark counts'),
+                item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),
+                item('← / →', 'navFocusLeftRight', 'Move focus left / right in grid'),
+                item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
+                item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category'),
+                item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
+                item('Esc', 'navEscClear', 'Clear selection / close overlay'),
+            ]),
+            section('sectionBookmarks', 'Bookmarks', [
+                item('+', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
+                item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
+                item('Ctrl + Shift + A', 'bmNewBookmarkModal', 'Open full new-bookmark modal'),
+                item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
+                item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
+                item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
+                item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
+                item('Delete', 'bmDelete', 'Delete focused bookmark (confirm, or Delete again in inline edit)'),
+                item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
+                item('Double-click category', 'bmRenameCategory', 'Rename category header'),
+                item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
+            ]),
+            section('sectionSearchModes', 'Search modes', [
+                item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
+                item('/', 'smFuzzySearch', 'Fuzzy search — ranked: exact → prefix → word-boundary → substring; also matches URL, tags and note'),
+                item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
+                item(':', 'smCommandPalette', 'Command palette — type a command name to run it'),
+                item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
+                item('*', 'smRecentPanel', 'Recent bookmarks panel'),
+                item('mode chips', 'smModeChips', 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly'),
+                item('category: / tag: / page: / status:', 'smFieldFilters', 'Filter results by field directly in the search bar'),
+            ]),
+            section('sectionCommandsBookmarks', 'Commands — bookmarks', [
+                item(':new', 'cbNew', 'Open new-bookmark modal'),
+                item(':note', 'cbNote', 'Edit note on the focused bookmark'),
+                item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
+                item(':tag <name>', 'cbTag', 'Add or remove a tag on the focused bookmark; omit name to see current tags'),
+                item(':remove', 'cbRemove', 'Delete the focused bookmark'),
+                item(':find <text>', 'cbFind', 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL'),
+                item(':open all', 'cbOpenAll', 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)'),
+                item(':goto <url or domain>', 'cbGoto', 'Navigate directly — full URLs open as-is, bare domains get https:// prepended'),
+                item(':duplicates', 'cbDuplicates', 'Find bookmarks with duplicate URLs across all pages'),
+                item(':stale <days>', 'cbStale', 'Show bookmarks not opened in <days> days (default 30)'),
+                item(':save / :saved', 'cbSave', 'Save the current search query / show saved searches'),
+            ]),
+            section('sectionCommandsAppearance', 'Commands — appearance', [
+                item(':layout <preset>', 'caLayout', 'Switch layout — default / compact / cards / masonry / list / launcher'),
+                item(':theme <name>', 'caTheme', 'Switch colour theme'),
+                item(':density <mode>', 'caDensity', 'Change density — comfortable / compact / dense'),
+                item(':columns <n>', 'caColumns', 'Set number of columns (1–6)'),
+                item(':fontsize <size>', 'caFontsize', 'Change font size'),
+                item(':favicons on/off', 'caFavicons', 'Toggle bookmark icons'),
+                item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
+                item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
+                item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right'),
+                item(':sort <method>', 'caSort', 'Change sort order — order / az / recent / custom'),
+            ]),
+            section('sectionOther', 'Other', [
+                item('! or F1 or Ctrl + /', 'otCheatSheet', 'This cheat sheet'),
+                item('★ (corner button)', 'otWhatsNew', 'Open what\'s new release notes'),
+                item('Ctrl + V (dashboard)', 'otPasteUrlDashboard', 'Paste URL anywhere on the dashboard to quick-add a bookmark'),
+                item('1–8 (config page)', 'otConfigTabs', 'Jump between config tabs'),
+                item('S (config page)', 'otConfigSave', 'Save config changes'),
+                item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
+                item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Open config command palette'),
+            ]),
         ];
     }
 
