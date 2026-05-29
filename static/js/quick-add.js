@@ -13,12 +13,66 @@ class QuickAddWidget {
     }
 
     init() {
-        this.createWidget();
-        this.attachEventListeners();
+        this.attachGlobalShortcut();
     }
 
-    t(key, fallback) {
-        return this.dashboard?.language?.t?.(key) || fallback;
+    t(key, fallback = '') {
+        const raw = this.dashboard?.language?.t?.(key);
+        if (typeof raw === 'string' && raw !== key) {
+            return raw;
+        }
+        return fallback || key;
+    }
+
+    applyLabels() {
+        if (!this.container) return;
+        const root = this.container;
+        root.setAttribute('aria-label', this.t('config.quickAddBookmark', 'Quick add bookmark'));
+        const title = root.querySelector('.quick-add-modal-title');
+        if (title) title.textContent = this.t('config.quickAddBookmark', 'Quick add bookmark');
+        const closeBtn = root.querySelector('.quick-add-close');
+        if (closeBtn) closeBtn.setAttribute('aria-label', this.t('dashboard.close', 'Close'));
+
+        const sections = [
+            { input: '.quick-add-name', key: 'config.bookmarkName', fallback: 'Name' },
+            { input: '.quick-add-url', key: 'config.urlLabelShort', fallback: 'URL' },
+            { input: '.quick-add-page', key: 'config.page', fallback: 'Page' },
+            { input: '.quick-add-category', key: 'config.category', fallback: 'Category' },
+            { input: '.quick-add-shortcut', key: 'config.shortcut', fallback: 'Shortcut' },
+            { input: '.quick-add-icon-url', key: 'config.icon', fallback: 'Icon' },
+            { input: '.quick-add-note', key: 'config.note', fallback: 'Note' },
+        ];
+        sections.forEach(({ input, key, fallback }) => {
+            const el = root.querySelector(input);
+            const label = el?.closest('.quick-add-section')?.querySelector('.quick-add-label')
+                || el?.closest('.quick-add-section-col')?.querySelector('.quick-add-label');
+            if (label) label.textContent = this.t(key, fallback);
+        });
+
+        const fetchBtn = root.querySelector('.quick-add-icon-fetch');
+        if (fetchBtn) fetchBtn.textContent = this.t('config.fetchFavicon', 'Favicon');
+        const iconClear = root.querySelector('.quick-add-icon-clear');
+        if (iconClear) iconClear.setAttribute('aria-label', this.t('config.clearIcon', 'Clear icon'));
+        const iconUrl = root.querySelector('.quick-add-icon-url');
+        if (iconUrl) iconUrl.placeholder = this.t('config.iconUrlOptional', 'Icon URL (optional)');
+
+        const cancelBtn = root.querySelector('.quick-add-cancel');
+        if (cancelBtn) cancelBtn.textContent = this.t('config.cancel', 'Cancel');
+        const submitBtn = root.querySelector('.quick-add-submit');
+        if (submitBtn && !submitBtn.classList.contains('btn-loading')) {
+            submitBtn.textContent = this.t('config.addBookmarkShort', 'Add bookmark');
+        }
+    }
+
+    attachGlobalShortcut() {
+        if (this.shortcutBound) return;
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+                e.preventDefault();
+                this.toggle();
+            }
+        });
+        this.shortcutBound = true;
     }
 
     createWidget() {
@@ -38,7 +92,7 @@ class QuickAddWidget {
                             <input type="text" class="quick-add-input quick-add-name" required autocomplete="off">
                         </div>
                         <div class="quick-add-section">
-                            <label class="quick-add-label">URL</label>
+                            <label class="quick-add-label">${this.t('config.urlLabelShort', 'URL')}</label>
                             <div class="quick-add-url-row">
                                 <input type="url" class="quick-add-input quick-add-url" required autocomplete="off">
                                 <button type="button" class="btn btn-small quick-add-icon-fetch">${this.t('config.fetchFavicon', 'Favicon')}</button>
@@ -89,11 +143,11 @@ class QuickAddWidget {
         tempDiv.innerHTML = html;
         this.container = tempDiv.firstElementChild;
         document.body.appendChild(this.container);
-        this.updateCategories();
-        this.updatePages();
     }
 
     attachEventListeners() {
+        if (this._listenersBound) return;
+        this._listenersBound = true;
         const closeBtn = this.container?.querySelector('.quick-add-close');
         const cancelBtn = this.container?.querySelector('.quick-add-cancel');
         const form = this.container?.querySelector('.quick-add-form');
@@ -154,17 +208,6 @@ class QuickAddWidget {
             this.setQuickAddIconState(this.t('config.iconFound', 'Found'));
             this.dashboard.showNotification(this.t('config.faviconFetched', 'Favicon fetched.'), 'success');
         });
-
-        // Keyboard shortcut: Ctrl+Shift+A to toggle
-        if (!this.shortcutBound) {
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
-                    e.preventDefault();
-                    this.toggle();
-                }
-            });
-            this.shortcutBound = true;
-        }
     }
 
     toggle() {
@@ -180,6 +223,7 @@ class QuickAddWidget {
             this.createWidget();
             this.attachEventListeners();
         }
+        this.applyLabels();
         this.updateCategories();
         this.updatePages();
         this.isOpen = true;
