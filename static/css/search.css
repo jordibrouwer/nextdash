@@ -790,10 +790,6 @@ body.no-animations .search-match.keyboard-selected {
     display: contents;
 }
 
-/* dock-layout-btn: verborgen in bottom-modus, zichtbaar in side-dock */
-.dock-layout-btn {
-    display: none;
-}
 
 /* ─── Side-dock: gedeeld (left + right) ──────────────────────────────────── */
 body[data-button-position="bottom-left"] .button-container,
@@ -822,17 +818,6 @@ body[data-button-position="bottom-right"] .btn-group {
 }
 
 
-/* dock-layout-btn zichtbaar in side-dock */
-body[data-button-position="bottom-left"] .dock-layout-btn,
-body[data-button-position="bottom-right"] .dock-layout-btn {
-    display: flex;
-}
-
-/* Standalone launcher-FAB verbergen in side-dock */
-body[data-button-position="bottom-left"] #launcher-toggle-btn,
-body[data-button-position="bottom-right"] #launcher-toggle-btn {
-    display: none;
-}
 
 /* search-flow-hint past niet in de dock */
 body[data-button-position="bottom-left"] .search-flow-hint,
@@ -881,10 +866,6 @@ body[data-button-position="bottom-right"] .search-button[data-tooltip]::after {
     transform: translateY(-50%);
 }
 
-/* ─── Layout-selector config toggle ─────────────────────────────────────── */
-body[data-show-dock-layout-btn="false"] .dock-layout-btn {
-    display: none !important;
-}
 
 /* ─── Hover-richting: weg van de rand ────────────────────────────────────── */
 body[data-button-position="bottom-right"] .search-button:hover {
@@ -896,13 +877,6 @@ body[data-button-position="bottom-left"] .search-button:hover {
 body[data-button-position="bottom-right"] .search-button:active,
 body[data-button-position="bottom-left"] .search-button:active {
     transform: translateX(0);
-}
-
-/* dock-layout-btn active state — zelfde als launcher FAB .is-active */
-.dock-layout-btn.is-active {
-    background: var(--accent-color, rgba(255,255,255,0.25));
-    color: var(--accent-text, #fff);
-    border-color: var(--accent-primary);
 }
 
 /* Ensure button container remains centered when animations are disabled */

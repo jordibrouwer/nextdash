@@ -1052,7 +1052,7 @@
         "enableSmartCollectionsInfoTitle": "Collections intelligentes",
         "enableSmartCollectionsInfoMessage": "Catégories automatiques (Today, Recent, …).\n\n• Détails sous Avancé",
         "buttonBarPositionInfoTitle": "Position de la barre de boutons",
-        "buttonBarPositionInfoMessage": "Emplacement des boutons du pied de page.",
+        "buttonBarPositionInfoMessage": "Emplacement des boutons du pied de page.\n\n• Centre-bas (défaut), coin inférieur gauche ou droit\n• Vue lanceur (⊞) via le bouton fixe en bas à droite",
         "showDockLayoutSelectorInfoTitle": "Sélecteur de mise en page dans le dock",
         "showDockLayoutSelectorInfoMessage": "Changement rapide de layout dans le dock.",
         "colorizeStatusInfoTitle": "Coloriser le statut",

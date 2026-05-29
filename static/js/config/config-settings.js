@@ -543,30 +543,14 @@ class ConfigSettings {
         }
 
         const buttonBarPositionSelect = document.getElementById('button-bar-position-select');
-        const showDockLayoutSelectorCheckbox = document.getElementById('show-dock-layout-selector-checkbox');
-        const dockLayoutSelectorGroup = document.getElementById('dock-layout-selector-group');
-
-        const updateDockLayoutGroupVisibility = () => {
-            if (dockLayoutSelectorGroup) {
-                dockLayoutSelectorGroup.hidden = !buttonBarPositionSelect || buttonBarPositionSelect.value === 'bottom';
-            }
-        };
 
         if (buttonBarPositionSelect) {
             const validPositions = ['bottom', 'bottom-left', 'bottom-right'];
             buttonBarPositionSelect.value = validPositions.includes(settings.buttonBarPosition) ? settings.buttonBarPosition : 'bottom';
             buttonBarPositionSelect.addEventListener('change', () => {
-                updateDockLayoutGroupVisibility();
                 if (callbacks.onButtonBarPositionChange) callbacks.onButtonBarPositionChange();
             });
         }
-        if (showDockLayoutSelectorCheckbox) {
-            showDockLayoutSelectorCheckbox.checked = settings.showDockLayoutSelector !== false;
-            showDockLayoutSelectorCheckbox.addEventListener('change', () => {
-                if (callbacks.onShowDockLayoutSelectorChange) callbacks.onShowDockLayoutSelectorChange();
-            });
-        }
-        updateDockLayoutGroupVisibility();
 
         const autoDarkModeCheckbox = document.getElementById('auto-dark-mode-checkbox');
         if (autoDarkModeCheckbox) {
@@ -1507,8 +1491,6 @@ class ConfigSettings {
                 ? buttonBarPositionSelectUI.value
                 : 'bottom';
         }
-        const showDockLayoutSelectorCheckboxUI = document.getElementById('show-dock-layout-selector-checkbox');
-        if (showDockLayoutSelectorCheckboxUI) settings.showDockLayoutSelector = showDockLayoutSelectorCheckboxUI.checked;
         const showIconsCheckbox = document.getElementById('show-icons-checkbox');
         const showLinkPreviewCardsCheckbox = document.getElementById('show-link-preview-cards-checkbox');
         const linkPreviewHoverDelaySelect = document.getElementById('link-preview-hover-delay-select');

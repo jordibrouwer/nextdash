@@ -1059,7 +1059,7 @@
         "enableSmartCollectionsInfoTitle": "Smart collections",
         "enableSmartCollectionsInfoMessage": "Automatic categories such as Today, Recently opened, or Stale.\n\n• Master toggle enables/disables all smart collections\n• Configure each type under Advanced → Smart collections",
         "buttonBarPositionInfoTitle": "Button bar position",
-        "buttonBarPositionInfoMessage": "Where the footer button bar sits.\n\n• Center-bottom (default), bottom-left, or bottom-right",
+        "buttonBarPositionInfoMessage": "Where the footer button bar sits.\n\n• Center-bottom (default), bottom-left, or bottom-right\n• Launcher view (⊞) is always toggled via the fixed button at the bottom-right",
         "showDockLayoutSelectorInfoTitle": "Layout selector in dock",
         "showDockLayoutSelectorInfoMessage": "Shows a layout switcher in the footer dock.\n\n• Quick switch between layout presets without opening config",
         "colorizeStatusInfoTitle": "Colorize bookmark status",

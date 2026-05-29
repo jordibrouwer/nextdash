@@ -33,6 +33,7 @@ class PostSetupWizard {
     shouldStart() {
         if (this.hasAnyBookmarks()) return false;
         if (!this.dashboard?.settings?.onboardingCompleted) return false;
+        if (!this.dashboard?.allowPostInstallTuningThisSession) return false;
         try {
             if (localStorage.getItem(this.storageKey)) return false;
         } catch {
@@ -227,6 +228,7 @@ class PostInstallTuningWizard {
 
     shouldStart() {
         if (!this.dashboard?.settings?.onboardingCompleted) return false;
+        if (!this.dashboard?.allowPostInstallTuningThisSession) return false;
         try {
             if (localStorage.getItem(this.storageKey)) return false;
         } catch {
@@ -360,24 +362,20 @@ class PostInstallTuningWizard {
     async applyStepSettings(step) {
         const dash = this.dashboard;
         if (!dash?.settings) return;
+        let changed = false;
         if (step.id === 'language') {
             const sel = document.getElementById('post-tuning-language');
-            if (sel) {
+            if (sel && sel.value && sel.value !== dash.settings.language) {
                 dash.settings.language = sel.value;
+                changed = true;
                 if (dash.language?.loadTranslations) {
                     await dash.language.loadTranslations(sel.value);
                     dash.language.applyTranslations?.();
                 }
             }
         }
-        if (step.id === 'theme') {
-            const sel = document.getElementById('post-tuning-theme');
-            if (sel) {
-                dash.settings.theme = sel.value;
-                dash.applyTheme?.(sel.value);
-            }
-        }
-        if (typeof dash.saveSettings === 'function') {
+        // Theme step is guidance only — do not overwrite the full theme id with "dark"/"light".
+        if (changed && typeof dash.saveSettings === 'function') {
             await dash.saveSettings();
         }
     }

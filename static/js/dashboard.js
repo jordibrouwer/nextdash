@@ -204,6 +204,7 @@ class Dashboard {
         this.weatherData = null;
         this.inlineEditingBookmarkIndex = null;
         this.onboardingStartedInSession = false;
+        this.allowPostInstallTuningThisSession = false;
         this.init();
     }
     
@@ -293,8 +294,9 @@ class Dashboard {
             document.body.classList.remove('loading');
         }
         this.updateMiniStatusLine();
+        this.markPostInstallWizardsSeenForEstablishedInstall();
         this.initializeOnboarding();
-        this.maybeShowPostSetupWizard();
+        this.maybeShowPostSetupWizard({ skipTuning: true });
         this.initializeFeatureTour();
         this.maybeShowWhatsNew();
         this.maybeShowTourSpotlight();
@@ -986,7 +988,6 @@ class Dashboard {
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
         document.body.setAttribute('data-show-tips', this.areRotatingTipsEnabled());
         document.body.setAttribute('data-button-position', this.settings.buttonBarPosition || 'bottom');
-        document.body.setAttribute('data-show-dock-layout-btn', this.settings.showDockLayoutSelector !== false ? 'true' : 'false');
 
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
@@ -1320,6 +1321,7 @@ class Dashboard {
     }
 
     maybeShowPostInstallTuning() {
+        if (!this.allowPostInstallTuningThisSession) return false;
         if (typeof window.PostInstallTuningWizard !== 'function') return false;
         const tuning = new window.PostInstallTuningWizard({
             dashboard: this,
@@ -1328,8 +1330,30 @@ class Dashboard {
         return tuning.start();
     }
 
-    maybeShowPostSetupWizard() {
-        if (this.maybeShowPostInstallTuning()) return;
+    /**
+     * Existing installs should never see post-onboarding wizards on a normal visit.
+     * Mark them seen when onboarding was already completed before this session.
+     */
+    markPostInstallWizardsSeenForEstablishedInstall() {
+        if (this.allowPostInstallTuningThisSession) return;
+        if (this.settings?.onboardingCompleted !== true) return;
+        try {
+            const hasBookmarks = (Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0)
+                || (Array.isArray(this.bookmarks) && this.bookmarks.length > 0);
+            const sawOnboardingBefore = Boolean(
+                localStorage.getItem('nextDashOnboardingSeenV2')
+                || localStorage.getItem('nextDashOnboardingSeen')
+            );
+            if (!hasBookmarks && !sawOnboardingBefore) return;
+            localStorage.setItem('nextdash-post-tuning-wizard-v1', '1');
+            localStorage.setItem('nextdash-post-setup-wizard-v1', '1');
+            localStorage.setItem('nextdash-first-bookmark-guide-v1', '1');
+        } catch { /* ignore */ }
+    }
+
+    maybeShowPostSetupWizard(options = {}) {
+        const skipTuning = options.skipTuning === true;
+        if (!skipTuning && this.maybeShowPostInstallTuning()) return;
         if (typeof window.PostSetupWizard !== 'function') {
             this.maybeShowFirstBookmarkGuide();
             return;
@@ -1413,7 +1437,7 @@ class Dashboard {
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
             { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'Ctrl+/'] },
-            { selector: '.dock-layout-btn', labelKey: 'dashboard.tooltipLauncher', keys: ['⊞'] }
+            { id: 'launcher-toggle-btn', labelKey: 'dashboard.tooltipLauncher', keys: ['⊞'] }
         ];
 
         const toolbarButtons = [];
@@ -1514,14 +1538,12 @@ class Dashboard {
             });
         }
 
-        // Launcher view FAB (standalone — zichtbaar in bottom-modus)
+        // Launcher view FAB (rechtsonder — enige launcher-schakelaar)
         const launcherBtn = document.getElementById('launcher-toggle-btn');
         if (launcherBtn) {
             this._syncLauncherBtn = () => {
                 const isLauncher = this.settings.layoutPreset === 'launcher';
                 launcherBtn.classList.toggle('is-active', isLauncher);
-                const dockBtn = document.querySelector('.dock-layout-btn');
-                if (dockBtn) dockBtn.classList.toggle('is-active', isLauncher);
             };
             this._syncLauncherBtn();
             launcherBtn.addEventListener('click', () => {
@@ -1544,20 +1566,6 @@ class Dashboard {
             });
         }
 
-        // Dock layout-selector (zichtbaar in side-dock modus)
-        const dockLayoutBtn = document.querySelector('.dock-layout-btn');
-        if (dockLayoutBtn) {
-            dockLayoutBtn.addEventListener('click', () => {
-                if (this.settings.layoutPreset === 'launcher') {
-                    const prev = localStorage.getItem('nextdash:prevLayout') || 'default';
-                    window.LayoutUtils.applyLayoutPreset(this.settings, prev, { syncDashboard: true, saveDashboard: true });
-                } else {
-                    localStorage.setItem('nextdash:prevLayout', this.settings.layoutPreset || 'default');
-                    window.LayoutUtils.applyLayoutPreset(this.settings, 'launcher', { syncDashboard: true, saveDashboard: true });
-                }
-                this._syncLauncherBtn?.();
-            });
-        }
 
         // Launcher tile dimming: dim non-matching tiles when search is active
         document.addEventListener('nextdash:find', (e) => {
@@ -1673,6 +1681,7 @@ class Dashboard {
                 document.body.setAttribute('data-show-tips', 'true');
                 await dash.saveSettings();
                 dash.initializeButtonTipsRotation();
+                dash.allowPostInstallTuningThisSession = true;
                 setTimeout(() => {
                     dash.maybeShowPostSetupWizard();
                     dash.maybeShowWhatsNew();

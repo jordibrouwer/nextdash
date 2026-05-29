@@ -1052,7 +1052,7 @@
         "enableSmartCollectionsInfoTitle": "Smart Collections",
         "enableSmartCollectionsInfoMessage": "Automatische Kategorien (Today, Recent, …).\n\n• Details unter Erweitert",
         "buttonBarPositionInfoTitle": "Position der Knopfleiste",
-        "buttonBarPositionInfoMessage": "Platzierung der Footer-Knöpfe.",
+        "buttonBarPositionInfoMessage": "Platzierung der Footer-Knöpfe.\n\n• Mitte unten (Standard), links oder rechts\n• Launcher-Ansicht (⊞) nur über die feste Schaltfläche rechts unten",
         "showDockLayoutSelectorInfoTitle": "Layout-Auswahl im Dock",
         "showDockLayoutSelectorInfoMessage": "Schneller Layout-Wechsel in der Fußleiste.",
         "colorizeStatusInfoTitle": "Status einfärben",

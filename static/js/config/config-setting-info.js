@@ -39,7 +39,6 @@ const SETTING_INFO_DEFS = [
     { type: 'labelFor', labelFor: 'weather-refresh-select', btnId: 'weather-refresh-info-btn', title: 'weatherRefreshInfoTitle', message: 'weatherRefreshInfoMessage' },
     { type: 'checkbox', targetId: 'enable-smart-collections-master', btnId: 'enable-smart-collections-info-btn', title: 'enableSmartCollectionsInfoTitle', message: 'enableSmartCollectionsInfoMessage' },
     { type: 'labelFor', labelFor: 'button-bar-position-select', btnId: 'button-bar-position-info-btn', title: 'buttonBarPositionInfoTitle', message: 'buttonBarPositionInfoMessage' },
-    { type: 'checkbox', targetId: 'show-dock-layout-selector-checkbox', btnId: 'show-dock-layout-selector-info-btn', title: 'showDockLayoutSelectorInfoTitle', message: 'showDockLayoutSelectorInfoMessage' },
     { type: 'checkbox', targetId: 'colorize-status-checkbox', btnId: 'colorize-status-info-btn', title: 'colorizeStatusInfoTitle', message: 'colorizeStatusInfoMessage' },
     { type: 'checkbox', targetId: 'show-ping-checkbox', btnId: 'show-ping-info-btn', title: 'showPingTimesInfoTitle', message: 'showPingTimesInfoMessage' },
     { type: 'checkbox', targetId: 'show-status-loading-checkbox', btnId: 'show-status-loading-info-btn', title: 'showStatusLoadingInfoTitle', message: 'showStatusLoadingInfoMessage' },

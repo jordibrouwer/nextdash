@@ -1173,6 +1173,13 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     color: var(--accent-primary);
 }
 
+
+/* Rechter-dock: launcher-FAB boven de knoppenkolom */
+body[data-button-position="bottom-right"] .launcher-toggle-btn {
+    bottom: 11.5rem;
+    right: 1.5rem;
+}
+
 /* ─── What's new FAB ──────────────────────────────────────────────────────── */
 .whats-new-btn {
     position: fixed;

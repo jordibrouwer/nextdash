@@ -513,11 +513,6 @@ class ConfigManager {
                 await this.settings.saveSettingsToServer(this.settingsData);
                 this.signalDashboardSettingsUpdated('settings-updated');
             },
-            onShowDockLayoutSelectorChange: async () => {
-                this.settings.updateFromUI(this.settingsData);
-                await this.settings.saveSettingsToServer(this.settingsData);
-                this.signalDashboardSettingsUpdated('settings-updated');
-            },
             onPackedColumnsChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
                 let ok = true;
