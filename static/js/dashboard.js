@@ -3165,6 +3165,11 @@ class Dashboard {
             }
             category.name = newName;
             nameSpan.textContent = newName.toLowerCase();
+            // Orphan categories (bookmarks referencing a non-existent category ID) are not
+            // in this.categories, so the save would skip them. Add the category first.
+            if (!this.categories.some(c => String(c.id) === String(category.id))) {
+                this.categories.push({ id: category.id, name: newName });
+            }
             await this.saveCategoryOrder();
         };
 
