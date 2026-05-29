@@ -140,6 +140,12 @@ class ConfigManager {
         this.setupDOM();
         await this.setupEventListeners();
         this.language.setupLanguageSelector();
+        if (typeof ConfigGeneralLayers === 'function') {
+            this.generalLayers = new ConfigGeneralLayers();
+            this.generalLayers.init();
+            this.language.applyTranslations();
+            this.generalLayers.applyHash(window.location.hash);
+        }
         this.setupGeneralCardCollapsible();
         
         // Set language for global modal
@@ -1488,7 +1494,14 @@ class ConfigManager {
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
         // Panels open by default; everything else starts collapsed.
-        const DEFAULT_OPEN = new Set(['basics', 'layout']);
+        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout']);
+        const DEFAULT_OPEN_ADVANCED = new Set([]);
+        const layer = this.generalLayers?.layer || 'essentials';
+        const DEFAULT_OPEN = layer === 'advanced'
+            ? DEFAULT_OPEN_ADVANCED
+            : layer === 'all'
+                ? new Set([...DEFAULT_OPEN_ESSENTIALS, ...DEFAULT_OPEN_ADVANCED])
+                : DEFAULT_OPEN_ESSENTIALS;
 
         let saved = null;
         try {
@@ -1528,7 +1541,10 @@ class ConfigManager {
             const panelId = card.getAttribute('data-general-panel');
             if (panelId) {
                 const alwaysCollapsed = panelId === 'reset';
-                const expanded = !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                const tier = card.dataset.configTier || 'advanced';
+                const layerMode = document.querySelector('[data-tab-content="general"] > div')?.dataset?.generalLayer || 'essentials';
+                const tierVisible = layerMode === 'all' || tier === layerMode;
+                const expanded = tierVisible && !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
                     ? Boolean(saved[panelId])
                     : DEFAULT_OPEN.has(panelId));
                 card.classList.toggle('is-collapsed', !expanded);
@@ -2648,6 +2664,9 @@ class ConfigManager {
     openConfigCommandPalette() {
         const html = `
             <div class="keyboard-cheat-sheet-list">
+                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-essentials')">${this.language.t('config.commandLayerEssentials') || 'General: Essentials'}</button>
+                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-advanced')">${this.language.t('config.commandLayerAdvanced') || 'General: Advanced'}</button>
+                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-all')">${this.language.t('config.commandLayerAll') || 'General: Show all sections'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-page')">${this.language.t('config.commandNewPage') || 'New page'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-category')">${this.language.t('config.commandNewCategory') || 'New category'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-bookmark')">${this.language.t('config.commandNewBookmark') || 'New bookmark'}</button>
@@ -2656,6 +2675,9 @@ class ConfigManager {
             </div>
         `;
         window.tempConfigCommand = async (command) => {
+            if (command === 'layer-essentials') this.generalLayers?.goToLayer('essentials');
+            if (command === 'layer-advanced') this.generalLayers?.goToLayer('advanced');
+            if (command === 'layer-all') this.generalLayers?.goToLayer('all');
             if (command === 'add-page') await this.addPage();
             if (command === 'add-category') await this.addCategory();
             if (command === 'add-bookmark') this.addBookmark();

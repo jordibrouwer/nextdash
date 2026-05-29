@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
@@ -117,14 +118,35 @@
                     </div>
                 </div>
 
+                <div id="general-layer-toolbar" class="general-layer-toolbar" role="tablist" aria-label="Settings layer">
+                    <div class="general-layer-switch">
+                        <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" role="tab" aria-selected="true" data-i18n="config.generalLayerEssentials">Essentials</button>
+                        <button type="button" class="general-layer-btn" data-general-layer="advanced" role="tab" aria-selected="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
+                    </div>
+                    <a href="#" id="general-layer-show-all" class="general-layer-show-all" data-i18n="config.generalLayerShowAll">Show all sections on one page</a>
+                </div>
+                <p id="general-layer-intro-essentials" class="general-layer-intro" data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</p>
+                <p id="general-layer-intro-advanced" class="general-layer-intro" hidden data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</p>
+                <nav id="general-advanced-nav" class="general-advanced-nav" hidden aria-label="Advanced sections">
+                    <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance</a>
+                    <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks</a>
+                    <a href="#" data-advanced-nav="bookmarks-behavior" data-i18n="config.advancedNavBookmarkBehavior">Behavior</a>
+                    <a href="#" data-advanced-nav="smart-collections" data-i18n="config.advancedNavSmart">Smart</a>
+                    <a href="#" data-advanced-nav="status" data-i18n="config.advancedNavStatus">Status</a>
+                    <a href="#" data-advanced-nav="branding" data-i18n="config.advancedNavBranding">Branding</a>
+                    <a href="#" data-advanced-nav="search-input" data-i18n="config.advancedNavSearch">Search</a>
+                    <a href="#" data-advanced-nav="system-tools" data-i18n="config.advancedNavSystem">System</a>
+                    <a href="#" data-advanced-nav="reset" data-i18n="config.advancedNavReset">Reset</a>
+                </nav>
+
                 <div class="general-layout">
                     <!-- 1. Appearance & Style: theme, background, font, animations -->
                     <section class="general-card" data-general-panel="basics">
                         <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
                         <p class="general-card-intro" data-i18n="config.generalAppearanceIntro">Theme, background, font, animations, and visual polish.</p>
-                        <div class="form-group">
+                        <div class="form-group form-group--theme-select">
                             <label for="theme-select" data-i18n="config.themeLabel">Theme:</label>
-                            <select id="theme-select">
+                            <select id="theme-select" class="config-select-wide">
                                 <option value="dark" data-i18n="dashboard.darkTheme">Dark</option>
                                 <option value="light" data-i18n="dashboard.lightTheme">Light</option>
                             </select>
@@ -708,11 +730,13 @@
                                 <option value="bottom-right" data-i18n="config.buttonBarPositionRight">Bottom-right corner</option>
                             </select>
                         </div>
-                        <div class="form-group" id="dock-layout-selector-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="show-dock-layout-selector-checkbox">
-                                <span data-i18n="config.showDockLayoutSelector">Show layout selector in dock</span>
-                            </label>
+                        <div class="checkbox-tree" style="margin-top:0.5rem">
+                            <div class="checkbox-tree-item" id="dock-layout-selector-group">
+                                <label class="checkbox-label" for="show-dock-layout-selector-checkbox">
+                                    <input type="checkbox" id="show-dock-layout-selector-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showDockLayoutSelector">Show layout selector in dock</span>
+                                </label>
+                            </div>
                         </div>
                     </section>
 
@@ -1852,6 +1876,7 @@
     <script src="/static/js/config/config-font.js"></script>
     <script src="/static/js/config/config-settings.js"></script>
     <script src="/static/js/config/config-language.js"></script>
+    <script src="/static/js/config/config-general-layers.js"></script>
     <script src="/static/js/config/config-stats.js"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>

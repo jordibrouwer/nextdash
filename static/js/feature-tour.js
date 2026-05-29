@@ -120,7 +120,7 @@ class FeatureTour {
                 secondaryAction: {
                     label: this._t('step8GoToConfig', 'Go to Config'),
                     handler: () => {
-                        window.location.href = '/config#general';
+                        window.location.href = '/config#general/advanced';
                     }
                 }
             }

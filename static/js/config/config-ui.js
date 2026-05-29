@@ -60,11 +60,19 @@ class ConfigUI {
             }
 
             this._currentTab = targetTab;
-            this.updateBreadcrumb(targetTab, null);
+            const generalSub = targetTab === 'general' && window.configManager?.generalLayers
+                ? window.configManager.generalLayers.getBreadcrumbSubsection()
+                : null;
+            this.updateBreadcrumb(targetTab, generalSub);
             this.initBreadcrumbObserver(targetTab);
 
-            // Update URL hash
-            window.location.hash = `#${targetTab}`;
+            // Update URL hash (preserve general layer subpaths)
+            if (targetTab !== 'general') {
+                window.location.hash = `#${targetTab}`;
+            } else if (!/^#general(\/|$)/.test(window.location.hash)) {
+                window.location.hash = '#general';
+                window.configManager?.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            }
             
             // Keep the selected page when switching tabs; only refresh custom-select chrome.
             // (Previously this reset to pagesData[0] whenever value !== first page, which
@@ -84,21 +92,33 @@ class ConfigUI {
             }
         };
 
+    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
+
+    const resolveTabFromHash = (hashRaw) => {
+        const hash = (hashRaw || '').replace(/^#/, '');
+        if (validTabs.includes(hash)) return hash;
+        if (hash.startsWith('general')) return 'general';
+        return null;
+    };
+
     // Check initial hash and switch to corresponding tab
     const initialHash = window.location.hash.substring(1);
-    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
-    if (validTabs.includes(initialHash)) {
-        switchToTab(initialHash);
-    } else {
-        // If no hash, switch to default tab (general)
-        switchToTab('general');
-    }        // Add hash change listener
-        window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.substring(1);
-            if (validTabs.includes(hash)) {
-                switchToTab(hash);
+    const initialTab = resolveTabFromHash(initialHash);
+    switchToTab(initialTab || 'general');
+    if (initialTab === 'general' && window.configManager?.generalLayers) {
+        window.configManager.generalLayers.applyHash(window.location.hash);
+    }
+
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.substring(1);
+        const tab = resolveTabFromHash(hash);
+        if (tab) {
+            if (tab !== this._currentTab) switchToTab(tab);
+            if (tab === 'general' && window.configManager?.generalLayers) {
+                window.configManager.generalLayers.applyHash(window.location.hash);
             }
-        });
+        }
+    });
 
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -230,13 +250,16 @@ class ConfigUI {
         }
     }
 
-    updateBreadcrumb(tab, subsection) {
+    updateBreadcrumb(tab, subsection, panelTitle) {
         const el = document.getElementById('config-breadcrumb');
         if (!el) return;
         const sep = `<span class="config-breadcrumb-sep">/</span>`;
         let html = `config${sep}${tab}`;
         if (subsection) {
             html += `${sep}<span class="config-breadcrumb-sub">${subsection}</span>`;
+        }
+        if (panelTitle) {
+            html += `${sep}<span class="config-breadcrumb-sub">${panelTitle}</span>`;
         }
         el.innerHTML = html;
     }
@@ -248,7 +271,11 @@ class ConfigUI {
         }
         if (tab !== 'general') return;
 
-        const panels = document.querySelectorAll('[data-general-panel]');
+        const layerMode = document.querySelector('[data-tab-content="general"] > div')?.dataset?.generalLayer || 'essentials';
+        const panels = [...document.querySelectorAll('[data-general-panel]')].filter((p) => {
+            if (layerMode === 'all') return true;
+            return (p.dataset.configTier || 'advanced') === layerMode && !p.hidden;
+        });
         if (!panels.length || typeof IntersectionObserver === 'undefined') return;
 
         const visibleRatios = new Map();
@@ -267,12 +294,13 @@ class ConfigUI {
                 }
             });
 
-            const subsection = topPanel
+            const panelTitle = topPanel
                 ? (topPanel.querySelector('.section-title') || {}).textContent || null
                 : null;
+            const layerSub = window.configManager?.generalLayers?.getBreadcrumbSubsection?.() || null;
 
             if (this._currentTab === 'general') {
-                this.updateBreadcrumb('general', subsection);
+                this.updateBreadcrumb('general', layerSub, panelTitle);
             }
         }, { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0] });
 

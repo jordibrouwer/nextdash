@@ -832,4 +832,11 @@
     .form-group:has(#language-select) label {
         min-width: auto;
     }
+
+    .form-group--theme-select .custom-select-wrapper,
+    .form-group--theme-select select.config-select-wide {
+        min-width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+    }
 }

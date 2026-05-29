@@ -360,6 +360,10 @@ class ConfigSettings {
         if (currentValue) {
             themeSelect.value = currentValue;
         }
+
+        if (typeof configManager !== 'undefined' && typeof configManager.refreshCustomSelects === 'function') {
+            configManager.refreshCustomSelects();
+        }
     }
 
     /**
