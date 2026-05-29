@@ -694,29 +694,58 @@
     text-align: center;
 }
 
-/* Info button for HyprMode */
+/* Info button (ℹ) next to setting labels */
 .info-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: var(--background-primary);
     border: 1px solid var(--border-primary);
     color: var(--text-primary);
-    font-size: var(--font-size-controls);
+    font-size: 0.7rem;
+    font-weight: var(--font-weight-bold);
     cursor: pointer;
     border-radius: 0;
     font-family: var(--font-family-main);
-    line-height: 0;
-    align-items: center;
-    justify-content: center;
+    line-height: 1;
     flex: 0 0 auto !important;
-    min-width: 14px !important;
+    min-width: 16px !important;
     padding: 0 !important;
-    width: 14px !important;
-    height: 14px !important;
+    width: 16px !important;
+    height: 16px !important;
+    vertical-align: middle;
+    opacity: 0.92;
 }
 
 .info-button:hover {
     background: var(--background-secondary);
     border-color: var(--border-primary);
     opacity: 1;
+}
+
+.form-group label .form-group-info-btn {
+    flex-shrink: 0;
+    margin-left: 0.35rem;
+    align-self: center;
+}
+
+.form-group > .form-group-info-btn {
+    flex-shrink: 0;
+    margin-left: 0.35rem;
+    margin-right: 0.15rem;
+    align-self: center;
+}
+
+.checkbox-tree-child > .info-button,
+.checkbox-tree-item > label + .info-button,
+.checkbox-tree-child > label[for] + .info-button {
+    flex-shrink: 0;
+    margin-left: 0.15rem;
+    align-self: center;
+}
+
+.checkbox-tree-child > label[for] + .info-button {
+    margin-right: 0.25rem;
 }
 
 /* Bookmark status toggle */

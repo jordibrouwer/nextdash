@@ -146,6 +146,9 @@ class ConfigManager {
             this.language.applyTranslations();
             this.generalLayers.applyHash(window.location.hash);
         }
+        if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
+            window.installSettingInfoButtons(this.settings);
+        }
         this.setupGeneralCardCollapsible();
         
         // Set language for global modal
@@ -156,7 +159,12 @@ class ConfigManager {
         this.initReordering();
         
         if (typeof initCustomSelects === 'function') {
-            setTimeout(() => initCustomSelects(), 0);
+            setTimeout(() => {
+                initCustomSelects();
+                if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
+                    window.installSettingInfoButtons(this.settings);
+                }
+            }, 0);
         }
 
 

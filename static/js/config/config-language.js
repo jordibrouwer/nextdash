@@ -90,6 +90,13 @@ class ConfigLanguage {
             }
             element.setAttribute('data-tooltip', translation);
         });
+
+        document.querySelectorAll('[data-i18n-aria]').forEach((element) => {
+            const key = element.getAttribute('data-i18n-aria');
+            const translation = this.t(key);
+            if (translation === key) return;
+            element.setAttribute('aria-label', translation);
+        });
     }
 
     /**

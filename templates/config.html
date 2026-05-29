@@ -146,6 +146,7 @@
                         <p class="general-card-intro" data-i18n="config.generalAppearanceIntro">Theme, background, font, animations, and visual polish.</p>
                         <div class="form-group form-group--theme-select">
                             <label for="theme-select" data-i18n="config.themeLabel">Theme:</label>
+                            <button type="button" id="theme-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.themeInfoTitle">ℹ</button>
                             <select id="theme-select" class="config-select-wide">
                                 <option value="dark" data-i18n="dashboard.darkTheme">Dark</option>
                                 <option value="light" data-i18n="dashboard.lightTheme">Light</option>
@@ -155,10 +156,12 @@
                             <label class="checkbox-label" for="auto-dark-mode-checkbox">
                                 <input type="checkbox" id="auto-dark-mode-checkbox">
                                 <span class="checkbox-text" data-i18n="onboarding.autoDarkModeLabel"></span>
+                                    <button type="button" id="auto-dark-mode-info-btn" class="info-button" data-i18n-aria="config.autoDarkModeInfoTitle">ℹ</button>
                             </label>
                         </div>
                         <div class="form-group">
                             <label data-i18n="config.backgroundLabel">Background:</label>
+                            <button type="button" id="background-picker-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundPickerInfoTitle">ℹ</button>
                             <div class="bg-picker-wrapper">
                                 <div class="bg-type-selector">
                                     <button type="button" class="bg-type-btn" data-bg-type="none" data-i18n="config.backgroundNone">None</button>
@@ -182,6 +185,7 @@
                         </div>
                         <div class="form-group">
                             <label for="background-opacity-input" data-i18n="config.backgroundOpacityLabel">Background opacity</label>
+                            <button type="button" id="background-opacity-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundOpacityInfoTitle">ℹ</button>
                             <div class="control-slider">
                                 <input type="range" id="background-opacity-input" class="slider-input" min="0.65" max="1" step="0.01" value="1">
                                 <span id="background-opacity-value" class="slider-value">100%</span>
@@ -192,17 +196,20 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-background-dots-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showBackgroundDots">Show background dots</span>
+                                    <button type="button" id="show-background-dots-info-btn" class="info-button" data-i18n-aria="config.showBackgroundDotsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="animations-enabled-checkbox">
                                     <span class="checkbox-text" data-i18n="config.enableAnimations">Enable animations</span>
+                                    <button type="button" id="animations-enabled-info-btn" class="info-button" data-i18n-aria="config.enableAnimationsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="font-preset-select" data-i18n="config.fontPresetLabel">UI font</label>
+                            <button type="button" id="font-preset-info-btn" class="info-button" data-i18n-aria="config.fontPresetInfoTitle">ℹ</button>
                             <select id="font-preset-select" class="font-preset-select">
                                 <option value="source-code-pro" data-i18n="config.fontPresetSourceCodePro">Source Code Pro (mono)</option>
                                 <option value="jetbrains-mono" data-i18n="config.fontPresetJetBrainsMono">JetBrains Mono (mono)</option>
@@ -215,6 +222,7 @@
                         </div>
                         <div class="form-group">
                             <label data-i18n="config.fontSizeLabel">Font size:</label>
+                            <button type="button" id="font-size-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.fontSizeInfoTitle">ℹ</button>
                             <div class="font-size-selector">
                                 <button type="button" class="font-size-option" data-size="xs">xs</button>
                                 <button type="button" class="font-size-option" data-size="s">s</button>
@@ -227,6 +235,7 @@
                         </div>
                         <div class="form-group">
                             <label for="font-weight-select" data-i18n="config.fontWeightLabel">Font weight:</label>
+                            <button type="button" id="font-weight-info-btn" class="info-button" data-i18n-aria="config.fontWeightInfoTitle">ℹ</button>
                             <select id="font-weight-select">
                                 <option value="normal" data-i18n="config.fontWeightNormal">Normal</option>
                                 <option value="600" data-i18n="config.fontWeightSemiBold">Semi-bold</option>
@@ -238,6 +247,7 @@
                                 <label class="checkbox-label" for="theme-iconstyling-enable">
                                     <input type="checkbox" id="theme-iconstyling-enable">
                                     <span class="checkbox-text" data-i18n="config.iconStylingLabel">Favicon harmonization (per theme)</span>
+                                    <button type="button" id="theme-iconstyling-info-btn" class="info-button" data-i18n-aria="config.iconStylingInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div id="theme-iconstyling-controls" hidden>
@@ -292,6 +302,7 @@
                         </div>
                         <div class="form-group">
                             <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
+                            <button type="button" id="layout-preset-info-btn" class="info-button" data-i18n-aria="config.layoutPresetInfoTitle">ℹ</button>
                             <select id="layout-preset-select"></select>
                         </div>
                         <p id="layout-preset-description" class="setting-description" aria-live="polite">
@@ -299,6 +310,7 @@
                         </p>
                         <div class="form-group">
                             <label for="density-mode-select" data-i18n="config.densityLabel">Density:</label>
+                            <button type="button" id="density-mode-info-btn" class="info-button" data-i18n-aria="config.densityModeInfoTitle">ℹ</button>
                             <select id="density-mode-select"></select>
                         </div>
                         <p id="density-mode-description" class="setting-description" aria-live="polite">
@@ -320,11 +332,13 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-title-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showDashboardTitle">Show dashboard title</span>
+                                    <button type="button" id="show-title-info-btn" class="info-button" data-i18n-aria="config.showDashboardTitleInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
                         <div class="form-group" id="launcher-icon-size-group">
                             <label for="launcher-icon-size-select" data-i18n="config.launcherIconSizeLabel">Launcher icon size:</label>
+                            <button type="button" id="launcher-icon-size-info-btn" class="info-button" data-i18n-aria="config.launcherIconSizeInfoTitle">ℹ</button>
                             <select id="launcher-icon-size-select">
                                 <option value="small" data-i18n="config.launcherIconSizeSmall">Small</option>
                                 <option value="normal" data-i18n="config.launcherIconSizeNormal">Normal</option>
@@ -333,6 +347,7 @@
                         </div>
                         <div class="form-group">
                             <label for="calendar-url-input" data-i18n="config.calendarUrlLabel">Calendar URL:</label>
+                            <button type="button" id="calendar-url-info-btn" class="info-button" data-i18n-aria="config.calendarUrlInfoTitle">ℹ</button>
                             <input type="url" id="calendar-url-input"
                                    data-i18n-placeholder="config.calendarUrlPlaceholder"
                                    placeholder="https://calendar.google.com"
@@ -349,35 +364,41 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-icons-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showIcons">Show bookmark icons</span>
+                                    <button type="button" id="show-icons-info-btn" class="info-button" data-i18n-aria="config.showIconsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-shortcuts-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showShortcuts">Show bookmark shortcuts</span>
+                                    <button type="button" id="show-shortcuts-info-btn" class="info-button" data-i18n-aria="config.showShortcutsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-pin-icon-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPinIcon">Show pin icon</span>
+                                    <button type="button" id="show-pin-icon-info-btn" class="info-button" data-i18n-aria="config.showPinIconInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-note-icon-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showNoteIcon">Show note icon</span>
+                                    <button type="button" id="show-note-icon-info-btn" class="info-button" data-i18n-aria="config.showNoteIconInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-link-preview-cards-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showLinkPreviewCards">Show link preview cards on hover</span>
+                                    <button type="button" id="show-link-preview-cards-info-btn" class="info-button" data-i18n-aria="config.showLinkPreviewCardsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="link-preview-hover-delay-select" data-i18n="config.linkPreviewHoverDelayLabel">Preview hover delay:</label>
+                            <button type="button" id="link-preview-hover-delay-info-btn" class="info-button" data-i18n-aria="config.linkPreviewHoverDelayInfoTitle">ℹ</button>
                                 <select id="link-preview-hover-delay-select">
                                     <option value="100" data-i18n="config.linkPreviewDelayFast">Fast (100ms)</option>
                                     <option value="150" data-i18n="config.linkPreviewDelayBalanced">Balanced (150ms)</option>
@@ -393,6 +414,7 @@
                         <p class="general-card-intro" data-i18n="config.generalBookmarksBehaviorIntro">Sorting, tab behavior, categories, shortcuts, and page navigation.</p>
                         <div class="form-group">
                             <label for="sort-method-select" data-i18n="config.bookmarkSortingLabel">Bookmark sorting:</label>
+                            <button type="button" id="sort-method-info-btn" class="info-button" data-i18n-aria="config.bookmarkSortingInfoTitle">ℹ</button>
                             <select id="sort-method-select">
                                 <option value="order" data-i18n="config.sortMethodManual">Manual order</option>
                                 <option value="az" data-i18n="config.sortMethodAZ">A-Z</option>
@@ -405,12 +427,14 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="new-tab-checkbox">
                                     <span class="checkbox-text" data-i18n="config.openLinksInNewTab">Open links in new tab</span>
+                                    <button type="button" id="new-tab-info-btn" class="info-button" data-i18n-aria="config.openLinksInNewTabInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="paste-url-quick-add-checkbox">
                                     <span class="checkbox-text" data-i18n="config.pasteUrlQuickAdd">Paste URL to quick-add bookmark</span>
+                                    <button type="button" id="paste-url-quick-add-info-btn" class="info-button" data-i18n-aria="config.pasteUrlQuickAddInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -451,6 +475,7 @@
                         <p class="general-card-intro" data-i18n="config.localizationIntro">Language, date and time display, and weather source.</p>
                         <div class="form-group">
                             <label for="language-select" data-i18n="config.languageLabel">Language:</label>
+                            <button type="button" id="language-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.languageInfoTitle">ℹ</button>
                             <select id="language-select">
                                 <option value="en">English</option>
                                 <option value="nl">Nederlands</option>
@@ -463,11 +488,13 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-date-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showDate">Show date</span>
+                                    <button type="button" id="show-date-info-btn" class="info-button" data-i18n-aria="config.showDateInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="date-format-select" data-i18n="config.dateFormatLabel">Date format:</label>
+                            <button type="button" id="date-format-info-btn" class="info-button" data-i18n-aria="config.dateFormatInfoTitle">ℹ</button>
                                 <select id="date-format-select">
                                     <option value="short-slash" data-i18n="config.dateFormatShortSlashExample">28/05/2026</option>
                                     <option value="short-dash" data-i18n="config.dateFormatShortDashExample">28-05-2026</option>
@@ -481,11 +508,13 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-time-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showTime">Show time</span>
+                                    <button type="button" id="show-time-info-btn" class="info-button" data-i18n-aria="config.showTimeInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="time-format-select" data-i18n="config.timeFormatLabel">Time format:</label>
+                            <button type="button" id="time-format-info-btn" class="info-button" data-i18n-aria="config.timeFormatInfoTitle">ℹ</button>
                                 <select id="time-format-select">
                                     <option value="24h" data-i18n="config.timeFormat24h">24-hour (13:35)</option>
                                     <option value="12h" data-i18n="config.timeFormat12h">12-hour AM/PM (01:35 PM)</option>
@@ -495,11 +524,13 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-weather-with-date-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showWeatherWithDate">Show weather next to date</span>
+                                    <button type="button" id="show-weather-with-date-info-btn" class="info-button" data-i18n-aria="config.showWeatherWithDateInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">├──</span>
                                 <label for="weather-source-select" data-i18n="config.weatherSourceLabel">Location source:</label>
+                            <button type="button" id="weather-source-info-btn" class="info-button" data-i18n-aria="config.weatherSourceInfoTitle">ℹ</button>
                                 <select id="weather-source-select">
                                     <option value="manual" data-i18n="config.weatherSourceManual">Manual location</option>
                                     <option value="browser" data-i18n="config.weatherSourceBrowser">Use browser location</option>
@@ -508,11 +539,13 @@
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">├──</span>
                                 <label for="weather-location-input" data-i18n="config.weatherLocationLabel">Weather location:</label>
+                            <button type="button" id="weather-location-info-btn" class="info-button" data-i18n-aria="config.weatherLocationInfoTitle">ℹ</button>
                                 <input type="text" id="weather-location-input" data-i18n-placeholder="config.weatherLocationPlaceholder" placeholder="City name">
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">├──</span>
                                 <label for="weather-unit-select" data-i18n="config.weatherUnitLabel">Temperature unit:</label>
+                            <button type="button" id="weather-unit-info-btn" class="info-button" data-i18n-aria="config.weatherUnitInfoTitle">ℹ</button>
                                 <select id="weather-unit-select">
                                     <option value="celsius" data-i18n="config.weatherUnitCelsius">Celsius (°C)</option>
                                     <option value="fahrenheit" data-i18n="config.weatherUnitFahrenheit">Fahrenheit (°F)</option>
@@ -521,6 +554,7 @@
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="weather-refresh-select" data-i18n="config.weatherRefreshLabel">Refresh interval:</label>
+                            <button type="button" id="weather-refresh-info-btn" class="info-button" data-i18n-aria="config.weatherRefreshInfoTitle">ℹ</button>
                                 <select id="weather-refresh-select">
                                     <option value="10" data-i18n="config.weatherRefresh10Min">10 min</option>
                                     <option value="30" data-i18n="config.weatherRefresh30Min">30 min</option>
@@ -724,6 +758,7 @@
                         </table>
                         <div class="form-group" style="margin-top:1rem">
                             <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
+                            <button type="button" id="button-bar-position-info-btn" class="info-button" data-i18n-aria="config.buttonBarPositionInfoTitle">ℹ</button>
                             <select id="button-bar-position-select">
                                 <option value="bottom"       data-i18n="config.buttonBarPositionBottom">Center-bottom (default)</option>
                                 <option value="bottom-left"  data-i18n="config.buttonBarPositionLeft">Bottom-left corner</option>
@@ -735,6 +770,7 @@
                                 <label class="checkbox-label" for="show-dock-layout-selector-checkbox">
                                     <input type="checkbox" id="show-dock-layout-selector-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showDockLayoutSelector">Show layout selector in dock</span>
+                                    <button type="button" id="show-dock-layout-selector-info-btn" class="info-button" data-i18n-aria="config.showDockLayoutSelectorInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
@@ -757,6 +793,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="colorize-status-checkbox">
                                     <span class="checkbox-text" data-i18n="config.colorizeStatus">Change bookmark color on online/offline</span>
+                                    <button type="button" id="colorize-status-info-btn" class="info-button" data-i18n-aria="config.colorizeStatusInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -764,6 +801,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-ping-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPingTimes">Show ping times (ms)</span>
+                                    <button type="button" id="show-ping-info-btn" class="info-button" data-i18n-aria="config.showPingTimesInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -771,6 +809,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-status-loading-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showStatusLoading">Show status loading indicator</span>
+                                    <button type="button" id="show-status-loading-info-btn" class="info-button" data-i18n-aria="config.showStatusLoadingInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -800,6 +839,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="enable-custom-favicon-checkbox">
                                     <span class="checkbox-text" data-i18n="config.enableCustomFavicon">Enable custom favicon</span>
+                                    <button type="button" id="enable-custom-favicon-info-btn" class="info-button" data-i18n-aria="config.enableCustomFaviconInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -812,6 +852,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="enable-custom-title-checkbox">
                                     <span class="checkbox-text" data-i18n="config.enableCustomTitle">Enable custom title</span>
+                                    <button type="button" id="enable-custom-title-info-btn" class="info-button" data-i18n-aria="config.enableCustomTitleInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -824,6 +865,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-in-title-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showPageInTitle">Show page name in title</span>
+                                    <button type="button" id="show-page-in-title-info-btn" class="info-button" data-i18n-aria="config.showPageInTitleInfoTitle">ℹ</button>
                                 </label>
                             </div>
                         </div>
@@ -845,6 +887,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="device-specific-checkbox">
                                     <span class="checkbox-text" data-i18n="config.deviceSpecificSettings">Use device-specific settings</span>
+                                    <button type="button" id="device-specific-info-btn" class="info-button" data-i18n-aria="config.deviceSpecificSettingsInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -880,6 +923,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="fuzzy-suggestions-start-with-checkbox">
                                     <span class="checkbox-text" data-i18n="config.fuzzySuggestionsStartWith">Only show suggestions that start with the query</span>
+                                    <button type="button" id="fuzzy-suggestions-start-with-info-btn" class="info-button" data-i18n-aria="config.fuzzySuggestionsStartWithInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="checkbox-tree-item">
@@ -1877,6 +1921,7 @@
     <script src="/static/js/config/config-settings.js"></script>
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/config/config-general-layers.js"></script>
+    <script src="/static/js/config/config-setting-info.js"></script>
     <script src="/static/js/config/config-stats.js"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>

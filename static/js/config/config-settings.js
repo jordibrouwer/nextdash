@@ -154,13 +154,32 @@ class ConfigSettings {
     bindInfoButton(buttonId, titleKey, messageKey) {
         const btn = document.getElementById(buttonId);
         if (!btn) return;
-        btn.addEventListener('click', () => {
-            if (!window.AppModal) return;
-            window.AppModal.alert({
-                title: this.t(titleKey),
-                htmlMessage: this.t(messageKey).replace(/\n/g, '<br>'),
-                confirmText: this.t('config.gotIt')
+        btn.setAttribute('data-i18n-aria', titleKey);
+        const applyAria = () => {
+            const title = this.t(titleKey);
+            if (title !== titleKey) btn.setAttribute('aria-label', title);
+        };
+        applyAria();
+        if (!btn.dataset.settingInfoBound) {
+            btn.dataset.settingInfoBound = 'true';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!window.AppModal) return;
+                window.AppModal.alert({
+                    title: this.t(titleKey),
+                    htmlMessage: this.t(messageKey).replace(/\n/g, '<br>'),
+                    confirmText: this.t('config.gotIt')
+                });
             });
+        }
+    }
+
+    /** Bind ℹ help modals for all settings (buttons live in config.html template). */
+    bindAllSettingInfoButtons() {
+        const defs = typeof window.SETTING_INFO_DEFS !== 'undefined' ? window.SETTING_INFO_DEFS : [];
+        defs.forEach((def) => {
+            this.bindInfoButton(def.btnId, `config.${def.title}`, `config.${def.message}`);
         });
     }
 
@@ -715,6 +734,7 @@ class ConfigSettings {
         this.bindInfoButton('show-health-dashboard-info-btn', 'config.showHealthDashboardInfoTitle', 'config.showHealthDashboardInfoMessage');
         this.bindInfoButton('skip-fast-ping-info-btn', 'config.skipFastPingInfoTitle', 'config.skipFastPingInfoMessage');
         this.bindInfoButton('show-sync-toasts-info-btn', 'config.showSyncToastsInfoTitle', 'config.showSyncToastsInfoMessage');
+        this.bindAllSettingInfoButtons();
 
         // Show background dots checkbox
         const showBackgroundDotsCheckbox = document.getElementById('show-background-dots-checkbox');

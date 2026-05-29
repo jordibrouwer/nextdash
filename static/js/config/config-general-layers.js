@@ -141,6 +141,7 @@ class ConfigGeneralLayers {
                     <label class="checkbox-label">
                         <input type="checkbox" id="enable-smart-collections-master" aria-describedby="smart-collections-master-hint">
                         <span class="checkbox-text" data-i18n="config.enableSmartCollections">Enable smart collections</span>
+                        <button type="button" id="enable-smart-collections-info-btn" class="info-button" data-i18n-aria="config.enableSmartCollectionsInfoTitle" aria-label="Smart collections information">ℹ</button>
                     </label>
                 </div>
             </div>
