@@ -926,3 +926,15 @@ body.no-animations .search-mode-tab {
 body.no-animations .search-history-chip {
     transition: none !important;
 }
+
+.search-command-chip {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+    color: var(--accent-color, #6ea8fe);
+    border-color: color-mix(in srgb, var(--accent-color, #6ea8fe) 35%, transparent);
+}
+
+.search-command-chip:hover {
+    color: var(--accent-color, #6ea8fe);
+    border-color: var(--accent-color, #6ea8fe);
+}

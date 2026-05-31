@@ -125,6 +125,7 @@
         "findCommandHint": "Tapez du texte pour mettre en évidence les signets correspondants sur cette page",
         "filtersGroupLabel": "Filtres",
         "emptyStateRecentLabel": "Récent",
+        "emptyStateRecentCommandsLabel": "Commandes récentes",
         "emptyStateSavedLabel": "Recherches sauvegardées",
         "emptyStateFindersLabel": "Moteurs de recherche",
         "filterByCategory": "Filtrer par catégorie (exemple : category:travail)",

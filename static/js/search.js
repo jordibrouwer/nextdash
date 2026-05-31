@@ -21,6 +21,7 @@ class SearchComponent {
         this.pendingConfirmation = false; // Flag to prevent accidental confirmation execution
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
+        this.recentCommands = this.loadRecentCommands();
         this.savedSearches = this.loadSavedSearches();
         this.lastNonCommandQuery = '';
         
@@ -1107,14 +1108,16 @@ class SearchComponent {
                 return;
             }
 
-            // Chip strip for history items
-            if (match.type === 'history-chips') {
+            // Chip strip for history / recent command items
+            if (match.type === 'history-chips' || match.type === 'command-chips') {
                 const chipRow = document.createElement('div');
                 chipRow.className = 'search-history-chip-row command-group-child';
                 match.queries.forEach((q) => {
                     const chip = document.createElement('button');
                     chip.type = 'button';
-                    chip.className = 'search-history-chip';
+                    chip.className = match.type === 'command-chips'
+                        ? 'search-history-chip search-command-chip'
+                        : 'search-history-chip';
                     chip.textContent = q;
                     chip.addEventListener('click', () => {
                         this.currentQuery = q;
@@ -1184,18 +1187,7 @@ class SearchComponent {
                 } else if (match.type === 'colors') {
                     this.openColors();
                 } else if (match.type === 'command') {
-                    match.action();
-                    // Keep command palette open so multiple commands can be chained.
-                    // If command action redirects away, this block naturally becomes irrelevant.
-                    if (this.searchActive) {
-                        this.currentQuery = ':';
-                        this.commandsComponent.resetState();
-                        this.updateSearch();
-                        this.selectedMatchIndex = 0;
-                        this.pendingConfirmation = false;
-                        this.justCompleted = true;
-                        this.updateSelectionHighlight();
-                    }
+                    this.invokeCommand(match);
                 } else if (match.type === 'command-completion') {
                     this.currentQuery = match.completion;
                     this.updateSearch();
@@ -1292,17 +1284,7 @@ class SearchComponent {
             } else if (selectedMatch.type === 'colors') {
                 this.openColors();
             } else if (selectedMatch.type === 'command') {
-                selectedMatch.action();
-                // Keep command palette open so user can run another command immediately.
-                if (this.searchActive) {
-                    this.currentQuery = ':';
-                    this.commandsComponent.resetState();
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0;
-                    this.pendingConfirmation = false;
-                    this.justCompleted = true;
-                    this.updateSelectionHighlight();
-                }
+                this.invokeCommand(selectedMatch);
             } else if (selectedMatch.type === 'command-completion') {
                 this.currentQuery = selectedMatch.completion;
                 this.updateSearch();
@@ -1457,6 +1439,49 @@ class SearchComponent {
         this.saveSearchHistory();
     }
 
+    loadRecentCommands() {
+        try {
+            const stored = localStorage.getItem('dashboardRecentCommands');
+            return stored
+                ? JSON.parse(stored).filter((entry) => typeof entry === 'string' && entry.startsWith(':') && entry !== ':').slice(0, 5)
+                : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    saveRecentCommands() {
+        localStorage.setItem('dashboardRecentCommands', JSON.stringify(this.recentCommands.slice(0, 5)));
+    }
+
+    recordRecentCommand(query) {
+        const cleanedQuery = (query || '').trim();
+        if (!cleanedQuery.startsWith(':') || cleanedQuery === ':') {
+            return;
+        }
+
+        this.recentCommands = [cleanedQuery, ...this.recentCommands.filter((entry) => entry !== cleanedQuery)].slice(0, 5);
+        this.saveRecentCommands();
+    }
+
+    invokeCommand(match) {
+        const result = match.action();
+        if (result !== false) {
+            this.recordRecentCommand(this.currentQuery);
+        }
+        // Keep command palette open so multiple commands can be chained.
+        // If command action redirects away, this block naturally becomes irrelevant.
+        if (this.searchActive) {
+            this.currentQuery = ':';
+            this.commandsComponent.resetState();
+            this.updateSearch();
+            this.selectedMatchIndex = 0;
+            this.pendingConfirmation = false;
+            this.justCompleted = true;
+            this.updateSelectionHighlight();
+        }
+    }
+
     toggleEmptyStateGroup(groupId) {
         if (this.emptyStateExpandedGroups.has(groupId)) {
             this.emptyStateExpandedGroups.delete(groupId);
@@ -1469,6 +1494,7 @@ class SearchComponent {
         const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
         const result = [];
         const historyMatches = this.getSearchHistoryMatches();
+        const recentCommandMatches = this.getRecentCommandMatches();
         const savedMatches = this.getSavedSearchMatches();
 
         const filterItems = [
@@ -1493,6 +1519,7 @@ class SearchComponent {
         const groups = [
             { id: 'whats-new', label: "What's new", items: whatsNewItems, defaultOpen: true },
             { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
+            { id: 'recent-commands', label: t('dashboard.emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
             { id: 'saved', label: t('dashboard.emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
             { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },
             { id: 'finders', label: t('dashboard.emptyStateFindersLabel', 'Finders'), items: finderItems, defaultOpen: false }
@@ -1528,6 +1555,16 @@ class SearchComponent {
         if (recent.length === 0) return [];
         return [{
             type: 'history-chips',
+            queries: recent,
+            _chipCount: recent.length
+        }];
+    }
+
+    getRecentCommandMatches() {
+        const recent = this.recentCommands.slice(0, 5);
+        if (recent.length === 0) return [];
+        return [{
+            type: 'command-chips',
             queries: recent,
             _chipCount: recent.length
         }];

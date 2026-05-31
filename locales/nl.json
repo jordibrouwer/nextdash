@@ -129,6 +129,7 @@
         "findCommandHint": "Typ tekst om overeenkomende bladwijzers op deze pagina te markeren",
         "filtersGroupLabel": "Filters",
         "emptyStateRecentLabel": "Recent",
+        "emptyStateRecentCommandsLabel": "Recente commando's",
         "emptyStateSavedLabel": "Opgeslagen zoekopdrachten",
         "emptyStateFindersLabel": "Zoekmachines",
         "filterByCategory": "Filter op categorie (voorbeeld: category:werk)",

@@ -125,6 +125,7 @@
         "findCommandHint": "Text eingeben, um passende Lesezeichen auf dieser Seite hervorzuheben",
         "filtersGroupLabel": "Filter",
         "emptyStateRecentLabel": "Zuletzt",
+        "emptyStateRecentCommandsLabel": "Letzte Befehle",
         "emptyStateSavedLabel": "Gespeicherte Suchen",
         "emptyStateFindersLabel": "Suchmaschinen",
         "filterByCategory": "Nach Kategorie filtern (Beispiel: category:arbeit)",

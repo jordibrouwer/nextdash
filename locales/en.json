@@ -130,6 +130,7 @@
         "findCommandHint": "Type text to highlight matching bookmarks on this page",
         "filtersGroupLabel": "Filters",
         "emptyStateRecentLabel": "Recent",
+        "emptyStateRecentCommandsLabel": "Recent commands",
         "emptyStateSavedLabel": "Saved searches",
         "emptyStateFindersLabel": "Finders",
         "emptyStateWhatsNewLabel": "What's new",
