@@ -1426,6 +1426,82 @@ body.no-animations .category-chevron {
     color: var(--accent-primary);
 }
 
+.smart-collection-why-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.35em;
+    padding: 0;
+    width: 1.15em;
+    height: 1.15em;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+    color: var(--accent-primary);
+    font-size: 0.62em;
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-family-main);
+    line-height: 1;
+    cursor: help;
+    vertical-align: 0.08em;
+    opacity: 0.82;
+    pointer-events: auto;
+    flex-shrink: 0;
+}
+
+.smart-collection-why-btn:hover,
+.smart-collection-why-btn:focus-visible {
+    opacity: 1;
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary));
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+.smart-collection-why-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    transform: none;
+    white-space: normal;
+    width: max-content;
+    max-width: min(22rem, calc(100vw - 2rem));
+    padding: 0.45rem 0.6rem;
+    background: var(--background-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.45;
+    letter-spacing: normal;
+    text-transform: none;
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--background-primary) 15%, transparent);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 1002;
+}
+
+.smart-collection-why-btn[data-tooltip]:hover::after,
+.smart-collection-why-btn[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (pointer: coarse) {
+    .smart-collection-why-btn[data-tooltip]:focus-visible::after {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+body.no-animations .smart-collection-why-btn[data-tooltip]::after {
+    transition: none !important;
+}
+
 .smart-collection-empty {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);

@@ -2659,7 +2659,8 @@ class Dashboard {
                 id: collection.id,
                 name: collection.name,
                 icon: collection.icon,
-                isSmartCollection: true
+                isSmartCollection: true,
+                customCollection: collection.customCollection || null,
             }, collectionBookmarks);
             columnBlocks.push(collectionElement);
         });
@@ -3322,6 +3323,26 @@ class Dashboard {
         chevron.setAttribute('aria-hidden', 'true');
         titleElement.appendChild(chevron);
 
+        if (isSmartCollection) {
+            const whyHint = this.getSmartCollectionWhyHint(category.id, category);
+            if (whyHint) {
+                const whyBtn = document.createElement('button');
+                whyBtn.type = 'button';
+                whyBtn.className = 'smart-collection-why-btn';
+                whyBtn.textContent = 'ℹ';
+                whyBtn.setAttribute('data-tooltip', whyHint);
+                whyBtn.setAttribute(
+                    'aria-label',
+                    this.language?.t?.('dashboard.smartWhyAria') || 'Why am I seeing this collection?'
+                );
+                whyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                titleElement.appendChild(whyBtn);
+            }
+        }
+
         titleElement.addEventListener('click', () => {
             const isCollapsed = categoryDiv.getAttribute('data-collapsed') === 'true';
             categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
@@ -3490,7 +3511,8 @@ class Dashboard {
                 name: col.icon ? `${col.icon} ${col.name}` : col.name,
                 icon: col.icon || '',
                 bookmarks: matched,
-                isSmartCollection: true
+                isSmartCollection: true,
+                customCollection: col,
             });
         }
 
@@ -3518,6 +3540,96 @@ class Dashboard {
         }
 
         return collections;
+    }
+
+    _smartWhyT(key, fallback, vars = {}) {
+        const fullKey = `dashboard.${key}`;
+        let text = this.language?.t?.(fullKey);
+        if (!text || text === fullKey) text = fallback;
+        Object.entries(vars).forEach(([k, v]) => {
+            text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        });
+        return text;
+    }
+
+    _getCurrentPageDisplayName() {
+        const page = (this.pages || []).find((p) => Number(p.id) === Number(this.currentPageId));
+        const raw = page?.name || this.language?.t?.('dashboard.defaultPageTitle') || 'dashboard';
+        return String(raw).trim() || 'dashboard';
+    }
+
+    _formatSmartWhyLimitSuffix(settingsKey, defaultLimit = 0) {
+        const configured = Number(this.settings?.[settingsKey] ?? defaultLimit);
+        if (!Number.isFinite(configured) || configured <= 0) return '';
+        return this._smartWhyT('smartWhyLimitSuffix', ' Up to {limit} shown.', { limit: configured });
+    }
+
+    getSmartCollectionWhyHint(collectionId, category = {}) {
+        const page = this._getCurrentPageDisplayName();
+
+        if (collectionId === '__smart_today__') {
+            return this._smartWhyT(
+                'smartWhyToday',
+                'Smart picks for now — recent opens, pins, and time-of-day keywords.{limitSuffix} Visible on page “{page}”.',
+                { page, limitSuffix: this._formatSmartWhyLimitSuffix('smartTodayLimit', 8) }
+            );
+        }
+        if (collectionId === '__smart_recent__') {
+            return this._smartWhyT(
+                'smartWhyRecent',
+                'Bookmarks opened in the last 7 days.{limitSuffix} Visible on page “{page}”.',
+                { page, limitSuffix: this._formatSmartWhyLimitSuffix('smartRecentLimit', 50) }
+            );
+        }
+        if (collectionId === '__smart_stale__') {
+            return this._smartWhyT(
+                'smartWhyStale',
+                'Not opened in 30+ days (or never).{limitSuffix} Visible on page “{page}”.',
+                { page, limitSuffix: this._formatSmartWhyLimitSuffix('smartStaleLimit', 50) }
+            );
+        }
+        if (collectionId === '__smart_most_used__') {
+            return this._smartWhyT(
+                'smartWhyMostUsed',
+                'Your most-opened bookmarks.{limitSuffix} Visible on page “{page}”.',
+                { page, limitSuffix: this._formatSmartWhyLimitSuffix('smartMostUsedLimit', 25) }
+            );
+        }
+        if (String(collectionId).startsWith('tag:')) {
+            const tag = String(collectionId).slice(4);
+            return this._smartWhyT(
+                'smartWhyTag',
+                'All bookmarks tagged “{tag}”. Visible on page “{page}”.',
+                { tag, page }
+            );
+        }
+        if (String(collectionId).startsWith('custom:')) {
+            const col = category.customCollection;
+            if (!col || !Array.isArray(col.rules) || col.rules.length === 0) {
+                return this._smartWhyT(
+                    'smartWhyCustomGeneric',
+                    'Matches rules you set in config → collections. Visible on page “{page}”.',
+                    { page }
+                );
+            }
+            const joiner = String(col.logic || 'and').toLowerCase() === 'or' ? ' OR ' : ' AND ';
+            const rules = col.rules
+                .map((rule) => {
+                    const field = rule.field || 'tag';
+                    const op = rule.operator === 'excludes' ? 'excludes' : 'includes';
+                    const value = String(rule.value || '').trim();
+                    if (!value) return '';
+                    return `${field} ${op} “${value}”`;
+                })
+                .filter(Boolean)
+                .join(joiner);
+            return this._smartWhyT(
+                'smartWhyCustom',
+                'Your collection rules: {rules}. Visible on page “{page}”.',
+                { rules: rules || '—', page }
+            );
+        }
+        return '';
     }
 
     _evaluateCollection(collection, bookmarks) {
