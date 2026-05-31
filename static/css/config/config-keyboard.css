@@ -112,6 +112,54 @@
     border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
 }
 
+.keyboard-section--fixed {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+.keyboard-fixed-note {
+    margin: -0.35rem 0 1rem;
+    font-size: 0.88rem;
+    opacity: 0.75;
+    line-height: 1.45;
+}
+
+.keyboard-binding-row--fixed {
+    background: var(--bg-primary, rgba(255, 255, 255, 0.02));
+}
+
+.binding-key--fixed {
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
+    border-color: var(--border-primary, rgba(255, 255, 255, 0.15));
+    color: var(--text-primary, rgba(255, 255, 255, 0.85));
+}
+
+.binding-key-sep {
+    font-size: 0.8rem;
+    opacity: 0.65;
+    text-transform: lowercase;
+    padding: 0 0.15rem;
+}
+
+.binding-fixed-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 1.75rem;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+.binding-key-display--fixed {
+    min-width: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .keyboard-binding-row {

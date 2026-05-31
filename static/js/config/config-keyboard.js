@@ -36,6 +36,26 @@ class ConfigKeyboard {
         };
     }
 
+    getFixedBookmarkBindings() {
+        return [
+            {
+                keys: ['+'],
+                descriptionKey: 'config.keyboardQuickAddDesc',
+                descriptionFallback: 'Quick-add omnibox — type name | url | shortcut in one line'
+            },
+            {
+                keys: ['&', 'Ctrl+Shift+A'],
+                descriptionKey: 'config.keyboardNewBookmarkModalDesc',
+                descriptionFallback: 'Full new-bookmark modal (& on dashboard; Ctrl+Shift+A anywhere)'
+            },
+            {
+                keys: [':new'],
+                descriptionKey: 'config.keyboardCommandNewDesc',
+                descriptionFallback: 'Open new-bookmark modal from command mode (same as & / Ctrl+Shift+A)'
+            }
+        ];
+    }
+
     getEffectiveKey(bindingId) {
         return this.customBindings[bindingId] || this.defaultBindings[bindingId]?.key || '';
     }
@@ -48,6 +68,8 @@ class ConfigKeyboard {
         if (!container) return;
 
         container.innerHTML = '';
+
+        this.renderFixedBookmarkSection(container);
 
         // Group bindings by category
         const categories = new Map();
@@ -141,6 +163,62 @@ class ConfigKeyboard {
         
         resetAllSection.appendChild(resetAllBtn);
         container.appendChild(resetAllSection);
+    }
+
+    renderFixedBookmarkSection(container) {
+        const section = document.createElement('section');
+        section.className = 'keyboard-section keyboard-section--fixed';
+
+        const title = document.createElement('h4');
+        title.className = 'keyboard-section-title';
+        title.textContent = this.t('config.keyboardSectionBookmarks') || 'Bookmarks';
+        section.appendChild(title);
+
+        const note = document.createElement('p');
+        note.className = 'keyboard-fixed-note';
+        note.textContent = this.t('config.keyboardFixedNote')
+            || 'Default shortcuts for adding bookmarks. These match the dashboard cheat sheet and are not rebindable here yet.';
+        section.appendChild(note);
+
+        const list = document.createElement('div');
+        list.className = 'keyboard-bindings-list';
+
+        this.getFixedBookmarkBindings().forEach((binding) => {
+            const row = document.createElement('div');
+            row.className = 'keyboard-binding-row keyboard-binding-row--fixed';
+
+            const descDiv = document.createElement('div');
+            descDiv.className = 'binding-description';
+            descDiv.textContent = this.t(binding.descriptionKey) || binding.descriptionFallback;
+
+            const keyDiv = document.createElement('div');
+            keyDiv.className = 'binding-key-display binding-key-display--fixed';
+
+            binding.keys.forEach((key, index) => {
+                if (index > 0) {
+                    const sep = document.createElement('span');
+                    sep.className = 'binding-key-sep';
+                    sep.textContent = this.t('config.keyboardKeyOr') || 'or';
+                    keyDiv.appendChild(sep);
+                }
+                const keySpan = document.createElement('span');
+                keySpan.className = 'binding-key binding-key--fixed';
+                keySpan.textContent = this.formatKeyForDisplay(key);
+                keyDiv.appendChild(keySpan);
+            });
+
+            const badge = document.createElement('span');
+            badge.className = 'binding-fixed-badge';
+            badge.textContent = this.t('config.keyboardDefaultBadge') || 'Default';
+            keyDiv.appendChild(badge);
+
+            row.appendChild(descDiv);
+            row.appendChild(keyDiv);
+            list.appendChild(row);
+        });
+
+        section.appendChild(list);
+        container.appendChild(section);
     }
 
     startListeningForKey(bindingId, keySpan, editBtn) {
@@ -271,10 +349,22 @@ class ConfigKeyboard {
             '?': '?',
             '!': '!',
             '*': '*',
-            ';': ';'
+            ';': ';',
+            '+': '+',
+            '&': '&',
+            ':new': ':new',
+            'Ctrl+Shift+A': 'Ctrl+Shift+A'
         };
 
-        return displayMap[key] || key.toUpperCase();
+        if (displayMap[key]) {
+            return displayMap[key];
+        }
+
+        if (key.includes('+')) {
+            return key;
+        }
+
+        return key.toUpperCase();
     }
 
     markDirty() {
