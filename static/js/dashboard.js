@@ -235,6 +235,7 @@ class Dashboard {
     }
 
     async init() {
+        window.MobileExperience?.initDashboard?.();
         await this.loadData();
         if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
             await window.TipsPolicy.applyExpiry(this);
@@ -243,6 +244,7 @@ class Dashboard {
         this.initializeAutoDarkMode();
         this.loadCollapsedStates();
         await this.language.init(this.settings.language);
+        window.MobileExperience?.refreshBannerTranslations?.();
         this.setupDOM();
         this.initializeSearchComponent();
         this.initializeStatusMonitor();
@@ -892,7 +894,24 @@ class Dashboard {
         setTimeout(() => document.addEventListener('mousedown', onOutside), 0);
     }
 
+    shouldStackDashboardCategories() {
+        return (
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(max-width: 767px)').matches
+        );
+    }
+
+    getEffectiveColumnsPerRow() {
+        if (this.shouldStackDashboardCategories()) {
+            return 1;
+        }
+        return this.getNormalizedColumnsPerRow();
+    }
+
     shouldPackDashboardColumns() {
+        if (this.shouldStackDashboardCategories()) {
+            return false;
+        }
         return (
             this.settings.packedColumns === true &&
             typeof window.matchMedia === 'function' &&
@@ -911,8 +930,9 @@ class Dashboard {
             return null;
         }
 
-        const colCount = this.getNormalizedColumnsPerRow();
-        this.settings.columnsPerRow = colCount;
+        const configuredColCount = this.getNormalizedColumnsPerRow();
+        this.settings.columnsPerRow = configuredColCount;
+        const colCount = this.getEffectiveColumnsPerRow();
         const packed = this.shouldPackDashboardColumns();
         const packedClass = packed ? ' packed-columns' : '';
 
@@ -923,6 +943,10 @@ class Dashboard {
             this.language?.t('dashboard.bookmarksGridLabel') || 'Bookmarks'
         );
         grid.style.setProperty('--packed-columns', String(colCount));
+        document.body.setAttribute(
+            'data-dashboard-stack-categories',
+            this.shouldStackDashboardCategories() ? 'true' : 'false'
+        );
         if (packed) {
             grid.style.removeProperty('grid-template-columns');
         } else {
@@ -1321,6 +1345,7 @@ class Dashboard {
     }
 
     maybeShowPostSetupWizard(options = {}) {
+        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
         const skipTuning = options.skipTuning === true;
         if (!skipTuning && this.maybeShowPostInstallTuning()) return;
         if (typeof window.PostSetupWizard !== 'function') {
@@ -1348,13 +1373,17 @@ class Dashboard {
         if (hasAny) return;
         if (!this.settings?.onboardingCompleted) return;
 
-        const msg = this.language?.t('dashboard.firstBookmarkGuide')
-            || 'Add your first bookmark with + below, or set up pages in config → pages.';
+        const msg = window.MobileExperience?.shouldSkipHeavyUi?.()
+            ? (this.language?.t('dashboard.firstBookmarkGuideMobile')
+                || 'Add bookmarks on a computer or tablet via config → bookmarks, or open search to launch existing links.')
+            : (this.language?.t('dashboard.firstBookmarkGuide')
+                || 'Add your first bookmark with + below, or set up pages in config → pages.');
         this.showNotification(msg, 'info', { duration: 10000 });
         try {
             localStorage.setItem(storageKey, '1');
         } catch { /* ignore */ }
         setTimeout(() => {
+            if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
             const btn = document.getElementById('quick-add-toolbar-btn');
             if (btn) btn.classList.add('first-bookmark-pulse');
             setTimeout(() => btn?.classList.remove('first-bookmark-pulse'), 4000);
@@ -1631,6 +1660,7 @@ class Dashboard {
             serverCompleted: dash.settings?.onboardingCompleted === true,
             settings: dash.settings,
             language: dash.language,
+            mobileCompact: window.MobileExperience?.shouldSkipHeavyUi?.() === true,
             onApplySettings: (nextSettings) => {
                 dash.settings = nextSettings;
                 dash.setupDOM();
@@ -1643,11 +1673,13 @@ class Dashboard {
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
-                dash.settings.showTips = true;
-                if (window.TipsPolicy && typeof window.TipsPolicy.startPromoPeriod === 'function') {
+                if (dash.settings.showTips !== false) {
+                    dash.settings.showTips = true;
+                }
+                if (dash.settings.showTips !== false && window.TipsPolicy && typeof window.TipsPolicy.startPromoPeriod === 'function') {
                     window.TipsPolicy.startPromoPeriod();
                 }
-                document.body.setAttribute('data-show-tips', 'true');
+                document.body.setAttribute('data-show-tips', dash.areRotatingTipsEnabled() ? 'true' : 'false');
                 await dash.saveSettings();
                 dash.initializeButtonTipsRotation();
                 dash.allowPostInstallTuningThisSession = true;
@@ -1671,6 +1703,7 @@ class Dashboard {
     }
 
     initializeFeatureTour() {
+        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
         const params = new URLSearchParams(window.location.search);
         if (params.has('tour')) {
             params.delete('tour');
@@ -1681,6 +1714,7 @@ class Dashboard {
     }
 
     startFeatureTour(onFinish) {
+        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
         if (typeof window.FeatureTour !== 'function') return;
         if (this.featureTour) this.featureTour.finish?.();
         const dash = this;
@@ -1703,6 +1737,7 @@ class Dashboard {
     }
 
     maybeShowTourSpotlight() {
+        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
         const STORAGE_KEY = 'nextdash:feature-tour-spotlight-v1';
         const showPasteAfterDelay = () => setTimeout(() => this.maybeShowPasteSpotlight(), 2000);
 
@@ -2081,14 +2116,43 @@ class Dashboard {
         overlay.className = 'page-overview-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', 'Page overview');
+
+        const isMobileLayout = window.MobileExperience?.isMobileLayout?.() === true;
+        if (isMobileLayout) {
+            overlay.classList.add('page-overview-overlay--mobile');
+        }
 
         const panel = document.createElement('div');
         panel.className = 'page-overview-panel';
 
         const header = document.createElement('div');
         header.className = 'page-overview-header';
-        header.textContent = 'Pages';
+        const headerTitle = document.createElement('span');
+        headerTitle.className = 'page-overview-header-title';
+        const pagesLabel = this.language?.t('dashboard.pagesOverview');
+        headerTitle.textContent = pagesLabel && pagesLabel !== 'dashboard.pagesOverview'
+            ? pagesLabel
+            : 'Pages';
+        header.appendChild(headerTitle);
+
+        if (isMobileLayout) {
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'page-overview-close';
+            const closeLabel = this.language?.t('dashboard.closePageOverview');
+            closeBtn.setAttribute(
+                'aria-label',
+                closeLabel && closeLabel !== 'dashboard.closePageOverview' ? closeLabel : 'Close'
+            );
+            closeBtn.textContent = '×';
+            header.appendChild(closeBtn);
+        }
+
+        const ariaLabel = this.language?.t('dashboard.pagesOverviewAria');
+        overlay.setAttribute(
+            'aria-label',
+            ariaLabel && ariaLabel !== 'dashboard.pagesOverviewAria' ? ariaLabel : 'Page overview'
+        );
         panel.appendChild(header);
 
         const list = document.createElement('ul');
@@ -2102,7 +2166,11 @@ class Dashboard {
             const li = document.createElement('li');
             li.className = 'page-overview-item' + (page.id === this.currentPageId ? ' is-current' : '');
             li.setAttribute('data-idx', String(idx));
-            li.setAttribute('tabindex', '-1');
+
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'page-overview-link';
+            link.setAttribute('aria-current', page.id === this.currentPageId ? 'page' : 'false');
 
             const numSpan = document.createElement('span');
             numSpan.className = 'page-overview-num';
@@ -2116,15 +2184,16 @@ class Dashboard {
             countSpan.className = 'page-overview-count';
             countSpan.textContent = String(count);
 
-            li.appendChild(numSpan);
-            li.appendChild(nameSpan);
-            li.appendChild(countSpan);
+            link.appendChild(numSpan);
+            link.appendChild(nameSpan);
+            link.appendChild(countSpan);
 
-            li.addEventListener('click', () => {
+            link.addEventListener('click', () => {
                 close();
                 this.loadPageBookmarks(page.id);
             });
 
+            li.appendChild(link);
             list.appendChild(li);
         });
 
@@ -2136,14 +2205,24 @@ class Dashboard {
 
         const setFocus = (idx) => {
             focusedIndex = Math.max(0, Math.min(pages.length - 1, idx));
-            items().forEach((el, i) => el.classList.toggle('is-focused', i === focusedIndex));
-            items()[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+            items().forEach((el, i) => {
+                el.classList.toggle('is-focused', i === focusedIndex);
+                const btn = el.querySelector('.page-overview-link');
+                if (i === focusedIndex) {
+                    btn?.focus({ preventScroll: true });
+                    el.scrollIntoView({ block: 'nearest' });
+                }
+            });
         };
 
         const close = () => {
             overlay.remove();
             document.removeEventListener('keydown', onKey, true);
         };
+
+        if (isMobileLayout) {
+            header.querySelector('.page-overview-close')?.addEventListener('click', close);
+        }
 
         const onKey = (e) => {
             if (e.key === 'Escape' || e.key === ',') {
@@ -2693,7 +2772,7 @@ class Dashboard {
         });
 
         const gridLayout = this.syncDashboardGridLayout();
-        const colCount = gridLayout ? gridLayout.colCount : this.getNormalizedColumnsPerRow();
+        const colCount = gridLayout ? gridLayout.colCount : this.getEffectiveColumnsPerRow();
         const shouldPackColumns = gridLayout ? gridLayout.packed : this.shouldPackDashboardColumns();
         if (shouldPackColumns && columnBlocks.length > 0) {
             const columns = Array.from({ length: colCount }, () => {

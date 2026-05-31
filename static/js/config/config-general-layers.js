@@ -41,6 +41,9 @@ class ConfigGeneralLayers {
         this.applyLayer(this.getStoredLayer(), { updateHash: false });
         this.applyHash(window.location.hash);
         window.addEventListener('hashchange', () => this.applyHash(window.location.hash));
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            window.MobileExperience.applyConfigGeneralPanels(this);
+        }
     }
 
     restructurePanels() {

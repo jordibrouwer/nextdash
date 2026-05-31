@@ -5,6 +5,7 @@
 
 class ConfigManager {
     constructor() {
+        window.MobileExperience?.applyBodyFlag?.();
         // Initialize modules
         this.storage = new ConfigStorage();
         this.data = new ConfigData(this.storage);
@@ -29,6 +30,7 @@ class ConfigManager {
         this.findersData = [];
         this.categoriesData = []; // Categories for the categories tab
         this.bookmarksPageCategories = []; // Categories for the bookmarks tab (read-only)
+        this.categoriesListHydrated = false;
         this.currentBookmarksCategoryFilter = '__all__';
         this.currentBookmarksSort = 'default';
         this.currentBookmarksSearch = '';
@@ -122,10 +124,12 @@ class ConfigManager {
     }
 
     async init() {
+        window.MobileExperience?.initConfig?.();
         await this.loadData();
         // Align categories page with bookmarks page before first render
         this.currentCategoriesPageId = parseInt(this.currentPageId) || 1;
         await this.language.init(this.settingsData.language);
+        window.MobileExperience?.refreshBannerTranslations?.();
         if (typeof ConfigStats === 'function') {
             this.stats = new ConfigStats(this.language.t.bind(this.language));
         }
@@ -400,16 +404,41 @@ class ConfigManager {
 
     async loadPageCategories(pageId) {
         try {
-            this.currentCategoriesPageId = parseInt(pageId);
+            this.currentCategoriesPageId = parseInt(pageId, 10);
             this.categoriesData = (await this.data.loadCategoriesByPage(pageId)).map(cat => ({ ...cat }));
+
+            const bookmarksForPage = Number(pageId) === Number(this.currentPageId)
+                ? this.bookmarksData
+                : await this.data.loadBookmarksByPage(pageId);
+
+            if (this.categoriesData.length === 0 && this.bookmarksReferenceCategories(bookmarksForPage)) {
+                this.categoriesData = this.rebuildCategoriesFromBookmarkRefs(bookmarksForPage);
+                if (this.categoriesData.length > 0) {
+                    try {
+                        await this.data.saveCategoriesByPage(this.categoriesData, this.currentCategoriesPageId);
+                        this.ui.showNotification(
+                            this.language.t('config.categoriesRecovered') || 'Recovered missing categories from bookmark references.',
+                            'success'
+                        );
+                    } catch (recoverErr) {
+                        console.error('Failed to persist recovered categories:', recoverErr);
+                    }
+                }
+            }
+
             const categoryIdMap = this.ensureStableCategoryIds(this.categoriesData);
             if (categoryIdMap.size > 0) {
-                this.reassignBookmarkCategoriesFromMap(categoryIdMap, this.bookmarksData);
+                this.reassignBookmarkCategoriesFromMap(categoryIdMap, bookmarksForPage);
+                if (Number(pageId) === Number(this.currentPageId)) {
+                    this.bookmarksData = bookmarksForPage;
+                }
             }
+
             this.categories.render(this.categoriesData, this.generateId.bind(this));
             this.categories.initReorder(this.categoriesData, (newCategories) => {
                 this.categoriesData = newCategories;
             });
+            this.categoriesListHydrated = true;
         } catch (error) {
             this.ui.showErrorWithReload(this.language.t('config.errorLoadingCategories'));
         }
@@ -2777,6 +2806,74 @@ class ConfigManager {
         return categories;
     }
 
+    bookmarksReferenceCategories(bookmarks) {
+        if (!Array.isArray(bookmarks)) return false;
+        return bookmarks.some((bookmark) => String(bookmark?.category || '').trim() !== '');
+    }
+
+    rebuildCategoriesFromBookmarkRefs(bookmarks) {
+        if (!Array.isArray(bookmarks)) return [];
+        const ids = [];
+        const seen = new Set();
+        bookmarks.forEach((bookmark) => {
+            const id = String(bookmark?.category || '').trim();
+            if (!id || seen.has(id)) return;
+            seen.add(id);
+            ids.push(id);
+        });
+        return ids.map((id) => ({
+            id,
+            originalId: id,
+            name: this.formatRecoveredCategoryName(id),
+            icon: ''
+        }));
+    }
+
+    formatRecoveredCategoryName(categoryId) {
+        const slug = String(categoryId || '').trim();
+        if (!slug) return 'Category';
+        if (slug.startsWith('cat_')) {
+            return slug.slice(4).replace(/_/g, ' ') || slug;
+        }
+        return slug.replace(/-/g, ' ').replace(/_/g, ' ');
+    }
+
+    async getBookmarksForPage(pageId) {
+        const pid = parseInt(pageId, 10);
+        if (Number(pid) === Number(this.currentPageId)) {
+            return this.bookmarksData;
+        }
+        return this.data.loadBookmarksByPage(pid);
+    }
+
+    async resolveCategoriesForSave(pageId) {
+        const pid = parseInt(pageId, 10);
+        if (!Number.isFinite(pid) || pid < 1) return null;
+
+        const fromDom = this.getCategoriesFromDOM();
+        const domMatchesPage = Number(this.currentCategoriesPageId) === pid;
+        let categories = null;
+
+        if (domMatchesPage && Array.isArray(fromDom) && fromDom.length > 0) {
+            categories = fromDom.map((cat) => ({ ...cat }));
+        } else if (domMatchesPage && Array.isArray(this.categoriesData) && this.categoriesData.length > 0) {
+            categories = this.categoriesData.map((cat) => ({ ...cat }));
+        } else if (domMatchesPage && this.categoriesListHydrated && Array.isArray(fromDom) && fromDom.length === 0) {
+            categories = [];
+        } else {
+            return null;
+        }
+
+        if (categories.length === 0) {
+            const bookmarks = await this.getBookmarksForPage(pid);
+            if (this.bookmarksReferenceCategories(bookmarks)) {
+                return null;
+            }
+        }
+
+        return categories;
+    }
+
     generateStableCategoryId() {
         return `cat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
     }
@@ -2854,8 +2951,8 @@ class ConfigManager {
             await this.data.saveFinders(this.findersData);
             
             if (this.currentCategoriesPageId) {
-                const categoriesForSelectedPage = this.getCategoriesFromDOM();
-                if (categoriesForSelectedPage && categoriesForSelectedPage.length >= 0) {
+                const categoriesForSelectedPage = await this.resolveCategoriesForSave(this.currentCategoriesPageId);
+                if (categoriesForSelectedPage !== null) {
                     await this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId);
                 }
             }

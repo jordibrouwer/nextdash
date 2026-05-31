@@ -164,6 +164,11 @@ class Modal {
         if (this.activeModalClasses.length > 0) {
             this.modalPanel.classList.add(...this.activeModalClasses);
         }
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            this.modalPanel.classList.add('modal--mobile-sheet');
+        } else {
+            this.modalPanel.classList.remove('modal--mobile-sheet');
+        }
 
         this.previousModalStyles = {
             maxWidth: this.modalPanel.style.maxWidth,
@@ -208,6 +213,7 @@ class Modal {
                 this.modalPanel.classList.remove(...this.activeModalClasses);
             }
             this.activeModalClasses = [];
+            this.modalPanel.classList.remove('modal--mobile-sheet');
 
             if (this.previousModalStyles) {
                 this.modalPanel.style.maxWidth = this.previousModalStyles.maxWidth;

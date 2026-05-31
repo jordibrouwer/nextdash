@@ -3,6 +3,11 @@ class Onboarding {
         this.hasBookmarks = options.hasBookmarks === true;
         this.settings = options.settings || {};
         this.language = options.language || null;
+        this.serverCompleted = options.serverCompleted === true;
+        this.onPersist = typeof options.onPersist === 'function' ? options.onPersist : null;
+        this.onApplySettings = typeof options.onApplySettings === 'function' ? options.onApplySettings : null;
+        this.mobileCompact = options.mobileCompact === true
+            || (typeof window.MobileExperience?.shouldSkipHeavyUi === 'function' && window.MobileExperience.shouldSkipHeavyUi());
         this.localSettings = this.buildInitialSettings(options.settings || {});
         this.steps = this.buildSteps();
         this.currentStep = 0;
@@ -13,9 +18,6 @@ class Onboarding {
         this.version = 2;
         this.storageSeenKey = 'nextDashOnboardingSeenV2';
         this.storageVersionKey = 'nextDashOnboardingVersionV2';
-        this.serverCompleted = options.serverCompleted === true;
-        this.onPersist = typeof options.onPersist === 'function' ? options.onPersist : null;
-        this.onApplySettings = typeof options.onApplySettings === 'function' ? options.onApplySettings : null;
         this.persisted = false;
     }
 
@@ -45,6 +47,9 @@ class Onboarding {
     }
 
     buildSteps() {
+        if (this.mobileCompact) {
+            return this.buildMobileSteps();
+        }
         return [
             {
                 title: this.t('onboarding.welcomeTitle', 'Welcome to nextDash'),
@@ -221,9 +226,73 @@ class Onboarding {
         ];
     }
 
+    buildMobileSteps() {
+        return [
+            {
+                title: this.t('onboarding.mobileWelcomeTitle', 'Welcome to nextDash'),
+                body: this.t(
+                    'onboarding.mobileWelcomeBody',
+                    'Quick mobile setup — language and theme. Full settings are available on a computer or tablet.'
+                ),
+                selector: '.header-top',
+                primaryLabel: this.t('onboarding.startSetup', 'Start setup')
+            },
+            {
+                title: this.t('onboarding.mobileLanguageThemeTitle', 'Language & theme'),
+                body: this.t('onboarding.mobileLanguageThemeBody', 'Pick your language and dashboard theme.'),
+                selector: '#search-button',
+                placement: 'top',
+                fields: [
+                    {
+                        id: 'language',
+                        type: 'select',
+                        label: this.t('onboarding.languageLabel', 'Language'),
+                        options: [
+                            { value: 'en', label: 'English' },
+                            { value: 'nl', label: 'Nederlands' },
+                            { value: 'de', label: 'Deutsch' },
+                            { value: 'fr', label: 'Français' }
+                        ]
+                    },
+                    {
+                        id: 'theme',
+                        type: 'select',
+                        label: this.t('onboarding.mobileThemeLabel', 'Theme'),
+                        options: [
+                            { value: 'cherry-graphite-dark', label: this.t('onboarding.mobileThemeDark', 'Dark') },
+                            { value: 'cherry-graphite-light', label: this.t('onboarding.mobileThemeLight', 'Light') },
+                            { value: 'ocean-dark', label: this.t('onboarding.mobileThemeOceanDark', 'Ocean dark') },
+                            { value: 'ocean-light', label: this.t('onboarding.mobileThemeOceanLight', 'Ocean light') }
+                        ]
+                    },
+                    {
+                        id: 'openInNewTab',
+                        type: 'radio',
+                        label: this.t('onboarding.openLinksLabel', 'Open links in'),
+                        options: [
+                            { value: 'true', label: this.t('onboarding.openLinksNewTab', 'New tab (recommended)') },
+                            { value: 'false', label: this.t('onboarding.openLinksCurrentTab', 'Current tab') }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: this.t('onboarding.mobileFinishTitle', 'Ready on mobile'),
+                body: this.t(
+                    'onboarding.mobileFinishBody',
+                    'Use search to open bookmarks. Swipe left or right to switch pages. Open config on a computer for full settings.'
+                ),
+                selector: '#search-button',
+                placement: 'top',
+                primaryLabel: this.t('onboarding.finishSetup', 'Finish setup')
+            }
+        ];
+    }
+
     buildInitialSettings(settings) {
         return {
             language: settings.language || 'en',
+            theme: settings.theme || 'cherry-graphite-dark',
             openInNewTab: settings.openInNewTab !== false,
             autoDarkMode: settings.autoDarkMode !== false,
             showWeatherWithDate: settings.showWeatherWithDate === true,
@@ -545,6 +614,7 @@ class Onboarding {
         this.collectCurrentStepInputs();
         Object.assign(this.settings, {
             language: this.localSettings.language,
+            theme: this.localSettings.theme,
             openInNewTab: this.localSettings.openInNewTab,
             autoDarkMode: this.localSettings.autoDarkMode,
             showWeatherWithDate: this.localSettings.showWeatherWithDate,

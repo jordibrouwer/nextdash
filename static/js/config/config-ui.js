@@ -84,6 +84,9 @@ class ConfigUI {
             if (typeof configManager !== 'undefined') {
                 if (targetTab === 'bookmarks' || targetTab === 'categories') {
                     configManager.refreshCustomSelects();
+                }
+                if (targetTab === 'categories' && typeof configManager.loadPageCategories === 'function') {
+                    void configManager.loadPageCategories(configManager.currentCategoriesPageId);
                 } else if (targetTab === 'stats' && configManager.stats) {
                     configManager.stats.refresh(configManager);
                 } else if (targetTab === 'keyboard' && configManager.keyboard) {
@@ -100,11 +103,23 @@ class ConfigUI {
 
     const validTabs = ['general', 'colors', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
 
+    const getAllowedTabs = () => {
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            return window.MobileExperience.MOBILE_CONFIG_TABS;
+        }
+        return validTabs;
+    };
+
     const resolveTabFromHash = (hashRaw) => {
         const hash = (hashRaw || '').replace(/^#/, '');
-        if (validTabs.includes(hash)) return hash;
-        if (hash.startsWith('colors')) return 'colors';
-        if (hash.startsWith('general')) return 'general';
+        const allowed = getAllowedTabs();
+        if (allowed.includes(hash)) return hash;
+        if (hash.startsWith('colors') && allowed.includes('colors')) return 'colors';
+        if (hash.startsWith('general') && allowed.includes('general')) return 'general';
+        if (window.MobileExperience?.isMobileLayout?.() && allowed.includes('general')) return 'general';
+        if (validTabs.includes(hash)) return null;
+        if (hash.startsWith('colors')) return allowed.includes('colors') ? 'colors' : (allowed[0] || 'general');
+        if (hash.startsWith('general')) return allowed.includes('general') ? 'general' : (allowed[0] || 'general');
         return null;
     };
 
@@ -144,6 +159,7 @@ class ConfigUI {
         tabButtons.forEach(button => {
             button.addEventListener('click', async () => {
                 const targetTab = button.getAttribute('data-tab');
+                if (!getAllowedTabs().includes(targetTab)) return;
                 if (targetTab === this._currentTab) return;
                 if (typeof configManager?.guardColorsTabLeave === 'function') {
                     const allowed = await configManager.guardColorsTabLeave(targetTab);

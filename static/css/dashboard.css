@@ -2157,6 +2157,10 @@ body.no-animations .bookmarks-list.reorder-container::after {
 }
 
 .page-overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 0.65rem 1rem;
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-bold);
@@ -2167,27 +2171,75 @@ body.no-animations .bookmarks-list.reorder-container::after {
     flex-shrink: 0;
 }
 
+.page-overview-header-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.page-overview-close {
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.35rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.page-overview-close:hover,
+.page-overview-close:focus-visible {
+    color: var(--text-primary);
+    outline: none;
+    border-color: var(--text-primary);
+}
+
 .page-overview-list {
     list-style: none;
     margin: 0;
     padding: 0.3rem 0;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .page-overview-item {
+    margin: 0;
+    padding: 0;
+}
+
+.page-overview-link {
     display: grid;
     grid-template-columns: 1.6rem 1fr auto;
     align-items: center;
     gap: 0.5rem;
+    width: 100%;
+    margin: 0;
     padding: 0.55rem 1rem;
+    border: none;
+    background: transparent;
     cursor: pointer;
+    font: inherit;
     font-size: var(--font-size-controls);
+    text-align: left;
+    color: inherit;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.1s ease;
 }
 
-.page-overview-item:hover,
-.page-overview-item.is-focused {
+.page-overview-link:hover,
+.page-overview-link:focus-visible,
+.page-overview-item.is-focused .page-overview-link {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    outline: none;
+}
+
+.page-overview-link:active {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
 .page-overview-item.is-current .page-overview-name {
