@@ -26,6 +26,42 @@ code {
     padding-left: 1.5rem;
 }
 
+.help-search-label {
+    display: block;
+    margin: 0 0 0.35rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.help-search-filter {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 1rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-controls);
+    outline: none;
+}
+
+.help-search-filter:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.help-search-filter::placeholder {
+    color: var(--text-tertiary);
+}
+
+.help-search-empty {
+    margin: -0.5rem 0 1rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+}
+
 .help-layout {
     display: grid;
     grid-template-columns: 260px 1fr;

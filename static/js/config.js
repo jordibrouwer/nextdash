@@ -1019,6 +1019,7 @@ class ConfigManager {
         this.setupAutosaveLowRiskFields();
         this.setupStickySaveBar();
         this.setupNavigationGuards();
+        window.ConfigHelpSearch?.init(this.language);
         this.updateHealthBadge();
         // Initialize theme icon styling controls
         try {
