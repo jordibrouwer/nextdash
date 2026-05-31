@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v32';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v33';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -80,6 +80,41 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.05.6', 'May 2026', [
+                {
+                    title: 'Pages & persistence',
+                    items: [
+                        { badge: 'fix', text: '<strong>Page 1 / “main” after restart</strong> — empty page names and missing page-1 metadata are normalised on load and save, so Config → Pages always shows your first page correctly after a server restart.' },
+                        { badge: 'new', text: '<strong>Auto-repair on open</strong> — the config pages tab detects stale page data and persists repairs when needed, without manual edits.' },
+                    ]
+                },
+                {
+                    title: 'Bookmarks UX',
+                    items: [
+                        { badge: 'new', text: '<strong>Mobile + Bookmark</strong> — the footer <em>+ Bookmark</em> button is easier to spot on phones; config bookmarks empty state points to the same actions on mobile.' },
+                        { badge: 'new', text: '<strong>Smarter empty states</strong> — touch devices no longer show keyboard shortcuts in empty libraries; desktop empty states mention <kbd>+</kbd> quick-add and <kbd>&amp;</kbd> / <kbd>Ctrl+Shift+A</kbd> for the full form.' },
+                        { badge: 'new', text: '<strong>Conflict hints when it matters</strong> — duplicate URL and shortcut warnings in the add modal, inline edit, and config detail panel appear only after you type a value — not on empty fields.' },
+                        { badge: 'new', text: '<strong>Detail panel i18n</strong> — move, fetch favicon, tags, pinned/status toggles, and related hints are translated (EN / NL / DE / FR).' },
+                        { badge: 'new', text: '<strong>Unified add-bookmark form</strong> — dashboard quick-add, <kbd>&amp;</kbd> / <kbd>Ctrl+Shift+A</kbd> modal, and <code>:new</code> share the same full form with dashboard + link preview strips.' },
+                    ]
+                },
+                {
+                    title: 'Shortcuts & docs',
+                    items: [
+                        { badge: 'new', text: '<strong>One shortcut story everywhere</strong> — cheat sheet, tooltips, help, and empty states agree: <kbd>+</kbd> = quick-add line; <kbd>&amp;</kbd> / <kbd>Ctrl+Shift+A</kbd> = full new-bookmark modal; <code>:new</code> = same modal from command mode.' },
+                        { badge: 'new', text: '<strong>Config → Keyboard tab</strong> — a read-only <em>Bookmarks</em> section at the top lists those default add-bookmark shortcuts (matches the cheat sheet). Rebindable dashboard keys stay below.' },
+                    ]
+                },
+                {
+                    title: 'Browser extension',
+                    items: [
+                        { badge: 'fix', text: '<strong>Same page list as config</strong> — the popup normalises pages like the dashboard config tab; page 1 is never missing from the picker.' },
+                        { badge: 'new', text: '<strong>Duplicate URL hint</strong> — typing a URL that already exists on the selected page shows an inline warning (same pattern as the add modal) instead of a “save anyway?” confirm dialog.' },
+                        { badge: 'new', text: '<strong>Link preview in popup</strong> — optional dashboard and link preview strips while saving from the browser toolbar.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.5', 'May 2026', [
                 {

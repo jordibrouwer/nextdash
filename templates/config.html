@@ -1753,10 +1753,13 @@
                         </section>
 
                         <section id="help-whats-new" class="help-block" lang="en">
-                            <h3 class="section-title">What&#39;s New</h3>
-                            <p class="help-block-intro">A short recap of recent dashboard and config changes.</p>
-                            <ul>
-                                <li>Recent features are summarized below.</li>
+                            <h3 class="section-title" data-i18n="config.helpPageWhatsNewTitle">What&#39;s New</h3>
+                            <p class="help-block-intro" data-i18n="config.helpPageWhatsNewIntro">A short recap of recent dashboard and config changes.</p>
+                            <ul data-i18n="config.helpPageWhatsNewItems">
+                                <li><strong>Page 1 / “main”</strong> — page metadata is normalised on load so Config → Pages stays correct after a restart.</li>
+                                <li><strong>Bookmark shortcuts</strong> — <code>+</code> quick-add; <code>&amp;</code> / <code>Ctrl+Shift+A</code> full modal; listed at the top of Config → Keyboard.</li>
+                                <li><strong>Mobile &amp; empty states</strong> — prominent <em>+ Bookmark</em> on touch; conflict hints only when URL/shortcut fields are filled.</li>
+                                <li><strong>Extension</strong> — inline duplicate-URL hint in the popup; page list matches config.</li>
                             </ul>
                             <p class="help-block-action">
                                 <button type="button" id="help-open-whats-new-btn" class="btn btn-secondary btn-small">Show what&#39;s new</button>

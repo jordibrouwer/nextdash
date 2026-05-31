@@ -76,7 +76,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 **Bookmarks**
 - `+` — quick-add omnibox: type `name | url | shortcut` in one line
-- `&` — open the full new-bookmark modal
+- `&` — open the full new-bookmark modal (dashboard only, when no input is focused)
+- `Ctrl + Shift + A` — same full new-bookmark modal from anywhere
 - `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
@@ -93,7 +94,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `! or F1 or Ctrl+/` — keyboard cheat sheet (filterable with a type-to-search input)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
-- `:new` — open new-bookmark modal
+- `:new` — open new-bookmark modal (same as `&` / `Ctrl+Shift+A`)
 - `:note` — edit the note of the focused bookmark
 - `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
 - `:tag <tagname>` — add or remove a tag on the selected bookmark
@@ -239,6 +240,30 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### v2026.05.6 — May 2026
+
+**Pages & persistence**
+- **Page 1 / “main” after restart** — empty page names and missing page-1 metadata are normalised on load and save, so Config → Pages always shows your first page correctly after a server restart.
+- **Auto-repair on open** — the config pages tab detects stale page data and persists repairs when needed.
+
+**Bookmarks UX**
+- **Mobile + Bookmark** — the footer *+ Bookmark* button is easier to spot on phones; config bookmarks empty state points to the same actions on mobile.
+- **Smarter empty states** — touch devices no longer show keyboard shortcuts in empty libraries; desktop empty states mention `+` quick-add and `&` / `Ctrl+Shift+A` for the full form.
+- **Conflict hints when it matters** — duplicate URL and shortcut warnings in the add modal, inline edit, and config detail panel appear only after you type a value.
+- **Detail panel i18n** — move, fetch favicon, tags, pinned/status toggles, and related hints are translated (EN / NL / DE / FR).
+- **Unified add-bookmark form** — dashboard quick-add, `&` / `Ctrl+Shift+A` modal, and `:new` share the same full form with dashboard + link preview strips.
+
+**Shortcuts & docs**
+- **One shortcut story everywhere** — cheat sheet, tooltips, help, and empty states agree: `+` = quick-add line; `&` / `Ctrl+Shift+A` = full new-bookmark modal; `:new` = same modal from command mode.
+- **Config → Keyboard tab** — a read-only *Bookmarks* section at the top lists those default add-bookmark shortcuts (matches the cheat sheet).
+
+**Browser extension**
+- **Same page list as config** — the popup normalises pages like the dashboard config tab; page 1 is never missing from the picker.
+- **Duplicate URL hint** — typing a URL that already exists on the selected page shows an inline warning (same pattern as the add modal) instead of a “save anyway?” confirm dialog.
+- **Link preview in popup** — optional dashboard and link preview strips while saving from the browser toolbar.
+
+---
 
 ### v2026.05.5 — May 2026
 
