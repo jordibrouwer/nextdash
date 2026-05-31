@@ -4474,12 +4474,18 @@ class Dashboard {
         const shortcutConflictHint = document.createElement('span');
         shortcutConflictHint.className = 'bookmark-inline-conflict';
         shortcutConflictHint.hidden = true;
-        shortcutConflictHint.textContent = 'Shortcut already in use';
+        shortcutConflictHint.textContent = this.language?.t('config.shortcutConflict') || 'Shortcut already in use';
+        const syncShortcutConflict = (value) => {
+            const normalized = String(value || '').trim();
+            const conflict = Boolean(normalized) && this.hasShortcutConflict(normalized, bookmarkRef);
+            shortcutConflictHint.hidden = !conflict;
+            shortcutInput.classList.toggle('field-conflict', conflict);
+        };
         shortcutInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-            const conflict = e.target.value && this.hasShortcutConflict(e.target.value, bookmarkRef);
-            shortcutConflictHint.hidden = !conflict;
+            syncShortcutConflict(e.target.value);
         });
+        syncShortcutConflict(shortcutInput.value);
         const shortcutField = mkField('Shortcut', shortcutInput);
         shortcutField.appendChild(shortcutConflictHint);
         form.appendChild(shortcutField);

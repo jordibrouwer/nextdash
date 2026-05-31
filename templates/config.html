@@ -1183,8 +1183,8 @@
                             <div class="bookmark-detail-header">
                                 <span class="bookmark-detail-title" id="bookmark-detail-title">Bookmark</span>
                                 <div class="bookmark-detail-header-actions">
-                                    <button type="button" id="bookmark-detail-move-btn" class="btn btn-secondary btn-small" data-tooltip="Move to page">→ Move</button>
-                                    <button type="button" id="bookmark-detail-delete-btn" class="btn btn-danger btn-small btn-icon-only" data-tooltip="Delete bookmark" aria-label="Delete bookmark">
+                                    <button type="button" id="bookmark-detail-move-btn" class="btn btn-secondary btn-small" data-i18n="config.detailMoveBtn" data-i18n-tooltip="config.moveBookmark">→ Move</button>
+                                    <button type="button" id="bookmark-detail-delete-btn" class="btn btn-danger btn-small btn-icon-only" data-i18n-tooltip="config.detailDeleteAria" data-i18n-aria="config.detailDeleteAria" title="Delete bookmark" aria-label="Delete bookmark">
                                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                             <path d="M6 7h12v2H6V7zm2 3h8l-1 10H9L8 10zm3-6h2l1 2h5v2H5V6h5l1-2z"></path>
                                         </svg>
@@ -1194,17 +1194,17 @@
 
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-name" data-i18n="config.bookmarkNamePlaceholder">Name</label>
-                                <input type="text" id="detail-name" class="bookmark-detail-input" placeholder="Bookmark name" autocomplete="off">
+                                <input type="text" id="detail-name" class="bookmark-detail-input" data-i18n-placeholder="config.bookmarkNamePlaceholder" placeholder="Bookmark name" autocomplete="off">
                             </div>
 
                             <div class="bookmark-detail-section">
-                                <label class="bookmark-detail-label" for="detail-url">URL</label>
+                                <label class="bookmark-detail-label" for="detail-url" data-i18n="config.urlLabelShort">URL</label>
                                 <div class="bookmark-detail-url-row">
-                                    <input type="url" id="detail-url" class="bookmark-detail-input" placeholder="https://example.com" autocomplete="off">
-                                    <button type="button" id="detail-meta-refresh-btn" class="btn btn-secondary btn-small" data-tooltip="Fetch favicon from URL" aria-label="Fetch favicon">
+                                    <input type="url" id="detail-url" class="bookmark-detail-input" data-i18n-placeholder="config.detailUrlPlaceholder" placeholder="https://example.com" autocomplete="off">
+                                    <button type="button" id="detail-meta-refresh-btn" class="btn btn-secondary btn-small" data-i18n-tooltip="config.detailFetchFaviconTooltip" data-i18n-aria="config.detailFetchFaviconTooltip" title="Fetch favicon from URL" aria-label="Fetch favicon">
                                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="width:.85rem;height:.85rem;fill:currentColor;display:inline-block;vertical-align:middle;margin-right:.3rem;">
                                             <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.83 2.83H22V4l-4.35 4.35z"></path>
-                                        </svg>Fetch favicon
+                                        </svg><span data-i18n="config.detailFetchFaviconBtn">Fetch favicon</span>
                                     </button>
                                 </div>
                                 <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden data-i18n="config.urlConflictHint">This URL already exists on this page.</p>
@@ -1238,7 +1238,7 @@
 
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-shortcut" data-i18n="config.bookmarkShortcutPlaceholder">Shortcut</label>
-                                <input type="text" id="detail-shortcut" class="bookmark-detail-input bookmark-detail-shortcut" placeholder="ABC" maxlength="5" autocomplete="off">
+                                <input type="text" id="detail-shortcut" class="bookmark-detail-input bookmark-detail-shortcut" data-i18n-placeholder="config.detailShortcutPlaceholder" placeholder="ABC" maxlength="5" autocomplete="off">
                                 <p id="detail-shortcut-conflict-msg" class="bookmark-detail-conflict-msg" hidden data-i18n="config.shortcutConflict">Shortcut already in use</p>
                             </div>
 
@@ -1250,31 +1250,31 @@
                                     </span>
                                     <div class="bookmark-detail-icon-actions">
                                         <input type="file" id="detail-icon-file" accept="image/*,.ico,.svg,.webp" hidden>
-                                        <button type="button" id="detail-icon-upload-btn" class="btn btn-secondary btn-small" data-tooltip="Upload icon">Upload</button>
-                                        <button type="button" id="detail-icon-clear-btn" class="btn btn-secondary btn-small" data-tooltip="Remove icon" disabled>Clear</button>
+                                        <button type="button" id="detail-icon-upload-btn" class="btn btn-secondary btn-small" data-i18n="config.detailUploadIconBtn" data-i18n-tooltip="config.detailUploadIconTooltip">Upload</button>
+                                        <button type="button" id="detail-icon-clear-btn" class="btn btn-secondary btn-small" data-i18n="config.detailClearIconBtn" data-i18n-tooltip="config.clearIcon" disabled>Clear</button>
                                     </div>
                                 </div>
                                 <div class="bookmark-detail-icon-url-row">
-                                    <input type="url" id="detail-icon-url" class="bookmark-detail-input" placeholder="https://.../icon.png">
-                                    <button type="button" id="detail-icon-url-btn" class="btn btn-secondary btn-small" data-tooltip="Set icon from URL">Set URL</button>
+                                    <input type="url" id="detail-icon-url" class="bookmark-detail-input" data-i18n-placeholder="config.detailIconUrlPlaceholder" placeholder="https://.../icon.png">
+                                    <button type="button" id="detail-icon-url-btn" class="btn btn-secondary btn-small" data-i18n="config.detailSetIconUrlBtn" data-i18n-tooltip="config.detailSetIconUrlTooltip">Set URL</button>
                                 </div>
                             </div>
 
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-category" data-i18n="config.category">Category</label>
                                 <select id="detail-category" class="bookmark-detail-select" data-no-custom>
-                                    <option value="">No category</option>
+                                    <option value="" data-i18n="config.noCategory">No category</option>
                                 </select>
                             </div>
 
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-note" data-i18n="bookmark.noteLabel">Note</label>
-                                <textarea id="detail-note" class="bookmark-detail-input bookmark-detail-note" placeholder="Optional note…" rows="3" autocomplete="off"></textarea>
+                                <textarea id="detail-note" class="bookmark-detail-input bookmark-detail-note" data-i18n-placeholder="config.detailNotePlaceholder" placeholder="Optional note…" rows="3" autocomplete="off"></textarea>
                             </div>
 
                             <div class="bookmark-detail-section">
-                                <label class="bookmark-detail-label" for="detail-tags">Tags</label>
-                                <input type="text" id="detail-tags" class="bookmark-detail-input" placeholder="work, dev, personal…" autocomplete="off">
+                                <label class="bookmark-detail-label" for="detail-tags" data-i18n="config.detailTagsLabel">Tags</label>
+                                <input type="text" id="detail-tags" class="bookmark-detail-input" data-i18n-placeholder="config.detailTagsPlaceholder" placeholder="work, dev, personal…" autocomplete="off">
                                 <span class="bookmark-detail-field-hint" data-i18n="config.tagsFieldHint">Comma-separated. Used for filtering and dynamic collections.</span>
                             </div>
 

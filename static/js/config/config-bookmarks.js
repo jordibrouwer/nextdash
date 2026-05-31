@@ -374,7 +374,7 @@ class ConfigBookmarks {
 
     _populateDetailPanel(index, bookmark, bookmarks, categories) {
         const title = document.getElementById('bookmark-detail-title');
-        if (title) title.textContent = bookmark.name || 'Bookmark';
+        if (title) title.textContent = bookmark.name || this.t('config.detailBookmarkFallback') || 'Bookmark';
 
         const nameEl = document.getElementById('detail-name');
         if (nameEl) nameEl.value = bookmark.name || '';
@@ -526,7 +526,7 @@ class ConfigBookmarks {
                 + (bookmark.tags?.length > 0 ? `<span class="bookmark-row-badge is-active" title="${this._escHtml((bookmark.tags || []).join(', '))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3H5a2 2 0 0 0-2 2v4.5a1 1 0 0 0 .29.71l9 9a1 1 0 0 0 1.42 0l6-6a1 1 0 0 0 0-1.42l-9-9A1 1 0 0 0 9.5 3Z"/><circle cx="6.5" cy="6.5" r="0.5" fill="currentColor"/></svg></span>` : '');
         }
         const titleEl = document.getElementById('bookmark-detail-title');
-        if (titleEl && this.activeDetailIndex === index) titleEl.textContent = bookmark.name || 'Bookmark';
+        if (titleEl && this.activeDetailIndex === index) titleEl.textContent = bookmark.name || this.t('config.detailBookmarkFallback') || 'Bookmark';
         if (this.activeDetailIndex === index) {
             this._updateDashboardPreview(bookmark);
             this._updateLinkPreviewCard(bookmark);
