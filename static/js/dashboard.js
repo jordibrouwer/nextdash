@@ -303,6 +303,7 @@ class Dashboard {
         this.initializeOnboarding();
         this.initializeFeatureTour();
         this.discoverabilityQueue?.scheduleRun();
+        window.PwaInstallHint?.scheduleShow?.();
     }
 
     setupExtensionBookmarkSavedListener() {
@@ -1686,6 +1687,7 @@ class Dashboard {
                 dash.allowPostInstallTuningThisSession = true;
                 window.PostSetupTiming?.recordOnboardingCompletedAt?.();
                 dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
+                window.PwaInstallHint?.scheduleShow?.({ afterOnboarding: true });
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
