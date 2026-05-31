@@ -1,82 +1,89 @@
 /**
- * Unified toast/notification helper for dashboard, config, and colors pages.
+ * Unified toast/notification helper for dashboard, config, colors, and health pages.
  */
 const AppNotification = {
     _timeout: null,
+    _progressTimeout: null,
 
-    _resolveHost() {
-        return document.getElementById('notification') || document.getElementById('error-notification');
+    ensureHost() {
+        let host = document.getElementById('app-notification');
+        if (host) return host;
+
+        host = document.createElement('div');
+        host.id = 'app-notification';
+        host.className = 'app-notification';
+        host.setAttribute('role', 'status');
+        host.setAttribute('aria-live', 'polite');
+        host.setAttribute('aria-hidden', 'true');
+        host.innerHTML = `
+            <span class="app-notification-text"></span>
+            <button type="button" class="app-notification-action" hidden></button>
+        `;
+
+        const mount = () => {
+            if (!document.body.contains(host)) {
+                document.body.appendChild(host);
+            }
+        };
+        if (document.body) {
+            mount();
+        } else {
+            document.addEventListener('DOMContentLoaded', mount, { once: true });
+        }
+        return host;
     },
 
-    _resolveMessageEl(host) {
-        if (!host) return null;
-        return host.querySelector('#notification-message')
-            || host.querySelector('.notification-text')
-            || (host.id === 'notification' ? host.querySelector('span') : null);
+    _messageEl(host) {
+        return host?.querySelector('.app-notification-text');
     },
 
-    _resolveActionEl(host) {
-        if (!host) return null;
-        return host.querySelector('#notification-action') || host.querySelector('.notification-undo-btn');
+    _actionEl(host) {
+        return host?.querySelector('.app-notification-action');
+    },
+
+    _resolveReloadLabel(options = {}) {
+        if (options.reloadLabel) return options.reloadLabel;
+        const langObj = window.dashboardInstance?.language
+            || window.configManager?.language
+            || window.healthLanguage;
+        if (langObj?.t) {
+            for (const key of ['dashboard.reloadPage', 'config.reloadPage', 'health.reloadPage', 'colors.reloadPage']) {
+                const val = langObj.t(key);
+                if (typeof val === 'string' && val !== key) return val;
+            }
+        }
+        const lang = document.documentElement.getAttribute('data-lang') || 'en';
+        const fallbacks = { en: 'Reload page', nl: 'Pagina herladen', de: 'Seite neu laden', fr: 'Recharger la page' };
+        return fallbacks[lang] || fallbacks.en;
     },
 
     show(message, type = 'success', options = {}) {
-        const host = this._resolveHost();
-        const messageEl = this._resolveMessageEl(host);
+        const host = this.ensureHost();
+        const messageEl = this._messageEl(host);
+        const actionEl = this._actionEl(host);
         if (!host || !messageEl) return;
 
         const normalized = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
+        const persist = options.persist === true;
 
-        if (host.id === 'error-notification') {
-            host.innerHTML = '';
-            const textNode = document.createElement('span');
-            textNode.className = 'notification-text';
-            textNode.textContent = message;
-            host.appendChild(textNode);
-            const actionEl = this._resolveActionEl(host);
-            if (options && typeof options.onAction === 'function') {
-                const undoBtn = document.createElement('button');
-                undoBtn.type = 'button';
-                undoBtn.className = 'notification-undo-btn';
-                undoBtn.textContent = options.actionLabel || options.undoLabel || 'Undo';
-                undoBtn.addEventListener('click', () => {
-                    this.hide();
+        messageEl.textContent = message;
+        host.className = `app-notification ${normalized}`;
+        if (persist) host.classList.add('persist');
+        if (options.onAction) host.classList.add('has-action');
+        host.classList.add('show');
+        host.setAttribute('aria-hidden', 'false');
+
+        if (actionEl) {
+            actionEl.hidden = true;
+            actionEl.textContent = '';
+            actionEl.onclick = null;
+            if (typeof options.onAction === 'function') {
+                actionEl.hidden = false;
+                actionEl.textContent = options.actionLabel || options.undoLabel || 'Undo';
+                actionEl.onclick = () => {
                     options.onAction();
-                });
-                host.appendChild(undoBtn);
-                host.classList.add('has-undo');
-            } else {
-                host.classList.remove('has-undo');
-            }
-            host.classList.remove('success', 'error', 'warning', 'info', 'notification-success', 'notification-error', 'notification-warning', 'notification-info');
-            if (normalized === 'success') host.classList.add('success');
-            if (normalized === 'error') host.classList.add('error');
-            if (normalized === 'warning') host.classList.add('warning');
-            if (normalized === 'info') host.classList.add('info');
-            requestAnimationFrame(() => {
-                host.classList.add('show');
-                host.setAttribute('aria-hidden', 'false');
-            });
-        } else {
-            messageEl.textContent = message;
-            host.className = `notification ${normalized}`;
-            host.classList.add('show');
-            host.setAttribute('role', 'status');
-            host.setAttribute('aria-live', 'polite');
-
-            const actionEl = this._resolveActionEl(host);
-            if (actionEl) {
-                actionEl.hidden = true;
-                actionEl.textContent = '';
-                actionEl.onclick = null;
-                if (options && typeof options.onAction === 'function') {
-                    actionEl.hidden = false;
-                    actionEl.textContent = options.actionLabel || options.undoLabel || 'Undo';
-                    actionEl.onclick = () => {
-                        options.onAction();
-                        this.hide();
-                    };
-                }
+                    this.hide();
+                };
             }
         }
 
@@ -85,22 +92,30 @@ const AppNotification = {
             this._timeout = null;
         }
 
-        if (!options.persist) {
+        if (!persist) {
             const duration = Number.isFinite(Number(options.durationMs))
                 ? Number(options.durationMs)
                 : Number.isFinite(Number(options.duration))
                     ? Number(options.duration)
-                    : 3000;
+                    : 5000;
             this._timeout = setTimeout(() => this.hide(), duration);
         }
     },
 
+    showErrorWithReload(message, options = {}) {
+        this.show(message, 'error', {
+            persist: true,
+            actionLabel: this._resolveReloadLabel(options),
+            onAction: () => window.location.reload(),
+        });
+    },
+
     hide() {
-        const host = this._resolveHost();
+        const host = document.getElementById('app-notification');
         if (!host) return;
-        host.classList.remove('show', 'success', 'error', 'warning', 'info', 'has-undo', 'notification-success', 'notification-error', 'notification-warning', 'notification-info');
+        host.classList.remove('show', 'success', 'error', 'warning', 'info', 'has-action', 'persist');
         host.setAttribute('aria-hidden', 'true');
-        const actionEl = this._resolveActionEl(host);
+        const actionEl = this._actionEl(host);
         if (actionEl) {
             actionEl.hidden = true;
             actionEl.textContent = '';
@@ -115,4 +130,9 @@ const AppNotification = {
 
 if (typeof window !== 'undefined') {
     window.AppNotification = AppNotification;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => AppNotification.ensureHost(), { once: true });
+    } else {
+        AppNotification.ensureHost();
+    }
 }

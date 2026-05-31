@@ -587,65 +587,34 @@ class Dashboard {
             // Always load all bookmarks so smart collections can work across pages.
             await this.loadAllBookmarks();
         } catch (error) {
-            this.showErrorNotification('Failed to load dashboard. Please refresh the page.');
+            const msg = this.language?.t?.('dashboard.loadFailed')
+                || 'Failed to load dashboard. Please reload the page.';
+            const translated = (typeof msg === 'string' && msg !== 'dashboard.loadFailed') ? msg : 'Failed to load dashboard. Please reload the page.';
+            if (window.AppNotification?.showErrorWithReload) {
+                window.AppNotification.showErrorWithReload(translated);
+            } else {
+                this.showErrorNotification(translated, { reload: true });
+            }
         }
     }
 
     showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {
-        if (window.AppNotification) {
-            const opts = { duration: durationMs ?? duration };
-            const undo = undoCallback || onAction;
-            if (undo) {
-                opts.onAction = undo;
-                opts.actionLabel = actionLabel || (this.language ? this.language.t('dashboard.undo') : 'Undo');
-            }
-            window.AppNotification.show(message, type, opts);
-            return;
+        if (!window.AppNotification) return;
+        const opts = { duration: durationMs ?? duration };
+        const undo = undoCallback || onAction;
+        if (undo) {
+            opts.onAction = undo;
+            opts.actionLabel = actionLabel || (this.language ? this.language.t('dashboard.undo') : 'Undo');
         }
-        const notification = document.getElementById('error-notification');
-        if (!notification) return;
-
-        notification.classList.remove('show');
-        notification.innerHTML = '';
-
-        const textNode = document.createElement('span');
-        textNode.className = 'notification-text';
-        textNode.textContent = message;
-        notification.appendChild(textNode);
-
-        if (undoCallback) {
-            const undoBtn = document.createElement('button');
-            undoBtn.type = 'button';
-            undoBtn.className = 'notification-undo-btn';
-            undoBtn.textContent = this.language ? this.language.t('dashboard.undo') : 'Undo';
-            undoBtn.addEventListener('click', () => {
-                clearTimeout(this.notificationTimeout);
-                notification.classList.remove('show');
-                notification.setAttribute('aria-hidden', 'true');
-                undoCallback();
-            });
-            notification.appendChild(undoBtn);
-        }
-
-        notification.classList.remove('success', 'has-undo');
-        if (type === 'success') notification.classList.add('success');
-        if (undoCallback) notification.classList.add('has-undo');
-
-        requestAnimationFrame(() => notification.classList.add('show'));
-        notification.setAttribute('aria-hidden', 'false');
-
-        if (this.notificationTimeout) {
-            clearTimeout(this.notificationTimeout);
-        }
-
-        this.notificationTimeout = setTimeout(() => {
-            notification.classList.remove('show', 'success', 'has-undo');
-            notification.setAttribute('aria-hidden', 'true');
-        }, duration);
+        window.AppNotification.show(message, type, opts);
     }
 
-    showErrorNotification(message) {
-        this.showNotification(message, 'error');
+    showErrorNotification(message, options = {}) {
+        if (options.reload && window.AppNotification?.showErrorWithReload) {
+            window.AppNotification.showErrorWithReload(message, options);
+            return;
+        }
+        this.showNotification(message, 'error', options);
     }
 
     loadCollapsedStates() {
@@ -699,7 +668,7 @@ class Dashboard {
                 this.keyboardNavigation.resetToFirst();
             }
         } catch (error) {
-            this.showErrorNotification('Failed to load bookmarks for this page.');
+            this.showErrorNotification('Failed to load bookmarks for this page.', { reload: true });
         }
     }
 

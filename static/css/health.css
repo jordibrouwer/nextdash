@@ -499,3 +499,57 @@ body {
         flex-direction: row;
     }
 }
+
+/* Merge duplicates picker (AppModal) */
+.health-merge-pick-intro {
+    margin: 0 0 0.75rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-text);
+    line-height: 1.45;
+}
+
+.health-merge-pick-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: min(50vh, 22rem);
+    overflow-y: auto;
+}
+
+.health-merge-pick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 0.35rem;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.health-merge-pick-btn:hover {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+}
+
+.health-merge-pick-url {
+    font-weight: var(--font-weight-semibold);
+    word-break: break-all;
+}
+
+.health-merge-pick-names {
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-controls) * 0.92);
+}
+
+.health-merge-pick-meta {
+    color: var(--accent-warning);
+    font-size: calc(var(--font-size-controls) * 0.88);
+}

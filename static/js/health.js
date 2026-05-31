@@ -491,8 +491,8 @@
             }
         });
 
-        document.getElementById('merge-duplicates-btn')?.addEventListener('click', async (e) => {
-            showMergeDuplicatesModal();
+        document.getElementById('merge-duplicates-btn')?.addEventListener('click', () => {
+            showMergeDuplicatesFlow();
         });
     }
 
@@ -507,37 +507,94 @@
         }
     }
 
-    function showMergeDuplicatesModal() {
+    function showMergeDuplicatesFlow() {
         if (!healthState.report?.duplicateGroups?.length) {
-            alert(t('health.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'));
+            showBulkStatus(t('health.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'));
+            return;
+        }
+        pickDuplicateGroup(healthState.report.duplicateGroups).then((group) => {
+            if (group) confirmAndMergeDuplicateGroup(group);
+        });
+    }
+
+    function pickDuplicateGroup(groups) {
+        if (!groups.length) return Promise.resolve(null);
+        if (groups.length === 1) return Promise.resolve(groups[0]);
+
+        return new Promise((resolve) => {
+            const itemsHtml = groups.map((group, idx) => {
+                const count = (group.bookmarks || []).length;
+                const names = (group.bookmarks || []).map((b) => escapeHtml(b.name)).join(', ');
+                return `<button type="button" class="health-merge-pick-btn" data-group-index="${idx}">
+                    <span class="health-merge-pick-url">${escapeHtml(group.url)}</span>
+                    <span class="health-merge-pick-names">${names}</span>
+                    <span class="health-merge-pick-meta">${escapeHtml(t('health.duplicateCount', '{count}x duplicate', { count }))}</span>
+                </button>`;
+            }).join('');
+
+            const htmlMessage = `<p class="health-merge-pick-intro">${escapeHtml(t('health.selectDuplicateGroup', 'Select a duplicate group to merge'))}</p>
+                <div class="health-merge-pick-list">${itemsHtml}</div>`;
+
+            if (!window.AppModal || typeof window.AppModal.show !== 'function') {
+                resolve(groups[0]);
+                return;
+            }
+
+            window.AppModal.show({
+                title: t('health.mergeDuplicateTitle', 'Merge duplicate group'),
+                htmlMessage,
+                showCancel: false,
+                confirmText: t('health.cancel', 'Cancel'),
+                onConfirm: () => resolve(null),
+                modalMaxWidth: '34rem',
+                modalClass: 'health-merge-modal'
+            });
+
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.health-merge-pick-btn').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const idx = parseInt(btn.getAttribute('data-group-index'), 10);
+                        window.AppModal.hide();
+                        resolve(groups[idx]);
+                    });
+                });
+            });
+        });
+    }
+
+    async function confirmAndMergeDuplicateGroup(group) {
+        if (!group?.bookmarks?.length || group.bookmarks.length < 2) {
+            showBulkStatus(t('health.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'));
             return;
         }
 
-        const groups = healthState.report.duplicateGroups;
-        let html = `<h3>${escapeHtml(t('health.selectDuplicateGroup', 'Select a duplicate group to merge'))}</h3><div style="max-height:400px;overflow-y:auto;">`;
-        
-        groups.forEach((group, idx) => {
-            html += `<div style="border:1px solid #ccc;padding:10px;margin:5px 0;cursor:pointer;" data-group-index="${idx}">
-                <strong>${escapeHtml(group.url)}</strong>
-                <p>${(group.bookmarks || []).map(b => escapeHtml(b.name)).join(', ')}</p>
-            </div>`;
-        });
-        html += '</div>';
+        const target = group.bookmarks[0];
+        const sources = group.bookmarks.slice(1);
+        const confirmMessage = t(
+            'health.mergeConfirm',
+            'Merge {count} bookmark(s) with the same URL?\n\nKeeps: "{keep}"\nRemoves: {remove} duplicate(s).',
+            {
+                count: group.bookmarks.length,
+                keep: target.name,
+                remove: sources.length
+            }
+        );
 
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
-        modal.innerHTML = `<div style="background:white;padding:20px;border-radius:8px;max-width:500px;width:90%;">${html}</div>`;
-        
-        modal.querySelectorAll('[data-group-index]').forEach((el) => {
-            el.addEventListener('click', async () => {
-                const groupIdx = parseInt(el.getAttribute('data-group-index'));
-                const group = groups[groupIdx];
-                document.body.removeChild(modal);
-                await performMergeDuplicates(group);
+        let confirmed = true;
+        if (window.AppModal && typeof window.AppModal.confirm === 'function') {
+            confirmed = await window.AppModal.confirm({
+                title: t('health.mergeDuplicateTitle', 'Merge duplicate group'),
+                message: confirmMessage,
+                confirmText: t('health.mergeConfirmBtn', 'Merge duplicates'),
+                cancelText: t('health.cancel', 'Cancel'),
+                confirmClass: 'danger'
             });
-        });
+        } else if (!window.confirm(confirmMessage)) {
+            confirmed = false;
+        }
+        if (!confirmed) return;
 
-        document.body.appendChild(modal);
+        await performMergeDuplicates(group);
     }
 
     async function performMergeDuplicates(group) {
@@ -793,6 +850,7 @@
         if (typeof ConfigLanguage === 'function') {
             healthState.language = new ConfigLanguage();
             await healthState.language.init(document.documentElement.lang || 'en');
+            window.healthLanguage = healthState.language;
             document.title = t('health.pageTitle', 'health beta');
             document.querySelectorAll('[data-i18n-title]').forEach((element) => {
                 const key = element.getAttribute('data-i18n-title');
@@ -842,6 +900,9 @@
             if (summary) {
                 summary.innerHTML = `<div class="health-empty">${escapeHtml(t('health.loadFailed', 'Unable to load the health report.'))}</div>`;
             }
+            window.AppNotification?.showErrorWithReload?.(
+                t('health.loadFailed', 'Unable to load the health report.')
+            );
             if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
                 window.SkeletonLoading.finish();
             } else {

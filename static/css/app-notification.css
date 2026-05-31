@@ -1,0 +1,124 @@
+/* Unified toast / notification host (#app-notification) */
+
+.app-notification {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    max-width: min(380px, calc(100vw - 1.5rem));
+    padding: 0.75rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-main);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    border-radius: 0.35rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity 0.24s ease, visibility 0.24s ease, transform 0.24s ease;
+    z-index: 2001;
+    pointer-events: none;
+}
+
+.app-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.app-notification.has-action {
+    max-width: min(420px, calc(100vw - 1.5rem));
+}
+
+.app-notification.success {
+    color: var(--accent-success);
+    border-color: var(--accent-success);
+}
+
+.app-notification.error {
+    color: var(--accent-error);
+    border-color: var(--accent-error);
+}
+
+.app-notification.warning {
+    color: var(--accent-warning);
+    border-color: var(--accent-warning);
+}
+
+.app-notification.info {
+    color: var(--text-secondary);
+    border-color: var(--border-primary);
+}
+
+.app-notification-text {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+.app-notification-action {
+    flex-shrink: 0;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.55rem;
+    font-size: var(--font-size-controls);
+    font-family: inherit;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.app-notification-action:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.app-notification:not(.persist) {
+    position: fixed;
+}
+
+.app-notification:not(.persist)::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: currentColor;
+    opacity: 0.35;
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+
+.app-notification.show:not(.persist)::after {
+    animation: app-notification-timeout 5s linear forwards;
+}
+
+@keyframes app-notification-timeout {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+@media (max-width: 575px) {
+    .app-notification {
+        right: max(0.75rem, env(safe-area-inset-right));
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+}
+
+body.no-animations .app-notification {
+    transition: none !important;
+    transform: none !important;
+}
+
+body.no-animations .app-notification.show:not(.persist)::after {
+    animation: none !important;
+}

@@ -335,7 +335,7 @@ class ConfigManager {
             
             await this.loadPageBookmarks(this.currentPageId);
         } catch (error) {
-            this.ui.showNotification(this.language.t('config.errorLoadingConfig'), 'error');
+            this.ui.showErrorWithReload(this.language.t('config.errorLoadingConfig'));
         }
     }
 
@@ -358,7 +358,7 @@ class ConfigManager {
             this.refreshBookmarksList({ skipFlush: true });
             this.syncBookmarksPageSelectorUI(this.currentPageId);
         } catch (error) {
-            this.ui.showNotification(this.language.t('config.errorLoadingBookmarks'), 'error');
+            this.ui.showErrorWithReload(this.language.t('config.errorLoadingBookmarks'));
         }
     }
 
@@ -375,7 +375,7 @@ class ConfigManager {
                 this.categoriesData = newCategories;
             });
         } catch (error) {
-            this.ui.showNotification(this.language.t('config.errorLoadingCategories'), 'error');
+            this.ui.showErrorWithReload(this.language.t('config.errorLoadingCategories'));
         }
     }
 
@@ -1324,13 +1324,13 @@ class ConfigManager {
         };
         root.addEventListener('input', (event) => {
             if (this.suppressDirtyTracking) return;
-            if (event.target && event.target.closest('#notification')) return;
+            if (event.target && event.target.closest('#app-notification')) return;
             if (shouldIgnoreTarget(event.target)) return;
             mark();
         });
         root.addEventListener('change', (event) => {
             if (this.suppressDirtyTracking) return;
-            if (event.target && event.target.closest('#notification')) return;
+            if (event.target && event.target.closest('#app-notification')) return;
             if (shouldIgnoreTarget(event.target)) return;
             mark();
         });

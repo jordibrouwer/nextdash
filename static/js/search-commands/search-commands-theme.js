@@ -159,6 +159,9 @@ class SearchCommandTheme {
                 }
             } catch (error) {
                 console.error('Error saving theme to server:', error);
+                if (window.dashboardInstance?.showNotification) {
+                    window.dashboardInstance.showNotification('Failed to save theme to server.', 'error', { duration: 6000 });
+                }
             }
         }
 

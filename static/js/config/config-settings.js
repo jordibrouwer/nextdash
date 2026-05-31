@@ -338,6 +338,11 @@ class ConfigSettings {
             console.error('Error loading custom themes:', error);
             this.customThemes = {};
             window.CustomThemeIds = [];
+            window.AppNotification?.show?.(
+                this.t('config.errorLoadingThemes') || 'Failed to load custom themes.',
+                'warning',
+                { durationMs: 5000 }
+            );
         }
     }
 

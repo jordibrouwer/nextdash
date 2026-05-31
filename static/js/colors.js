@@ -153,7 +153,7 @@ async function loadColors() {
         clearColorsDirty();
     } catch (error) {
         console.error('Error loading colors:', error);
-        showNotification(window.t('colors.errorLoadingColors'), 'error');
+        showErrorWithReload(window.t('colors.errorLoadingColors'));
     }
 }
 
@@ -271,7 +271,7 @@ async function saveColors() {
         clearColorsDirty();
     } catch (error) {
         console.error('Error saving colors:', error);
-        showNotification(window.t('colors.errorSavingColors'), 'error');
+        showErrorWithReload(window.t('colors.errorSavingColors'));
     }
 }
 
@@ -293,7 +293,7 @@ async function autosaveThemeStructure() {
         clearColorsDirty();
     } catch (error) {
         console.error('Error autosaving theme structure:', error);
-        showNotification(window.t('colors.errorSavingColors'), 'error');
+        showErrorWithReload(window.t('colors.errorSavingColors'));
     }
 }
 
@@ -344,7 +344,7 @@ async function resetColors() {
         clearColorsDirty();
     } catch (error) {
         console.error('Error resetting colors:', error);
-        showNotification(window.t('colors.errorResettingColors'), 'error');
+        showErrorWithReload(window.t('colors.errorResettingColors'));
     }
 }
 
@@ -411,17 +411,16 @@ window.switchToTheme = switchToTheme;
 
 // Show notification
 function showNotification(message, type = 'info') {
-    if (window.AppNotification) {
-        window.AppNotification.show(message, type, { durationMs: 3000 });
+    if (!window.AppNotification) return;
+    window.AppNotification.show(message, type, { durationMs: 3000 });
+}
+
+function showErrorWithReload(message) {
+    if (window.AppNotification?.showErrorWithReload) {
+        window.AppNotification.showErrorWithReload(message);
         return;
     }
-    const notification = document.getElementById('notification');
-    const notificationMessage = document.getElementById('notification-message');
-    if (!notification || !notificationMessage) return;
-    notificationMessage.textContent = message;
-    notification.className = `notification notification-${type}`;
-    notification.classList.add('show');
-    setTimeout(() => notification.classList.remove('show'), 3000);
+    showNotification(message, 'error');
 }
 
 // Add custom theme
