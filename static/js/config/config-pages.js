@@ -20,8 +20,21 @@ class ConfigPages {
 
         container.innerHTML = '';
 
-        pages.forEach((page, index) => {
-            const pageElement = this.createPageElement(page, index, pages, generateId, isArchived);
+        const list = Array.isArray(pages) ? pages : [];
+        if (list.length === 0) {
+            const hint = document.createElement('p');
+            hint.className = 'pages-list-empty-hint';
+            const defaultName = 'main';
+            const tpl = this.t('config.pagesListDefaultHint');
+            hint.textContent = tpl.includes('{name}')
+                ? tpl.replace('{count}', '1').replace('{name}', defaultName)
+                : `You have 1 page: ${defaultName}.`;
+            container.appendChild(hint);
+            return;
+        }
+
+        list.forEach((page, index) => {
+            const pageElement = this.createPageElement(page, index, list, generateId, isArchived);
             container.appendChild(pageElement);
         });
     }

@@ -122,6 +122,7 @@ class ConfigManager {
         this.colorsDirty = false;
         this._persistedTheme = '';
         this._themeAutosaveToken = 0;
+        this._pagesRepairedOnLoad = false;
 
         this.init();
     }
@@ -165,6 +166,7 @@ class ConfigManager {
         }
         this.renderConfig();
         this.initReordering();
+        await this.persistRepairedPagesIfNeeded();
         if (typeof initCustomSelects === 'function') {
             setTimeout(() => {
                 initCustomSelects();
@@ -236,7 +238,7 @@ class ConfigManager {
             const { bookmarks, pages, settings } = await this.data.loadData(this.deviceSpecific);
 
             this.bookmarksData = bookmarks;
-            this.pagesData = this.normalizePagesData(pages);
+            this.pagesData = this.applyPagesNormalization(pages, { trackRepair: true });
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.findersData = await this.data.loadFinders();
             try {
@@ -1936,6 +1938,7 @@ class ConfigManager {
     }
 
     renderConfig() {
+        this.pagesData = this.applyPagesNormalization(this.pagesData);
         this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
         if (this.settings && typeof this.settings.populateSmartPageSelectors === 'function') {
             this.settings.populateSmartPageSelectors(this.pagesData, this.settingsData);
@@ -1980,6 +1983,7 @@ class ConfigManager {
         this.renderStructureWorkspace();
         this.finders.render(this.findersData);
         this.refreshCustomSelects();
+        this.refreshPageDropdowns();
         if (this.collections) this.collections.refresh(this);
 
         // Set checkbox states
@@ -3481,20 +3485,51 @@ class ConfigManager {
     }
 
     normalizePagesData(pages) {
-        const list = Array.isArray(pages)
-            ? pages.filter((page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1)
-            : [];
+        const raw = Array.isArray(pages) ? pages : [];
+        const list = raw.filter(
+            (page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1
+        );
+        let repaired = false;
+
         if (!list.some((page) => Number(page.id) === 1)) {
             list.unshift({ id: 1, name: 'main' });
+            repaired = true;
         }
         if (list.length === 0) {
-            return [{ id: 1, name: 'main' }];
+            return { pages: [{ id: 1, name: 'main' }], repaired: true };
         }
         const mainPage = list.find((page) => Number(page.id) === 1);
         if (mainPage && !String(mainPage.name || '').trim()) {
             mainPage.name = 'main';
+            repaired = true;
         }
-        return list;
+        if (raw.length === 0 || raw.length !== list.length) {
+            repaired = true;
+        }
+        return { pages: list, repaired };
+    }
+
+    applyPagesNormalization(pages, options = {}) {
+        const { pages: normalized, repaired } = this.normalizePagesData(pages);
+        if (options.trackRepair && repaired) {
+            this._pagesRepairedOnLoad = true;
+        }
+        return normalized;
+    }
+
+    async persistRepairedPagesIfNeeded() {
+        if (!this._pagesRepairedOnLoad) {
+            return;
+        }
+        this._pagesRepairedOnLoad = false;
+        try {
+            await this.withRetry(() => this.data.savePages(this.pagesData));
+            this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
+            this.signalDashboardReload('pages-repaired');
+        } catch (error) {
+            console.warn('Auto-persist of default page structure failed:', error);
+            this._pagesRepairedOnLoad = true;
+        }
     }
 
     resolvePageId(rawPageId, pages) {

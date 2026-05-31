@@ -57,6 +57,14 @@
     border: 1px solid var(--border-primary);
 }
 
+.pages-list-empty-hint {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
 /* Lists */
 .pages-list,
 .categories-list,

@@ -82,17 +82,9 @@ class ConfigUI {
             // (Previously this reset to pagesData[0] whenever value !== first page, which
             // forced page 1 and saved new bookmarks to the wrong file.)
             if (typeof configManager !== 'undefined') {
-                if (targetTab === 'bookmarks' || targetTab === 'categories' || targetTab === 'pages') {
+                if (targetTab === 'bookmarks' || targetTab === 'categories') {
                     configManager.refreshCustomSelects();
-                    if (targetTab === 'pages') {
-                        configManager.pages.render(
-                            configManager.pagesData,
-                            configManager.generateId.bind(configManager),
-                            configManager.isPageArchived.bind(configManager)
-                        );
-                    } else if (targetTab === 'bookmarks' || targetTab === 'categories') {
-                        configManager.refreshPageDropdowns();
-                    }
+                    configManager.refreshPageDropdowns();
                 }
                 if (targetTab === 'categories' && typeof configManager.loadPageCategories === 'function') {
                     void configManager.loadPageCategories(configManager.currentCategoriesPageId);

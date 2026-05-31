@@ -1056,6 +1056,7 @@
         "categoriesIntro": "Categories organise bookmarks within a page. Select a page to manage its categories.",
         "findersIntro": "Finders are quick-search shortcuts that open a filtered view on the dashboard when triggered by a key combination.",
         "pagesIntro": "Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.",
+        "pagesListDefaultHint": "You have {count} page: {name}.",
         "selectBookmarkToEdit": "Select a bookmark to edit",
         "tagsTab": "tags",
         "featureTourHint": "Start the interactive tour: learn search, finders, commands and key settings.",

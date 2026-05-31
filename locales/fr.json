@@ -1041,6 +1041,7 @@
         "categoriesIntro": "Les catégories organisent les favoris au sein d'une page. Sélectionnez une page pour gérer ses catégories.",
         "findersIntro": "Les finders sont des raccourcis de recherche rapide qui ouvrent une vue filtrée dans le tableau de bord lorsqu'ils sont activés par une combinaison de touches.",
         "pagesIntro": "Les pages regroupent vos favoris. Chaque page possède ses propres catégories et favoris dans le tableau de bord.",
+        "pagesListDefaultHint": "Vous avez {count} page : {name}.",
         "selectBookmarkToEdit": "Sélectionner un favori à modifier",
         "tagsTab": "tags",
         "featureTourHint": "Démarrez la visite interactive : apprenez la recherche, les finders, les commandes et les paramètres clés.",

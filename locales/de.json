@@ -1041,6 +1041,7 @@
         "categoriesIntro": "Kategorien organisieren Lesezeichen innerhalb einer Seite. Wähle eine Seite aus, um ihre Kategorien zu verwalten.",
         "findersIntro": "Finder sind Schnellsuche-Tastenkürzel, die beim Auslösen einer Tastenkombination eine gefilterte Ansicht im Dashboard öffnen.",
         "pagesIntro": "Seiten gruppieren deine Lesezeichen. Jede Seite hat ihre eigenen Kategorien und Lesezeichen im Dashboard.",
+        "pagesListDefaultHint": "Du hast {count} Seite: {name}.",
         "selectBookmarkToEdit": "Lesezeichen zum Bearbeiten auswählen",
         "tagsTab": "Tags",
         "featureTourHint": "Starte die interaktive Tour: Lerne Suche, Finder, Befehle und wichtige Einstellungen kennen.",
