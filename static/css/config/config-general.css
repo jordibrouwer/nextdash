@@ -70,9 +70,7 @@ body {
     transition: border-color 0.25s ease, background 0.25s ease;
 }
 
-body.config-is-dirty .config-controls-wrapper {
-    border-bottom-color: var(--accent-warning);
-}
+/* unsaved border: config-unsaved-state.css */
 
 .config-section.section-content {
     padding-top: 1rem;
@@ -229,9 +227,7 @@ body.config-is-dirty .config-controls-wrapper {
     opacity: 0.9;
 }
 
-.save-status-indicator.is-unsaved {
-    color: var(--accent-warning);
-}
+/* unsaved status styling: config-unsaved-state.css */
 
 .save-status-indicator.is-hidden {
     display: none;

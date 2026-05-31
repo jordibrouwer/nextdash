@@ -1,0 +1,128 @@
+/**
+ * Shared “unsaved changes” visuals for config + theme/colors editor.
+ * Uses accent-warning mixed with theme surfaces for contrast on all palettes.
+ */
+
+:root {
+    --unsaved-tone: var(--accent-warning, #d4a017);
+    --unsaved-fg: color-mix(in srgb, var(--unsaved-tone) 82%, var(--text-primary));
+    --unsaved-surface: color-mix(in srgb, var(--unsaved-tone) 14%, var(--background-secondary));
+    --unsaved-border: color-mix(in srgb, var(--unsaved-tone) 52%, var(--border-primary));
+    --unsaved-dot: var(--unsaved-tone);
+    --unsaved-glow: color-mix(in srgb, var(--unsaved-tone) 22%, transparent);
+}
+
+/* Pill badge — config header + theme toolbar */
+.unsaved-badge {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-main);
+    line-height: 1.2;
+    color: var(--unsaved-fg);
+    background: var(--unsaved-surface);
+    border: 1px solid var(--unsaved-border);
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem 0.3rem 0.5rem;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+    animation: unsavedBadgePulse 4s ease-in-out infinite;
+}
+
+.unsaved-badge::before {
+    content: '';
+    flex-shrink: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--unsaved-dot);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--unsaved-dot) 28%, transparent);
+}
+
+.unsaved-badge.is-visible,
+.unsaved-badge:not([hidden]) {
+    display: inline-flex;
+}
+
+@keyframes unsavedBadgePulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.72;
+    }
+}
+
+/* Inline status text (when shown instead of badge) */
+.save-status-indicator.is-unsaved {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--unsaved-fg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.save-status-indicator.is-unsaved::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--unsaved-dot);
+    flex-shrink: 0;
+}
+
+/* Save buttons with pending changes */
+.btn-success.has-unsaved {
+    animation: unsavedSaveBtnPulse 4s ease-in-out infinite;
+}
+
+@keyframes unsavedSaveBtnPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 var(--unsaved-glow);
+    }
+    50% {
+        box-shadow: 0 0 0 3px var(--unsaved-glow);
+    }
+}
+
+/* Sticky bar hint */
+.config-save-sticky-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--unsaved-fg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-save-sticky-hint::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--unsaved-dot);
+    flex-shrink: 0;
+}
+
+body.config-is-dirty .config-controls-wrapper {
+    border-bottom-color: var(--unsaved-border);
+}
+
+body.colors-is-dirty .theme-colors-toolbar {
+    border-bottom-color: var(--unsaved-border);
+}
+
+/* Theme tab dot when colors palette is dirty */
+.tab-button.tab-has-unsaved::after {
+    content: '';
+    position: absolute;
+    top: 0.28rem;
+    right: 0.18rem;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--unsaved-dot);
+    box-shadow: 0 0 0 1px var(--background-primary);
+    pointer-events: none;
+}

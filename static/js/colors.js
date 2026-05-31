@@ -27,14 +27,22 @@ class ColorsEditor {
     markDirty() {
         this.hasUnsavedColorChanges = true;
         const badge = this.root?.querySelector('#colors-unsaved-indicator');
-        if (badge) badge.hidden = false;
+        if (badge) {
+            badge.hidden = false;
+            badge.classList.add('is-visible');
+        }
+        this.root?.querySelector('#save-colors-btn')?.classList.add('has-unsaved');
         this.onDirtyChange(true);
     }
 
     clearDirty() {
         this.hasUnsavedColorChanges = false;
         const badge = this.root?.querySelector('#colors-unsaved-indicator');
-        if (badge) badge.hidden = true;
+        if (badge) {
+            badge.hidden = true;
+            badge.classList.remove('is-visible');
+        }
+        this.root?.querySelector('#save-colors-btn')?.classList.remove('has-unsaved');
         this.onDirtyChange(false);
     }
 

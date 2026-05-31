@@ -17,8 +17,20 @@
     color: var(--text-primary);
 }
 
+.config-actions-buttons #save-btn.btn-success,
+.config-save-sticky-actions #save-btn-sticky.btn-success {
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
 .btn-primary:hover,
 .btn-success:hover {
+    background-color: var(--background-secondary);
+    transform: translateX(2px);
+}
+
+.config-actions-buttons #save-btn.btn-success:hover,
+.config-save-sticky-actions #save-btn-sticky.btn-success:hover {
     background-color: var(--background-secondary);
     transform: translateX(2px);
 }
@@ -49,43 +61,6 @@
 .btn-small {
     padding: 0.375rem 0.5rem;
     font-size: var(--font-size-text);
-}
-
-.btn-success.has-unsaved {
-    animation: savePulse 4s ease-in-out infinite;
-}
-
-@keyframes savePulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-warning) 0%, transparent);
-    }
-    50% {
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-warning) 18%, transparent);
-    }
-}
-
-.unsaved-indicator {
-    display: none;
-    font-size: var(--font-size-controls);
-    color: var(--accent-warning);
-    border: 1px solid var(--accent-warning);
-    padding: 0.25rem 0.5rem;
-    line-height: 1;
-    animation: unsavedFade 4s ease-in-out infinite;
-}
-
-.unsaved-indicator.is-visible {
-    display: inline-flex;
-    align-items: center;
-}
-
-@keyframes unsavedFade {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.55;
-    }
 }
 
 /* Disabled state */

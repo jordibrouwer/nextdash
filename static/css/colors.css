@@ -68,12 +68,7 @@
     margin: 0 0 1rem;
 }
 
-.colors-unsaved-indicator {
-    font-size: var(--font-size-controls);
-    color: var(--accent-warning, var(--text-secondary));
-    text-transform: lowercase;
-    letter-spacing: 0.04em;
-}
+/* colors unsaved badge: config-unsaved-state.css (.unsaved-badge) */
 
 .colors-subtabs {
     display: flex;

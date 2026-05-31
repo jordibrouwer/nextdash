@@ -119,6 +119,7 @@ class ConfigManager {
         this.tabId = `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         this.lastSyncToastAt = 0;
         this.colorsEditor = null;
+        this.colorsDirty = false;
 
         this.init();
     }
@@ -200,7 +201,8 @@ class ConfigManager {
             this.colorsEditor = new ColorsEditor({
                 root: document.getElementById('theme-colors-editor'),
                 language: this.language,
-                settings: this.settingsData
+                settings: this.settingsData,
+                onDirtyChange: (dirty) => this.setColorsDirtyState(dirty),
             });
         }
         await this.colorsEditor.init();
@@ -1485,16 +1487,30 @@ class ConfigManager {
         onScroll();
     }
 
+    setColorsDirtyState(isDirty) {
+        this.colorsDirty = isDirty === true;
+        document.body.classList.toggle('colors-is-dirty', this.colorsDirty);
+        const colorsTab = document.querySelector('.tab-button[data-tab="colors"]');
+        colorsTab?.classList.toggle('tab-has-unsaved', this.colorsDirty);
+    }
+
+    getSaveButtons() {
+        return [
+            document.getElementById('save-btn'),
+            document.getElementById('save-btn-sticky'),
+        ].filter(Boolean);
+    }
+
     setDirtyState(isDirty) {
         this.isDirty = isDirty === true;
-        const saveBtn = document.getElementById('save-btn');
+        const saveButtons = this.getSaveButtons();
         const badge = document.getElementById('unsaved-indicator');
         const saveStatus = document.getElementById('save-status-indicator');
         const undoTopBtn = document.getElementById('undo-top-btn');
         const discardTopBtn = document.getElementById('discard-top-btn');
-        if (saveBtn) {
+        saveButtons.forEach((saveBtn) => {
             saveBtn.classList.toggle('has-unsaved', this.isDirty);
-        }
+        });
         if (badge) {
             badge.classList.toggle('is-visible', this.isDirty);
         }
@@ -3178,10 +3194,10 @@ class ConfigManager {
             );
         }
 
-        const saveBtn = document.getElementById('save-btn');
-        if (saveBtn) {
+        const saveButtons = this.getSaveButtons();
+        saveButtons.forEach((saveBtn) => {
             saveBtn.disabled = hasConflicts;
-        }
+        });
 
         return {
             hasConflicts,
