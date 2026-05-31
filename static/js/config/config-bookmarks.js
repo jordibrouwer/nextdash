@@ -398,7 +398,7 @@ class ConfigBookmarks {
             scEl.classList.toggle('field-conflict', isDupSc);
             if (scConflictMsg) scConflictMsg.hidden = !isDupSc;
             if (isDupSc) {
-                scEl.title = 'Shortcut must be unique within this page.';
+                scEl.title = this.t('config.shortcutUniqueHint') || 'Shortcut must be unique within this page.';
             } else {
                 scEl.removeAttribute('title');
             }

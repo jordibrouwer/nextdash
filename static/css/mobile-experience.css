@@ -65,11 +65,14 @@ body[data-mobile-layout="true"] .btn-group-secondary {
 
 body[data-mobile-layout="true"] #quick-add-toolbar-btn {
     display: flex !important;
-    flex: 0 0 auto;
-    min-width: 4.25rem;
+    order: -1;
+    flex: 1 1 auto;
+    min-width: 5.5rem;
     min-height: 44px;
-    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 55%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 8%, var(--background-primary));
+    padding-inline: 0.85rem;
+    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 70%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 18%, var(--background-primary));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary, var(--text-primary)) 25%, transparent);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 }
@@ -81,6 +84,11 @@ body[data-mobile-layout="true"] #quick-add-toolbar-btn .search-button-icon {
 body[data-mobile-layout="true"] #quick-add-toolbar-btn .search-button-label {
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+body[data-mobile-layout="true"] #quick-add-toolbar-btn.search-button--add {
+    gap: 0.35rem;
 }
 
 body[data-mobile-layout="true"] .button-container {

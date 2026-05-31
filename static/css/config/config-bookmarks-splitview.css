@@ -92,8 +92,21 @@
 body[data-mobile-layout="true"] #config-quick-add-btn {
     min-width: 2.75rem;
     min-height: 44px;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     flex-shrink: 0;
+    gap: 0.35rem;
+    padding-inline: 0.65rem;
+    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 65%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 16%, var(--background-primary));
+}
+
+body[data-mobile-layout="true"] #config-quick-add-btn .config-quick-add-label {
+    display: inline;
+    font-weight: var(--font-weight-semibold);
+}
+
+#config-quick-add-btn .config-quick-add-label {
+    display: none;
 }
 
 body[data-mobile-layout="true"] .bookmarks-list-controls-row {

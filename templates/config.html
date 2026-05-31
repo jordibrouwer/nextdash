@@ -1110,7 +1110,7 @@
                                     </select>
                                 </div>
                                 <button id="add-bookmark-btn" class="btn btn-secondary btn-small" title="Add bookmark" data-i18n="config.addBookmark">+ Add</button>
-                                <button id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n="config.quickAddBookmark" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark">⚡</button>
+                                <button id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark"><span class="config-quick-add-icon" aria-hidden="true">⚡</span><span class="config-quick-add-label" data-i18n="config.quickAddBookmarkLabel">Quick add</span></button>
                             </div>
                             <div class="bookmarks-list-search-row">
                                 <div class="bookmarks-search-wrap">
@@ -1275,12 +1275,12 @@
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-tags">Tags</label>
                                 <input type="text" id="detail-tags" class="bookmark-detail-input" placeholder="work, dev, personal…" autocomplete="off">
-                                <span class="bookmark-detail-field-hint">Comma-separated. Used for filtering and dynamic collections.</span>
+                                <span class="bookmark-detail-field-hint" data-i18n="config.tagsFieldHint">Comma-separated. Used for filtering and dynamic collections.</span>
                             </div>
 
                             <div class="bookmark-detail-section bookmark-detail-toggles">
                                 <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.pinnedToggleHint">
-                                    <input type="checkbox" id="detail-pinned">
+                                    <input type="checkbox" id="detail-pinned" data-i18n-aria="config.pinnedToggleHint">
                                     <span class="icon-toggle-indicator" data-i18n-tooltip="config.pinnedToggleHint" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" focusable="false">
                                             <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
@@ -1289,7 +1289,7 @@
                                     <span class="bookmark-detail-toggle-label" data-i18n="config.pinnedShort">Pinned</span>
                                 </label>
                                 <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.statusCheckToggleHint">
-                                    <input type="checkbox" id="detail-check-status">
+                                    <input type="checkbox" id="detail-check-status" data-i18n-aria="config.statusCheckToggleHint">
                                     <span class="icon-toggle-indicator" data-i18n-tooltip="config.statusCheckToggleHint" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" focusable="false">
                                             <path d="M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z"></path>

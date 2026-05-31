@@ -3308,9 +3308,11 @@ class ConfigManager {
                 const hasFinderWarning = finderConflictIndexes.has(index);
                 shortcutInput.classList.toggle('field-warning', hasFinderWarning && !hasBlockingShortcutConflict);
                 if (hasBlockingShortcutConflict) {
-                    shortcutInput.title = 'Shortcut must be unique within this page.';
+                    shortcutInput.title = this.language?.t('config.shortcutUniqueHint')
+                        || 'Shortcut must be unique within this page.';
                 } else if (hasFinderWarning) {
-                    shortcutInput.title = 'Shortcut matches a finder shortcut.';
+                    shortcutInput.title = this.language?.t('config.shortcutFinderHint')
+                        || 'Shortcut matches a finder shortcut.';
                 } else {
                     shortcutInput.removeAttribute('title');
                 }
@@ -3325,20 +3327,24 @@ class ConfigManager {
             const detailShortcut = document.getElementById('detail-shortcut');
             const detailShortcutMsg = document.getElementById('detail-shortcut-conflict-msg');
             if (detailUrl) {
-                const isDupUrl = duplicateUrlIndexes.has(activeIdx);
+                const urlVal = detailUrl.value.trim().toLowerCase();
+                const isDupUrl = Boolean(urlVal) && duplicateUrlIndexes.has(activeIdx);
                 detailUrl.classList.toggle('field-conflict', isDupUrl);
                 if (detailUrlMsg) detailUrlMsg.hidden = !isDupUrl;
             }
             if (detailShortcut) {
-                const hasBlockingShortcutConflict = duplicateShortcutIndexes.has(activeIdx);
-                const hasFinderWarning = finderConflictIndexes.has(activeIdx);
+                const scVal = detailShortcut.value.trim().toUpperCase();
+                const hasBlockingShortcutConflict = Boolean(scVal) && duplicateShortcutIndexes.has(activeIdx);
+                const hasFinderWarning = Boolean(scVal) && finderConflictIndexes.has(activeIdx);
                 detailShortcut.classList.toggle('field-conflict', hasBlockingShortcutConflict);
                 detailShortcut.classList.toggle('field-warning', hasFinderWarning && !hasBlockingShortcutConflict);
                 if (detailShortcutMsg) detailShortcutMsg.hidden = !hasBlockingShortcutConflict;
                 if (hasBlockingShortcutConflict) {
-                    detailShortcut.title = 'Shortcut must be unique within this page.';
+                    detailShortcut.title = this.language?.t('config.shortcutUniqueHint')
+                        || 'Shortcut must be unique within this page.';
                 } else if (hasFinderWarning) {
-                    detailShortcut.title = 'Shortcut matches a finder shortcut.';
+                    detailShortcut.title = this.language?.t('config.shortcutFinderHint')
+                        || 'Shortcut matches a finder shortcut.';
                 } else {
                     detailShortcut.removeAttribute('title');
                 }

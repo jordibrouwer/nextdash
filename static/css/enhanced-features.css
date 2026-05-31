@@ -540,6 +540,16 @@ kbd {
     max-width: 22rem;
 }
 
+.empty-state-action-btn--primary {
+    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 65%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 14%, var(--background-primary));
+    font-weight: var(--font-weight-semibold);
+}
+
+.empty-state-action-btn--primary:hover {
+    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 22%, var(--background-primary));
+}
+
 .empty-state-action-btn {
     display: inline-flex;
     align-items: center;

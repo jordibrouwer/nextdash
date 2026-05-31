@@ -260,6 +260,7 @@ class Dashboard {
             this.quickAddWidget = new QuickAddWidget(this);
         }
         this.setupToolbarActions();
+        this.refreshAddBookmarkToolbarLabel();
         this.setupHeaderEnhancements();
         this.setupConfigStructureReloadListener();
         this.setupExtensionBookmarkSavedListener();
@@ -1298,6 +1299,20 @@ class Dashboard {
             return;
         }
         this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
+    }
+
+    refreshAddBookmarkToolbarLabel() {
+        const btn = document.getElementById('quick-add-toolbar-btn');
+        const label = btn?.querySelector('.search-button-label');
+        if (!label) return;
+        const isTouch = this.isCoarsePointer() || window.MobileExperience?.isMobileLayout?.();
+        const key = isTouch ? 'dashboard.addBookmarkToolbarMobile' : 'dashboard.addBookmarkShort';
+        const fallback = isTouch ? '+ Bookmark' : 'bookmark';
+        label.textContent = this.language?.t(key) || fallback;
+    }
+
+    shouldShowEmptyStateKeyboardActions() {
+        return !this.isCoarsePointer() && window.MobileExperience?.isMobileLayout?.() !== true;
     }
 
     buildEmptyStateAddLabel() {
@@ -2583,9 +2598,16 @@ class Dashboard {
 
             const addLabel = this.buildEmptyStateAddLabel();
             const addHint = this.buildEmptyStateAddHint();
+            const showKeyboardActions = this.shouldShowEmptyStateKeyboardActions();
             const emptyPageText = this.language?.t('dashboard.emptyPage') || 'This page is empty';
             const searchLabel = this.language?.t('dashboard.searchLabel') || 'Search';
             const commandNewLabel = this.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
+            const searchActionHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>`
+                : `<button class="empty-state-action-btn" id="empty-state-search" type="button">${searchLabel}</button>`;
+            const commandNewHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>`
+                : '';
 
             if (hasBookmarksOnOtherPages) {
                 container.innerHTML = `
@@ -2593,9 +2615,9 @@ class Dashboard {
                         <div class="empty-state-label">// ${pageName}</div>
                         <div class="empty-state-text" data-i18n="dashboard.emptyPage">${emptyPageText}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn" id="empty-state-new-bookmark" type="button">${addLabel}</button>
-                            <button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
-                            <button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark" type="button">${addLabel}</button>
+                            ${searchActionHtml}
+                            ${commandNewHtml}
                         </div>
                         <p class="empty-state-hint">${addHint}</p>
                     </div>
@@ -2616,12 +2638,15 @@ class Dashboard {
                 });
             } else {
                 const freshText = this.language?.t('dashboard.emptyFresh') || 'No bookmarks yet';
+                const searchFreshHtml = showKeyboardActions
+                    ? `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>`
+                    : `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button">${searchLabel}</button>`;
                 container.innerHTML = `
                     <div class="empty-state empty-state--fresh">
                         <div class="empty-state-text" data-i18n="dashboard.emptyFresh">${freshText}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn" id="empty-state-new-bookmark-fresh" type="button">${addLabel}</button>
-                            <button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark-fresh" type="button">${addLabel}</button>
+                            ${searchFreshHtml}
                         </div>
                         <p class="empty-state-hint">${addHint}</p>
                         <div class="empty-state-action">
