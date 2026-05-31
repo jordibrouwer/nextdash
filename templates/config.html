@@ -1209,6 +1209,32 @@
                                 <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden>This URL already exists in another bookmark.</p>
                             </div>
 
+                            <div class="bookmark-detail-section bookmark-detail-preview-section">
+                                <div class="bookmark-detail-preview-header">
+                                    <label class="bookmark-detail-label" data-i18n="config.bookmarkDashboardPreviewLabel">Dashboard preview</label>
+                                    <span class="bookmark-detail-field-hint" data-i18n="config.bookmarkDashboardPreviewHint">Hover to see the full tile</span>
+                                </div>
+                                <div class="config-bookmark-preview-hover-zone" id="detail-dashboard-preview-zone" tabindex="0">
+                                    <div class="config-bookmark-preview config-bookmark-preview--compact" id="detail-dashboard-preview"
+                                         data-i18n-aria="config.bookmarkDashboardPreviewAria"
+                                         aria-label="Dashboard tile preview"></div>
+                                    <div class="config-bookmark-preview-popover" id="detail-dashboard-preview-popover"
+                                         role="tooltip" aria-hidden="true"></div>
+                                </div>
+                            </div>
+
+                            <div class="bookmark-detail-section bookmark-detail-link-preview-section">
+                                <div class="bookmark-detail-preview-header">
+                                    <label class="bookmark-detail-label" data-i18n="config.bookmarkLinkPreviewLabel">Link preview</label>
+                                    <div class="bookmark-detail-link-preview-actions">
+                                        <button type="button" id="detail-link-preview-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkLinkPreviewRefresh">Refresh</button>
+                                        <button type="button" id="detail-link-preview-clear-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkLinkPreviewClear">Clear</button>
+                                    </div>
+                                </div>
+                                <p id="detail-link-preview-empty" class="bookmark-detail-field-hint" data-i18n="config.bookmarkLinkPreviewEmpty">No preview metadata yet — refresh to fetch title, description and image.</p>
+                                <div id="detail-link-preview-card" class="config-link-preview-card" hidden></div>
+                            </div>
+
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-shortcut" data-i18n="config.bookmarkShortcutPlaceholder">Shortcut</label>
                                 <input type="text" id="detail-shortcut" class="bookmark-detail-input bookmark-detail-shortcut" placeholder="ABC" maxlength="5" autocomplete="off">
