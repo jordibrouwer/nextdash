@@ -37,5 +37,19 @@
   "notifySaved": "Favori enregistré dans nextDash",
   "notifySavedNamed": "\"{name}\" enregistré dans nextDash",
   "contextMenuSavePage": "Enregistrer la page dans nextDash",
-  "contextMenuSaveLink": "Enregistrer le lien dans nextDash"
+  "contextMenuSaveLink": "Enregistrer le lien dans nextDash",
+  "previewDashboardLabel": "Aperçu dashboard",
+  "previewDashboardHint": "Survoler pour la tuile complète",
+  "previewDashboardAria": "Aperçu tuile dashboard",
+  "previewLinkLabel": "Aperçu du lien",
+  "previewRefresh": "Actualiser",
+  "previewClear": "Effacer",
+  "previewEmpty": "Pas encore d'aperçu — actualisez pour récupérer titre, description et image.",
+  "previewNoUrl": "Entrez d'abord une URL.",
+  "previewRefreshed": "Aperçu du lien mis à jour.",
+  "previewRefreshFailed": "Impossible de récupérer l'aperçu du lien.",
+  "previewCleared": "Aperçu du lien effacé.",
+  "previewUntitled": "Sans titre",
+  "previewStatusCheck": "···",
+  "moreOptions": "Plus d'options"
 }

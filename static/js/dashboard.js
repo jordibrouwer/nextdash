@@ -1240,27 +1240,19 @@ class Dashboard {
             if (this.searchComponent && this.searchComponent.isActive()) return;
 
             const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-            const trimmed = text.trim();
-            if (!/^https?:\/\/.+/i.test(trimmed)) return;
+            const trimmed = text.trim().split(/\s/)[0];
+            const looksLikeUrl = trimmed && (
+                /^https?:\/\/.+/i.test(trimmed)
+                || /^[\w.-]+\.[a-z]{2,}/i.test(trimmed)
+            );
+            if (!looksLikeUrl) return;
 
             e.preventDefault();
 
             const handler = this.searchComponent?.commandsComponent?.newCommandHandler;
             if (!handler) return;
 
-            handler.openModal();
-
-            // Wait for modal DOM to be ready, then pre-fill URL and trigger favicon fetch
-            setTimeout(() => {
-                const urlInput = document.getElementById('new-bookmark-url');
-                if (urlInput) {
-                    urlInput.value = trimmed;
-                    urlInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    handler.autoFetchModalFaviconFromUrlField?.();
-                }
-                const nameInput = document.getElementById('new-bookmark-name');
-                if (nameInput) nameInput.focus();
-            }, 120);
+            handler.openModal({ url: trimmed });
         });
     }
 
@@ -2258,32 +2250,26 @@ class Dashboard {
                 }
             }
 
-            let fullUrl = url;
-            if (!/^https?:\/\//i.test(url)) fullUrl = 'https://' + url;
+            let fullUrl = window.BookmarkUrlUtils?.ensureHttpUrl(url) || url;
+            if (!/^https?:\/\//i.test(fullUrl)) fullUrl = 'https://' + url;
 
             status.textContent = t('dashboard.quickAddFetchingFavicon');
             status.classList.remove('is-error');
             input.disabled = true;
 
             let icon = '';
+            let previewTitle = '';
+            let previewDesc = '';
+            let previewImage = '';
             try {
-                const faviconUrl = (() => {
+                if (window.BookmarkPreviewService) {
+                    icon = await window.BookmarkPreviewService.fetchAndUploadFavicon(fullUrl);
                     try {
-                        const p = new URL(fullUrl);
-                        return (p.protocol === 'http:' || p.protocol === 'https:')
-                            ? `${p.protocol}//${p.host}/favicon.ico` : '';
-                    } catch { return ''; }
-                })();
-                if (faviconUrl) {
-                    const iconResp = await fetch('/api/icon/from-url', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: faviconUrl })
-                    });
-                    if (iconResp.ok) {
-                        const iconData = await iconResp.json();
-                        icon = iconData.icon || '';
-                    }
+                        const preview = await window.BookmarkPreviewService.fetchLinkPreview(fullUrl);
+                        previewTitle = preview.title || '';
+                        previewDesc = preview.description || '';
+                        previewImage = preview.image || '';
+                    } catch { /* optional */ }
                 }
             } catch { /* favicon is optional */ }
 
@@ -2303,6 +2289,9 @@ class Dashboard {
                             pinned: false,
                             checkStatus: false,
                             icon,
+                            previewTitle: previewTitle || undefined,
+                            previewDesc: previewDesc || undefined,
+                            previewImage: previewImage || undefined,
                             createdAt: Date.now()
                         }
                     })

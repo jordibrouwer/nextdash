@@ -1,4 +1,9 @@
-importScripts('save-common.js', 'i18n.js');
+importScripts(
+  'save-common.js',
+  'i18n.js',
+  'bookmark-form/bookmark-url-utils.js',
+  'bookmark-form/bookmark-preview-service.js'
+);
 
 const BADGE_MS = 3500;
 
@@ -55,6 +60,9 @@ async function quickSaveBookmark(name, url) {
     return { ok: false, reason: 'bad_url' };
   }
 
+  const extras = await fetchBookmarkExtras(serverUrl, url);
+  const saveUrl = extras.url || url;
+
   const { lastSaveContext } = await chrome.storage.local.get('lastSaveContext');
 
   let pageId;
@@ -69,14 +77,20 @@ async function quickSaveBookmark(name, url) {
     return { ok: false, reason: 'resolve' };
   }
 
-  const dup = await findDuplicateBookmark(serverUrl, pageId, url);
+  const dup = await findDuplicateBookmark(serverUrl, pageId, saveUrl);
   if (dup) {
     flashBadge('D', '#FFD600');
     return { ok: false, reason: 'duplicate' };
   }
 
     try {
-    const res = await postAddBookmark(serverUrl, pageId, name, url, category, '');
+    const { icon, previewTitle, previewDesc, previewImage } = extras;
+    const res = await postAddBookmark(serverUrl, pageId, name, saveUrl, category, '', [], {
+      icon,
+      previewTitle,
+      previewDesc,
+      previewImage,
+    });
     if (!res.ok) {
       flashBadge('!', '#FF0055');
       return { ok: false, reason: 'http' };

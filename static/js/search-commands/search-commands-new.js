@@ -1,6 +1,6 @@
 /**
  * Search Command: :new
- * Opens a modal to create a new bookmark from the dashboard
+ * Unified bookmark add modal (also used by QuickAdd / Ctrl+Shift+A)
  */
 
 class SearchCommandNew {
@@ -12,6 +12,10 @@ class SearchCommandNew {
         this.pages = [];
         this._mouseDownTarget = null;
         this.pendingIcon = '';
+        this.draftState = {};
+        this.formPreview = null;
+        this._userEditedIcon = false;
+        this._wizardStep = 1;
     }
 
     setLanguage(language) {
@@ -25,6 +29,12 @@ class SearchCommandNew {
         this.pages = pages;
     }
 
+    t(key, fallback) {
+        if (!this.language) return fallback;
+        const val = this.language.t(key);
+        return val !== key ? val : fallback;
+    }
+
     notify(message, type = 'error') {
         const dash = window.dashboardInstance;
         if (dash && typeof dash.showNotification === 'function') {
@@ -32,48 +42,158 @@ class SearchCommandNew {
         }
     }
 
-    /** Same rules as server canonicalBookmarkURLKey (handlers.go). */
     canonicalBookmarkURLKey(raw) {
-        const s = String(raw || '').trim();
-        try {
-            const u = new URL(s);
-            const scheme = u.protocol.replace(/:$/, '').toLowerCase();
-            const host = u.hostname.toLowerCase();
-            let path = u.pathname;
-            if (path === '/') {
-                path = '';
-            } else {
-                path = path.replace(/\/+$/, '');
-            }
-            return `${scheme}://${host}${path}${u.search}`;
-        } catch {
-            let t = s.toLowerCase();
-            const hash = t.indexOf('#');
-            if (hash >= 0) {
-                t = t.slice(0, hash);
-            }
-            return t.replace(/\/+$/, '');
+        if (window.BookmarkUrlUtils) {
+            return window.BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
         }
+        return String(raw || '').trim().toLowerCase();
     }
 
     duplicateBookmarkUrlMessage() {
-        return this.language
-            ? (this.language.t('config.duplicateBookmarkUrl') || 'This bookmark URL already exists on this page.')
-            : 'This bookmark URL already exists on this page.';
+        return this.t('config.duplicateBookmarkUrl', 'This bookmark URL already exists on this page.');
     }
 
     handle(args) {
+        const argText = (args || []).join(' ').trim();
         return [{
-            name: this.language ? this.language.t('config.addNewBookmark') : 'Create New Bookmark',
+            name: this.t('config.addNewBookmark', 'Create New Bookmark'),
             shortcut: ':new',
-            action: () => this.openModal(),
+            action: () => this.openModal(argText ? { url: argText } : {}),
             type: 'command'
         }];
     }
 
-    openModal() {
+    openModal(options = {}) {
+        this._openOptions = options;
         this.createModal();
-        this.showModal();
+        this.showModal(options);
+    }
+
+    resetDraftState() {
+        this.draftState = {
+            previewTitle: '',
+            previewDesc: '',
+            previewImage: '',
+        };
+        this.pendingIcon = '';
+        this._userEditedIcon = false;
+    }
+
+    getDraftBookmark() {
+        const nameEl = document.getElementById('new-bookmark-name');
+        const urlEl = document.getElementById('new-bookmark-url');
+        const shortcutEl = document.getElementById('new-bookmark-shortcut');
+        const noteEl = document.getElementById('new-bookmark-note');
+        const pinnedEl = document.getElementById('new-bookmark-pinned');
+        const statusEl = document.getElementById('new-bookmark-status');
+        return {
+            name: nameEl?.value || '',
+            url: urlEl?.value || '',
+            shortcut: shortcutEl?.value || '',
+            note: noteEl?.value || '',
+            icon: this.pendingIcon || '',
+            pinned: pinnedEl?.checked || false,
+            checkStatus: statusEl?.checked || false,
+            previewTitle: this.draftState.previewTitle || '',
+            previewDesc: this.draftState.previewDesc || '',
+            previewImage: this.draftState.previewImage || '',
+        };
+    }
+
+    updatePreviews() {
+        const bookmark = this.getDraftBookmark();
+        this.formPreview?.updateAll(bookmark);
+    }
+
+    usesMobileWizard() {
+        return window.MobileExperience?.isMobileLayout?.() === true;
+    }
+
+    setWizardStep(step) {
+        this._wizardStep = step === 2 ? 2 : 1;
+        const modalInner = this.modal?.querySelector('.modal-new-bookmark');
+        if (!modalInner) return;
+        modalInner.classList.toggle('nbm-wizard-step-1', this._wizardStep === 1);
+        modalInner.classList.toggle('nbm-wizard-step-2', this._wizardStep === 2);
+        modalInner.querySelectorAll('.nbm-wizard-step').forEach((el) => {
+            const s = parseInt(el.dataset.step, 10);
+            el.classList.toggle('is-active', s === this._wizardStep);
+            el.classList.toggle('is-done', s < this._wizardStep);
+        });
+    }
+
+    initWizardLayout() {
+        const modalInner = this.modal?.querySelector('.modal-new-bookmark');
+        if (!modalInner) return;
+        if (this.usesMobileWizard()) {
+            modalInner.classList.add('nbm-mobile-wizard');
+            const nav = modalInner.querySelector('.nbm-wizard-nav');
+            if (nav) nav.removeAttribute('aria-hidden');
+            this.setWizardStep(1);
+        } else {
+            modalInner.classList.remove('nbm-mobile-wizard', 'nbm-wizard-step-1', 'nbm-wizard-step-2');
+        }
+    }
+
+    validateWizardStep1() {
+        const urlInput = document.getElementById('new-bookmark-url');
+        const nameInput = document.getElementById('new-bookmark-name');
+        if (!urlInput?.value.trim()) {
+            urlInput?.focus();
+            if (typeof urlInput.reportValidity === 'function') urlInput.reportValidity();
+            return false;
+        }
+        this.normalizeUrlField(urlInput, true);
+        if (!window.BookmarkUrlUtils?.isHttpUrl(urlInput.value)) {
+            this.notify(this.t('config.urlRequiredShort', 'URL required.'), 'error');
+            urlInput.focus();
+            return false;
+        }
+        if (nameInput && !String(nameInput.value || '').trim()) {
+            const fallback = this.draftState.previewTitle || '';
+            if (fallback) nameInput.value = fallback;
+        }
+        if (nameInput && !String(nameInput.value || '').trim()) {
+            nameInput.focus();
+            if (typeof nameInput.reportValidity === 'function') nameInput.reportValidity();
+            return false;
+        }
+        return true;
+    }
+
+    getSelectedPageId() {
+        const pageSelect = document.getElementById('new-bookmark-page');
+        const pageId = parseInt(String(pageSelect?.value ?? ''), 10);
+        return Number.isFinite(pageId) && pageId >= 1 ? pageId : null;
+    }
+
+    getBookmarksForPage(pageId) {
+        const dash = window.dashboardInstance;
+        if (!dash || pageId == null) return [];
+        const samePage = Number(dash.currentPageId) === pageId || String(dash.currentPageId) === String(pageId);
+        if (samePage && Array.isArray(dash.bookmarks)) return dash.bookmarks;
+        return (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
+    }
+
+    hasShortcutConflictOnPage(shortcut, pageId = null) {
+        const normalized = String(shortcut || '').trim().toUpperCase();
+        if (!normalized) return false;
+        const pid = pageId ?? this.getSelectedPageId();
+        if (pid == null) return false;
+        return this.getBookmarksForPage(pid).some(
+            (b) => String(b?.shortcut || '').trim().toUpperCase() === normalized
+        );
+    }
+
+    updateShortcutConflictHint() {
+        const shortcutInput = document.getElementById('new-bookmark-shortcut');
+        const shortcutConflictHint = document.getElementById('new-bookmark-shortcut-conflict');
+        if (!shortcutInput || !shortcutConflictHint) return;
+
+        const normalized = String(shortcutInput.value || '').trim().toUpperCase();
+        const conflict = normalized && this.hasShortcutConflictOnPage(normalized);
+        shortcutConflictHint.hidden = !conflict;
+        shortcutInput.classList.toggle('field-conflict', Boolean(conflict));
     }
 
     createModal() {
@@ -82,87 +202,109 @@ class SearchCommandNew {
             existingModal.remove();
         }
 
-        const t = (key, fallback) => {
-            if (!this.language) return fallback;
-            const val = this.language.t(key);
-            return val !== key ? val : fallback;
-        };
+        this.resetDraftState();
+
+        const compactStripHtml = window.BookmarkFormPreviewHtml?.buildCompactPreviewStripHtml
+            ? window.BookmarkFormPreviewHtml.buildCompactPreviewStripHtml('new-bookmark', (key, fb) => this.t(key, fb))
+            : '';
+
+        const fullPreviewHtml = window.BookmarkFormPreviewHtml?.buildPreviewSectionHtml
+            ? window.BookmarkFormPreviewHtml.buildPreviewSectionHtml('new-bookmark', (key, fb) => this.t(key, fb))
+            : '';
+
+        const shortcutConflictLabel = this.t('config.shortcutConflict', 'Shortcut already in use');
 
         const modalHTML = `
             <div id="new-bookmark-modal" class="modal-overlay">
                 <div class="modal modal-new-bookmark">
                     <div class="nbm-header">
-                        <span class="nbm-title">${t('config.addNewBookmark', 'New Bookmark')}</span>
+                        <span class="nbm-title">${this.t('config.addNewBookmark', 'New Bookmark')}</span>
                         <div class="nbm-header-actions">
                             <kbd>Ctrl+Shift+A</kbd>
                             <button type="button" class="nbm-btn" id="new-bookmark-cancel-header" aria-label="Close">✕</button>
                         </div>
                     </div>
                     <form id="new-bookmark-form" class="new-bookmark-form">
-                        <div class="nbm-section">
-                            <label class="nbm-label" for="new-bookmark-name">${t('config.bookmarkNamePlaceholder', 'Name')}</label>
-                            <input type="text" id="new-bookmark-name" name="name" class="nbm-input" required autocomplete="off">
+                        <div class="nbm-wizard-nav" aria-hidden="true">
+                            <span class="nbm-wizard-step is-active" data-step="1">${this.t('config.addBookmarkWizardStepLink', '1 · Link')}</span>
+                            <span class="nbm-wizard-step" data-step="2">${this.t('config.addBookmarkWizardStepPlace', '2 · Place')}</span>
                         </div>
-                        <div class="nbm-section">
-                            <label class="nbm-label" for="new-bookmark-url">${t('config.urlLabelShort', 'URL')}</label>
+                        <div class="nbm-section nbm-wizard-step-1-panel">
+                            <label class="nbm-label" for="new-bookmark-url">${this.t('config.urlLabelShort', 'URL')}</label>
                             <div class="nbm-url-row">
                                 <input type="url" id="new-bookmark-url" name="url" class="nbm-input" required autocomplete="off" placeholder="https://">
-                                <button type="button" class="nbm-btn" id="new-bookmark-icon-fetch">${t('config.fetch', 'Fetch favicon')}</button>
+                                <button type="button" class="nbm-btn" id="new-bookmark-icon-fetch">${this.t('config.fetchFaviconRetry', 'Retry')}</button>
                             </div>
                         </div>
-                        <div class="nbm-section nbm-section-row">
+                        <div class="nbm-section nbm-wizard-step-1-panel">
+                            <label class="nbm-label" for="new-bookmark-name">${this.t('config.bookmarkNamePlaceholder', 'Name')}</label>
+                            <input type="text" id="new-bookmark-name" name="name" class="nbm-input" required autocomplete="off">
+                        </div>
+                        ${compactStripHtml}
+                        <div class="nbm-section nbm-section-row nbm-wizard-step-2-panel">
                             <div class="nbm-col">
-                                <label class="nbm-label" for="new-bookmark-page">${t('config.page', 'Page')}</label>
+                                <label class="nbm-label" for="new-bookmark-page">${this.t('config.page', 'Page')}</label>
                                 <select id="new-bookmark-page" name="page" class="nbm-input">
                                     ${this.generatePageOptions()}
                                 </select>
                             </div>
                             <div class="nbm-col">
-                                <label class="nbm-label" for="new-bookmark-category">${t('config.category', 'Category')}</label>
+                                <label class="nbm-label" for="new-bookmark-category">${this.t('config.category', 'Category')}</label>
                                 <select id="new-bookmark-category" name="category" class="nbm-input">
-                                    <option value="">${t('config.noCategory', 'No category')}</option>
+                                    <option value="">${this.t('config.noCategory', 'No category')}</option>
                                     ${this.generateCategoryOptions()}
                                 </select>
                             </div>
-                            <div class="nbm-col nbm-col-narrow">
-                                <label class="nbm-label" for="new-bookmark-shortcut">${t('config.bookmarkShortcutPlaceholder', 'Shortcut')}</label>
-                                <input type="text" id="new-bookmark-shortcut" name="shortcut" class="nbm-input nbm-shortcut" maxlength="5" autocomplete="off">
-                                <span id="new-bookmark-shortcut-conflict" class="nbm-conflict-hint" hidden>Shortcut already in use</span>
+                        </div>
+                        <details class="nbm-more-options nbm-wizard-step-2-panel" id="new-bookmark-more">
+                            <summary>${this.t('config.addBookmarkMoreOptions', 'More options')}</summary>
+                            <div class="nbm-more-content">
+                                <div class="nbm-section">
+                                    <div class="nbm-shortcut-row">
+                                        <label class="nbm-label" for="new-bookmark-shortcut">${this.t('config.shortcut', 'Shortcut')}</label>
+                                        <input type="text" id="new-bookmark-shortcut" name="shortcut" class="nbm-input nbm-shortcut" maxlength="5" autocomplete="off" placeholder="${this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC')}">
+                                        <span id="new-bookmark-shortcut-conflict" class="nbm-conflict-hint" hidden>${shortcutConflictLabel}</span>
+                                    </div>
+                                </div>
+                                ${fullPreviewHtml}
+                                <div class="nbm-section">
+                                    <label class="nbm-label">${this.t('config.icon', 'Icon')}</label>
+                                    <div class="nbm-icon-row">
+                                        <div id="new-bookmark-icon-preview" class="nbm-icon-preview"><span class="nbm-icon-preview-empty">—</span></div>
+                                        <button type="button" class="nbm-btn nbm-icon-clear" id="new-bookmark-icon-clear" hidden aria-label="${this.t('config.clearIcon', 'Clear icon')}">✕</button>
+                                        <input type="text" id="new-bookmark-icon-url" class="nbm-input" placeholder="${this.t('config.iconUrlOptional', 'Icon URL (optional)')}">
+                                        <label class="nbm-btn nbm-file-label">
+                                            Upload
+                                            <input type="file" id="new-bookmark-icon-file" class="nbm-file-hidden" accept="image/*,.ico,.svg,.webp">
+                                        </label>
+                                    </div>
+                                    <div id="new-bookmark-icon-fetch-state" class="nbm-icon-state"></div>
+                                </div>
+                                <div class="nbm-section">
+                                    <label class="nbm-label" for="new-bookmark-note">${this.t('config.note', 'Note')}</label>
+                                    <textarea id="new-bookmark-note" name="note" class="nbm-input nbm-note" rows="2"></textarea>
+                                </div>
+                                <div class="nbm-section">
+                                    <label class="nbm-label" for="new-bookmark-tags">Tags <span class="nbm-label-hint">comma-separated</span></label>
+                                    <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="work, dev, personal…" autocomplete="off" spellcheck="false">
+                                </div>
+                                <div class="nbm-section nbm-section-toggles">
+                                    <label class="nbm-toggle-label">
+                                        <input type="checkbox" id="new-bookmark-pinned" name="pinned">
+                                        <span>${this.t('config.pinnedShort', 'Pinned')}</span>
+                                    </label>
+                                    <label class="nbm-toggle-label">
+                                        <input type="checkbox" id="new-bookmark-status" name="checkStatus">
+                                        <span>${this.t('config.status', 'Status check')}</span>
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="nbm-section">
-                            <label class="nbm-label">${t('config.icon', 'Icon')}</label>
-                            <div class="nbm-icon-row">
-                                <div id="new-bookmark-icon-preview" class="nbm-icon-preview"><span class="nbm-icon-preview-empty">—</span></div>
-                                <input type="text" id="new-bookmark-icon-url" class="nbm-input" placeholder="${t('config.iconUrlOptional', 'Icon URL (optional)')}">
-                                <label class="nbm-btn nbm-file-label">
-                                    Upload
-                                    <input type="file" id="new-bookmark-icon-file" class="nbm-file-hidden" accept="image/*,.ico,.svg,.webp">
-                                </label>
-                            </div>
-                            <div id="new-bookmark-icon-fetch-state" class="nbm-icon-state"></div>
-                        </div>
-                        <div class="nbm-section">
-                            <label class="nbm-label" for="new-bookmark-note">${t('config.bookmarkNoteLabel', 'Note')}</label>
-                            <textarea id="new-bookmark-note" name="note" class="nbm-input nbm-note" rows="2"></textarea>
-                        </div>
-                        <div class="nbm-section">
-                            <label class="nbm-label" for="new-bookmark-tags">Tags <span class="nbm-label-hint">comma-separated</span></label>
-                            <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="work, dev, personal…" autocomplete="off" spellcheck="false">
-                        </div>
-                        <div class="nbm-section nbm-section-toggles">
-                            <label class="nbm-toggle-label">
-                                <input type="checkbox" id="new-bookmark-pinned" name="pinned">
-                                <span>${t('config.pinnedShort', 'Pinned')}</span>
-                            </label>
-                            <label class="nbm-toggle-label">
-                                <input type="checkbox" id="new-bookmark-status" name="checkStatus">
-                                <span>${t('config.status', 'Status check')}</span>
-                            </label>
-                        </div>
+                        </details>
                         <div class="nbm-footer">
-                            <button type="button" class="nbm-btn nbm-btn-secondary" id="new-bookmark-cancel">${t('config.cancel', 'Cancel')}</button>
-                            <button type="button" class="nbm-btn nbm-btn-primary" id="new-bookmark-create">${t('config.create', 'Add Bookmark')}</button>
+                            <button type="button" class="nbm-btn nbm-btn-secondary nbm-wizard-only" id="new-bookmark-wizard-back">${this.t('config.addBookmarkWizardBack', 'Back')}</button>
+                            <button type="button" class="nbm-btn nbm-btn-secondary" id="new-bookmark-cancel">${this.t('config.cancel', 'Cancel')}</button>
+                            <button type="button" class="nbm-btn nbm-btn-primary nbm-wizard-only" id="new-bookmark-wizard-next">${this.t('config.addBookmarkWizardNext', 'Next')}</button>
+                            <button type="button" class="nbm-btn nbm-btn-primary" id="new-bookmark-create">${this.t('config.create', 'Add Bookmark')}</button>
                         </div>
                     </form>
                 </div>
@@ -171,15 +313,28 @@ class SearchCommandNew {
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         this.modal = document.getElementById('new-bookmark-modal');
-        this.pendingIcon = '';
+
+        if (window.BookmarkFormPreview) {
+            this.formPreview = new window.BookmarkFormPreview({
+                prefix: 'new-bookmark',
+                getSettings: () => window.dashboardInstance?.settings || window.configManager?.settingsData || {},
+                t: (key, fb) => this.t(key, fb),
+                notify: (msg, type) => this.notify(msg, type),
+                onPreviewChange: (bookmark) => {
+                    this.draftState.previewTitle = bookmark.previewTitle || '';
+                    this.draftState.previewDesc = bookmark.previewDesc || '';
+                    this.draftState.previewImage = bookmark.previewImage || '';
+                },
+            });
+            this.formPreview.getBookmark = () => this.getDraftBookmark();
+            this.formPreview.bind();
+        }
 
         const pageSelectPre = document.getElementById('new-bookmark-page');
         if (pageSelectPre) {
             const want = Number(this.currentPageId);
             const match = [...pageSelectPre.options].find((o) => Number(o.value) === want);
-            if (match) {
-                pageSelectPre.value = match.value;
-            }
+            if (match) pageSelectPre.value = match.value;
         }
 
         this.setupEventListeners();
@@ -188,17 +343,17 @@ class SearchCommandNew {
         const pageSelectPost = document.getElementById('new-bookmark-page');
         if (pageSelectPost) {
             const pid = parseInt(String(pageSelectPost.value), 10);
-            if (Number.isFinite(pid)) {
-                void this.updateCategoriesForPage(pid);
-            }
+            if (Number.isFinite(pid)) void this.updateCategoriesForPage(pid);
         }
+
+        this.initWizardLayout();
+        this.updateShortcutConflictHint();
     }
 
     generatePageOptions() {
         if (!this.pages || this.pages.length === 0) {
-            return `<option value="1">${this.language ? this.language.t('dashboard.defaultPageTitle') : 'Dashboard'}</option>`;
+            return `<option value="1">${this.t('dashboard.defaultPageTitle', 'Dashboard')}</option>`;
         }
-
         const currentId = Number(this.currentPageId);
         return this.pages.map(page => {
             const isCurrentPage = Number(page.id) === currentId;
@@ -208,232 +363,226 @@ class SearchCommandNew {
     }
 
     generateCategoryOptions() {
-        if (!this.categories || this.categories.length === 0) {
-            return '';
-        }
-
-        return this.categories.map(category => {
-            return `<option value="${category.id}">${category.name}</option>`;
-        }).join('');
+        if (!this.categories || this.categories.length === 0) return '';
+        return this.categories.map(category => `<option value="${category.id}">${category.name}</option>`).join('');
     }
 
     async updateCategoriesForPage(pageId) {
         try {
             const response = await fetch(`/api/categories?page=${pageId}`);
-            if (response.ok) {
-                const categories = await response.json();
-                
-                this.categories = categories.map(cat => ({ 
-                    ...cat, 
-                    name: this.language ? this.language.t(cat.name) || cat.name : cat.name 
-                }));
-                
-                const categorySelect = document.getElementById('new-bookmark-category');
-                if (categorySelect) {
-                    const currentValue = categorySelect.value;
-                    
-                    if (categorySelect.__customSelectInstance) {
-                        try {
-                            categorySelect.__customSelectInstance.destroy();
-                            categorySelect.__customSelectInstance = null;
-                            delete categorySelect.dataset.customSelectInit;
-                        } catch (e) {
-                            console.error('Error destroying custom select:', e);
-                        }
-                    }
-                    
-                    categorySelect.innerHTML = `
-                        <option value="">${this.language ? this.language.t('config.noCategory') : 'No category'}</option>
-                        ${this.generateCategoryOptions()}
-                    `;
-                    
-                    if (currentValue && this.categories.find(cat => cat.id === currentValue)) {
-                        categorySelect.value = currentValue;
-                    }
-                    
-                    if (typeof CustomSelect !== 'undefined') {
-                        const instance = new CustomSelect(categorySelect);
-                        categorySelect.__customSelectInstance = instance;
-                        categorySelect.dataset.customSelectInit = 'true';
-                    }
+            if (!response.ok) return;
+            const categories = await response.json();
+            this.categories = categories.map(cat => ({
+                ...cat,
+                name: this.language ? this.language.t(cat.name) || cat.name : cat.name
+            }));
+            const categorySelect = document.getElementById('new-bookmark-category');
+            if (!categorySelect) return;
+            const currentValue = categorySelect.value;
+            if (categorySelect.__customSelectInstance) {
+                try {
+                    categorySelect.__customSelectInstance.destroy();
+                    categorySelect.__customSelectInstance = null;
+                    delete categorySelect.dataset.customSelectInit;
+                } catch (e) {
+                    console.error('Error destroying custom select:', e);
                 }
+            }
+            categorySelect.innerHTML = `
+                <option value="">${this.t('config.noCategory', 'No category')}</option>
+                ${this.generateCategoryOptions()}
+            `;
+            if (currentValue && this.categories.find(cat => cat.id === currentValue)) {
+                categorySelect.value = currentValue;
+            }
+            if (typeof CustomSelect !== 'undefined') {
+                const instance = new CustomSelect(categorySelect);
+                categorySelect.__customSelectInstance = instance;
+                categorySelect.dataset.customSelectInit = 'true';
             }
         } catch (error) {
             console.error('Error loading categories for page:', error);
         }
     }
 
+    normalizeUrlField(urlInput, writeBack = true) {
+        if (!urlInput) return '';
+        const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput.value) || urlInput.value.trim();
+        if (writeBack && normalized && normalized !== urlInput.value.trim()) {
+            urlInput.value = normalized;
+        }
+        return normalized;
+    }
+
+    scheduleUrlMetaFetch() {
+        window.BookmarkPreviewService?.scheduleDebounced('new-bookmark-url-meta', () => {
+            void this.autoFetchFromUrlField(true);
+        }, 400);
+    }
+
+    async autoFetchFromUrlField(force = false) {
+        const urlInput = document.getElementById('new-bookmark-url');
+        const iconUrlInput = document.getElementById('new-bookmark-icon-url');
+        const urlValue = this.normalizeUrlField(urlInput, true);
+        if (!urlValue || !window.BookmarkUrlUtils?.isHttpUrl(urlValue)) {
+            this.updatePreviews();
+            return;
+        }
+
+        if (!force && (this._userEditedIcon || this._autoFetchInFlight)) return;
+        if (!force && iconUrlInput && String(iconUrlInput.value || '').trim()) return;
+        if (!force && this.pendingIcon) return;
+
+        this._autoFetchInFlight = true;
+        this.setModalIconFetchState(this.t('config.iconFetching', 'Fetching...'));
+        const icon = await window.BookmarkPreviewService.fetchAndUploadFavicon(urlValue);
+        this._autoFetchInFlight = false;
+
+        if (icon && !this._userEditedIcon) {
+            this.pendingIcon = icon;
+            if (iconUrlInput) iconUrlInput.value = `/data/icons/${icon}`;
+            this.syncIconPreview(icon);
+            this.setModalIconFetchState(this.t('config.iconFound', 'Found'));
+
+            const nameEl = document.getElementById('new-bookmark-name');
+            if (nameEl && !String(nameEl.value || '').trim()) {
+                try {
+                    const preview = await window.BookmarkPreviewService.fetchLinkPreview(urlValue);
+                    if (preview.title) nameEl.value = preview.title;
+                } catch { /* ignore */ }
+            }
+        } else if (!icon) {
+            this.setModalIconFetchState(this.t('config.iconNotFound', 'Not found'));
+        }
+
+        this.updatePreviews();
+    }
+
     setupEventListeners() {
         this.keyboardBlockHandler = (e) => {
             if (this.modal && this.modal.classList.contains('show')) {
                 const isInsideModal = e.target.closest('#new-bookmark-modal');
-                
                 if (!isInsideModal) {
                     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Enter', 'Tab'].includes(e.key)) {
                         e.preventDefault();
                         e.stopPropagation();
                     }
-                } else {
-                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                        const target = e.target;
-                        const isInCustomSelect = target.classList.contains('custom-select-trigger') || 
-                                                target.closest('.custom-select') ||
-                                                document.querySelector('.custom-select.open');
-                        const isInteractiveElement = target.tagName === 'INPUT' || 
-                                                     target.tagName === 'SELECT' || 
-                                                     target.tagName === 'TEXTAREA' ||
-                                                     target.tagName === 'BUTTON' ||
-                                                     target.type === 'checkbox';
-                        
-                        if (!isInCustomSelect && !isInteractiveElement) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
+                } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    const target = e.target;
+                    const isInCustomSelect = target.classList.contains('custom-select-trigger')
+                        || target.closest('.custom-select')
+                        || document.querySelector('.custom-select.open');
+                    const isInteractiveElement = target.tagName === 'INPUT'
+                        || target.tagName === 'SELECT'
+                        || target.tagName === 'TEXTAREA'
+                        || target.tagName === 'BUTTON'
+                        || target.type === 'checkbox';
+                    if (!isInCustomSelect && !isInteractiveElement) {
+                        e.preventDefault();
+                        e.stopPropagation();
                     }
                 }
             }
         };
-        
         document.addEventListener('keydown', this.keyboardBlockHandler, true);
 
         this.modal.addEventListener('keydown', (e) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.stopPropagation();
-            }
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.stopPropagation();
         }, false);
 
-        this.modal.addEventListener('mousedown', (e) => {
-            this._mouseDownTarget = e.target;
-        });
-
+        this.modal.addEventListener('mousedown', (e) => { this._mouseDownTarget = e.target; });
         this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal && this._mouseDownTarget === this.modal) {
-                this.closeModal();
-            }
+            if (e.target === this.modal && this._mouseDownTarget === this.modal) this.closeModal();
         });
 
         this._boundHandleKeyDown = this.handleKeyDown.bind(this);
         document.addEventListener('keydown', this._boundHandleKeyDown);
 
-        const pageSelect = document.getElementById('new-bookmark-page');
-        if (pageSelect) {
-            pageSelect.addEventListener('change', async (e) => {
-                const selectedPageId = parseInt(e.target.value);
-                await this.updateCategoriesForPage(selectedPageId);
-            });
-        }
+        document.getElementById('new-bookmark-page')?.addEventListener('change', async (e) => {
+            await this.updateCategoriesForPage(parseInt(e.target.value, 10));
+            this.updateShortcutConflictHint();
+        });
 
         const shortcutInput = document.getElementById('new-bookmark-shortcut');
-        const shortcutConflictHint = document.getElementById('new-bookmark-shortcut-conflict');
-        shortcutInput.addEventListener('input', (e) => {
+        shortcutInput?.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-            const val = e.target.value;
-            if (shortcutConflictHint) {
-                const dash = window.dashboardInstance;
-                const allBookmarks = dash ? (dash.allBookmarks || dash.bookmarks || []) : [];
-                const conflict = val && allBookmarks.some((b) => String(b?.shortcut || '').trim().toUpperCase() === val);
-                shortcutConflictHint.hidden = !conflict;
-            }
+            this.updateShortcutConflictHint();
+            this.updatePreviews();
         });
 
-        const statusCheckbox = document.getElementById('new-bookmark-status');
-        statusCheckbox.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                statusCheckbox.checked = !statusCheckbox.checked;
-            }
+        ['new-bookmark-name', 'new-bookmark-note'].forEach((id) => {
+            document.getElementById(id)?.addEventListener('input', () => this.updatePreviews());
         });
 
-        const pinnedCheckbox = document.getElementById('new-bookmark-pinned');
-        pinnedCheckbox.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                pinnedCheckbox.checked = !pinnedCheckbox.checked;
-            }
+        document.getElementById('new-bookmark-pinned')?.addEventListener('change', () => this.updatePreviews());
+        document.getElementById('new-bookmark-status')?.addEventListener('change', () => this.updatePreviews());
+
+        const urlInput = document.getElementById('new-bookmark-url');
+        urlInput?.addEventListener('input', () => this.scheduleUrlMetaFetch());
+        urlInput?.addEventListener('blur', () => {
+            this.normalizeUrlField(urlInput, true);
+            void this.autoFetchFromUrlField(false);
         });
 
         const iconFileInput = document.getElementById('new-bookmark-icon-file');
-        if (iconFileInput) {
-            iconFileInput.addEventListener('change', () => {
-                const iconUrlInput = document.getElementById('new-bookmark-icon-url');
-                if (iconUrlInput) {
-                    iconUrlInput.value = '';
-                }
-                this.pendingIcon = '';
-                this.syncIconPreview('');
-                this.setModalIconFetchState('');
-            });
-        }
+        iconFileInput?.addEventListener('change', () => {
+            document.getElementById('new-bookmark-icon-url').value = '';
+            this.pendingIcon = '';
+            this._userEditedIcon = true;
+            this.syncIconPreview('');
+            this.setModalIconFetchState('');
+            this.updatePreviews();
+        });
 
         const iconUrlInput = document.getElementById('new-bookmark-icon-url');
-        if (iconUrlInput) {
-            iconUrlInput.addEventListener('input', () => {
-                this.pendingIcon = '';
-            });
-            iconUrlInput.addEventListener('blur', () => {
-                this.autoFetchModalFaviconFromUrlField();
-            });
-        }
-
-        const fetchIconButton = document.getElementById('new-bookmark-icon-fetch');
-        if (fetchIconButton) {
-            fetchIconButton.addEventListener('click', async () => {
-                const urlValue = String(document.getElementById('new-bookmark-url')?.value || '').trim();
-                if (!urlValue) {
-                    this.notify(this.language ? this.language.t('config.urlRequiredShort') : 'URL required.', 'error');
-                    return;
-                }
-                fetchIconButton.disabled = true;
-                this.setModalIconFetchState(this.language ? this.language.t('config.iconFetching') : 'Fetching...');
-                const icon = await this.fetchAndAssignFaviconForUrl(urlValue);
-                fetchIconButton.disabled = false;
-                if (!icon) {
-                    this.setModalIconFetchState(this.language ? this.language.t('config.iconNotFound') : 'Not found');
-                    this.notify(this.language ? this.language.t('config.faviconFetchFailed') : 'Favicon fetch failed.', 'error');
-                    return;
-                }
-                this.pendingIcon = icon;
-                this.syncIconPreview(icon);
-                this.setModalIconFetchState(this.language ? this.language.t('config.iconFound') : 'Found');
-                this.notify(this.language ? this.language.t('config.faviconFetched') : 'Favicon fetched.', 'success');
-            });
-        }
-
-        const createButton = document.getElementById('new-bookmark-create');
-        createButton.addEventListener('click', () => {
-            this.createBookmark();
+        iconUrlInput?.addEventListener('input', () => {
+            this.pendingIcon = '';
+            this._userEditedIcon = true;
         });
-        createButton.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.createBookmark();
+
+        document.getElementById('new-bookmark-icon-clear')?.addEventListener('click', () => {
+            if (iconUrlInput) iconUrlInput.value = '';
+            if (iconFileInput) iconFileInput.value = '';
+            this.pendingIcon = '';
+            this._userEditedIcon = false;
+            this.syncIconPreview('');
+            this.setModalIconFetchState('');
+            this.updatePreviews();
+        });
+
+        document.getElementById('new-bookmark-icon-fetch')?.addEventListener('click', async () => {
+            const urlValue = this.normalizeUrlField(urlInput, true);
+            if (!urlValue) {
+                this.notify(this.t('config.urlRequiredShort', 'URL required.'), 'error');
+                return;
             }
+            this._userEditedIcon = false;
+            await this.autoFetchFromUrlField(true);
         });
 
-        const cancelButton = document.getElementById('new-bookmark-cancel');
-        cancelButton?.addEventListener('click', () => {
-            this.closeModal();
-        });
-        cancelButton?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.closeModal();
-            }
+        document.getElementById('new-bookmark-create')?.addEventListener('click', () => this.createBookmark());
+        document.getElementById('new-bookmark-cancel')?.addEventListener('click', () => this.closeModal());
+        document.getElementById('new-bookmark-cancel-header')?.addEventListener('click', () => this.closeModal());
+
+        document.getElementById('new-bookmark-wizard-next')?.addEventListener('click', () => {
+            if (!this.validateWizardStep1()) return;
+            void this.autoFetchFromUrlField(false);
+            this.setWizardStep(2);
+            document.getElementById('new-bookmark-page')?.focus();
         });
 
-        const cancelHeaderButton = document.getElementById('new-bookmark-cancel-header');
-        cancelHeaderButton?.addEventListener('click', () => {
-            this.closeModal();
+        document.getElementById('new-bookmark-wizard-back')?.addEventListener('click', () => {
+            this.setWizardStep(1);
+            document.getElementById('new-bookmark-url')?.focus();
         });
 
-        document.getElementById('new-bookmark-form').addEventListener('submit', (e) => {
+        document.getElementById('new-bookmark-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.createBookmark();
         });
 
         this._modalCustomSelects = [];
-        const selects = this.modal.querySelectorAll('select');
-        selects.forEach(select => {
+        this.modal.querySelectorAll('select').forEach(select => {
             if (typeof CustomSelect !== 'undefined') {
                 const instance = new CustomSelect(select);
                 select.__customSelectInstance = instance;
@@ -441,100 +590,149 @@ class SearchCommandNew {
             }
         });
 
-        const urlInput = document.getElementById('new-bookmark-url');
-        if (urlInput) {
-            urlInput.addEventListener('blur', () => {
-                this.autoFetchModalFaviconFromUrlField();
-            });
-        }
-
         const tagsInput = document.getElementById('new-bookmark-tags');
         if (tagsInput && typeof TagAutocomplete !== 'undefined') {
             const dash = window.dashboardInstance;
             const pool = new Set();
             (dash?.allBookmarks?.length ? dash.allBookmarks : dash?.bookmarks ?? [])
-                .forEach(bm => (bm.tags || []).forEach(t => pool.add(t.toLowerCase())));
+                .forEach(bm => (bm.tags || []).forEach(tg => pool.add(tg.toLowerCase())));
             TagAutocomplete.attach(tagsInput, () => {
-                tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => pool.add(t));
+                tagsInput.value.split(',').map(tg => tg.trim().toLowerCase()).filter(Boolean).forEach(tg => pool.add(tg));
                 return [...pool];
+            });
+        }
+
+        if (this.formPreview) {
+            const refreshBtn = document.getElementById('new-bookmark-link-preview-refresh-btn');
+            const clearBtn = document.getElementById('new-bookmark-link-preview-clear-btn');
+            refreshBtn?.addEventListener('click', async () => {
+                const bookmark = this.getDraftBookmark();
+                this.normalizeUrlField(urlInput, true);
+                bookmark.url = urlInput?.value || bookmark.url;
+                const ok = await this.formPreview.refreshLinkPreview(bookmark);
+                if (ok) {
+                    this.draftState.previewTitle = bookmark.previewTitle || '';
+                    this.draftState.previewDesc = bookmark.previewDesc || '';
+                    this.draftState.previewImage = bookmark.previewImage || '';
+                    this.updatePreviews();
+                }
+            });
+            clearBtn?.addEventListener('click', () => {
+                const bookmark = this.getDraftBookmark();
+                this.formPreview.clearLinkPreview(bookmark);
+                this.draftState.previewTitle = '';
+                this.draftState.previewDesc = '';
+                this.draftState.previewImage = '';
+                this.updatePreviews();
             });
         }
     }
 
     handleKeyDown(e) {
-        if (e.key === 'Escape' && this.modal && this.modal.classList.contains('show')) {
+        if (e.key === 'Escape' && this.modal?.classList.contains('show')) {
             this.closeModal();
         }
     }
 
-    showModal() {
-        if (this.modal) {
-            this.modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            
-            setTimeout(() => {
-                const firstInput = document.getElementById('new-bookmark-name');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-            }, 100);
+    showModal(options = {}) {
+        if (!this.modal) return;
+        this.modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        const urlInput = document.getElementById('new-bookmark-url');
+        const nameInput = document.getElementById('new-bookmark-name');
+        const opts = options.url ? options : (this._openOptions || {});
+
+        if (opts.url && urlInput) {
+            urlInput.value = window.BookmarkUrlUtils?.ensureHttpUrl(opts.url) || opts.url;
+            void this.autoFetchFromUrlField(true);
         }
+        if (opts.name && nameInput) {
+            nameInput.value = opts.name;
+        }
+
+        this.updatePreviews();
+        this.updateShortcutConflictHint();
+
+        setTimeout(() => {
+            if (opts.url && urlInput) {
+                urlInput.focus();
+                urlInput.select();
+            } else if (this.usesMobileWizard()) {
+                urlInput?.focus();
+            } else {
+                urlInput?.focus();
+            }
+        }, 100);
     }
 
     closeModal() {
-        if (this.modal) {
-            const tagsInput = document.getElementById('new-bookmark-tags');
-            if (tagsInput && typeof TagAutocomplete !== 'undefined') {
-                TagAutocomplete.detach(tagsInput);
-            }
+        if (!this.modal) return;
+        window.BookmarkPreviewService?.cancelDebounced('new-bookmark-url-meta');
 
-            this.modal.classList.remove('show');
-            document.body.style.overflow = '';
+        const tagsInput = document.getElementById('new-bookmark-tags');
+        if (tagsInput && typeof TagAutocomplete !== 'undefined') TagAutocomplete.detach(tagsInput);
 
-            if (this.keyboardBlockHandler) {
-                document.removeEventListener('keydown', this.keyboardBlockHandler, true);
-            }
-            if (this._boundHandleKeyDown) {
-                document.removeEventListener('keydown', this._boundHandleKeyDown);
-                this._boundHandleKeyDown = null;
-            }
-            if (this._modalCustomSelects) {
-                this._modalCustomSelects.forEach(cs => cs.destroy());
-                this._modalCustomSelects = [];
-            }
+        this.modal.classList.remove('show');
+        document.body.style.overflow = '';
 
-            setTimeout(() => {
-                if (this.modal) {
-                    this.modal.remove();
-                    this.modal = null;
-                }
-            }, 200);
+        if (this.keyboardBlockHandler) document.removeEventListener('keydown', this.keyboardBlockHandler, true);
+        if (this._boundHandleKeyDown) {
+            document.removeEventListener('keydown', this._boundHandleKeyDown);
+            this._boundHandleKeyDown = null;
         }
+        if (this._modalCustomSelects) {
+            this._modalCustomSelects.forEach(cs => cs.destroy());
+            this._modalCustomSelects = [];
+        }
+
+        setTimeout(() => {
+            if (this.modal) {
+                this.modal.remove();
+                this.modal = null;
+            }
+            this.formPreview = null;
+            this._openOptions = null;
+        }, 200);
     }
 
     async createBookmark() {
         const form = document.getElementById('new-bookmark-form');
-        
-        if (!form.checkValidity()) {
+        const nameEl = document.getElementById('new-bookmark-name');
+        if (nameEl && !String(nameEl.value || '').trim()) {
+            const fallback = this.draftState.previewTitle || '';
+            if (fallback) nameEl.value = fallback;
+        }
+        if (!form?.checkValidity()) {
             form.reportValidity();
             return;
         }
 
+        const urlInput = document.getElementById('new-bookmark-url');
+        const normalizedUrl = this.normalizeUrlField(urlInput, true);
+
         const formData = new FormData(form);
+        const pageSelectEl = document.getElementById('new-bookmark-page');
+        const pageId = parseInt(String(pageSelectEl?.value ?? formData.get('page') ?? ''), 10);
+
+        const shortcut = String(formData.get('shortcut') || '').trim().toUpperCase();
+        if (shortcut && this.hasShortcutConflictOnPage(shortcut, pageId)) {
+            this.updateShortcutConflictHint();
+            this.notify(this.t('config.shortcutConflict', 'Shortcut already in use'), 'error');
+            return;
+        }
+
         const iconFile = document.getElementById('new-bookmark-icon-file')?.files?.[0];
         const iconUrl = (document.getElementById('new-bookmark-icon-url')?.value || '').trim();
         const icon = await this.resolveIconValue(iconFile, iconUrl);
-
-        if (icon === null) {
-            return;
-        }
+        if (icon === null) return;
 
         const rawTags = String(formData.get('tags') || '');
         const tags = rawTags.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i);
 
         const bookmark = {
             name: formData.get('name').trim(),
-            url: formData.get('url').trim(),
+            url: normalizedUrl,
             note: (formData.get('note') || '').trim(),
             shortcut: formData.get('shortcut').trim().toUpperCase(),
             category: formData.get('category'),
@@ -542,16 +740,15 @@ class SearchCommandNew {
             checkStatus: formData.get('checkStatus') === 'on',
             tags,
             icon,
-            createdAt: Date.now()
+            createdAt: Date.now(),
         };
 
-        const pageSelectEl = document.getElementById('new-bookmark-page');
-        const pageId = parseInt(String(pageSelectEl?.value ?? formData.get('page') ?? ''), 10);
+        if (this.draftState.previewTitle) bookmark.previewTitle = this.draftState.previewTitle;
+        if (this.draftState.previewDesc) bookmark.previewDesc = this.draftState.previewDesc;
+        if (this.draftState.previewImage) bookmark.previewImage = this.draftState.previewImage;
+
         if (!Number.isFinite(pageId) || pageId < 1) {
-            this.notify(
-                this.language ? this.language.t('config.errorCreatingBookmark') : 'Invalid page selected.',
-                'error'
-            );
+            this.notify(this.t('config.errorCreatingBookmark', 'Invalid page selected.'), 'error');
             return;
         }
 
@@ -572,28 +769,19 @@ class SearchCommandNew {
             const response = await fetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    page: pageId,
-                    bookmark: bookmark
-                })
+                body: JSON.stringify({ page: pageId, bookmark })
             });
 
             if (response.ok) {
                 this.closeModal();
                 this.pendingIcon = '';
-                
                 if (window.dashboardInstance) {
                     await window.dashboardInstance.loadAllBookmarks();
-                    
                     if (Number(pageId) === Number(window.dashboardInstance.currentPageId)) {
                         await window.dashboardInstance.loadPageBookmarks(pageId);
                     }
                 }
-
-                this.notify(
-                    this.language ? this.language.t('config.bookmarkCreated') : 'Bookmark created successfully!',
-                    'success'
-                );
+                this.notify(this.t('config.bookmarkCreated', 'Bookmark created successfully!'), 'success');
             } else if (response.status === 409) {
                 let conflictMessage = this.duplicateBookmarkUrlMessage();
                 const raw = await response.text();
@@ -604,25 +792,16 @@ class SearchCommandNew {
                             conflictMessage = `Duplicate shortcut "${errorBody.shortcut}".`;
                         }
                     } catch {
-                        if (raw.includes('Duplicate bookmark URL')) {
-                            conflictMessage = this.duplicateBookmarkUrlMessage();
-                        }
+                        if (raw.includes('Duplicate bookmark URL')) conflictMessage = this.duplicateBookmarkUrlMessage();
                     }
                 }
                 this.notify(conflictMessage, 'error');
             } else {
-                console.error('Failed to create bookmark');
-                this.notify(
-                    this.language ? this.language.t('config.errorCreatingBookmark') : 'Error creating bookmark',
-                    'error'
-                );
+                this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
             }
         } catch (error) {
             console.error('Error creating bookmark:', error);
-            this.notify(
-                this.language ? this.language.t('config.errorCreatingBookmark') : 'Error creating bookmark',
-                'error'
-            );
+            this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
         }
     }
 
@@ -630,149 +809,50 @@ class SearchCommandNew {
         if (iconFile) {
             const uploadedIcon = await this.uploadIconFile(iconFile);
             if (!uploadedIcon) {
-                this.notify(this.language ? this.language.t('config.iconUploadFailed') : 'Icon upload failed.', 'error');
+                this.notify(this.t('config.iconUploadFailed', 'Icon upload failed.'), 'error');
                 return null;
             }
             return uploadedIcon;
         }
-
         if (iconUrl) {
-            if (iconUrl.startsWith('/data/icons/')) {
-                return iconUrl.replace('/data/icons/', '').trim();
-            }
-            const remoteIcon = await this.uploadIconFromUrl(iconUrl);
+            if (iconUrl.startsWith('/data/icons/')) return iconUrl.replace('/data/icons/', '').trim();
+            const remoteIcon = await window.BookmarkPreviewService.uploadIconFromUrl(iconUrl);
             if (!remoteIcon) {
-                this.notify(this.language ? this.language.t('config.iconUrlInvalid') : 'Icon URL invalid.', 'error');
+                this.notify(this.t('config.iconUrlInvalid', 'Icon URL invalid.'), 'error');
                 return null;
             }
             return remoteIcon;
         }
-
-        if (this.pendingIcon) {
-            return this.pendingIcon;
-        }
-
+        if (this.pendingIcon) return this.pendingIcon;
         return '';
     }
 
     syncIconPreview(icon) {
         const previewEl = document.getElementById('new-bookmark-icon-preview');
+        const clearBtn = document.getElementById('new-bookmark-icon-clear');
         if (!previewEl) return;
         if (icon) {
             previewEl.innerHTML = `<img src="/data/icons/${icon}" alt="">`;
         } else {
             previewEl.innerHTML = `<span class="nbm-icon-preview-empty">—</span>`;
         }
-    }
-
-    deriveFaviconFromBookmarkUrl(bookmarkUrl) {
-        const safeUrl = String(bookmarkUrl || '').trim();
-        if (!safeUrl) return '';
-        try {
-            const parsed = new URL(safeUrl);
-            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
-            return `${parsed.protocol}//${parsed.host}/favicon.ico`;
-        } catch {
-            return '';
-        }
-    }
-
-    async fetchAndAssignFaviconForUrl(bookmarkUrl) {
-        const safeUrl = String(bookmarkUrl || '').trim();
-        if (!safeUrl) return '';
-        try {
-            const previewResponse = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
-            if (previewResponse.ok) {
-                const preview = await previewResponse.json();
-                const iconUrl = String(preview?.icon || '').trim();
-                if (iconUrl) {
-                    const icon = await this.uploadIconFromUrl(iconUrl);
-                    if (icon) {
-                        return icon;
-                    }
-                }
-            }
-        } catch {
-            // Continue to fallback.
-        }
-        const fallbackUrl = this.deriveFaviconFromBookmarkUrl(safeUrl);
-        if (!fallbackUrl) return '';
-        return this.uploadIconFromUrl(fallbackUrl);
-    }
-
-    autoFetchModalFaviconFromUrlField() {
-        if (this._autoFetchTimer) {
-            clearTimeout(this._autoFetchTimer);
-        }
-        this._autoFetchTimer = setTimeout(async () => {
-            if (this._autoFetchInFlight || this.pendingIcon) {
-                return;
-            }
-            const urlValue = String(document.getElementById('new-bookmark-url')?.value || '').trim();
-            if (!urlValue) {
-                return;
-            }
-            this._autoFetchInFlight = true;
-            this.setModalIconFetchState(this.language ? this.language.t('config.iconFetching') : 'Fetching...');
-            const icon = await this.fetchAndAssignFaviconForUrl(urlValue);
-            this._autoFetchInFlight = false;
-            if (!icon) {
-                this.setModalIconFetchState(this.language ? this.language.t('config.iconNotFound') : 'Not found');
-                return;
-            }
-            this.pendingIcon = icon;
-            const iconUrlInput = document.getElementById('new-bookmark-icon-url');
-            if (iconUrlInput) {
-                iconUrlInput.value = `/data/icons/${icon}`;
-            }
-            this.syncIconPreview(icon);
-            this.setModalIconFetchState(this.language ? this.language.t('config.iconFound') : 'Found');
-        }, 250);
+        if (clearBtn) clearBtn.hidden = !icon;
     }
 
     setModalIconFetchState(text) {
         const stateEl = document.getElementById('new-bookmark-icon-fetch-state');
-        if (stateEl) {
-            stateEl.textContent = text;
-        }
+        if (stateEl) stateEl.textContent = text;
     }
 
     async uploadIconFile(file) {
         const formData = new FormData();
         formData.append('icon', file);
-
         try {
-            const response = await fetch('/api/icon', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                return '';
-            }
-
+            const response = await fetch('/api/icon', { method: 'POST', body: formData });
+            if (!response.ok) return '';
             const result = await response.json();
             return result.icon || '';
-        } catch (error) {
-            return '';
-        }
-    }
-
-    async uploadIconFromUrl(iconUrl) {
-        try {
-            const response = await fetch('/api/icon/from-url', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: iconUrl })
-            });
-
-            if (!response.ok) {
-                return '';
-            }
-
-            const result = await response.json();
-            return result.icon || '';
-        } catch (error) {
+        } catch {
             return '';
         }
     }

@@ -1037,8 +1037,14 @@ class SearchComponent {
                     <span class="search-match-name search-hint-name">${t('dashboard.hintAddBookmark', 'Add as new bookmark')}</span>
                 `;
                 newHint.addEventListener('click', () => {
+                    const handler = this.commandsComponent?.newCommandHandler;
+                    if (handler) {
+                        handler.openModal({ url: q });
+                        this.closeSearch();
+                        return;
+                    }
                     this.currentQuery = `:new ${q}`;
-                    this.handleSearch(this.currentQuery);
+                    this.updateSearch();
                     const input = document.getElementById('shortcut-search-input');
                     if (input) { input.value = this.currentQuery; input.focus(); }
                 });

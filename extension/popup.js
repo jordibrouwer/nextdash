@@ -1,6 +1,118 @@
 // nextDash Bookmark Saver Extension
 
 let confirmationCallback = null;
+let extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
+let extFormPreview = null;
+let extServerUrl = '';
+
+function getExtDraftBookmark() {
+    return {
+        name: document.getElementById('bookmark-name')?.value || '',
+        url: document.getElementById('bookmark-url')?.value || '',
+        shortcut: '',
+        note: document.getElementById('bookmark-note')?.value || '',
+        icon: extDraftState.icon || '',
+        pinned: false,
+        checkStatus: false,
+        previewTitle: extDraftState.previewTitle || '',
+        previewDesc: extDraftState.previewDesc || '',
+        previewImage: extDraftState.previewImage || '',
+    };
+}
+
+function initExtensionPreview() {
+    if (!window.BookmarkFormPreview) return;
+    extFormPreview = new window.BookmarkFormPreview({
+        prefix: 'ext',
+        apiBase: extServerUrl,
+        iconBasePath: extServerUrl ? `${extServerUrl.replace(/\/+$/, '')}/data/icons/` : '/data/icons/',
+        getSettings: () => ({}),
+        t: (key, fb) => {
+            const short = key.replace(/^config\./, '');
+            const extKeyMap = {
+                bookmarkDashboardPreviewLabel: 'previewDashboardLabel',
+                bookmarkDashboardPreviewHint: 'previewDashboardHint',
+                bookmarkDashboardPreviewAria: 'previewDashboardAria',
+                bookmarkLinkPreviewLabel: 'previewLinkLabel',
+                bookmarkLinkPreviewRefresh: 'previewRefresh',
+                bookmarkLinkPreviewClear: 'previewClear',
+                bookmarkLinkPreviewEmpty: 'previewEmpty',
+                bookmarkLinkPreviewNoUrl: 'previewNoUrl',
+                bookmarkLinkPreviewRefreshed: 'previewRefreshed',
+                bookmarkLinkPreviewRefreshFailed: 'previewRefreshFailed',
+                bookmarkLinkPreviewCleared: 'previewCleared',
+                bookmarkPreviewUntitled: 'previewUntitled',
+                bookmarkPreviewStatusCheck: 'previewStatusCheck',
+            };
+            const extKey = extKeyMap[short];
+            return extKey ? extT(extKey, fb) : fb;
+        },
+        notify: (msg, type) => showMessage(msg, type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'),
+        onPreviewChange: (bookmark) => {
+            extDraftState.previewTitle = bookmark.previewTitle || '';
+            extDraftState.previewDesc = bookmark.previewDesc || '';
+            extDraftState.previewImage = bookmark.previewImage || '';
+        },
+    });
+    extFormPreview.getBookmark = () => getExtDraftBookmark();
+    extFormPreview.bind();
+
+    document.getElementById('ext-link-preview-refresh-btn')?.addEventListener('click', async () => {
+        const bookmark = getExtDraftBookmark();
+        const urlInput = document.getElementById('bookmark-url');
+        if (urlInput) {
+            bookmark.url = BookmarkUrlUtils.ensureHttpUrl(urlInput.value);
+            urlInput.value = bookmark.url;
+        }
+        await extFormPreview.refreshLinkPreview(bookmark);
+        extDraftState.previewTitle = bookmark.previewTitle || '';
+        extDraftState.previewDesc = bookmark.previewDesc || '';
+        extDraftState.previewImage = bookmark.previewImage || '';
+        extFormPreview.updateAll(bookmark);
+    });
+
+    document.getElementById('ext-link-preview-clear-btn')?.addEventListener('click', () => {
+        const bookmark = getExtDraftBookmark();
+        extFormPreview.clearLinkPreview(bookmark);
+        extDraftState.previewTitle = '';
+        extDraftState.previewDesc = '';
+        extDraftState.previewImage = '';
+        extFormPreview.updateAll(bookmark);
+    });
+}
+
+async function scheduleExtensionUrlMeta() {
+    BookmarkPreviewService.scheduleDebounced('ext-url-meta', async () => {
+        await autoFetchExtensionUrlMeta();
+    }, 450);
+}
+
+async function autoFetchExtensionUrlMeta() {
+    const urlInput = document.getElementById('bookmark-url');
+    const nameInput = document.getElementById('bookmark-name');
+    if (!urlInput || !extServerUrl) return;
+
+    const normalized = BookmarkUrlUtils.ensureHttpUrl(urlInput.value);
+    if (!normalized || !isBookmarkableUrl(normalized)) {
+        extFormPreview?.updateAll(getExtDraftBookmark());
+        return;
+    }
+    if (normalized !== urlInput.value.trim()) urlInput.value = normalized;
+    updateUrlGuard(normalized);
+
+    try {
+        const extras = await fetchBookmarkExtras(extServerUrl, normalized);
+        if (extras.icon) extDraftState.icon = extras.icon;
+        if (extras.previewTitle) extDraftState.previewTitle = extras.previewTitle;
+        if (extras.previewDesc) extDraftState.previewDesc = extras.previewDesc;
+        if (extras.previewImage) extDraftState.previewImage = extras.previewImage;
+        if (!String(nameInput?.value || '').trim() && extras.previewTitle) {
+            nameInput.value = extras.previewTitle;
+        }
+    } catch { /* optional */ }
+
+    extFormPreview?.updateAll(getExtDraftBookmark());
+}
 
 function showMessage(text, type = 'info') {
     const messageEl = document.getElementById('message');
@@ -95,6 +207,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     document.getElementById('bookmark-url').addEventListener('input', (e) => {
         updateUrlGuard(e.target.value);
+        scheduleExtensionUrlMeta();
+    });
+
+    document.getElementById('bookmark-url').addEventListener('blur', (e) => {
+        const normalized = BookmarkUrlUtils.ensureHttpUrl(e.target.value);
+        if (normalized && normalized !== e.target.value.trim()) {
+            e.target.value = normalized;
+            updateUrlGuard(normalized);
+        }
+        void autoFetchExtensionUrlMeta();
+    });
+
+    document.getElementById('bookmark-name')?.addEventListener('input', () => {
+        extFormPreview?.updateAll(getExtDraftBookmark());
     });
 
     // Page select change to load categories
@@ -146,11 +272,17 @@ async function loadSettings() {
 
 async function loadSaveTab() {
     try {
+        const settings = await chrome.storage.sync.get(['serverUrl']);
+        extServerUrl = settings.serverUrl || '';
+        if (!extFormPreview) initExtensionPreview();
+
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         document.getElementById('bookmark-name').value = tab.title || '';
         document.getElementById('bookmark-url').value = tab.url || '';
+        extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
         updateUrlGuard(tab.url || '');
         await loadPages();
+        void autoFetchExtensionUrlMeta();
     } catch (error) {
         console.error('Error loading save tab:', error);
     }
@@ -167,6 +299,8 @@ async function loadPages(providedServerUrl) {
         showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'info');
         return;
     }
+    extServerUrl = serverUrl;
+    if (!extFormPreview) initExtensionPreview();
 
     try {
         const response = await fetch(new URL('/api/pages', serverUrl));
@@ -318,7 +452,8 @@ async function saveBookmark(event) {
     }
 
     const name = document.getElementById('bookmark-name').value;
-    const url = document.getElementById('bookmark-url').value;
+    const rawUrl = document.getElementById('bookmark-url').value;
+    const url = BookmarkUrlUtils.ensureHttpUrl(rawUrl);
     const pageId = document.getElementById('page-select').value;
     const category = document.getElementById('category-select').value;
     const note = (document.getElementById('bookmark-note') && document.getElementById('bookmark-note').value) || '';
@@ -404,7 +539,13 @@ async function showSaveSuccess(serverUrl, pageId, bookmarkName) {
 
 async function performSave(serverUrl, pageId, name, url, category, note, tags) {
     try {
-        const response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags);
+        const extras = {
+            icon: extDraftState.icon || undefined,
+            previewTitle: extDraftState.previewTitle || undefined,
+            previewDesc: extDraftState.previewDesc || undefined,
+            previewImage: extDraftState.previewImage || undefined,
+        };
+        const response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras);
         if (!response.ok) throw new Error('Failed to save bookmark');
 
         await persistLastSaveContext(serverUrl, pageId, category);

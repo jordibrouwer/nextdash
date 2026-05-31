@@ -37,5 +37,19 @@
   "notifySaved": "Bladwijzer opgeslagen in nextDash",
   "notifySavedNamed": "\"{name}\" opgeslagen in nextDash",
   "contextMenuSavePage": "Pagina opslaan in nextDash",
-  "contextMenuSaveLink": "Link opslaan in nextDash"
+  "contextMenuSaveLink": "Link opslaan in nextDash",
+  "previewDashboardLabel": "Dashboard preview",
+  "previewDashboardHint": "Hover voor de volledige tegel",
+  "previewDashboardAria": "Dashboard-tegel preview",
+  "previewLinkLabel": "Link preview",
+  "previewRefresh": "Verversen",
+  "previewClear": "Wissen",
+  "previewEmpty": "Nog geen preview — ververs om titel, beschrijving en afbeelding op te halen.",
+  "previewNoUrl": "Voer eerst een URL in.",
+  "previewRefreshed": "Link preview bijgewerkt.",
+  "previewRefreshFailed": "Kon link preview niet ophalen.",
+  "previewCleared": "Link preview gewist.",
+  "previewUntitled": "Naamloos",
+  "previewStatusCheck": "···",
+  "moreOptions": "Meer opties"
 }

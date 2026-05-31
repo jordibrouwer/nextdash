@@ -7,11 +7,46 @@ function normalizeServerUrl(serverUrl) {
 function isBookmarkableUrl(url) {
   if (!url || typeof url !== 'string') return false;
   try {
-    const u = new URL(url);
+    const normalized = typeof BookmarkUrlUtils !== 'undefined'
+      ? BookmarkUrlUtils.ensureHttpUrl(url)
+      : ensureHttpUrl(url);
+    const u = new URL(normalized);
     return u.protocol === 'http:' || u.protocol === 'https:';
   } catch {
     return false;
   }
+}
+
+function ensureHttpUrl(raw) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+async function fetchBookmarkExtras(serverUrl, url) {
+  const base = normalizeServerUrl(serverUrl);
+  const safeUrl = typeof BookmarkUrlUtils !== 'undefined'
+    ? BookmarkUrlUtils.ensureHttpUrl(url)
+    : ensureHttpUrl(url);
+  if (!safeUrl || !isBookmarkableUrl(safeUrl)) return { url: safeUrl };
+
+  const extras = { url: safeUrl };
+  if (typeof BookmarkPreviewService === 'undefined') return extras;
+
+  try {
+    const icon = await BookmarkPreviewService.fetchAndUploadFavicon(safeUrl, base);
+    if (icon) extras.icon = icon;
+  } catch { /* optional */ }
+
+  try {
+    const preview = await BookmarkPreviewService.fetchLinkPreview(safeUrl, base);
+    if (preview.title) extras.previewTitle = preview.title;
+    if (preview.description) extras.previewDesc = preview.description;
+    if (preview.image) extras.previewImage = preview.image;
+  } catch { /* optional */ }
+
+  return extras;
 }
 
 async function loadPagesList(serverUrl) {
@@ -36,22 +71,27 @@ async function findDuplicateBookmark(serverUrl, pageId, bookmarkUrl) {
   return bookmarks.find((b) => b.url === bookmarkUrl) || null;
 }
 
-async function postAddBookmark(serverUrl, pageId, name, url, category, note, tags) {
+async function postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras = {}) {
   const base = normalizeServerUrl(serverUrl);
+  const bookmark = {
+    name,
+    url,
+    category: category || '',
+    shortcut: '',
+    checkStatus: false,
+    note: note || '',
+    tags: Array.isArray(tags) ? tags : [],
+  };
+  if (extras.icon) bookmark.icon = extras.icon;
+  if (extras.previewTitle) bookmark.previewTitle = extras.previewTitle;
+  if (extras.previewDesc) bookmark.previewDesc = extras.previewDesc;
+  if (extras.previewImage) bookmark.previewImage = extras.previewImage;
   return fetch(new URL('/api/bookmarks/add', base), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       page: parseInt(pageId, 10),
-      bookmark: {
-        name,
-        url,
-        category: category || '',
-        shortcut: '',
-        checkStatus: false,
-        note: note || '',
-        tags: Array.isArray(tags) ? tags : []
-      }
+      bookmark,
     })
   });
 }

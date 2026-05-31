@@ -1,0 +1,361 @@
+/* Shared bookmark form preview (dashboard tile + link preview card) */
+
+.bookmark-form-preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bookmark-form-preview-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.bookmark-form-preview-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.bookmark-form-preview-label {
+    font-size: var(--font-size-controls, 0.8125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-secondary);
+}
+
+.bookmark-form-preview-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal, 400);
+}
+
+.bookmark-form-preview-empty {
+    font-size: var(--font-size-controls, 0.8125rem);
+    color: var(--text-tertiary);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.bookmark-detail-link-preview-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.config-bookmark-preview-hover-zone {
+    position: relative;
+    max-width: 100%;
+    outline: none;
+}
+
+.config-bookmark-preview {
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    padding: 0.35rem 0.5rem;
+}
+
+.config-bookmark-preview--compact {
+    max-width: 100%;
+    cursor: default;
+}
+
+.config-bookmark-preview-popover {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 40;
+    min-width: min(22rem, 100%);
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: 0.5rem 0.65rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-radius: 8px;
+    background: var(--background-primary);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--background-primary) 20%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    pointer-events: none;
+}
+
+.config-bookmark-preview-hover-zone:hover .config-bookmark-preview-popover,
+.config-bookmark-preview-hover-zone:focus-within .config-bookmark-preview-popover {
+    display: block;
+}
+
+.config-bookmark-preview-hover-zone:hover .config-bookmark-preview--compact,
+.config-bookmark-preview-hover-zone:focus-within .config-bookmark-preview--compact {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+}
+
+.config-bookmark-preview-tile.bookmark-link {
+    display: grid;
+    grid-template-columns: minmax(1rem, max-content) minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: 0.35rem;
+    padding: 0.1rem 0;
+    min-height: 1.55rem;
+    font-size: var(--font-size-bookmark, 0.8125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary);
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.config-bookmark-preview-tile .bookmark-lead {
+    grid-column: 1;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    min-width: 1.1em;
+    cursor: default;
+}
+
+.config-bookmark-preview-tile .bookmark-open {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+}
+
+.config-bookmark-preview-tile .bookmark-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.config-bookmark-preview-tile--expanded .bookmark-text {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.config-bookmark-preview-tile--expanded.bookmark-link {
+    white-space: normal;
+    min-height: 2rem;
+    padding: 0.15rem 0;
+}
+
+.config-bookmark-preview-tile--expanded .bookmark-open {
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.config-link-preview-card {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.65rem;
+    align-items: start;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 0.55rem 0.65rem;
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    margin-top: 0.25rem;
+}
+
+.config-link-preview-card-image-wrap {
+    width: 5.5rem;
+    height: 3.25rem;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-secondary);
+}
+
+.config-link-preview-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.config-link-preview-card-body {
+    min-width: 0;
+}
+
+.config-link-preview-card-title {
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin-bottom: 0.2rem;
+}
+
+.config-link-preview-card-desc {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.config-link-preview-card-domain {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.config-link-preview-card:not(:has(.config-link-preview-card-image-wrap)) {
+    grid-template-columns: 1fr;
+}
+
+.config-bookmark-preview-tile .bookmark-shortcut {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: 0.85em;
+    opacity: 0.85;
+    text-align: right;
+}
+
+.config-bookmark-preview-tile .bookmark-icon-slot {
+    width: 1.1em;
+    height: 1.1em;
+}
+
+.config-bookmark-preview-tile .bookmark-icon-slot--empty {
+    border: 1px dashed var(--border-secondary);
+    border-radius: 3px;
+    opacity: 0.45;
+}
+
+.config-bookmark-preview-tile .bookmark-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.config-bookmark-preview-tile .status-text {
+    flex-shrink: 0;
+    font-size: 0.75em;
+    font-weight: var(--font-weight-normal, 400);
+}
+
+.config-bookmark-preview-tile .bookmark-superscript-badge {
+    flex-shrink: 0;
+    width: 0.85em;
+    height: 0.85em;
+}
+
+.config-bookmark-preview-tile .bookmark-superscript-badge svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.modal-new-bookmark .bookmark-form-preview-section {
+    margin: 0.25rem 0 0.5rem;
+}
+
+.modal-new-bookmark .config-link-preview-card {
+    grid-template-columns: 4.5rem 1fr;
+}
+
+.modal-new-bookmark .config-link-preview-card-image-wrap {
+    width: 4.5rem;
+    height: 2.75rem;
+}
+
+/* Compact preview strip (primary add-bookmark view) */
+.bookmark-form-preview-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    min-height: 2.35rem;
+}
+
+.bookmark-form-preview-strip-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.bookmark-form-preview-strip-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.bookmark-form-preview-strip-icon-empty {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 3px;
+    opacity: 0.45;
+}
+
+.bookmark-form-preview-strip-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
+.bookmark-form-preview-strip-title {
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bookmark-form-preview-strip-domain {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bookmark-form-preview-strip-tile {
+    flex-shrink: 0;
+    max-width: 42%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.bookmark-form-preview-strip-tile .config-bookmark-preview-tile.bookmark-link {
+    font-size: 0.72rem;
+    min-height: 1.35rem;
+    padding: 0;
+}
+
+.nbm-section-compact-preview {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+.ext-preview-section .config-link-preview-card {
+    grid-template-columns: 3.5rem 1fr;
+    padding: 0.45rem 0.5rem;
+}
+
+.ext-preview-section .config-link-preview-card-image-wrap {
+    width: 3.5rem;
+    height: 2.25rem;
+}
+
+.ext-preview-section .bookmark-form-preview-block-header {
+    margin-top: 0.35rem;
+}

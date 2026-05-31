@@ -37,5 +37,19 @@
   "notifySaved": "Lesezeichen in nextDash gespeichert",
   "notifySavedNamed": "\"{name}\" in nextDash gespeichert",
   "contextMenuSavePage": "Seite in nextDash speichern",
-  "contextMenuSaveLink": "Link in nextDash speichern"
+  "contextMenuSaveLink": "Link in nextDash speichern",
+  "previewDashboardLabel": "Dashboard-Vorschau",
+  "previewDashboardHint": "Hover für die volle Kachel",
+  "previewDashboardAria": "Dashboard-Kachel-Vorschau",
+  "previewLinkLabel": "Link-Vorschau",
+  "previewRefresh": "Aktualisieren",
+  "previewClear": "Löschen",
+  "previewEmpty": "Noch keine Vorschau — aktualisieren, um Titel, Beschreibung und Bild abzurufen.",
+  "previewNoUrl": "Zuerst eine URL eingeben.",
+  "previewRefreshed": "Link-Vorschau aktualisiert.",
+  "previewRefreshFailed": "Link-Vorschau konnte nicht abgerufen werden.",
+  "previewCleared": "Link-Vorschau gelöscht.",
+  "previewUntitled": "Ohne Titel",
+  "previewStatusCheck": "···",
+  "moreOptions": "Weitere Optionen"
 }

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="bookmark-form-preview.css">
 </head>
 <body>
     <div class="container">
@@ -25,24 +26,68 @@
         <div id="save-tab" class="tab-content active">
             <h2 data-i18n="saveTitle">Save Bookmark</h2>
             <form id="save-form" class="save-form">
+                <label for="bookmark-url" data-i18n="labelUrl">URL:</label>
+                <input type="text" id="bookmark-url" required autocomplete="off" spellcheck="false" placeholder="https://">
+                <p id="url-guard-msg" class="url-guard-msg hidden" role="status"></p>
+
                 <label for="bookmark-name" data-i18n="labelName">Name:</label>
                 <input type="text" id="bookmark-name" required>
 
-                <label for="bookmark-url" data-i18n="labelUrl">URL:</label>
-                <input type="text" id="bookmark-url" required autocomplete="off" spellcheck="false">
-                <p id="url-guard-msg" class="url-guard-msg hidden" role="status"></p>
+                <div class="ext-compact-preview" id="ext-preview-strip-section" hidden>
+                    <div class="bookmark-form-preview-strip" id="ext-preview-strip" aria-live="polite">
+                        <div class="bookmark-form-preview-strip-icon" id="ext-preview-strip-icon" aria-hidden="true"></div>
+                        <div class="bookmark-form-preview-strip-meta">
+                            <span class="bookmark-form-preview-strip-title" id="ext-preview-strip-title" data-i18n="previewUntitled">Untitled</span>
+                            <span class="bookmark-form-preview-strip-domain" id="ext-preview-strip-domain"></span>
+                        </div>
+                        <div class="bookmark-form-preview-strip-tile" id="ext-preview-strip-tile"></div>
+                    </div>
+                </div>
 
-                <label for="bookmark-tags" data-i18n="labelTags">Tags (optional, comma-separated):</label>
-                <input type="text" id="bookmark-tags" data-i18n-placeholder="tagsPlaceholder" placeholder="work, personal, dev">
+                <div class="ext-placement-row">
+                    <div class="ext-placement-col">
+                        <label for="page-select" data-i18n="labelPage">Page:</label>
+                        <select id="page-select"></select>
+                    </div>
+                    <div class="ext-placement-col">
+                        <label for="category-select" data-i18n="labelCategory">Category:</label>
+                        <select id="category-select"></select>
+                    </div>
+                </div>
 
-                <label for="bookmark-note" data-i18n="labelNote">Note (optional):</label>
-                <textarea id="bookmark-note" rows="3" data-i18n-placeholder="notePlaceholder" placeholder="Optional note"></textarea>
+                <details class="ext-more-options" id="ext-more-options">
+                    <summary data-i18n="moreOptions">More options</summary>
+                    <div class="ext-more-content">
+                        <label for="bookmark-tags" data-i18n="labelTags">Tags (optional, comma-separated):</label>
+                        <input type="text" id="bookmark-tags" data-i18n-placeholder="tagsPlaceholder" placeholder="work, personal, dev">
 
-                <label for="page-select" data-i18n="labelPage">Page:</label>
-                <select id="page-select"></select>
+                        <label for="bookmark-note" data-i18n="labelNote">Note (optional):</label>
+                        <textarea id="bookmark-note" rows="2" data-i18n-placeholder="notePlaceholder" placeholder="Optional note"></textarea>
 
-                <label for="category-select" data-i18n="labelCategory">Category:</label>
-                <select id="category-select"></select>
+                        <div class="ext-preview-section bookmark-form-preview-section" id="ext-preview-section">
+                            <div class="bookmark-form-preview-block">
+                                <div class="bookmark-form-preview-block-header">
+                                    <span class="bookmark-form-preview-label" data-i18n="previewDashboardLabel">Dashboard preview</span>
+                                </div>
+                                <div class="config-bookmark-preview-hover-zone" id="ext-dashboard-preview-zone" tabindex="0">
+                                    <div class="config-bookmark-preview config-bookmark-preview--compact" id="ext-dashboard-preview"></div>
+                                    <div class="config-bookmark-preview-popover" id="ext-dashboard-preview-popover" aria-hidden="true"></div>
+                                </div>
+                            </div>
+                            <div class="bookmark-form-preview-block">
+                                <div class="bookmark-form-preview-block-header">
+                                    <span class="bookmark-form-preview-label" data-i18n="previewLinkLabel">Link preview</span>
+                                    <div class="bookmark-detail-link-preview-actions">
+                                        <button type="button" id="ext-link-preview-refresh-btn" class="btn-secondary-small" data-i18n="previewRefresh">Refresh</button>
+                                        <button type="button" id="ext-link-preview-clear-btn" class="btn-secondary-small" data-i18n="previewClear">Clear</button>
+                                    </div>
+                                </div>
+                                <p id="ext-link-preview-empty" class="bookmark-form-preview-empty" data-i18n="previewEmpty">No preview metadata yet — refresh to fetch title, description and image.</p>
+                                <div id="ext-link-preview-card" class="config-link-preview-card" hidden></div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
 
                 <button type="submit" class="btn-primary" data-i18n="btnSaveBookmark">Save Bookmark</button>
             </form>
@@ -74,6 +119,9 @@
     </div>
     <div id="message" class="message"></div>
     <script src="save-common.js"></script>
+    <script src="bookmark-form/bookmark-url-utils.js"></script>
+    <script src="bookmark-form/bookmark-preview-service.js"></script>
+    <script src="bookmark-form/bookmark-form-preview.js"></script>
     <script src="i18n.js"></script>
     <script src="popup.js"></script>
 </body>

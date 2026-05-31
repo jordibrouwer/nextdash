@@ -37,5 +37,19 @@
   "notifySaved": "Bookmark saved to nextDash",
   "notifySavedNamed": "\"{name}\" saved to nextDash",
   "contextMenuSavePage": "Save page to nextDash",
-  "contextMenuSaveLink": "Save link to nextDash"
+  "contextMenuSaveLink": "Save link to nextDash",
+  "previewDashboardLabel": "Dashboard preview",
+  "previewDashboardHint": "Hover to see the full tile",
+  "previewDashboardAria": "Dashboard tile preview",
+  "previewLinkLabel": "Link preview",
+  "previewRefresh": "Refresh",
+  "previewClear": "Clear",
+  "previewEmpty": "No preview metadata yet — refresh to fetch title, description and image.",
+  "previewNoUrl": "Enter a URL first.",
+  "previewRefreshed": "Link preview updated.",
+  "previewRefreshFailed": "Could not fetch link preview.",
+  "previewCleared": "Link preview cleared.",
+  "previewUntitled": "Untitled",
+  "previewStatusCheck": "···",
+  "moreOptions": "More options"
 }

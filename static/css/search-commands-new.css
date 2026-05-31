@@ -5,9 +5,13 @@
     width: min(560px, 92vw);
     padding: 0;
     overflow: hidden;
-    max-height: 90vh;
+    max-height: min(90vh, 520px);
     display: flex;
     flex-direction: column;
+}
+
+.modal-new-bookmark.nbm-mobile-wizard {
+    max-height: 90vh;
 }
 
 /* ── Header ── */
@@ -112,13 +116,44 @@
 .nbm-shortcut {
     text-transform: uppercase;
     text-align: center;
+    max-width: 5.5rem;
+}
+
+.nbm-shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.nbm-shortcut-row .nbm-label {
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.nbm-shortcut-row .nbm-input {
+    flex: 0 0 5.5rem;
+    width: 5.5rem;
 }
 
 .nbm-conflict-hint {
-    display: block;
+    display: inline;
     font-size: 0.72rem;
     color: var(--accent-error);
-    margin-top: 0.2rem;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nbm-conflict-hint[hidden] {
+    display: none !important;
+}
+
+.nbm-shortcut.field-conflict {
+    border-color: var(--accent-error);
 }
 
 .nbm-file-label {
@@ -143,7 +178,136 @@
 }
 
 .nbm-col-narrow {
-    flex: 0 0 7ch;
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+/* ── More options ── */
+.nbm-more-options {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.nbm-more-options > summary {
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    list-style: none;
+    user-select: none;
+}
+
+.nbm-more-options > summary::-webkit-details-marker {
+    display: none;
+}
+
+.nbm-more-options > summary::before {
+    content: '▸ ';
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.nbm-more-options[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.nbm-more-content {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-primary);
+}
+
+.nbm-more-content .nbm-section {
+    border-bottom: none;
+}
+
+.nbm-more-content .nbm-section + .nbm-section {
+    border-top: 1px solid var(--border-primary);
+}
+
+.nbm-more-content .bookmark-form-preview-section {
+    padding: 0.65rem 1rem;
+    gap: 0.65rem;
+}
+
+/* ── Mobile wizard ── */
+.nbm-wizard-nav {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    flex-shrink: 0;
+}
+
+.nbm-mobile-wizard .nbm-wizard-nav {
+    display: flex;
+}
+
+.nbm-wizard-step {
+    flex: 1;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-tertiary);
+    padding: 0.25rem 0.35rem;
+    border: 1px solid transparent;
+}
+
+.nbm-wizard-step.is-active {
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+    background: var(--background-primary);
+}
+
+.nbm-wizard-step.is-done {
+    color: var(--text-secondary);
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-2 .nbm-wizard-step-1-panel {
+    display: none;
+}
+
+.nbm-mobile-wizard .nbm-section.nbm-wizard-step-2-panel {
+    display: none;
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-2 .nbm-section.nbm-wizard-step-2-panel {
+    display: flex;
+}
+
+.nbm-mobile-wizard .nbm-more-options {
+    display: none;
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-2 .nbm-more-options {
+    display: block;
+}
+
+.nbm-wizard-only {
+    display: none;
+}
+
+.nbm-mobile-wizard .nbm-wizard-only {
+    display: inline-flex;
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-1 #new-bookmark-create {
+    display: none;
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-1 #new-bookmark-wizard-back {
+    display: none;
+}
+
+.nbm-mobile-wizard.nbm-wizard-step-2 #new-bookmark-wizard-next {
+    display: none;
+}
+
+.nbm-mobile-wizard:not(.nbm-wizard-step-1):not(.nbm-wizard-step-2) #new-bookmark-wizard-back,
+.nbm-mobile-wizard:not(.nbm-wizard-step-1):not(.nbm-wizard-step-2) #new-bookmark-wizard-next {
+    display: none;
 }
 
 /* ── URL row ── */
@@ -193,6 +357,12 @@
 .nbm-icon-row .nbm-input {
     flex: 1;
     min-width: 0;
+}
+
+.nbm-icon-clear {
+    flex-shrink: 0;
+    min-width: 2rem;
+    padding: 0 0.45rem;
 }
 
 .nbm-icon-state {

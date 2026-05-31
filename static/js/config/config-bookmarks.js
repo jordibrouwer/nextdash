@@ -20,6 +20,20 @@ class ConfigBookmarks {
         this._rebindAbort = null;
         this.bulkToolbarDismissed = false;
         this._prevSelectedCount = 0;
+        this.formPreview = null;
+    }
+
+    ensureFormPreview() {
+        if (!this.formPreview && window.BookmarkFormPreview) {
+            this.formPreview = new window.BookmarkFormPreview({
+                prefix: 'detail',
+                getSettings: () => window.configManager?.settingsData || {},
+                t: (key, fb) => this.t(key) || fb,
+                notify: (msg, type) => this.notify(msg, type),
+                onPreviewChange: () => window.configManager?.markDirty?.(),
+            });
+        }
+        return this.formPreview;
     }
     
     createNoteBadgeSvg() {
@@ -423,142 +437,31 @@ class ConfigBookmarks {
         this._updateDashboardPreview(bookmark);
     }
 
-    _buildDashboardPreviewHtml(bookmark, expanded = false) {
-        const settings = window.configManager?.settingsData || {};
-        const showIcons = settings.showIcons !== false;
-        const showShortcuts = settings.showShortcuts !== false;
-        const showPinIcon = settings.showPinIcon === true;
-        const showNoteIcon = settings.showNoteIcon !== false;
-        const showStatus = settings.showStatus === true;
-
-        const untitled = this.t('config.bookmarkPreviewUntitled') || 'Untitled';
-        const name = String(bookmark.name || '').trim() || untitled;
-        const shortcutRaw = String(bookmark.shortcut || '').trim().toUpperCase();
-        const shortcut = showShortcuts && shortcutRaw ? shortcutRaw : '';
-
-        let statusClass = '';
-        let statusHtml = '';
-        if (showStatus && bookmark.checkStatus) {
-            statusClass = ' status-checking';
-            const statusLabel = this.t('config.bookmarkPreviewStatusCheck') || '···';
-            statusHtml = `<span class="status-text">${this._escHtml(statusLabel)}</span>`;
-        }
-
-        const pinHtml = (showPinIcon && bookmark.pinned)
-            ? `<span class="bookmark-pin-badge bookmark-superscript-badge" title="Pinned" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg></span>`
-            : '';
-
-        const noteHtml = (showNoteIcon && String(bookmark.note || '').trim())
-            ? `<span class="bookmark-note-badge bookmark-superscript-badge" title="Note" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.75h7l3.75 3.75V19A1.25 1.25 0 0 1 17 20.25H7A1.25 1.25 0 0 1 5.75 19V6A1.25 1.25 0 0 1 7 4.75Z"/><path d="M14.5 4.75V8.5h3.75"/><path d="M8.75 11h6.5"/><path d="M8.75 14h5.25"/></svg></span>`
-            : '';
-
-        const iconHtml = showIcons
-            ? (bookmark.icon
-                ? `<span class="bookmark-icon-slot"><img class="bookmark-icon" src="/data/icons/${this._escHtml(bookmark.icon)}" alt=""></span>`
-                : `<span class="bookmark-icon-slot bookmark-icon-slot--empty" aria-hidden="true"></span>`)
-            : '';
-
-        const expandedClass = expanded ? ' config-bookmark-preview-tile--expanded' : '';
-
-        return `
-            <div class="config-bookmark-preview-tile bookmark-link${statusClass}${expandedClass}" role="presentation">
-                <div class="bookmark-lead">${iconHtml}</div>
-                <span class="bookmark-open">
-                    <span class="bookmark-text">${this._escHtml(name)}</span>
-                    ${statusHtml}
-                    ${pinHtml}
-                    ${noteHtml}
-                </span>
-                <span class="bookmark-shortcut${shortcut ? '' : ' is-empty'}">${this._escHtml(shortcut)}</span>
-            </div>
-        `;
+    _buildDashboardPreviewHtml(bookmark, expanded) {
+        return this.ensureFormPreview()?.buildDashboardPreviewHtml(bookmark, expanded) || '';
     }
 
     _updateDashboardPreview(bookmark) {
-        const compact = document.getElementById('detail-dashboard-preview');
-        const popover = document.getElementById('detail-dashboard-preview-popover');
-        if (!compact || !bookmark) return;
-
-        const html = this._buildDashboardPreviewHtml(bookmark, false);
-        compact.innerHTML = html;
-        if (popover) {
-            popover.innerHTML = this._buildDashboardPreviewHtml(bookmark, true);
-        }
+        this.ensureFormPreview()?.updateDashboardPreview(bookmark);
     }
 
     _hasLinkPreviewMetadata(bookmark) {
-        return Boolean(
-            String(bookmark?.previewTitle || '').trim()
-            || String(bookmark?.previewDesc || '').trim()
-            || String(bookmark?.previewImage || '').trim()
-        );
+        return this.ensureFormPreview()?.hasLinkPreviewMetadata(bookmark) || false;
     }
 
     _updateLinkPreviewCard(bookmark) {
-        const card = document.getElementById('detail-link-preview-card');
-        const emptyEl = document.getElementById('detail-link-preview-empty');
-        const clearBtn = document.getElementById('detail-link-preview-clear-btn');
-        if (!card || !emptyEl) return;
-
-        const hasMeta = this._hasLinkPreviewMetadata(bookmark);
-        emptyEl.hidden = hasMeta;
-        card.hidden = !hasMeta;
-        if (clearBtn) clearBtn.disabled = !hasMeta;
-
-        if (!hasMeta) {
-            card.innerHTML = '';
-            return;
-        }
-
-        const title = String(bookmark.previewTitle || bookmark.name || '').trim()
-            || (this.t('config.bookmarkPreviewUntitled') || 'Untitled');
-        const desc = String(bookmark.previewDesc || '').trim();
-        const image = String(bookmark.previewImage || '').trim();
-        let domain = '';
-        try { domain = new URL(bookmark.url || '').hostname; } catch { domain = ''; }
-
-        card.innerHTML = `
-            ${image ? `<div class="config-link-preview-card-image-wrap"><img class="config-link-preview-card-image" src="${this._escHtml(image)}" alt=""></div>` : ''}
-            <div class="config-link-preview-card-body">
-                <div class="config-link-preview-card-title">${this._escHtml(title)}</div>
-                ${desc ? `<div class="config-link-preview-card-desc">${this._escHtml(desc)}</div>` : ''}
-                ${domain ? `<div class="config-link-preview-card-domain">${this._escHtml(domain)}</div>` : ''}
-            </div>
-        `;
+        this.ensureFormPreview()?.updateLinkPreviewCard(bookmark);
     }
 
     async _refreshLinkPreview(index, bookmark) {
-        const url = (bookmark?.url || '').trim();
-        if (!url) {
-            this.notify(this.t('config.bookmarkLinkPreviewNoUrl') || 'Enter a URL first.', 'info');
-            return;
-        }
-        const btn = document.getElementById('detail-link-preview-refresh-btn');
-        if (btn) btn.disabled = true;
-        try {
-            const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
-            if (!response.ok) throw new Error('fetch failed');
-            const data = await response.json();
-            bookmark.previewTitle = data.title || '';
-            bookmark.previewDesc = data.description || '';
-            bookmark.previewImage = data.image || '';
-            this._updateLinkPreviewCard(bookmark);
-            window.configManager?.markDirty?.();
-            this.notify(this.t('config.bookmarkLinkPreviewRefreshed') || 'Link preview updated.', 'success');
-        } catch {
-            this.notify(this.t('config.bookmarkLinkPreviewRefreshFailed') || 'Could not fetch link preview.', 'error');
-        } finally {
-            if (btn) btn.disabled = false;
-        }
+        const fp = this.ensureFormPreview();
+        if (!fp) return;
+        const ok = await fp.refreshLinkPreview(bookmark);
+        if (ok) window.configManager?.markDirty?.();
     }
 
     _clearLinkPreview(index, bookmark) {
-        delete bookmark.previewTitle;
-        delete bookmark.previewDesc;
-        delete bookmark.previewImage;
-        this._updateLinkPreviewCard(bookmark);
-        window.configManager?.markDirty?.();
-        this.notify(this.t('config.bookmarkLinkPreviewCleared') || 'Link preview cleared.', 'success');
+        this.ensureFormPreview()?.clearLinkPreview(bookmark);
     }
 
     _syncRow(index, bookmark) {
@@ -667,15 +570,25 @@ class ConfigBookmarks {
             if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
             this._syncRow(index, bookmark);
             if (isDup) {
-                // Cancel any pending favicon fetch so it cannot overwrite the duplicate's data.
                 const key = `detail-${index}`;
                 const t = this.metadataTimers?.get(key);
                 if (t) { clearTimeout(t); this.metadataTimers.delete(key); }
+                window.BookmarkPreviewService?.cancelDebounced(`detail-meta-${index}`);
             } else {
                 const policy = window.configManager?.settingsData?.faviconRefreshPolicy || 'on-save';
                 if (policy === 'on-save') this._scheduleDetailMetaRefresh(index, bookmark);
             }
             if (window.configManager?.markDirty) window.configManager.markDirty();
+        }, { signal });
+
+        if (urlEl) urlEl.addEventListener('blur', () => {
+            const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(urlEl.value) || urlEl.value.trim();
+            if (normalized && normalized !== urlEl.value.trim()) {
+                urlEl.value = normalized;
+                bookmark.url = normalized;
+                this._syncRow(index, bookmark);
+                if (window.configManager?.markDirty) window.configManager.markDirty();
+            }
         }, { signal });
 
         if (scEl) scEl.addEventListener('input', (e) => {
@@ -772,22 +685,27 @@ class ConfigBookmarks {
     }
 
     _scheduleDetailMetaRefresh(index, bookmark) {
-        const key = `detail-${index}`;
-        const existing = this.metadataTimers.get(key);
-        if (existing) clearTimeout(existing);
-        this.metadataTimers.set(key, setTimeout(() => this._refreshDetailMeta(index, bookmark), 450));
+        const key = `detail-meta-${index}`;
+        window.BookmarkPreviewService?.scheduleDebounced(key, () => {
+            void this._refreshDetailMeta(index, bookmark);
+        }, 450);
     }
 
     async _refreshDetailMeta(index, bookmark) {
-        const url = (bookmark?.url || '').trim();
+        const url = window.BookmarkUrlUtils?.ensureHttpUrl(bookmark?.url) || String(bookmark?.url || '').trim();
         if (!url) return;
+        bookmark.url = url;
         try {
-            const faviconUrl = this.deriveFaviconFromBookmarkUrl(url);
-            if (faviconUrl) {
-                const ok = await this._assignIconFromUrlDetail(faviconUrl, bookmark, index);
-                bookmark.iconFetchState = ok ? 'ok' : 'no_icon';
+            const icon = await window.BookmarkPreviewService.fetchAndUploadFavicon(url);
+            if (icon) {
+                bookmark.icon = icon;
+                bookmark.iconFetchState = 'ok';
+                this._updateDetailIconPreview(bookmark);
+                this._syncRow(index, bookmark);
+            } else {
+                bookmark.iconFetchState = 'no_icon';
             }
-        } catch (err) {
+        } catch {
             bookmark.iconFetchState = 'failed';
         }
     }
@@ -991,19 +909,10 @@ class ConfigBookmarks {
     }
 
     deriveFaviconFromBookmarkUrl(bookmarkUrl) {
-        const safeUrl = (bookmarkUrl || '').trim();
-        if (!safeUrl) {
-            return '';
+        if (window.BookmarkUrlUtils) {
+            return window.BookmarkUrlUtils.deriveFaviconFromBookmarkUrl(bookmarkUrl);
         }
-        try {
-            const parsed = new URL(safeUrl);
-            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-                return '';
-            }
-            return `${parsed.protocol}//${parsed.host}/favicon.ico`;
-        } catch (error) {
-            return '';
-        }
+        return '';
     }
 
     updateIconControls(bookmarkElement) {
