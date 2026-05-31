@@ -36,6 +36,38 @@
     gap: 0.5rem;
 }
 
+.theme-colors-info-btn {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.colors-subtabs-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.theme-colors-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    text-transform: lowercase;
+}
+
+.theme-colors-section-heading::before {
+    content: '// ';
+}
+
+.colors-panel-hint {
+    margin: 0 0 1rem;
+}
+
 .colors-unsaved-indicator {
     font-size: var(--font-size-controls);
     color: var(--accent-warning, var(--text-secondary));

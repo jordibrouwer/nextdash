@@ -59,6 +59,12 @@ class ColorsEditor {
         this.customThemesManager.setupThemeSelector(this.colorsData.custom);
         this.applyInitialSubTab();
         this._initialized = true;
+
+        if (window.installThemeColorsInfoButtons && window.configManager?.settings) {
+            window.installThemeColorsInfoButtons(window.configManager.settings);
+        } else if (this.language?.applyTranslations) {
+            this.language.applyTranslations();
+        }
     }
 
     applyInitialSubTab() {

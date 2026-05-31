@@ -6,17 +6,22 @@
     <div class="theme-colors-toolbar">
         <div class="theme-colors-actions">
             <button type="button" id="save-colors-btn" class="btn btn-success btn-small" data-i18n="colors.saveColors">Save colors</button>
+            <button type="button" id="colors-save-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.saveColorsInfoTitle">ℹ</button>
             <button type="button" id="reset-colors-btn" class="btn btn-danger btn-small" data-i18n="colors.resetColorsShort">Reset defaults</button>
             <span id="colors-unsaved-indicator" class="colors-unsaved-indicator" hidden data-i18n="config.unsavedShort">unsaved</span>
         </div>
-        <div class="colors-subtabs" role="tablist" aria-label="Theme palettes">
+        <div class="colors-subtabs-header">
+            <button type="button" id="colors-palettes-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.palettesInfoTitle">ℹ</button>
+            <div class="colors-subtabs" role="tablist" aria-label="Theme palettes">
             <button type="button" class="colors-tab-button" data-colors-tab="dark" data-i18n="dashboard.darkTheme">Dark</button>
             <button type="button" class="colors-tab-button" data-colors-tab="light" data-i18n="dashboard.lightTheme">Light</button>
             <button type="button" class="colors-tab-button active" data-colors-tab="custom" data-i18n="colors.customThemesTab">Custom themes</button>
+            </div>
         </div>
     </div>
 <div class="colors-tab-panel" data-colors-tab-panel="dark" hidden>
             <div class="config-section">
+                <p class="help-text colors-panel-hint" data-i18n="colors.defaultDarkHint">Edits the default dark palette used when classic dark themes are active.</p>
                 <div class="colors-grid">
                     <div class="color-group">
                         <h3 data-i18n="colors.textColors">text colors</h3>
@@ -122,6 +127,7 @@
 
             <div class="colors-tab-panel" data-colors-tab-panel="light" hidden>
             <div class="config-section">
+                <p class="help-text colors-panel-hint" data-i18n="colors.defaultLightHint">Edits the default light palette used when classic light themes are active.</p>
                 <div class="colors-grid">
                     <div class="color-group">
                         <h3 data-i18n="colors.textColors">text colors</h3>
@@ -237,7 +243,10 @@
 
                 <div class="custom-themes-main-grid">
                     <div class="custom-themes-list-section">
-                        <h3 data-i18n="colors.manageCustomThemes">Manage Custom Themes</h3>
+                        <h3 class="theme-colors-section-heading">
+                            <span data-i18n="colors.manageCustomThemes">Manage Custom Themes</span>
+                            <button type="button" id="colors-custom-themes-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.customThemesInfoTitle">ℹ</button>
+                        </h3>
                         <div id="custom-themes-list" class="categories-list js-list">
                             <!-- Custom themes will be rendered here -->
                         </div>

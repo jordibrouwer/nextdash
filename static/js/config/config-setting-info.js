@@ -135,3 +135,24 @@ function installSettingInfoButtons(configSettings) {
 
 window.installSettingInfoButtons = installSettingInfoButtons;
 window.SETTING_INFO_DEFS = SETTING_INFO_DEFS;
+
+const THEME_COLORS_INFO_DEFS = [
+    { btnId: 'colors-save-info-btn', title: 'colors.saveColorsInfoTitle', message: 'colors.saveColorsInfoMessage' },
+    { btnId: 'colors-palettes-info-btn', title: 'colors.palettesInfoTitle', message: 'colors.palettesInfoMessage' },
+    { btnId: 'colors-custom-themes-info-btn', title: 'colors.customThemesInfoTitle', message: 'colors.customThemesInfoMessage' }
+];
+
+function installThemeColorsInfoButtons(configSettings) {
+    if (!configSettings || typeof configSettings.bindInfoButton !== 'function') return;
+
+    THEME_COLORS_INFO_DEFS.forEach((def) => {
+        configSettings.bindInfoButton(def.btnId, def.title, def.message);
+    });
+
+    if (typeof configSettings.language?.applyTranslations === 'function') {
+        configSettings.language.applyTranslations();
+    }
+}
+
+window.installThemeColorsInfoButtons = installThemeColorsInfoButtons;
+window.THEME_COLORS_INFO_DEFS = THEME_COLORS_INFO_DEFS;
