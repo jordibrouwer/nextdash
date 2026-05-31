@@ -812,6 +812,7 @@
         "unsavedColorChangesSavePrompt": "Save color changes before leaving this page?",
         "pageDeleted": "Page deleted successfully",
         "configSaved": "Configuration saved successfully!",
+        "previewDashboard": "Open dashboard to preview",
         "errorSavingConfig": "Error saving configuration",
         "duplicateBookmarkUrl": "Duplicate bookmark URL",
         "fileTooLarge": "File is too large",

@@ -800,6 +800,7 @@
         "unsavedColorChangesSavePrompt": "Enregistrer les couleurs avant de quitter ?",
         "pageDeleted": "Page supprimée avec succès",
         "configSaved": "Configuration enregistrée avec succès !",
+        "previewDashboard": "Ouvrir le tableau de bord pour prévisualiser",
         "errorSavingConfig": "Erreur lors de l'enregistrement de la configuration",
         "duplicateBookmarkUrl": "URL de favori en double",
         "fileTooLarge": "Le fichier est trop volumineux",

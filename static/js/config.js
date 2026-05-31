@@ -3022,11 +3022,60 @@ class ConfigManager {
         });
     }
 
+    /** Settings that visibly change the dashboard — offer preview after save when any differ. */
+    _dashboardPreviewSettingKeys() {
+        return [
+            'theme', 'layoutPreset', 'densityMode', 'fontSize', 'fontPreset', 'fontWeight',
+            'packedColumns', 'backgroundOpacity', 'showBackgroundDots', 'animationsEnabled',
+            'showIcons', 'showTitle', 'hyprMode', 'showPageTabs', 'showPageNamesInTabs',
+            'autoDarkMode', 'sortMethod', 'alwaysCollapseCategories', 'showLinkPreviewCards',
+            'linkPreviewHoverDelayMs', 'buttonBarPosition', 'themeIconStyling',
+            'enableCustomFont', 'customFontPath', 'dashboardTitle', 'customTitle',
+        ];
+    }
+
+    shouldOfferDashboardPreview(preSaveSnapshot) {
+        if (!preSaveSnapshot?.settingsData) return false;
+
+        const before = preSaveSnapshot.settingsData;
+        const after = this.settingsData || {};
+
+        for (const key of this._dashboardPreviewSettingKeys()) {
+            const prev = before[key];
+            const next = after[key];
+            if (key === 'themeIconStyling') {
+                if (JSON.stringify(prev || {}) !== JSON.stringify(next || {})) return true;
+            } else if (prev !== next) {
+                return true;
+            }
+        }
+
+        const pageVisualKeys = ['name', 'icon', 'color'];
+        const beforePages = preSaveSnapshot.pagesData || [];
+        const afterPages = this.pagesData || [];
+        if (beforePages.length !== afterPages.length) return true;
+        for (let i = 0; i < beforePages.length; i += 1) {
+            const bp = beforePages[i];
+            const ap = afterPages.find((p) => Number(p?.id) === Number(bp?.id));
+            if (!ap) return true;
+            for (const key of pageVisualKeys) {
+                if ((bp?.[key] || '') !== (ap?.[key] || '')) return true;
+            }
+        }
+
+        return false;
+    }
+
+    openDashboardPreview() {
+        window.open('/', '_blank', 'noopener,noreferrer');
+    }
+
     async saveChanges() {
         const conflicts = this.validateBookmarkConflicts({ showToast: true });
         if (conflicts.hasConflicts) {
             return;
         }
+        const preSaveSnapshot = this.savedSnapshot;
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
             saveStatus.textContent = 'Saving...';
@@ -3079,11 +3128,18 @@ class ConfigManager {
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.refreshPageDropdowns();
             this.signalDashboardSettingsUpdated('settings-saved');
-            if (duplicateUrls.length > 0) {
-                this.ui.showNotification('Configuration saved. Duplicate bookmark URLs detected.', 'warning');
-            } else {
-                this.ui.showNotification(this.language.t('config.configSaved'), 'success');
-            }
+            const savedMessage = duplicateUrls.length > 0
+                ? 'Configuration saved. Duplicate bookmark URLs detected.'
+                : this.language.t('config.configSaved');
+            const savedType = duplicateUrls.length > 0 ? 'warning' : 'success';
+            const toastOptions = this.shouldOfferDashboardPreview(preSaveSnapshot)
+                ? {
+                    actionLabel: this.language.t('config.previewDashboard'),
+                    durationMs: 10000,
+                    onAction: () => this.openDashboardPreview(),
+                }
+                : {};
+            this.ui.showNotification(savedMessage, savedType, toastOptions);
             this.clearDirty();
             this.flashSavedIndicator();
             this.undoSnapshot = null;

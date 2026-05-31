@@ -807,6 +807,7 @@
         "unsavedColorChangesSavePrompt": "Kleurwijzigingen opslaan voordat je deze pagina verlaat?",
         "pageDeleted": "Pagina succesvol verwijderd",
         "configSaved": "Configuratie succesvol opgeslagen!",
+        "previewDashboard": "Open dashboard om te previewen",
         "errorSavingConfig": "Fout bij opslaan van configuratie",
         "duplicateBookmarkUrl": "Dubbele bladwijzer-URL",
         "fileTooLarge": "Bestand is te groot",

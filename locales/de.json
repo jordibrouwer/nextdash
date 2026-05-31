@@ -800,6 +800,7 @@
         "unsavedColorChangesSavePrompt": "Farbänderungen vor dem Verlassen speichern?",
         "pageDeleted": "Seite erfolgreich gelöscht",
         "configSaved": "Konfiguration erfolgreich gespeichert!",
+        "previewDashboard": "Dashboard zur Vorschau öffnen",
         "errorSavingConfig": "Fehler beim Speichern der Konfiguration",
         "duplicateBookmarkUrl": "Doppelte Lesezeichen-URL",
         "fileTooLarge": "Datei ist zu groß",
