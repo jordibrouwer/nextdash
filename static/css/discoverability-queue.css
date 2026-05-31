@@ -1,0 +1,54 @@
+/* Shared discoverability queue chrome (post-onboarding prompts) */
+
+.discoverability-queue-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.65rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--accent-warning, #d4a017) 45%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-warning, #d4a017) 10%, var(--background-secondary));
+    border-radius: 0.35rem;
+}
+
+.discoverability-queue-step {
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: color-mix(in srgb, var(--accent-warning, #d4a017) 75%, var(--text-primary));
+    letter-spacing: 0.02em;
+}
+
+.discoverability-queue-defer {
+    border: 1px solid color-mix(in srgb, var(--accent-warning, #d4a017) 40%, var(--border-primary));
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: calc(var(--font-size-controls) * 0.95);
+    font-weight: var(--font-weight-semibold);
+    padding: 0.3rem 0.55rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.discoverability-queue-defer:hover,
+.discoverability-queue-defer:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    outline: none;
+}
+
+.feature-spotlight .discoverability-queue-bar {
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+}
+
+.whats-new-modal .discoverability-queue-bar {
+    margin-bottom: 0.85rem;
+}

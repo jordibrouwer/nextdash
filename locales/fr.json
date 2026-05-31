@@ -220,6 +220,8 @@
         "tourSpotlightBody": "Suivez une courte visite interactive pour découvrir les fonctionnalités les plus puissantes de nextDash.",
         "tourSpotlightStart": "Démarrer la visite",
         "tourSpotlightLater": "Plus tard",
+        "discoverabilityStep": "Étape {step} sur {total}",
+        "discoverabilitySkipLater": "Reporter",
         "undo": "Annuler",
         "tipBackup": "Conseil : créez une sauvegarde via <a class=\"button-hint-link\" href=\"/config#backups\">config → sauvegardes</a>.",
         "tipUndoDelete": "Conseil : supprimez un favori et cliquez <code>Annuler</code> dans le toast pour annuler en 5s",

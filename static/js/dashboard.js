@@ -297,11 +297,12 @@ class Dashboard {
         }
         this.updateMiniStatusLine();
         this.markPostInstallWizardsSeenForEstablishedInstall();
+        this.discoverabilityQueue = typeof window.DiscoverabilityQueue === 'function'
+            ? new window.DiscoverabilityQueue(this)
+            : null;
         this.initializeOnboarding();
-        this.maybeShowPostSetupWizard({ skipTuning: true });
         this.initializeFeatureTour();
-        this.maybeShowWhatsNew();
-        this.maybeShowTourSpotlight();
+        this.discoverabilityQueue?.scheduleRun();
     }
 
     setupExtensionBookmarkSavedListener() {
@@ -1669,7 +1670,6 @@ class Dashboard {
                 dash.renderDashboard();
                 dash.updateSearchComponent();
                 dash.onboardingStartedInSession = false;
-                dash.maybeShowTourSpotlight();
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
@@ -1682,11 +1682,10 @@ class Dashboard {
                 document.body.setAttribute('data-show-tips', dash.areRotatingTipsEnabled() ? 'true' : 'false');
                 await dash.saveSettings();
                 dash.initializeButtonTipsRotation();
+                dash.onboardingStartedInSession = false;
                 dash.allowPostInstallTuningThisSession = true;
-                setTimeout(() => {
-                    dash.maybeShowPostSetupWizard();
-                    dash.maybeShowWhatsNew();
-                }, 0);
+                window.PostSetupTiming?.recordOnboardingCompletedAt?.();
+                dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
@@ -1697,9 +1696,6 @@ class Dashboard {
             } catch {}
         }
         onboarding.maybeStart();
-        if (!this.onboardingStartedInSession) {
-            this.maybeShowWhatsNew();
-        }
     }
 
     initializeFeatureTour() {
@@ -1737,69 +1733,7 @@ class Dashboard {
     }
 
     maybeShowTourSpotlight() {
-        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
-        const STORAGE_KEY = 'nextdash:feature-tour-spotlight-v1';
-        const showPasteAfterDelay = () => setTimeout(() => this.maybeShowPasteSpotlight(), 2000);
-
-        let alreadySeen = false;
-        try {
-            alreadySeen = !!localStorage.getItem(STORAGE_KEY);
-        } catch {
-            this.maybeShowPasteSpotlight();
-            return;
-        }
-
-        if (alreadySeen || this.onboardingStartedInSession) {
-            this.maybeShowPasteSpotlight();
-            return;
-        }
-
-        const _t = (key, fallback) => (this.language ? this.language.t('dashboard.' + key) : null) || fallback;
-        const spotlightTitle = _t('tourSpotlightTitle', 'Discover search, finders and commands');
-        const el = document.createElement('div');
-        el.className = 'feature-spotlight';
-        el.setAttribute('role', 'complementary');
-        el.setAttribute('aria-label', _t('tourSpotlightAriaLabel', 'Discover nextDash features'));
-        el.innerHTML = `
-            <div class="feature-spotlight-stripe"></div>
-            <div class="feature-spotlight-body">
-                <div class="feature-spotlight-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-                    </svg>
-                </div>
-                <div class="feature-spotlight-content">
-                    <p class="feature-spotlight-title"></p>
-                    <p class="feature-spotlight-text"></p>
-                </div>
-            </div>
-            <div class="feature-spotlight-actions">
-                <button class="feature-spotlight-try" type="button"></button>
-                <button class="feature-spotlight-close" type="button"></button>
-            </div>
-        `;
-        el.querySelector('.feature-spotlight-title').textContent = spotlightTitle;
-        el.querySelector('.feature-spotlight-text').textContent = _t('tourSpotlightBody', 'Follow a short interactive tour to learn the most powerful features of nextDash.');
-        el.querySelector('.feature-spotlight-try').textContent = _t('tourSpotlightStart', 'Start tour');
-        el.querySelector('.feature-spotlight-close').textContent = _t('tourSpotlightLater', 'Later');
-        document.body.appendChild(el);
-
-        const dismiss = () => {
-            try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
-            el.classList.remove('show');
-        };
-
-        el.querySelector('.feature-spotlight-try').addEventListener('click', () => {
-            dismiss();
-            this.startFeatureTour(showPasteAfterDelay);
-        });
-        el.querySelector('.feature-spotlight-close').addEventListener('click', () => {
-            dismiss();
-            showPasteAfterDelay();
-        });
-
-        setTimeout(() => { if (el) el.classList.add('show'); }, 2000);
+        this.discoverabilityQueue?.scheduleRun();
     }
 
     initializeButtonTipsRotation() {

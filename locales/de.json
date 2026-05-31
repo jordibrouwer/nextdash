@@ -220,6 +220,8 @@
         "tourSpotlightBody": "Folge einer kurzen interaktiven Tour, um die leistungsstärksten Funktionen von nextDash kennenzulernen.",
         "tourSpotlightStart": "Tour starten",
         "tourSpotlightLater": "Später",
+        "discoverabilityStep": "Schritt {step} von {total}",
+        "discoverabilitySkipLater": "Später überspringen",
         "undo": "Rückgängig",
         "tipBackup": "Tipp: Backup erstellen über <a class=\"button-hint-link\" href=\"/config#backups\">Konfiguration → Backups</a>.",
         "tipUndoDelete": "Tipp: Lösche ein Lesezeichen und klicke <code>Rückgängig</code> im Toast, um es innerhalb von 5s rückgängig zu machen",

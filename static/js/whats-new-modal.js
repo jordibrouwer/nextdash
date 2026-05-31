@@ -6,6 +6,7 @@
 
     const DASHBOARD_RELEASE = '2026.05-dashboard-release-v32';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
+    window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
 
     function release(tag, date, sections) {
         const sectionsHtml = sections.map(({ title, items }) => `
@@ -353,36 +354,68 @@
     window.openWhatsNewModal = function openWhatsNewModal(options) {
         options = options || {};
         const force = options.force === true;
+        const markSeenOnConfirm = options.markSeenOnConfirm !== false;
+        const queueMeta = options.queueMeta || null;
+        const onDefer = typeof options.onDefer === 'function' ? options.onDefer : null;
+        const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+
         if (!window.AppModal) {
+            onClose?.();
             return;
         }
         if (!force) {
             try {
                 const lastSeen = localStorage.getItem(STORAGE_KEY);
                 if (lastSeen === DASHBOARD_RELEASE) {
+                    onClose?.();
                     return;
                 }
             } catch (error) {
                 // Ignore localStorage failures.
             }
             if (typeof options.ifBlockingModalOpen === 'function' && options.ifBlockingModalOpen()) {
+                onClose?.();
                 return;
             }
         }
 
+        let htmlMessage = buildHtml();
+        if (queueMeta && window.DiscoverabilityQueueBar?.inject) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = htmlMessage;
+            window.DiscoverabilityQueueBar.inject(wrap, queueMeta, () => {
+                window.AppModal.hide();
+                onDefer?.();
+                onClose?.();
+            }, window.dashboardInstance || window.configManager);
+            htmlMessage = wrap.innerHTML;
+        }
+
+        const skipLaterText = options.skipLaterText || 'Skip for later';
+
         window.AppModal.show({
             title: "what's new",
-            htmlMessage: buildHtml(),
+            htmlMessage,
             confirmText: 'close',
-            showCancel: false,
+            cancelText: onDefer ? skipLaterText : 'Cancel',
+            showCancel: Boolean(onDefer),
             modalMaxWidth: '640px',
             modalWidth: '96vw',
             modalClass: 'whats-new-modal',
+            onConfirm: () => {
+                if (markSeenOnConfirm) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, DASHBOARD_RELEASE);
+                    } catch (error) {
+                        // Ignore localStorage failures.
+                    }
+                }
+                onClose?.();
+            },
+            onCancel: () => {
+                onDefer?.();
+                onClose?.();
+            },
         });
-        try {
-            localStorage.setItem(STORAGE_KEY, DASHBOARD_RELEASE);
-        } catch (error) {
-            // Ignore localStorage failures.
-        }
     };
 })();

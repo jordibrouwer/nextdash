@@ -1,10 +1,34 @@
 /**
  * Post-onboarding wizard for empty libraries — guides users to config#pages and first bookmark.
  */
+const POST_SETUP_DELAY_MS = 24 * 60 * 60 * 1000;
+const ONBOARDING_COMPLETED_AT_KEY = 'nextdash:onboarding-completed-at';
+
+function recordOnboardingCompletedAt() {
+    try {
+        localStorage.setItem(ONBOARDING_COMPLETED_AT_KEY, String(Date.now()));
+    } catch { /* ignore */ }
+}
+
+function isPostSetupEligible() {
+    try {
+        const raw = localStorage.getItem(ONBOARDING_COMPLETED_AT_KEY);
+        if (!raw) return true;
+        const completedAt = parseInt(raw, 10);
+        if (!Number.isFinite(completedAt)) return true;
+        return Date.now() - completedAt >= POST_SETUP_DELAY_MS;
+    } catch {
+        return false;
+    }
+}
+
 class PostSetupWizard {
-    constructor({ dashboard, language }) {
+    constructor({ dashboard, language, queueMeta = null, onQueueComplete = null, onQueueDefer = null }) {
         this.dashboard = dashboard;
         this.language = language;
+        this.queueMeta = queueMeta;
+        this.onQueueComplete = typeof onQueueComplete === 'function' ? onQueueComplete : null;
+        this.onQueueDefer = typeof onQueueDefer === 'function' ? onQueueDefer : null;
         this.storageKey = 'nextdash-post-setup-wizard-v1';
         this.currentStep = 0;
         this.overlay = null;
@@ -33,13 +57,13 @@ class PostSetupWizard {
     shouldStart() {
         if (this.hasAnyBookmarks()) return false;
         if (!this.dashboard?.settings?.onboardingCompleted) return false;
-        if (!this.dashboard?.allowPostInstallTuningThisSession) return false;
+        if (this.dashboard.onboardingStartedInSession) return false;
+        if (!isPostSetupEligible()) return false;
         try {
             if (localStorage.getItem(this.storageKey)) return false;
         } catch {
             return false;
         }
-        if (this.dashboard.onboardingStartedInSession) return false;
         return true;
     }
 
@@ -130,6 +154,13 @@ class PostSetupWizard {
         document.body.appendChild(card);
         this.card = card;
 
+        if (this.queueMeta && window.DiscoverabilityQueueBar?.inject) {
+            window.DiscoverabilityQueueBar.inject(this.card, this.queueMeta, () => {
+                this.close();
+                this.onQueueDefer?.();
+            }, this.dashboard);
+        }
+
         card.querySelector('.post-setup-skip').addEventListener('click', () => this.finish());
         document.addEventListener('keydown', this._onKeydown = (e) => {
             if (e.key === 'Escape') this.finish();
@@ -195,7 +226,7 @@ class PostSetupWizard {
     finish() {
         this.markSeen();
         this.close();
-        this.dashboard?.maybeShowWhatsNew?.();
+        this.onQueueComplete?.();
     }
 }
 
@@ -203,9 +234,12 @@ class PostSetupWizard {
  * One-time tuning wizard after onboarding: language, theme, browser extension.
  */
 class PostInstallTuningWizard {
-    constructor({ dashboard, language }) {
+    constructor({ dashboard, language, queueMeta = null, onQueueComplete = null, onQueueDefer = null }) {
         this.dashboard = dashboard;
         this.language = language;
+        this.queueMeta = queueMeta;
+        this.onQueueComplete = typeof onQueueComplete === 'function' ? onQueueComplete : null;
+        this.onQueueDefer = typeof onQueueDefer === 'function' ? onQueueDefer : null;
         this.storageKey = 'nextdash-post-tuning-wizard-v1';
         this.currentStep = 0;
         this.overlay = null;
@@ -309,6 +343,13 @@ class PostInstallTuningWizard {
         document.body.appendChild(card);
         this.card = card;
         this.fieldsHost = card.querySelector('.post-tuning-fields');
+
+        if (this.queueMeta && window.DiscoverabilityQueueBar?.inject) {
+            window.DiscoverabilityQueueBar.inject(this.card, this.queueMeta, () => {
+                this.close();
+                this.onQueueDefer?.();
+            }, this.dashboard);
+        }
 
         card.querySelector('.post-setup-skip').addEventListener('click', () => this.finish());
         document.addEventListener('keydown', this._onKeydown = (e) => {
@@ -447,10 +488,16 @@ class PostInstallTuningWizard {
     finish() {
         this.markSeen();
         this.close();
+        this.onQueueComplete?.();
     }
 }
 
 if (typeof window !== 'undefined') {
     window.PostSetupWizard = PostSetupWizard;
     window.PostInstallTuningWizard = PostInstallTuningWizard;
+    window.PostSetupTiming = {
+        recordOnboardingCompletedAt,
+        isPostSetupEligible,
+        delayMs: POST_SETUP_DELAY_MS,
+    };
 }
