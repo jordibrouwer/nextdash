@@ -1304,7 +1304,7 @@ class Dashboard {
         if (this.isCoarsePointer()) {
             return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + below to add a bookmark';
         }
-        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + below or Ctrl+Shift+A';
+        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or + below to add a bookmark';
     }
 
     maybeShowPostInstallTuning() {
@@ -1423,7 +1423,7 @@ class Dashboard {
         };
 
         const defs = [
-            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+', 'Ctrl+Shift+A'] },
+            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['&', '+'] },
             { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
@@ -1753,10 +1753,12 @@ class Dashboard {
             'Tip: <code>↑/↓</code> navigate bookmarks',
             'Tip: <code>;</code> edit bookmark (highlighted row or focused link)',
             'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet',
-            'Tip: <code>Ctrl+Shift+A</code> new bookmark — or just paste a URL anywhere on the dashboard',
             'Tip: <code>[</code> preview card on keyboard-selected bookmark',
             'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark',
             'Tip: left strip = drag reorder; long-press row (not strip) = inline edit',
+            ...[
+                ['dashboard.tipNewBookmarkAmpersand', null],
+            ].map(([key]) => { const v = this.language?.t?.(key); return v && v !== key ? v : null; }).filter(Boolean),
         ];
         const normalTips = [
             'Tip: <code>&gt;</code> search, <code>:</code> commands, <code>?</code> finders',
@@ -1808,6 +1810,7 @@ class Dashboard {
                 ['dashboard.tipKeyboardTab', null],
                 ['dashboard.tipDisableTips', null],
                 ['dashboard.tipDisableTipsAlt', null],
+                ['dashboard.tipNewBookmarkAmpersandShort', null],
             ].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean)
         ];
 
@@ -2361,7 +2364,7 @@ class Dashboard {
             section('sectionBookmarks', 'Bookmarks', [
                 item('+', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
                 item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
-                item('Ctrl + Shift + A', 'bmNewBookmarkModal', 'Open full new-bookmark modal'),
+                item('&', 'bmNewBookmarkModal', 'Open full new-bookmark modal'),
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),

@@ -140,18 +140,6 @@ class SearchComponent {
 
         // Add keyboard event listener
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
-                const matches = this.commandsComponent.handleCommand(':new');
-                const action = Array.isArray(matches) && matches[0] && typeof matches[0].action === 'function'
-                    ? matches[0].action
-                    : null;
-                if (action) {
-                    e.preventDefault();
-                    action();
-                    return;
-                }
-            }
-
             // Don't trigger shortcuts if user is typing in an input, except when search is active and it's a navigation key
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 if (!this.searchActive || !['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].includes(e.key)) {
@@ -378,6 +366,13 @@ class SearchComponent {
         if (e.key === '+') {
             e.preventDefault();
             window.dashboardInstance?.showOmnibox?.();
+            return;
+        }
+
+        // & opens the full new-bookmark modal (never feeds into search)
+        if (e.key === '&') {
+            e.preventDefault();
+            window.dashboardInstance?.quickAddWidget?.toggle?.();
             return;
         }
 

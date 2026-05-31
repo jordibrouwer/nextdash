@@ -1,5 +1,5 @@
 /**
- * Config quick-add: wraps SearchCommandNew (the full Ctrl+Shift+A modal) so it
+ * Config quick-add: wraps SearchCommandNew (the full & / :new modal) so it
  * works from the config page. Only two things differ from the dashboard version:
  *  1. Notifications go through config UI toasts, not dashboardInstance.
  *  2. After a successful save, the config bookmarks list is refreshed.

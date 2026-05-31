@@ -76,8 +76,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 **Bookmarks**
 - `+` — quick-add omnibox: type `name | url | shortcut` in one line
+- `&` — open the full new-bookmark modal
 - `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled
-- `Ctrl + Shift + A` — open the full new-bookmark modal
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
 - `Ctrl + C` — copy the URL of the focused bookmark (row flashes green)
@@ -267,7 +267,7 @@ See `extension/README.md` for full usage and development notes.
 ### v2026.05.4 — May 2026
 
 **UX & discoverability**
-- **Rich keyboard tooltips** — on desktop, hovering footer buttons shows the action name plus shortcuts in `<kbd>` chips (e.g. `>` search, `Ctrl+Shift+A` for quick-add). Hidden on touch devices.
+- **Rich keyboard tooltips** — on desktop, hovering footer buttons shows the action name plus shortcuts in `<kbd>` chips (e.g. `>` search, `&` for the new-bookmark modal). Hidden on touch devices.
 - **Search-flow hint with labels** — the first-run hint above the button bar uses `<kbd>` chips plus text labels (search · commands · finders · bookmark); includes a swipe-between-pages hint on mobile.
 - **Mobile bottom bar** — short text labels under footer icon buttons; a mini status line on small screens shows date · current page · health summary.
 - **Post-setup wizard** — after onboarding, empty libraries get a 3-step guide: open **config → pages**, add your first bookmark (quick-add or **config → bookmarks**), then finish.

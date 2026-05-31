@@ -1,6 +1,6 @@
 /**
  * Search Command: :new
- * Unified bookmark add modal (also used by QuickAdd / Ctrl+Shift+A)
+ * Unified bookmark add modal (also used by QuickAdd / & / Ctrl+Shift+A)
  */
 
 class SearchCommandNew {
@@ -220,7 +220,7 @@ class SearchCommandNew {
                     <div class="nbm-header">
                         <span class="nbm-title">${this.t('config.addNewBookmark', 'New Bookmark')}</span>
                         <div class="nbm-header-actions">
-                            <kbd>Ctrl+Shift+A</kbd>
+                            <kbd>&</kbd>
                             <button type="button" class="nbm-btn" id="new-bookmark-cancel-header" aria-label="Close">✕</button>
                         </div>
                     </div>

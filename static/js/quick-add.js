@@ -1,5 +1,6 @@
 /**
  * Quick Add Widget — delegates to the unified :new bookmark modal.
+ * Shortcuts: & (dashboard) and Ctrl+Shift+A (global).
  */
 class QuickAddWidget {
     constructor(dashboard) {
@@ -16,13 +17,16 @@ class QuickAddWidget {
         return this.dashboard?.searchComponent?.commandsComponent?.newCommandHandler;
     }
 
+    static matchesChordShortcut(e) {
+        return Boolean(e?.ctrlKey && e.shiftKey && e.code === 'KeyA');
+    }
+
     attachGlobalShortcut() {
         if (this.shortcutBound) return;
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
-                e.preventDefault();
-                this.toggle();
-            }
+            if (!QuickAddWidget.matchesChordShortcut(e)) return;
+            e.preventDefault();
+            this.toggle();
         });
         this.shortcutBound = true;
     }
