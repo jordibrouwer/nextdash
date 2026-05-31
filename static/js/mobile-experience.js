@@ -246,6 +246,9 @@
         if (dash && typeof dash.refreshAddBookmarkToolbarLabel === 'function') {
             dash.refreshAddBookmarkToolbarLabel();
         }
+        if (window.configManager?.language?.applyTranslations) {
+            window.configManager.language.applyTranslations();
+        }
     }
 
     function initDashboard() {

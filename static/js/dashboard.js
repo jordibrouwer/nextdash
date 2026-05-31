@@ -1389,17 +1389,17 @@ class Dashboard {
         if (hasAny) return;
         if (!this.settings?.onboardingCompleted) return;
 
-        const msg = window.MobileExperience?.shouldSkipHeavyUi?.()
+        const isMobile = window.MobileExperience?.shouldSkipHeavyUi?.() === true;
+        const msg = isMobile
             ? (this.language?.t('dashboard.firstBookmarkGuideMobile')
-                || 'Add bookmarks on a computer or tablet via config → bookmarks, or open search to launch existing links.')
+                || 'Tap + Bookmark in the bar below to add your first bookmark. In config → bookmarks, use ⚡ for the full form.')
             : (this.language?.t('dashboard.firstBookmarkGuide')
-                || 'Add your first bookmark with + below, or set up pages in config → pages.');
+                || 'Add your first bookmark with & or Ctrl+Shift+A (+ for quick-add), or set up pages in config → pages.');
         this.showNotification(msg, 'info', { duration: 10000 });
         try {
             localStorage.setItem(storageKey, '1');
         } catch { /* ignore */ }
         setTimeout(() => {
-            if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
             const btn = document.getElementById('quick-add-toolbar-btn');
             if (btn) btn.classList.add('first-bookmark-pulse');
             setTimeout(() => btn?.classList.remove('first-bookmark-pulse'), 4000);

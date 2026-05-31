@@ -549,6 +549,32 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     color: var(--text-secondary);
 }
 
+.bookmark-detail-empty-summary--mobile {
+    display: none;
+    margin: 0.35rem 0 0;
+    max-width: 18rem;
+    line-height: 1.45;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+}
+
+body[data-mobile-layout="true"] .bookmark-detail-empty {
+    padding: 1.75rem 1rem;
+    gap: 0.5rem;
+}
+
+body[data-mobile-layout="true"] .bookmark-detail-empty-icon {
+    display: none;
+}
+
+body[data-mobile-layout="true"] .bookmark-detail-empty-summary--mobile {
+    display: block;
+}
+
+body[data-mobile-layout="true"] .bookmark-detail-empty-hints--desktop {
+    display: none;
+}
+
 .bookmark-detail-empty-hints {
     list-style: none;
     margin: 0.5rem 0 0;

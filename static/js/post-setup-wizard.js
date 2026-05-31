@@ -88,8 +88,7 @@ class PostSetupWizard {
                 title: this.t('postSetup.bookmarkTitle', 'Add your first bookmark'),
                 body: this.t(
                     'postSetup.bookmarkBody',
-                    'Use + below for a quick add, or manage bookmarks in bulk from config. Shortcuts: {shortcut}.',
-                    { shortcut: '+' }
+                    'Press + for a quick one-line add, or & / Ctrl+Shift+A for the full bookmark form. You can also manage bookmarks in config.'
                 ),
                 primary: this.t('postSetup.addBookmark', 'Add bookmark now'),
                 primaryAction: () => {
