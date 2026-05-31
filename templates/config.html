@@ -463,6 +463,15 @@
                                     <button type="button" id="global-shortcuts-info-btn" class="info-button" data-i18n-aria="config.globalShortcutsInfoTitle">ℹ</button>
                                 </label>
                             </div>
+                            <div class="checkbox-tree-item checkbox-tree-child general-keyboard-link-row">
+                                <span class="tree-symbol">└──</span>
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.keyboardTabHint">Customize which keys trigger search, navigation, and other dashboard actions.</p>
+                                    <div class="config-advanced-action-actions">
+                                        <a href="#keyboard" id="general-keyboard-link" class="btn btn-primary btn-small help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-page-tabs-checkbox">
@@ -950,14 +959,6 @@
                                     <div class="config-advanced-action-actions">
                                         <a href="/?tour=1" class="btn btn-secondary btn-small" data-i18n="config.startFeatureTour">Start tour</a>
                                         <button type="button" id="reset-tour-notification-btn" class="btn btn-secondary btn-small" data-i18n="config.resetTourNotification">Reset notification</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text">Customize which keys trigger search, navigation, and other dashboard actions.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <a href="#keyboard" id="go-to-keyboard-link" class="btn btn-secondary btn-small" data-i18n="config.keyboardTab">Keyboard shortcuts</a>
                                     </div>
                                 </div>
                             </div>
@@ -1686,6 +1687,7 @@
                             <li><a href="#help-onboarding">First-run onboarding</a></li>
                             <li><a href="#help-config-general">General settings</a></li>
                             <li><a href="#help-navigation">Navigation</a></li>
+                            <li><a href="#help-keyboard">Keyboard shortcuts</a></li>
                             <li><a href="#help-bookmarks-dashboard">Dashboard bookmarks</a></li>
                             <li><a href="#help-search">Search &amp; modes</a></li>
                             <li><a href="#help-date-weather">Date &amp; weather</a></li>
@@ -1753,6 +1755,17 @@
                                 <li>Open selected bookmark with <code>Enter</code> or <code>Space</code>.</li>
                                 <li>Clear keyboard selection with <code>Esc</code> (also undoes the latest drag reorder when applicable).</li>
                             </ul>
+                        </section>
+
+                        <section id="help-keyboard" class="help-block help-block--spotlight">
+                            <h3 class="section-title" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</h3>
+                            <p class="help-block-intro" data-i18n="config.helpPageKeyboardIntro">Rebind search, navigation, and dashboard keys. The keyboard tab is not in the main tab bar — open it here.</p>
+                            <ul data-i18n="config.helpPageKeyboardItems">
+                                <li>Open the cheat sheet on the dashboard with <code>!</code> or <code>Ctrl+/</code>.</li>
+                            </ul>
+                            <p class="help-block-action">
+                                <a href="#keyboard" id="help-open-keyboard-link" class="btn btn-primary help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
+                            </p>
                         </section>
 
                         <section id="help-bookmarks-dashboard" class="help-block">

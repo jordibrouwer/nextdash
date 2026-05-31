@@ -304,6 +304,11 @@ body.config-is-dirty .config-controls-wrapper {
     line-height: 1.45;
 }
 
+.general-keyboard-link-row .config-advanced-action-row {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 @media (max-width: 640px) {
     .config-advanced-action-row {
         flex-direction: column;

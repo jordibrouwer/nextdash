@@ -1793,7 +1793,7 @@ class Dashboard {
             'Tip: <code>Ctrl+Shift+A</code> new bookmark — or just paste a URL anywhere on the dashboard',
             'Tip: <code>[</code> preview card on keyboard-selected bookmark',
             'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark',
-            'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'
+            'Tip: left strip = drag reorder; long-press row (not strip) = inline edit',
         ];
         const normalTips = [
             'Tip: <code>&gt;</code> search, <code>:</code> commands, <code>?</code> finders',
@@ -1842,6 +1842,7 @@ class Dashboard {
                 ['dashboard.tipFaviconToggle', null],
                 ['dashboard.tipPackedColumns', null],
                 ['dashboard.tipHideShortcutPin', null],
+                ['dashboard.tipKeyboardTab', null],
                 ['dashboard.tipDisableTips', null],
                 ['dashboard.tipDisableTipsAlt', null],
             ].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean)

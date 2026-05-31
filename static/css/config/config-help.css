@@ -82,6 +82,18 @@ code {
     margin: 0.75rem 0 0;
 }
 
+.help-block--spotlight {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary));
+}
+
+.help-keyboard-cta {
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.03em;
+    padding: 0.55rem 1.35rem;
+    text-transform: lowercase;
+}
+
 .help-subheading {
     margin: 1rem 0 0.4rem;
     font-size: var(--font-size-controls);
