@@ -1140,8 +1140,9 @@ class SearchComponent {
             const historyClass = match.type === 'history' ? ' history-entry' : '';
             const savedClass = match.type === 'saved-search' ? ' saved-search-entry' : '';
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
-            const groupChildClass = (match.groupId || match.type === 'filter-completion') ? ' command-group-child' : '';
-            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + groupChildClass;
+            const whatsNewClass = match.type === 'whats-new' ? ' whats-new-entry' : '';
+            const groupChildClass = (match.groupId || match.type === 'filter-completion' || match.type === 'whats-new') ? ' command-group-child' : '';
+            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass;
 
             // Get the display name based on match type
             let displayName;
@@ -1158,7 +1159,7 @@ class SearchComponent {
             // For fuzzy/global search, don't show shortcut span to avoid empty space
             let shortcutHtml = '';
             if (match.type !== 'fuzzy' && match.type !== 'global-search') {
-                const rawShortcut = match.shortcut.toUpperCase();
+                const rawShortcut = match.type === 'whats-new' ? match.shortcut : match.shortcut.toUpperCase();
                 const highlightedShortcut = match.query
                     ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
                     : this._escHtml(rawShortcut);
@@ -1231,6 +1232,9 @@ class SearchComponent {
                     this.selectedMatchIndex = 0;
                     this.updateSelectionHighlight();
                     this.justCompleted = true;
+                } else if (match.type === 'whats-new') {
+                    this.closeSearch();
+                    window.openWhatsNewModal?.({ force: true });
                 } else {
                     this.openBookmark(match.bookmark);
                 }
@@ -1335,6 +1339,9 @@ class SearchComponent {
                 this.selectedMatchIndex = 0;
                 this.updateSelectionHighlight();
                 this.justCompleted = true;
+            } else if (selectedMatch.type === 'whats-new') {
+                this.closeSearch();
+                window.openWhatsNewModal?.({ force: true });
             } else {
                 this.openBookmark(selectedMatch.bookmark);
             }
@@ -1475,7 +1482,16 @@ class SearchComponent {
             ? this.findersComponent.getTopFinders(this.finders.length || 10)
             : [];
 
+        const whatsNewItems = typeof window.shouldShowWhatsNewInSearch === 'function' && window.shouldShowWhatsNewInSearch()
+            ? [{
+                type: 'whats-new',
+                shortcut: '★',
+                name: 'See latest release notes'
+            }]
+            : [];
+
         const groups = [
+            { id: 'whats-new', label: "What's new", items: whatsNewItems, defaultOpen: true },
             { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
             { id: 'saved', label: t('dashboard.emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
             { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },

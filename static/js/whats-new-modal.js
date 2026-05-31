@@ -6,7 +6,40 @@
 
     const DASHBOARD_RELEASE = '2026.05-dashboard-release-v32';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
+    const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
+    const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
+    const SEARCH_PROMO_MS = 7 * 24 * 60 * 60 * 1000;
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
+
+    function isReleaseUnread() {
+        try {
+            return localStorage.getItem(STORAGE_KEY) !== DASHBOARD_RELEASE;
+        } catch {
+            return false;
+        }
+    }
+
+    function getSearchPromoStart() {
+        try {
+            const storedRelease = localStorage.getItem(SEARCH_PROMO_RELEASE_KEY);
+            if (storedRelease === DASHBOARD_RELEASE) {
+                const start = Number(localStorage.getItem(SEARCH_PROMO_START_KEY) || 0);
+                if (start > 0) return start;
+            }
+            const now = Date.now();
+            localStorage.setItem(SEARCH_PROMO_START_KEY, String(now));
+            localStorage.setItem(SEARCH_PROMO_RELEASE_KEY, DASHBOARD_RELEASE);
+            return now;
+        } catch {
+            return Date.now();
+        }
+    }
+
+    /** Unread release notes within the 7-day search empty-state promo window. */
+    window.shouldShowWhatsNewInSearch = function shouldShowWhatsNewInSearch() {
+        if (!isReleaseUnread()) return false;
+        return Date.now() - getSearchPromoStart() < SEARCH_PROMO_MS;
+    };
 
     function release(tag, date, sections) {
         const sectionsHtml = sections.map(({ title, items }) => `

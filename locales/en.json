@@ -132,6 +132,8 @@
         "emptyStateRecentLabel": "Recent",
         "emptyStateSavedLabel": "Saved searches",
         "emptyStateFindersLabel": "Finders",
+        "emptyStateWhatsNewLabel": "What's new",
+        "emptyStateWhatsNewItem": "See latest release notes",
         "filterByCategory": "Filter by category (example: category:work)",
         "filterByStatus": "Filter by status (online/offline/pinned/broken…)",
         "filterByPage": "Filter by page (current/all/number)",
