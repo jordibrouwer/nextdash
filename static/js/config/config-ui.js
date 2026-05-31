@@ -85,6 +85,8 @@ class ConfigUI {
                 if (targetTab === 'bookmarks' || targetTab === 'categories') {
                     configManager.refreshCustomSelects();
                     configManager.refreshPageDropdowns();
+                } else if (targetTab === 'pages') {
+                    configManager.renderPagesTab();
                 }
                 if (targetTab === 'categories' && typeof configManager.loadPageCategories === 'function') {
                     void configManager.loadPageCategories(configManager.currentCategoriesPageId);

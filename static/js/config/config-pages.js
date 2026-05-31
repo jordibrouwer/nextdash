@@ -85,7 +85,7 @@ class ConfigPages {
         // Store reference to the actual page object
         div._pageRef = page;
 
-        const isDefaultPage = page.id === 1;
+        const isDefaultPage = Number(page.id) === 1;
         const archived = typeof isArchived === 'function' ? isArchived(page.id) : false;
         if (archived) div.classList.add('is-archived');
         const removeButton = isDefaultPage
@@ -99,7 +99,7 @@ class ConfigPages {
         
         div.innerHTML = `
             <span class="drag-handle js-drag-handle" title="Drag to reorder">⠿</span>
-            <input type="text" id="page-name-${index}" name="page-name-${index}" value="${page.name}" placeholder="${this.t('config.pageNamePlaceholder')}" data-page-id="${page.id}" data-field="name">
+            <input type="text" id="page-name-${index}" name="page-name-${index}" value="${this.escapePageName(page.name)}" placeholder="${this.t('config.pageNamePlaceholder')}" data-page-id="${page.id}" data-field="name">
             ${archived ? `<span class="page-archived-badge">${this.t('config.archived') || 'archived'}</span>` : ''}
             ${archiveButton}
             ${removeButton}
@@ -113,6 +113,13 @@ class ConfigPages {
         });
 
         return div;
+    }
+
+    escapePageName(name) {
+        return String(name || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;');
     }
 
     /**

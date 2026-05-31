@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -825,10 +826,15 @@ func (fs *FileStore) getPages() []Page {
 		return []Page{{ID: 1, Name: "main"}}
 	}
 
-	// First, collect all pages from bookmark files
+	// First, collect all pages from bookmark files (filename id is authoritative)
 	pageMap := make(map[int]Page)
 	for _, file := range files {
 		if file.IsDir() || !strings.HasPrefix(file.Name(), "bookmarks-") || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+
+		fileID, ok := parseBookmarkPageIDFromFilename(file.Name())
+		if !ok {
 			continue
 		}
 
@@ -843,7 +849,7 @@ func (fs *FileStore) getPages() []Page {
 			continue
 		}
 
-		pageMap[pageWithBookmarks.Page.ID] = pageWithBookmarks.Page
+		pageMap[fileID] = normalizePageMeta(pageWithBookmarks.Page, fileID)
 	}
 
 	if len(pageMap) == 0 {
@@ -883,11 +889,66 @@ func (fs *FileStore) getPages() []Page {
 		}
 	}
 
-	if len(pages) == 0 {
-		return []Page{{ID: 1, Name: "main"}}
+	return finalizePagesList(pages, pageMap)
+}
+
+func parseBookmarkPageIDFromFilename(name string) (int, bool) {
+	if !strings.HasPrefix(name, "bookmarks-") || !strings.HasSuffix(name, ".json") {
+		return 0, false
+	}
+	idStr := strings.TrimSuffix(strings.TrimPrefix(name, "bookmarks-"), ".json")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id < 1 {
+		return 0, false
+	}
+	return id, true
+}
+
+func defaultPageName(id int) string {
+	if id == 1 {
+		return "main"
+	}
+	return fmt.Sprintf("Page %d", id)
+}
+
+func normalizePageMeta(page Page, fileID int) Page {
+	page.ID = fileID
+	if strings.TrimSpace(page.Name) == "" {
+		page.Name = defaultPageName(fileID)
+	}
+	return page
+}
+
+func finalizePagesList(pages []Page, pageMap map[int]Page) []Page {
+	normalized := make([]Page, 0, len(pages))
+	seen := make(map[int]bool)
+	for _, page := range pages {
+		if seen[page.ID] {
+			continue
+		}
+		seen[page.ID] = true
+		normalized = append(normalized, normalizePageMeta(page, page.ID))
 	}
 
-	return pages
+	hasMain := false
+	for _, page := range normalized {
+		if page.ID == 1 {
+			hasMain = true
+			break
+		}
+	}
+	if !hasMain {
+		if page, ok := pageMap[1]; ok {
+			normalized = append([]Page{normalizePageMeta(page, 1)}, normalized...)
+		} else {
+			normalized = append([]Page{{ID: 1, Name: "main"}}, normalized...)
+		}
+	}
+
+	if len(normalized) == 0 {
+		return []Page{{ID: 1, Name: "main"}}
+	}
+	return normalized
 }
 
 func (fs *FileStore) GetPageOrder() []int {

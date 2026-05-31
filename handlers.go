@@ -828,6 +828,7 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 	// Save each page individually
 	// Note: This assumes bookmarks are saved separately via SaveBookmarks endpoint
 	for _, page := range pages {
+		page = normalizePageMeta(page, page.ID)
 		// Get existing bookmarks for this page to preserve them
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
 		h.store.SavePage(page, bookmarks)

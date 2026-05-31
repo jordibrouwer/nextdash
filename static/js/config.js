@@ -167,6 +167,8 @@ class ConfigManager {
         this.renderConfig();
         this.initReordering();
         await this.persistRepairedPagesIfNeeded();
+        await this.reloadPagesFromServerIfNeeded();
+        this.renderPagesTab();
         if (typeof initCustomSelects === 'function') {
             setTimeout(() => {
                 initCustomSelects();
@@ -3486,23 +3488,30 @@ class ConfigManager {
 
     normalizePagesData(pages) {
         const raw = Array.isArray(pages) ? pages : [];
-        const list = raw.filter(
-            (page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1
-        );
+        const list = raw
+            .filter((page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1)
+            .map((page) => ({
+                ...page,
+                id: Number(page.id),
+                name: String(page.name || '').trim(),
+            }));
         let repaired = false;
 
-        if (!list.some((page) => Number(page.id) === 1)) {
+        if (!list.some((page) => page.id === 1)) {
             list.unshift({ id: 1, name: 'main' });
             repaired = true;
         }
         if (list.length === 0) {
             return { pages: [{ id: 1, name: 'main' }], repaired: true };
         }
-        const mainPage = list.find((page) => Number(page.id) === 1);
-        if (mainPage && !String(mainPage.name || '').trim()) {
-            mainPage.name = 'main';
-            repaired = true;
-        }
+
+        list.forEach((page) => {
+            if (!page.name) {
+                page.name = page.id === 1 ? 'main' : `Page ${page.id}`;
+                repaired = true;
+            }
+        });
+
         if (raw.length === 0 || raw.length !== list.length) {
             repaired = true;
         }
@@ -3517,18 +3526,44 @@ class ConfigManager {
         return normalized;
     }
 
+    renderPagesTab() {
+        this.pagesData = this.applyPagesNormalization(this.pagesData);
+        this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
+        this.pages.initReorder(this.pagesData, (newPages) => {
+            this.pagesData = newPages;
+            this.pages.renderPageSelector(this.getVisiblePages(), this.currentPageId);
+        });
+    }
+
+    async reloadPagesFromServerIfNeeded() {
+        if (!this._pagesRepairedOnLoad) {
+            return;
+        }
+        try {
+            const response = await fetch('/api/pages');
+            if (!response.ok) {
+                return;
+            }
+            const pages = await response.json();
+            this.pagesData = this.applyPagesNormalization(pages);
+            this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
+            this._pagesRepairedOnLoad = false;
+        } catch (error) {
+            console.warn('Failed to reload pages after repair:', error);
+        }
+    }
+
     async persistRepairedPagesIfNeeded() {
         if (!this._pagesRepairedOnLoad) {
             return;
         }
-        this._pagesRepairedOnLoad = false;
         try {
             await this.withRetry(() => this.data.savePages(this.pagesData));
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.signalDashboardReload('pages-repaired');
+            // Keep flag until reloadPagesFromServerIfNeeded confirms sync
         } catch (error) {
             console.warn('Auto-persist of default page structure failed:', error);
-            this._pagesRepairedOnLoad = true;
         }
     }
 
