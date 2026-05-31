@@ -883,6 +883,10 @@ func (fs *FileStore) getPages() []Page {
 		}
 	}
 
+	if len(pages) == 0 {
+		return []Page{{ID: 1, Name: "main"}}
+	}
+
 	return pages
 }
 

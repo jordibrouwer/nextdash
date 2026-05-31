@@ -171,6 +171,7 @@ class ConfigManager {
                 if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
                     window.installSettingInfoButtons(this.settings);
                 }
+                this.refreshPageDropdowns();
             }, 0);
         }
 
@@ -235,8 +236,8 @@ class ConfigManager {
             const { bookmarks, pages, settings } = await this.data.loadData(this.deviceSpecific);
 
             this.bookmarksData = bookmarks;
-            this.pagesData = pages;
-            this.originalPagesData = JSON.parse(JSON.stringify(pages));
+            this.pagesData = this.normalizePagesData(pages);
+            this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.findersData = await this.data.loadFinders();
             try {
                 const allBookmarksResponse = await fetch('/api/bookmarks?all=true');
@@ -372,10 +373,10 @@ class ConfigManager {
             } else if (!this.settingsData.fontPreset) {
                 this.settingsData.fontPreset = 'source-code-pro';
             }
-            this.currentPageId = settings.currentPage || 1;
+            this.currentPageId = this.resolvePageId(settings.currentPage, this.getVisiblePages());
             if (this.isPageArchived(this.currentPageId)) {
                 const visiblePages = this.getVisiblePages();
-                this.currentPageId = visiblePages.length > 0 ? visiblePages[0].id : 1;
+                this.currentPageId = visiblePages.length > 0 ? Number(visiblePages[0].id) : 1;
             }
             
             await this.loadPageBookmarks(this.currentPageId);
@@ -1954,13 +1955,21 @@ class ConfigManager {
             
             categoriesSelector.innerHTML = '';
             const wantCatPage = Number(this.currentCategoriesPageId);
+            let catMatched = false;
             this.getVisiblePages().forEach(page => {
                 const option = document.createElement('option');
                 option.value = page.id;
                 option.textContent = page.name;
-                if (Number(page.id) === wantCatPage) option.selected = true;
+                if (Number.isFinite(wantCatPage) && Number(page.id) === wantCatPage) {
+                    option.selected = true;
+                    catMatched = true;
+                }
                 categoriesSelector.appendChild(option);
             });
+            if (!catMatched && categoriesSelector.options.length > 0) {
+                categoriesSelector.options[0].selected = true;
+                this.currentCategoriesPageId = Number(categoriesSelector.options[0].value);
+            }
             if (categoriesSelector.__customSelectInstance) {
                 categoriesSelector.__customSelectInstance.refresh();
             }
@@ -2519,6 +2528,8 @@ class ConfigManager {
 
     refreshPageDropdowns() {
         const visiblePages = this.getVisiblePages();
+        this.currentPageId = this.resolvePageId(this.currentPageId, visiblePages);
+        this.currentCategoriesPageId = this.resolvePageId(this.currentCategoriesPageId, visiblePages);
 
         // Bookmarks tab page selector
         this.pages.renderPageSelector(visiblePages, this.currentPageId);
@@ -2532,13 +2543,21 @@ class ConfigManager {
         if (catSel) {
             const wantCatPage = Number(this.currentCategoriesPageId);
             catSel.innerHTML = '';
+            let catMatched = false;
             visiblePages.forEach(page => {
                 const opt = document.createElement('option');
                 opt.value = page.id;
                 opt.textContent = page.name;
-                if (Number(page.id) === wantCatPage) opt.selected = true;
+                if (Number.isFinite(wantCatPage) && Number(page.id) === wantCatPage) {
+                    opt.selected = true;
+                    catMatched = true;
+                }
                 catSel.appendChild(opt);
             });
+            if (!catMatched && catSel.options.length > 0) {
+                catSel.options[0].selected = true;
+                this.currentCategoriesPageId = Number(catSel.options[0].value);
+            }
             if (catSel.__customSelectInstance) {
                 catSel.__customSelectInstance.refresh();
             }
@@ -3459,6 +3478,39 @@ class ConfigManager {
             .replace(/[^a-z0-9]/g, '-')
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '');
+    }
+
+    normalizePagesData(pages) {
+        const list = Array.isArray(pages)
+            ? pages.filter((page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1)
+            : [];
+        if (!list.some((page) => Number(page.id) === 1)) {
+            list.unshift({ id: 1, name: 'main' });
+        }
+        if (list.length === 0) {
+            return [{ id: 1, name: 'main' }];
+        }
+        const mainPage = list.find((page) => Number(page.id) === 1);
+        if (mainPage && !String(mainPage.name || '').trim()) {
+            mainPage.name = 'main';
+        }
+        return list;
+    }
+
+    resolvePageId(rawPageId, pages) {
+        const candidates = Array.isArray(pages) ? pages : [];
+        const parsed = Number(rawPageId);
+        if (
+            Number.isFinite(parsed) &&
+            parsed >= 1 &&
+            candidates.some((page) => Number(page.id) === parsed)
+        ) {
+            return parsed;
+        }
+        if (candidates.length > 0) {
+            return Number(candidates[0].id);
+        }
+        return 1;
     }
 }
 

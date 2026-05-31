@@ -37,16 +37,22 @@ class ConfigPages {
 
         selector.innerHTML = '';
 
+        const list = Array.isArray(pages) ? pages : [];
         const want = Number(currentPageId);
-        pages.forEach(page => {
+        let matched = false;
+        list.forEach((page) => {
             const option = document.createElement('option');
             option.value = page.id;
             option.textContent = page.name;
-            if (Number(page.id) === want) {
+            if (Number.isFinite(want) && Number(page.id) === want) {
                 option.selected = true;
+                matched = true;
             }
             selector.appendChild(option);
         });
+        if (!matched && selector.options.length > 0) {
+            selector.options[0].selected = true;
+        }
     }
 
     /**
