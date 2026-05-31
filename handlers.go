@@ -388,7 +388,7 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFS(h.files, "templates/config.html")
+	tmpl, err := template.ParseFS(h.files, "templates/config.html", "templates/partials/theme-colors-editor.html")
 	if err != nil {
 		http.Error(w, "Template parsing error", http.StatusInternalServerError)
 		return
@@ -929,105 +929,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Colors(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFS(h.files, "templates/colors.html")
-	if err != nil {
-		http.Error(w, "Template parsing error", http.StatusInternalServerError)
-		return
-	}
-
-	settings := h.store.GetSettings()
-
-	data := struct {
-		Theme                     string
-		FontSize                  string
-		FontPreset                string
-		ShowBackgroundDots        bool
-		ShowTitle                 bool
-		ShowDate                  bool
-		ShowConfigButton          bool
-		ShowHealthDashboard       bool
-		ShowSearchButton          bool
-		ShowFindersButton         bool
-		ShowCommandsButton        bool
-		ShowSearchButtonText      bool
-		ShowFindersButtonText     bool
-		ShowCommandsButtonText    bool
-		ShowStatus                bool
-		ShowPing                  bool
-		ShowStatusLoading         bool
-		SkipFastPing              bool
-		GlobalShortcuts           bool
-		HyprMode                  bool
-		AnimationsEnabled         bool
-		EnableCustomTitle         bool
-		CustomTitle               string
-		ShowPageInTitle           bool
-		ShowPageNamesInTabs       bool
-		EnableCustomFavicon       bool
-		CustomFaviconPath         string
-		EnableCustomFont          bool
-		CustomFontPath            string
-		Language                  string
-		InterleaveMode            bool
-		ShowPageTabs              bool
-		EnableFuzzySuggestions    bool
-		FuzzySuggestionsStartWith bool
-		KeepSearchOpenWhenEmpty   bool
-		ShowIcons                 bool
-		IncludeFindersInSearch    bool
-		AlwaysCollapseCategories  bool
-		ThemeIconStyling          map[string]ThemeIconStylingEntry
-	}{
-		Theme:                     settings.Theme,
-		FontSize:                  settings.FontSize,
-		FontPreset:                settings.FontPreset,
-		ShowBackgroundDots:        settings.ShowBackgroundDots,
-		ShowTitle:                 settings.ShowTitle,
-		ShowDate:                  settings.ShowDate,
-		ShowConfigButton:          true,
-		ShowHealthDashboard:       settings.ShowHealthDashboard,
-		ShowSearchButton:          settings.ShowSearchButton,
-		ShowFindersButton:         settings.ShowFindersButton,
-		ShowCommandsButton:        settings.ShowCommandsButton,
-		ShowSearchButtonText:      settings.ShowSearchButtonText,
-		ShowFindersButtonText:     settings.ShowFindersButtonText,
-		ShowCommandsButtonText:    settings.ShowCommandsButtonText,
-		ShowStatus:                settings.ShowStatus,
-		ShowPing:                  settings.ShowPing,
-		ShowStatusLoading:         settings.ShowStatusLoading,
-		SkipFastPing:              settings.SkipFastPing,
-		GlobalShortcuts:           settings.GlobalShortcuts,
-		HyprMode:                  settings.HyprMode,
-		AnimationsEnabled:         settings.AnimationsEnabled,
-		EnableCustomTitle:         settings.EnableCustomTitle,
-		CustomTitle:               settings.CustomTitle,
-		ShowPageInTitle:           settings.ShowPageInTitle,
-		ShowPageNamesInTabs:       settings.ShowPageNamesInTabs,
-		EnableCustomFavicon:       settings.EnableCustomFavicon,
-		CustomFaviconPath:         settings.CustomFaviconPath,
-		EnableCustomFont:          settings.EnableCustomFont,
-		CustomFontPath:            settings.CustomFontPath,
-		Language:                  settings.Language,
-		InterleaveMode:            settings.InterleaveMode,
-		ShowPageTabs:              settings.ShowPageTabs,
-		EnableFuzzySuggestions:    settings.EnableFuzzySuggestions,
-		FuzzySuggestionsStartWith: settings.FuzzySuggestionsStartWith,
-		KeepSearchOpenWhenEmpty:   settings.KeepSearchOpenWhenEmpty,
-		ShowIcons:                 settings.ShowIcons,
-		IncludeFindersInSearch:    settings.IncludeFindersInSearch,
-		AlwaysCollapseCategories:  settings.AlwaysCollapseCategories,
-		ThemeIconStyling:          settings.ThemeIconStyling,
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		http.Error(w, "Template execution error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	http.Redirect(w, r, "/config#colors", http.StatusMovedPermanently)
 }
 
 func (h *Handlers) GetColors(w http.ResponseWriter, r *http.Request) {

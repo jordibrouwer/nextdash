@@ -2535,9 +2535,13 @@ class Dashboard {
         if (base === 'dark' || base === 'light') {
             return wantsDark ? 'dark' : 'light';
         }
+        const userCustomIds = window.UserCustomThemeIds;
+        if (Array.isArray(userCustomIds) && userCustomIds.includes(base)) {
+            return base;
+        }
         const match = base.match(/^(.*)-(dark|light)$/);
         if (!match) {
-            return wantsDark ? 'dark' : 'light';
+            return base;
         }
         return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
     }

@@ -81,6 +81,7 @@ class ConfigSettings {
         this.language = language;
         this.t = language.t.bind(language); // Translation function
         this.customThemes = {}; // Store selectable themes (id -> display name)
+        this.userCustomThemeIds = new Set(); // Themes created in Config → theme (colors.custom)
         this.legacyThemeMap = {
             aurora: 'midnight-neon-dark',
             cyberpunk: 'retro-crt-dark',
@@ -142,13 +143,66 @@ class ConfigSettings {
         if (normalized === 'dark' || normalized === 'light') {
             return wantsDark ? 'dark' : 'light';
         }
+        if (this.isUserCustomTheme(normalized)) {
+            return normalized;
+        }
         const match = normalized.match(/^(.*)-(dark|light)$/);
         if (!match) {
-            return wantsDark ? 'dark' : 'light';
+            return normalized;
         }
         const pairCandidate = `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
         const hasPair = Object.prototype.hasOwnProperty.call(this.customThemes || {}, pairCandidate);
         return hasPair ? pairCandidate : normalized;
+    }
+
+    isUserCustomTheme(themeId) {
+        const normalized = this.normalizeThemeId(themeId);
+        return this.userCustomThemeIds?.has(normalized) === true;
+    }
+
+    themeSupportsAutoDarkMode(themeId) {
+        const normalized = this.normalizeThemeId(themeId);
+        if (this.isUserCustomTheme(normalized)) {
+            return false;
+        }
+        if (normalized === 'dark' || normalized === 'light') {
+            return true;
+        }
+        const match = normalized.match(/^(.*)-(dark|light)$/);
+        if (!match) {
+            return false;
+        }
+        const pairCandidate = `${match[1]}-${match[2] === 'dark' ? 'light' : 'dark'}`;
+        return Object.prototype.hasOwnProperty.call(this.customThemes || {}, pairCandidate);
+    }
+
+    updateAutoDarkModeAvailability(themeId, settings, callbacks = {}, options = {}) {
+        const checkbox = document.getElementById('auto-dark-mode-checkbox');
+        const hint = document.getElementById('auto-dark-mode-unavailable-hint');
+        const formGroup = document.getElementById('auto-dark-mode-form-group');
+        if (!checkbox) return;
+
+        const supported = this.themeSupportsAutoDarkMode(themeId);
+        checkbox.disabled = !supported;
+        if (formGroup) {
+            formGroup.classList.toggle('auto-dark-mode-unavailable', !supported);
+        }
+        if (hint) {
+            hint.hidden = supported;
+        }
+
+        if (!supported && settings?.autoDarkMode) {
+            settings.autoDarkMode = false;
+            checkbox.checked = false;
+            if (callbacks.onAutoDarkModeChange) {
+                callbacks.onAutoDarkModeChange(false);
+            } else {
+                this.applyAutoDarkMode(false, settings);
+            }
+            if (options.markDirtyOnDisable) {
+                window.configManager?.markDirty?.();
+            }
+        }
     }
 
     bindInfoButton(buttonId, titleKey, messageKey) {
@@ -324,9 +378,12 @@ class ConfigSettings {
 
     async loadCustomThemes() {
         try {
-            const response = await fetch('/api/colors/custom-themes');
-            if (response.ok) {
-                this.customThemes = await response.json();
+            const [themesResponse, colorsResponse] = await Promise.all([
+                fetch('/api/colors/custom-themes'),
+                fetch('/api/colors')
+            ]);
+            if (themesResponse.ok) {
+                this.customThemes = await themesResponse.json();
                 window.CustomThemeIds = Array.isArray(this.customThemes)
                     ? this.customThemes
                     : Object.keys(this.customThemes || {});
@@ -334,10 +391,20 @@ class ConfigSettings {
                 this.customThemes = {};
                 window.CustomThemeIds = [];
             }
+            if (colorsResponse.ok) {
+                const colors = await colorsResponse.json();
+                this.userCustomThemeIds = new Set(Object.keys(colors?.custom || {}));
+                window.UserCustomThemeIds = [...this.userCustomThemeIds];
+            } else {
+                this.userCustomThemeIds = new Set();
+                window.UserCustomThemeIds = [];
+            }
         } catch (error) {
             console.error('Error loading custom themes:', error);
             this.customThemes = {};
+            this.userCustomThemeIds = new Set();
             window.CustomThemeIds = [];
+            window.UserCustomThemeIds = [];
             window.AppNotification?.show?.(
                 this.t('config.errorLoadingThemes') || 'Failed to load custom themes.',
                 'warning',
@@ -378,6 +445,14 @@ class ConfigSettings {
         if (typeof configManager !== 'undefined' && typeof configManager.refreshCustomSelects === 'function') {
             configManager.refreshCustomSelects();
         }
+
+        if (this._currentSettings) {
+            this.updateAutoDarkModeAvailability(
+                this._currentSettings.theme,
+                this._currentSettings,
+                this._settingsCallbacks || {}
+            );
+        }
     }
 
     /**
@@ -387,6 +462,7 @@ class ConfigSettings {
      */
     async setupListeners(settings, callbacks) {
         this._currentSettings = settings;
+        this._settingsCallbacks = callbacks;
         await this.loadCustomThemes();
         this.populateThemeSelect();
         
@@ -411,6 +487,7 @@ class ConfigSettings {
             settings.theme = themeSelect.value;
             themeSelect.addEventListener('change', (e) => {
                 settings.theme = e.target.value;
+                this.updateAutoDarkModeAvailability(settings.theme, settings, callbacks, { markDirtyOnDisable: true });
                 if (callbacks.onThemeChange) callbacks.onThemeChange(settings.theme);
                 this.reloadThemeCSS();
                 this.updateAutoPreview(settings.theme);
@@ -561,9 +638,15 @@ class ConfigSettings {
         if (autoDarkModeCheckbox) {
             autoDarkModeCheckbox.checked = settings.autoDarkMode === true;
             autoDarkModeCheckbox.addEventListener('change', (e) => {
+                if (!this.themeSupportsAutoDarkMode(settings.theme)) {
+                    e.target.checked = false;
+                    settings.autoDarkMode = false;
+                    return;
+                }
                 settings.autoDarkMode = e.target.checked;
                 if (callbacks.onAutoDarkModeChange) callbacks.onAutoDarkModeChange(settings.autoDarkMode);
             });
+            this.updateAutoDarkModeAvailability(settings.theme, settings, callbacks);
         }
 
         const backgroundOpacityInput = document.getElementById('background-opacity-input');

@@ -740,7 +740,7 @@ class SearchComponent {
                 if ('colors'.startsWith(searchQuery.toLowerCase()) && this.matchesAdvancedFilters({ category: 'colors' }, filters)) {
                     this.searchMatches.push({
                         shortcut: 'colors',
-                        bookmark: { name: this.language ? this.language.t('dashboard.colorCustomization') : 'Theme Customization', url: '/colors' },
+                        bookmark: { name: this.language ? this.language.t('dashboard.colorCustomization') : 'Theme Customization', url: '/config#colors' },
                         type: 'colors',
                         query: searchQuery
                     });
@@ -1398,7 +1398,7 @@ class SearchComponent {
         
         // Navigate to colors page
         setTimeout(() => {
-            window.location.href = '/colors';
+            window.location.href = '/config#colors';
         }, 100);
     }
 

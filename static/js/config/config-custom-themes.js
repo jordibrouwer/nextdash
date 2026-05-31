@@ -90,9 +90,8 @@ class ConfigCustomThemes {
             // Update only the name, keeping the same ID
             if (customThemes[themeId]) {
                 customThemes[themeId].name = newName;
-                
-                // Update selector to show new name
                 this.updateThemeSelector(customThemes);
+                window.configManager?.colorsEditor?.markDirty?.();
             }
         });
 
@@ -242,8 +241,8 @@ class ConfigCustomThemes {
 
         // Create new theme with default dark colors
         customThemes[themeId] = {
-            name: themeName,
-            ...defaultColors
+            ...defaultColors,
+            name: themeName
         };
 
         return themeId;

@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css">
+    <link rel="stylesheet" href="/static/css/colors.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
@@ -46,7 +47,6 @@
             <header class="header">
                 <h1 class="title" data-i18n="config.title">configuration</h1>
                 <div class="header-links">
-                    <a href="/colors" class="back-link" data-i18n="config.customizeColors">→ customize theme</a>
                     <a href="/health" class="back-link">→ <span data-i18n="config.health">health beta</span></a>
                     <a href="/" class="back-link" data-i18n="config.backToDashboard">← back to dashboard</a>
                 </div>
@@ -71,6 +71,7 @@
                 <div class="tabs-scroll-wrapper">
                 <div class="tabs">
                     <button class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
+                    <button class="tab-button" data-tab="colors" data-i18n="config.colorsTab">theme</button>
                     <button class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
                     <button class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
                     <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
@@ -163,12 +164,13 @@
                                 <option value="light" data-i18n="dashboard.lightTheme">Light</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="auto-dark-mode-form-group">
                             <label class="checkbox-label" for="auto-dark-mode-checkbox">
                                 <input type="checkbox" id="auto-dark-mode-checkbox">
                                 <span class="checkbox-text" data-i18n="onboarding.autoDarkModeLabel"></span>
                                     <button type="button" id="auto-dark-mode-info-btn" class="info-button" data-i18n-aria="config.autoDarkModeInfoTitle">ℹ</button>
                             </label>
+                            <p id="auto-dark-mode-unavailable-hint" class="form-hint auto-dark-mode-hint" hidden data-i18n="config.autoDarkModeUnavailableHint">Auto dark mode is not available for custom themes. Custom themes use one fixed palette instead of separate dark and light variants.</p>
                         </div>
                         <div class="form-group">
                             <label data-i18n="config.backgroundLabel">Background:</label>
@@ -1659,6 +1661,10 @@
             </div>
             </div>
 
+            <div class="tab-content" data-tab-content="colors">
+            {{template "theme-colors-editor" .}}
+            </div>
+
             <div class="tab-content" data-tab-content="keyboard">
             <div class="keyboard-tab">
                 <p class="keyboard-intro" data-i18n="config.keyboardIntro">Customize keyboard shortcuts. Click "Rebind" next to any shortcut and press the key you want to use. Press Escape to cancel.</p>
@@ -1923,6 +1929,8 @@
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/config/config-general-layers.js"></script>
     <script src="/static/js/config/config-setting-info.js"></script>
+    <script src="/static/js/config/config-custom-themes.js"></script>
+    <script src="/static/js/colors.js"></script>
     <script src="/static/js/config/config-stats.js"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>

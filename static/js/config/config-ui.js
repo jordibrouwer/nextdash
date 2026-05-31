@@ -40,7 +40,6 @@ class ConfigUI {
 
         // Function to switch to a specific tab
         const switchToTab = (targetTab) => {
-            // Remove active class from all buttons and contents
             tabButtons.forEach(btn => {
                 btn.classList.remove('active');
                 btn.setAttribute('aria-selected', 'false');
@@ -67,7 +66,12 @@ class ConfigUI {
             this.initBreadcrumbObserver(targetTab);
 
             // Update URL hash (preserve general layer subpaths)
-            if (targetTab !== 'general') {
+            if (targetTab === 'colors') {
+                const sub = (() => {
+                    try { return sessionStorage.getItem('nextdash:colors-subtab') || 'custom'; } catch (_) { return 'custom'; }
+                })();
+                window.location.hash = sub === 'custom' ? '#colors' : `#colors/${sub}`;
+            } else if (targetTab !== 'general') {
                 window.location.hash = `#${targetTab}`;
             } else if (!/^#general(\/|$)/.test(window.location.hash)) {
                 window.location.hash = '#general';
@@ -88,15 +92,18 @@ class ConfigUI {
                     configManager.tags.refresh(configManager);
                 } else if (targetTab === 'collections' && configManager.collections) {
                     configManager.collections.refresh(configManager);
+                } else if (targetTab === 'colors') {
+                    void configManager.ensureColorsEditor?.();
                 }
             }
         };
 
-    const validTabs = ['general', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
+    const validTabs = ['general', 'colors', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
 
     const resolveTabFromHash = (hashRaw) => {
         const hash = (hashRaw || '').replace(/^#/, '');
         if (validTabs.includes(hash)) return hash;
+        if (hash.startsWith('colors')) return 'colors';
         if (hash.startsWith('general')) return 'general';
         return null;
     };
@@ -108,21 +115,40 @@ class ConfigUI {
     if (initialTab === 'general' && window.configManager?.generalLayers) {
         window.configManager.generalLayers.applyHash(window.location.hash);
     }
+    if (initialTab === 'colors') {
+        window.configManager?.ensureColorsEditor?.();
+    }
 
-    window.addEventListener('hashchange', () => {
+    window.addEventListener('hashchange', async () => {
         const hash = window.location.hash.substring(1);
         const tab = resolveTabFromHash(hash);
         if (tab) {
-            if (tab !== this._currentTab) switchToTab(tab);
+            if (tab !== this._currentTab) {
+                if (typeof configManager?.guardColorsTabLeave === 'function') {
+                    const allowed = await configManager.guardColorsTabLeave(tab);
+                    if (!allowed) return;
+                }
+                switchToTab(tab);
+            }
             if (tab === 'general' && window.configManager?.generalLayers) {
                 window.configManager.generalLayers.applyHash(window.location.hash);
+            }
+            if (tab === 'colors' && window.configManager?.colorsEditor) {
+                const subMatch = hash.match(/^colors(?:\/(dark|light|custom))?$/);
+                const sub = subMatch?.[1] || 'custom';
+                window.configManager.colorsEditor.switchSubTab(sub, { updateHash: false });
             }
         }
     });
 
         tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 const targetTab = button.getAttribute('data-tab');
+                if (targetTab === this._currentTab) return;
+                if (typeof configManager?.guardColorsTabLeave === 'function') {
+                    const allowed = await configManager.guardColorsTabLeave(targetTab);
+                    if (!allowed) return;
+                }
                 switchToTab(targetTab);
                 this._scrollTabIntoView(button);
             });
@@ -221,14 +247,49 @@ class ConfigUI {
         const el = document.getElementById('config-breadcrumb');
         if (!el) return;
         const sep = `<span class="config-breadcrumb-sep">/</span>`;
-        let html = `config${sep}${tab}`;
-        if (subsection) {
+        const tabLabel = this._breadcrumbTabLabel(tab);
+        let html = `config${sep}${tabLabel}`;
+        if (tab === 'colors') {
+            const sub = (() => {
+                try { return sessionStorage.getItem('nextdash:colors-subtab') || 'custom'; } catch (_) { return 'custom'; }
+            })();
+            if (sub && sub !== 'custom') {
+                const subLabel = window.configManager?.language?.t(
+                    sub === 'dark' ? 'dashboard.darkTheme' : 'dashboard.lightTheme'
+                ) || sub;
+                html += `${sep}<span class="config-breadcrumb-sub">${subLabel}</span>`;
+            }
+        } else if (subsection) {
             html += `${sep}<span class="config-breadcrumb-sub">${subsection}</span>`;
         }
         if (panelTitle) {
             html += `${sep}<span class="config-breadcrumb-sub">${panelTitle}</span>`;
         }
         el.innerHTML = html;
+    }
+
+    _breadcrumbTabLabel(tab) {
+        const lang = window.configManager?.language;
+        const keys = {
+            general: 'config.generalTab',
+            colors: 'config.colorsTab',
+            pages: 'config.pagesTab',
+            categories: 'config.categoriesTab',
+            tags: 'config.tagsTab',
+            bookmarks: 'config.bookmarksTab',
+            finders: 'config.findersTab',
+            collections: 'config.collectionsTab',
+            backups: 'config.backupsTab',
+            keyboard: 'config.keyboardTab',
+            stats: 'config.statsTab',
+            help: 'config.aboutTab'
+        };
+        const key = keys[tab];
+        if (key && lang?.t) {
+            const label = lang.t(key);
+            if (label && label !== key) return label;
+        }
+        return tab;
     }
 
     initBreadcrumbObserver(tab) {

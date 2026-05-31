@@ -116,6 +116,7 @@ class ConfigManager {
         this.settingsSyncEventKey = 'nextdash:config-settings-sync';
         this.tabId = `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         this.lastSyncToastAt = 0;
+        this.colorsEditor = null;
 
         this.init();
     }
@@ -167,10 +168,11 @@ class ConfigManager {
         }
 
 
-        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
-            window.SkeletonLoading.finish();
-        } else {
-            document.body.classList.remove('loading');
+        if (this.stats && window.location.hash === '#stats') {
+            this.stats.refresh(this);
+        }
+        if (window.location.hash.startsWith('#colors')) {
+            await this.ensureColorsEditor();
         }
 
         const categoriesSelector = document.getElementById('categories-page-selector');
@@ -180,9 +182,43 @@ class ConfigManager {
         this.savedSnapshot = this.captureUndoSnapshot();
         this.refreshSmartCollectionCounters();
         this.validateBookmarkConflicts({ showToast: false });
-        if (this.stats && window.location.hash === '#stats') {
-            this.stats.refresh(this);
+
+        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+            window.SkeletonLoading.finish();
+        } else {
+            document.body.classList.remove('loading');
         }
+    }
+
+    async ensureColorsEditor() {
+        if (!document.getElementById('theme-colors-editor')) return;
+        if (!this.colorsEditor) {
+            this.colorsEditor = new ColorsEditor({
+                root: document.getElementById('theme-colors-editor'),
+                language: this.language,
+                settings: this.settingsData
+            });
+        }
+        await this.colorsEditor.init();
+    }
+
+    async removeCustomTheme(themeId) {
+        return this.colorsEditor?.removeCustomTheme(themeId);
+    }
+
+    async guardColorsTabLeave(targetTab) {
+        if (this.ui._currentTab !== 'colors' || targetTab === 'colors') {
+            if (targetTab === 'colors') await this.ensureColorsEditor();
+            return true;
+        }
+        if (!this.colorsEditor?.isDirty()) return true;
+        const ok = await this.colorsEditor.confirmLeave();
+        if (ok && targetTab === 'colors') await this.ensureColorsEditor();
+        return ok;
+    }
+
+    hasUnsavedColorChanges() {
+        return Boolean(this.colorsEditor?.isDirty());
     }
 
     async loadData() {
@@ -1060,11 +1096,17 @@ class ConfigManager {
                 if (!href) {
                     return;
                 }
-                if (!this.isDirty) {
+                if (!this.isDirty && !this.hasUnsavedColorChanges()) {
                     return;
                 }
                 event.preventDefault();
-                const shouldLeave = await this.confirmLeaveWithUnsavedChanges();
+                let shouldLeave = true;
+                if (this.isDirty) {
+                    shouldLeave = await this.confirmLeaveWithUnsavedChanges();
+                }
+                if (shouldLeave && this.hasUnsavedColorChanges()) {
+                    shouldLeave = await this.colorsEditor.confirmLeave();
+                }
                 if (!shouldLeave) {
                     return;
                 }
@@ -1075,6 +1117,7 @@ class ConfigManager {
     }
 
     async confirmLeaveWithUnsavedChanges() {
+        if (!this.isDirty) return true;
         if (!window.AppModal) {
             return window.confirm(this.language.t('config.unsavedChangesLeaveConfirm'));
         }
@@ -1336,7 +1379,7 @@ class ConfigManager {
         });
         window.addEventListener('beforeunload', (event) => {
             if (this.isNavigatingAway) return;
-            if (!this.isDirty) return;
+            if (!this.isDirty && !this.hasUnsavedColorChanges()) return;
             event.preventDefault();
             event.returnValue = '';
         });

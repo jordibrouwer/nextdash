@@ -1,9 +1,84 @@
-/* Colors Page Styles - Minimalist Terminal Style */
+/* Colors editor — embedded in Config (#colors tab) */
 
-/* Main sections container */
-.config-main {
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
+.theme-colors-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.theme-colors-intro .simple-tab-intro {
+    display: block;
+    line-height: 1.5;
+}
+
+.theme-colors-intro .help-text,
+.theme-colors-intro p {
+    margin: 0 0 0.5rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-text);
+    line-height: 1.5;
+}
+
+.theme-colors-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.theme-colors-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.colors-unsaved-indicator {
+    font-size: var(--font-size-controls);
+    color: var(--accent-warning, var(--text-secondary));
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+}
+
+.colors-subtabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.colors-tab-button {
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    text-transform: lowercase;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.colors-tab-button:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.colors-tab-button.active {
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+    background: var(--background-secondary);
+}
+
+.colors-tab-button:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+}
+
+.colors-tab-panel[hidden] {
+    display: none !important;
 }
 
 .colors-grid {
@@ -118,6 +193,22 @@
 
 /* Responsive adjustments for colors page */
 @media (max-width: 768px) {
+    .theme-colors-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .theme-colors-actions,
+    .colors-subtabs {
+        width: 100%;
+    }
+
+    .colors-subtabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.25rem;
+    }
+
     .color-item {
         flex-direction: column;
         align-items: flex-start;

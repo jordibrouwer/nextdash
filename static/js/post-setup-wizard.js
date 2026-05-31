@@ -253,7 +253,7 @@ class PostInstallTuningWizard {
             {
                 id: 'theme',
                 title: this.t('postTuning.themeTitle', 'Pick a theme'),
-                body: this.t('postTuning.themeBody', 'Choose a starting theme. Customize colors later via Config or /colors.'),
+                body: this.t('postTuning.themeBody', 'Choose a starting theme. Customize colors later under Config → theme.'),
                 primary: this.t('postTuning.saveContinue', 'Save & continue'),
                 secondary: this.t('postTuning.openAppearance', 'Open appearance in config'),
                 secondaryAction: () => {

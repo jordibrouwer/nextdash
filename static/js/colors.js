@@ -1,663 +1,469 @@
-// Colors Management
-let colorsData = {
-    light: {},
-    dark: {},
-    builtIn: {},
-    custom: {} // Object to store custom themes
-};
-
-let customThemesManager = null; // Will be initialized in DOMContentLoaded
-let currentPreviewTheme = 'dark'; // Current theme being previewed
-let settings = {}; // To store settings data
-let language = null; // Language instance for translations
-let hasUnsavedColorChanges = false;
-let isNavigatingAway = false;
-
-function markColorsDirty() {
-    hasUnsavedColorChanges = true;
-}
-
-function clearColorsDirty() {
-    hasUnsavedColorChanges = false;
-}
-
-// Apply animations based on settings
-function applyAnimations() {
-    if (settings.animationsEnabled !== false) {
-        document.body.classList.remove('no-animations');
-    } else {
-        document.body.classList.add('no-animations');
+/**
+ * Theme colors editor — embedded in Config (#colors tab) or legacy standalone page.
+ */
+class ColorsEditor {
+    constructor(options = {}) {
+        this.root = options.root || document.getElementById('theme-colors-editor');
+        this.language = options.language || null;
+        this.onDirtyChange = typeof options.onDirtyChange === 'function' ? options.onDirtyChange : () => {};
+        this.settings = options.settings || {};
+        this.colorsData = { light: {}, dark: {}, builtIn: {}, custom: {} };
+        this.customThemesManager = null;
+        this.currentPreviewTheme = 'custom';
+        this.hasUnsavedColorChanges = false;
+        this._initialized = false;
+        this._bound = false;
+        this._initPromise = null;
     }
-}
 
-// Load settings from API or localStorage
-async function loadSettings() {
-    try {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        if (deviceSpecific) {
-            const deviceSettings = localStorage.getItem('dashboardSettings');
-            settings = deviceSettings ? JSON.parse(deviceSettings) : {};
+    t(key, fallback) {
+        if (this.language?.t) {
+            const val = this.language.t(key);
+            if (typeof val === 'string' && val !== key) return val;
+        }
+        return fallback || key;
+    }
+
+    markDirty() {
+        this.hasUnsavedColorChanges = true;
+        const badge = this.root?.querySelector('#colors-unsaved-indicator');
+        if (badge) badge.hidden = false;
+        this.onDirtyChange(true);
+    }
+
+    clearDirty() {
+        this.hasUnsavedColorChanges = false;
+        const badge = this.root?.querySelector('#colors-unsaved-indicator');
+        if (badge) badge.hidden = true;
+        this.onDirtyChange(false);
+    }
+
+    isDirty() {
+        return this.hasUnsavedColorChanges;
+    }
+
+    async init() {
+        if (this._initPromise) return this._initPromise;
+        if (!this.root) return;
+        this._initPromise = this._doInit();
+        return this._initPromise;
+    }
+
+    async _doInit() {
+        if (this._initialized) return;
+
+        this.customThemesManager = new ConfigCustomThemes(() => {}, this.t.bind(this));
+        this.initSubTabs();
+        this.bindEvents();
+        await this.loadColors();
+        this.customThemesManager.setupThemeSelector(this.colorsData.custom);
+        this.applyInitialSubTab();
+        this._initialized = true;
+    }
+
+    applyInitialSubTab() {
+        const hash = window.location.hash.replace(/^#/, '');
+        const match = hash.match(/^colors(?:\/(dark|light|custom))?$/);
+        const sub = match?.[1] || sessionStorage.getItem('nextdash:colors-subtab') || 'custom';
+        this.switchSubTab(sub, { updateHash: false });
+    }
+
+    initSubTabs() {
+        const buttons = this.root.querySelectorAll('.colors-tab-button');
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.switchSubTab(btn.getAttribute('data-colors-tab'));
+            });
+        });
+    }
+
+    switchSubTab(targetTab, { updateHash = true } = {}) {
+        const valid = ['dark', 'light', 'custom'];
+        if (!valid.includes(targetTab)) return;
+
+        this.root.querySelectorAll('.colors-tab-button').forEach((btn) => {
+            const active = btn.getAttribute('data-colors-tab') === targetTab;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        this.root.querySelectorAll('.colors-tab-panel').forEach((panel) => {
+            const show = panel.getAttribute('data-colors-tab-panel') === targetTab;
+            panel.hidden = !show;
+            panel.classList.toggle('active', show);
+        });
+
+        if (targetTab === 'dark' || targetTab === 'light') {
+            this.currentPreviewTheme = targetTab;
+            this.applyColorsToPreview();
+        } else if (targetTab === 'custom') {
+            this.currentPreviewTheme = 'custom';
+            const selector = this.root.querySelector('#custom-theme-selector');
+            if (selector && !selector.value && this.customThemesManager) {
+                this.customThemesManager.currentSelectedTheme = null;
+                this.customThemesManager.hideThemeColors();
+                document.getElementById('color-preview-style')?.remove();
+            }
+        }
+
+        try {
+            sessionStorage.setItem('nextdash:colors-subtab', targetTab);
+        } catch (_) { /* ignore */ }
+
+        if (updateHash && window.configManager?.ui?._currentTab === 'colors') {
+            window.location.hash = targetTab === 'custom' ? '#colors' : `#colors/${targetTab}`;
+        }
+
+        if (window.configManager?.ui?._currentTab === 'colors') {
+            window.configManager.ui.updateBreadcrumb('colors');
+        }
+    }
+
+    async loadColors() {
+        try {
+            const response = await fetch('/api/colors');
+            if (!response.ok) throw new Error('Failed to load colors');
+            this.colorsData = await response.json();
+            if (!this.colorsData.custom) this.colorsData.custom = {};
+            this.populateColorInputs();
+            if (this.customThemesManager) {
+                this.customThemesManager.render(this.colorsData.custom);
+                this.customThemesManager.updateThemeSelector(this.colorsData.custom);
+            }
+            this.applyColorsToPreview();
+            this.clearDirty();
+        } catch (error) {
+            console.error('Error loading colors:', error);
+            this.showErrorWithReload(this.t('colors.errorLoadingColors', 'Failed to load colors'));
+        }
+    }
+
+    populateColorInputs() {
+        this.root.querySelectorAll('input[data-theme][data-prop]').forEach((input) => {
+            const theme = input.dataset.theme;
+            const prop = input.dataset.prop;
+            const bucket = theme === 'custom' ? null : this.colorsData[theme];
+            const value = theme === 'custom'
+                ? ''
+                : bucket?.[prop];
+
+            if (input.type === 'color') {
+                if (value && value.startsWith('#')) input.value = value;
+                const textInput = this.root.querySelector(`#${input.id}-text`);
+                if (textInput) textInput.value = value || '';
+            } else if (input.type === 'text') {
+                input.value = value || '';
+            }
+        });
+    }
+
+    updateColorValue(theme, prop, value) {
+        if (theme === 'custom') {
+            if (this.customThemesManager?.currentSelectedTheme) {
+                this.customThemesManager.updateColorValue(this.colorsData.custom, prop, value);
+            }
         } else {
-            const response = await fetch('/api/settings');
-            settings = await response.json();
+            if (!this.colorsData[theme]) this.colorsData[theme] = {};
+            this.colorsData[theme][prop] = value;
+            this.currentPreviewTheme = theme;
         }
-    } catch (error) {
-        // Error loading settings - use defaults
-        settings = {};
-    }
-}
-
-// Tab Management
-function initTabs() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    // Function to switch to a specific tab
-    const switchToTab = (targetTab) => {
-        // Remove active class from all buttons and contents
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
-        
-        // Add active class to target button and corresponding content
-        const targetButton = document.querySelector(`.tab-button[data-tab="${targetTab}"]`);
-        const targetContent = document.querySelector(`[data-tab-content="${targetTab}"]`);
-        if (targetButton) {
-            targetButton.classList.add('active');
-        }
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-        
-        // Update URL hash
-        window.location.hash = `#${targetTab}`;
-        
-        if (targetTab === 'custom') {
-            // Reset custom theme selector when entering custom tab
-            const selector = document.getElementById('custom-theme-selector');
-            if (selector) {
-                selector.value = '';
-                // Refresh custom select component if it exists
-                try {
-                    const instance = selector.__customSelectInstance;
-                    if (instance && typeof instance.refresh === 'function') {
-                        instance.refresh();
-                    }
-                } catch (e) {
-                    // ignore
-                }
-            }
-            if (customThemesManager) {
-                customThemesManager.currentSelectedTheme = null;
-                customThemesManager.hideThemeColors();
-            }
-            // Remove preview when entering custom tab without selection
-            const previewStyle = document.getElementById('color-preview-style');
-            if (previewStyle) {
-                previewStyle.remove();
-            }
-        }
-    };
-
-    // Check initial hash and switch to corresponding tab
-    const initialHash = window.location.hash.substring(1);
-    const validTabs = ['custom'];
-    if (validTabs.includes(initialHash)) {
-        switchToTab(initialHash);
-    } else {
-        // If no hash, switch to default tab (custom)
-        switchToTab('custom');
+        this.applyColorsToPreview();
     }
 
-    // Add hash change listener
-    window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.substring(1);
-        if (validTabs.includes(hash)) {
-            switchToTab(hash);
+    applyColorsToPreview() {
+        let colors;
+        if (this.currentPreviewTheme === 'custom' && this.customThemesManager?.currentSelectedTheme) {
+            colors = this.colorsData.custom[this.customThemesManager.currentSelectedTheme];
+        } else if (this.currentPreviewTheme === 'custom') {
+            return;
+        } else {
+            colors = this.colorsData[this.currentPreviewTheme];
         }
-    });
+        if (!colors) return;
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-tab');
-            switchToTab(targetTab);
+        let previewStyle = document.getElementById('color-preview-style');
+        previewStyle?.remove();
+        previewStyle = document.createElement('style');
+        previewStyle.id = 'color-preview-style';
+        previewStyle.textContent = `
+            body {
+                --text-primary: ${colors.textPrimary} !important;
+                --text-secondary: ${colors.textSecondary} !important;
+                --text-tertiary: ${colors.textTertiary} !important;
+                --background-primary: ${colors.backgroundPrimary} !important;
+                --background-secondary: ${colors.backgroundSecondary} !important;
+                --background-dots: ${colors.backgroundDots} !important;
+                --background-modal: ${colors.backgroundModal} !important;
+                --border-primary: ${colors.borderPrimary} !important;
+                --border-secondary: ${colors.borderSecondary} !important;
+                --accent-success: ${colors.accentSuccess} !important;
+                --accent-warning: ${colors.accentWarning} !important;
+                --accent-error: ${colors.accentError} !important;
+            }
+        `;
+        document.head.appendChild(previewStyle);
+    }
+
+    reloadThemeCSS() {
+        const link = document.querySelector('link[href^="/api/theme.css"]');
+        if (link) {
+            const newLink = link.cloneNode();
+            newLink.href = `/api/theme.css?${Date.now()}`;
+            link.parentNode.replaceChild(newLink, link);
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        window.AppNotification?.show(message, type, { durationMs: 3000 });
+    }
+
+    showErrorWithReload(message) {
+        if (window.AppNotification?.showErrorWithReload) {
+            window.AppNotification.showErrorWithReload(message);
+        } else {
+            this.showNotification(message, 'error');
+        }
+    }
+
+    async saveColors() {
+        try {
+            const response = await fetch('/api/colors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.colorsData)
+            });
+            if (!response.ok) throw new Error('Failed to save colors');
+            this.showNotification(this.t('colors.colorsSaved', 'Colors saved'), 'success');
+            document.getElementById('color-preview-style')?.remove();
+            this.reloadThemeCSS();
+            this.applyColorsToPreview();
+            this.clearDirty();
+            if (window.configManager?.settings) {
+                await window.configManager.settings.loadCustomThemes();
+                window.configManager.settings.populateThemeSelect?.();
+                window.configManager.settings.updateAutoDarkModeAvailability?.(
+                    window.configManager.settingsData?.theme,
+                    window.configManager.settingsData,
+                    window.configManager.settings._settingsCallbacks || {}
+                );
+            }
+        } catch (error) {
+            console.error('Error saving colors:', error);
+            this.showErrorWithReload(this.t('colors.errorSavingColors', 'Failed to save colors'));
+        }
+    }
+
+    async autosaveThemeStructure() {
+        try {
+            const response = await fetch('/api/colors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.colorsData)
+            });
+            if (!response.ok) throw new Error('Failed to autosave');
+            this.clearDirty();
+            if (window.configManager?.settings) {
+                await window.configManager.settings.loadCustomThemes();
+                window.configManager.settings.populateThemeSelect?.();
+                window.configManager.settings.updateAutoDarkModeAvailability?.(
+                    window.configManager.settingsData?.theme,
+                    window.configManager.settingsData,
+                    window.configManager.settings._settingsCallbacks || {}
+                );
+            }
+        } catch (error) {
+            console.error('Error autosaving theme structure:', error);
+            this.showErrorWithReload(this.t('colors.errorSavingColors', 'Failed to save colors'));
+        }
+    }
+
+    async resetColors() {
+        const confirmed = await window.AppModal.danger({
+            title: this.t('colors.resetColorsTitle', 'Reset colors'),
+            message: this.t('colors.resetColorsMessage', 'Reset all theme colors to defaults?'),
+            confirmText: this.t('config.reset', 'Reset'),
+            cancelText: this.t('config.cancel', 'Cancel')
         });
-    });
-}
+        if (!confirmed) return;
 
-// Load colors from API
-async function loadColors() {
-    try {
-        const response = await fetch('/api/colors');
-        if (!response.ok) throw new Error('Failed to load colors');
-        
-        colorsData = await response.json();
-        
-        // Ensure custom themes object exists
-        if (!colorsData.custom) {
-            colorsData.custom = {};
-        }
-        
-        populateColorInputs();
-        
-        // Keep preview focused on custom workflow in this page.
-        currentPreviewTheme = 'custom';
-        
-        // Render custom themes if manager exists
-        if (customThemesManager) {
-            customThemesManager.render(colorsData.custom);
-            customThemesManager.updateThemeSelector(colorsData.custom);
-        }
-        
-        // Apply colors immediately to show current theme colors
-        applyColorsToPreview();
-        clearColorsDirty();
-    } catch (error) {
-        console.error('Error loading colors:', error);
-        showErrorWithReload(window.t('colors.errorLoadingColors'));
-    }
-}
-
-// Populate color inputs with current values
-function populateColorInputs() {
-    const colorInputs = document.querySelectorAll('input[data-theme][data-prop]');
-    
-    colorInputs.forEach(input => {
-        const theme = input.dataset.theme;
-        const prop = input.dataset.prop;
-        const value = colorsData[theme][prop];
-        
-        if (input.type === 'color') {
-            // For color pickers, extract hex value if it's a simple color
-            if (value && value.startsWith('#')) {
-                input.value = value;
+        try {
+            const response = await fetch('/api/colors/reset', { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to reset');
+            this.colorsData = await response.json();
+            this.populateColorInputs();
+            document.getElementById('color-preview-style')?.remove();
+            this.reloadThemeCSS();
+            this.applyColorsToPreview();
+            if (this.customThemesManager) {
+                this.customThemesManager.render(this.colorsData.custom || {});
+                this.customThemesManager.updateThemeSelector(this.colorsData.custom || {});
             }
-            // Update corresponding text input
-            const textInput = document.getElementById(`${input.id}-text`);
-            if (textInput) {
-                textInput.value = value || '';
-            }
-        } else if (input.type === 'text') {
-            // For all text inputs (both paired and standalone)
-            input.value = value || '';
+            this.showNotification(this.t('colors.colorsReset', 'Colors reset'), 'success');
+            this.clearDirty();
+        } catch (error) {
+            console.error('Error resetting colors:', error);
+            this.showErrorWithReload(this.t('colors.errorResettingColors', 'Failed to reset colors'));
         }
-    });
-}
+    }
 
-// Update color value from input
-function updateColorValue(theme, prop, value) {
-    if (theme === 'custom') {
-        // For custom themes, update the currently selected theme
-        if (customThemesManager && customThemesManager.currentSelectedTheme) {
-            customThemesManager.updateColorValue(colorsData.custom, prop, value);
+    addCustomTheme() {
+        if (!this.customThemesManager) return;
+        if (!this.colorsData.custom || typeof this.colorsData.custom !== 'object') {
+            this.colorsData.custom = {};
         }
-    } else {
-        colorsData[theme][prop] = value;
-    }
-    applyColorsToPreview();
-}
+        const starterTheme =
+            (this.colorsData.builtIn && this.colorsData.builtIn['cherry-graphite-dark']) ||
+            this.colorsData.dark ||
+            this.colorsData.light ||
+            {};
+        const themeId = this.customThemesManager.add(this.colorsData.custom, { ...starterTheme });
+        if (!themeId) return;
 
-// Apply colors to current page for preview
-function applyColorsToPreview() {
-    let colors;
-    if (currentPreviewTheme === 'custom' && customThemesManager && customThemesManager.currentSelectedTheme) {
-        colors = colorsData.custom[customThemesManager.currentSelectedTheme];
-    } else if (currentPreviewTheme === 'custom') {
-        // If custom but no theme selected, don't apply preview
-        return;
-    } else {
-        colors = colorsData[currentPreviewTheme];
-    }
-    
-    if (!colors) return;
-    
-    // Remove existing preview style if present
-    let previewStyle = document.getElementById('color-preview-style');
-    if (previewStyle) {
-        previewStyle.remove();
-    }
-    
-    // Create new style element with higher specificity
-    previewStyle = document.createElement('style');
-    previewStyle.id = 'color-preview-style';
-    
-    // Generate CSS with the current theme colors
-    const css = `
-        body {
-            --text-primary: ${colors.textPrimary} !important;
-            --text-secondary: ${colors.textSecondary} !important;
-            --text-tertiary: ${colors.textTertiary} !important;
-            --background-primary: ${colors.backgroundPrimary} !important;
-            --background-secondary: ${colors.backgroundSecondary} !important;
-            --background-dots: ${colors.backgroundDots} !important;
-            --background-modal: ${colors.backgroundModal} !important;
-            --border-primary: ${colors.borderPrimary} !important;
-            --border-secondary: ${colors.borderSecondary} !important;
-            --accent-success: ${colors.accentSuccess} !important;
-            --accent-warning: ${colors.accentWarning} !important;
-            --accent-error: ${colors.accentError} !important;
-        }
-    `;
-    
-    previewStyle.textContent = css;
-    document.head.appendChild(previewStyle);
-}
-
-// Save colors to API
-async function saveColors() {
-    try {
-        const response = await fetch('/api/colors', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(colorsData)
-        });
-        
-        if (!response.ok) throw new Error('Failed to save colors');
-        
-        showNotification(window.t('colors.colorsSaved'), 'success');
-        
-        // Remove preview style since we're loading the saved version
-        const previewStyle = document.getElementById('color-preview-style');
-        if (previewStyle) {
-            previewStyle.remove();
-        }
-        
-        // Reload the dynamic theme CSS
-        reloadThemeCSS();
-        
-        // Re-apply preview after saving to maintain current preview theme
-        applyColorsToPreview();
-        clearColorsDirty();
-    } catch (error) {
-        console.error('Error saving colors:', error);
-        showErrorWithReload(window.t('colors.errorSavingColors'));
-    }
-}
-
-// Persist color data after structural custom theme changes (add/remove)
-// without interrupting the current preview flow.
-async function autosaveThemeStructure() {
-    try {
-        const response = await fetch('/api/colors', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(colorsData)
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to autosave theme structure');
-        }
-        clearColorsDirty();
-    } catch (error) {
-        console.error('Error autosaving theme structure:', error);
-        showErrorWithReload(window.t('colors.errorSavingColors'));
-    }
-}
-
-// Reload the theme CSS to apply changes
-function reloadThemeCSS() {
-    const link = document.querySelector('link[href="/api/theme.css"]');
-    if (link) {
-        const newLink = link.cloneNode();
-        newLink.href = '/api/theme.css?' + new Date().getTime();
-        link.parentNode.replaceChild(newLink, link);
-    }
-}
-
-// Reset colors to defaults
-async function resetColors() {
-    const confirmed = await window.AppModal.danger({
-        title: window.t('colors.resetColorsTitle'),
-        message: window.t('colors.resetColorsMessage'),
-        confirmText: window.t('config.reset'),
-        cancelText: window.t('config.cancel')
-    });
-    
-    if (!confirmed) return;
-    
-    try {
-        const response = await fetch('/api/colors/reset', {
-            method: 'POST'
-        });
-        
-        if (!response.ok) throw new Error('Failed to reset colors');
-        
-        colorsData = await response.json();
-        populateColorInputs();
-        applyColorsToPreview();
-        showNotification(window.t('colors.colorsReset'), 'success');
-        
-        // Remove preview style since we're loading the saved version
-        const previewStyle = document.getElementById('color-preview-style');
-        if (previewStyle) {
-            previewStyle.remove();
-        }
-        
-        // Reload the dynamic theme CSS
-        reloadThemeCSS();
-        
-        // Re-apply preview after resetting to maintain current preview theme
-        applyColorsToPreview();
-        clearColorsDirty();
-    } catch (error) {
-        console.error('Error resetting colors:', error);
-        showErrorWithReload(window.t('colors.errorResettingColors'));
-    }
-}
-
-async function confirmLeaveColorsPage() {
-    if (!window.AppModal) {
-        return window.confirm(window.t('config.unsavedColorChangesLeaveConfirm'));
-    }
-
-    const saveAndLeave = await window.AppModal.confirm({
-        title: window.t('config.unsavedColorChangesTitle'),
-        message: window.t('config.unsavedColorChangesSavePrompt'),
-        confirmText: window.t('config.unsavedChangesSaveAndLeave'),
-        cancelText: window.t('config.unsavedChangesMoreOptions')
-    });
-    if (saveAndLeave) {
-        await saveColors();
-        return !hasUnsavedColorChanges;
-    }
-
-    return window.AppModal.danger({
-        title: window.t('config.unsavedChangesLeaveTitle'),
-        message: window.t('config.unsavedChangesLeaveMessage'),
-        confirmText: window.t('config.unsavedChangesLeaveWithoutSaving'),
-        cancelText: window.t('config.unsavedChangesStayHere')
-    });
-}
-
-function setupNavigationGuards() {
-    document.querySelectorAll('header.header .back-link').forEach((link) => {
-        link.addEventListener('click', async (event) => {
-            const href = link.getAttribute('href');
-            if (!href) {
-                return;
-            }
-            if (!hasUnsavedColorChanges) {
-                return;
-            }
-            event.preventDefault();
-            const shouldLeave = await confirmLeaveColorsPage();
-            if (!shouldLeave) {
-                return;
-            }
-            isNavigatingAway = true;
-            window.location.href = href;
-        });
-    });
-
-    window.addEventListener('beforeunload', (event) => {
-        if (isNavigatingAway) return;
-        if (!hasUnsavedColorChanges) return;
-        event.preventDefault();
-        event.returnValue = '';
-    });
-}
-
-// Switch to a specific theme for preview
-function switchToTheme(theme) {
-    currentPreviewTheme = theme;
-    applyColorsToPreview();
-}
-
-// Make switchToTheme globally accessible
-window.switchToTheme = switchToTheme;
-
-// Show notification
-function showNotification(message, type = 'info') {
-    if (!window.AppNotification) return;
-    window.AppNotification.show(message, type, { durationMs: 3000 });
-}
-
-function showErrorWithReload(message) {
-    if (window.AppNotification?.showErrorWithReload) {
-        window.AppNotification.showErrorWithReload(message);
-        return;
-    }
-    showNotification(message, 'error');
-}
-
-// Add custom theme
-function addCustomTheme() {
-    if (!customThemesManager) return;
-    
-    // Use the default built-in starter palette for new custom themes.
-    const starterTheme =
-        (colorsData.builtIn && colorsData.builtIn['cherry-graphite-dark']) ||
-        colorsData.dark ||
-        colorsData.light ||
-        {};
-    const defaultColors = { ...starterTheme };
-    
-    const themeId = customThemesManager.add(colorsData.custom, defaultColors);
-    
-    if (themeId) {
-        customThemesManager.render(colorsData.custom);
-        customThemesManager.updateThemeSelector(colorsData.custom);
-        
-        // Auto-select the new theme
-        const selector = document.getElementById('custom-theme-selector');
+        this.customThemesManager.render(this.colorsData.custom);
+        this.customThemesManager.updateThemeSelector(this.colorsData.custom);
+        const selector = this.root.querySelector('#custom-theme-selector');
         if (selector) {
             selector.value = themeId;
-            customThemesManager.currentSelectedTheme = themeId;
-            customThemesManager.showThemeColors(colorsData.custom[themeId]);
-            
-            // Switch to custom theme preview
-            if (window.switchToTheme) {
-                window.switchToTheme('custom');
-            }
-            
-            // Refresh custom select to update display
-            try {
-                const instance = selector.__customSelectInstance;
-                if (instance && typeof instance.refresh === 'function') {
-                    instance.refresh();
-                }
-            } catch (e) {
-                // ignore
-            }
+            this.customThemesManager.currentSelectedTheme = themeId;
+            this.customThemesManager.showThemeColors(this.colorsData.custom[themeId]);
+            this.currentPreviewTheme = 'custom';
+            this.applyColorsToPreview();
+            selector.__customSelectInstance?.refresh?.();
         }
-
-        // Auto-save so add/remove changes persist immediately.
-        autosaveThemeStructure();
+        this.switchSubTab('custom', { updateHash: true });
+        this.markDirty();
+        void this.autosaveThemeStructure();
     }
-}
 
-// Remove custom theme
-async function removeCustomTheme(themeId) {
-    if (!customThemesManager) return;
+    async removeCustomTheme(themeId) {
+        if (!this.customThemesManager) return;
+        const wasSelected = this.customThemesManager.currentSelectedTheme === themeId;
+        const removed = await this.customThemesManager.remove(this.colorsData.custom, themeId);
+        if (!removed) return;
 
-    const wasSelected = customThemesManager.currentSelectedTheme === themeId;
-    
-    const removed = await customThemesManager.remove(colorsData.custom, themeId);
-    
-    if (removed) {
-        customThemesManager.render(colorsData.custom);
-        customThemesManager.updateThemeSelector(colorsData.custom);
-
+        this.customThemesManager.render(this.colorsData.custom);
+        this.customThemesManager.updateThemeSelector(this.colorsData.custom);
         if (wasSelected) {
-            // Clear preview if the selected custom theme was removed.
-            const previewStyle = document.getElementById('color-preview-style');
-            if (previewStyle) {
-                previewStyle.remove();
-            }
-
-            const selector = document.getElementById('custom-theme-selector');
+            document.getElementById('color-preview-style')?.remove();
+            const selector = this.root.querySelector('#custom-theme-selector');
             if (selector) {
                 selector.value = '';
-                try {
-                    const instance = selector.__customSelectInstance;
-                    if (instance && typeof instance.refresh === 'function') {
-                        instance.refresh();
-                    }
-                } catch (e) {
-                    // ignore
-                }
+                selector.__customSelectInstance?.refresh?.();
             }
         }
-
-        await autosaveThemeStructure();
+        await this.autosaveThemeStructure();
     }
-}
 
-// Make functions globally accessible (merge to avoid overwriting config.js's configManager)
-window.configManager = Object.assign(window.configManager || {}, {
-    removeCustomTheme: removeCustomTheme
-});
+    async confirmLeave() {
+        if (!this.hasUnsavedColorChanges) return true;
+        if (!window.AppModal) {
+            return window.confirm(this.t('config.unsavedColorChangesLeaveConfirm', 'You have unsaved color changes. Leave anyway?'));
+        }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load settings and apply animations
-    await loadSettings();
-    applyAnimations();
-    
-    // Initialize language and load translations
-    language = new ConfigLanguage();
-    const lang = document.documentElement.getAttribute('data-lang') || 'en';
-    await language.loadTranslations(lang);
-    window.t = language.t.bind(language);
-    
-    // Initialize custom themes manager
-    customThemesManager = new ConfigCustomThemes(() => {
-        // Callback when themes are updated
-    }, language.t.bind(language));
-    
-    // Initialize tabs
-    initTabs();
-    
-    // Load colors on page load
-    loadColors().then(() => {
-        // Setup custom theme selector after colors are loaded
-        if (customThemesManager) {
-            customThemesManager.setupThemeSelector(colorsData.custom);
+        const saveAndLeave = await window.AppModal.confirm({
+            title: this.t('config.unsavedColorChangesTitle', 'Unsaved color changes'),
+            message: this.t('config.unsavedColorChangesSavePrompt', 'Save color changes before leaving?'),
+            confirmText: this.t('config.unsavedChangesSaveAndLeave', 'Save and leave'),
+            cancelText: this.t('config.unsavedChangesMoreOptions', 'More options')
+        });
+        if (saveAndLeave) {
+            await this.saveColors();
+            return !this.hasUnsavedColorChanges;
         }
-        
-        // Show body after everything is loaded and rendered
-        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
-            window.SkeletonLoading.finish();
-        } else {
-            document.body.classList.remove('loading');
-        }
-    }).catch(() => {
-        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
-            window.SkeletonLoading.finish();
-        } else {
-            document.body.classList.remove('loading');
-        }
-    });
-    
-    // Save button
-    document.getElementById('save-colors-btn').addEventListener('click', saveColors);
-    
-    // Reset button
-    document.getElementById('reset-colors-btn').addEventListener('click', resetColors);
-    
-    // Add custom theme button
-    const addCustomThemeBtn = document.getElementById('add-custom-theme-btn');
-    if (addCustomThemeBtn) {
-        addCustomThemeBtn.addEventListener('click', addCustomTheme);
+
+        return window.AppModal.danger({
+            title: this.t('config.unsavedChangesLeaveTitle', 'Leave without saving?'),
+            message: this.t('config.unsavedChangesLeaveMessage', 'Unsaved color changes will be lost.'),
+            confirmText: this.t('config.unsavedChangesLeaveWithoutSaving', 'Leave without saving'),
+            cancelText: this.t('config.unsavedChangesStayHere', 'Stay here')
+        });
     }
-    
-    // Color picker inputs
-    document.querySelectorAll('input[type="color"][data-theme][data-prop]').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const theme = e.target.dataset.theme;
-            const prop = e.target.dataset.prop;
-            const value = e.target.value;
-            
-            // Update the corresponding text input
-            const textInput = document.getElementById(`${e.target.id}-text`);
-            if (textInput) {
-                textInput.value = value;
-            }
-            
-            updateColorValue(theme, prop, value);
-            markColorsDirty();
+
+    bindEvents() {
+        if (this._bound) return;
+        this._bound = true;
+
+        this.root.querySelector('#save-colors-btn')?.addEventListener('click', () => this.saveColors());
+        this.root.querySelector('#reset-colors-btn')?.addEventListener('click', () => this.resetColors());
+
+        this.root.querySelectorAll('input[type="color"][data-theme][data-prop]').forEach((input) => {
+            const handler = (e) => {
+                const theme = e.target.dataset.theme;
+                const prop = e.target.dataset.prop;
+                const value = e.target.value;
+                const textInput = this.root.querySelector(`#${e.target.id}-text`);
+                if (textInput) textInput.value = value;
+                this.updateColorValue(theme, prop, value);
+                this.markDirty();
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
         });
-        
-        // Also listen for change event
-        input.addEventListener('change', (e) => {
-            const theme = e.target.dataset.theme;
-            const prop = e.target.dataset.prop;
-            const value = e.target.value;
-            
-            // Update the corresponding text input
-            const textInput = document.getElementById(`${e.target.id}-text`);
-            if (textInput) {
-                textInput.value = value;
-            }
-            
-            updateColorValue(theme, prop, value);
-            markColorsDirty();
-        });
-    });
-    
-    // Text inputs paired with color pickers
-    document.querySelectorAll('.color-text-input').forEach(input => {
-        const handleColorTextInput = (e) => {
-            // Remove only the '-text' suffix at the end of the ID
-            const colorPickerId = e.target.id.endsWith('-text') 
-                ? e.target.id.slice(0, -5) 
-                : e.target.id;
-            const colorPicker = document.getElementById(colorPickerId);
-            
-            if (colorPicker) {
+
+        this.root.querySelectorAll('.color-text-input').forEach((input) => {
+            const handler = (e) => {
+                const colorPickerId = e.target.id.endsWith('-text') ? e.target.id.slice(0, -5) : e.target.id;
+                const colorPicker = this.root.querySelector(`#${colorPickerId}`);
+                if (!colorPicker) return;
                 const theme = colorPicker.dataset.theme;
                 const prop = colorPicker.dataset.prop;
                 const value = e.target.value;
-                
-                // Update color picker if it's a valid hex color
                 if (value.startsWith('#') && (value.length === 7 || value.length === 4)) {
                     colorPicker.value = value;
                 }
-                
-                updateColorValue(theme, prop, value);
-                markColorsDirty();
-            }
-        };
-        
-        input.addEventListener('input', handleColorTextInput);
-        input.addEventListener('change', handleColorTextInput);
-        
-        // Handle Enter key
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleColorTextInput(e);
-                input.blur(); // Remove focus to show the change was applied
-            }
+                this.updateColorValue(theme, prop, value);
+                this.markDirty();
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handler(e);
+                    input.blur();
+                }
+            });
         });
-    });
-    
-    // Standalone text inputs (like rgba values)
-    document.querySelectorAll('.color-text-input-full').forEach(input => {
-        const handleFullTextInput = (e) => {
-            const theme = e.target.dataset.theme;
-            const prop = e.target.dataset.prop;
-            const value = e.target.value;
-            
-            updateColorValue(theme, prop, value);
-            markColorsDirty();
-        };
-        
-        input.addEventListener('input', handleFullTextInput);
-        input.addEventListener('change', handleFullTextInput);
-        
-        // Handle Enter key
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleFullTextInput(e);
-                input.blur(); // Remove focus to show the change was applied
-            }
-        });
-    });
 
-    setupNavigationGuards();
-});
+        this.root.querySelectorAll('.color-text-input-full').forEach((input) => {
+            const handler = (e) => {
+                this.updateColorValue(e.target.dataset.theme, e.target.dataset.prop, e.target.value);
+                this.markDirty();
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handler(e);
+                    input.blur();
+                }
+            });
+        });
+    }
+}
+
+window.ColorsEditor = ColorsEditor;
+window.switchToTheme = (theme) => {
+    window.configManager?.colorsEditor?.switchSubTab(theme === 'custom' ? 'custom' : theme);
+};
+
+async function handleThemeColorsEditorClick(event) {
+    const addBtn = event.target.closest('#add-custom-theme-btn');
+    if (!addBtn || !addBtn.closest('#theme-colors-editor')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+        await window.configManager?.ensureColorsEditor?.();
+        window.configManager?.colorsEditor?.addCustomTheme?.();
+    } catch (error) {
+        console.error('Add custom theme failed:', error);
+    }
+}
+
+if (!window.__themeColorsEditorClickBound) {
+    window.__themeColorsEditorClickBound = true;
+    document.addEventListener('click', handleThemeColorsEditorClick);
+}
