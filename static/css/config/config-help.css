@@ -71,6 +71,17 @@ code {
     margin-bottom: 0.5rem;
 }
 
+.help-block-intro {
+    margin: 0 0 0.75rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+}
+
+.help-block-action {
+    margin: 0.75rem 0 0;
+}
+
 .help-subheading {
     margin: 1rem 0 0.4rem;
     font-size: var(--font-size-controls);

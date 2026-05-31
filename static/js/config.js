@@ -932,6 +932,15 @@ class ConfigManager {
             });
         }
 
+        const helpWhatsNewBtn = document.getElementById('help-open-whats-new-btn');
+        if (helpWhatsNewBtn) {
+            helpWhatsNewBtn.addEventListener('click', () => {
+                if (typeof window.openWhatsNewModal === 'function') {
+                    window.openWhatsNewModal({ force: true });
+                }
+            });
+        }
+
         const undoTopBtn = document.getElementById('undo-top-btn');
         if (undoTopBtn) {
             undoTopBtn.addEventListener('click', () => {
