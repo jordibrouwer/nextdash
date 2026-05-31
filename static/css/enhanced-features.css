@@ -532,6 +532,14 @@ kbd {
     gap: 0.4rem;
 }
 
+.empty-state-hint {
+    margin: 0.85rem 0 0;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.45;
+    max-width: 22rem;
+}
+
 .empty-state-action-btn {
     display: inline-flex;
     align-items: center;

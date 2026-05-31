@@ -105,14 +105,22 @@ class ConfigBookmarks {
         if (scopedBookmarks.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'empty-state';
+            const isMobile = window.MobileExperience?.isMobileLayout?.() || window.matchMedia?.('(max-width: 767px)')?.matches;
+            const hintKey = isMobile ? 'config.noBookmarksHintMobile' : 'config.noBookmarksHint';
             emptyState.innerHTML = `
                 <div class="empty-state-icon">📚</div>
                 <div class="empty-state-text">${this.t('config.noBookmarks') || 'No bookmarks in this category'}</div>
-                <div class="empty-state-subtext">${this.t('config.noBookmarksHint') || 'Use "Add Bookmark" below, or restore a ZIP backup on the Backups tab.'}</div>
+                <div class="empty-state-subtext">${this.t(hintKey) || this.t('config.noBookmarksHint') || 'Use + Add or ⚡ below to create a bookmark.'}</div>
                 <div class="empty-state-action">
+                    <button type="button" class="btn btn-primary btn-small config-empty-add-btn">${this.t('config.addBookmark') || '+ Add'}</button>
                     <a class="btn btn-secondary btn-small" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
                 </div>
             `;
+            emptyState.querySelector('.config-empty-add-btn')?.addEventListener('click', () => {
+                if (typeof configManager?.addBookmark === 'function') {
+                    configManager.addBookmark();
+                }
+            });
             container.appendChild(emptyState);
             if (typeof configManager !== 'undefined' && configManager.language && typeof configManager.language.applyTranslations === 'function') {
                 configManager.language.applyTranslations();
@@ -564,7 +572,8 @@ class ConfigBookmarks {
         if (urlEl) urlEl.addEventListener('input', (e) => {
             bookmark.url = e.target.value;
             delete bookmark._isNew;
-            const isDup = bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === e.target.value.trim().toLowerCase());
+            const trimmed = e.target.value.trim();
+            const isDup = Boolean(trimmed) && bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === trimmed.toLowerCase());
             urlEl.classList.toggle('field-conflict', isDup);
             if (urlConflictMsg) urlConflictMsg.hidden = !isDup;
             if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
@@ -594,6 +603,11 @@ class ConfigBookmarks {
         if (scEl) scEl.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
             bookmark.shortcut = e.target.value;
+            const normalizedSc = e.target.value.trim().toUpperCase();
+            const isDupSc = Boolean(normalizedSc) && bookmarks.some((b, i) => i !== index && (b.shortcut || '').trim().toUpperCase() === normalizedSc);
+            scEl.classList.toggle('field-conflict', isDupSc);
+            const scConflictMsg = panel.querySelector('#detail-shortcut-conflict-msg');
+            if (scConflictMsg) scConflictMsg.hidden = !isDupSc;
             this._updateDashboardPreview(bookmark);
             if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
             if (window.configManager?.markDirty) window.configManager.markDirty();

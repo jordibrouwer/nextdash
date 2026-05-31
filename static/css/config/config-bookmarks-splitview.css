@@ -89,6 +89,17 @@
     justify-content: center;
 }
 
+body[data-mobile-layout="true"] #config-quick-add-btn {
+    min-width: 2.75rem;
+    min-height: 44px;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+body[data-mobile-layout="true"] .bookmarks-list-controls-row {
+    gap: 0.35rem;
+}
+
 /* ── Zoekbalk ── */
 .bookmarks-list-search-row {
     padding: 0.4rem 0.75rem 0.5rem;

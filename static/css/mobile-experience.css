@@ -54,14 +54,33 @@
     color: var(--text-primary);
 }
 
-/* ── Dashboard: footer — search only ── */
-body[data-mobile-layout="true"] #quick-add-toolbar-btn,
+/* ── Dashboard: footer — search + add bookmark on mobile ── */
 body[data-mobile-layout="true"] #finders-button,
 body[data-mobile-layout="true"] #commands-button,
 body[data-mobile-layout="true"] #recent-bookmarks-button,
 body[data-mobile-layout="true"] #help-button,
 body[data-mobile-layout="true"] .btn-group-secondary {
     display: none !important;
+}
+
+body[data-mobile-layout="true"] #quick-add-toolbar-btn {
+    display: flex !important;
+    flex: 0 0 auto;
+    min-width: 4.25rem;
+    min-height: 44px;
+    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 8%, var(--background-primary));
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body[data-mobile-layout="true"] #quick-add-toolbar-btn .search-button-icon {
+    font-size: 1.35em;
+}
+
+body[data-mobile-layout="true"] #quick-add-toolbar-btn .search-button-label {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
 }
 
 body[data-mobile-layout="true"] .button-container {
@@ -74,11 +93,13 @@ body[data-mobile-layout="true"] .button-container {
 body[data-mobile-layout="true"] .btn-group-primary {
     justify-content: center;
     width: 100%;
+    gap: 0.5rem;
 }
 
 body[data-mobile-layout="true"] #search-button {
     flex: 1 1 auto;
-    max-width: 12rem;
+    max-width: none;
+    min-height: 44px;
 }
 
 /* Dashboard: single column on phone — ignore columnsPerRow / packed layout */

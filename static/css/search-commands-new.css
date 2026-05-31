@@ -156,6 +156,15 @@
     border-color: var(--accent-error);
 }
 
+.nbm-input.field-conflict {
+    border-color: var(--accent-error);
+}
+
+.nbm-url-conflict-hint {
+    display: block;
+    margin-top: 0.35rem;
+}
+
 .nbm-file-label {
     cursor: pointer;
 }

@@ -1302,9 +1302,16 @@ class Dashboard {
 
     buildEmptyStateAddLabel() {
         if (this.isCoarsePointer()) {
-            return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + below to add a bookmark';
+            return this.language?.t('dashboard.emptyStateAddAction') || '+ Add bookmark';
         }
-        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or + below to add a bookmark';
+        return this.language?.t('dashboard.emptyStateAddAction') || '+ Add bookmark';
+    }
+
+    buildEmptyStateAddHint() {
+        if (this.isCoarsePointer()) {
+            return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + bookmark in the bar below';
+        }
+        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or + in the bar below';
     }
 
     maybeShowPostInstallTuning() {
@@ -2575,6 +2582,7 @@ class Dashboard {
             const pageName = currentPage ? currentPage.name : '';
 
             const addLabel = this.buildEmptyStateAddLabel();
+            const addHint = this.buildEmptyStateAddHint();
             const emptyPageText = this.language?.t('dashboard.emptyPage') || 'This page is empty';
             const searchLabel = this.language?.t('dashboard.searchLabel') || 'Search';
             const commandNewLabel = this.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
@@ -2589,6 +2597,7 @@ class Dashboard {
                             <button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
                             <button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>
                         </div>
+                        <p class="empty-state-hint">${addHint}</p>
                     </div>
                 `;
                 container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
@@ -2614,6 +2623,7 @@ class Dashboard {
                             <button class="empty-state-action-btn" id="empty-state-new-bookmark-fresh" type="button">${addLabel}</button>
                             <button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>
                         </div>
+                        <p class="empty-state-hint">${addHint}</p>
                         <div class="empty-state-action">
                             <a class="btn btn-secondary" href="/config#pages" data-i18n="dashboard.emptyStateSetupPages">Set up pages in config</a>
                             <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>

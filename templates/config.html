@@ -1110,7 +1110,7 @@
                                     </select>
                                 </div>
                                 <button id="add-bookmark-btn" class="btn btn-secondary btn-small" title="Add bookmark" data-i18n="config.addBookmark">+ Add</button>
-                                <button id="config-quick-add-btn" class="btn btn-primary btn-small" title="Quick add: paste a URL or type name | url | shortcut" aria-label="Quick add bookmark">⚡</button>
+                                <button id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n="config.quickAddBookmark" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark">⚡</button>
                             </div>
                             <div class="bookmarks-list-search-row">
                                 <div class="bookmarks-search-wrap">
@@ -1174,9 +1174,9 @@
                             <span class="bookmark-detail-empty-icon">←</span>
                             <span class="bookmark-detail-empty-title" data-i18n="config.selectBookmarkToEdit">Select a bookmark to edit</span>
                             <ul class="bookmark-detail-empty-hints">
-                                <li><kbd>⚡</kbd> <strong>Quick add</strong> — paste a URL to add instantly</li>
-                                <li><kbd>⠿</kbd> Drag rows to reorder</li>
-                                <li>Click a bookmark to edit name, URL, icon &amp; more</li>
+                                <li><kbd>⚡</kbd> <span data-i18n="config.detailEmptyHintQuickAdd">Quick add — tap ⚡ or + Add to create a bookmark</span></li>
+                                <li><kbd>⠿</kbd> <span data-i18n="config.detailEmptyHintReorder">Drag rows to reorder</span></li>
+                                <li><span data-i18n="config.detailEmptyHintClick">Click a bookmark to edit name, URL, icon &amp; more</span></li>
                             </ul>
                         </div>
                         <div class="bookmark-detail-form" id="bookmark-detail-form" hidden>
@@ -1207,7 +1207,7 @@
                                         </svg>Fetch favicon
                                     </button>
                                 </div>
-                                <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden>This URL already exists in another bookmark.</p>
+                                <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden data-i18n="config.urlConflictHint">This URL already exists on this page.</p>
                             </div>
 
                             <div class="bookmark-detail-section bookmark-detail-preview-section">
@@ -1239,7 +1239,7 @@
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-shortcut" data-i18n="config.bookmarkShortcutPlaceholder">Shortcut</label>
                                 <input type="text" id="detail-shortcut" class="bookmark-detail-input bookmark-detail-shortcut" placeholder="ABC" maxlength="5" autocomplete="off">
-                                <p id="detail-shortcut-conflict-msg" class="bookmark-detail-conflict-msg" hidden>This shortcut is already in use.</p>
+                                <p id="detail-shortcut-conflict-msg" class="bookmark-detail-conflict-msg" hidden data-i18n="config.shortcutConflict">Shortcut already in use</p>
                             </div>
 
                             <div class="bookmark-detail-section">
@@ -1279,23 +1279,23 @@
                             </div>
 
                             <div class="bookmark-detail-section bookmark-detail-toggles">
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" title="Toggle pin">
+                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.pinnedToggleHint">
                                     <input type="checkbox" id="detail-pinned">
-                                    <span class="icon-toggle-indicator" data-tooltip="Pinned" aria-hidden="true">
+                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.pinnedToggleHint" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" focusable="false">
                                             <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
                                         </svg>
                                     </span>
-                                    <span class="bookmark-detail-toggle-label">Pinned</span>
+                                    <span class="bookmark-detail-toggle-label" data-i18n="config.pinnedShort">Pinned</span>
                                 </label>
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" title="Toggle status check">
+                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.statusCheckToggleHint">
                                     <input type="checkbox" id="detail-check-status">
-                                    <span class="icon-toggle-indicator" data-tooltip="Status check" aria-hidden="true">
+                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.statusCheckToggleHint" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" focusable="false">
                                             <path d="M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z"></path>
                                         </svg>
                                     </span>
-                                    <span class="bookmark-detail-toggle-label">Status check</span>
+                                    <span class="bookmark-detail-toggle-label" data-i18n="config.statusCheck">Status check</span>
                                 </label>
                             </div>
 

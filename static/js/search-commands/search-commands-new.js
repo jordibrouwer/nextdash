@@ -169,10 +169,44 @@ class SearchCommandNew {
 
     getBookmarksForPage(pageId) {
         const dash = window.dashboardInstance;
-        if (!dash || pageId == null) return [];
+        const mgr = window.configManager;
+        if (pageId == null) return [];
+
+        if (
+            mgr &&
+            Number(mgr.currentPageId) === Number(pageId) &&
+            Array.isArray(mgr.bookmarksData)
+        ) {
+            return mgr.bookmarksData;
+        }
+
+        if (!dash) return [];
+
         const samePage = Number(dash.currentPageId) === pageId || String(dash.currentPageId) === String(pageId);
         if (samePage && Array.isArray(dash.bookmarks)) return dash.bookmarks;
         return (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
+    }
+
+    hasUrlDuplicateOnPage(url, pageId = null) {
+        const key = this.canonicalBookmarkURLKey(url);
+        if (!key) return false;
+        const pid = pageId ?? this.getSelectedPageId();
+        if (pid == null) return false;
+        return this.getBookmarksForPage(pid).some(
+            (b) => this.canonicalBookmarkURLKey(b.url) === key
+        );
+    }
+
+    updateUrlDuplicateHint() {
+        const urlInput = document.getElementById('new-bookmark-url');
+        const urlDuplicateHint = document.getElementById('new-bookmark-url-duplicate');
+        if (!urlInput || !urlDuplicateHint) return;
+
+        const raw = String(urlInput.value || '').trim();
+        const normalized = raw ? (this.normalizeUrlField(urlInput, false) || raw) : '';
+        const duplicate = Boolean(normalized) && this.hasUrlDuplicateOnPage(normalized);
+        urlDuplicateHint.hidden = !duplicate;
+        urlInput.classList.toggle('field-conflict', Boolean(duplicate));
     }
 
     hasShortcutConflictOnPage(shortcut, pageId = null) {
@@ -213,6 +247,7 @@ class SearchCommandNew {
             : '';
 
         const shortcutConflictLabel = this.t('config.shortcutConflict', 'Shortcut already in use');
+        const urlDuplicateLabel = this.t('config.urlConflictHint', 'This URL already exists on this page.');
 
         const modalHTML = `
             <div id="new-bookmark-modal" class="modal-overlay">
@@ -235,6 +270,7 @@ class SearchCommandNew {
                                 <input type="url" id="new-bookmark-url" name="url" class="nbm-input" required autocomplete="off" placeholder="https://">
                                 <button type="button" class="nbm-btn" id="new-bookmark-icon-fetch">${this.t('config.fetchFaviconRetry', 'Retry')}</button>
                             </div>
+                            <p id="new-bookmark-url-duplicate" class="nbm-conflict-hint nbm-url-conflict-hint" hidden>${urlDuplicateLabel}</p>
                         </div>
                         <div class="nbm-section nbm-wizard-step-1-panel">
                             <label class="nbm-label" for="new-bookmark-name">${this.t('config.bookmarkNamePlaceholder', 'Name')}</label>
@@ -348,6 +384,7 @@ class SearchCommandNew {
 
         this.initWizardLayout();
         this.updateShortcutConflictHint();
+        this.updateUrlDuplicateHint();
     }
 
     generatePageOptions() {
@@ -501,6 +538,7 @@ class SearchCommandNew {
         document.getElementById('new-bookmark-page')?.addEventListener('change', async (e) => {
             await this.updateCategoriesForPage(parseInt(e.target.value, 10));
             this.updateShortcutConflictHint();
+            this.updateUrlDuplicateHint();
         });
 
         const shortcutInput = document.getElementById('new-bookmark-shortcut');
@@ -518,10 +556,14 @@ class SearchCommandNew {
         document.getElementById('new-bookmark-status')?.addEventListener('change', () => this.updatePreviews());
 
         const urlInput = document.getElementById('new-bookmark-url');
-        urlInput?.addEventListener('input', () => this.scheduleUrlMetaFetch());
+        urlInput?.addEventListener('input', () => {
+            this.scheduleUrlMetaFetch();
+            this.updateUrlDuplicateHint();
+        });
         urlInput?.addEventListener('blur', () => {
             this.normalizeUrlField(urlInput, true);
             void this.autoFetchFromUrlField(false);
+            this.updateUrlDuplicateHint();
         });
 
         const iconFileInput = document.getElementById('new-bookmark-icon-file');
@@ -653,6 +695,7 @@ class SearchCommandNew {
 
         this.updatePreviews();
         this.updateShortcutConflictHint();
+        this.updateUrlDuplicateHint();
 
         setTimeout(() => {
             if (opts.url && urlInput) {
@@ -719,6 +762,12 @@ class SearchCommandNew {
         if (shortcut && this.hasShortcutConflictOnPage(shortcut, pageId)) {
             this.updateShortcutConflictHint();
             this.notify(this.t('config.shortcutConflict', 'Shortcut already in use'), 'error');
+            return;
+        }
+
+        if (normalizedUrl && this.hasUrlDuplicateOnPage(normalizedUrl, pageId)) {
+            this.updateUrlDuplicateHint();
+            this.notify(this.duplicateBookmarkUrlMessage(), 'error');
             return;
         }
 
