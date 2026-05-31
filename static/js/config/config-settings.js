@@ -203,6 +203,59 @@ class ConfigSettings {
                 window.configManager?.markDirty?.();
             }
         }
+
+        this.updateSystemAppearanceBadge(settings?.theme);
+    }
+
+    updateSystemAppearanceBadge(themeId) {
+        const badge = document.getElementById('system-appearance-badge');
+        if (!badge) return;
+
+        if (!window.matchMedia) {
+            badge.hidden = true;
+            return;
+        }
+
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const labelKey = isDark ? 'config.systemAppearanceDark' : 'config.systemAppearanceLight';
+        let label = this.t(labelKey);
+        if (!label || label === labelKey) {
+            label = isDark ? 'System: dark' : 'System: light';
+        }
+
+        badge.textContent = label;
+        badge.hidden = false;
+        badge.classList.toggle('is-dark', isDark);
+        badge.classList.toggle('is-light', !isDark);
+
+        const supported = themeId ? this.themeSupportsAutoDarkMode(themeId) : true;
+        const autoDarkOn = Boolean(document.getElementById('auto-dark-mode-checkbox')?.checked);
+        badge.classList.toggle('is-active', supported && autoDarkOn);
+        badge.classList.toggle('is-muted', !supported);
+
+        const titleKey = supported
+            ? (autoDarkOn ? 'config.systemAppearanceHintActive' : 'config.systemAppearanceHintIdle')
+            : 'config.systemAppearanceHintUnsupported';
+        const title = this.t(titleKey);
+        if (title && title !== titleKey) {
+            badge.setAttribute('title', title);
+        } else {
+            badge.removeAttribute('title');
+        }
+    }
+
+    initSystemAppearanceBadge(settings) {
+        this.updateSystemAppearanceBadge(settings?.theme);
+        if (this._systemAppearanceListenerAttached || !window.matchMedia) return;
+
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const onChange = () => this.updateSystemAppearanceBadge(settings?.theme);
+        if (typeof media.addEventListener === 'function') {
+            media.addEventListener('change', onChange);
+        } else if (typeof media.addListener === 'function') {
+            media.addListener(onChange);
+        }
+        this._systemAppearanceListenerAttached = true;
     }
 
     bindInfoButton(buttonId, titleKey, messageKey) {
@@ -474,6 +527,7 @@ class ConfigSettings {
                 const newLang = e.target.value;
                 settings.language = newLang;
                 await this.language.loadTranslations(newLang);
+                this.updateSystemAppearanceBadge(settings.theme);
                 await this.saveSettingsToServer(settings);
             });
         }
@@ -645,8 +699,10 @@ class ConfigSettings {
                 }
                 settings.autoDarkMode = e.target.checked;
                 if (callbacks.onAutoDarkModeChange) callbacks.onAutoDarkModeChange(settings.autoDarkMode);
+                this.updateSystemAppearanceBadge(settings.theme);
             });
             this.updateAutoDarkModeAvailability(settings.theme, settings, callbacks);
+            this.initSystemAppearanceBadge(settings);
         }
 
         const backgroundOpacityInput = document.getElementById('background-opacity-input');
@@ -2073,9 +2129,14 @@ class ConfigSettings {
         apply();
 
         if (!this._autoDarkModeListenerAttached && typeof media.addEventListener === 'function') {
-            media.addEventListener('change', apply);
+            media.addEventListener('change', () => {
+                apply();
+                this.updateSystemAppearanceBadge(settings?.theme);
+            });
             this._autoDarkModeListenerAttached = true;
         }
+
+        this.updateSystemAppearanceBadge(settings?.theme);
     }
 
     /**

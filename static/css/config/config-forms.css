@@ -807,9 +807,47 @@
 
 .auto-dark-mode-hint {
     margin-top: 0.35rem;
-    margin-left: 1.65rem;
+    margin-left: 0;
     max-width: 42rem;
     line-height: 1.45;
+}
+
+.auto-dark-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.system-appearance-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.system-appearance-badge.is-dark {
+    border-color: color-mix(in srgb, var(--text-primary) 25%, var(--border-primary));
+}
+
+.system-appearance-badge.is-light {
+    border-color: color-mix(in srgb, var(--accent-warning, #f59e0b) 35%, var(--border-primary));
+}
+
+.system-appearance-badge.is-active {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.system-appearance-badge.is-muted {
+    opacity: 0.75;
 }
 
 .auto-dark-mode-unavailable .checkbox-label {
