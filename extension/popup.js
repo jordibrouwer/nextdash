@@ -4,6 +4,7 @@ let confirmationCallback = null;
 let extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
 let extFormPreview = null;
 let extServerUrl = '';
+let extPageBookmarks = [];
 
 function getExtDraftBookmark() {
     return {
@@ -148,6 +149,54 @@ function updateUrlGuard(url) {
     }
 }
 
+function hasUrlDuplicateOnPage(url) {
+    const key = BookmarkUrlUtils.canonicalBookmarkURLKey(url);
+    if (!key) return false;
+    return extPageBookmarks.some(
+        (bookmark) => BookmarkUrlUtils.canonicalBookmarkURLKey(bookmark.url) === key
+    );
+}
+
+function updateUrlDuplicateHint() {
+    const urlInput = document.getElementById('bookmark-url');
+    const hint = document.getElementById('bookmark-url-duplicate');
+    if (!urlInput || !hint) return;
+
+    const raw = String(urlInput.value || '').trim();
+    if (!raw) {
+        hint.hidden = true;
+        urlInput.classList.remove('field-conflict');
+        return;
+    }
+
+    const normalized = BookmarkUrlUtils.ensureHttpUrl(raw);
+    const duplicate = isBookmarkableUrl(normalized) && hasUrlDuplicateOnPage(normalized);
+    hint.hidden = !duplicate;
+    urlInput.classList.toggle('field-conflict', Boolean(duplicate));
+}
+
+async function refreshPageBookmarks() {
+    const settings = await chrome.storage.sync.get(['serverUrl']);
+    const serverUrl = settings.serverUrl;
+    const pageId = document.getElementById('page-select')?.value;
+
+    if (!serverUrl || !pageId) {
+        extPageBookmarks = [];
+        updateUrlDuplicateHint();
+        return;
+    }
+
+    try {
+        const response = await fetch(new URL(`/api/bookmarks?page=${pageId}`, serverUrl));
+        extPageBookmarks = response.ok ? await response.json() : [];
+    } catch (error) {
+        console.error('Error loading bookmarks for duplicate check:', error);
+        extPageBookmarks = [];
+    }
+
+    updateUrlDuplicateHint();
+}
+
 function showConfirmation(text, onYes) {
     document.getElementById('confirmation-text').innerHTML = text;
     document.getElementById('confirmation').classList.remove('hidden');
@@ -207,6 +256,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     document.getElementById('bookmark-url').addEventListener('input', (e) => {
         updateUrlGuard(e.target.value);
+        updateUrlDuplicateHint();
         scheduleExtensionUrlMeta();
     });
 
@@ -216,6 +266,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.target.value = normalized;
             updateUrlGuard(normalized);
         }
+        updateUrlDuplicateHint();
         void autoFetchExtensionUrlMeta();
     });
 
@@ -228,6 +279,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const pageId = event.target.value;
         if (pageId) {
             await loadCategories(pageId);
+            await refreshPageBookmarks();
+        } else {
+            extPageBookmarks = [];
+            updateUrlDuplicateHint();
         }
     });
 
@@ -352,6 +407,7 @@ async function loadPages(providedServerUrl) {
 
         pageSelect.value = savePageId;
         await loadCategories(savePageId);
+        await refreshPageBookmarks();
         const catSelect = document.getElementById('category-select');
         if (saveCategory && [...catSelect.options].some((o) => o.value === saveCategory)) {
             catSelect.value = saveCategory;
@@ -467,25 +523,13 @@ async function saveBookmark(event) {
         return;
     }
 
-    // Check for duplicate URL
-    try {
-        const bookmarksResponse = await fetch(new URL(`/api/bookmarks?page=${pageId}`, serverUrl));
-        if (bookmarksResponse.ok) {
-            const bookmarks = await bookmarksResponse.json();
-            const duplicate = bookmarks.find(bookmark => bookmark.url === url);
-            if (duplicate) {
-                showConfirmation(extT('msgDuplicateConfirm', '', { name: duplicate.name }), async () => {
-                    await performSave(serverUrl, pageId, name, url, category, note, tags);
-                });
-                return; // Wait for confirmation
-            }
-        }
-    } catch (error) {
-        console.error('Error checking for duplicates:', error);
-        // Continue anyway
+    await refreshPageBookmarks();
+    if (hasUrlDuplicateOnPage(url)) {
+        updateUrlDuplicateHint();
+        showMessage(extT('msgDuplicateBookmarkUrl', 'This bookmark URL already exists on this page.'), 'error');
+        return;
     }
 
-    // No duplicate, save directly
     await performSave(serverUrl, pageId, name, url, category, note, tags);
 }
 

@@ -26,6 +26,8 @@
   "openInNextdash": "In nextDash öffnen",
   "noCategory": "Keine Kategorie",
   "urlGuardInvalid": "Nur http(s)-Seiten können gespeichert werden (keine Browser-Interna, Erweiterungsseiten oder file://).",
+  "urlConflictHint": "Diese URL existiert bereits auf dieser Seite.",
+  "msgDuplicateBookmarkUrl": "Diese Lesezeichen-URL existiert bereits auf dieser Seite.",
   "msgSetServerUrl": "Bitte zuerst die nextDash-URL in den Einstellungen setzen.",
   "msgNoPages": "Keine Seiten vom Server erhalten.",
   "msgFailedPages": "Seiten konnten nicht geladen werden. Server-URL prüfen.",

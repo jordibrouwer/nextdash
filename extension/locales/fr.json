@@ -26,6 +26,8 @@
   "openInNextdash": "Ouvrir dans nextDash",
   "noCategory": "Aucune catégorie",
   "urlGuardInvalid": "Seules les pages http(s) peuvent être enregistrées (pas les pages internes du navigateur, d'extension ou file://).",
+  "urlConflictHint": "Cette URL existe déjà sur cette page.",
+  "msgDuplicateBookmarkUrl": "Cette URL de favori existe déjà sur cette page.",
   "msgSetServerUrl": "Définissez d'abord l'URL nextDash dans les paramètres.",
   "msgNoPages": "Aucune page renvoyée par le serveur.",
   "msgFailedPages": "Échec du chargement des pages. Vérifiez l'URL du serveur.",

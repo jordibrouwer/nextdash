@@ -26,6 +26,8 @@
   "openInNextdash": "Open in nextDash",
   "noCategory": "No Category",
   "urlGuardInvalid": "Only http(s) pages can be saved (not browser internals, extension pages, or file://).",
+  "urlConflictHint": "This URL already exists on this page.",
+  "msgDuplicateBookmarkUrl": "This bookmark URL already exists on this page.",
   "msgSetServerUrl": "Please set the nextDash URL in settings first.",
   "msgNoPages": "No pages returned from server.",
   "msgFailedPages": "Failed to load pages. Check your server URL.",

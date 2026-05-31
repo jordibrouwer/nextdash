@@ -26,6 +26,8 @@
   "openInNextdash": "Openen in nextDash",
   "noCategory": "Geen categorie",
   "urlGuardInvalid": "Alleen http(s)-pagina's kunnen worden opgeslagen (geen browser-intern, extensiepagina's of file://).",
+  "urlConflictHint": "Deze URL bestaat al op deze pagina.",
+  "msgDuplicateBookmarkUrl": "Deze bladwijzer-URL bestaat al op deze pagina.",
   "msgSetServerUrl": "Stel eerst de nextDash-URL in bij instellingen.",
   "msgNoPages": "Geen pagina's van de server ontvangen.",
   "msgFailedPages": "Pagina's laden mislukt. Controleer je server-URL.",

@@ -93,7 +93,16 @@ async function findDuplicateBookmark(serverUrl, pageId, bookmarkUrl) {
   const response = await fetch(new URL(`/api/bookmarks?page=${pageId}`, base));
   if (!response.ok) return null;
   const bookmarks = await response.json();
-  return bookmarks.find((b) => b.url === bookmarkUrl) || null;
+  const key = typeof BookmarkUrlUtils !== 'undefined'
+    ? BookmarkUrlUtils.canonicalBookmarkURLKey(bookmarkUrl)
+    : String(bookmarkUrl || '').trim().toLowerCase();
+  if (!key) return null;
+  return bookmarks.find((b) => {
+    const other = typeof BookmarkUrlUtils !== 'undefined'
+      ? BookmarkUrlUtils.canonicalBookmarkURLKey(b.url)
+      : String(b.url || '').trim().toLowerCase();
+    return other === key;
+  }) || null;
 }
 
 async function postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras = {}) {
