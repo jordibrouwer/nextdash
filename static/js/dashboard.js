@@ -1326,7 +1326,7 @@ class Dashboard {
         if (this.isCoarsePointer()) {
             return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + bookmark in the bar below';
         }
-        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or + in the bar below';
+        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or Ctrl+Shift+A for the full add-bookmark form (+ for quick-add line)';
     }
 
     maybeShowPostInstallTuning() {
@@ -1445,7 +1445,7 @@ class Dashboard {
         };
 
         const defs = [
-            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['&', '+'] },
+            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['&', 'Ctrl+Shift+A'] },
             { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
@@ -2386,7 +2386,7 @@ class Dashboard {
             section('sectionBookmarks', 'Bookmarks', [
                 item('+', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
                 item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
-                item('&', 'bmNewBookmarkModal', 'Open full new-bookmark modal'),
+                item('& or Ctrl + Shift + A', 'bmNewBookmarkModal', 'Open full new-bookmark modal (& on dashboard; Ctrl+Shift+A anywhere)'),
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
@@ -2407,7 +2407,7 @@ class Dashboard {
                 item('category: / tag: / page: / status:', 'smFieldFilters', 'Filter results by field directly in the search bar'),
             ]),
             section('sectionCommandsBookmarks', 'Commands — bookmarks', [
-                item(':new', 'cbNew', 'Open new-bookmark modal'),
+                item(':new', 'cbNew', 'Open new-bookmark modal (same as & / Ctrl+Shift+A)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
                 item(':tag <name>', 'cbTag', 'Add or remove a tag on the focused bookmark; omit name to see current tags'),

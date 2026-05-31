@@ -49,11 +49,36 @@ async function fetchBookmarkExtras(serverUrl, url) {
   return extras;
 }
 
+function normalizePagesData(pages) {
+  const raw = Array.isArray(pages) ? pages : [];
+  const list = raw
+    .filter((page) => page && Number.isFinite(Number(page.id)) && Number(page.id) >= 1)
+    .map((page) => ({
+      ...page,
+      id: Number(page.id),
+      name: String(page.name || '').trim(),
+    }));
+
+  if (!list.some((page) => page.id === 1)) {
+    list.unshift({ id: 1, name: 'main' });
+  }
+  if (list.length === 0) {
+    return [{ id: 1, name: 'main' }];
+  }
+  list.forEach((page) => {
+    if (!page.name) {
+      page.name = page.id === 1 ? 'main' : `Page ${page.id}`;
+    }
+  });
+  return list;
+}
+
 async function loadPagesList(serverUrl) {
   const base = normalizeServerUrl(serverUrl);
   const response = await fetch(new URL('/api/pages', base));
   if (!response.ok) throw new Error('pages');
-  return response.json();
+  const pages = await response.json();
+  return normalizePagesData(pages);
 }
 
 async function loadCategoriesList(serverUrl, pageId) {
@@ -107,6 +132,8 @@ async function resolveSaveTarget(serverUrl, syncDefaults, lastCtx) {
     pageId = String(lastCtx.pageId);
   } else if (syncDefaults.defaultPage != null && String(syncDefaults.defaultPage) !== '' && ids.has(String(syncDefaults.defaultPage))) {
     pageId = String(syncDefaults.defaultPage);
+  } else if (ids.has('1')) {
+    pageId = '1';
   } else {
     pageId = String(pages[0].id);
   }

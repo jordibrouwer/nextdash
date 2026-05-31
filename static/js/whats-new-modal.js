@@ -120,7 +120,7 @@
                 {
                     title: 'UX & discoverability',
                     items: [
-                        { badge: 'new', text: '<strong>Rich keyboard tooltips</strong> — on desktop, hovering footer buttons shows the action name plus shortcuts (e.g. <kbd>&gt;</kbd> search, <kbd>Ctrl+Shift+A</kbd> for quick-add). Hidden on touch devices.' },
+                        { badge: 'new', text: '<strong>Rich keyboard tooltips</strong> — on desktop, hovering footer buttons shows the action name plus shortcuts (e.g. <kbd>&gt;</kbd> search, <kbd>&amp;</kbd> / <kbd>Ctrl+Shift+A</kbd> for the new-bookmark modal). Hidden on touch devices.' },
                         { badge: 'new', text: '<strong>Search-flow hint with labels</strong> — the first-run hint above the button bar shows key chips plus text labels (search · commands · finders · bookmark); includes a swipe-between-pages hint on mobile.' },
                         { badge: 'new', text: '<strong>Mobile bottom bar</strong> — short text labels under footer icon buttons; a mini status line on small screens shows date · current page · health summary.' },
                         { badge: 'new', text: '<strong>Post-setup wizard</strong> — after onboarding, empty libraries get a 3-step guide: open <em>config → pages</em>, add your first bookmark (quick-add or <em>config → bookmarks</em>), then finish.' },

@@ -306,7 +306,7 @@ async function loadPages(providedServerUrl) {
         const response = await fetch(new URL('/api/pages', serverUrl));
         if (!response.ok) throw new Error('Failed to fetch pages');
 
-        const pages = await response.json();
+        const pages = normalizePagesData(await response.json());
         if (!pages.length) {
             showMessage(extT('msgNoPages', 'No pages returned from server.'), 'error');
             return;
@@ -335,7 +335,9 @@ async function loadPages(providedServerUrl) {
         const defPage =
             defaultSettings.defaultPage != null && pageIds.has(String(defaultSettings.defaultPage))
                 ? String(defaultSettings.defaultPage)
-                : String(pages[0].id);
+                : pageIds.has('1')
+                    ? '1'
+                    : String(pages[0].id);
         defaultPageSelect.value = defPage;
 
         let savePageId = defPage;
