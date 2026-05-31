@@ -375,6 +375,41 @@
     text-overflow: ellipsis;
 }
 
+.theme-preview-badge {
+    display: none;
+    flex: 1 1 100%;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.35;
+    color: color-mix(in srgb, var(--accent-primary) 78%, var(--text-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem 0.3rem 0.5rem;
+}
+
+.theme-preview-badge::before {
+    content: '';
+    flex-shrink: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+.theme-preview-badge.is-visible,
+.theme-preview-badge:not([hidden]) {
+    display: inline-flex;
+}
+
+.theme-preview-badge.is-saving {
+    opacity: 0.75;
+}
+
 /* Number input wrapper with custom controls */
 .number-input-wrapper {
     position: relative;

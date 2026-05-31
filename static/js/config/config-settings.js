@@ -539,13 +539,16 @@ class ConfigSettings {
             const hasPreferredTheme = Array.from(themeSelect.options).some(option => option.value === preferredTheme);
             themeSelect.value = hasPreferredTheme ? preferredTheme : 'dark';
             settings.theme = themeSelect.value;
-            themeSelect.addEventListener('change', (e) => {
+            themeSelect.addEventListener('change', async (e) => {
                 settings.theme = e.target.value;
                 this.updateAutoDarkModeAvailability(settings.theme, settings, callbacks, { markDirtyOnDisable: true });
-                if (callbacks.onThemeChange) callbacks.onThemeChange(settings.theme);
-                this.reloadThemeCSS();
-                this.updateAutoPreview(settings.theme);
-                this.applyBackground(settings);
+                if (callbacks.onThemeChange) {
+                    await callbacks.onThemeChange(settings.theme);
+                } else {
+                    this.reloadThemeCSS();
+                    this.updateAutoPreview(settings.theme);
+                    this.applyBackground(settings);
+                }
             });
         }
 

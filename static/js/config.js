@@ -120,6 +120,8 @@ class ConfigManager {
         this.lastSyncToastAt = 0;
         this.colorsEditor = null;
         this.colorsDirty = false;
+        this._persistedTheme = '';
+        this._themeAutosaveToken = 0;
 
         this.init();
     }
@@ -243,6 +245,7 @@ class ConfigManager {
                 this.allBookmarksData = [];
             }
             this.settingsData = { ...this.settingsData, ...settings };
+            this._persistedTheme = String(this.settingsData.theme || '');
             if (!this.settingsData.language || this.settingsData.language === "") {
                 this.settingsData.language = 'en';
             }
@@ -514,9 +517,13 @@ class ConfigManager {
         
         // Setup settings listeners with callbacks
         await this.settings.setupListeners(this.settingsData, {
-            onThemeChange: (theme) => {
+            onThemeChange: async (theme) => {
                 this.settings.applyTheme(theme);
+                this.settings.reloadThemeCSS();
+                this.settings.updateAutoPreview(theme);
+                this.settings.applyBackground(this.settingsData);
                 try { this.initThemeIconStylingControls(); } catch (e) {}
+                await this.autosaveThemeSelection(theme);
             },
             onFontSizeChange: (fontSize) => {
                 this.settings.applyFontSize(fontSize);
@@ -1392,6 +1399,81 @@ class ConfigManager {
         this.initReordering();
     }
 
+    updateThemePreviewBadge(options = {}) {
+        const badge = document.getElementById('theme-preview-badge');
+        if (!badge) return;
+        const current = String(this.settingsData?.theme || '');
+        const persisted = String(this._persistedTheme || '');
+        const pending = current !== persisted;
+        const saving = options.saving === true;
+
+        badge.hidden = !pending && !saving;
+        badge.classList.toggle('is-visible', pending || saving);
+        badge.classList.toggle('is-saving', saving);
+
+        const hintKey = saving ? 'config.themePreviewSaving' : 'config.themePreviewSaveHint';
+        const hintFallback = saving ? 'Saving theme…' : 'Preview — click Save to keep';
+        const hint = this.language?.t(hintKey);
+        badge.textContent = hint && hint !== hintKey ? hint : hintFallback;
+    }
+
+    async autosaveThemeSelection(theme) {
+        if (theme) {
+            this.settingsData.theme = theme;
+        }
+        const token = ++this._themeAutosaveToken;
+        this.updateThemePreviewBadge({ saving: true });
+
+        this.suppressDirtyTracking = true;
+        this.settings.updateFromUI(this.settingsData);
+
+        let ok = false;
+        try {
+            if (this.deviceSpecific) {
+                const settingsToSave = { ...this.settingsData };
+                delete settingsToSave.enableCustomFavicon;
+                delete settingsToSave.customFaviconPath;
+                delete settingsToSave.enableCustomFont;
+                delete settingsToSave.customFontPath;
+                this.storage.saveDeviceSettings(settingsToSave);
+                ok = true;
+            } else {
+                ok = await this.settings.saveSettingsToServer(this.settingsData);
+            }
+        } catch {
+            ok = false;
+        }
+        this.suppressDirtyTracking = false;
+
+        if (token !== this._themeAutosaveToken) return;
+
+        if (ok) {
+            this._persistedTheme = String(this.settingsData.theme || '');
+            this.updateThemePreviewBadge();
+            this.flashSavedIndicator();
+            const msg = this.language?.t('config.themeSaved');
+            const text = msg && msg !== 'config.themeSaved' ? msg : 'Theme saved';
+            if (window.AppNotification?.show) {
+                window.AppNotification.show(text, 'success', { durationMs: 3000 });
+            } else {
+                this.ui.showNotification(text, 'success', { duration: 3000 });
+            }
+            this.signalDashboardSettingsUpdated('settings-autosave');
+            return;
+        }
+
+        this.updateThemePreviewBadge();
+        const errMsg = this.language?.t('config.themeSaveFailed');
+        const errText = errMsg && errMsg !== 'config.themeSaveFailed'
+            ? errMsg
+            : 'Could not save theme — use Save to try again';
+        if (window.AppNotification?.show) {
+            window.AppNotification.show(errText, 'error', { durationMs: 5000 });
+        } else {
+            this.ui.showNotification(errText, 'error', { duration: 5000 });
+        }
+    }
+
     setupDirtyTracking() {
         const root = document.querySelector('.config-main');
         if (!root) {
@@ -1403,7 +1485,7 @@ class ConfigManager {
         };
         const shouldIgnoreTarget = (target) => {
             if (!target || !target.id) return false;
-            return target.id === 'page-selector' || target.id === 'categories-page-selector' || target.id === 'bookmarks-category-filter' || target.id === 'packed-columns-checkbox' || target.id === 'bookmarks-search';
+            return target.id === 'page-selector' || target.id === 'categories-page-selector' || target.id === 'bookmarks-category-filter' || target.id === 'packed-columns-checkbox' || target.id === 'bookmarks-search' || target.id === 'theme-select';
         };
         root.addEventListener('input', (event) => {
             if (this.suppressDirtyTracking) return;
@@ -1893,6 +1975,7 @@ class ConfigManager {
         // Set checkbox states
         const interleaveModeCheckbox = document.getElementById('interleave-mode-checkbox');
         if (interleaveModeCheckbox) interleaveModeCheckbox.checked = this.settingsData.interleaveMode;
+        this.updateThemePreviewBadge();
     }
 
     refreshCustomSelects() {
@@ -3005,6 +3088,8 @@ class ConfigManager {
             this.flashSavedIndicator();
             this.undoSnapshot = null;
             this.savedSnapshot = this.captureUndoSnapshot();
+            this._persistedTheme = String(this.settingsData.theme || '');
+            this.updateThemePreviewBadge();
             this.setDirtyState(false);
             if (typeof this._persistGeneralPanelState === 'function') {
                 this._persistGeneralPanelState();
