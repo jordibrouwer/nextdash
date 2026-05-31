@@ -1094,6 +1094,19 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     transition: opacity 0.18s ease, filter 0.18s ease;
 }
 
+/* ─── Corner FAB layout tokens ───────────────────────────────────────────── */
+:root {
+    --corner-fab-edge: 1.5rem;
+    --corner-fab-height: 2.75rem;
+    --corner-fab-gap: 0.4rem;
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    :root {
+        --corner-fab-height: 3.35rem;
+    }
+}
+
 /* ─── Launcher FAB ────────────────────────────────────────────── */
 .launcher-toggle-btn[data-tooltip] {
     position: fixed;
@@ -1131,9 +1144,9 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 
 .launcher-toggle-btn {
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 500;
+    bottom: var(--corner-fab-edge);
+    right: var(--corner-fab-edge);
+    z-index: 1001;
     padding: 0.62rem 0.92rem;
     border: 1px solid var(--border-primary);
     background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
@@ -1174,18 +1187,30 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 }
 
 
-/* Rechter-dock: launcher-FAB boven de knoppenkolom */
+/* Linker-dock: FABs rechts gestapeld (what's new onder, launcher erboven) */
+body[data-button-position="bottom-left"] .launcher-toggle-btn {
+    left: auto;
+    right: var(--corner-fab-edge);
+    bottom: calc(var(--corner-fab-edge) + var(--corner-fab-height) + var(--corner-fab-gap));
+}
+
+/* Rechter-dock: FABs links gestapeld (what's new onder, launcher erboven) */
 body[data-button-position="bottom-right"] .launcher-toggle-btn {
-    bottom: 11.5rem;
-    right: 1.5rem;
+    left: var(--corner-fab-edge);
+    right: auto;
+    bottom: calc(var(--corner-fab-edge) + var(--corner-fab-height) + var(--corner-fab-gap));
+}
+body[data-button-position="bottom-right"] .launcher-toggle-btn[data-tooltip]::after {
+    left: 0;
+    right: auto;
 }
 
 /* ─── What's new FAB ──────────────────────────────────────────────────────── */
 .whats-new-btn {
     position: fixed;
-    bottom: 1.5rem;
-    left: 1.5rem;
-    z-index: 500;
+    bottom: var(--corner-fab-edge);
+    left: var(--corner-fab-edge);
+    z-index: 1001;
     padding: 0.62rem 0.72rem;
     border: 1px solid var(--border-primary);
     background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
@@ -1249,16 +1274,21 @@ body[data-button-position="bottom-right"] .launcher-toggle-btn {
         display: none;
     }
 }
-/* When button bar is bottom-left: star goes to bottom-right */
+/* Linker-dock: what's new naar rechts (tegenover de knoppenbalk) */
 body[data-button-position="bottom-left"] .whats-new-btn {
     left: auto;
-    right: 1.5rem;
+    right: var(--corner-fab-edge);
 }
 body[data-button-position="bottom-left"] .whats-new-btn[data-tooltip]::after {
     left: auto;
     right: 0;
 }
-/* In bottom-right dock mode: keep star at bottom-left (default) */
+
+/* Rechter-dock: what's new expliciet links (tegenover de knoppenbalk) */
+body[data-button-position="bottom-right"] .whats-new-btn {
+    left: var(--corner-fab-edge);
+    right: auto;
+}
 
 /* Density overrides (can be combined with layout presets) */
 body[data-density-mode="comfortable"] .dashboard-grid {
