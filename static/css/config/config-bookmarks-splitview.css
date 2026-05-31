@@ -988,8 +988,10 @@
     flex-wrap: wrap;
 }
 
-.bookmark-detail-toggle {
-    display: flex;
+/* Override .checkbox-label grid — icon-toggle indicator is wider than 1.4em */
+.bookmark-detail-toggles .bookmark-detail-toggle.checkbox-label {
+    display: inline-flex !important;
+    grid-template-columns: unset;
     align-items: center;
     gap: 0.4rem;
     cursor: pointer;
@@ -999,6 +1001,7 @@
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     user-select: none;
+    white-space: nowrap;
 }
 
 /* Detail header knoppen */
