@@ -122,7 +122,11 @@ class ConfigGeneralLayers {
             if (item) essentials.appendChild(item);
         });
         const pageNamesItem = behavior.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
-        if (pageNamesItem) essentials.appendChild(pageNamesItem);
+        if (pageNamesItem) {
+            pageNamesItem.classList.remove('checkbox-tree-child');
+            pageNamesItem.querySelector('.tree-symbol')?.remove();
+            essentials.appendChild(pageNamesItem);
+        }
 
         behavior.parentNode.insertBefore(essentials, display);
     }
