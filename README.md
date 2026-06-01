@@ -242,6 +242,23 @@ See `extension/README.md` for full usage and development notes.
 
 ## Changelog
 
+### v2026.05.7 — May 2026
+
+**Search & commands**
+- **:open last [n]** — open the N most recently opened bookmarks on the current page from the command palette (`lastOpened`). Default `:open last` opens 5; `:open recent` is an alias. Max request 50; same 15-tab safe batch as `:open all` when N is large.
+
+**Config → General**
+- **Visible nested settings** — parent/child checkboxes (smart collections, page tabs, status options) use tree guide lines and ├── / └── symbols so hierarchy is obvious.
+- **Status-dependent rows** — child options under Status dim and disable when the status feature is off.
+
+**Browser extension**
+- **Save anyway on duplicate URL** — inline warning when the URL already exists on the page, plus a *Save anyway* button; optional setting to allow duplicate URLs without the extra step.
+
+**Help**
+- **What's new only where it belongs** — the What's New section was removed from Config → Help. Release notes remain on the dashboard ★ FAB and Config → Advanced → What's new.
+
+---
+
 ### v2026.05.6 — May 2026
 
 **Pages & persistence**
@@ -357,7 +374,6 @@ See `extension/README.md` for full usage and development notes.
 - **Fuzzy search on URL, note & tags** — the `/` fuzzy mode now also matches against a bookmark's URL domain, tags, and note. Secondary-field results rank below name matches and show a small context snippet (URL, `#tag`, or note excerpt).
 - **Saved searches as separate group** — opening the `>` search bar now shows *Recent* (last 5 queries) and *Saved searches* as two distinct groups. Saved searches are collapsed by default.
 - **:open all** — opens all bookmarks on the current page in new tabs. Shows a "first 15" safe option plus "open all" when the page has more bookmarks.
-- **:open last [n]** — opens the N most recently opened bookmarks (`lastOpened` on the current page). Default 5; alias `:open recent`. Uses the same 15-tab batch cap when N is large.
 - **:pin / :unpin** — toggle the pin flag on the keyboard-selected bookmark from the command palette without opening Config.
 - **:tag \<tagname\>** — add or remove a tag on the selected bookmark. Typing `:tag` alone shows the bookmark's current tags.
 - **:stale \[days\]** — accepts a custom day window: `:stale 7`, `:stale 90` etc. Default remains 30 days.

@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v33';
+    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v34';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -80,6 +80,34 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.05.7', 'May 2026', [
+                {
+                    title: 'Search & commands',
+                    items: [
+                        { badge: 'new', text: '<strong>:open last [n]</strong> — open the most recently used bookmarks on the current page from command mode. Default <code>:open last</code> opens 5; use <code>:open last 10</code> or <code>:open recent 5</code>. Same safe 15-tab batch cap as <strong>:open all</strong> when you ask for more.' },
+                    ]
+                },
+                {
+                    title: 'Config → General',
+                    items: [
+                        { badge: 'new', text: '<strong>Visible nested settings</strong> — parent/child checkboxes (smart collections, page tabs, status options) show a clear tree with guide lines and ├── / └── symbols instead of looking like a flat list.' },
+                        { badge: 'fix', text: '<strong>Status-dependent rows</strong> — child options under Status dim and disable when the status feature is off, so you cannot toggle hidden behaviour by accident.' },
+                    ]
+                },
+                {
+                    title: 'Browser extension',
+                    items: [
+                        { badge: 'new', text: '<strong>Save anyway on duplicate URL</strong> — when a URL already exists on the page, the popup shows an inline warning plus <em>Save anyway</em>. Optional setting to allow duplicates without the extra step.' },
+                    ]
+                },
+                {
+                    title: 'Help',
+                    items: [
+                        { badge: 'fix', text: '<strong>What’s new only where it belongs</strong> — the duplicate What’s New block was removed from Config → Help. Release notes stay on the dashboard ★ button and Config → Advanced → What’s new.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.6', 'May 2026', [
                 {
