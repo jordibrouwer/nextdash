@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v35';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v36';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -80,6 +80,23 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.06.2', 'June 2026', [
+                {
+                    title: 'Config → General tour',
+                    items: [
+                        { badge: 'new', text: '<strong>First-visit guided tour</strong> — 9 steps through Essentials, Advanced, appearance, bookmarks, toolbar, smart collections, other config tabs, and Save. Runs once on a desktop-width window; completion is remembered.' },
+                        { badge: 'new', text: '<strong>Replay anytime</strong> — Config → General → Advanced → System &amp; tools → <em>Show General tour again</em>.' },
+                    ]
+                },
+                {
+                    title: 'Config → Bookmarks tour',
+                    items: [
+                        { badge: 'new', text: '<strong>Bookmarks editor tour</strong> — 10 steps: structure (pages/categories), filters, quick-add vs <em>+ Add</em>, list search, reorder and bulk select, detail editor, bulk toolbar, favicon policy, and Save.' },
+                        { badge: 'new', text: '<strong>Replay anytime</strong> — System &amp; tools → <em>Show Bookmarks tour again</em> (switch to the Bookmarks tab first if needed).' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.1', 'June 2026', [
                 {

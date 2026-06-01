@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.2 — June 2026](#v2026062--june-2026)
 - [v2026.06.1 — June 2026](#v2026061--june-2026)
 - [v2026.05.7 — May 2026](#v2026057--may-2026)
 - [v2026.05.6 — May 2026](#v2026056--may-2026)
@@ -28,6 +29,27 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No shipped release yet — items land here before the next version section._
+
+---
+
+## v2026.06.2 — June 2026
+
+Config guided tours for **General** and **Bookmarks**: one-time spotlight walkthroughs on desktop-width windows.
+
+### Config → General
+
+- **new** **General settings tour** — 9-step guided tour on first visit to the General tab: Essentials vs Advanced, appearance, bookmarks, toolbar, smart collections, Advanced nav, other tabs, and Save. Spotlight highlight with scroll lock; completion stored in settings and `localStorage`.
+- **new** **Replay General tour** — Config → General → Advanced → System & tools → *Show General tour again*.
+
+### Config → Bookmarks
+
+- **new** **Bookmarks editor tour** — 10-step guided tour on first visit to the Bookmarks tab: split layout, structure workspace, page/filter/sort, quick-add vs full add, list search, reorder and selection, detail editor, bulk toolbar, favicon refresh policy, and Save.
+- **new** **Replay Bookmarks tour** — same System & tools section → *Show Bookmarks tour again*.
+
+### Tours (shared)
+
+- **new** **Once per install** — each tour runs automatically only until completed (`configGeneralTourCompleted` / `configBookmarksTourCompleted` synced with the server).
+- **fix** **Stable spotlight UX** — CSS cutout highlight (no jumping overlay panels); tours exclude each other and the dashboard feature tour.
 
 ---
 
@@ -540,7 +562,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard); nextDa
 ## How releases are numbered
 
 - **Calendar versions** — `v2026.MM.P` = year, month, patch (e.g. `v2026.05.7`).
-- **In-app token** — `2026.06-dashboard-release-v35` in `whats-new-modal.js` tracks the dashboard “seen” state separately from git tags.
+- **In-app token** — `2026.06-dashboard-release-v36` in `whats-new-modal.js` tracks the dashboard “seen” state separately from git tags.
 - **Unreleased** — work on `main` not yet tied to a numbered release; may appear in README *Unreleased* until shipped.
 
 When you ship a release, add a dated section here, bump the What's new modal, and clear **Unreleased** items that are included.

@@ -111,12 +111,13 @@ Data is stored under `./data` by default.
 ```
 Install → Open URL in browser → Onboarding wizard (optional)
     → Dashboard (may be empty) → Config to add pages/bookmarks
-    → Optional: feature tour, tuning wizard, browser extension
+    → Optional: config guided tours (General / Bookmarks), feature tour, tuning wizard, browser extension
 ```
 
 1. **Onboarding** — Language, open-in-new-tab, weather/date, search behaviour. You can skip and change everything later in **Config → General**.
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
 3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
+4. **Guided config tours** — The first time you open **General** or **Bookmarks** on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
 
 ---
 
@@ -231,6 +232,7 @@ Follow this path once; later you will mix steps freely.
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
 | 7 | Enable a theme you like | **config → general → appearance** |
+| 7b | (Optional) Let the **General** and **Bookmarks** guided tours run when you open those tabs | `/config#general`, `/config#bookmarks` |
 | 8 | Create a ZIP backup | **config → backups** |
 | 9 | (Optional) Install browser extension | `extension/` folder |
 | 10 | (Optional) Import old browser bookmarks | **config → backups → Import from Browser** |
@@ -271,6 +273,10 @@ Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on t
 ### 7.5 Config → bookmarks (bulk and detail)
 
 **config → bookmarks**: list on the left, detail on the right. Best for many edits, tags, notes, favicon upload, and bulk actions.
+
+At the top, the **structure workspace** manages pages and categories; below that you pick the active page, filter by category, and sort the list. **Quick add (⚡)** inserts a URL with minimal fields; **+ Add** creates a blank row and opens the full detail panel. Select multiple rows for the **bulk toolbar** (move, pin, status, favicon refresh, delete). Bookmark changes apply to the dashboard only after **Save** in the config header.
+
+The first time you open this tab on a desktop-width window, a **10-step guided tour** walks through these areas (see [Guided config tours](#guided-config-tours)).
 
 ### 7.6 Browser extension
 
@@ -595,8 +601,23 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 ### Essentials vs Advanced (general)
 
 - **Essentials** — Language, appearance, layout, everyday bookmark options.  
-- **Advanced** — Smart collections, status, branding, backups pointers, feature tour, what’s new.  
+- **Advanced** — Smart collections, status, branding, backups pointers, system tools (tours, onboarding replay), feature tour, what’s new.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
+
+### Guided config tours
+
+Two **one-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The page scroll is locked per step so the highlight stays stable. Tours need a **desktop-width** window (the mobile config layout does not run them).
+
+| Tour | When it starts | What it covers |
+|------|----------------|----------------|
+| **General** (9 steps) | First visit to **config → general** | Welcome, Essentials vs Advanced, appearance, bookmark behaviour, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
+| **Bookmarks** (10 steps) | First visit to **config → bookmarks** | Split layout, structure (pages/categories), page filter and sort, quick-add vs **+ Add**, list search, list reorder and selection, detail editor, bulk toolbar, favicon refresh policy, **Save** |
+
+**Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted` / `configBookmarksTourCompleted`) and in browser `localStorage`, so it does not repeat on every visit.
+
+**Replay** — Open **config → general → Advanced** and scroll to **System & tools**. Use **Show General tour again** or **Show Bookmarks tour again**. Switch to the matching tab first if the tour does not start.
+
+**Not the same as** — The dashboard **feature tour** (search, finders, commands — launched from the discoverability spotlight after What’s new), the **tuning wizard** (language → theme → extension on the dashboard), or **first-run onboarding**. Those are separate one-time flows.
 
 ### Config keyboard
 
@@ -675,7 +696,7 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On small screens, config limits to **General** and **Help**; use desktop for full bookmark editing.
+On small screens, config limits to **General** and **Help**; use desktop for full bookmark editing and for **guided config tours** (General and Bookmarks).
 
 ### Touch gestures
 
@@ -763,6 +784,13 @@ Bookmark index may have changed after reorder/delete. Link still opens the right
 ### Settings not applying
 
 Click **Save** in config (sticky bar). Some fields autosave — watch for “unsaved” indicator.
+
+### Config guided tour does not start
+
+- Use a **wider browser window** or turn off mobile device emulation.  
+- Open the correct tab (**general** or **bookmarks**) before replaying from **System & tools**.  
+- If you already completed the tour, use **Show General tour again** or **Show Bookmarks tour again** in **config → general → Advanced → System & tools**.  
+- Refresh the page if the editor is still loading, then try again.
 
 ### Weather not showing
 
