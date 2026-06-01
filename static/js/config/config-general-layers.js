@@ -147,9 +147,16 @@ class ConfigGeneralLayers {
                         <button type="button" id="enable-smart-collections-info-btn" class="info-button" data-i18n-aria="config.enableSmartCollectionsInfoTitle" aria-label="Smart collections information">ℹ</button>
                     </label>
                 </div>
+                <div class="checkbox-tree-item checkbox-tree-child smart-collections-action-row">
+                    <span class="tree-symbol">└──</span>
+                    <div class="config-advanced-action-row">
+                        <p id="smart-collections-master-hint" class="config-advanced-action-text" data-i18n="config.enableSmartCollectionsHint">Turns smart collections on or off. Configure each collection in Advanced.</p>
+                        <div class="config-advanced-action-actions">
+                            <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="smart-collections" data-i18n="config.configureSmartCollections">Configure in Advanced →</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p id="smart-collections-master-hint" class="setting-description" data-i18n="config.enableSmartCollectionsHint">Turns smart collections on or off. Configure each collection in Advanced.</p>
-            <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="smart-collections" data-i18n="config.configureSmartCollections">Configure in Advanced →</button>
         `;
 
         full.parentNode.insertBefore(summary, full);

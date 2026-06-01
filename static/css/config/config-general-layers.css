@@ -112,8 +112,8 @@
     padding-bottom: 0.55rem;
 }
 
-.general-card-compact .general-layer-jump {
-    margin-top: 0.35rem;
+.general-card-compact .checkbox-tree {
+    margin-bottom: 0;
 }
 
 .general-layer-mode-all [data-general-panel][hidden] {

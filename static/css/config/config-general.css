@@ -305,6 +305,11 @@ body {
     min-width: 0;
 }
 
+.smart-collections-action-row .config-advanced-action-row {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 @media (max-width: 640px) {
     .config-advanced-action-row {
         flex-direction: column;
