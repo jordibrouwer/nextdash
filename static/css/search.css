@@ -659,15 +659,18 @@ body.no-animations .search-button[data-tooltip]::after {
 }
 
 #search-button .search-button-icon,
+.add-bookmark-button .search-button-icon,
 .commands-button .search-button-icon,
 .finders-button .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
 }
-#search-button .search-button-icon    { animation-delay: 1s;   }
-.commands-button .search-button-icon  { animation-delay: 4.6s; }
-.finders-button .search-button-icon   { animation-delay: 8.2s; }
+#search-button .search-button-icon         { animation-delay: 1s;   }
+.add-bookmark-button .search-button-icon  { animation-delay: 2.8s; }
+.commands-button .search-button-icon       { animation-delay: 4.6s; }
+.finders-button .search-button-icon        { animation-delay: 8.2s; }
 
 body.no-animations #search-button .search-button-icon,
+body.no-animations .add-bookmark-button .search-button-icon,
 body.no-animations .commands-button .search-button-icon,
 body.no-animations .finders-button .search-button-icon {
     animation: none !important;

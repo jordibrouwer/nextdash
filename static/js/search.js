@@ -362,17 +362,17 @@ class SearchComponent {
             return;
         }
 
-        // + opens the quick-add omnibox (never feeds into search)
+        // + opens the full new-bookmark modal (never feeds into search)
         if (e.key === '+') {
             e.preventDefault();
-            window.dashboardInstance?.showOmnibox?.();
+            window.dashboardInstance?.quickAddWidget?.toggle?.();
             return;
         }
 
-        // & opens the full new-bookmark modal (never feeds into search)
+        // & opens the quick-add omnibox (never feeds into search)
         if (e.key === '&') {
             e.preventDefault();
-            window.dashboardInstance?.quickAddWidget?.toggle?.();
+            window.dashboardInstance?.showOmnibox?.();
             return;
         }
 

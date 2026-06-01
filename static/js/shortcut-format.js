@@ -34,16 +34,17 @@
                 .join('<span class="kbd-or"> / </span>');
         }
 
+        // Lone "+" is a key, not a chord separator (would split to empty otherwise).
+        if (raw.length <= 4 && !/\s/.test(raw)) {
+            return wrapKbd(raw);
+        }
+
         if (/\s*\+\s*/.test(raw)) {
             return raw
                 .split(/\s*\+\s*/)
                 .map(wrapKbd)
                 .filter(Boolean)
                 .join('<span class="kbd-sep">+</span>');
-        }
-
-        if (raw.length <= 4 && !/\s/.test(raw)) {
-            return wrapKbd(raw);
         }
 
         return escapeHtml(raw);

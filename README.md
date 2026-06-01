@@ -75,8 +75,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Esc` — clear selection or close overlay
 
 **Bookmarks**
-- `+` — quick-add omnibox: type `name | url | shortcut` in one line
-- `&` — open the full new-bookmark modal (dashboard only, when no input is focused)
+- `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
+- `&` — quick-add omnibox: type `name | url | shortcut` in one line
 - `Ctrl + Shift + A` — same full new-bookmark modal from anywhere
 - `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled
 - `;` — inline-edit the focused bookmark
@@ -94,7 +94,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `! or F1 or Ctrl+/` — keyboard cheat sheet (filterable with a type-to-search input)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
-- `:new` — open new-bookmark modal (same as `&` / `Ctrl+Shift+A`)
+- `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)
 - `:note` — edit the note of the focused bookmark
 - `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
 - `:tag <tagname>` — add or remove a tag on the selected bookmark
@@ -241,6 +241,15 @@ See `extension/README.md` for full usage and development notes.
 ---
 
 ## Changelog
+
+### Unreleased
+
+**Bookmark shortcuts**
+- **`+`** — full new-bookmark modal on the dashboard (toolbar `+` button shows only this shortcut in the hover tooltip)
+- **`&`** — quick-add omnibox (`name | url | shortcut` in one line)
+- **`Ctrl + Shift + A`** — same full modal from anywhere (unchanged; not shown on the toolbar tooltip)
+
+---
 
 ### v2026.05.7 — May 2026
 

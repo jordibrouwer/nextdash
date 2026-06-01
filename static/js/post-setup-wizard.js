@@ -88,7 +88,7 @@ class PostSetupWizard {
                 title: this.t('postSetup.bookmarkTitle', 'Add your first bookmark'),
                 body: this.t(
                     'postSetup.bookmarkBody',
-                    'Press + for a quick one-line add, or & / Ctrl+Shift+A for the full bookmark form. You can also manage bookmarks in config.'
+                    'Press + for the full bookmark form, or & for a quick one-line add. You can also manage bookmarks in config.'
                 ),
                 primary: this.t('postSetup.addBookmark', 'Add bookmark now'),
                 primaryAction: () => {

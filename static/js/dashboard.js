@@ -1305,10 +1305,7 @@ class Dashboard {
         const btn = document.getElementById('quick-add-toolbar-btn');
         const label = btn?.querySelector('.search-button-label');
         if (!label) return;
-        const isTouch = this.isCoarsePointer() || window.MobileExperience?.isMobileLayout?.();
-        const key = isTouch ? 'dashboard.addBookmarkToolbarMobile' : 'dashboard.addBookmarkShort';
-        const fallback = isTouch ? '+ Bookmark' : 'bookmark';
-        label.textContent = this.language?.t(key) || fallback;
+        label.textContent = this.language?.t('dashboard.addBookmarkShort') || 'bookmark';
     }
 
     shouldShowEmptyStateKeyboardActions() {
@@ -1317,16 +1314,16 @@ class Dashboard {
 
     buildEmptyStateAddLabel() {
         if (this.isCoarsePointer()) {
-            return this.language?.t('dashboard.emptyStateAddAction') || '+ Add bookmark';
+            return this.language?.t('dashboard.emptyStateAddAction') || '+ bookmark';
         }
-        return this.language?.t('dashboard.emptyStateAddAction') || '+ Add bookmark';
+        return this.language?.t('dashboard.emptyStateAddAction') || '+ bookmark';
     }
 
     buildEmptyStateAddHint() {
         if (this.isCoarsePointer()) {
             return this.language?.t('dashboard.emptyStateAddTouch') || 'Tap + bookmark in the bar below';
         }
-        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press & or Ctrl+Shift+A for the full add-bookmark form (+ for quick-add line)';
+        return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + for the full add-bookmark form (& for quick-add line)';
     }
 
     maybeShowPostInstallTuning() {
@@ -1392,9 +1389,9 @@ class Dashboard {
         const isMobile = window.MobileExperience?.shouldSkipHeavyUi?.() === true;
         const msg = isMobile
             ? (this.language?.t('dashboard.firstBookmarkGuideMobile')
-                || 'Tap + Bookmark in the bar below to add your first bookmark. In config → bookmarks, use ⚡ for the full form.')
+                || 'Tap + bookmark in the bar below to add your first bookmark. In config → bookmarks, use ⚡ for the full form.')
             : (this.language?.t('dashboard.firstBookmarkGuide')
-                || 'Add your first bookmark with & or Ctrl+Shift+A (+ for quick-add), or set up pages in config → pages.');
+                || 'Add your first bookmark with + (& for quick-add), or set up pages in config → pages.');
         this.showNotification(msg, 'info', { duration: 10000 });
         try {
             localStorage.setItem(storageKey, '1');
@@ -1445,7 +1442,7 @@ class Dashboard {
         };
 
         const defs = [
-            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['&', 'Ctrl+Shift+A'] },
+            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+'] },
             { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
@@ -1790,7 +1787,7 @@ class Dashboard {
             'Tip: <code>/</code> start fuzzy search',
             'Tip: <code>1-9</code> jump to page',
             'Tip: <code>,</code> page overview — see all pages with bookmark counts',
-            'Tip: <code>+</code> quick-add — naam | url | shortcut in één invoer',
+            'Tip: <code>&amp;</code> quick-add — naam | url | shortcut in één invoer',
             'Tip: <code>Shift+←/→</code> switch page',
             'Tip: <code>Enter</code> open selected bookmark',
             'Tip: <code>Space</code> open selected bookmark',
@@ -2384,9 +2381,10 @@ class Dashboard {
                 item('Esc', 'navEscClear', 'Clear selection / close overlay'),
             ]),
             section('sectionBookmarks', 'Bookmarks', [
-                item('+', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
+                item('&', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
                 item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
-                item('& or Ctrl + Shift + A', 'bmNewBookmarkModal', 'Open full new-bookmark modal (& on dashboard; Ctrl+Shift+A anywhere)'),
+                item('+', 'bmNewBookmarkModal', 'Open full new-bookmark modal (+ on dashboard)'),
+                item('Ctrl + Shift + A', 'bmNewBookmarkModalGlobal', 'Open full new-bookmark modal from anywhere'),
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
@@ -2407,7 +2405,7 @@ class Dashboard {
                 item('category: / tag: / page: / status:', 'smFieldFilters', 'Filter results by field directly in the search bar'),
             ]),
             section('sectionCommandsBookmarks', 'Commands — bookmarks', [
-                item(':new', 'cbNew', 'Open new-bookmark modal (same as & / Ctrl+Shift+A)'),
+                item(':new', 'cbNew', 'Open new-bookmark modal (same as + / Ctrl+Shift+A)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
                 item(':tag <name>', 'cbTag', 'Add or remove a tag on the focused bookmark; omit name to see current tags'),

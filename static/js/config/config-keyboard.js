@@ -39,19 +39,19 @@ class ConfigKeyboard {
     getFixedBookmarkBindings() {
         return [
             {
-                keys: ['+'],
+                keys: ['&'],
                 descriptionKey: 'config.keyboardQuickAddDesc',
                 descriptionFallback: 'Quick-add omnibox — type name | url | shortcut in one line'
             },
             {
-                keys: ['&', 'Ctrl+Shift+A'],
+                keys: ['+', 'Ctrl+Shift+A'],
                 descriptionKey: 'config.keyboardNewBookmarkModalDesc',
-                descriptionFallback: 'Full new-bookmark modal (& on dashboard; Ctrl+Shift+A anywhere)'
+                descriptionFallback: 'Full new-bookmark modal (+ on dashboard; Ctrl+Shift+A anywhere)'
             },
             {
                 keys: [':new'],
                 descriptionKey: 'config.keyboardCommandNewDesc',
-                descriptionFallback: 'Open new-bookmark modal from command mode (same as & / Ctrl+Shift+A)'
+                descriptionFallback: 'Open new-bookmark modal from command mode (same as + / Ctrl+Shift+A)'
             }
         ];
     }

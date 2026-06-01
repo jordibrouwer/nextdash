@@ -190,11 +190,6 @@ kbd,
     font-family: var(--font-family-main);
 }
 
-.search-button--add .search-button-icon {
-    font-size: 1.15em;
-    font-weight: var(--font-weight-black, 900);
-}
-
 .search-flow-hint .sfh-seg-swipe.hidden {
     display: none;
 }

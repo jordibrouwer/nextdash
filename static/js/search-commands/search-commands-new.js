@@ -1,6 +1,6 @@
 /**
  * Search Command: :new
- * Unified bookmark add modal (also used by QuickAdd / & / Ctrl+Shift+A)
+ * Unified bookmark add modal (also used by QuickAdd / + / Ctrl+Shift+A)
  */
 
 class SearchCommandNew {

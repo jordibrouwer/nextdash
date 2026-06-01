@@ -1,6 +1,6 @@
 /**
  * Quick Add Widget — delegates to the unified :new bookmark modal.
- * Shortcuts: & (dashboard) and Ctrl+Shift+A (global).
+ * Shortcuts: + (dashboard) and Ctrl+Shift+A (global).
  */
 class QuickAddWidget {
     constructor(dashboard) {
