@@ -2541,6 +2541,34 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     margin-bottom: 1rem;
 }
 
+.recent-bookmarks-modal-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.recent-bookmarks-open-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.recent-bookmarks-open-btn.modal-button {
+    flex: 1 1 auto;
+    min-width: min(100%, 12rem);
+    justify-content: center;
+}
+
+.recent-bookmarks-open-hint {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    line-height: 1.35;
+}
+
 .recent-bookmarks-modal-list {
     display: flex;
     flex-direction: column;
