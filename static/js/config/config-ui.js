@@ -81,25 +81,29 @@ class ConfigUI {
             // Keep the selected page when switching tabs; only refresh custom-select chrome.
             // (Previously this reset to pagesData[0] whenever value !== first page, which
             // forced page 1 and saved new bookmarks to the wrong file.)
-            if (typeof configManager !== 'undefined') {
+            const mgr = window.configManager;
+            if (mgr) {
                 if (targetTab === 'bookmarks' || targetTab === 'categories') {
-                    configManager.refreshCustomSelects();
-                    configManager.refreshPageDropdowns();
+                    mgr.refreshCustomSelects();
+                    mgr.refreshPageDropdowns();
                 } else if (targetTab === 'pages') {
-                    configManager.renderPagesTab();
+                    mgr.renderPagesTab();
                 }
-                if (targetTab === 'categories' && typeof configManager.loadPageCategories === 'function') {
-                    void configManager.loadPageCategories(configManager.currentCategoriesPageId);
-                } else if (targetTab === 'stats' && configManager.stats) {
-                    configManager.stats.refresh(configManager);
-                } else if (targetTab === 'keyboard' && configManager.keyboard) {
-                    configManager.keyboard.refresh(configManager);
-                } else if (targetTab === 'tags' && configManager.tags) {
-                    configManager.tags.refresh(configManager);
-                } else if (targetTab === 'collections' && configManager.collections) {
-                    configManager.collections.refresh(configManager);
+                if (targetTab === 'categories' && typeof mgr.loadPageCategories === 'function') {
+                    void mgr.loadPageCategories(mgr.currentCategoriesPageId);
+                } else if (targetTab === 'stats' && mgr.stats) {
+                    mgr.stats.refresh(mgr);
+                } else if (targetTab === 'keyboard' && mgr.keyboard) {
+                    mgr.keyboard.refresh(mgr);
+                } else if (targetTab === 'tags' && mgr.tags) {
+                    mgr.tags.refresh(mgr);
+                } else if (targetTab === 'collections' && mgr.collections) {
+                    mgr.collections.refresh(mgr);
                 } else if (targetTab === 'colors') {
-                    void configManager.ensureColorsEditor?.();
+                    void mgr.ensureColorsEditor?.();
+                }
+                if (targetTab === 'general' && !mgr._configGeneralTourActive && !mgr._configGeneralTourStarting) {
+                    mgr.scheduleConfigGeneralTour?.();
                 }
             }
         };
@@ -172,6 +176,8 @@ class ConfigUI {
                 this._scrollTabIntoView(button);
             });
         });
+
+        this.switchToTab = switchToTab;
 
         // Fade mask: toggle is-scrolled-end on wrapper when tabs are fully scrolled
         const tabBar = document.querySelector('.config-controls-wrapper .tabs');

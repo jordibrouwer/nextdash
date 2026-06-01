@@ -1,0 +1,95 @@
+/* Config → General tour — dim via highlight box-shadow (no JS-positioned hole panels) */
+
+body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-general-tour-card {
+    visibility: hidden;
+}
+
+.config-general-tour-card {
+    position: fixed;
+    z-index: 12600;
+    left: 50%;
+    right: auto;
+    top: auto !important;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    width: min(640px, 96vw);
+    max-height: min(55vh, calc(100vh - 12rem - env(safe-area-inset-bottom, 0px)));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-primary);
+    background: var(--background-modal, var(--background-primary));
+    color: var(--text-primary);
+    padding: 1rem;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-success) 22%, transparent),
+        0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.config-general-tour-progress {
+    display: block;
+    font-size: var(--font-size-controls, 0.875rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    margin-bottom: 0.35rem;
+}
+
+.config-general-tour-title {
+    display: block;
+    font-size: var(--font-size-category, 1.125rem);
+    font-weight: var(--font-weight-bold, 700);
+    line-height: 1.35;
+    color: var(--text-primary);
+    margin: 0 0 0.35rem;
+}
+
+.config-general-tour-body {
+    display: block;
+    font-size: var(--font-size-text, 0.875rem);
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+}
+
+.config-general-tour-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.config-general-tour-btn {
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-controls, 0.875rem);
+}
+
+.config-general-tour-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Cutout dim + green frame — moves with the element, no separate overlay sync */
+.config-general-tour-highlight {
+    position: relative !important;
+    z-index: 12550 !important;
+    scroll-margin: 5rem 1rem 13rem;
+    outline: 3px solid var(--accent-success) !important;
+    outline-offset: 3px;
+    background-color: var(--background-primary) !important;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.58) !important;
+}
+
+html.config-general-tour-scroll-lock,
+html.config-general-tour-scroll-lock body {
+    overflow: hidden;
+}
+
+html.config-general-tour-scroll-lock body {
+    position: fixed;
+    width: 100%;
+    left: 0;
+    right: 0;
+}

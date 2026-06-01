@@ -295,7 +295,8 @@ class ConfigSettings {
             const flat = this.language?.translations?.config?.[suffix];
             if (typeof flat === 'string') return flat;
             const key = `config.${suffix}`;
-            const v = this.language?.t?.(key);
+            const v =
+                this.language && typeof this.language.t === 'function' ? this.language.t(key) : key;
             return v && v !== key ? v : fallback;
         };
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()

@@ -21,10 +21,10 @@ class ConfigGeneralLayers {
     }
 
     t(key, fallback) {
-        const fn = window.configManager?.language?.t;
-        if (!fn) return fallback;
+        const lang = window.configManager?.language;
+        if (!lang || typeof lang.t !== 'function') return fallback;
         const full = `config.${key}`;
-        const v = fn(full);
+        const v = lang.t(full);
         return v !== full ? v : fallback;
     }
 
@@ -311,6 +311,13 @@ class ConfigGeneralLayers {
     }
 
     applyLayer(layer, { updateHash = true, scrollPanel = null } = {}) {
+        if (!this.root) {
+            this.root = document.querySelector('.general-layout');
+            this.toolbar = this.toolbar || document.getElementById('general-layer-toolbar');
+            this.advancedNav = this.advancedNav || document.getElementById('general-advanced-nav');
+        }
+        if (!this.root) return;
+
         this.layer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
         try {
             localStorage.setItem(this.storageKey, this.layer);
@@ -393,6 +400,7 @@ class ConfigGeneralLayers {
     }
 
     scrollToPanel(panelId, { switchLayer = false } = {}) {
+        if (!this.root) return;
         const card = this.root.querySelector(`[data-general-panel="${panelId}"]`);
         if (!card) return;
 
@@ -404,7 +412,8 @@ class ConfigGeneralLayers {
         }
 
         card.classList.remove('is-collapsed');
-        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const tourActive = document.body.hasAttribute('data-config-general-tour-active');
+        card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
     }
 
     setupSmartCollectionsMaster() {

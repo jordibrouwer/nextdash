@@ -94,6 +94,7 @@
     .dashboard-grid.packed-columns {
         display: flex !important;
         flex-wrap: wrap;
+        justify-content: center;
         grid-template-columns: unset !important;
         gap: 1.5rem;
     }

@@ -205,7 +205,6 @@ class Dashboard {
         this.weatherData = null;
         this.inlineEditingBookmarkIndex = null;
         this.onboardingStartedInSession = false;
-        this.allowPostInstallTuningThisSession = false;
         this.init();
     }
     
@@ -298,7 +297,6 @@ class Dashboard {
             document.body.classList.remove('loading');
         }
         this.updateMiniStatusLine();
-        this.markPostInstallWizardsSeenForEstablishedInstall();
         this.discoverabilityQueue = typeof window.DiscoverabilityQueue === 'function'
             ? new window.DiscoverabilityQueue(this)
             : null;
@@ -958,10 +956,19 @@ class Dashboard {
             'data-dashboard-stack-categories',
             this.shouldStackDashboardCategories() ? 'true' : 'false'
         );
+        const colMin = 'var(--dashboard-column-min, 250px)';
+        const colMax = 'var(--dashboard-column-max, 300px)';
+        grid.style.setProperty(
+            '--dashboard-grid-max-width',
+            `calc(${colCount} * ${colMax} + ${Math.max(0, colCount - 1)} * var(--gap, 1.5rem))`
+        );
+
         if (packed) {
             grid.style.removeProperty('grid-template-columns');
+        } else if (colCount === 1) {
+            grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
         } else {
-            grid.style.gridTemplateColumns = `repeat(${colCount}, minmax(0, 1fr))`;
+            grid.style.gridTemplateColumns = `repeat(${colCount}, minmax(${colMin}, ${colMax}))`;
         }
 
         if (typeof this._syncLauncherBtn === 'function') {
@@ -1334,83 +1341,6 @@ class Dashboard {
         return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + for the full add-bookmark form (& for quick-add line)';
     }
 
-    maybeShowPostInstallTuning() {
-        if (!this.allowPostInstallTuningThisSession) return false;
-        if (typeof window.PostInstallTuningWizard !== 'function') return false;
-        const tuning = new window.PostInstallTuningWizard({
-            dashboard: this,
-            language: this.language
-        });
-        return tuning.start();
-    }
-
-    /**
-     * Existing installs should never see post-onboarding wizards on a normal visit.
-     * Mark them seen when onboarding was already completed before this session.
-     */
-    markPostInstallWizardsSeenForEstablishedInstall() {
-        if (this.allowPostInstallTuningThisSession) return;
-        if (this.settings?.onboardingCompleted !== true) return;
-        try {
-            const hasBookmarks = (Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0)
-                || (Array.isArray(this.bookmarks) && this.bookmarks.length > 0);
-            const sawOnboardingBefore = Boolean(
-                localStorage.getItem('nextDashOnboardingSeenV2')
-                || localStorage.getItem('nextDashOnboardingSeen')
-            );
-            if (!hasBookmarks && !sawOnboardingBefore) return;
-            localStorage.setItem('nextdash-post-tuning-wizard-v1', '1');
-            localStorage.setItem('nextdash-post-setup-wizard-v1', '1');
-            localStorage.setItem('nextdash-first-bookmark-guide-v1', '1');
-        } catch { /* ignore */ }
-    }
-
-    maybeShowPostSetupWizard(options = {}) {
-        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
-        const skipTuning = options.skipTuning === true;
-        if (!skipTuning && this.maybeShowPostInstallTuning()) return;
-        if (typeof window.PostSetupWizard !== 'function') {
-            this.maybeShowFirstBookmarkGuide();
-            return;
-        }
-        const wizard = new window.PostSetupWizard({
-            dashboard: this,
-            language: this.language
-        });
-        if (wizard.shouldStart()) {
-            wizard.start();
-            return;
-        }
-        this.maybeShowFirstBookmarkGuide();
-    }
-
-    maybeShowFirstBookmarkGuide() {
-        const storageKey = 'nextdash-first-bookmark-guide-v1';
-        try {
-            if (localStorage.getItem(storageKey)) return;
-        } catch { return; }
-        const hasAny = (Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0)
-            || (Array.isArray(this.bookmarks) && this.bookmarks.length > 0);
-        if (hasAny) return;
-        if (!this.settings?.onboardingCompleted) return;
-
-        const isMobile = window.MobileExperience?.shouldSkipHeavyUi?.() === true;
-        const msg = isMobile
-            ? (this.language?.t('dashboard.firstBookmarkGuideMobile')
-                || 'Tap + bookmark in the bar below to add your first bookmark. In config → bookmarks, use ⚡ for the full form.')
-            : (this.language?.t('dashboard.firstBookmarkGuide')
-                || 'Add your first bookmark with + (& for quick-add), or set up pages in config → pages.');
-        this.showNotification(msg, 'info', { duration: 10000 });
-        try {
-            localStorage.setItem(storageKey, '1');
-        } catch { /* ignore */ }
-        setTimeout(() => {
-            const btn = document.getElementById('quick-add-toolbar-btn');
-            if (btn) btn.classList.add('first-bookmark-pulse');
-            setTimeout(() => btn?.classList.remove('first-bookmark-pulse'), 4000);
-        }, 400);
-    }
-
     createHealthCountBadge(count, type) {
         const badge = document.createElement('span');
         const n = count > 99 ? '99+' : String(count);
@@ -1703,8 +1633,6 @@ class Dashboard {
                 await dash.saveSettings();
                 dash.initializeButtonTipsRotation();
                 dash.onboardingStartedInSession = false;
-                dash.allowPostInstallTuningThisSession = true;
-                window.PostSetupTiming?.recordOnboardingCompletedAt?.();
                 dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
                 window.PwaInstallHint?.scheduleShow?.({ afterOnboarding: true });
             }

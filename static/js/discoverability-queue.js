@@ -1,11 +1,11 @@
 /**
  * Post-onboarding discoverability queue — one prompt per session, priority order.
- * Journey: tuning → post-setup → what's new → recent/open spotlight → feature-tour spotlight
+ * Journey: what's new → recent/open spotlight → feature-tour spotlight
  */
 (function () {
     'use strict';
 
-    const JOURNEY = ['tuning', 'post-setup', 'whats-new', 'recent-open-spotlight', 'tour-spotlight'];
+    const JOURNEY = ['whats-new', 'recent-open-spotlight', 'tour-spotlight'];
     const SESSION_SHOWN_KEY = 'nextdash:discoverability-session-shown';
     const SESSION_DEFER_KEY = 'nextdash:discoverability-deferred';
     const TOUR_SPOTLIGHT_KEY = 'nextdash:feature-tour-spotlight-v1';
@@ -115,17 +115,6 @@
             const dash = this.dashboard;
             if (!dash?.settings?.onboardingCompleted) return false;
 
-            if (id === 'tuning') {
-                if (typeof window.PostInstallTuningWizard !== 'function') return false;
-                const wizard = new window.PostInstallTuningWizard({ dashboard: dash, language: dash.language });
-                return wizard.shouldStart();
-            }
-            if (id === 'post-setup') {
-                if (typeof window.PostSetupWizard !== 'function') return false;
-                if (window.PostSetupTiming?.isPostSetupEligible?.() === false) return false;
-                const wizard = new window.PostSetupWizard({ dashboard: dash, language: dash.language });
-                return wizard.shouldStart();
-            }
             if (id === 'whats-new') {
                 if (typeof window.openWhatsNewModal !== 'function') return false;
                 try {
@@ -171,49 +160,12 @@
 
             this.markSessionShown();
 
-            if (itemId === 'tuning') {
-                this.runTuning(meta, onDefer, onComplete);
-            } else if (itemId === 'post-setup') {
-                this.runPostSetup(meta, onDefer, onComplete);
-            } else if (itemId === 'whats-new') {
+            if (itemId === 'whats-new') {
                 this.runWhatsNew(meta, onDefer, onComplete);
             } else if (itemId === 'recent-open-spotlight') {
                 this.runRecentOpenSpotlight(meta, onDefer, onComplete);
             } else if (itemId === 'tour-spotlight') {
                 this.runTourSpotlight(meta, onDefer, onComplete);
-            }
-        }
-
-        runTuning(meta, onDefer, onComplete) {
-            const dash = this.dashboard;
-            const wizard = new window.PostInstallTuningWizard({
-                dashboard: dash,
-                language: dash.language,
-                queueMeta: meta,
-                onQueueDefer: onDefer,
-                onQueueComplete: onComplete,
-            });
-            this._activeClose = () => wizard.close?.();
-            if (!wizard.start()) {
-                onComplete();
-                this._activeClose = null;
-            }
-        }
-
-        runPostSetup(meta, onDefer, onComplete) {
-            const dash = this.dashboard;
-            const wizard = new window.PostSetupWizard({
-                dashboard: dash,
-                language: dash.language,
-                queueMeta: meta,
-                onQueueDefer: onDefer,
-                onQueueComplete: onComplete,
-            });
-            this._activeClose = () => wizard.close?.();
-            wizard.start();
-            if (!wizard.card) {
-                onComplete();
-                this._activeClose = null;
             }
         }
 

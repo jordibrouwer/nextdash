@@ -42,9 +42,12 @@ class ConfigLanguage {
     t(key) {
         if (typeof key !== 'string') return String(key);
         const keys = key.split('.');
-        let value = this.translations;
+        let value = this.translations ?? {};
         for (const k of keys) {
-            value = value?.[k];
+            if (value == null || typeof value !== 'object') {
+                return key;
+            }
+            value = value[k];
         }
         return typeof value === 'string' ? value : key;
     }

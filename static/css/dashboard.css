@@ -532,6 +532,8 @@ body {
 
 /* Dashboard Grid */
 .dashboard-grid {
+    --dashboard-column-min: 250px;
+    --dashboard-column-max: 300px;
     display: grid;
     row-gap: 3rem;
     column-gap: 1.5rem;
@@ -593,6 +595,7 @@ body {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-start;
+    justify-content: center;
     grid-template-columns: unset;
 }
 
@@ -600,9 +603,30 @@ body {
     display: flex;
     flex-direction: column;
     gap: 3rem;
-    flex: 0 0 calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3));
-    max-width: calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3));
+    flex: 0 1 var(--dashboard-column-max, 300px);
+    flex-basis: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
+    );
+    max-width: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
+    );
     min-width: 0;
+}
+
+/* Center column block when the viewport is wider than the configured column count needs */
+@media (min-width: 768px) {
+    .dashboard-grid:not(.packed-columns):not(.layout-launcher) {
+        width: fit-content;
+        max-width: min(100%, var(--dashboard-grid-max-width, 100%));
+        margin-inline: auto;
+        justify-content: center;
+    }
+
+    .layout-launcher.packed-columns {
+        justify-content: flex-start;
+    }
 }
 
 .dashboard-grid.layout-compact.packed-columns .dashboard-column {
