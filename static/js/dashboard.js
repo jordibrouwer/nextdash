@@ -1705,6 +1705,7 @@ class Dashboard {
         if (this.onboardingStartedInSession) {
             try {
                 localStorage.removeItem('nextdash:feature-tour-spotlight-v1');
+                localStorage.removeItem('nextdash:recent-open-spotlight-v1');
                 localStorage.removeItem('nextdash:search-flow-hint-v1');
             } catch {}
         }
@@ -1768,6 +1769,12 @@ class Dashboard {
 
         const priorityTips = [
             'Tip: <code>*</code> recent',
+            ...[
+                ['dashboard.tipOpenLastRecent', 'Tip: <code>*</code> shows recent bookmarks — <code>:open last 5</code> in command mode opens them in tabs'],
+            ].map(([key, fallback]) => {
+                const v = this.language?.t?.(key);
+                return v && v !== key ? v : fallback;
+            }).filter(Boolean),
             'Tip: <code>!</code> cheatsheet',
             'Tip: <code>↑/↓</code> navigate bookmarks',
             'Tip: <code>;</code> edit bookmark (highlighted row or focused link)',

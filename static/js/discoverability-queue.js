@@ -1,15 +1,21 @@
 /**
  * Post-onboarding discoverability queue — one prompt per session, priority order.
- * Journey: tuning → post-setup → what's new → feature-tour spotlight
+ * Journey: tuning → post-setup → what's new → recent/open spotlight → feature-tour spotlight
  */
 (function () {
     'use strict';
 
-    const JOURNEY = ['tuning', 'post-setup', 'whats-new', 'tour-spotlight'];
+    const JOURNEY = ['tuning', 'post-setup', 'whats-new', 'recent-open-spotlight', 'tour-spotlight'];
     const SESSION_SHOWN_KEY = 'nextdash:discoverability-session-shown';
     const SESSION_DEFER_KEY = 'nextdash:discoverability-deferred';
     const TOUR_SPOTLIGHT_KEY = 'nextdash:feature-tour-spotlight-v1';
+    const RECENT_OPEN_SPOTLIGHT_KEY = 'nextdash:recent-open-spotlight-v1';
     const WHATS_NEW_STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
+
+    const RECENT_OPEN_ICON_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 8v8M8 12h8"/>
+    </svg>`;
 
     function t(dashboard, key, fallback, vars) {
         const raw = dashboard?.language?.t?.(key);
@@ -132,6 +138,15 @@
                 }
                 return true;
             }
+            if (id === 'recent-open-spotlight') {
+                if (typeof window.FeatureSpotlight !== 'function') return false;
+                try {
+                    if (localStorage.getItem(RECENT_OPEN_SPOTLIGHT_KEY)) return false;
+                } catch {
+                    return false;
+                }
+                return true;
+            }
             if (id === 'tour-spotlight') {
                 try {
                     if (localStorage.getItem(TOUR_SPOTLIGHT_KEY)) return false;
@@ -162,6 +177,8 @@
                 this.runPostSetup(meta, onDefer, onComplete);
             } else if (itemId === 'whats-new') {
                 this.runWhatsNew(meta, onDefer, onComplete);
+            } else if (itemId === 'recent-open-spotlight') {
+                this.runRecentOpenSpotlight(meta, onDefer, onComplete);
             } else if (itemId === 'tour-spotlight') {
                 this.runTourSpotlight(meta, onDefer, onComplete);
             }
@@ -214,6 +231,51 @@
                 },
                 skipLaterText: t(dash, 'dashboard.discoverabilitySkipLater', 'Skip for later'),
             });
+        }
+
+        runRecentOpenSpotlight(meta, onDefer, onComplete) {
+            const dash = this.dashboard;
+            if (typeof window.FeatureSpotlight !== 'function') {
+                onComplete();
+                return;
+            }
+
+            const finish = () => {
+                document.getElementById('recent-bookmarks-button')?.classList.remove('first-bookmark-pulse');
+                onComplete();
+                this._activeClose = null;
+            };
+
+            const spotlight = new window.FeatureSpotlight({
+                language: dash.language,
+                dashboard: dash,
+                storageKey: RECENT_OPEN_SPOTLIGHT_KEY,
+                titleKey: 'recentOpenSpotlightTitle',
+                bodyKey: 'recentOpenSpotlightBody',
+                tryKey: 'recentOpenSpotlightTry',
+                closeKey: 'recentOpenSpotlightClose',
+                titleFallback: 'Recent bookmarks & :open last',
+                bodyFallback: 'Press * for recently opened links on this page. In command mode (:), type :open last 5 to open the last five in new tabs.',
+                tryFallback: 'Open recent',
+                closeFallback: 'Got it',
+                iconSvg: RECENT_OPEN_ICON_SVG,
+                queueMeta: meta,
+                onQueueDefer: onDefer,
+                onTry: () => dash.toggleRecentBookmarksModal?.(),
+                onDismiss: finish,
+            });
+
+            this._activeClose = () => {
+                spotlight._dismiss(true);
+            };
+
+            const recentBtn = document.getElementById('recent-bookmarks-button');
+            if (recentBtn) recentBtn.classList.add('first-bookmark-pulse');
+
+            if (!spotlight.show(900)) {
+                recentBtn?.classList.remove('first-bookmark-pulse');
+                finish();
+            }
         }
 
         runTourSpotlight(meta, onDefer, onComplete) {
