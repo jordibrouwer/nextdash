@@ -359,11 +359,8 @@ class ConfigUI {
      * @param {boolean} showStatus - Whether status is enabled
      */
     updateStatusOptionsVisibility(showStatus) {
-        const showPingCheckbox = document.getElementById('show-ping-checkbox');
-        const showPingLabel = showPingCheckbox ? showPingCheckbox.closest('.checkbox-tree-item') : null;
-        
-        if (showPingLabel) {
-            showPingLabel.style.display = showStatus ? 'flex' : 'none';
+        if (window.configManager?.settings?.updateStatusOptionsVisibility) {
+            window.configManager.settings.updateStatusOptionsVisibility(showStatus);
         }
     }
 }

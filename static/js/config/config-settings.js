@@ -1733,18 +1733,26 @@ class ConfigSettings {
      * @param {boolean} showStatus
      */
     updateStatusOptionsVisibility(showStatus) {
-        const statusNested = document.querySelector('.status-settings-nested');
-        
-        if (statusNested) {
-            if (showStatus) {
-                statusNested.style.display = 'block';
-            } else {
-                statusNested.style.display = 'none';
-                // Also uncheck ping when status is disabled
-                const showPingCheckbox = document.getElementById('show-ping-checkbox');
-                if (showPingCheckbox) {
-                    showPingCheckbox.checked = false;
-                }
+        const showStatusCheckbox = document.getElementById('show-status-checkbox');
+        if (!showStatusCheckbox) return;
+
+        const parentItem = showStatusCheckbox.closest('.checkbox-tree-item');
+        if (!parentItem?.parentNode) return;
+
+        const siblings = [...parentItem.parentNode.children];
+        const startIndex = siblings.indexOf(parentItem);
+
+        for (let i = startIndex + 1; i < siblings.length; i++) {
+            const sibling = siblings[i];
+            if (!sibling.classList.contains('checkbox-tree-child')) break;
+
+            sibling.classList.toggle('is-disabled', !showStatus);
+            sibling.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                input.disabled = !showStatus;
+            });
+            if (!showStatus) {
+                const ping = sibling.querySelector('#show-ping-checkbox');
+                if (ping) ping.checked = false;
             }
         }
     }

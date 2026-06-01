@@ -38,6 +38,7 @@ class ConfigGeneralLayers {
         this.setupLayerSwitcher();
         this.setupSmartCollectionsMaster();
         this.setupAdvancedNav();
+        this.refreshCheckboxTreeSymbols();
         this.applyLayer(this.getStoredLayer(), { updateHash: false });
         this.applyHash(window.location.hash);
         window.addEventListener('hashchange', () => this.applyHash(window.location.hash));
@@ -56,6 +57,34 @@ class ConfigGeneralLayers {
         this.assignPanelTiers();
         this.reorderPanels();
         this.root.dataset.layersReady = '1';
+    }
+
+    /**
+     * Set ├── / └── on consecutive .checkbox-tree-child runs so nesting reads clearly.
+     */
+    refreshCheckboxTreeSymbols(scope = this.root) {
+        if (!scope) return;
+        scope.querySelectorAll('.checkbox-tree').forEach((tree) => {
+            const items = [...tree.children].filter(
+                (el) => el.classList && el.classList.contains('checkbox-tree-item')
+            );
+            let run = [];
+            const flush = () => {
+                run.forEach((item, index) => {
+                    const sym = item.querySelector('.tree-symbol');
+                    if (sym) sym.textContent = index === run.length - 1 ? '└──' : '├──';
+                });
+                run = [];
+            };
+            items.forEach((item) => {
+                if (item.classList.contains('checkbox-tree-child')) {
+                    run.push(item);
+                } else {
+                    flush();
+                }
+            });
+            flush();
+        });
     }
 
     splitBasicsPanel() {
@@ -122,11 +151,7 @@ class ConfigGeneralLayers {
             if (item) essentials.appendChild(item);
         });
         const pageNamesItem = behavior.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
-        if (pageNamesItem) {
-            pageNamesItem.classList.remove('checkbox-tree-child');
-            pageNamesItem.querySelector('.tree-symbol')?.remove();
-            essentials.appendChild(pageNamesItem);
-        }
+        if (pageNamesItem) essentials.appendChild(pageNamesItem);
 
         behavior.parentNode.insertBefore(essentials, display);
     }
@@ -151,7 +176,7 @@ class ConfigGeneralLayers {
                         <button type="button" id="enable-smart-collections-info-btn" class="info-button" data-i18n-aria="config.enableSmartCollectionsInfoTitle" aria-label="Smart collections information">ℹ</button>
                     </label>
                 </div>
-                <div class="checkbox-tree-item checkbox-tree-child smart-collections-action-row">
+                <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row smart-collections-action-row">
                     <span class="tree-symbol">└──</span>
                     <div class="config-advanced-action-row">
                         <p id="smart-collections-master-hint" class="config-advanced-action-text" data-i18n="config.enableSmartCollectionsHint">Turns smart collections on or off. Configure each collection in Advanced.</p>

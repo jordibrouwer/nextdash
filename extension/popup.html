@@ -29,7 +29,10 @@
                 <label for="bookmark-url" data-i18n="labelUrl">URL:</label>
                 <input type="text" id="bookmark-url" required autocomplete="off" spellcheck="false" placeholder="https://">
                 <p id="url-guard-msg" class="url-guard-msg hidden" role="status"></p>
-                <p id="bookmark-url-duplicate" class="url-duplicate-hint hidden" role="status" data-i18n="urlConflictHint">This URL already exists on this page.</p>
+                <div id="bookmark-url-duplicate-panel" class="url-duplicate-panel hidden" role="status" aria-live="polite">
+                    <p id="bookmark-url-duplicate-text" class="url-duplicate-hint"></p>
+                    <button type="button" id="bookmark-url-save-anyway" class="btn btn-secondary btn-small url-duplicate-save-anyway" data-i18n="btnSaveDuplicateAnyway">Save anyway</button>
+                </div>
 
                 <label for="bookmark-name" data-i18n="labelName">Name:</label>
                 <input type="text" id="bookmark-name" required>
@@ -110,6 +113,12 @@
 
                 <label for="default-category" data-i18n="labelDefaultCategory">Default Category:</label>
                 <select id="default-category"></select>
+
+                <label class="ext-setting-checkbox" for="extension-allow-duplicate-urls">
+                    <input type="checkbox" id="extension-allow-duplicate-urls">
+                    <span data-i18n="settingAllowDuplicateUrls">Allow duplicate URLs without asking</span>
+                </label>
+                <p class="ext-setting-hint" data-i18n="settingAllowDuplicateUrlsHint">When enabled, the save button works even if the URL already exists on the selected page. You can still use “Save anyway” when this is off.</p>
 
                 <div class="button-group">
                     <button type="submit" data-i18n="btnSaveSettings">Save Settings</button>

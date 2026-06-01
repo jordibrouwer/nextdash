@@ -84,14 +84,69 @@
 
 .general-card .checkbox-tree {
     margin-top: 0;
+    --checkbox-tree-guide: 1.4rem;
+    --checkbox-tree-line: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
 }
 
+/* Nested hierarchy: show TUI guides (overrides legacy hide rules) */
 .general-card .tree-symbol {
-    display: none;
+    display: inline-block;
+    flex: 0 0 var(--checkbox-tree-guide);
+    width: var(--checkbox-tree-guide);
+    font-family: 'Source Code Pro', ui-monospace, monospace;
+    font-size: 0.82em;
+    line-height: 1.2;
+    color: var(--accent-primary);
+    opacity: 0.9;
+    user-select: none;
+}
+
+.general-card .checkbox-tree > .checkbox-tree-item:not(.checkbox-tree-child) {
+    position: relative;
 }
 
 .general-card .checkbox-tree-child {
-    margin-left: 0;
+    margin-left: 0.15rem;
+    padding: 0.22rem 0 0.22rem calc(var(--checkbox-tree-guide) + 0.35rem);
+    border-left: 2px solid var(--checkbox-tree-line);
+    border-radius: 0;
+    gap: 0.45rem;
+}
+
+.general-card .checkbox-tree-child + .checkbox-tree-item:not(.checkbox-tree-child) {
+    margin-top: 0.35rem;
+}
+
+.general-card .checkbox-tree-child.is-disabled {
+    opacity: 0.42;
+    pointer-events: none;
+}
+
+/* Hint / link rows under a parent setting */
+.general-card .checkbox-tree-child.checkbox-tree-action-row,
+.general-card .checkbox-tree-child.general-keyboard-link-row,
+.general-card .checkbox-tree-child.smart-collections-action-row {
+    align-items: flex-start;
+    padding-top: 0.35rem;
+    padding-bottom: 0.4rem;
+}
+
+.general-card .checkbox-tree-child .config-advanced-action-row {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Child rows with selects/inputs: keep controls aligned */
+.general-card .checkbox-tree-child:has(select),
+.general-card .checkbox-tree-child:has(input:not([type="checkbox"]):not([type="file"]):not([type="range"])) {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+#theme-iconstyling-controls .checkbox-tree-child {
+    margin-left: 0.15rem;
+    padding-left: calc(var(--checkbox-tree-guide) + 0.35rem);
+    border-left: 2px solid var(--checkbox-tree-line);
 }
 
 /* Full-width card outside the grid */

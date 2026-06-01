@@ -1193,6 +1193,7 @@
         "fuzzySuggestionsStartWithInfoMessage": "Bij fuzzy-suggesties alleen matches die met je query beginnen.\n\n• Uit: ook midden in namen",
         "showWeatherWithDateInfoMessage": "Temperatuur (en condities) naast de datum.\n\n• Locatie hieronder nodig",
         "generalEssentialsHint": "Tip: gebruik ℹ naast een instelling voor uitleg. Wissel naar Geavanceerd voor extra opties, of toon alle secties hieronder.",
+        "generalNestedTreeHint": "Ingesprongen opties (├── / └──) horen bij de instelling erboven.",
         "generalAdvancedHint": "Gebruik de sectielinks hierboven. Essentials bevat dagelijkse instellingen.",
         "layoutPresetDescIntro": "Kies hoe bladwijzers worden getoond: Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets of Launcher.",
         "densityDescIntro": "Dichtheid bepaalt ruimte en typografie: Comfortable, Compact, Dense of Auto.",

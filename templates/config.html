@@ -136,10 +136,12 @@
                 <p id="general-layer-intro-essentials" class="general-layer-intro">
                     <span data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</span>
                     <span class="general-layer-intro-hint" data-i18n="config.generalEssentialsHint">Tip: use ℹ next to a setting for help. Switch to Advanced for power features, or show all sections below.</span>
+                    <span class="general-layer-intro-hint" data-i18n="config.generalNestedTreeHint">Indented options (├── / └──) belong to the setting directly above.</span>
                 </p>
                 <p id="general-layer-intro-advanced" class="general-layer-intro" hidden>
                     <span data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</span>
                     <span class="general-layer-intro-hint" data-i18n="config.generalAdvancedHint">Use the section links above to jump. Essentials covers everyday options.</span>
+                    <span class="general-layer-intro-hint" data-i18n="config.generalNestedTreeHint">Indented options (├── / └──) belong to the setting directly above.</span>
                 </p>
                 <nav id="general-advanced-nav" class="general-advanced-nav" hidden aria-label="Advanced sections">
                     <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance</a>
@@ -466,7 +468,7 @@
                                     <button type="button" id="global-shortcuts-info-btn" class="info-button" data-i18n-aria="config.globalShortcutsInfoTitle">ℹ</button>
                                 </label>
                             </div>
-                            <div class="checkbox-tree-item checkbox-tree-child general-keyboard-link-row">
+                            <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row general-keyboard-link-row">
                                 <span class="tree-symbol">└──</span>
                                 <div class="config-advanced-action-row">
                                     <p class="config-advanced-action-text" data-i18n="config.keyboardTabHint">Customize which keys trigger search, navigation, and other dashboard actions.</p>

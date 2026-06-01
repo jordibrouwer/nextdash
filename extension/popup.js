@@ -5,6 +5,7 @@ let extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage:
 let extFormPreview = null;
 let extServerUrl = '';
 let extPageBookmarks = [];
+let extAllowDuplicateUrls = false;
 
 function getExtDraftBookmark() {
     return {
@@ -149,30 +150,69 @@ function updateUrlGuard(url) {
     }
 }
 
-function hasUrlDuplicateOnPage(url) {
+function findDuplicateBookmarkOnPage(url) {
     const key = BookmarkUrlUtils.canonicalBookmarkURLKey(url);
-    if (!key) return false;
-    return extPageBookmarks.some(
+    if (!key) return null;
+    return extPageBookmarks.find(
         (bookmark) => BookmarkUrlUtils.canonicalBookmarkURLKey(bookmark.url) === key
-    );
+    ) || null;
+}
+
+function hasUrlDuplicateOnPage(url) {
+    return Boolean(findDuplicateBookmarkOnPage(url));
+}
+
+async function loadExtensionPreferences() {
+    try {
+        const sync = await chrome.storage.sync.get(['extensionAllowDuplicateUrls']);
+        extAllowDuplicateUrls = Boolean(sync.extensionAllowDuplicateUrls);
+    } catch {
+        extAllowDuplicateUrls = false;
+    }
+    const allowCheckbox = document.getElementById('extension-allow-duplicate-urls');
+    if (allowCheckbox) allowCheckbox.checked = extAllowDuplicateUrls;
 }
 
 function updateUrlDuplicateHint() {
     const urlInput = document.getElementById('bookmark-url');
-    const hint = document.getElementById('bookmark-url-duplicate');
-    if (!urlInput || !hint) return;
+    const panel = document.getElementById('bookmark-url-duplicate-panel');
+    const textEl = document.getElementById('bookmark-url-duplicate-text');
+    const saveAnywayBtn = document.getElementById('bookmark-url-save-anyway');
+    if (!urlInput || !panel || !textEl) return;
 
     const raw = String(urlInput.value || '').trim();
     if (!raw) {
-        hint.hidden = true;
+        panel.hidden = true;
+        if (saveAnywayBtn) saveAnywayBtn.hidden = true;
         urlInput.classList.remove('field-conflict');
         return;
     }
 
     const normalized = BookmarkUrlUtils.ensureHttpUrl(raw);
-    const duplicate = isBookmarkableUrl(normalized) && hasUrlDuplicateOnPage(normalized);
-    hint.hidden = !duplicate;
-    urlInput.classList.toggle('field-conflict', Boolean(duplicate));
+    const duplicateBookmark = isBookmarkableUrl(normalized)
+        ? findDuplicateBookmarkOnPage(normalized)
+        : null;
+    const duplicate = Boolean(duplicateBookmark);
+
+    if (!duplicate || extAllowDuplicateUrls) {
+        panel.hidden = true;
+        if (saveAnywayBtn) saveAnywayBtn.hidden = true;
+        urlInput.classList.remove('field-conflict');
+        return;
+    }
+
+    panel.hidden = false;
+    urlInput.classList.add('field-conflict');
+    if (duplicateBookmark.name) {
+        textEl.textContent = extT(
+            'urlConflictExisting',
+            'This URL already exists on this page as "{name}".',
+            { name: duplicateBookmark.name }
+        );
+    } else {
+        textEl.textContent = extT('urlConflictHint', 'This URL already exists on this page.');
+    }
+    if (saveAnywayBtn) saveAnywayBtn.hidden = false;
 }
 
 async function refreshPageBookmarks() {
@@ -220,6 +260,7 @@ function handleConfirmationClick(event) {
 
 document.addEventListener('DOMContentLoaded', async function() {
     await initExtensionI18n();
+    await loadExtensionPreferences();
 
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -274,6 +315,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         extFormPreview?.updateAll(getExtDraftBookmark());
     });
 
+    document.getElementById('bookmark-url-save-anyway')?.addEventListener('click', () => {
+        void saveBookmarkAnyway();
+    });
+
     // Page select change to load categories
     document.getElementById('page-select').addEventListener('change', async (event) => {
         const pageId = event.target.value;
@@ -320,9 +365,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 async function loadSettings() {
-    const settings = await chrome.storage.sync.get(['serverUrl', 'defaultPage', 'defaultCategory']);
+    const settings = await chrome.storage.sync.get([
+        'serverUrl',
+        'defaultPage',
+        'defaultCategory',
+        'extensionAllowDuplicateUrls',
+    ]);
     document.getElementById('server-url').value = settings.serverUrl || '';
-    // Default page and category will be loaded when settings tab is opened
+    extAllowDuplicateUrls = Boolean(settings.extensionAllowDuplicateUrls);
+    const allowCheckbox = document.getElementById('extension-allow-duplicate-urls');
+    if (allowCheckbox) allowCheckbox.checked = extAllowDuplicateUrls;
 }
 
 async function loadSaveTab() {
@@ -498,39 +550,77 @@ async function loadCategories(pageId) {
     }
 }
 
-async function saveBookmark(event) {
-    event.preventDefault();
+function collectSaveFormData() {
+    const serverUrl = extServerUrl
+        || document.getElementById('server-url')?.value?.trim()
+        || '';
+    const name = document.getElementById('bookmark-name')?.value || '';
+    const rawUrl = document.getElementById('bookmark-url')?.value || '';
+    const url = BookmarkUrlUtils.ensureHttpUrl(rawUrl);
+    const pageId = document.getElementById('page-select')?.value || '';
+    const category = document.getElementById('category-select')?.value || '';
+    const note = document.getElementById('bookmark-note')?.value || '';
+    const tagsRaw = document.getElementById('bookmark-tags')?.value || '';
+    const tags = tagsRaw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+    return { serverUrl, name, url, pageId, category, note, tags };
+}
 
-    const settings = await chrome.storage.sync.get(['serverUrl']);
-    const serverUrl = settings.serverUrl;
+async function saveBookmark(event, options = {}) {
+    if (event) event.preventDefault();
 
-    if (!serverUrl) {
+    const data = collectSaveFormData();
+    if (!data.serverUrl) {
         showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'error');
         return;
     }
 
-    const name = document.getElementById('bookmark-name').value;
-    const rawUrl = document.getElementById('bookmark-url').value;
-    const url = BookmarkUrlUtils.ensureHttpUrl(rawUrl);
-    const pageId = document.getElementById('page-select').value;
-    const category = document.getElementById('category-select').value;
-    const note = (document.getElementById('bookmark-note') && document.getElementById('bookmark-note').value) || '';
-    const tagsRaw = (document.getElementById('bookmark-tags') && document.getElementById('bookmark-tags').value) || '';
-    const tags = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
-
-    if (!isBookmarkableUrl(url)) {
+    if (!isBookmarkableUrl(data.url)) {
         showMessage(extT('msgUrlNotSavable', 'This URL cannot be saved. Use a normal http(s) page.'), 'error');
         return;
     }
 
-    await refreshPageBookmarks();
-    if (hasUrlDuplicateOnPage(url)) {
-        updateUrlDuplicateHint();
-        showMessage(extT('msgDuplicateBookmarkUrl', 'This bookmark URL already exists on this page.'), 'error');
-        return;
+    const allowDuplicate = options.allowDuplicate === true || extAllowDuplicateUrls;
+
+    if (!allowDuplicate) {
+        await refreshPageBookmarks();
+        if (hasUrlDuplicateOnPage(data.url)) {
+            updateUrlDuplicateHint();
+            showMessage(extT('msgDuplicateBookmarkUrl', 'This URL already exists on this page.'), 'error');
+            return;
+        }
     }
 
-    await performSave(serverUrl, pageId, name, url, category, note, tags);
+    await performSave(
+        data.serverUrl,
+        data.pageId,
+        data.name,
+        data.url,
+        data.category,
+        data.note,
+        data.tags
+    );
+}
+
+async function saveBookmarkAnyway() {
+    const data = collectSaveFormData();
+    if (!data.serverUrl) {
+        showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'error');
+        return;
+    }
+    if (!isBookmarkableUrl(data.url)) {
+        showMessage(extT('msgUrlNotSavable', 'This URL cannot be saved. Use a normal http(s) page.'), 'error');
+        return;
+    }
+    hideMessage();
+    await performSave(
+        data.serverUrl,
+        data.pageId,
+        data.name,
+        data.url,
+        data.category,
+        data.note,
+        data.tags
+    );
 }
 
 async function saveSettings(event) {
@@ -540,10 +630,16 @@ async function saveSettings(event) {
     const defaultPage = document.getElementById('default-page').value;
     const defaultCategory = document.getElementById('default-category').value;
 
+    const allowDuplicateUrls = Boolean(
+        document.getElementById('extension-allow-duplicate-urls')?.checked
+    );
+    extAllowDuplicateUrls = allowDuplicateUrls;
+
     await chrome.storage.sync.set({
         serverUrl: serverUrl,
         defaultPage: defaultPage,
-        defaultCategory: defaultCategory
+        defaultCategory: defaultCategory,
+        extensionAllowDuplicateUrls: allowDuplicateUrls,
     });
 
     try {
@@ -559,6 +655,7 @@ async function saveSettings(event) {
         // keep current locale
     }
 
+    updateUrlDuplicateHint();
     showMessage(extT('msgSettingsSaved', 'Settings saved!'), 'success');
 }
 
@@ -618,6 +715,11 @@ async function resetSettings() {
     // Clear pages in save tab as well
     document.getElementById('page-select').innerHTML = '';
     document.getElementById('category-select').innerHTML = '';
-    
+
+    extAllowDuplicateUrls = false;
+    const allowCheckbox = document.getElementById('extension-allow-duplicate-urls');
+    if (allowCheckbox) allowCheckbox.checked = false;
+    updateUrlDuplicateHint();
+
     showMessage(extT('msgSettingsReset', 'Settings reset!'), 'info');
 }
