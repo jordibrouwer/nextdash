@@ -171,7 +171,8 @@ type Settings struct {
 	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
 	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
-	ConfigGeneralTourCompleted  bool                             `json:"configGeneralTourCompleted"`
+	ConfigGeneralTourCompleted   bool                             `json:"configGeneralTourCompleted"`
+	ConfigBookmarksTourCompleted bool                             `json:"configBookmarksTourCompleted"`
 	CustomKeyBindings           map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
 	BackgroundType              string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
 	BackgroundGradient          string                           `json:"backgroundGradient"`          // preset name used when type="gradient"

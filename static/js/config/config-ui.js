@@ -105,6 +105,13 @@ class ConfigUI {
                 if (targetTab === 'general' && !mgr._configGeneralTourActive && !mgr._configGeneralTourStarting) {
                     mgr.scheduleConfigGeneralTour?.();
                 }
+                if (
+                    targetTab === 'bookmarks' &&
+                    !mgr._configBookmarksTourActive &&
+                    !mgr._configBookmarksTourStarting
+                ) {
+                    mgr.scheduleConfigBookmarksTour?.();
+                }
             }
         };
 

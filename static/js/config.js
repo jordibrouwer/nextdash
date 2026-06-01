@@ -202,6 +202,7 @@ class ConfigManager {
         }
 
         this.scheduleConfigGeneralTour();
+        this.scheduleConfigBookmarksTour();
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('configTour') === '1') {
@@ -258,6 +259,7 @@ class ConfigManager {
         if (typeof window.ConfigGeneralTour !== 'function') return;
         if (this.hasSeenConfigGeneralTour()) return;
         if (this._configGeneralTourActive || this._configGeneralTourStarting) return;
+        if (this._configBookmarksTourActive || this._configBookmarksTourStarting) return;
         if (document.body?.classList.contains('loading')) return;
 
         this.cancelConfigGeneralTourSchedule();
@@ -265,7 +267,13 @@ class ConfigManager {
         this._configGeneralTourScheduleTimer = setTimeout(() => {
             this._configGeneralTourScheduleTimer = null;
             if (runId !== this._configGeneralTourScheduleId) return;
-            if (this.hasSeenConfigGeneralTour() || this._configGeneralTourActive || this._configGeneralTourStarting) {
+            if (
+                this.hasSeenConfigGeneralTour() ||
+                this._configGeneralTourActive ||
+                this._configGeneralTourStarting ||
+                this._configBookmarksTourActive ||
+                this._configBookmarksTourStarting
+            ) {
                 return;
             }
             if (!this.isConfigGeneralTabActive()) return;
@@ -325,6 +333,9 @@ class ConfigManager {
             return { ok: false, reason: blockReason };
         }
         if (this._configGeneralTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._configBookmarksTourActive || this._configBookmarksTourStarting) {
+            return { ok: false, reason: 'active-other' };
+        }
         if (!force && this.hasSeenConfigGeneralTour()) return { ok: false, reason: 'completed' };
 
         if (force) {
@@ -366,6 +377,190 @@ class ConfigManager {
             return { ok: false, reason: 'error' };
         } finally {
             this._configGeneralTourStarting = false;
+        }
+    }
+
+    hasSeenConfigBookmarksTour() {
+        if (this.settingsData?.configBookmarksTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(window.ConfigBookmarksTour?.STORAGE_KEY || 'nextdash:config-bookmarks-tour-v1') === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigBookmarksTourSeenFromServer() {
+        const key = window.ConfigBookmarksTour?.STORAGE_KEY || 'nextdash:config-bookmarks-tour-v1';
+        try {
+            if (this.settingsData?.configBookmarksTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigBookmarksTourCompleted() {
+        this.settingsData.configBookmarksTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigBookmarksTour?.STORAGE_KEY || 'nextdash:config-bookmarks-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigBookmarksTourSchedule() {
+        this._configBookmarksTourScheduleId = (this._configBookmarksTourScheduleId || 0) + 1;
+        if (this._configBookmarksTourScheduleTimer) {
+            clearTimeout(this._configBookmarksTourScheduleTimer);
+            this._configBookmarksTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigBookmarksTour() {
+        if (typeof window.ConfigBookmarksTour !== 'function') return;
+        if (this.hasSeenConfigBookmarksTour()) return;
+        if (this._configBookmarksTourActive || this._configBookmarksTourStarting) return;
+        if (this._configGeneralTourActive || this._configGeneralTourStarting) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigBookmarksTourSchedule();
+        const runId = this._configBookmarksTourScheduleId;
+        this._configBookmarksTourScheduleTimer = setTimeout(() => {
+            this._configBookmarksTourScheduleTimer = null;
+            if (runId !== this._configBookmarksTourScheduleId) return;
+            if (
+                this.hasSeenConfigBookmarksTour() ||
+                this._configBookmarksTourActive ||
+                this._configBookmarksTourStarting ||
+                this._configGeneralTourActive ||
+                this._configGeneralTourStarting
+            ) {
+                return;
+            }
+            if (!this.isConfigBookmarksTabActive()) return;
+            void this.maybeStartConfigBookmarksTour();
+        }, 550);
+    }
+
+    isConfigBookmarksTabActive() {
+        if (this.ui?._currentTab === 'bookmarks') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'bookmarks') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'bookmarks' || hash.startsWith('bookmarks/');
+    }
+
+    configBookmarksTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigBookmarksTourFailedReload',
+            'no-bookmarks-tab': 'config.resetConfigBookmarksTourFailedTab',
+            'dom-not-ready': 'config.resetConfigBookmarksTourFailedDom',
+            'render-failed': 'config.resetConfigBookmarksTourFailedDom',
+            'step-error': 'config.resetConfigBookmarksTourFailedDom',
+            blocked: 'config.resetConfigBookmarksTourFailedDom',
+            mobile: 'config.resetConfigBookmarksTourFailedMobile',
+            error: 'config.resetConfigBookmarksTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Bookmarks tour. Refresh the page and try again.',
+            'no-bookmarks-tab': 'Could not start the Bookmarks tour. Open the Bookmarks tab first.',
+            'dom-not-ready': 'Could not start the Bookmarks tour. The editor is still loading — refresh and try again.',
+            mobile: 'Could not start the Bookmarks tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Bookmarks tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigBookmarksTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Bookmarks tour. Open the Bookmarks tab first.';
+    }
+
+    async maybeStartConfigBookmarksTour({ force = false } = {}) {
+        if (this._configBookmarksTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigBookmarksTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigBookmarksTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Bookmarks tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configBookmarksTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._configGeneralTourActive || this._configGeneralTourStarting) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigBookmarksTour()) return { ok: false, reason: 'completed' };
+
+        if (force) {
+            this.cancelConfigBookmarksTourSchedule();
+            window.ConfigBookmarksTour.teardownStaleDom?.();
+            this._configBookmarksTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureBookmarksTabActive();
+        } else if (!this.isConfigBookmarksTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigBookmarksTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigBookmarksTour(),
+            onMarkSeen: () => this.markConfigBookmarksTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-bookmarks-tab' : 'mobile' };
+        }
+
+        this._configBookmarksTourStarting = true;
+        this._configBookmarksTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configBookmarksTourActive = false;
+                window.ConfigBookmarksTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigBookmarksTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Bookmarks tour failed to start', error);
+            this._configBookmarksTourActive = false;
+            window.ConfigBookmarksTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configBookmarksTourStarting = false;
+        }
+    }
+
+    ensureBookmarksTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('bookmarks');
+        } else {
+            const panel = document.querySelector('[data-tab-content="bookmarks"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="bookmarks"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'bookmarks' && !hash.startsWith('bookmarks/')) {
+            window.history.replaceState(null, '', '#bookmarks');
         }
     }
 
@@ -479,7 +674,11 @@ class ConfigManager {
             if (typeof this.settingsData.configGeneralTourCompleted === 'undefined') {
                 this.settingsData.configGeneralTourCompleted = false;
             }
+            if (typeof this.settingsData.configBookmarksTourCompleted === 'undefined') {
+                this.settingsData.configBookmarksTourCompleted = false;
+            }
             this.syncConfigGeneralTourSeenFromServer();
+            this.syncConfigBookmarksTourSeenFromServer();
             if (typeof this.settingsData.packedColumns === 'undefined') {
                 this.settingsData.packedColumns = true;
             }
@@ -870,6 +1069,55 @@ class ConfigManager {
                     window.ConfigGeneralTour?.teardownStaleDom?.();
                     this.ui.showNotification(
                         this.configGeneralTourFailureMessage('error'),
+                        'error'
+                    );
+                }
+            });
+        }
+
+        const resetConfigBookmarksTourBtn = document.getElementById('reset-config-bookmarks-tour-btn');
+        if (resetConfigBookmarksTourBtn) {
+            resetConfigBookmarksTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigBookmarksTour?.teardownStaleDom?.();
+                    this._configBookmarksTourActive = false;
+
+                    if (typeof window.ConfigBookmarksTour?.resetSeen === 'function') {
+                        window.ConfigBookmarksTour.resetSeen();
+                    }
+                    this.settingsData.configBookmarksTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigBookmarksTour?.STORAGE_KEY || 'nextdash:config-bookmarks-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureBookmarksTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigBookmarksTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigBookmarksTourSuccess')
+                            || 'Bookmarks tour started.')
+                        : this.configBookmarksTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Bookmarks tour failed', error);
+                    this._configBookmarksTourActive = false;
+                    window.ConfigBookmarksTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configBookmarksTourFailureMessage('error'),
                         'error'
                     );
                 }

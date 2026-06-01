@@ -1,10 +1,12 @@
-/* Config → General tour — dim via highlight box-shadow (no JS-positioned hole panels) */
+/* Config guided tours — dim via highlight box-shadow (no JS-positioned hole panels) */
 
-body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-general-tour-card {
+body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-general-tour-card,
+body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .config-bookmarks-tour-card {
     visibility: hidden;
 }
 
-.config-general-tour-card {
+.config-general-tour-card,
+.config-bookmarks-tour-card {
     position: fixed;
     z-index: 12600;
     left: 50%;
@@ -72,7 +74,8 @@ body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-ge
 }
 
 /* Cutout dim + green frame — moves with the element, no separate overlay sync */
-.config-general-tour-highlight {
+.config-general-tour-highlight,
+.config-bookmarks-tour-highlight {
     position: relative !important;
     z-index: 12550 !important;
     scroll-margin: 5rem 1rem 13rem;
@@ -83,11 +86,14 @@ body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-ge
 }
 
 html.config-general-tour-scroll-lock,
-html.config-general-tour-scroll-lock body {
+html.config-bookmarks-tour-scroll-lock,
+html.config-general-tour-scroll-lock body,
+html.config-bookmarks-tour-scroll-lock body {
     overflow: hidden;
 }
 
-html.config-general-tour-scroll-lock body {
+html.config-general-tour-scroll-lock body,
+html.config-bookmarks-tour-scroll-lock body {
     position: fixed;
     width: 100%;
     left: 0;
