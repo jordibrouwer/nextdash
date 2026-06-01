@@ -85,6 +85,27 @@
             .replaceAll("'", '&#39;');
     }
 
+    function buildDashboardDeepLinkHref({ pageId, index, category, url }) {
+        if (typeof DashboardDeepLink === 'undefined' || pageId == null) return '/';
+        return DashboardDeepLink.buildDashboardDeepLink({
+            pageId,
+            bookmarkIndex: index,
+            categoryId: category || null,
+            url: url || null,
+        });
+    }
+
+    function renderOpenInDashboardAction(issue) {
+        const href = buildDashboardDeepLinkHref({
+            pageId: issue.pageId,
+            index: issue.index,
+            category: issue.category,
+            url: issue.url,
+        });
+        const label = t('health.openInDashboard', 'dashboard');
+        return `<a class="health-action health-action-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+    }
+
     function fmtDate(value) {
         if (!value) return t('health.never', 'never');
         return new Date(value).toLocaleString(healthState.language?.currentLanguage || undefined);
@@ -218,6 +239,7 @@
                     </div>
                 </div>
                 <div class="health-issue-actions">
+                    ${renderOpenInDashboardAction(issue)}
                     <button type="button" class="health-action" data-open-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.open', 'open'))}</button>
                     <button type="button" class="health-action" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.ping', 'ping'))}</button>
                     <button type="button" class="health-action" data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.refreshFavicon', 'favicon'))}</button>
@@ -248,13 +270,22 @@
                     </button>
                 </div>
                 <div class="health-duplicate-items">
-                    ${(group.bookmarks || []).map((bookmark, bIdx) => `
+                    ${(group.bookmarks || []).map((bookmark, bIdx) => {
+                        const dashHref = buildDashboardDeepLinkHref({
+                            pageId: bookmark.pageId,
+                            index: bookmark.index,
+                            category: bookmark.category,
+                            url: group.url,
+                        });
+                        const dashLabel = t('health.openInDashboard', 'dashboard');
+                        return `
                         <span class="${bIdx === 0 ? 'health-duplicate-keep' : 'health-duplicate-remove'}">
                             ${escapeHtml(bookmark.name)}
                             <em>${escapeHtml(t('health.pageLower', 'page'))} ${escapeHtml(String(bookmark.pageId))}</em>
+                            <a class="health-duplicate-item-link" href="${escapeHtml(dashHref)}">${escapeHtml(dashLabel)}</a>
                             ${bIdx === 0 ? `<span class="health-duplicate-badge keep">${escapeHtml(t('health.keep', 'keep'))}</span>` : `<span class="health-duplicate-badge remove">${escapeHtml(t('health.remove', 'remove'))}</span>`}
-                        </span>
-                    `).join('')}
+                        </span>`;
+                    }).join('')}
                 </div>
             </article>
         `).join('');

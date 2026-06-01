@@ -576,11 +576,16 @@ class Dashboard {
             // Update document title based on custom title settings
             this.updateDocumentTitle();
 
-            // Check for page hash in URL
+            // Page from ?page=<id> or legacy #<1-based index>
             const hash = window.location.hash.substring(1);
+            const deepLink = typeof DashboardDeepLink !== 'undefined'
+                ? DashboardDeepLink.parseDashboardDeepLink()
+                : null;
             let initialPageId = this.pages.length > 0 ? this.pages[0].id : 'default';
-            if (hash && /^\d+$/.test(hash)) {
-                const pageIndex = parseInt(hash) - 1;
+            if (deepLink?.pageId != null && this.pages.some((p) => p.id === deepLink.pageId)) {
+                initialPageId = deepLink.pageId;
+            } else if (hash && /^\d+$/.test(hash)) {
+                const pageIndex = parseInt(hash, 10) - 1;
                 if (pageIndex >= 0 && pageIndex < this.pages.length) {
                     initialPageId = this.pages[pageIndex].id;
                 }
@@ -592,6 +597,8 @@ class Dashboard {
             
             // Always load all bookmarks so smart collections can work across pages.
             await this.loadAllBookmarks();
+
+            await this.consumeDashboardDeepLink();
         } catch (error) {
             const msg = this.language?.t?.('dashboard.loadFailed')
                 || 'Failed to load dashboard. Please reload the page.';
@@ -3850,6 +3857,102 @@ class Dashboard {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         el.classList.add('nextdash-stale-flash');
         setTimeout(() => el.classList.remove('nextdash-stale-flash'), ANIM.STALE_FLASH);
+    }
+
+    async consumeDashboardDeepLink() {
+        if (typeof DashboardDeepLink === 'undefined') return;
+        const link = DashboardDeepLink.parseDashboardDeepLink();
+        if (!DashboardDeepLink.hasDeepLinkTarget(link)) return;
+
+        if (link.pageId != null && this.pages.some((p) => p.id === link.pageId)) {
+            if (this.currentPageId !== link.pageId) {
+                await this.loadPageBookmarks(link.pageId);
+            }
+        }
+
+        const focus = () => this.focusDashboardDeepLinkTarget(link);
+        requestAnimationFrame(() => requestAnimationFrame(focus));
+    }
+
+    expandCategoryForDeepLink(categoryId) {
+        if (!categoryId) return null;
+        const escaped = typeof CSS !== 'undefined' && CSS.escape
+            ? CSS.escape(categoryId)
+            : String(categoryId).replace(/["\\]/g, '\\$&');
+        const catEl = document.querySelector(
+            `.category[data-category-id="${escaped}"]:not([data-smart-collection="true"])`
+        );
+        if (!catEl) return null;
+        const collapsedKey = `${this.currentPageId}:${categoryId}`;
+        catEl.setAttribute('data-collapsed', 'false');
+        this.collapsedCategories[collapsedKey] = false;
+        if (categoryId in this.collapsedCategories) {
+            delete this.collapsedCategories[categoryId];
+        }
+        this.saveCollapsedStates();
+        return catEl;
+    }
+
+    findBookmarkRowForDeepLink(link) {
+        if (!link) return null;
+        if (link.bookmarkIndex != null && link.bookmarkIndex >= 0) {
+            const byIndex = document.querySelector(
+                `.bookmark-link[data-bookmark-index="${link.bookmarkIndex}"]`
+            );
+            if (byIndex) return byIndex;
+        }
+        if (!link.url) return null;
+        const targetUrl = String(link.url).trim();
+        const canonical = typeof BookmarkUrlUtils !== 'undefined'
+            ? BookmarkUrlUtils.canonicalBookmarkURLKey(targetUrl)
+            : targetUrl.toLowerCase();
+        const rows = document.querySelectorAll('.bookmark-link[data-bookmark-url]');
+        for (const row of rows) {
+            const rowUrl = String(row.getAttribute('data-bookmark-url') || '').trim();
+            if (!rowUrl) continue;
+            const rowKey = typeof BookmarkUrlUtils !== 'undefined'
+                ? BookmarkUrlUtils.canonicalBookmarkURLKey(rowUrl)
+                : rowUrl.toLowerCase();
+            if (rowKey === canonical) return row;
+        }
+        return null;
+    }
+
+    focusDashboardDeepLinkTarget(link) {
+        if (!link) return false;
+
+        if (link.categoryId) {
+            const catEl = this.expandCategoryForDeepLink(link.categoryId);
+            catEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        const row = this.findBookmarkRowForDeepLink(link);
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.remove('bookmark-deep-link-focus');
+            void row.offsetWidth;
+            row.classList.add('bookmark-deep-link-focus');
+            row.addEventListener(
+                'animationend',
+                () => row.classList.remove('bookmark-deep-link-focus'),
+                { once: true }
+            );
+            if (this.keyboardNavigation?.navigableElements) {
+                this.keyboardNavigation.updateNavigableElements?.();
+                const navIdx = this.keyboardNavigation.navigableElements.indexOf(row);
+                if (navIdx >= 0) {
+                    this.keyboardNavigation.currentIndex = navIdx;
+                    this.keyboardNavigation.highlightCurrentElement?.();
+                }
+            }
+        } else if (link.bookmarkIndex != null || link.url) {
+            const msg = this.language?.t?.('dashboard.deepLinkBookmarkNotFound')
+                || 'Bookmark not found on this page (it may have moved).';
+            this.showNotification(msg, 'info', { duration: 4000 });
+        }
+
+        DashboardDeepLink.stripDeepLinkParams();
+        return Boolean(row);
     }
 
     ensureBookmarkMutationSnapshot() {

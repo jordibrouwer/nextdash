@@ -271,6 +271,25 @@ body {
     justify-content: flex-start;
 }
 
+.health-action-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.health-duplicate-item-link {
+    margin-left: 0.35rem;
+    font-size: 0.85em;
+    font-style: normal;
+    text-decoration: none;
+    opacity: 0.85;
+}
+
+.health-duplicate-item-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
 .health-action {
     border: 1px solid var(--border-secondary);
     padding: 10px 14px;

@@ -176,9 +176,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if key != "" {
 				duplicateCounts[key]++
 				duplicateRefs[key] = append(duplicateRefs[key], BookmarkRef{
-					Name:   bm.Name,
-					Index:  idx,
-					PageID: page.ID,
+					Name:     bm.Name,
+					Index:    idx,
+					PageID:   page.ID,
+					Category: bm.Category,
 				})
 			}
 		}
@@ -1197,9 +1198,10 @@ func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
 		for idx, bm := range bookmarks {
 			normalizedURL := strings.ToLower(strings.TrimSpace(bm.URL))
 			duplicates[normalizedURL] = append(duplicates[normalizedURL], BookmarkRef{
-				Name:   bm.Name,
-				Index:  idx,
-				PageID: page.ID,
+				Name:     bm.Name,
+				Index:    idx,
+				PageID:   page.ID,
+				Category: bm.Category,
 			})
 		}
 	}

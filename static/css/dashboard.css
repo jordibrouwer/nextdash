@@ -2630,6 +2630,28 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     border-radius: 6px;
 }
 
+@keyframes bookmarkDeepLinkFocus {
+    0% {
+        box-shadow: inset 3px 0 0 var(--accent-primary), 0 0 0 0 color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    }
+    40% {
+        box-shadow: inset 3px 0 0 var(--accent-primary), 0 0 0 6px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    }
+    100% {
+        box-shadow: inset 3px 0 0 transparent, 0 0 0 0 transparent;
+    }
+}
+
+.bookmark-link.bookmark-deep-link-focus {
+    animation: bookmarkDeepLinkFocus 1.1s ease-out 2;
+    border-radius: 4px;
+}
+
+body.no-animations .bookmark-link.bookmark-deep-link-focus {
+    animation: none;
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
 body.no-animations #dashboard-layout.page-transition,
 body.no-animations .category.animate-enter,
 body.no-animations .bookmark-link.animate-enter,

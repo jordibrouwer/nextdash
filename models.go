@@ -1593,9 +1593,10 @@ type DuplicateGroup struct {
 }
 
 type BookmarkRef struct {
-	Name   string `json:"name"`
-	Index  int    `json:"index"`
-	PageID int    `json:"pageId"`
+	Name     string `json:"name"`
+	Index    int    `json:"index"`
+	PageID   int    `json:"pageId"`
+	Category string `json:"category,omitempty"`
 }
 
 // PreviewCacheFile stores cached bookmark preview metadata keyed by canonical URL.

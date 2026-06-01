@@ -318,6 +318,7 @@
         "lastChecked": "dernière vérification {date}",
         "never": "jamais",
         "open": "ouvrir",
+        "openInDashboard": "tableau de bord",
         "ping": "ping",
         "pinging": "ping...",
         "onlineMs": "en ligne {ms}ms",
