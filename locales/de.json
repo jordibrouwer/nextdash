@@ -89,6 +89,7 @@
             "cbRemove": "Fokussiertes Lesezeichen löschen",
             "cbFind": "Kacheln auf aktueller Seite filtern — blendet nicht passende Namen/URLs aus",
             "cbOpenAll": "Alle Lesezeichen der Seite in neuen Tabs öffnen (max. 15; darüber Option „alle öffnen“)",
+            "cbOpenLast": "Die N zuletzt geöffneten Lesezeichen dieser Seite öffnen (Standard 5, max. 50; Tab-Batch max. 15)",
             "cbGoto": "Direkt navigieren — volle URLs unverändert, nackte Domains erhalten https://",
             "cbDuplicates": "Lesezeichen mit doppelten URLs auf allen Seiten finden",
             "cbStale": "Lesezeichen anzeigen, die seit <Tage> nicht geöffnet wurden (Standard 30)",

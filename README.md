@@ -99,6 +99,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
 - `:tag <tagname>` — add or remove a tag on the selected bookmark
 - `:open all` — open all bookmarks on the current page in new tabs
+- `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — `order` / `az` / `recent` / `custom`
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
@@ -356,6 +357,7 @@ See `extension/README.md` for full usage and development notes.
 - **Fuzzy search on URL, note & tags** — the `/` fuzzy mode now also matches against a bookmark's URL domain, tags, and note. Secondary-field results rank below name matches and show a small context snippet (URL, `#tag`, or note excerpt).
 - **Saved searches as separate group** — opening the `>` search bar now shows *Recent* (last 5 queries) and *Saved searches* as two distinct groups. Saved searches are collapsed by default.
 - **:open all** — opens all bookmarks on the current page in new tabs. Shows a "first 15" safe option plus "open all" when the page has more bookmarks.
+- **:open last [n]** — opens the N most recently opened bookmarks (`lastOpened` on the current page). Default 5; alias `:open recent`. Uses the same 15-tab batch cap when N is large.
 - **:pin / :unpin** — toggle the pin flag on the keyboard-selected bookmark from the command palette without opening Config.
 - **:tag \<tagname\>** — add or remove a tag on the selected bookmark. Typing `:tag` alone shows the bookmark's current tags.
 - **:stale \[days\]** — accepts a custom day window: `:stale 7`, `:stale 90` etc. Default remains 30 days.

@@ -328,61 +328,140 @@ class SearchCommandsComponent {
 
     // ─── :open ────────────────────────────────────────────────────────────────
 
+    static OPEN_TABS_CAP = 15;
+    static OPEN_LAST_DEFAULT = 5;
+    static OPEN_LAST_MAX = 50;
+
+    _openTabsAction(bookmarks) {
+        return () => {
+            (bookmarks || []).forEach((b) => {
+                const url = String(b?.url || '').trim();
+                if (url) window.open(url, '_blank');
+            });
+            return true;
+        };
+    }
+
+    _buildOpenTabRows(bookmarks, labels) {
+        const list = (bookmarks || []).filter((b) => b && String(b.url || '').trim());
+        if (list.length === 0) return [];
+
+        const cap = SearchCommandsComponent.OPEN_TABS_CAP;
+        const rows = [];
+        const n = list.length;
+
+        if (n <= cap) {
+            rows.push({
+                name: labels.all(n),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: this._openTabsAction(list),
+            });
+        } else {
+            rows.push({
+                name: labels.first(cap, n),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: this._openTabsAction(list.slice(0, cap)),
+            });
+            rows.push({
+                name: labels.all(n),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: this._openTabsAction(list),
+            });
+        }
+        return rows;
+    }
+
+    _parseOpenLastCount(raw) {
+        if (raw == null || raw === '') return SearchCommandsComponent.OPEN_LAST_DEFAULT;
+        const n = parseInt(String(raw), 10);
+        if (!Number.isFinite(n) || n < 1) return SearchCommandsComponent.OPEN_LAST_DEFAULT;
+        return Math.min(n, SearchCommandsComponent.OPEN_LAST_MAX);
+    }
+
+    _getRecentBookmarksForOpen(dashboard, count) {
+        if (!dashboard || typeof dashboard.getRecentBookmarks !== 'function') return [];
+        return dashboard.getRecentBookmarks(dashboard.bookmarks || [], count);
+    }
+
+    _openAllRows(dashboard) {
+        const bookmarks = (dashboard.bookmarks || []).filter((b) => b && String(b.url || '').trim());
+        if (bookmarks.length === 0) {
+            return [{ name: 'No bookmarks on this page', shortcut: ':OPEN', action: () => true, type: 'command' }];
+        }
+        return this._buildOpenTabRows(bookmarks, {
+            all: (n) => `Open all ${n} bookmark${n !== 1 ? 's' : ''} (${n} new tab${n !== 1 ? 's' : ''})`,
+            first: (cap, total) => `Open first ${cap} of ${total} bookmarks (${cap} new tabs)`,
+        });
+    }
+
+    _openLastRows(dashboard, requestedCount) {
+        const recent = this._getRecentBookmarksForOpen(dashboard, requestedCount);
+        const valid = recent.filter((b) => b && String(b.url || '').trim());
+        if (valid.length === 0) {
+            return [{
+                name: 'No recently opened bookmarks on this page',
+                shortcut: ':OPEN',
+                action: () => true,
+                type: 'command',
+            }];
+        }
+
+        const labelCount = Math.min(requestedCount, valid.length);
+        return this._buildOpenTabRows(valid, {
+            all: (count) => `Open last ${labelCount} recent bookmark${count !== 1 ? 's' : ''} (${count} new tab${count !== 1 ? 's' : ''})`,
+            first: (cap) => `Open first ${cap} of last ${labelCount} recent (${cap} new tabs)`,
+        });
+    }
+
     handleOpenCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
         const scope = (args[0] || '').toLowerCase();
 
         if (!scope) {
-            return [{
-                name: '',
-                shortcut: ':OPEN',
-                completion: ':open all ',
-                type: 'command-completion'
-            }];
+            return [
+                { name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open last ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open last 5 ', type: 'command-completion' },
+            ];
         }
 
-        if (scope !== 'all') return [];
-
-        const bookmarks = (dashboard.bookmarks || []).filter(b => b && String(b.url || '').trim());
-        if (bookmarks.length === 0) {
-            return [{ name: 'No bookmarks on this page', shortcut: ':OPEN', action: () => true, type: 'command' }];
+        if (scope === 'all') {
+            if (args[1]) return [];
+            return this._openAllRows(dashboard);
         }
 
-        const cap = 15;
-        const rows = [];
-
-        if (bookmarks.length <= cap) {
-            rows.push({
-                name: `Open all ${bookmarks.length} bookmark${bookmarks.length !== 1 ? 's' : ''} (${bookmarks.length} new tab${bookmarks.length !== 1 ? 's' : ''})`,
-                shortcut: ':OPEN',
-                type: 'command',
-                action: () => {
-                    bookmarks.forEach(b => window.open(b.url, '_blank'));
-                    return true;
-                }
-            });
-        } else {
-            rows.push({
-                name: `Open first ${cap} of ${bookmarks.length} bookmarks (${cap} new tabs)`,
-                shortcut: ':OPEN',
-                type: 'command',
-                action: () => {
-                    bookmarks.slice(0, cap).forEach(b => window.open(b.url, '_blank'));
-                    return true;
-                }
-            });
-            rows.push({
-                name: `Open all ${bookmarks.length} bookmarks (${bookmarks.length} new tabs)`,
-                shortcut: ':OPEN',
-                type: 'command',
-                action: () => {
-                    bookmarks.forEach(b => window.open(b.url, '_blank'));
-                    return true;
-                }
-            });
+        if (scope === 'last' || scope === 'recent') {
+            const count = this._parseOpenLastCount(args[1]);
+            const rows = this._openLastRows(dashboard, count);
+            if (!args[1] && rows.length > 0) {
+                rows.push(
+                    { name: '', shortcut: ':OPEN', completion: ':open last 3 ', type: 'command-completion' },
+                    { name: '', shortcut: ':OPEN', completion: ':open last 10 ', type: 'command-completion' }
+                );
+            }
+            return rows;
         }
-        return rows;
+
+        if ('all'.startsWith(scope) && scope !== 'all') {
+            return [{ name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' }];
+        }
+        if ('last'.startsWith(scope) && scope !== 'last') {
+            return [
+                { name: '', shortcut: ':OPEN', completion: ':open last ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open last 5 ', type: 'command-completion' },
+            ];
+        }
+        if ('recent'.startsWith(scope) && scope !== 'recent') {
+            return [
+                { name: '', shortcut: ':OPEN', completion: ':open recent 5 ', type: 'command-completion' },
+            ];
+        }
+
+        return [];
     }
 
     // ─── persist helper ───────────────────────────────────────────────────────

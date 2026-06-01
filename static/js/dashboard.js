@@ -2414,6 +2414,7 @@ class Dashboard {
                 item(':remove', 'cbRemove', 'Delete the focused bookmark'),
                 item(':find <text>', 'cbFind', 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL'),
                 item(':open all', 'cbOpenAll', 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)'),
+                item(':open last [n]', 'cbOpenLast', 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15)'),
                 item(':goto <url or domain>', 'cbGoto', 'Navigate directly — full URLs open as-is, bare domains get https:// prepended'),
                 item(':duplicates', 'cbDuplicates', 'Find bookmarks with duplicate URLs across all pages'),
                 item(':stale <days>', 'cbStale', 'Show bookmarks not opened in <days> days (default 30)'),
@@ -5204,11 +5205,12 @@ class Dashboard {
             .replace(/'/g, '&#39;');
     }
 
-    getRecentBookmarks(bookmarks) {
-        return [...(Array.isArray(bookmarks) ? bookmarks : [])]
+    getRecentBookmarks(bookmarks, limit = 10) {
+        const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])]
             .filter((bookmark) => bookmark && bookmark.lastOpened)
-            .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
-            .slice(0, 10);
+            .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+        if (limit == null || limit <= 0) return sorted;
+        return sorted.slice(0, limit);
     }
 
     buildBookmarkTooltip(bookmark, previewTitle, previewDescription) {

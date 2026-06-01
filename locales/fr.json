@@ -89,6 +89,7 @@
             "cbRemove": "Supprimer le favori focalisé",
             "cbFind": "Filtrer les tuiles sur la page courante — masque celles qui ne correspondent pas au nom ou à l'URL",
             "cbOpenAll": "Ouvrir chaque favori de la page dans de nouveaux onglets (max. 15 ; au-delà option « tout ouvrir »)",
+            "cbOpenLast": "Ouvrir les N favoris ouverts le plus récemment sur cette page (défaut 5, max. 50 ; lot d’onglets max. 15)",
             "cbGoto": "Naviguer directement — URL complètes telles quelles, domaines nus reçoivent https://",
             "cbDuplicates": "Trouver les favoris avec des URL en double sur toutes les pages",
             "cbStale": "Afficher les favoris non ouverts depuis <jours> jours (défaut 30)",

@@ -99,6 +99,7 @@
             "cbRemove": "Verwijder bladwijzer met focus",
             "cbFind": "Filter tegels op huidige pagina — verbergt tegels die niet op naam of URL matchen",
             "cbOpenAll": "Open elke bladwijzer op huidige pagina in nieuwe tabbladen (max. 15; daarboven optie \"alles openen\")",
+            "cbOpenLast": "Open de N meest recent geopende bladwijzers op deze pagina (standaard 5, max. 50; tab-batch max. 15)",
             "cbGoto": "Navigeer direct — volledige URL's zoals ze zijn, kale domeinen krijgen https://",
             "cbDuplicates": "Vind bladwijzers met dubbele URL's op alle pagina's",
             "cbStale": "Toon bladwijzers niet geopend in <dagen> dagen (standaard 30)",

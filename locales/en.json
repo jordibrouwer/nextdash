@@ -99,6 +99,7 @@
             "cbRemove": "Delete the focused bookmark",
             "cbFind": "Filter bookmark tiles on the current page — hides tiles that don't match name or URL",
             "cbOpenAll": "Open every bookmark on the current page in new tabs (capped at 15; offers \"open all\" above that)",
+            "cbOpenLast": "Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15)",
             "cbGoto": "Navigate directly — full URLs open as-is, bare domains get https:// prepended",
             "cbDuplicates": "Find bookmarks with duplicate URLs across all pages",
             "cbStale": "Show bookmarks not opened in <days> days (default 30)",
