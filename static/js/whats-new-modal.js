@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.05-dashboard-release-v34';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v35';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -80,6 +80,38 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.06.1', 'June 2026', [
+                {
+                    title: 'Bookmark shortcuts',
+                    items: [
+                        { badge: 'new', text: '<strong><kbd>+</kbd> = full new-bookmark modal</strong> — press <kbd>+</kbd> on the dashboard (toolbar <em>+</em> shows only this key in the hover tooltip). Same form as <kbd>Ctrl+Shift+A</kbd> and <code>:new</code>.' },
+                        { badge: 'new', text: '<strong><kbd>&amp;</kbd> = quick-add</strong> — one-line omnibox: <code>name | url | shortcut</code>. Favicon fetched on save.' },
+                        { badge: 'fix', text: '<strong>Shortcut tooltips</strong> — a lone <kbd>+</kbd> in tooltips and the cheat sheet renders correctly (no longer treated as a chord separator).' },
+                    ]
+                },
+                {
+                    title: 'Import &amp; health workflows',
+                    items: [
+                        { badge: 'new', text: '<strong>Browser import preview</strong> — before confirming an HTML export, see <em>X new, Y conflicts (skipped)</em>. Counts update when you change the target page; only new URLs are imported.' },
+                        { badge: 'new', text: '<strong>Health → dashboard</strong> — each issue and duplicate-group row has a <em>dashboard</em> link. Opens the right page, expands the category, scrolls to the bookmark, and highlights the row (<code>?page=&amp;bookmark=&amp;category=</code>).' },
+                    ]
+                },
+                {
+                    title: 'Recent bookmarks (<kbd>*</kbd>)',
+                    items: [
+                        { badge: 'new', text: '<strong>Open from the <kbd>*</kbd> panel</strong> — bulk-open buttons for shown recents and for the last N opened (same safe tab cap as <code>:open all</code>). Hint points to <code>:open last</code> in command mode.' },
+                        { badge: 'new', text: '<strong>Discoverability</strong> — one-time spotlight on the <kbd>*</kbd> button after What\'s new; priority rotating tip for <kbd>*</kbd> and <code>:open last</code>.' },
+                    ]
+                },
+                {
+                    title: 'Documentation',
+                    items: [
+                        { badge: 'new', text: '<strong><code>MANUAL.md</code></strong> — full English user guide in the repo (concepts, keyboard workflow, config, import, health, extension).' },
+                        { badge: 'new', text: '<strong><code>CHANGELOG.md</code></strong> — complete release history in the same new/fix style; linked from the README.' },
+                    ]
+                },
+            ]),
 
             release('v2026.05.7', 'May 2026', [
                 {
