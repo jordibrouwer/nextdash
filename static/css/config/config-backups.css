@@ -79,6 +79,72 @@
     margin-top: 0.15rem;
 }
 
+/* Browser HTML import confirm modal */
+.browser-import-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.browser-import-found {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.browser-import-summary {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.browser-import-no-new {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--accent-warning, var(--text-secondary));
+}
+
+.browser-import-page-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.browser-import-page-row label {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.browser-import-page-row select {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+}
+
+.browser-import-preview-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    list-style: disc;
+    max-height: 8rem;
+    overflow-y: auto;
+}
+
+.browser-import-preview-list li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.browser-import-preview-more {
+    list-style: none;
+    margin-left: -1.1rem;
+    opacity: 0.75;
+}
+
 .backups-danger-hint {
     margin: 0;
     font-size: var(--font-size-controls);

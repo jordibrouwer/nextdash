@@ -310,6 +310,89 @@ class ConfigBackup {
         }
     }
 
+    canonicalUrlKey(url) {
+        if (typeof BookmarkUrlUtils !== 'undefined') {
+            return BookmarkUrlUtils.canonicalBookmarkURLKey(url);
+        }
+        return String(url || '').trim().toLowerCase().replace(/\/+$/, '');
+    }
+
+    /**
+     * Same dedup rules as POST /api/bookmarks/import-browser (page URLs + first wins in file).
+     * @param {Array<{name, url, category}>} bookmarks
+     * @param {Set<string>} existingUrlKeys
+     * @returns {{ newCount: number, conflictCount: number, toImport: Array }}
+     */
+    planBrowserImport(bookmarks, existingUrlKeys) {
+        const seen = new Set(existingUrlKeys);
+        const toImport = [];
+        let conflictCount = 0;
+        for (const bm of bookmarks) {
+            const key = this.canonicalUrlKey(bm.url);
+            if (seen.has(key)) {
+                conflictCount++;
+                continue;
+            }
+            seen.add(key);
+            toImport.push(bm);
+        }
+        return { newCount: toImport.length, conflictCount, toImport };
+    }
+
+    async fetchPageUrlKeys(pageId, cache) {
+        if (cache.has(pageId)) {
+            return cache.get(pageId);
+        }
+        let keys = new Set();
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (res.ok) {
+                const list = await res.json();
+                keys = new Set(list.map((b) => this.canonicalUrlKey(b.url)));
+            }
+        } catch (e) {
+            console.warn('Could not load page bookmarks for import preview', e);
+        }
+        cache.set(pageId, keys);
+        return keys;
+    }
+
+    formatBrowserImportSummary(plan) {
+        return this.t('config.browserImportPreviewSummary')
+            .replace('{{newCount}}', plan.newCount)
+            .replace('{{conflictCount}}', plan.conflictCount);
+    }
+
+    buildBrowserImportModalHtml({ foundText, summaryText, pageOptions, previewItems, moreCount, noNew }) {
+        const noNewHtml = noNew
+            ? `<p class="browser-import-no-new" id="browser-import-no-new">${this.t('config.browserImportNoNew')}</p>`
+            : '<p class="browser-import-no-new" id="browser-import-no-new" hidden></p>';
+        return `
+            <div class="browser-import-modal">
+                <p class="browser-import-found">${foundText}</p>
+                <p class="browser-import-summary" id="browser-import-summary" aria-live="polite">${summaryText}</p>
+                ${noNewHtml}
+                <div class="browser-import-page-row">
+                    <label for="browser-import-page-select">${this.t('config.browserImportPageLabel')}</label>
+                    <select id="browser-import-page-select">${pageOptions}</select>
+                </div>
+                <ul class="browser-import-preview-list" id="browser-import-preview-list">
+                    ${previewItems}
+                    ${moreCount > 0 ? `<li class="browser-import-preview-more">… ${moreCount} more</li>` : ''}
+                </ul>
+            </div>`;
+    }
+
+    renderBrowserImportPreviewItems(bookmarks, limit = 5) {
+        return bookmarks
+            .slice(0, limit)
+            .map(
+                (b) =>
+                    `<li title="${(b.url || '').replace(/"/g, '&quot;')}">${(b.name || b.url || '').replace(/</g, '&lt;')}</li>`
+            )
+            .join('');
+    }
+
     /**
      * Parse Netscape HTML bookmark format exported from browsers
      * @param {string} html
@@ -384,43 +467,105 @@ class ConfigBackup {
             pages = [{ id: 1, name: 'main' }];
         }
 
-        const folders = [...new Set(bookmarks.map(b => b.category).filter(c => c))];
-        const pageOptions = pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-        const previewItems = bookmarks.slice(0, 5).map(b => `<li style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name || b.url}</li>`).join('');
-        const moreCount = bookmarks.length - 5;
+        const folders = [...new Set(bookmarks.map((b) => b.category).filter((c) => c))];
+        const pageOptions = pages
+            .map((p) => `<option value="${p.id}">${p.name}</option>`)
+            .join('');
+        const defaultPageId = pages[0]?.id || 1;
+        const pageUrlKeysCache = new Map();
+        await Promise.all(pages.map((p) => this.fetchPageUrlKeys(p.id, pageUrlKeysCache)));
+
+        let currentPlan = this.planBrowserImport(
+            bookmarks,
+            pageUrlKeysCache.get(defaultPageId) || new Set()
+        );
 
         const foundText = this.t('config.browserImportFound')
             .replace('{{count}}', bookmarks.length)
             .replace('{{folders}}', folders.length);
 
-        const htmlMessage = `
-            <div style="margin-bottom:12px;">${foundText}</div>
-            <div style="margin-bottom:8px;">
-                <label for="browser-import-page-select" style="display:block;margin-bottom:4px;font-size:0.9em;">${this.t('config.browserImportPageLabel')}</label>
-                <select id="browser-import-page-select" style="width:100%;padding:4px 6px;">${pageOptions}</select>
-            </div>
-            <ul style="font-size:0.82em;margin:8px 0 0;padding-left:16px;opacity:0.65;list-style:disc;">
-                ${previewItems}
-                ${moreCount > 0 ? `<li>... and ${moreCount} more</li>` : ''}
-            </ul>`;
+        let previewList = currentPlan.toImport;
+        let moreCount = Math.max(0, previewList.length - 5);
+        const htmlMessage = this.buildBrowserImportModalHtml({
+            foundText,
+            summaryText: this.formatBrowserImportSummary(currentPlan),
+            pageOptions,
+            previewItems: this.renderBrowserImportPreviewItems(previewList),
+            moreCount,
+            noNew: currentPlan.newCount === 0,
+        });
 
         if (!window.AppModal) return;
-        const confirmed = await window.AppModal.confirm({
-            title: this.t('config.browserImportConfirmTitle'),
-            htmlMessage,
-            confirmText: this.t('config.browserImportConfirm'),
-            cancelText: this.t('config.cancelImport')
+
+        let importPlan = currentPlan;
+        const confirmed = await new Promise((resolve) => {
+            window.AppModal.show({
+                title: this.t('config.browserImportConfirmTitle'),
+                htmlMessage,
+                confirmText: this.t('config.browserImportConfirm'),
+                cancelText: this.t('config.cancelImport'),
+                onConfirm: () => resolve(true),
+                onCancel: () => resolve(false),
+            });
+
+            const summaryEl = document.getElementById('browser-import-summary');
+            const noNewEl = document.getElementById('browser-import-no-new');
+            const previewEl = document.getElementById('browser-import-preview-list');
+            const selectEl = document.getElementById('browser-import-page-select');
+            const confirmBtn = document.querySelector('#app-modal .modal-button:first-child');
+
+            const applyPlan = (plan) => {
+                importPlan = plan;
+                if (summaryEl) summaryEl.textContent = this.formatBrowserImportSummary(plan);
+                if (noNewEl) {
+                    if (plan.newCount === 0) {
+                        noNewEl.hidden = false;
+                    } else {
+                        noNewEl.hidden = true;
+                    }
+                }
+                if (previewEl) {
+                    const list = plan.toImport;
+                    const more = Math.max(0, list.length - 5);
+                    previewEl.innerHTML =
+                        this.renderBrowserImportPreviewItems(list) +
+                        (more > 0
+                            ? `<li class="browser-import-preview-more">… ${more} more</li>`
+                            : '');
+                }
+                if (confirmBtn) {
+                    confirmBtn.disabled = plan.newCount === 0;
+                    confirmBtn.setAttribute('aria-disabled', plan.newCount === 0 ? 'true' : 'false');
+                }
+            };
+
+            if (confirmBtn && currentPlan.newCount === 0) {
+                confirmBtn.disabled = true;
+                confirmBtn.setAttribute('aria-disabled', 'true');
+            }
+
+            selectEl?.addEventListener('change', async () => {
+                const pageId = parseInt(selectEl.value, 10) || defaultPageId;
+                const keys = await this.fetchPageUrlKeys(pageId, pageUrlKeysCache);
+                applyPlan(this.planBrowserImport(bookmarks, keys));
+            });
         });
 
         if (confirmed) {
-            const selectEl = document.getElementById('browser-import-page-select');
-            const pageId = selectEl ? parseInt(selectEl.value, 10) : (pages[0]?.id || 1);
-            const browserBtn = document.getElementById('browser-import-btn');
-            this.setButtonLoading(browserBtn, true, this.t('config.importInProgress') || 'Importing…');
-            try {
-                await this.performBrowserImport(bookmarks, pageId);
-            } finally {
-                this.setButtonLoading(browserBtn, false);
+            const pageId = (() => {
+                const el = document.getElementById('browser-import-page-select');
+                return el ? parseInt(el.value, 10) || defaultPageId : defaultPageId;
+            })();
+            const keys = pageUrlKeysCache.get(pageId) || new Set();
+            const finalPlan = this.planBrowserImport(bookmarks, keys);
+            if (finalPlan.newCount > 0) {
+                const browserBtn = document.getElementById('browser-import-btn');
+                this.setButtonLoading(browserBtn, true, this.t('config.importInProgress') || 'Importing…');
+                try {
+                    await this.performBrowserImport(finalPlan.toImport, pageId);
+                } finally {
+                    this.setButtonLoading(browserBtn, false);
+                }
             }
         }
     }
