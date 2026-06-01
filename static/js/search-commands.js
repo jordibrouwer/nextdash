@@ -381,6 +381,7 @@ class SearchCommandsComponent {
         return Math.min(n, SearchCommandsComponent.OPEN_LAST_MAX);
     }
 
+    /** :open last — page-local only; see Dashboard.getRecentBookmarks (do not use allBookmarks). */
     _getRecentBookmarksForOpen(dashboard, count) {
         if (!dashboard || typeof dashboard.getRecentBookmarks !== 'function') return [];
         return dashboard.getRecentBookmarks(dashboard.bookmarks || [], count);

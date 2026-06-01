@@ -92,7 +92,8 @@ const THEME_BACKGROUND_MAP = {
 class Dashboard {
     constructor() {
         this.bookmarks = [];
-        this.allBookmarks = []; // For global shortcuts
+        /** All pages — search / global shortcuts; not for getRecentBookmarks (page-local recent UX). */
+        this.allBookmarks = [];
         this.finders = [];
         this.categories = [];
         this.collapsedCategories = {};
@@ -5143,6 +5144,11 @@ class Dashboard {
         return text;
     }
 
+    /**
+     * Same sort/filter as {@link getRecentBookmarks}, then drops rows without a URL.
+     * Pass the same bookmark array you would pass to {@link getRecentBookmarks} (page-local:
+     * `this.bookmarks`, not `this.allBookmarks`).
+     */
     getRecentBookmarksWithUrls(bookmarks, limit) {
         return this.getRecentBookmarks(bookmarks, limit).filter(
             (bookmark) => bookmark && String(bookmark.url || '').trim()
@@ -5211,6 +5217,7 @@ class Dashboard {
             return;
         }
 
+        // Page-local recent list (* modal) — always this.bookmarks, never allBookmarks.
         const recentBookmarks = this.getRecentBookmarks(
             this.bookmarks,
             Dashboard.RECENT_MODAL_DISPLAY_LIMIT
@@ -5320,6 +5327,25 @@ class Dashboard {
             .replace(/'/g, '&#39;');
     }
 
+    /**
+     * Recent bookmarks by `lastOpened` (newest first).
+     *
+     * Scope is **whatever array you pass** — this helper does not read `this.bookmarks` or
+     * `this.allBookmarks` itself. All dashboard “recent” UX is **page-local**:
+     *
+     * - `this.bookmarks` — bookmarks on the **current page** (use this for `*` modal, `:open last`,
+     *   open-tabs actions, and any new recent UI).
+     * - `this.allBookmarks` — every bookmark on **all pages** (search / global shortcuts only).
+     *   Do **not** pass `allBookmarks` here unless you intentionally add a cross-page recent feature
+     *   and update copy (cheat sheet, help, commands) to say “across all pages”.
+     *
+     * `lastOpened` is updated when a bookmark is opened on the dashboard; it is per bookmark record,
+     * but filtering by page still requires passing only that page’s rows.
+     *
+     * @param {Array<object>} bookmarks — usually `this.bookmarks` (current page)
+     * @param {number} [limit=10] — max rows returned; `limit <= 0` returns the full sorted list
+     * @returns {Array<object>}
+     */
     getRecentBookmarks(bookmarks, limit = 10) {
         const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])]
             .filter((bookmark) => bookmark && bookmark.lastOpened)
