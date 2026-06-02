@@ -277,6 +277,15 @@ class ConfigStatsTour {
                 scrollBlock: 'center',
             },
             {
+                title: this.t('configStatsTourTagsTitle', 'Tag usage'),
+                body: this.t(
+                    'configStatsTourTagsBody',
+                    'See tag coverage, unique tags, and which tags appear on the most bookmarks. Tables rank tags and the most opened tagged bookmarks.'
+                ),
+                selector: '#stats-tags',
+                scrollBlock: 'center',
+            },
+            {
                 title: this.t('configStatsTourShortcutsTitle', 'Shortcuts usage'),
                 body: this.t(
                     'configStatsTourShortcutsBody',

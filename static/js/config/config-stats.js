@@ -1,14 +1,14 @@
 /**
  * Config "Stats" tab — two-column insights dashboard.
  * Sections: overview, cleanup score, activity, top bookmarks,
- *           pages, categories, shortcuts, rot & cleanup, conflicts, search & status.
+ *           pages, categories, tags, shortcuts, rot & cleanup, conflicts, search & status.
  */
 class ConfigStats {
     constructor(t) {
         this.t = typeof t === 'function' ? t : (k) => k;
         this.lastManager = null;
         // Current period (days) per section; 0 = all time
-        this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, rot: 90 };
+        this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, tags: 0, rot: 90 };
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -111,6 +111,7 @@ class ConfigStats {
             case 'top':         this.renderTopBookmarks(bookmarks, pages, locale, days); break;
             case 'pages':       this.renderPagesBlock(bookmarks, pages, days); break;
             case 'categories':  this.renderCategoriesBlock(bookmarks, pages, days); break;
+            case 'tags':        this.renderTagsBlock(bookmarks, pages, days); break;
             case 'rot':         this.renderRotBlock(bookmarks, pages, locale, days); break;
         }
     }
@@ -146,10 +147,22 @@ class ConfigStats {
         });
         const totalOpens = bookmarks.reduce((s, b) => s + Number(b?.openCount || 0), 0);
         const avg = bookmarks.length > 0 ? Math.round((totalOpens / bookmarks.length) * 10) / 10 : 0;
+        const uniqueTags = new Set();
+        let taggedCount = 0;
+        bookmarks.forEach((b) => {
+            const tags = Array.isArray(b?.tags)
+                ? b.tags.map((t) => String(t || '').trim()).filter(Boolean)
+                : [];
+            if (tags.length === 0) return;
+            taggedCount += 1;
+            tags.forEach((t) => uniqueTags.add(t.toLowerCase()));
+        });
 
         this.setText('stats-pages-count',      String(pages.length));
         this.setText('stats-categories-count', String(catKeys.size));
         this.setText('stats-bookmarks-total',  String(bookmarks.length));
+        this.setText('stats-unique-tags',      String(uniqueTags.size));
+        this.setText('stats-tagged-bookmarks', String(taggedCount));
         this.setText('stats-with-url',         String(withUrl));
         this.setText('stats-without-url',      String(Math.max(0, bookmarks.length - withUrl)));
         this.setText('stats-with-shortcut',    String(withSc));
@@ -167,6 +180,7 @@ class ConfigStats {
             ['stats-top-info-btn',        'statsInfoTopTitle',        'statsInfoTopMsg'],
             ['stats-pages-info-btn',      'statsInfoPagesTitle',      'statsInfoPagesMsg'],
             ['stats-categories-info-btn', 'statsInfoCategoriesTitle', 'statsInfoCategoriesMsg'],
+            ['stats-tags-info-btn',       'statsInfoTagsTitle',       'statsInfoTagsMsg'],
             ['stats-shortcuts-info-btn',  'statsInfoShortcutsTitle',  'statsInfoShortcutsMsg'],
             ['stats-rot-info-btn',        'statsInfoRotTitle',        'statsInfoRotMsg'],
             ['stats-conflicts-info-btn',  'statsInfoConflictsTitle',  'statsInfoConflictsMsg'],
@@ -536,6 +550,127 @@ class ConfigStats {
         });
     }
 
+    // ── Tags ───────────────────────────────────────────────────────────────
+
+    renderTagsBlock(bookmarks, pages, days) {
+        const total = bookmarks.length;
+        const cutoff = days ? Date.now() - days * 86400000 : 0;
+        const tagMap = new Map();
+        let taggedCount = 0;
+        let tagAssignments = 0;
+        let multiTagCount = 0;
+
+        bookmarks.forEach((b) => {
+            const tags = Array.isArray(b?.tags)
+                ? b.tags.map((t) => String(t || '').trim()).filter(Boolean)
+                : [];
+            if (tags.length === 0) return;
+
+            taggedCount += 1;
+            tagAssignments += tags.length;
+            if (tags.length > 1) multiTagCount += 1;
+
+            const lo = Number(b?.lastOpened || 0);
+            const opens = !cutoff || lo >= cutoff ? Number(b?.openCount || 0) : 0;
+            const pageId = Number(b?.pageId) || 0;
+
+            tags.forEach((raw) => {
+                const key = raw.toLowerCase();
+                const entry = tagMap.get(key) || {
+                    label: raw,
+                    count: 0,
+                    opens: 0,
+                    pageIds: new Set(),
+                };
+                if (!entry.label) entry.label = raw;
+                entry.count += 1;
+                entry.opens += opens;
+                if (pageId) entry.pageIds.add(pageId);
+                tagMap.set(key, entry);
+            });
+        });
+
+        const uniqueTags = tagMap.size;
+        const pct = total > 0 ? Math.round((taggedCount / total) * 100) : 0;
+        const avgTags = taggedCount > 0 ? Math.round((tagAssignments / taggedCount) * 10) / 10 : 0;
+
+        const fill = document.getElementById('stats-tag-bar-fill');
+        const label = document.getElementById('stats-tag-bar-label');
+        if (fill) fill.style.width = `${pct}%`;
+        if (label) {
+            label.textContent = this.t('config.statsTagCoverage')
+                .replace('{count}', taggedCount)
+                .replace('{total}', total)
+                .replace('{pct}', pct);
+        }
+
+        this.setText('stats-tags-unique-count', String(uniqueTags));
+        this.setText('stats-tags-tagged-count', String(taggedCount));
+        this.setText('stats-tags-untagged-count', String(Math.max(0, total - taggedCount)));
+        this.setText('stats-tags-avg-count', String(avgTags));
+        this.setText('stats-tags-multi-count', String(multiTagCount));
+
+        const tbodyId = 'stats-tags-body';
+        this.clearTable(tbodyId);
+        const rows = [...tagMap.values()].sort((a, b) => b.count - a.count || b.opens - a.opens);
+        if (rows.length === 0) {
+            this.noData(tbodyId, 4);
+        } else {
+            const maxCount = Math.max(...rows.map((r) => r.count), 1);
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) {
+                rows.slice(0, 25).forEach((row) => {
+                    const tr = document.createElement('tr');
+                    const tdTag = document.createElement('td');
+                    tdTag.className = 'stats-bar-cell';
+                    if (row.count > 0) {
+                        const bar = document.createElement('span');
+                        bar.className = 'stats-bar-cell-fill';
+                        bar.style.width = `${Math.round((row.count / maxCount) * 100)}%`;
+                        tdTag.appendChild(bar);
+                    }
+                    const lbl = document.createElement('span');
+                    lbl.className = 'stats-bar-cell-text';
+                    lbl.textContent = row.label;
+                    tdTag.appendChild(lbl);
+                    tr.appendChild(tdTag);
+
+                    [
+                        String(row.count),
+                        String(row.opens),
+                        String(row.pageIds.size),
+                    ].forEach((txt) => {
+                        const td = document.createElement('td');
+                        td.textContent = txt;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        const topTaggedId = 'stats-top-tagged-body';
+        this.clearTable(topTaggedId);
+        const topTagged = bookmarks
+            .filter((b) => Array.isArray(b?.tags) && b.tags.some((t) => String(t || '').trim()))
+            .sort((a, b) => Number(b?.openCount || 0) - Number(a?.openCount || 0))
+            .slice(0, 20);
+
+        if (topTagged.length === 0) {
+            this.noData(topTaggedId, 4);
+        } else {
+            topTagged.forEach((b) => {
+                const tags = b.tags.map((t) => String(t || '').trim()).filter(Boolean);
+                this.appendRow(topTaggedId, [
+                    String(b.name || '—'),
+                    tags.join(', ') || '—',
+                    String(Number(b.openCount || 0)),
+                    this.pageName(pages, b.pageId),
+                ]);
+            });
+        }
+    }
+
     // ── Shortcuts ──────────────────────────────────────────────────────────
 
     renderShortcutsBlock(bookmarks, pages) {
@@ -703,6 +838,7 @@ class ConfigStats {
         this.renderTopBookmarks(bookmarks, pages, locale, this.sectionPeriods.top);
         this.renderPagesBlock(bookmarks, pages, this.sectionPeriods.pages);
         this.renderCategoriesBlock(bookmarks, pages, this.sectionPeriods.categories);
+        this.renderTagsBlock(bookmarks, pages, this.sectionPeriods.tags);
         this.renderShortcutsBlock(bookmarks, pages);
         this.renderRotBlock(bookmarks, pages, locale, this.sectionPeriods.rot);
         this.renderConflictsBlock(bookmarks);

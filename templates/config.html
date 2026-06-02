@@ -1509,6 +1509,7 @@
                         <li><a href="#stats-top" data-i18n="config.statsNavTop">top bookmarks</a></li>
                         <li><a href="#stats-pages" data-i18n="config.statsNavPages">pages</a></li>
                         <li><a href="#stats-categories" data-i18n="config.statsNavCategories">categories</a></li>
+                        <li><a href="#stats-tags" data-i18n="config.statsNavTags">tags</a></li>
                         <li><a href="#stats-shortcuts" data-i18n="config.statsNavShortcuts">shortcuts</a></li>
                         <li><a href="#stats-rot" data-i18n="config.statsNavRot">rot &amp; cleanup</a></li>
                         <li><a href="#stats-conflicts" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</a></li>
@@ -1527,6 +1528,8 @@
                             <div><dt data-i18n="config.statsPages">Pages</dt><dd id="stats-pages-count">0</dd></div>
                             <div><dt data-i18n="config.statsCategories">Categories</dt><dd id="stats-categories-count">0</dd></div>
                             <div><dt data-i18n="config.statsBookmarksTotal">Bookmarks total</dt><dd id="stats-bookmarks-total">0</dd></div>
+                            <div><dt data-i18n="config.statsUniqueTags">Unique tags</dt><dd id="stats-unique-tags">0</dd></div>
+                            <div><dt data-i18n="config.statsTaggedBookmarks">Tagged bookmarks</dt><dd id="stats-tagged-bookmarks">0</dd></div>
                             <div><dt data-i18n="config.statsWithUrl">With URL</dt><dd id="stats-with-url">0</dd></div>
                             <div><dt data-i18n="config.statsWithoutUrl">Without URL</dt><dd id="stats-without-url">0</dd></div>
                             <div><dt data-i18n="config.statsWithShortcut">With shortcut</dt><dd id="stats-with-shortcut">0</dd></div>
@@ -1658,6 +1661,57 @@
                                     <th data-i18n="config.statsColOpens">Opens</th>
                                 </tr></thead>
                                 <tbody id="stats-categories-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="stats-tags" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavTags">tags</h3>
+                            <button type="button" class="info-button" id="stats-tags-info-btn">ℹ</button>
+                        </div>
+                        <div class="stats-shortcut-bar-wrap">
+                            <div class="stats-shortcut-bar">
+                                <div id="stats-tag-bar-fill" class="stats-shortcut-bar-fill"></div>
+                            </div>
+                            <span id="stats-tag-bar-label" class="stats-shortcut-bar-label"></span>
+                        </div>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsUniqueTags">Unique tags</dt><dd id="stats-tags-unique-count">0</dd></div>
+                            <div><dt data-i18n="config.statsTaggedBookmarks">Tagged bookmarks</dt><dd id="stats-tags-tagged-count">0</dd></div>
+                            <div><dt data-i18n="config.statsUntaggedBookmarks">Without tags</dt><dd id="stats-tags-untagged-count">0</dd></div>
+                            <div><dt data-i18n="config.statsAvgTagsPerBookmark">Avg tags / tagged bookmark</dt><dd id="stats-tags-avg-count">0</dd></div>
+                            <div><dt data-i18n="config.statsMultiTagBookmarks">Bookmarks with 2+ tags</dt><dd id="stats-tags-multi-count">0</dd></div>
+                        </dl>
+                        <div class="stats-period-bar" data-section="tags">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                            <button type="button" class="stats-period-btn" data-period="180" data-i18n="config.statsPeriod6Months">6 months</button>
+                            <button type="button" class="stats-period-btn active" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubTopTags">top tags by bookmarks</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColTag">Tag</th>
+                                    <th data-i18n="config.statsColBookmarks">Bookmarks</th>
+                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-i18n="config.statsColPagesUsingTag">Pages</th>
+                                </tr></thead>
+                                <tbody id="stats-tags-body"></tbody>
+                            </table>
+                        </div>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubTopTaggedBookmarks">most opened tagged bookmarks</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColName">Name</th>
+                                    <th data-i18n="config.statsColTag">Tags</th>
+                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-i18n="config.statsColPage">Page</th>
+                                </tr></thead>
+                                <tbody id="stats-top-tagged-body"></tbody>
                             </table>
                         </div>
                     </section>
