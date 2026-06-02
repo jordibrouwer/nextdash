@@ -276,6 +276,8 @@ Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on t
 
 At the top, the **structure workspace** manages pages and categories; below that you pick the active page, filter by category, and sort the list. **Quick add (⚡)** inserts a URL with minimal fields; **+ Add** creates a blank row and opens the full detail panel. Select multiple rows for the **bulk toolbar** (move, pin, status, favicon refresh, delete). Bookmark changes apply to the dashboard only after **Save** in the config header.
 
+All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs and after guided tours.
+
 The first time you open this tab on a desktop-width window, a **10-step guided tour** walks through these areas (see [Guided config tours](#guided-config-tours)).
 
 ### 7.6 Browser extension
@@ -327,7 +329,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 |------|--------|
 | `1`–`9` | Jump to page tab by position |
 | `Shift + ←` / `Shift + →` | Previous / next page |
-| `,` | Page overview modal |
+| `,` | Page overview modal (popover stays inside the viewport on narrow screens) |
 
 ### 9.2 Bookmark grid
 
@@ -443,10 +445,12 @@ Temporarily hides bookmark tiles that do not match. Run `:find` alone to clear.
 
 ### Page customisation
 
-Double-click a page tab:
+Double-click a page tab **on desktop or tablet landscape** (not on mobile — avoids accidental renames on touch):
 
 - Set **emoji** icon  
 - Choose **colour dot** (8 accents)
+
+Use **config → pages** to rename a page on any device.
 
 ### Sorting
 
@@ -559,25 +563,30 @@ When enabled, bookmarks can show online/offline from ping checks. Configure in *
 Central place to triage issues:
 
 ```
-Summary cards → Filter pills → Issue list → Per-bookmark actions
+Summary cards → Filter pills + page filter → Issue list → Action toolbar
                                     ↓
-              Duplicate groups → merge (keep first)
+              Duplicate groups → merge (keep best)
 ```
 
 | Feature | Use |
 |---------|-----|
-| **Score 0–100** | Combines broken, duplicate, stale, missing preview, unused |
-| **Filters** | broken, duplicate, stale, unchecked, … |
+| **Score 0–100** | Combines broken, duplicate, shortcut conflict, stale, missing preview, unused |
+| **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy |
+| **Page filter** | Limit the issue list to one dashboard page |
 | **Search** | Name, URL, category, page |
+| **Action toolbar** | Two compact rows per issue (config-style buttons): standard actions (dashboard, open, ping, favicon, delete) and auto-heal (archive, detect redirect, refresh title, 1-click fix) |
 | **dashboard link** | Jump to bookmark on correct page/category |
-| **ping / favicon** | Quick fixes from the list |
-| **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicates |
+| **ping** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
+| **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicate groups |
+| **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; removes the rest |
 
-Filter/sort/search state persists in the session across refreshes.
+Filter, sort, search, and page-filter state persist in the session across refreshes.
+
+The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts).
 
 ### Stats (`config#stats`)
 
-Read-only analytics: activity, top bookmarks, cleanup score, rot tables, duplicate/conflict links to health.
+Read-only analytics: activity, top bookmarks, cleanup score, **tags** (coverage, most-used tag, untagged count, per-tag tables), rot tables, duplicate/conflict links to health.
 
 ---
 
@@ -620,7 +629,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
 | **Collections** (11 steps) | First visit to **config → collections** | List, new collection, optional demo rules (tag/category/shortcut, AND/OR), save to dashboard, preview on dashboard, cleanup |
 | **Finders** (8 steps) | First visit to **config → finders** | Concept, fields, **+ Add finder**, optional **Google** example (`?g`), dashboard usage, reorder/remove, **Save** |
-| **Stats** (11 steps) | First visit to **config → stats** | Index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, rot & cleanup, conflicts (Health link), search/status settings |
+| **Stats** (12 steps) | First visit to **config → stats** | Index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, **tags**, rot & cleanup, conflicts (Health link), search/status settings |
 | **Theme** (9 steps) | First visit to **config → theme** (`#colors`) | Editor, dark/light/custom subtabs, add custom theme, auto **Tour demo** palette, live preview, **Save colors**, **General → Appearance** to activate, confirm removal and restore previous theme |
 
 **Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.

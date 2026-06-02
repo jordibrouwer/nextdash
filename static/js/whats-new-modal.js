@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v38';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v39';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -81,6 +81,34 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.06.4', 'May 2026', [
+                {
+                    title: 'Config — bookmarks &amp; stats',
+                    items: [
+                        { badge: 'fix', text: '<strong>Bookmark store</strong> — one central cache in config so page lists and the Tags tab always share the same data; fixes tags appearing empty after restart or a guided tour.' },
+                        { badge: 'new', text: '<strong>Stats → Tags</strong> — tag counts, most-used tag, untagged bookmarks, and a per-tag breakdown; new index link and tour step.' },
+                    ]
+                },
+                {
+                    title: 'Dashboard',
+                    items: [
+                        { badge: 'fix', text: '<strong>Page-tab popover</strong> — stays inside the viewport on narrow screens and after scroll/resize.' },
+                        { badge: 'fix', text: '<strong>Mobile page tabs</strong> — double-tap no longer starts inline rename on phones; rename remains a desktop/tablet action.' },
+                        { badge: 'new', text: '<strong>Health badge</strong> — shortcut conflicts are included in the warning count on the health link.' },
+                    ]
+                },
+                {
+                    title: 'Health beta',
+                    items: [
+                        { badge: 'new', text: '<strong>Shortcut conflicts</strong> — detected across all pages; summary card, filter pill, and per-bookmark status.' },
+                        { badge: 'new', text: '<strong>Filter by page</strong> — dropdown next to search; choice is remembered for the session.' },
+                        { badge: 'new', text: '<strong>Smarter duplicate merge</strong> — keeps the bookmark with the most opens, then pinned, then oldest; <em>keep best</em> on duplicate groups.' },
+                        { badge: 'new', text: '<strong>Clearer link errors</strong> — ping and retest report <em>HTTP 404</em>, <em>Timeout</em>, DNS, TLS, and similar instead of a generic failure.' },
+                        { badge: 'fix', text: '<strong>Action toolbar per issue</strong> — buttons sit below each bookmark in a compact two-row bar (standard actions + auto-heal), styled like config buttons.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.3', 'June 2026', [
                 {

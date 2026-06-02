@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.4 — May 2026](#v2026064--may-2026)
 - [v2026.06.3 — June 2026](#v2026063--june-2026)
 - [v2026.06.2 — June 2026](#v2026062--june-2026)
 - [v2026.06.1 — June 2026](#v2026061--june-2026)
@@ -30,6 +31,43 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No shipped release yet — items land here before the next version section._
+
+---
+
+## v2026.06.4 — May 2026
+
+**Bookmark sync reliability**, **Stats tags**, **dashboard page-tab polish**, and a major **Health beta** upgrade (shortcut conflicts, page filter, smarter merge, clearer errors, config-style action toolbars).
+
+### Config → Bookmarks & tags
+
+- **fix** **Central bookmark store** — new `ConfigBookmarkStore` as the single source of truth for bookmark data in config; page lists and the Tags tab share the same object references. Fixes tags appearing empty or out of sync after restart or a guided tour.
+- **fix** **Tag sync simplified** — duplicate cache/sync helpers removed or reduced to no-ops; tours and demos read/write through the store.
+
+### Config → Stats
+
+- **new** **Tags section** — tag usage overview (total tags, most-used tag, untagged bookmarks) plus a per-tag breakdown with counts. Index link, stats tour step, and EN/NL/DE/FR strings.
+
+### Dashboard
+
+- **fix** **Page-tab popover** — popover stays inside the viewport (clamp + reposition on scroll/resize); no more menu clipped off-screen on narrow windows.
+- **fix** **Page-tab rename on mobile** — inline rename (double-click) only on desktop/tablet landscape via `allowsPageTabInlineEdit()`; avoids accidental renames on touch.
+- **new** **Health badge** — shortcut conflicts count toward the warning badge alongside duplicates, unchecked, and stale items.
+
+### Health beta
+
+- **new** **Shortcut conflicts** — backend detects duplicate shortcuts across pages; summary card, filter pill, and `shortcut-conflict` issue status.
+- **new** **Filter by page** — dropdown next to search; choice persisted in `sessionStorage`.
+- **new** **Smarter duplicate merge** — keeps the best bookmark (most opens → pinned → oldest `createdAt`); **keep best** on duplicate groups; merge deletes highest indices per page safely.
+- **new** **Clearer broken diagnosis** — shared `ping.go` with detailed reachability errors (HTTP status, timeout, DNS, TLS, etc.) instead of generic “ping failed”; ping and retest store the real error on the bookmark.
+- **fix** **Action toolbar layout** — buttons sit below each bookmark (fixes actions clipped off-screen by horizontal overflow).
+- **fix** **Auto-heal always available** — archive, detect redirect, refresh title, and 1-click fix in a second toolbar row on every issue.
+- **new** **Config-style buttons** — issue actions use `btn btn-small` from config; two compact rows (standard + auto-heal) in an inset bar matching the config bulk-toolbar look.
+
+### Backend
+
+- **new** `HealthSummary.shortcutConflictCount`; extended `BookmarkRef` (open count, pinned, createdAt).
+- **new** `ping.go` — shared `pingURLDetailed()` for health, retest, and `/api/ping`.
+- **refactor** Removed duplicate `pingURL` from `handlers.go`; `status.go` delegates to shared ping logic.
 
 ---
 
