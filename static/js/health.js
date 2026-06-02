@@ -6,6 +6,7 @@
         filter: 'all',
         sort: 'score',
         query: '',
+        pageId: 'all',
         language: null
     };
 
@@ -14,7 +15,8 @@
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
                 filter: healthState.filter,
                 sort: healthState.sort,
-                query: healthState.query
+                query: healthState.query,
+                pageId: healthState.pageId
             }));
         } catch (e) { /* quota or private mode */ }
     }
@@ -28,12 +30,18 @@
             const validSorts = ['score', 'status', 'last-checked', 'last-checked-desc', 'name'];
             if (validSorts.includes(saved.sort)) healthState.sort = saved.sort;
             if (typeof saved.query === 'string') healthState.query = saved.query;
+            if (saved.pageId === 'all' || saved.pageId == null || saved.pageId === '') {
+                healthState.pageId = 'all';
+            } else {
+                healthState.pageId = String(saved.pageId);
+            }
         } catch (e) { /* malformed JSON */ }
     }
 
     const statusFallbacks = {
         broken: 'broken',
         duplicate: 'duplicate',
+        'shortcut-conflict': 'shortcut conflict',
         unchecked: 'unchecked',
         stale: 'stale',
         unused: 'unused',
@@ -41,7 +49,7 @@
         healthy: 'healthy'
     };
 
-    const filterOrder = ['all', 'broken', 'duplicate', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
+    const filterOrder = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
 
     function t(key, fallback, replacements = {}) {
         const translated = healthState.language && typeof healthState.language.t === 'function'
@@ -64,13 +72,31 @@
             return t('health.reasonDuplicateUrl', 'Duplicate URL in {count} bookmarks', { count: duplicateMatch[1] });
         }
 
+        const shortcutMatch = String(reason).match(/^Shortcut conflict with (\d+) bookmarks$/);
+        if (shortcutMatch) {
+            return t('health.reasonShortcutConflict', 'Shortcut conflict with {count} bookmarks', { count: shortcutMatch[1] });
+        }
+
+        const httpMatch = String(reason).match(/^HTTP (\d+)$/);
+        if (httpMatch) {
+            return t('health.errorHttp', 'HTTP {status}', { status: httpMatch[1] });
+        }
+
         const reasonKeys = {
             'Last error recorded': 'health.reasonLastError',
             'Status check has never run': 'health.reasonStatusNeverRun',
             'Status check is stale': 'health.reasonStatusStale',
             'Not opened in over 30 days': 'health.reasonNotOpened30Days',
             'Never opened': 'health.reasonNeverOpened',
-            'No preview metadata yet': 'health.reasonNoPreview'
+            'No preview metadata yet': 'health.reasonNoPreview',
+            'Timeout': 'health.errorTimeout',
+            'DNS lookup failed': 'health.errorDns',
+            'Connection refused': 'health.errorConnectionRefused',
+            'TLS error': 'health.errorTls',
+            'Too many redirects': 'health.errorTooManyRedirects',
+            'Unreachable': 'health.errorUnreachable',
+            'Invalid URL': 'health.errorInvalidUrl',
+            'ping failed': 'health.errorPingFailed'
         };
         const key = reasonKeys[reason];
         return key ? t(key, reason) : reason;
@@ -103,7 +129,24 @@
             url: issue.url,
         });
         const label = t('health.openInDashboard', 'dashboard');
-        return `<a class="health-action health-action-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+        return `<a class="btn btn-small btn-secondary health-action-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+    }
+
+    function shouldShowHealActions(issue) {
+        return Boolean(issue?.url);
+    }
+
+    function renderHealActions(issue) {
+        if (!shouldShowHealActions(issue)) return '';
+
+        return `
+            <div class="health-issue-toolbar health-issue-toolbar-heal">
+                <button type="button" class="btn btn-small btn-secondary" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
+                <button type="button" class="btn btn-small btn-secondary" data-heal-redirect-page="${escapeHtml(issue.pageId)}" data-heal-redirect-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealRedirect', 'detect redirect'))}</button>
+                <button type="button" class="btn btn-small btn-secondary" data-heal-title-page="${escapeHtml(issue.pageId)}" data-heal-title-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealTitle', 'refresh title'))}</button>
+                <button type="button" class="btn btn-small btn-primary" data-heal-fix-page="${escapeHtml(issue.pageId)}" data-heal-fix-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealOneClick', '1-click fix'))}</button>
+            </div>
+        `;
     }
 
     function fmtDate(value) {
@@ -115,6 +158,47 @@
         if (score >= 90) return 'good';
         if (score >= 70) return 'warn';
         return 'bad';
+    }
+
+    function matchesPageFilter(issue, pageId) {
+        if (!pageId || pageId === 'all') return true;
+        return String(issue.pageId) === String(pageId);
+    }
+
+    function getPageFilterOptions(report) {
+        const pages = new Map();
+        for (const issue of report?.issues || []) {
+            if (!pages.has(issue.pageId)) {
+                pages.set(issue.pageId, issue.pageName || t('health.pageNumber', 'Page {id}', { id: issue.pageId }));
+            }
+        }
+        return [...pages.entries()].sort((a, b) => a[0] - b[0]);
+    }
+
+    function pickBestDuplicateBookmark(bookmarks) {
+        if (!bookmarks?.length) return null;
+        const sorted = [...bookmarks].sort((a, b) => {
+            const openDiff = (b.openCount || 0) - (a.openCount || 0);
+            if (openDiff !== 0) return openDiff;
+            const pinnedDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+            if (pinnedDiff !== 0) return pinnedDiff;
+            const aCreated = a.createdAt || 0;
+            const bCreated = b.createdAt || 0;
+            if (aCreated === 0 && bCreated === 0) return 0;
+            if (aCreated === 0) return 1;
+            if (bCreated === 0) return -1;
+            return aCreated - bCreated;
+        });
+        return sorted[0];
+    }
+
+    function orderDuplicateGroupBestFirst(group) {
+        if (!group?.bookmarks?.length) return group;
+        const best = pickBestDuplicateBookmark(group.bookmarks);
+        if (!best) return group;
+        const rest = group.bookmarks.filter((bookmark) => bookmark !== best
+            && !(bookmark.pageId === best.pageId && bookmark.index === best.index));
+        return { ...group, bookmarks: [best, ...rest] };
     }
 
     function matchesQuery(issue, query) {
@@ -145,6 +229,7 @@
             buildSummaryCard(t('health.summaryHealthy', 'Healthy'), summary.healthyCount || 0, t('health.summaryHealthyMeta', 'No active issues'), 'good'),
             buildSummaryCard(t('health.summaryBroken', 'Broken'), summary.brokenCount || 0, t('health.summaryBrokenMeta', 'Last error recorded'), 'bad'),
             buildSummaryCard(t('health.summaryDuplicates', 'Duplicates'), summary.duplicateCount || 0, t('health.summaryDuplicatesMeta', 'Duplicate URLs'), 'warn'),
+            buildSummaryCard(t('health.summaryShortcutConflicts', 'Shortcut conflicts'), summary.shortcutConflictCount || 0, t('health.summaryShortcutConflictsMeta', 'Duplicate shortcuts'), 'warn'),
             buildSummaryCard(t('health.summaryUnchecked', 'Unchecked'), summary.uncheckedCount || 0, t('health.summaryUncheckedMeta', 'Status checks missing or stale'), 'warn'),
             buildSummaryCard(t('health.summaryStale', 'Stale'), summary.staleCount || 0, t('health.summaryStaleMeta', 'Not opened recently'), 'warn'),
             buildSummaryCard(t('health.summaryMissingPreview', 'Missing preview'), summary.missingPreviewCount || 0, t('health.summaryMissingPreviewMeta', 'No preview metadata yet'), 'neutral'),
@@ -159,6 +244,7 @@
             all: summary.totalBookmarks || 0,
             broken: summary.brokenCount || 0,
             duplicate: summary.duplicateCount || 0,
+            'shortcut-conflict': summary.shortcutConflictCount || 0,
             unchecked: summary.uncheckedCount || 0,
             stale: summary.staleCount || 0,
             unused: summary.unusedCount || 0,
@@ -174,7 +260,7 @@
         `).join('');
     }
 
-    const statusRank = { broken: 0, duplicate: 1, unchecked: 2, stale: 3, unused: 4, 'missing-preview': 5, healthy: 6 };
+    const statusRank = { broken: 0, duplicate: 1, 'shortcut-conflict': 2, unchecked: 3, stale: 4, unused: 5, 'missing-preview': 6, healthy: 7 };
 
     function sortIssues(issues) {
         const sorted = [...issues];
@@ -200,7 +286,11 @@
     }
 
     function renderIssues(report) {
-        const issues = sortIssues((report?.issues || []).filter((issue) => matchesFilter(issue, healthState.filter) && matchesQuery(issue, healthState.query)));
+        const issues = sortIssues((report?.issues || []).filter((issue) =>
+            matchesFilter(issue, healthState.filter)
+            && matchesPageFilter(issue, healthState.pageId)
+            && matchesQuery(issue, healthState.query)
+        ));
 
         const resultsCount = document.getElementById('health-results-count');
         if (resultsCount) {
@@ -239,24 +329,21 @@
                     </div>
                 </div>
                 <div class="health-issue-actions">
-                    ${renderOpenInDashboardAction(issue)}
-                    <button type="button" class="health-action" data-open-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.open', 'open'))}</button>
-                    <button type="button" class="health-action" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.ping', 'ping'))}</button>
-                    <button type="button" class="health-action" data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.refreshFavicon', 'favicon'))}</button>
-                    <button type="button" class="health-action health-action-danger" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
-                    ${issue.status === 'broken' ? `
-                        <button type="button" class="health-action" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
-                        <button type="button" class="health-action" data-heal-redirect-page="${escapeHtml(issue.pageId)}" data-heal-redirect-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealRedirect', 'detect redirect'))}</button>
-                        <button type="button" class="health-action" data-heal-title-page="${escapeHtml(issue.pageId)}" data-heal-title-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealTitle', 'refresh title'))}</button>
-                        <button type="button" class="health-action" data-heal-fix-page="${escapeHtml(issue.pageId)}" data-heal-fix-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealOneClick', '1-click fix'))}</button>
-                    ` : ''}
+                    <div class="health-issue-toolbar">
+                        ${renderOpenInDashboardAction(issue)}
+                        <button type="button" class="btn btn-small btn-secondary" data-open-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.open', 'open'))}</button>
+                        <button type="button" class="btn btn-small btn-secondary" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.ping', 'ping'))}</button>
+                        <button type="button" class="btn btn-small btn-secondary" data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.refreshFavicon', 'favicon'))}</button>
+                        <button type="button" class="btn btn-small btn-danger" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
+                    </div>
+                    ${renderHealActions(issue)}
                 </div>
             </article>
         `).join('');
     }
 
     function renderDuplicates(report) {
-        const groups = report?.duplicateGroups || [];
+        const groups = (report?.duplicateGroups || []).map(orderDuplicateGroupBestFirst);
         if (!groups.length) {
             return `<div class="health-empty">${escapeHtml(t('health.noDuplicateGroups', 'No duplicate groups found.'))}</div>`;
         }
@@ -265,8 +352,8 @@
             <article class="health-duplicate-group" data-group-index="${idx}">
                 <div class="health-duplicate-header">
                     <div class="health-duplicate-url">${escapeHtml(group.url)}</div>
-                    <button class="btn btn-small btn-danger health-keep-first-btn" data-group-index="${idx}" title="${escapeHtml(t('health.keepFirstTitle', 'Keep first, remove the rest'))}">
-                        ${escapeHtml(t('health.keepFirst', 'keep first'))}
+                    <button class="btn btn-small btn-danger health-keep-first-btn" data-group-index="${idx}" title="${escapeHtml(t('health.keepBestTitle', 'Keep best bookmark (most opens, pinned, oldest)'))}">
+                        ${escapeHtml(t('health.keepBest', 'keep best'))}
                     </button>
                 </div>
                 <div class="health-duplicate-items">
@@ -278,10 +365,15 @@
                             url: group.url,
                         });
                         const dashLabel = t('health.openInDashboard', 'dashboard');
+                        const metaParts = [
+                            t('health.openedCount', 'opened {count}x', { count: bookmark.openCount || 0 }),
+                            bookmark.pinned ? t('health.pinned', 'pinned') : null
+                        ].filter(Boolean).join(' · ');
                         return `
                         <span class="${bIdx === 0 ? 'health-duplicate-keep' : 'health-duplicate-remove'}">
                             ${escapeHtml(bookmark.name)}
                             <em>${escapeHtml(t('health.pageLower', 'page'))} ${escapeHtml(String(bookmark.pageId))}</em>
+                            <small>${escapeHtml(metaParts)}</small>
                             <a class="health-duplicate-item-link" href="${escapeHtml(dashHref)}">${escapeHtml(dashLabel)}</a>
                             ${bIdx === 0 ? `<span class="health-duplicate-badge keep">${escapeHtml(t('health.keep', 'keep'))}</span>` : `<span class="health-duplicate-badge remove">${escapeHtml(t('health.remove', 'remove'))}</span>`}
                         </span>`;
@@ -297,7 +389,7 @@
         document.querySelectorAll('.health-keep-first-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const idx = parseInt(btn.getAttribute('data-group-index'), 10);
-                const group = healthState.report?.duplicateGroups?.[idx];
+                const group = orderDuplicateGroupBestFirst(healthState.report?.duplicateGroups?.[idx]);
                 if (!group) return;
 
                 btn.disabled = true;
@@ -346,22 +438,25 @@
                     const result = await response.json();
                     const status = result.status === 'online' ? 'online' : 'offline';
                     const pingMs = result.ping || 0;
+                    const errorDetail = (result.errorDetail || '').trim()
+                        || (status === 'online' ? '' : t('health.errorPingFailed', 'ping failed'));
                     button.textContent = status === 'online'
                         ? t('health.onlineMs', 'online {ms}ms', { ms: pingMs })
-                        : t('health.offline', 'offline');
+                        : (errorDetail || t('health.offline', 'offline'));
                     
                     // Cache the result
-                    await cacheScanResult(url, status, pingMs, '');
+                    await cacheScanResult(url, status, pingMs, errorDetail);
                     if (Number.isFinite(pageId) && Number.isFinite(index)) {
-                        await persistIssueStatus(pageId, index, status, status === 'online' ? '' : 'ping failed');
+                        await persistIssueStatus(pageId, index, status, status === 'online' ? '' : errorDetail);
                         await loadReport();
                         render();
                     }
                 } catch (error) {
                     button.textContent = t('health.failed', 'failed');
-                    await cacheScanResult(url, 'error', 0, error.message);
+                    const failDetail = error.message || t('health.errorPingFailed', 'ping failed');
+                    await cacheScanResult(url, 'error', 0, failDetail);
                     if (Number.isFinite(pageId) && Number.isFinite(index)) {
-                        await persistIssueStatus(pageId, index, 'offline', error.message || 'ping failed');
+                        await persistIssueStatus(pageId, index, 'offline', failDetail);
                         await loadReport();
                         render();
                     }
@@ -594,19 +689,22 @@
     }
 
     async function confirmAndMergeDuplicateGroup(group) {
-        if (!group?.bookmarks?.length || group.bookmarks.length < 2) {
+        const ordered = orderDuplicateGroupBestFirst(group);
+        if (!ordered?.bookmarks?.length || ordered.bookmarks.length < 2) {
             showBulkStatus(t('health.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'));
             return;
         }
 
-        const target = group.bookmarks[0];
-        const sources = group.bookmarks.slice(1);
+        const target = ordered.bookmarks[0];
+        const sources = ordered.bookmarks.slice(1);
         const confirmMessage = t(
-            'health.mergeConfirm',
-            'Merge {count} bookmark(s) with the same URL?\n\nKeeps: "{keep}"\nRemoves: {remove} duplicate(s).',
+            'health.mergeConfirmBest',
+            'Merge {count} bookmark(s) with the same URL?\n\nKeeps best: "{keep}" ({opens}x opened{pinned})\nRemoves: {remove} duplicate(s).',
             {
-                count: group.bookmarks.length,
+                count: ordered.bookmarks.length,
                 keep: target.name,
+                opens: target.openCount || 0,
+                pinned: target.pinned ? `, ${t('health.pinned', 'pinned')}` : '',
                 remove: sources.length
             }
         );
@@ -625,15 +723,15 @@
         }
         if (!confirmed) return;
 
-        await performMergeDuplicates(group);
+        await performMergeDuplicates(ordered);
     }
 
     async function performMergeDuplicates(group) {
-        if (!group.bookmarks?.length) return;
+        const ordered = orderDuplicateGroupBestFirst(group);
+        if (!ordered.bookmarks?.length) return;
 
-        // Keep first, delete rest
-        const target = group.bookmarks[0];
-        const sources = group.bookmarks.slice(1);
+        const target = ordered.bookmarks[0];
+        const sources = ordered.bookmarks.slice(1);
 
         try {
             const response = await fetch('/api/health/merge-duplicates', {
@@ -852,6 +950,25 @@
         }
     }
 
+    function syncPageFilterSelect(report) {
+        const select = document.getElementById('health-page-filter');
+        if (!select) return;
+
+        const options = getPageFilterOptions(report);
+        const allLabel = escapeHtml(t('health.filterPageAll', 'All pages'));
+        select.innerHTML = `<option value="all">${allLabel}</option>`
+            + options.map(([id, name]) => `<option value="${escapeHtml(String(id))}">${escapeHtml(name)}</option>`).join('');
+
+        const current = String(healthState.pageId);
+        if (current === 'all' || options.some(([id]) => String(id) === current)) {
+            select.value = current;
+        } else {
+            healthState.pageId = 'all';
+            select.value = 'all';
+            saveState();
+        }
+    }
+
     function render() {
         const report = healthState.report;
         if (!report) return;
@@ -863,8 +980,15 @@
 
         if (summaryEl) summaryEl.innerHTML = renderSummary(report);
         if (pillsEl) pillsEl.innerHTML = renderFilterPills(report);
+        syncPageFilterSelect(report);
         if (issuesEl) issuesEl.innerHTML = renderIssues(report);
         if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
+
+        const mergeBtn = document.getElementById('merge-duplicates-btn');
+        if (mergeBtn) {
+            mergeBtn.disabled = !(report?.duplicateGroups || []).length;
+        }
+
         bindActions();
         bindDuplicateActions();
     }
@@ -896,6 +1020,13 @@
         const refreshButton = document.getElementById('refresh-health-btn');
 
         if (searchInput && healthState.query) searchInput.value = healthState.query;
+
+        const pageFilter = document.getElementById('health-page-filter');
+        pageFilter?.addEventListener('change', () => {
+            healthState.pageId = pageFilter.value || 'all';
+            saveState();
+            render();
+        });
 
         searchInput?.addEventListener('input', () => {
             healthState.query = searchInput.value.trim();

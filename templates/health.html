@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/config/config-buttons.css">
     <link rel="stylesheet" href="/static/css/health.css">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -49,9 +50,17 @@
         </section>
 
         <section class="health-filters">
-            <div class="health-search-wrap">
-                <label for="health-search" data-i18n="health.filterBookmarks">Filter bookmarks</label>
-                <input id="health-search" type="search" placeholder="Search name, URL, category, page..." data-i18n-placeholder="health.searchPlaceholder" autocomplete="off" />
+            <div class="health-filter-row">
+                <div class="health-search-wrap">
+                    <label for="health-search" data-i18n="health.filterBookmarks">Filter bookmarks</label>
+                    <input id="health-search" type="search" placeholder="Search name, URL, category, page..." data-i18n-placeholder="health.searchPlaceholder" autocomplete="off" />
+                </div>
+                <div class="health-page-filter-wrap">
+                    <label for="health-page-filter" data-i18n="health.filterPage">Filter by page</label>
+                    <select id="health-page-filter" class="health-page-filter">
+                        <option value="all" data-i18n="health.filterPageAll">All pages</option>
+                    </select>
+                </div>
             </div>
             <div class="health-filter-pills" id="health-filter-pills"></div>
         </section>

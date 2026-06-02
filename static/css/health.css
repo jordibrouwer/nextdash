@@ -73,7 +73,7 @@ body {
 
 .health-summary {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 14px;
     margin-bottom: 24px;
 }
@@ -120,6 +120,37 @@ body {
 .health-filters {
     display: grid;
     gap: 14px;
+}
+
+.health-filter-row {
+    display: grid;
+    gap: 14px;
+}
+
+@media (min-width: 720px) {
+    .health-filter-row {
+        grid-template-columns: 1fr minmax(180px, 260px);
+        align-items: end;
+    }
+}
+
+.health-page-filter-wrap label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.health-page-filter {
+    width: 100%;
+    border: 1px solid var(--border-secondary);
+    padding: 14px 16px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.health-duplicate-items small {
+    opacity: 0.75;
+    font-style: normal;
 }
 
 .health-search-wrap label {
@@ -202,12 +233,17 @@ body {
 }
 
 .health-issue {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: column;
     gap: 14px;
+    min-width: 0;
     border: 1px solid var(--border-secondary);
     padding: 16px;
     background: var(--background-primary);
+}
+
+.health-issue-main {
+    min-width: 0;
 }
 
 .health-issue-head {
@@ -219,12 +255,14 @@ body {
 
 .health-issue h3 {
     margin: 0;
+    overflow-wrap: anywhere;
 }
 
 .health-issue p {
     margin: 6px 0 0;
     opacity: 0.72;
     word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .health-score {
@@ -267,14 +305,34 @@ body {
 .health-issue-actions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    justify-content: flex-start;
+    gap: 0;
+    width: 100%;
+    margin-top: 2px;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+}
+
+.health-issue-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.6rem;
+}
+
+.health-issue-toolbar-heal {
+    border-top: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 55%, var(--background-secondary));
 }
 
 .health-action-link {
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+}
+
+.health-action-link:hover {
+    text-decoration: none;
 }
 
 .health-duplicate-item-link {
@@ -288,18 +346,6 @@ body {
 .health-duplicate-item-link:hover {
     opacity: 1;
     text-decoration: underline;
-}
-
-.health-action {
-    border: 1px solid var(--border-secondary);
-    padding: 10px 14px;
-    background: var(--background-secondary);
-    color: var(--text-primary);
-}
-
-.health-action-danger {
-    border-color: var(--accent-error);
-    color: var(--accent-error);
 }
 
 .health-duplicate-group {
@@ -508,14 +554,6 @@ body {
 @media (max-width: 720px) {
     .health-summary {
         grid-template-columns: 1fr;
-    }
-
-    .health-issue {
-        grid-template-columns: 1fr;
-    }
-
-    .health-issue-actions {
-        flex-direction: row;
     }
 }
 

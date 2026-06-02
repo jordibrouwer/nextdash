@@ -1,0 +1,173 @@
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"errors"
+	"fmt"
+	"net"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// PingResult holds the outcome of a bookmark URL reachability check.
+type PingResult struct {
+	Status      string
+	PingMs      int
+	ErrorDetail string
+	HTTPStatus  int
+}
+
+func (h *Handlers) pingURL(urlStr string) (string, int) {
+	result := h.pingURLDetailed(urlStr)
+	return result.Status, result.PingMs
+}
+
+func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
+	urlStr = strings.TrimSpace(urlStr)
+	if urlStr == "" {
+		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
+	}
+
+	parsed, err := url.Parse(urlStr)
+	if err != nil || parsed.Host == "" {
+		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
+	}
+
+	start := time.Now()
+	client := &http.Client{
+		Timeout: 3 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DialContext: (&net.Dialer{Timeout: 2 * time.Second}).DialContext,
+			TLSHandshakeTimeout:   2 * time.Second,
+			ResponseHeaderTimeout: 2 * time.Second,
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return errors.New("too many redirects")
+			}
+			return nil
+		},
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, urlStr, nil)
+	if err != nil {
+		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
+	}
+	req.Header.Set("User-Agent", "nextDash-Health/1.0")
+
+	resp, err := client.Do(req)
+	elapsed := int(time.Since(start).Milliseconds())
+	if elapsed < 1 {
+		elapsed = 1
+	}
+
+	if err == nil && resp != nil {
+		defer resp.Body.Close()
+		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: resp.StatusCode}
+		}
+		if resp.StatusCode >= 400 {
+			return PingResult{
+				Status:      "offline",
+				PingMs:      elapsed,
+				ErrorDetail: fmt.Sprintf("HTTP %d", resp.StatusCode),
+				HTTPStatus:  resp.StatusCode,
+			}
+		}
+	}
+
+	detail := classifyPingError(err, resp)
+	return PingResult{Status: "offline", PingMs: elapsed, ErrorDetail: detail, HTTPStatus: httpStatusFromResponse(resp)}
+}
+
+func httpStatusFromResponse(resp *http.Response) int {
+	if resp == nil {
+		return 0
+	}
+	return resp.StatusCode
+}
+
+func classifyPingError(err error, resp *http.Response) string {
+	if err != nil {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return "Timeout"
+		}
+		msg := strings.ToLower(err.Error())
+		switch {
+		case strings.Contains(msg, "no such host"), strings.Contains(msg, "dns"):
+			return "DNS lookup failed"
+		case strings.Contains(msg, "connection refused"):
+			return "Connection refused"
+		case strings.Contains(msg, "tls"), strings.Contains(msg, "certificate"), strings.Contains(msg, "x509"):
+			return "TLS error"
+		case strings.Contains(msg, "timeout"), strings.Contains(msg, "deadline exceeded"):
+			return "Timeout"
+		case strings.Contains(msg, "too many redirects"):
+			return "Too many redirects"
+		default:
+			return "Unreachable"
+		}
+	}
+	if resp != nil && resp.StatusCode >= 400 {
+		return fmt.Sprintf("HTTP %d", resp.StatusCode)
+	}
+	return "Unreachable"
+}
+
+func duplicateKeepScore(ref BookmarkRef) (opens int, pinned int, created int64) {
+	opens = ref.OpenCount
+	if ref.Pinned {
+		pinned = 1
+	}
+	created = ref.CreatedAt
+	return opens, pinned, created
+}
+
+func duplicateRefBetter(a, b BookmarkRef) bool {
+	aOpens, aPinned, aCreated := duplicateKeepScore(a)
+	bOpens, bPinned, bCreated := duplicateKeepScore(b)
+	if aOpens != bOpens {
+		return aOpens > bOpens
+	}
+	if aPinned != bPinned {
+		return aPinned > bPinned
+	}
+	switch {
+	case aCreated == 0 && bCreated == 0:
+		return false
+	case aCreated == 0:
+		return false
+	case bCreated == 0:
+		return true
+	default:
+		return aCreated < bCreated
+	}
+}
+
+func sortDuplicateRefsBestFirst(refs []BookmarkRef) {
+	if len(refs) < 2 {
+		return
+	}
+	// Stable sort: best keeper first (most opens → pinned → oldest createdAt).
+	for i := 0; i < len(refs); i++ {
+		bestIdx := i
+		for j := i + 1; j < len(refs); j++ {
+			if duplicateRefBetter(refs[j], refs[bestIdx]) {
+				bestIdx = j
+			}
+		}
+		if bestIdx != i {
+			refs[i], refs[bestIdx] = refs[bestIdx], refs[i]
+		}
+	}
+}
+
+type mergeDeleteRef struct {
+	pageID int
+	index  int
+}

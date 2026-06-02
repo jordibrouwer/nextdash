@@ -1547,10 +1547,11 @@ type HealthSummary struct {
 	BrokenCount         int `json:"brokenCount"`
 	DuplicateCount      int `json:"duplicateCount"`
 	UncheckedCount      int `json:"uncheckedCount"`
-	StaleCount          int `json:"staleCount"`
-	MissingPreviewCount int `json:"missingPreviewCount"`
-	UnusedCount         int `json:"unusedCount"`
-	PinnedCount         int `json:"pinnedCount"`
+	StaleCount            int `json:"staleCount"`
+	MissingPreviewCount   int `json:"missingPreviewCount"`
+	UnusedCount           int `json:"unusedCount"`
+	ShortcutConflictCount int `json:"shortcutConflictCount"`
+	PinnedCount           int `json:"pinnedCount"`
 }
 
 type HealthIssue struct {
@@ -1602,10 +1603,13 @@ type DuplicateGroup struct {
 }
 
 type BookmarkRef struct {
-	Name     string `json:"name"`
-	Index    int    `json:"index"`
-	PageID   int    `json:"pageId"`
-	Category string `json:"category,omitempty"`
+	Name      string `json:"name"`
+	Index     int    `json:"index"`
+	PageID    int    `json:"pageId"`
+	Category  string `json:"category,omitempty"`
+	OpenCount int    `json:"openCount,omitempty"`
+	Pinned    bool   `json:"pinned,omitempty"`
+	CreatedAt int64  `json:"createdAt,omitempty"`
 }
 
 // PreviewCacheFile stores cached bookmark preview metadata keyed by canonical URL.

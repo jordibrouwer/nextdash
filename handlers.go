@@ -164,6 +164,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	bookmarksByPage := make(map[int][]bookmarkEntry, len(pages))
 	duplicateRefs := make(map[string][]BookmarkRef)
 	duplicateCounts := make(map[string]int)
+	shortcutCounts := make(map[string]int)
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -176,11 +177,19 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if key != "" {
 				duplicateCounts[key]++
 				duplicateRefs[key] = append(duplicateRefs[key], BookmarkRef{
-					Name:     bm.Name,
-					Index:    idx,
-					PageID:   page.ID,
-					Category: bm.Category,
+					Name:      bm.Name,
+					Index:     idx,
+					PageID:    page.ID,
+					Category:  bm.Category,
+					OpenCount: bm.OpenCount,
+					Pinned:    bm.Pinned,
+					CreatedAt: bm.CreatedAt,
 				})
+			}
+
+			shortcut := normalizeShortcut(bm.Shortcut)
+			if shortcut != "" {
+				shortcutCounts[shortcut]++
 			}
 		}
 		bookmarksByPage[page.ID] = entries
@@ -196,16 +205,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			return 0
 		case "duplicate":
 			return 1
-		case "unchecked":
+		case "shortcut-conflict":
 			return 2
-		case "stale":
+		case "unchecked":
 			return 3
-		case "unused":
+		case "stale":
 			return 4
-		case "missing-preview":
+		case "unused":
 			return 5
-		default:
+		case "missing-preview":
 			return 6
+		default:
+			return 7
 		}
 	}
 
@@ -226,6 +237,8 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isUnused := bm.OpenCount == 0 && bm.LastOpened == 0
 			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > 30*24*time.Hour
 			isMissingPreview := missingPreview(bm)
+			shortcutKey := normalizeShortcut(bm.Shortcut)
+			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
 
 			status := "healthy"
 			reasons := make([]string, 0, 4)
@@ -233,7 +246,11 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 			if isBroken {
 				status = "broken"
-				reasons = append(reasons, "Last error recorded")
+				if detail := strings.TrimSpace(bm.LastError); detail != "" {
+					reasons = append(reasons, detail)
+				} else {
+					reasons = append(reasons, "Unreachable")
+				}
 				score -= 60
 			}
 			if isDuplicate {
@@ -241,6 +258,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					status = "duplicate"
 				}
 				reasons = append(reasons, fmt.Sprintf("Duplicate URL in %d bookmarks", duplicateCount))
+				score -= 15
+			}
+			if isShortcutConflict {
+				if status == "healthy" {
+					status = "shortcut-conflict"
+				}
+				reasons = append(reasons, fmt.Sprintf("Shortcut conflict with %d bookmarks", shortcutCounts[shortcutKey]))
 				score -= 15
 			}
 			if isUnchecked {
@@ -292,6 +316,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if isDuplicate {
 				report.Summary.DuplicateCount++
 			}
+			if isShortcutConflict {
+				report.Summary.ShortcutConflictCount++
+			}
 			if isChecked && (isUnchecked || isStaleCheck) {
 				report.Summary.UncheckedCount++
 			}
@@ -337,6 +364,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		if len(refs) < 2 {
 			continue
 		}
+		sortDuplicateRefsBestFirst(refs)
 		report.DuplicateGroups = append(report.DuplicateGroups, DuplicateGroup{
 			URL:       key,
 			Bookmarks: refs,
@@ -1608,7 +1636,7 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	} else {
 		errMsg := strings.TrimSpace(req.Error)
 		if errMsg == "" {
-			errMsg = "ping failed"
+			errMsg = "Unreachable"
 		}
 		bookmark.LastError = errMsg
 	}
@@ -1651,10 +1679,13 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Run ping
-			status, pingMs := h.pingURL(bm.URL)
+			result := h.pingURLDetailed(bm.URL)
 			errMsg := ""
-			if status != "online" {
-				errMsg = "ping failed"
+			if result.Status != "online" {
+				errMsg = result.ErrorDetail
+				if errMsg == "" {
+					errMsg = "Unreachable"
+				}
 				bm.LastError = errMsg
 			} else {
 				bm.LastError = ""
@@ -1668,8 +1699,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			key := canonicalBookmarkURLKey(bm.URL)
 			cache.Cache[key] = HealthScanCache{
 				URL:         bm.URL,
-				Status:      status,
-				PingMs:      pingMs,
+				Status:      result.Status,
+				PingMs:      result.PingMs,
 				LastScanned: time.Now().UnixMilli(),
 				Error:       errMsg,
 			}
@@ -1677,8 +1708,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			results = append(results, map[string]interface{}{
 				"name":   bm.Name,
 				"url":    bm.URL,
-				"status": status,
-				"pingMs": pingMs,
+				"status": result.Status,
+				"pingMs": result.PingMs,
 				"error":  errMsg,
 			})
 		}
@@ -1780,16 +1811,26 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 
 	mergedCount := 0
 
-	// Delete all source duplicates
+	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
 	for i := 0; i < len(req.SourcePageIDs); i++ {
-		pageID := req.SourcePageIDs[i]
-		index := req.SourceIndices[i]
+		deletes = append(deletes, mergeDeleteRef{
+			pageID: req.SourcePageIDs[i],
+			index:  req.SourceIndices[i],
+		})
+	}
+	sort.Slice(deletes, func(i, j int) bool {
+		if deletes[i].pageID != deletes[j].pageID {
+			return deletes[i].pageID < deletes[j].pageID
+		}
+		return deletes[i].index > deletes[j].index
+	})
 
-		bookmarks := h.store.GetBookmarksByPage(pageID)
-		if index >= 0 && index < len(bookmarks) {
-			// Remove bookmark at index
-			bookmarks = append(bookmarks[:index], bookmarks[index+1:]...)
-			h.store.SaveBookmarksByPage(pageID, bookmarks)
+	// Delete sources highest index first per page so indices stay valid.
+	for _, del := range deletes {
+		bookmarks := h.store.GetBookmarksByPage(del.pageID)
+		if del.index >= 0 && del.index < len(bookmarks) {
+			bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
+			h.store.SaveBookmarksByPage(del.pageID, bookmarks)
 			mergedCount++
 		}
 	}
@@ -2033,32 +2074,4 @@ func (h *Handlers) fetchPageTitleSafe(urlStr string) string {
 		return ""
 	}
 	return strings.Join(strings.Fields(title), " ")
-}
-
-// pingURL is a helper to check if a URL is online (extracted from status.go logic)
-func (h *Handlers) pingURL(urlStr string) (string, int) {
-	if urlStr == "" {
-		return "error", 0
-	}
-
-	start := time.Now()
-
-	// TCP check first
-	if strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://") {
-		// HTTP request with timeout
-		client := &http.Client{
-			Timeout: 3 * time.Second,
-		}
-		resp, err := client.Head(urlStr)
-		if err == nil && resp.StatusCode < 400 {
-			elapsed := int(time.Since(start).Milliseconds())
-			resp.Body.Close()
-			return "online", elapsed
-		}
-		if resp != nil {
-			resp.Body.Close()
-		}
-	}
-
-	return "offline", 0
 }

@@ -5952,7 +5952,10 @@ class Dashboard {
             const data = await response.json();
             const summary = data?.summary || {};
             const broken = Number(summary.brokenCount || 0);
-            const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
+            const warn = Number(summary.duplicateCount || 0)
+                + Number(summary.shortcutConflictCount || 0)
+                + Number(summary.uncheckedCount || 0)
+                + Number(summary.staleCount || 0);
 
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
