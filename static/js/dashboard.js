@@ -756,6 +756,11 @@ class Dashboard {
         }
     }
 
+    /** Inline page-tab rename (name/icon/color) — desktop/tablet landscape only. */
+    allowsPageTabInlineEdit() {
+        return window.MobileExperience?.isMobileLayout?.() !== true;
+    }
+
     renderPageNavigation() {
         const container = document.getElementById('page-navigation');
         if (!container) return;
@@ -777,6 +782,7 @@ class Dashboard {
                 this.markInlineTipUsed('page_switch');
             });
             pageBtn.addEventListener('dblclick', (e) => {
+                if (!this.allowsPageTabInlineEdit()) return;
                 e.preventDefault();
                 this._startPageTabRename(pageBtn, page, index);
             });
@@ -854,6 +860,7 @@ class Dashboard {
     }
 
     _startPageTabRename(btn, page, index) {
+        if (!this.allowsPageTabInlineEdit()) return;
         if (btn.querySelector('.page-tab-popover')) return;
 
         const PAGE_COLORS = [
