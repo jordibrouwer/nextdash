@@ -646,6 +646,7 @@ class ConfigBookmarks {
                     .filter(t => t.length > 0)
                     .filter((t, i, arr) => arr.indexOf(t) === i);
                 bookmark.tags.forEach(t => _sessionTags.add(t));
+                window.configManager?.syncBookmarkTagsToAllCaches?.(bookmark);
                 this._syncRow(index, bookmark);
                 if (window.configManager?.markDirty) window.configManager.markDirty();
             }, { signal });

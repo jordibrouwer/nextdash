@@ -238,7 +238,6 @@ class Dashboard {
     }
 
     async init() {
-        window.MobileExperience?.initDashboard?.();
         await this.loadData();
         if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
             await window.TipsPolicy.applyExpiry(this);
@@ -247,10 +246,13 @@ class Dashboard {
         this.initializeAutoDarkMode();
         this.loadCollapsedStates();
         await this.language.init(this.settings.language);
-        window.MobileExperience?.refreshBannerTranslations?.();
+        // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
+        window.dashboardInstance = this;
+        window.MobileExperience?.initDashboard?.();
         this.setupDOM();
         this.initializeSearchComponent();
         this.initializeStatusMonitor();
+        window.MobileExperience?.refreshBannerTranslations?.();
         this.initializeKeyboardNavigation();
         this.initializeSwipeNavigation();
         this.initializeHyprMode();

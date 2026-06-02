@@ -7,7 +7,8 @@
     const MOBILE_FOOTER_BUTTONS = ['search'];
     const MOBILE_CONFIG_TABS = ['general', 'help'];
     const MOBILE_GENERAL_PANELS = ['localization', 'basics-core', 'layout'];
-    const BANNER_DISMISS_KEY = 'nextdash-mobile-banner-dismissed';
+    /** Set when the mobile info banner was shown and dismissed (persists across sessions). */
+    const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
     const DEVICE_SUGGEST_KEY = 'nextdash-mobile-device-suggest-done';
 
     function isPortraitTablet() {
@@ -52,21 +53,23 @@
         }
     }
 
-    function isBannerDismissed() {
+    function isBannerSeen() {
         try {
-            return sessionStorage.getItem(BANNER_DISMISS_KEY) === '1';
+            return localStorage.getItem(BANNER_SEEN_KEY) === '1';
         } catch {
             return false;
         }
     }
 
-    function dismissBanner() {
+    function markBannerSeen() {
         try {
-            sessionStorage.setItem(BANNER_DISMISS_KEY, '1');
+            localStorage.setItem(BANNER_SEEN_KEY, '1');
         } catch { /* ignore */ }
-        document.querySelectorAll('.mobile-experience-banner').forEach((el) => {
-            el.hidden = true;
-        });
+        removeBanners();
+    }
+
+    function dismissBanner() {
+        markBannerSeen();
     }
 
     function shouldSuggestDeviceSpecific() {
@@ -114,8 +117,7 @@
     }
 
     function installBanner(context, anchor) {
-        // Mobile layout uses a reduced UI; informational banners are desktop-only.
-        if (isMobileLayout() || isBannerDismissed() || !anchor) return null;
+        if (!isMobileLayout() || isBannerSeen() || !anchor) return null;
         const existing = document.getElementById(
             context === 'config' ? 'mobile-experience-banner-config' : 'mobile-experience-banner'
         );
@@ -193,15 +195,20 @@
         document.querySelectorAll('.mobile-experience-banner').forEach((el) => el.remove());
     }
 
-    function refreshBanners() {
-        if (isMobileLayout()) {
+    function syncBannersForLayout() {
+        if (!isMobileLayout() || isBannerSeen()) {
             removeBanners();
             return;
         }
-        document.querySelectorAll('.mobile-experience-banner').forEach((el) => {
-            el.hidden = isBannerDismissed();
-            if (!el.hidden) translateBanner(el);
-        });
+        const dashAnchor = document.querySelector('.section-content .container');
+        if (dashAnchor) installBanner('dashboard', dashAnchor);
+        const configAnchor = document.getElementById('config-breadcrumb') || document.getElementById('config-main');
+        if (configAnchor) installBanner('config', configAnchor);
+        document.querySelectorAll('.mobile-experience-banner').forEach(translateBanner);
+    }
+
+    function refreshBanners() {
+        syncBannersForLayout();
     }
 
     let resizeTimer = null;
@@ -231,7 +238,7 @@
     function onLayoutChange() {
         const wasMobile = document.body.dataset.mobileLayout === 'true';
         const nowMobile = applyBodyFlag();
-        refreshBanners();
+        syncBannersForLayout();
         syncDashboardColumnLayout();
 
         if (window.configManager?.generalLayers) {
@@ -248,7 +255,6 @@
 
         if (nowMobile) {
             applyConfigTabGuard();
-            removeBanners();
         }
 
         const dash = window.dashboardInstance;

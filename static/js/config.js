@@ -2275,6 +2275,65 @@ class ConfigManager {
         }
     }
 
+    /**
+     * Find a bookmark in the cross-page cache (matched by page + URL).
+     */
+    findBookmarkInAllCaches(bookmark, pageId = null) {
+        const pid = Number(pageId ?? bookmark?.pageId ?? this.currentPageId);
+        const urlKey = String(bookmark?.url || '').trim().toLowerCase();
+        if (!Number.isFinite(pid) || pid < 1 || !urlKey) return null;
+        return this.allBookmarksData.find((b) => {
+            if (Number(b.pageId) !== pid) return false;
+            return String(b.url || '').trim().toLowerCase() === urlKey;
+        }) || null;
+    }
+
+    /** Copy tag edits from allBookmarksData into the current page before save. */
+    syncTagsFromAllBookmarksIntoCurrentPage() {
+        const pageId = this.getResolvedBookmarksPageId();
+        for (const bm of this.bookmarksData) {
+            const match = this.findBookmarkInAllCaches(bm, pageId);
+            if (!match) continue;
+            bm.tags = Array.isArray(match.tags) ? [...match.tags] : [];
+        }
+    }
+
+    /** Keep one bookmark's tags in sync between page list and cross-page cache. */
+    syncBookmarkTagsToAllCaches(bookmark, pageId = null) {
+        const pid = Number(pageId ?? bookmark?.pageId ?? this.currentPageId);
+        const match = this.findBookmarkInAllCaches(bookmark, pid);
+        if (!match) return;
+        match.tags = Array.isArray(bookmark.tags) ? [...bookmark.tags] : [];
+    }
+
+    /** Merge in-memory edits for the active bookmarks page into allBookmarksData. */
+    mergeCurrentPageIntoAllBookmarksData() {
+        const pageId = this.getResolvedBookmarksPageId();
+        const others = this.allBookmarksData.filter((b) => Number(b.pageId) !== pageId);
+        const current = this.bookmarksData.map((bm) => ({
+            ...bm,
+            pageId,
+        }));
+        this.allBookmarksData = [...others, ...current];
+    }
+
+    /** Persist every page's bookmarks (tags tab edits can span pages). */
+    async saveAllBookmarkPages() {
+        this.syncTagsFromAllBookmarksIntoCurrentPage();
+        this.mergeCurrentPageIntoAllBookmarksData();
+        const pageIds = [
+            ...new Set(
+                this.allBookmarksData
+                    .map((b) => Number(b.pageId))
+                    .filter((id) => Number.isFinite(id) && id >= 1)
+            ),
+        ].sort((a, b) => a - b);
+        for (const pageId of pageIds) {
+            const bookmarks = this.allBookmarksData.filter((b) => Number(b.pageId) === pageId);
+            await this.withRetry(() => this.data.saveBookmarks(bookmarks, pageId));
+        }
+    }
+
     async loadPageBookmarks(pageId) {
         try {
             this.currentPageId = parseInt(pageId);
@@ -5430,7 +5489,7 @@ class ConfigManager {
 
             const duplicateUrls = this.findDuplicateBookmarkUrls(this.bookmarksData);
 
-            await this.data.saveBookmarks(this.bookmarksData, saveBookmarksPageId);
+            await this.saveAllBookmarkPages();
             await this.data.saveFinders(this.findersData);
             
             if (this.currentCategoriesPageId) {
