@@ -805,6 +805,54 @@ class Dashboard {
         btn.appendChild(label);
     }
 
+    /**
+     * Place a fixed popover fully inside the viewport, anchored to a page tab (or similar).
+     */
+    _positionPageTabPopover(popover, anchorEl, { initial = false } = {}) {
+        const pad = 8;
+        const gap = 6;
+        if (initial) {
+            popover.style.visibility = 'hidden';
+        }
+        popover.style.top = '0';
+        popover.style.left = '0';
+        popover.style.right = 'auto';
+        popover.style.bottom = 'auto';
+
+        const measure = () => {
+            const anchor = anchorEl.getBoundingClientRect();
+            const pop = popover.getBoundingClientRect();
+            const maxLeft = Math.max(pad, window.innerWidth - pad - pop.width);
+            const maxTop = Math.max(pad, window.innerHeight - pad - pop.height);
+
+            let top = anchor.bottom + gap;
+            let left = anchor.left;
+
+            if (left + pop.width > window.innerWidth - pad) {
+                left = anchor.right - pop.width;
+            }
+            left = Math.min(Math.max(pad, left), maxLeft);
+
+            if (top + pop.height > window.innerHeight - pad) {
+                const above = anchor.top - gap - pop.height;
+                top = above >= pad ? above : maxTop;
+            }
+            top = Math.min(Math.max(pad, top), maxTop);
+
+            popover.style.top = `${Math.round(top)}px`;
+            popover.style.left = `${Math.round(left)}px`;
+            if (initial) {
+                popover.style.visibility = '';
+            }
+        };
+
+        if (initial) {
+            requestAnimationFrame(measure);
+        } else {
+            measure();
+        }
+    }
+
     _startPageTabRename(btn, page, index) {
         if (btn.querySelector('.page-tab-popover')) return;
 
@@ -856,10 +904,21 @@ class Dashboard {
         popover.appendChild(row);
         popover.appendChild(swatches);
 
-        // Position below btn
-        const btnRect = btn.getBoundingClientRect();
-        popover.style.left = btnRect.left + 'px';
         document.body.appendChild(popover);
+        this._positionPageTabPopover(popover, btn, { initial: true });
+
+        const reposition = () => {
+            if (popover.isConnected) {
+                this._positionPageTabPopover(popover, btn);
+            }
+        };
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+
+        const removeRepositionListeners = () => {
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+        };
 
         nameInput.focus();
         nameInput.select();
@@ -868,6 +927,7 @@ class Dashboard {
         const commit = async () => {
             if (done) return;
             done = true;
+            removeRepositionListeners();
             popover.remove();
             const newName = nameInput.value.trim();
             const newIcon = iconInput.value.trim();
@@ -887,6 +947,7 @@ class Dashboard {
         const cancel = () => {
             if (done) return;
             done = true;
+            removeRepositionListeners();
             popover.remove();
             this._renderPageTabContent(btn, page, index);
         };

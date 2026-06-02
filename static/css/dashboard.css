@@ -353,10 +353,9 @@ body {
     flex-shrink: 0;
 }
 
-/* Page-tab edit popover */
+/* Page-tab edit popover (top/left set in JS from anchor + viewport) */
 .page-tab-popover {
     position: fixed;
-    top: 2.8rem;
     z-index: 1100;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
@@ -367,6 +366,7 @@ body {
     flex-direction: column;
     gap: 0.5rem;
     min-width: 12rem;
+    max-width: min(20rem, calc(100vw - 1rem));
 }
 
 .page-tab-popover-row {
