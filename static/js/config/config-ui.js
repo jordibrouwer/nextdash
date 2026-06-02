@@ -105,8 +105,8 @@ class ConfigUI {
                         mgr.tags?.refresh(mgr);
                     } else if (typeof mgr.onConfigTagsTabOpened === 'function') {
                         void mgr.onConfigTagsTabOpened();
-                    } else if (mgr.tags) {
-                        mgr.tags.refresh(mgr);
+                    } else {
+                        void mgr.reloadTagsTabData?.();
                     }
                 } else if (targetTab === 'collections' && mgr.collections) {
                     if (!mgr._configCollectionsTourActive && !mgr._configCollectionsTourStarting) {

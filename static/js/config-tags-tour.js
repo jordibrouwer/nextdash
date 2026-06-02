@@ -149,30 +149,11 @@ class ConfigTagsTour {
         void this.reloadAllBookmarksForTagsView();
     }
 
-    /**
-     * Tags tab reads from allBookmarksData. After tour cleanup we must reload from the
-     * server — otherwise removing the demo bookmark from a stale in-memory cache can
-     * make every tag appear gone even though bookmarks on disk still have tags.
-     */
+    /** Reload tag data from the server (tags tab reads allBookmarksData). */
     async reloadAllBookmarksForTagsView() {
         const mgr = window.configManager;
-        if (!mgr) return;
-
-        try {
-            const res = await fetch('/api/bookmarks?all=true');
-            if (res.ok) {
-                const data = await res.json();
-                mgr.allBookmarksData = Array.isArray(data) ? data : [];
-            }
-        } catch (error) {
-            console.warn('Tags tour: could not reload bookmarks for tags view', error);
-        }
-
-        try {
-            mgr.tags?.refresh?.(mgr);
-        } catch (error) {
-            console.warn('Tags tour: could not refresh tags', error);
-        }
+        if (!mgr?.reloadTagsTabData) return;
+        await mgr.reloadTagsTabData();
     }
 
     waitMs(ms) {
@@ -362,50 +343,93 @@ class ConfigTagsTour {
         }
     }
 
+    isDemoBookmark(bookmark) {
+        if (!bookmark) return false;
+        if (bookmark[ConfigTagsTour.DEMO_FLAG]) return true;
+        const url = String(bookmark.url || '').trim().toLowerCase();
+        return url === ConfigTagsTour.DEMO_URL;
+    }
+
+    /**
+     * Drop the tour demo bookmark without wiping real tags. The demo usually lives only
+     * in memory (never saved); POSTing stale bookmarksData was clearing tags on disk.
+     */
     async removeTourDemoBookmark({ silent = false } = {}) {
         if (this._demoCleanupInProgress) return false;
         const mgr = window.configManager;
-        if (!mgr?.bookmarksData) return true;
+        if (!mgr) return true;
 
-        const idx = this.findDemoBookmarkIndex();
-        if (idx === -1) {
+        const pageId = Number(mgr.getResolvedBookmarksPageId?.() || mgr.currentPageId || 1);
+        const hadDemoInMemory = this.findDemoBookmarkIndex() !== -1;
+
+        if (!hadDemoInMemory) {
             this._demoBookmarkIndex = null;
             this.removeDemoFromAllBookmarks();
-            await this.reloadAllBookmarksForTagsView();
+            await this.resyncBookmarksAfterTour(pageId);
             return true;
+        }
+
+        if (!silent) {
+            const idx = this.findDemoBookmarkIndex();
+            const removed = await mgr.bookmarks.remove(mgr.bookmarksData, idx);
+            if (!removed) return false;
         }
 
         this._demoCleanupInProgress = true;
         try {
-            if (!silent) {
-                const removed = await mgr.bookmarks.remove(mgr.bookmarksData, idx);
-                if (!removed) return false;
-            } else {
-                mgr.bookmarksData.splice(idx, 1);
-                if (mgr.bookmarks.activeDetailIndex === idx) {
-                    mgr.bookmarks.activeDetailIndex = null;
-                    const formEl = document.getElementById('bookmark-detail-form');
-                    const emptyEl = document.getElementById('bookmark-detail-empty');
-                    if (formEl) formEl.setAttribute('hidden', '');
-                    if (emptyEl) emptyEl.style.display = '';
-                }
+            let fromServer = [];
+            try {
+                fromServer = await mgr.data.loadBookmarksByPage(pageId);
+            } catch (error) {
+                console.warn('Tags tour: could not reload bookmarks before cleanup', error);
             }
 
+            const serverDemoIdx = fromServer.findIndex((b) => this.isDemoBookmark(b));
+            const demoWasPersisted = serverDemoIdx >= 0;
+
+            if (demoWasPersisted) {
+                const toSave = fromServer.filter((_, i) => i !== serverDemoIdx);
+                await mgr.saveBookmarksPage(pageId, toSave);
+            }
+
+            // Always realign in-memory state with disk (keeps imported tags; drops unsaved demo).
+            mgr.bookmarksData = demoWasPersisted
+                ? fromServer.filter((_, i) => i !== serverDemoIdx)
+                : fromServer;
             this._demoBookmarkIndex = null;
             this.removeDemoFromAllBookmarks();
-            mgr.refreshBookmarksList?.();
-            mgr.markDirty?.();
 
-            try {
-                const pageId = mgr.getResolvedBookmarksPageId?.() || mgr.currentPageId || 1;
-                await mgr.withRetry(() => mgr.data.saveBookmarks(mgr.bookmarksData, pageId));
-            } catch (error) {
-                console.warn('Tags tour: could not persist bookmark removal', error);
+            if (mgr.bookmarks) {
+                mgr.bookmarks.activeDetailIndex = null;
+                const formEl = document.getElementById('bookmark-detail-form');
+                const emptyEl = document.getElementById('bookmark-detail-empty');
+                if (formEl) formEl.setAttribute('hidden', '');
+                if (emptyEl) emptyEl.style.display = '';
             }
-            await this.reloadAllBookmarksForTagsView();
+            mgr.refreshBookmarksList?.({ skipFlush: true });
+            if (!demoWasPersisted && typeof mgr.clearDirty === 'function') {
+                mgr.clearDirty();
+            }
+            await this.resyncBookmarksAfterTour(pageId);
             return true;
+        } catch (error) {
+            console.warn('Tags tour: demo cleanup failed', error);
+            return false;
         } finally {
             this._demoCleanupInProgress = false;
+        }
+    }
+
+    async resyncBookmarksAfterTour(pageId) {
+        const mgr = window.configManager;
+        await this.reloadAllBookmarksForTagsView();
+        if (mgr && Number.isFinite(Number(pageId))) {
+            try {
+                mgr.bookmarksData = await mgr.data.loadBookmarksByPage(pageId);
+                mgr.refreshBookmarksList?.({ skipFlush: true });
+            } catch (error) {
+                console.warn('Tags tour: could not resync page bookmarks', error);
+            }
         }
     }
 
@@ -927,22 +951,35 @@ class ConfigTagsTour {
         }
     }
 
-    finish() {
-        if (!this._tourShown) {
-            void this.ensureDemoRemoved().finally(() => this.close());
-            return;
+    async finish() {
+        try {
+            if (!this._tourShown) {
+                await this.ensureDemoRemoved();
+                await this.close();
+                return;
+            }
+            await this.markCompleted();
+            await this.ensureDemoRemoved();
+            await this.close();
+        } catch (error) {
+            console.warn('Tags tour: finish failed', error);
+            await this.close();
         }
-        void this.markCompleted().then(() => this.ensureDemoRemoved()).finally(() => this.close());
     }
 
-    close() {
+    async close() {
         this._stepRunId += 1;
         this._tourShown = false;
         this.clearHighlight();
+        document
+            .querySelectorAll('.config-tags-tour-highlight')
+            .forEach((el) => el.classList.remove('config-tags-tour-highlight'));
         this.unlockScroll();
 
-        if (window.configManager) {
-            window.configManager._configTagsTourActive = false;
+        const mgr = window.configManager;
+        if (mgr) {
+            mgr._configTagsTourActive = false;
+            mgr._configTagsTourStarting = false;
         }
         document.body.removeAttribute('data-config-tags-tour-active');
         document.body.classList.remove('config-tags-tour-ready');
@@ -952,7 +989,8 @@ class ConfigTagsTour {
             document.removeEventListener('keydown', this.keyHandler);
             this.keyHandler = null;
         }
-        void this.reloadAllBookmarksForTagsView();
+        const pageId = Number(mgr?.getResolvedBookmarksPageId?.() || mgr?.currentPageId || 1);
+        await this.resyncBookmarksAfterTour(pageId);
     }
 
     static resetSeen() {
