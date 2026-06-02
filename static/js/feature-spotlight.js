@@ -128,6 +128,7 @@
         }
 
         show(delayMs = 1400) {
+            if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             try {
                 if (localStorage.getItem(this.storageKey)) return false;
             } catch { /* ignore */ }

@@ -1,19 +1,28 @@
 /* Config guided tours — dim via highlight box-shadow (no JS-positioned hole panels) */
 
 body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-general-tour-card,
-body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .config-bookmarks-tour-card {
+body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .config-bookmarks-tour-card,
+body[data-config-finders-tour-active]:not(.config-finders-tour-ready) .config-finders-tour-card,
+body[data-config-stats-tour-active]:not(.config-stats-tour-ready) .config-stats-tour-card,
+body[data-config-categories-tour-active]:not(.config-categories-tour-ready) .config-categories-tour-card,
+body[data-config-tags-tour-active]:not(.config-tags-tour-ready) .config-tags-tour-card,
+body[data-config-pages-tour-active]:not(.config-pages-tour-ready) .config-pages-tour-card,
+body[data-config-collections-tour-active]:not(.config-collections-tour-ready) .config-collections-tour-card,
+body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-tour-card {
     visibility: hidden;
 }
 
 .config-general-tour-card,
-.config-bookmarks-tour-card {
+.config-bookmarks-tour-card,
+.config-finders-tour-card,
+.config-stats-tour-card,
+.config-categories-tour-card,
+.config-tags-tour-card,
+.config-pages-tour-card,
+.config-collections-tour-card,
+.config-theme-tour-card {
     position: fixed;
-    z-index: 12600;
-    left: 50%;
-    right: auto;
-    top: auto !important;
-    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-    transform: translateX(-50%);
+    z-index: 12700;
     width: min(640px, 96vw);
     max-height: min(55vh, calc(100vh - 12rem - env(safe-area-inset-bottom, 0px)));
     overflow-y: auto;
@@ -25,6 +34,24 @@ body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .confi
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--accent-success) 22%, transparent),
         0 18px 48px rgba(0, 0, 0, 0.28);
+    pointer-events: auto;
+}
+
+/* Default: anchored to bottom center (also for oversized highlights) */
+.config-general-tour-card:not(.is-docked),
+.config-bookmarks-tour-card:not(.is-docked),
+.config-finders-tour-card:not(.is-docked),
+.config-stats-tour-card:not(.is-docked),
+.config-categories-tour-card:not(.is-docked),
+.config-tags-tour-card:not(.is-docked),
+.config-pages-tour-card:not(.is-docked),
+.config-collections-tour-card:not(.is-docked),
+.config-theme-tour-card:not(.is-docked) {
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
 }
 
 .config-general-tour-progress {
@@ -75,25 +102,104 @@ body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .confi
 
 /* Cutout dim + green frame — moves with the element, no separate overlay sync */
 .config-general-tour-highlight,
-.config-bookmarks-tour-highlight {
+.config-bookmarks-tour-highlight,
+.config-finders-tour-highlight,
+.config-stats-tour-highlight,
+.config-categories-tour-highlight,
+.config-tags-tour-highlight,
+.config-pages-tour-highlight,
+.config-collections-tour-highlight,
+.config-theme-tour-highlight {
     position: relative !important;
     z-index: 12550 !important;
-    scroll-margin: 5rem 1rem 13rem;
+    scroll-margin: 5rem 1rem 18rem;
     outline: 3px solid var(--accent-success) !important;
     outline-offset: 3px;
     background-color: var(--background-primary) !important;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.58) !important;
 }
 
+/* Docked beside a target — top/left set via inline styles in JS */
+.config-general-tour-card.is-docked,
+.config-bookmarks-tour-card.is-docked,
+.config-finders-tour-card.is-docked,
+.config-stats-tour-card.is-docked,
+.config-categories-tour-card.is-docked,
+.config-tags-tour-card.is-docked,
+.config-pages-tour-card.is-docked,
+.config-collections-tour-card.is-docked,
+.config-theme-tour-card.is-docked {
+    right: auto;
+    bottom: auto;
+    transform: none;
+}
+
+.modal-overlay.show .config-bookmarks-tour-highlight {
+    position: relative !important;
+    z-index: 12551 !important;
+}
+
+/* Tour card hidden while AppModal confirm is open — dialog is docked at bottom */
+.config-bookmarks-tour-card.is-suppressed-for-dialog {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* AppModal (consent / cleanup) above tour card, anchored to bottom */
+body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show,
+body.config-theme-tour-dialog-open #app-modal.modal-overlay.show {
+    z-index: 12850 !important;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 1rem max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show .modal,
+body.config-theme-tour-dialog-open #app-modal.modal-overlay.show .modal {
+    margin: 0;
+    max-height: min(70vh, calc(100vh - 10rem));
+}
+
+.config-theme-tour-card.is-suppressed-for-dialog {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* + bookmark modal above highlight dim, tour card stays at bottom (12700) */
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal .modal-overlay.show {
+    z-index: 12680 !important;
+}
+
 html.config-general-tour-scroll-lock,
 html.config-bookmarks-tour-scroll-lock,
+html.config-finders-tour-scroll-lock,
+html.config-stats-tour-scroll-lock,
+html.config-categories-tour-scroll-lock,
+html.config-tags-tour-scroll-lock,
+html.config-pages-tour-scroll-lock,
+html.config-collections-tour-scroll-lock,
+html.config-theme-tour-scroll-lock,
 html.config-general-tour-scroll-lock body,
-html.config-bookmarks-tour-scroll-lock body {
+html.config-bookmarks-tour-scroll-lock body,
+html.config-finders-tour-scroll-lock body,
+html.config-stats-tour-scroll-lock body,
+html.config-categories-tour-scroll-lock body,
+html.config-tags-tour-scroll-lock body,
+html.config-pages-tour-scroll-lock body,
+html.config-collections-tour-scroll-lock body,
+html.config-theme-tour-scroll-lock body {
     overflow: hidden;
 }
 
 html.config-general-tour-scroll-lock body,
-html.config-bookmarks-tour-scroll-lock body {
+html.config-bookmarks-tour-scroll-lock body,
+html.config-finders-tour-scroll-lock body,
+html.config-stats-tour-scroll-lock body,
+html.config-categories-tour-scroll-lock body,
+html.config-tags-tour-scroll-lock body,
+html.config-pages-tour-scroll-lock body,
+html.config-collections-tour-scroll-lock body,
+html.config-theme-tour-scroll-lock body {
     position: fixed;
     width: 100%;
     left: 0;

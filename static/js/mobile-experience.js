@@ -114,7 +114,8 @@
     }
 
     function installBanner(context, anchor) {
-        if (!isMobileLayout() || isBannerDismissed() || !anchor) return null;
+        // Mobile layout uses a reduced UI; informational banners are desktop-only.
+        if (isMobileLayout() || isBannerDismissed() || !anchor) return null;
         const existing = document.getElementById(
             context === 'config' ? 'mobile-experience-banner-config' : 'mobile-experience-banner'
         );
@@ -188,9 +189,17 @@
         if (showAll) showAll.hidden = false;
     }
 
+    function removeBanners() {
+        document.querySelectorAll('.mobile-experience-banner').forEach((el) => el.remove());
+    }
+
     function refreshBanners() {
+        if (isMobileLayout()) {
+            removeBanners();
+            return;
+        }
         document.querySelectorAll('.mobile-experience-banner').forEach((el) => {
-            el.hidden = !isMobileLayout() || isBannerDismissed();
+            el.hidden = isBannerDismissed();
             if (!el.hidden) translateBanner(el);
         });
     }
@@ -237,7 +246,10 @@
             }
         }
 
-        if (nowMobile) applyConfigTabGuard();
+        if (nowMobile) {
+            applyConfigTabGuard();
+            removeBanners();
+        }
 
         const dash = window.dashboardInstance;
         if (dash && typeof dash.initializeButtonTipsRotation === 'function') {
@@ -283,11 +295,12 @@
         isMobileLayout,
         isPortraitTablet,
         shouldSkipHeavyUi() {
-            // Interactive tours / multi-step wizards only — not tips, toasts, or banners.
+            // Interactive tours / multi-step wizards on desktop-width layouts only.
             return isMobileLayout();
         },
         shouldShowDiscoverabilityUi() {
-            return true;
+            // Rotating tips, spotlights, discoverability queue, and promo banners.
+            return !isMobileLayout();
         },
         applyConfigGeneralPanels,
         applyConfigTabGuard,

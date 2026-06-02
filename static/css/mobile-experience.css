@@ -270,17 +270,13 @@ body[data-mobile-layout="true"] .general-keyboard-link-row {
     display: none !important;
 }
 
-/* Tips + search-flow hint: compact footer spacing on mobile */
-body[data-mobile-layout="true"] .button-hint {
-    flex: 1 1 100%;
-    order: -1;
-    font-size: calc(var(--font-size-text) * 0.88);
-    padding: 0.15rem 0.5rem 0;
-}
-
-body[data-mobile-layout="true"] .search-flow-hint {
-    bottom: calc(100% + 0.45rem);
-    font-size: calc(var(--font-size-controls) * 0.92);
+/* Tips, search-flow hint, spotlights — desktop discoverability only */
+body[data-mobile-layout="true"] .button-hint,
+body[data-mobile-layout="true"] .search-flow-hint,
+body[data-mobile-layout="true"] .mobile-experience-banner,
+body[data-mobile-layout="true"] .feature-spotlight,
+body[data-mobile-layout="true"] .discoverability-queue-bar {
+    display: none !important;
 }
 
 /* Toasts above the mobile search footer */

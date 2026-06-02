@@ -111,13 +111,13 @@ Data is stored under `./data` by default.
 ```
 Install → Open URL in browser → Onboarding wizard (optional)
     → Dashboard (may be empty) → Config to add pages/bookmarks
-    → Optional: config guided tours (General / Bookmarks), feature tour, tuning wizard, browser extension
+    → Optional: config guided tours (General / Bookmarks / Theme / …), feature tour, tuning wizard, browser extension
 ```
 
 1. **Onboarding** — Language, open-in-new-tab, weather/date, search behaviour. You can skip and change everything later in **Config → General**.
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
 3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
-4. **Guided config tours** — The first time you open **General** or **Bookmarks** on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
+4. **Guided config tours** — The first time you open **General**, **Bookmarks**, **Theme**, **Finders**, or other config tabs on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
 
 ---
 
@@ -232,7 +232,7 @@ Follow this path once; later you will mix steps freely.
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
 | 7 | Enable a theme you like | **config → general → appearance** |
-| 7b | (Optional) Let the **General** and **Bookmarks** guided tours run when you open those tabs | `/config#general`, `/config#bookmarks` |
+| 7b | (Optional) Let the **General**, **Bookmarks**, and **Theme** guided tours run when you open those tabs | `/config#general`, `/config#bookmarks`, `/config#colors` |
 | 8 | Create a ZIP backup | **config → backups** |
 | 9 | (Optional) Install browser extension | `extension/` folder |
 | 10 | (Optional) Import old browser bookmarks | **config → backups → Import from Browser** |
@@ -526,8 +526,11 @@ When enabled, one auto-group per tag that meets minimum count.
 ### Themes
 
 - 37+ built-in families (dark/light pairs).  
-- **config → theme** tab or **colors** editor for custom palettes.  
+- **config → theme** tab (`#colors`) — built-in dark/light subtabs, custom theme list, live preview, **Save colors**.  
+- **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
 - **Auto dark mode** follows system (built-in pairs only; disabled with custom theme).
+
+The first time you open the **Theme** tab on a desktop-width window, a **9-step guided tour** creates a temporary **Tour demo** palette, saves it, activates it on General, then removes it (see [Guided config tours](#guided-config-tours)).
 
 ### Typography and density
 
@@ -606,16 +609,25 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Guided config tours
 
-Two **one-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The page scroll is locked per step so the highlight stays stable. Tours need a **desktop-width** window (the mobile config layout does not run them).
+**One-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The card stays near the bottom on large highlights so it does not cover the spotlight. Page scroll is locked per step so the highlight stays stable. Tours need a **desktop-width** window (the mobile config layout does not run them).
 
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
 | **General** (9 steps) | First visit to **config → general** | Welcome, Essentials vs Advanced, appearance, bookmark behaviour, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
-| **Bookmarks** (10 steps) | First visit to **config → bookmarks** | Split layout, structure (pages/categories), page filter and sort, quick-add vs **+ Add**, list search, list reorder and selection, detail editor, bulk toolbar, favicon refresh policy, **Save** |
+| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, structure, filters, optional demo bookmarks (editor, **+** modal, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
+| **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
+| **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
+| **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
+| **Collections** (11 steps) | First visit to **config → collections** | List, new collection, optional demo rules (tag/category/shortcut, AND/OR), save to dashboard, preview on dashboard, cleanup |
+| **Finders** (8 steps) | First visit to **config → finders** | Concept, fields, **+ Add finder**, optional **Google** example (`?g`), dashboard usage, reorder/remove, **Save** |
+| **Stats** (11 steps) | First visit to **config → stats** | Index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, rot & cleanup, conflicts (Health link), search/status settings |
+| **Theme** (9 steps) | First visit to **config → theme** (`#colors`) | Editor, dark/light/custom subtabs, add custom theme, auto **Tour demo** palette, live preview, **Save colors**, **General → Appearance** to activate, confirm removal and restore previous theme |
 
-**Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted` / `configBookmarksTourCompleted`) and in browser `localStorage`, so it does not repeat on every visit.
+**Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.
 
-**Replay** — Open **config → general → Advanced** and scroll to **System & tools**. Use **Show General tour again** or **Show Bookmarks tour again**. Switch to the matching tab first if the tour does not start.
+**Replay** — Open **config → general → Advanced** → **System & tools**. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start.
+
+**Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips and promo banners are also hidden on mobile.
 
 **Not the same as** — The dashboard **feature tour** (search, finders, commands — launched from the discoverability spotlight after What’s new), the **tuning wizard** (language → theme → extension on the dashboard), or **first-run onboarding**. Those are separate one-time flows.
 
@@ -788,8 +800,8 @@ Click **Save** in config (sticky bar). Some fields autosave — watch for “uns
 ### Config guided tour does not start
 
 - Use a **wider browser window** or turn off mobile device emulation.  
-- Open the correct tab (**general** or **bookmarks**) before replaying from **System & tools**.  
-- If you already completed the tour, use **Show General tour again** or **Show Bookmarks tour again** in **config → general → Advanced → System & tools**.  
+- Open the correct tab (**general**, **bookmarks**, **theme** / `#colors`, **finders**, **stats**, …) before replaying from **System & tools**.  
+- If you already completed the tour, use the matching **Show … tour again** button in **config → general → Advanced → System & tools** (e.g. **Show Theme tour again**).  
 - Refresh the page if the editor is still loading, then try again.
 
 ### Weather not showing

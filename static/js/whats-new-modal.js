@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v36';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v38';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -37,6 +37,7 @@
 
     /** Unread release notes within the 7-day search empty-state promo window. */
     window.shouldShowWhatsNewInSearch = function shouldShowWhatsNewInSearch() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (!isReleaseUnread()) return false;
         return Date.now() - getSearchPromoStart() < SEARCH_PROMO_MS;
     };
@@ -80,6 +81,25 @@
 
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
+
+            release('v2026.06.3', 'June 2026', [
+                {
+                    title: 'Config guided tours',
+                    items: [
+                        { badge: 'new', text: '<strong>Spotlight tour on every major tab</strong> — first visit on a desktop-width window: <strong>General</strong>, <strong>Bookmarks</strong>, <strong>Pages</strong>, <strong>Categories</strong>, <strong>Tags</strong>, <strong>Collections</strong>, <strong>Finders</strong>, <strong>Stats</strong>, and <strong>Theme</strong>. Step card stays at the bottom on large highlights; completion is remembered per tab.' },
+                        { badge: 'new', text: '<strong>Replay anytime</strong> — Config → General → Advanced → System &amp; tools → <em>Show … tour again</em> for each tab (open that tab first).' },
+                        { badge: 'new', text: '<strong>Desktop only</strong> — tours, rotating footer tips, and promo banners do not run on the mobile layout.' },
+                    ]
+                },
+                {
+                    title: 'Hands-on demos',
+                    items: [
+                        { badge: 'new', text: '<strong>Bookmarks</strong> — optional demo bookmarks in the editor, via the <em>+</em> modal, and on the dashboard <em>+</em>; all removed before the tour ends.' },
+                        { badge: 'new', text: '<strong>Pages, Categories, Tags, Collections</strong> — temporary demo page/category/tag/collection with consent; cleanup restores your data.' },
+                        { badge: 'new', text: '<strong>Finders &amp; Theme</strong> — optional Google finder example; Theme tour creates a <em>Tour demo</em> palette, saves it, activates it on General → Appearance, then deletes it.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.2', 'June 2026', [
                 {

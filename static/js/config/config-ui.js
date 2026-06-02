@@ -88,29 +88,87 @@ class ConfigUI {
                     mgr.refreshPageDropdowns();
                 } else if (targetTab === 'pages') {
                     mgr.renderPagesTab();
+                    if (mgr._configPagesTourActive || mgr._configPagesTourStarting) {
+                        // keep tour running; list refresh only
+                    } else if (typeof mgr.onConfigPagesTabOpened === 'function') {
+                        void mgr.onConfigPagesTabOpened();
+                    }
                 }
-                if (targetTab === 'categories' && typeof mgr.loadPageCategories === 'function') {
-                    void mgr.loadPageCategories(mgr.currentCategoriesPageId);
+                if (targetTab === 'categories' && typeof mgr.onConfigCategoriesTabOpened === 'function') {
+                    void mgr.onConfigCategoriesTabOpened();
                 } else if (targetTab === 'stats' && mgr.stats) {
                     mgr.stats.refresh(mgr);
                 } else if (targetTab === 'keyboard' && mgr.keyboard) {
                     mgr.keyboard.refresh(mgr);
-                } else if (targetTab === 'tags' && mgr.tags) {
-                    mgr.tags.refresh(mgr);
+                } else if (targetTab === 'tags') {
+                    if (mgr._configTagsTourActive || mgr._configTagsTourStarting) {
+                        mgr.tags?.refresh(mgr);
+                    } else if (typeof mgr.onConfigTagsTabOpened === 'function') {
+                        void mgr.onConfigTagsTabOpened();
+                    } else if (mgr.tags) {
+                        mgr.tags.refresh(mgr);
+                    }
                 } else if (targetTab === 'collections' && mgr.collections) {
-                    mgr.collections.refresh(mgr);
+                    if (!mgr._configCollectionsTourActive && !mgr._configCollectionsTourStarting) {
+                        mgr.collections.refresh(mgr);
+                    }
+                    if (
+                        !mgr._configCollectionsTourActive &&
+                        !mgr._configCollectionsTourStarting &&
+                        typeof mgr.onConfigCollectionsTabOpened === 'function'
+                    ) {
+                        void mgr.onConfigCollectionsTabOpened();
+                    }
                 } else if (targetTab === 'colors') {
                     void mgr.ensureColorsEditor?.();
+                    if (
+                        !mgr._configThemeTourActive &&
+                        !mgr._configThemeTourStarting &&
+                        typeof mgr.onConfigColorsTabOpened === 'function'
+                    ) {
+                        void mgr.onConfigColorsTabOpened();
+                    }
                 }
-                if (targetTab === 'general' && !mgr._configGeneralTourActive && !mgr._configGeneralTourStarting) {
+                if (
+                    targetTab === 'general' &&
+                    !mgr._configGeneralTourActive &&
+                    !mgr._configGeneralTourStarting &&
+                    !mgr._configThemeTourActive &&
+                    !mgr._configThemeTourStarting
+                ) {
                     mgr.scheduleConfigGeneralTour?.();
+                }
+                if (
+                    targetTab === 'colors' &&
+                    !mgr._configThemeTourActive &&
+                    !mgr._configThemeTourStarting
+                ) {
+                    mgr.scheduleConfigThemeTour?.();
                 }
                 if (
                     targetTab === 'bookmarks' &&
                     !mgr._configBookmarksTourActive &&
-                    !mgr._configBookmarksTourStarting
+                    !mgr._configBookmarksTourStarting &&
+                    !mgr._configPagesTourActive &&
+                    !mgr._configPagesTourStarting &&
+                    !mgr._configCollectionsTourActive &&
+                    !mgr._configCollectionsTourStarting
                 ) {
                     mgr.scheduleConfigBookmarksTour?.();
+                }
+                if (
+                    targetTab === 'finders' &&
+                    !mgr._configFindersTourActive &&
+                    !mgr._configFindersTourStarting
+                ) {
+                    mgr.scheduleConfigFindersTour?.();
+                }
+                if (
+                    targetTab === 'stats' &&
+                    !mgr._configStatsTourActive &&
+                    !mgr._configStatsTourStarting
+                ) {
+                    mgr.scheduleConfigStatsTour?.();
                 }
             }
         };

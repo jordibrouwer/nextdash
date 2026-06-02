@@ -223,6 +223,9 @@ class Dashboard {
     }
 
     areRotatingTipsEnabled() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
+            return false;
+        }
         if (window.TipsPolicy && typeof window.TipsPolicy.shouldShowRotatingTips === 'function') {
             return window.TipsPolicy.shouldShowRotatingTips(this.settings);
         }
@@ -302,8 +305,10 @@ class Dashboard {
             : null;
         this.initializeOnboarding();
         this.initializeFeatureTour();
-        this.discoverabilityQueue?.scheduleRun();
-        window.PwaInstallHint?.scheduleShow?.();
+        this.initializeConfigBookmarksTour();
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
+            this.discoverabilityQueue?.scheduleRun();
+        }
     }
 
     setupExtensionBookmarkSavedListener() {
@@ -1568,6 +1573,7 @@ class Dashboard {
     }
 
     maybeShowPasteSpotlight() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
         if (typeof window.FeatureSpotlight !== 'function') return;
         if (this.onboardingStartedInSession) return;
 
@@ -1626,15 +1632,21 @@ class Dashboard {
                 if (dash.settings.showTips !== false) {
                     dash.settings.showTips = true;
                 }
-                if (dash.settings.showTips !== false && window.TipsPolicy && typeof window.TipsPolicy.startPromoPeriod === 'function') {
+                if (
+                    dash.settings.showTips !== false &&
+                    window.TipsPolicy &&
+                    typeof window.TipsPolicy.startPromoPeriod === 'function' &&
+                    window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false
+                ) {
                     window.TipsPolicy.startPromoPeriod();
                 }
                 document.body.setAttribute('data-show-tips', dash.areRotatingTipsEnabled() ? 'true' : 'false');
                 await dash.saveSettings();
                 dash.initializeButtonTipsRotation();
                 dash.onboardingStartedInSession = false;
-                dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
-                window.PwaInstallHint?.scheduleShow?.({ afterOnboarding: true });
+                if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
+                    dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
+                }
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
@@ -1657,6 +1669,12 @@ class Dashboard {
             history.replaceState(null, '', clean ? `?${clean}` : window.location.pathname);
             this.startFeatureTour();
         }
+    }
+
+    initializeConfigBookmarksTour() {
+        if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
+        if (typeof window.ConfigBookmarksTour?.maybeStartDashboardPhase !== 'function') return;
+        this._configBookmarksTour = window.ConfigBookmarksTour.maybeStartDashboardPhase(this);
     }
 
     startFeatureTour(onFinish) {
@@ -1687,6 +1705,10 @@ class Dashboard {
     }
 
     initializeButtonTipsRotation() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
+            document.body.setAttribute('data-show-tips', 'false');
+            return;
+        }
         this.initializeSearchFlowHint();
         const hintEl = document.getElementById('button-hint-text');
         if (!hintEl) {
@@ -1805,6 +1827,9 @@ class Dashboard {
     }
 
     scheduleBackupTip() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
+            return;
+        }
         if (this.backupTipShown || this.backupTipTimer) {
             return;
         }
@@ -1835,6 +1860,7 @@ class Dashboard {
     }
 
     initializeSearchFlowHint() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
         const hintEl = document.getElementById('search-flow-hint');
         if (!hintEl) return;
 

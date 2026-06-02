@@ -82,6 +82,7 @@
     async function maybeShow() {
         const dash = window.dashboardInstance;
         if (!dash || typeof dash.showNotification !== 'function') return;
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
         if (!isMobile()) return;
         if (dash.settings?.onboardingCompleted !== true) return;
         if (hasShown()) return;

@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.1**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.3**.
 
 ---
 
@@ -122,6 +122,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `Alt + ↑/↓` — reorder the selected bookmark
 - `Ctrl/Cmd + K` — open the config command palette
 
+**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. Several tours include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools** (open the matching tab first). Tours, rotating tips, and promo banners do not run on the mobile layout.
+
 #### Config → General (for self-hosters)
 
 **Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks) live under **Essentials**. Power features (smart collections, status monitor, branding, search behaviour, backups) are under **Advanced**. Use the section links at the top of Advanced to jump, or click **Show all sections on one page** to view everything at once.
@@ -165,7 +167,7 @@ Dynamic bookmark groups that appear automatically:
 ### Appearance
 
 - 37+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink)
-- Custom theme editor
+- Custom theme editor — optional **Theme** tab guided tour walks through custom palettes, save, General → Theme selection, and demo cleanup
 - Auto dark mode
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
 - Launcher view: toggle via FAB button (⊞) or `:layout launcher`; icon size configurable (small / normal / large)

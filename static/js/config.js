@@ -203,11 +203,149 @@ class ConfigManager {
 
         this.scheduleConfigGeneralTour();
         this.scheduleConfigBookmarksTour();
+        this.scheduleConfigFindersTour();
+        this.scheduleConfigStatsTour();
+        if (this.isConfigCategoriesTabActive() && !this.hasSeenConfigCategoriesTour()) {
+            void this.onConfigCategoriesTabOpened();
+        } else {
+            this.scheduleConfigCategoriesTour();
+        }
+        if (this.isConfigTagsTabActive() && !this.hasSeenConfigTagsTour()) {
+            void this.onConfigTagsTabOpened();
+        } else {
+            this.scheduleConfigTagsTour();
+        }
+        if (this.isConfigPagesTabActive() && !this.hasSeenConfigPagesTour()) {
+            void this.onConfigPagesTabOpened();
+        } else {
+            this.scheduleConfigPagesTour();
+        }
+        if (this.isConfigCollectionsTabActive() && !this.hasSeenConfigCollectionsTour()) {
+            void this.onConfigCollectionsTabOpened();
+        } else {
+            this.scheduleConfigCollectionsTour();
+        }
+        if (this.isConfigColorsTabActive() && !this.hasSeenConfigThemeTour()) {
+            void this.onConfigColorsTabOpened();
+        } else {
+            this.scheduleConfigThemeTour();
+        }
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('configTour') === '1') {
             void this.maybeStartConfigGeneralTour({ force: true });
         }
+    }
+
+    _isConfigTabTourBusy(exclude) {
+        const entries = [
+            ['general', this._configGeneralTourActive, this._configGeneralTourStarting],
+            ['bookmarks', this._configBookmarksTourActive, this._configBookmarksTourStarting],
+            ['finders', this._configFindersTourActive, this._configFindersTourStarting],
+            ['stats', this._configStatsTourActive, this._configStatsTourStarting],
+            ['categories', this._configCategoriesTourActive, this._configCategoriesTourStarting],
+            ['tags', this._configTagsTourActive, this._configTagsTourStarting],
+            ['pages', this._configPagesTourActive, this._configPagesTourStarting],
+            ['collections', this._configCollectionsTourActive, this._configCollectionsTourStarting],
+            ['theme', this._configThemeTourActive, this._configThemeTourStarting],
+        ];
+        for (const [name, active, starting] of entries) {
+            if (exclude && name === exclude) continue;
+            if (active || starting) return true;
+        }
+        return false;
+    }
+
+    /** Close other config tab tours (without marking complete) so the active tab tour can run. */
+    dismissOtherConfigTabTours(except) {
+        const tours = [
+            ['general', window.ConfigGeneralTour, '_configGeneralTourActive', '_configGeneralTourStarting', 'cancelConfigGeneralTourSchedule'],
+            ['bookmarks', window.ConfigBookmarksTour, '_configBookmarksTourActive', '_configBookmarksTourStarting', 'cancelConfigBookmarksTourSchedule'],
+            ['finders', window.ConfigFindersTour, '_configFindersTourActive', '_configFindersTourStarting', 'cancelConfigFindersTourSchedule'],
+            ['stats', window.ConfigStatsTour, '_configStatsTourActive', '_configStatsTourStarting', 'cancelConfigStatsTourSchedule'],
+            ['categories', window.ConfigCategoriesTour, '_configCategoriesTourActive', '_configCategoriesTourStarting', 'cancelConfigCategoriesTourSchedule'],
+            ['tags', window.ConfigTagsTour, '_configTagsTourActive', '_configTagsTourStarting', 'cancelConfigTagsTourSchedule'],
+            ['pages', window.ConfigPagesTour, '_configPagesTourActive', '_configPagesTourStarting', 'cancelConfigPagesTourSchedule'],
+            ['collections', window.ConfigCollectionsTour, '_configCollectionsTourActive', '_configCollectionsTourStarting', 'cancelConfigCollectionsTourSchedule'],
+            ['theme', window.ConfigThemeTour, '_configThemeTourActive', '_configThemeTourStarting', 'cancelConfigThemeTourSchedule'],
+        ];
+        for (const [name, TourClass, activeKey, startingKey, cancelMethod] of tours) {
+            if (except && name === except) continue;
+            TourClass?.teardownStaleDom?.();
+            this[activeKey] = false;
+            this[startingKey] = false;
+            if (typeof this[cancelMethod] === 'function') {
+                this[cancelMethod]();
+            }
+        }
+    }
+
+    onConfigCategoriesTabOpened() {
+        if (this.hasSeenConfigCategoriesTour()) return Promise.resolve();
+        this.dismissOtherConfigTabTours('categories');
+        const schedule = () => this.scheduleConfigCategoriesTour();
+        const pageId = this.currentCategoriesPageId || this.currentPageId || 1;
+        if (typeof this.loadPageCategories === 'function') {
+            return this.loadPageCategories(pageId).finally(schedule);
+        }
+        schedule();
+        return Promise.resolve();
+    }
+
+    onConfigTagsTabOpened() {
+        if (this.hasSeenConfigTagsTour()) return Promise.resolve();
+        if (this._configTagsTourActive || this._configTagsTourStarting) {
+            if (this.tags?.refresh) {
+                try {
+                    this.tags.refresh(this);
+                } catch {
+                    // ignore
+                }
+            }
+            return Promise.resolve();
+        }
+        this.dismissOtherConfigTabTours('tags');
+        const schedule = () => this.scheduleConfigTagsTour();
+        if (this.tags?.refresh) {
+            try {
+                this.tags.refresh(this);
+            } catch {
+                // ignore
+            }
+        }
+        schedule();
+        return Promise.resolve();
+    }
+
+    onConfigPagesTabOpened() {
+        if (this.hasSeenConfigPagesTour()) return Promise.resolve();
+        if (this._configPagesTourActive || this._configPagesTourStarting) {
+            this.renderPagesTab();
+            return Promise.resolve();
+        }
+        this.dismissOtherConfigTabTours('pages');
+        const schedule = () => this.scheduleConfigPagesTour();
+        this.renderPagesTab();
+        schedule();
+        return Promise.resolve();
+    }
+
+    onConfigCollectionsTabOpened() {
+        if (this.hasSeenConfigCollectionsTour()) return Promise.resolve();
+        if (this._configCollectionsTourActive || this._configCollectionsTourStarting) {
+            return Promise.resolve();
+        }
+        this.dismissOtherConfigTabTours('collections');
+        const schedule = () => this.scheduleConfigCollectionsTour();
+        if (this.collections?.refresh) {
+            try {
+                this.collections.refresh(this);
+            } catch {
+                // ignore
+            }
+        }
+        schedule();
+        return Promise.resolve();
     }
 
     hasSeenConfigGeneralTour() {
@@ -259,7 +397,7 @@ class ConfigManager {
         if (typeof window.ConfigGeneralTour !== 'function') return;
         if (this.hasSeenConfigGeneralTour()) return;
         if (this._configGeneralTourActive || this._configGeneralTourStarting) return;
-        if (this._configBookmarksTourActive || this._configBookmarksTourStarting) return;
+        if (this._isConfigTabTourBusy('general')) return;
         if (document.body?.classList.contains('loading')) return;
 
         this.cancelConfigGeneralTourSchedule();
@@ -271,8 +409,7 @@ class ConfigManager {
                 this.hasSeenConfigGeneralTour() ||
                 this._configGeneralTourActive ||
                 this._configGeneralTourStarting ||
-                this._configBookmarksTourActive ||
-                this._configBookmarksTourStarting
+                this._isConfigTabTourBusy('general')
             ) {
                 return;
             }
@@ -334,6 +471,9 @@ class ConfigManager {
         }
         if (this._configGeneralTourActive && !force) return { ok: false, reason: 'active' };
         if (this._configBookmarksTourActive || this._configBookmarksTourStarting) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (this._isConfigTabTourBusy('general')) {
             return { ok: false, reason: 'active-other' };
         }
         if (!force && this.hasSeenConfigGeneralTour()) return { ok: false, reason: 'completed' };
@@ -429,7 +569,7 @@ class ConfigManager {
         if (typeof window.ConfigBookmarksTour !== 'function') return;
         if (this.hasSeenConfigBookmarksTour()) return;
         if (this._configBookmarksTourActive || this._configBookmarksTourStarting) return;
-        if (this._configGeneralTourActive || this._configGeneralTourStarting) return;
+        if (this._isConfigTabTourBusy('bookmarks')) return;
         if (document.body?.classList.contains('loading')) return;
 
         this.cancelConfigBookmarksTourSchedule();
@@ -441,8 +581,7 @@ class ConfigManager {
                 this.hasSeenConfigBookmarksTour() ||
                 this._configBookmarksTourActive ||
                 this._configBookmarksTourStarting ||
-                this._configGeneralTourActive ||
-                this._configGeneralTourStarting
+                this._isConfigTabTourBusy('bookmarks')
             ) {
                 return;
             }
@@ -502,7 +641,7 @@ class ConfigManager {
             return { ok: false, reason: blockReason };
         }
         if (this._configBookmarksTourActive && !force) return { ok: false, reason: 'active' };
-        if (this._configGeneralTourActive || this._configGeneralTourStarting) {
+        if (this._isConfigTabTourBusy('bookmarks')) {
             return { ok: false, reason: 'active-other' };
         }
         if (!force && this.hasSeenConfigBookmarksTour()) return { ok: false, reason: 'completed' };
@@ -519,19 +658,21 @@ class ConfigManager {
             return { ok: false, reason: 'wrong-tab' };
         }
 
+        const resumeCleanup = window.ConfigBookmarksTour?.consumeResume?.() === 'cleanup';
+
         const tour = new window.ConfigBookmarksTour({
             language: this.language,
             hasSeen: () => this.hasSeenConfigBookmarksTour(),
             onMarkSeen: () => this.markConfigBookmarksTourCompleted(),
         });
-        if (!tour.canStart({ force })) {
+        if (!tour.canStart({ force: force || resumeCleanup })) {
             return { ok: false, reason: force ? 'no-bookmarks-tab' : 'mobile' };
         }
 
         this._configBookmarksTourStarting = true;
         this._configBookmarksTourActive = true;
         try {
-            const started = await tour.prepareAndStart({ force });
+            const started = await tour.prepareAndStart({ force, resumeCleanup });
             if (!started) {
                 this._configBookmarksTourActive = false;
                 window.ConfigBookmarksTour.teardownStaleDom?.();
@@ -561,6 +702,1334 @@ class ConfigManager {
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (hash !== 'bookmarks' && !hash.startsWith('bookmarks/')) {
             window.history.replaceState(null, '', '#bookmarks');
+        }
+    }
+
+    hasSeenConfigFindersTour() {
+        if (this.settingsData?.configFindersTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(window.ConfigFindersTour?.STORAGE_KEY || 'nextdash:config-finders-tour-v1') === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigFindersTourSeenFromServer() {
+        const key = window.ConfigFindersTour?.STORAGE_KEY || 'nextdash:config-finders-tour-v1';
+        try {
+            if (this.settingsData?.configFindersTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigFindersTourCompleted() {
+        this.settingsData.configFindersTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigFindersTour?.STORAGE_KEY || 'nextdash:config-finders-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigFindersTourSchedule() {
+        this._configFindersTourScheduleId = (this._configFindersTourScheduleId || 0) + 1;
+        if (this._configFindersTourScheduleTimer) {
+            clearTimeout(this._configFindersTourScheduleTimer);
+            this._configFindersTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigFindersTour() {
+        if (typeof window.ConfigFindersTour !== 'function') return;
+        if (this.hasSeenConfigFindersTour()) return;
+        if (this._configFindersTourActive || this._configFindersTourStarting) return;
+        if (this._isConfigTabTourBusy('finders')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigFindersTourSchedule();
+        const runId = this._configFindersTourScheduleId;
+        this._configFindersTourScheduleTimer = setTimeout(() => {
+            this._configFindersTourScheduleTimer = null;
+            if (runId !== this._configFindersTourScheduleId) return;
+            if (
+                this.hasSeenConfigFindersTour() ||
+                this._configFindersTourActive ||
+                this._configFindersTourStarting ||
+                this._isConfigTabTourBusy('finders')
+            ) {
+                return;
+            }
+            if (!this.isConfigFindersTabActive()) return;
+            void this.maybeStartConfigFindersTour();
+        }, 550);
+    }
+
+    isConfigFindersTabActive() {
+        if (this.ui?._currentTab === 'finders') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'finders') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'finders';
+    }
+
+    configFindersTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigFindersTourFailedReload',
+            'no-finders-tab': 'config.resetConfigFindersTourFailedTab',
+            'dom-not-ready': 'config.resetConfigFindersTourFailedDom',
+            'render-failed': 'config.resetConfigFindersTourFailedDom',
+            'step-error': 'config.resetConfigFindersTourFailedDom',
+            blocked: 'config.resetConfigFindersTourFailedDom',
+            mobile: 'config.resetConfigFindersTourFailedMobile',
+            error: 'config.resetConfigFindersTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Finders tour. Refresh the page and try again.',
+            'no-finders-tab': 'Could not start the Finders tour. Open the Finders tab first.',
+            'dom-not-ready': 'Could not start the Finders tour. Finders are still loading — refresh and try again.',
+            mobile: 'Could not start the Finders tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Finders tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigFindersTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Finders tour. Open the Finders tab first.';
+    }
+
+    async maybeStartConfigFindersTour({ force = false } = {}) {
+        if (this._configFindersTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigFindersTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigFindersTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Finders tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configFindersTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('finders')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigFindersTour()) return { ok: false, reason: 'completed' };
+
+        if (force) {
+            this.cancelConfigFindersTourSchedule();
+            window.ConfigFindersTour.teardownStaleDom?.();
+            this._configFindersTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureFindersTabActive();
+        } else if (!this.isConfigFindersTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigFindersTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigFindersTour(),
+            onMarkSeen: () => this.markConfigFindersTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-finders-tab' : 'mobile' };
+        }
+
+        this._configFindersTourStarting = true;
+        this._configFindersTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configFindersTourActive = false;
+                window.ConfigFindersTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigFindersTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Finders tour failed to start', error);
+            this._configFindersTourActive = false;
+            window.ConfigFindersTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configFindersTourStarting = false;
+        }
+    }
+
+    ensureFindersTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('finders');
+        } else {
+            const panel = document.querySelector('[data-tab-content="finders"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="finders"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'finders') {
+            window.history.replaceState(null, '', '#finders');
+        }
+    }
+
+    hasSeenConfigStatsTour() {
+        if (this.settingsData?.configStatsTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(window.ConfigStatsTour?.STORAGE_KEY || 'nextdash:config-stats-tour-v1') === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigStatsTourSeenFromServer() {
+        const key = window.ConfigStatsTour?.STORAGE_KEY || 'nextdash:config-stats-tour-v1';
+        try {
+            if (this.settingsData?.configStatsTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigStatsTourCompleted() {
+        this.settingsData.configStatsTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigStatsTour?.STORAGE_KEY || 'nextdash:config-stats-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigStatsTourSchedule() {
+        this._configStatsTourScheduleId = (this._configStatsTourScheduleId || 0) + 1;
+        if (this._configStatsTourScheduleTimer) {
+            clearTimeout(this._configStatsTourScheduleTimer);
+            this._configStatsTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigStatsTour() {
+        if (typeof window.ConfigStatsTour !== 'function') return;
+        if (this.hasSeenConfigStatsTour()) return;
+        if (this._configStatsTourActive || this._configStatsTourStarting) return;
+        if (this._isConfigTabTourBusy('stats')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigStatsTourSchedule();
+        const runId = this._configStatsTourScheduleId;
+        this._configStatsTourScheduleTimer = setTimeout(() => {
+            this._configStatsTourScheduleTimer = null;
+            if (runId !== this._configStatsTourScheduleId) return;
+            if (
+                this.hasSeenConfigStatsTour() ||
+                this._configStatsTourActive ||
+                this._configStatsTourStarting ||
+                this._isConfigTabTourBusy('stats')
+            ) {
+                return;
+            }
+            if (!this.isConfigStatsTabActive()) return;
+            void this.maybeStartConfigStatsTour();
+        }, 550);
+    }
+
+    isConfigStatsTabActive() {
+        if (this.ui?._currentTab === 'stats') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'stats') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'stats';
+    }
+
+    configStatsTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigStatsTourFailedReload',
+            'no-stats-tab': 'config.resetConfigStatsTourFailedTab',
+            'dom-not-ready': 'config.resetConfigStatsTourFailedDom',
+            'render-failed': 'config.resetConfigStatsTourFailedDom',
+            'step-error': 'config.resetConfigStatsTourFailedDom',
+            blocked: 'config.resetConfigStatsTourFailedDom',
+            mobile: 'config.resetConfigStatsTourFailedMobile',
+            error: 'config.resetConfigStatsTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Stats tour. Refresh the page and try again.',
+            'no-stats-tab': 'Could not start the Stats tour. Open the Stats tab first.',
+            'dom-not-ready': 'Could not start the Stats tour. Stats are still loading — refresh and try again.',
+            mobile: 'Could not start the Stats tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Stats tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigStatsTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Stats tour. Open the Stats tab first.';
+    }
+
+    async maybeStartConfigStatsTour({ force = false } = {}) {
+        if (this._configStatsTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigStatsTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigStatsTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Stats tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configStatsTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('stats')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigStatsTour()) return { ok: false, reason: 'completed' };
+
+        if (force) {
+            this.cancelConfigStatsTourSchedule();
+            window.ConfigStatsTour.teardownStaleDom?.();
+            this._configStatsTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureStatsTabActive();
+        } else if (!this.isConfigStatsTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigStatsTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigStatsTour(),
+            onMarkSeen: () => this.markConfigStatsTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-stats-tab' : 'mobile' };
+        }
+
+        this._configStatsTourStarting = true;
+        this._configStatsTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configStatsTourActive = false;
+                window.ConfigStatsTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigStatsTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Stats tour failed to start', error);
+            this._configStatsTourActive = false;
+            window.ConfigStatsTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configStatsTourStarting = false;
+        }
+    }
+
+    ensureStatsTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('stats');
+        } else {
+            const panel = document.querySelector('[data-tab-content="stats"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="stats"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'stats') {
+            window.history.replaceState(null, '', '#stats');
+        }
+    }
+
+    hasSeenConfigCategoriesTour() {
+        if (this.settingsData?.configCategoriesTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(
+                window.ConfigCategoriesTour?.STORAGE_KEY || 'nextdash:config-categories-tour-v1'
+            ) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigCategoriesTourSeenFromServer() {
+        const key = window.ConfigCategoriesTour?.STORAGE_KEY || 'nextdash:config-categories-tour-v1';
+        try {
+            if (this.settingsData?.configCategoriesTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigCategoriesTourCompleted() {
+        this.settingsData.configCategoriesTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigCategoriesTour?.STORAGE_KEY || 'nextdash:config-categories-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigCategoriesTourSchedule() {
+        this._configCategoriesTourScheduleId = (this._configCategoriesTourScheduleId || 0) + 1;
+        if (this._configCategoriesTourScheduleTimer) {
+            clearTimeout(this._configCategoriesTourScheduleTimer);
+            this._configCategoriesTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigCategoriesTour() {
+        if (typeof window.ConfigCategoriesTour !== 'function') return;
+        if (this.hasSeenConfigCategoriesTour()) return;
+        if (this._configCategoriesTourActive || this._configCategoriesTourStarting) return;
+        if (this._isConfigTabTourBusy('categories')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigCategoriesTourSchedule();
+        const runId = this._configCategoriesTourScheduleId;
+        this._configCategoriesTourScheduleTimer = setTimeout(() => {
+            this._configCategoriesTourScheduleTimer = null;
+            if (runId !== this._configCategoriesTourScheduleId) return;
+            if (
+                this.hasSeenConfigCategoriesTour() ||
+                this._configCategoriesTourActive ||
+                this._configCategoriesTourStarting ||
+                this._isConfigTabTourBusy('categories')
+            ) {
+                return;
+            }
+            if (!this.isConfigCategoriesTabActive()) return;
+            this.dismissOtherConfigTabTours('categories');
+            void this.maybeStartConfigCategoriesTour();
+        }, 550);
+    }
+
+    isConfigCategoriesTabActive() {
+        if (this.ui?._currentTab === 'categories') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'categories') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'categories';
+    }
+
+    configCategoriesTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigCategoriesTourFailedReload',
+            'no-categories-tab': 'config.resetConfigCategoriesTourFailedTab',
+            'dom-not-ready': 'config.resetConfigCategoriesTourFailedDom',
+            'render-failed': 'config.resetConfigCategoriesTourFailedDom',
+            'step-error': 'config.resetConfigCategoriesTourFailedDom',
+            blocked: 'config.resetConfigCategoriesTourFailedDom',
+            mobile: 'config.resetConfigCategoriesTourFailedMobile',
+            error: 'config.resetConfigCategoriesTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Categories tour. Refresh the page and try again.',
+            'no-categories-tab': 'Could not start the Categories tour. Open the Categories tab first.',
+            'dom-not-ready':
+                'Could not start the Categories tour. Categories are still loading — refresh and try again.',
+            mobile:
+                'Could not start the Categories tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Categories tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigCategoriesTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Categories tour. Open the Categories tab first.';
+    }
+
+    async maybeStartConfigCategoriesTour({ force = false } = {}) {
+        if (this._configCategoriesTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigCategoriesTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigCategoriesTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Categories tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configCategoriesTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('categories')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigCategoriesTour()) return { ok: false, reason: 'completed' };
+
+        this.dismissOtherConfigTabTours('categories');
+
+        if (force) {
+            this.cancelConfigCategoriesTourSchedule();
+            window.ConfigCategoriesTour.teardownStaleDom?.();
+            this._configCategoriesTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureCategoriesTabActive();
+        } else if (!this.isConfigCategoriesTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigCategoriesTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigCategoriesTour(),
+            onMarkSeen: () => this.markConfigCategoriesTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-categories-tab' : 'mobile' };
+        }
+
+        this._configCategoriesTourStarting = true;
+        this._configCategoriesTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configCategoriesTourActive = false;
+                window.ConfigCategoriesTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigCategoriesTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Categories tour failed to start', error);
+            this._configCategoriesTourActive = false;
+            window.ConfigCategoriesTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configCategoriesTourStarting = false;
+        }
+    }
+
+    ensureCategoriesTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('categories');
+        } else {
+            const panel = document.querySelector('[data-tab-content="categories"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="categories"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'categories') {
+            window.history.replaceState(null, '', '#categories');
+        }
+    }
+
+    hasSeenConfigTagsTour() {
+        if (this.settingsData?.configTagsTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(
+                window.ConfigTagsTour?.STORAGE_KEY || 'nextdash:config-tags-tour-v1'
+            ) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigTagsTourSeenFromServer() {
+        const key = window.ConfigTagsTour?.STORAGE_KEY || 'nextdash:config-tags-tour-v1';
+        try {
+            if (this.settingsData?.configTagsTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigTagsTourCompleted() {
+        this.settingsData.configTagsTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigTagsTour?.STORAGE_KEY || 'nextdash:config-tags-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigTagsTourSchedule() {
+        this._configTagsTourScheduleId = (this._configTagsTourScheduleId || 0) + 1;
+        if (this._configTagsTourScheduleTimer) {
+            clearTimeout(this._configTagsTourScheduleTimer);
+            this._configTagsTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigTagsTour() {
+        if (typeof window.ConfigTagsTour !== 'function') return;
+        if (this.hasSeenConfigTagsTour()) return;
+        if (this._configTagsTourActive || this._configTagsTourStarting) return;
+        if (this._isConfigTabTourBusy('tags')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigTagsTourSchedule();
+        const runId = this._configTagsTourScheduleId;
+        this._configTagsTourScheduleTimer = setTimeout(() => {
+            this._configTagsTourScheduleTimer = null;
+            if (runId !== this._configTagsTourScheduleId) return;
+            if (
+                this.hasSeenConfigTagsTour() ||
+                this._configTagsTourActive ||
+                this._configTagsTourStarting ||
+                this._isConfigTabTourBusy('tags')
+            ) {
+                return;
+            }
+            if (!this.isConfigTagsTabActive()) return;
+            this.dismissOtherConfigTabTours('tags');
+            void this.maybeStartConfigTagsTour();
+        }, 550);
+    }
+
+    isConfigTagsTabActive() {
+        if (this.ui?._currentTab === 'tags') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'tags') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'tags';
+    }
+
+    configTagsTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigTagsTourFailedReload',
+            'no-tags-tab': 'config.resetConfigTagsTourFailedTab',
+            'dom-not-ready': 'config.resetConfigTagsTourFailedDom',
+            'render-failed': 'config.resetConfigTagsTourFailedDom',
+            'step-error': 'config.resetConfigTagsTourFailedDom',
+            blocked: 'config.resetConfigTagsTourFailedDom',
+            mobile: 'config.resetConfigTagsTourFailedMobile',
+            error: 'config.resetConfigTagsTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Tags tour. Refresh the page and try again.',
+            'no-tags-tab': 'Could not start the Tags tour. Open the Tags tab first.',
+            'dom-not-ready': 'Could not start the Tags tour. Tags are still loading — refresh and try again.',
+            mobile:
+                'Could not start the Tags tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Tags tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigTagsTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Tags tour. Open the Tags tab first.';
+    }
+
+    async maybeStartConfigTagsTour({ force = false } = {}) {
+        if (this._configTagsTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigTagsTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigTagsTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Tags tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configTagsTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('tags')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigTagsTour()) return { ok: false, reason: 'completed' };
+
+        this.dismissOtherConfigTabTours('tags');
+
+        if (force) {
+            this.cancelConfigTagsTourSchedule();
+            window.ConfigTagsTour.teardownStaleDom?.();
+            this._configTagsTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureTagsTabActive();
+        } else if (!this.isConfigTagsTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigTagsTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigTagsTour(),
+            onMarkSeen: () => this.markConfigTagsTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-tags-tab' : 'mobile' };
+        }
+
+        this._configTagsTourStarting = true;
+        this._configTagsTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configTagsTourActive = false;
+                window.ConfigTagsTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigTagsTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Tags tour failed to start', error);
+            this._configTagsTourActive = false;
+            window.ConfigTagsTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configTagsTourStarting = false;
+        }
+    }
+
+    ensureTagsTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('tags');
+        } else {
+            const panel = document.querySelector('[data-tab-content="tags"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="tags"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'tags') {
+            window.history.replaceState(null, '', '#tags');
+        }
+    }
+
+    hasSeenConfigPagesTour() {
+        if (this.settingsData?.configPagesTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(
+                window.ConfigPagesTour?.STORAGE_KEY || 'nextdash:config-pages-tour-v1'
+            ) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigPagesTourSeenFromServer() {
+        const key = window.ConfigPagesTour?.STORAGE_KEY || 'nextdash:config-pages-tour-v1';
+        try {
+            if (this.settingsData?.configPagesTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigPagesTourCompleted() {
+        this.settingsData.configPagesTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigPagesTour?.STORAGE_KEY || 'nextdash:config-pages-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigPagesTourSchedule() {
+        this._configPagesTourScheduleId = (this._configPagesTourScheduleId || 0) + 1;
+        if (this._configPagesTourScheduleTimer) {
+            clearTimeout(this._configPagesTourScheduleTimer);
+            this._configPagesTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigPagesTour() {
+        if (typeof window.ConfigPagesTour !== 'function') return;
+        if (this.hasSeenConfigPagesTour()) return;
+        if (this._configPagesTourActive || this._configPagesTourStarting) return;
+        if (this._isConfigTabTourBusy('pages')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigPagesTourSchedule();
+        const runId = this._configPagesTourScheduleId;
+        this._configPagesTourScheduleTimer = setTimeout(() => {
+            this._configPagesTourScheduleTimer = null;
+            if (runId !== this._configPagesTourScheduleId) return;
+            if (
+                this.hasSeenConfigPagesTour() ||
+                this._configPagesTourActive ||
+                this._configPagesTourStarting ||
+                this._isConfigTabTourBusy('pages')
+            ) {
+                return;
+            }
+            if (!this.isConfigPagesTabActive()) return;
+            this.dismissOtherConfigTabTours('pages');
+            void this.maybeStartConfigPagesTour();
+        }, 550);
+    }
+
+    isConfigPagesTabActive() {
+        if (this.ui?._currentTab === 'pages') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'pages') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'pages';
+    }
+
+    configPagesTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigPagesTourFailedReload',
+            'no-pages-tab': 'config.resetConfigPagesTourFailedTab',
+            'dom-not-ready': 'config.resetConfigPagesTourFailedDom',
+            'render-failed': 'config.resetConfigPagesTourFailedDom',
+            'step-error': 'config.resetConfigPagesTourFailedDom',
+            blocked: 'config.resetConfigPagesTourFailedDom',
+            mobile: 'config.resetConfigPagesTourFailedMobile',
+            error: 'config.resetConfigPagesTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Pages tour. Refresh the page and try again.',
+            'no-pages-tab': 'Could not start the Pages tour. Open the Pages tab first.',
+            'dom-not-ready':
+                'Could not start the Pages tour. Pages are still loading — refresh and try again.',
+            mobile:
+                'Could not start the Pages tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Pages tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigPagesTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Pages tour. Open the Pages tab first.';
+    }
+
+    async maybeStartConfigPagesTour({ force = false } = {}) {
+        if (this._configPagesTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigPagesTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigPagesTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Pages tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configPagesTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('pages')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigPagesTour()) return { ok: false, reason: 'completed' };
+
+        this.dismissOtherConfigTabTours('pages');
+
+        if (force) {
+            this.cancelConfigPagesTourSchedule();
+            window.ConfigPagesTour.teardownStaleDom?.();
+            this._configPagesTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensurePagesTabActive();
+        } else if (!this.isConfigPagesTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigPagesTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigPagesTour(),
+            onMarkSeen: () => this.markConfigPagesTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-pages-tab' : 'mobile' };
+        }
+
+        this._configPagesTourStarting = true;
+        this._configPagesTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configPagesTourActive = false;
+                window.ConfigPagesTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigPagesTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Pages tour failed to start', error);
+            this._configPagesTourActive = false;
+            window.ConfigPagesTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configPagesTourStarting = false;
+        }
+    }
+
+    ensurePagesTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('pages');
+        } else {
+            const panel = document.querySelector('[data-tab-content="pages"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="pages"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'pages') {
+            window.history.replaceState(null, '', '#pages');
+        }
+    }
+
+    hasSeenConfigCollectionsTour() {
+        if (this.settingsData?.configCollectionsTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(
+                window.ConfigCollectionsTour?.STORAGE_KEY || 'nextdash:config-collections-tour-v1'
+            ) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigCollectionsTourSeenFromServer() {
+        const key =
+            window.ConfigCollectionsTour?.STORAGE_KEY || 'nextdash:config-collections-tour-v1';
+        try {
+            if (this.settingsData?.configCollectionsTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigCollectionsTourCompleted() {
+        this.settingsData.configCollectionsTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigCollectionsTour?.STORAGE_KEY || 'nextdash:config-collections-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigCollectionsTourSchedule() {
+        this._configCollectionsTourScheduleId = (this._configCollectionsTourScheduleId || 0) + 1;
+        if (this._configCollectionsTourScheduleTimer) {
+            clearTimeout(this._configCollectionsTourScheduleTimer);
+            this._configCollectionsTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigCollectionsTour() {
+        if (typeof window.ConfigCollectionsTour !== 'function') return;
+        if (this.hasSeenConfigCollectionsTour()) return;
+        if (this._configCollectionsTourActive || this._configCollectionsTourStarting) return;
+        if (this._isConfigTabTourBusy('collections')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigCollectionsTourSchedule();
+        const runId = this._configCollectionsTourScheduleId;
+        this._configCollectionsTourScheduleTimer = setTimeout(() => {
+            this._configCollectionsTourScheduleTimer = null;
+            if (runId !== this._configCollectionsTourScheduleId) return;
+            if (
+                this.hasSeenConfigCollectionsTour() ||
+                this._configCollectionsTourActive ||
+                this._configCollectionsTourStarting ||
+                this._isConfigTabTourBusy('collections')
+            ) {
+                return;
+            }
+            if (!this.isConfigCollectionsTabActive()) return;
+            this.dismissOtherConfigTabTours('collections');
+            void this.maybeStartConfigCollectionsTour();
+        }, 550);
+    }
+
+    isConfigCollectionsTabActive() {
+        if (this.ui?._currentTab === 'collections') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'collections') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'collections';
+    }
+
+    configCollectionsTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigCollectionsTourFailedReload',
+            'no-collections-tab': 'config.resetConfigCollectionsTourFailedTab',
+            'dom-not-ready': 'config.resetConfigCollectionsTourFailedDom',
+            'render-failed': 'config.resetConfigCollectionsTourFailedDom',
+            'step-error': 'config.resetConfigCollectionsTourFailedDom',
+            blocked: 'config.resetConfigCollectionsTourFailedDom',
+            mobile: 'config.resetConfigCollectionsTourFailedMobile',
+            error: 'config.resetConfigCollectionsTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Collections tour. Refresh the page and try again.',
+            'no-collections-tab': 'Could not start the Collections tour. Open the Collections tab first.',
+            'dom-not-ready':
+                'Could not start the Collections tour. Collections are still loading — refresh and try again.',
+            mobile:
+                'Could not start the Collections tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Collections tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigCollectionsTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Collections tour. Open the Collections tab first.';
+    }
+
+    async maybeStartConfigCollectionsTour({ force = false } = {}) {
+        if (this._configCollectionsTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigCollectionsTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigCollectionsTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Collections tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configCollectionsTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('collections')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigCollectionsTour()) return { ok: false, reason: 'completed' };
+
+        this.dismissOtherConfigTabTours('collections');
+
+        if (force) {
+            this.cancelConfigCollectionsTourSchedule();
+            window.ConfigCollectionsTour.teardownStaleDom?.();
+            this._configCollectionsTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureCollectionsTabActive();
+        } else if (!this.isConfigCollectionsTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigCollectionsTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigCollectionsTour(),
+            onMarkSeen: () => this.markConfigCollectionsTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-collections-tab' : 'mobile' };
+        }
+
+        this._configCollectionsTourStarting = true;
+        this._configCollectionsTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configCollectionsTourActive = false;
+                window.ConfigCollectionsTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigCollectionsTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Collections tour failed to start', error);
+            this._configCollectionsTourActive = false;
+            window.ConfigCollectionsTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configCollectionsTourStarting = false;
+        }
+    }
+
+    ensureCollectionsTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('collections');
+        } else {
+            const panel = document.querySelector('[data-tab-content="collections"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="collections"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash !== 'collections') {
+            window.history.replaceState(null, '', '#collections');
+        }
+    }
+
+    onConfigColorsTabOpened() {
+        if (this.hasSeenConfigThemeTour()) return Promise.resolve();
+        this.dismissOtherConfigTabTours('theme');
+        const schedule = () => this.scheduleConfigThemeTour();
+        if (typeof this.ensureColorsEditor === 'function') {
+            return this.ensureColorsEditor().finally(schedule);
+        }
+        schedule();
+        return Promise.resolve();
+    }
+
+    hasSeenConfigThemeTour() {
+        if (this.settingsData?.configThemeTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(
+                window.ConfigThemeTour?.STORAGE_KEY || 'nextdash:config-theme-tour-v1'
+            ) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigThemeTourSeenFromServer() {
+        const key = window.ConfigThemeTour?.STORAGE_KEY || 'nextdash:config-theme-tour-v1';
+        try {
+            if (this.settingsData?.configThemeTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigThemeTourCompleted() {
+        this.settingsData.configThemeTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigThemeTour?.STORAGE_KEY || 'nextdash:config-theme-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigThemeTourSchedule() {
+        this._configThemeTourScheduleId = (this._configThemeTourScheduleId || 0) + 1;
+        if (this._configThemeTourScheduleTimer) {
+            clearTimeout(this._configThemeTourScheduleTimer);
+            this._configThemeTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigThemeTour() {
+        if (typeof window.ConfigThemeTour !== 'function') return;
+        if (this.hasSeenConfigThemeTour()) return;
+        if (this._configThemeTourActive || this._configThemeTourStarting) return;
+        if (this._isConfigTabTourBusy('theme')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigThemeTourSchedule();
+        const runId = this._configThemeTourScheduleId;
+        this._configThemeTourScheduleTimer = setTimeout(() => {
+            this._configThemeTourScheduleTimer = null;
+            if (runId !== this._configThemeTourScheduleId) return;
+            if (
+                this.hasSeenConfigThemeTour() ||
+                this._configThemeTourActive ||
+                this._configThemeTourStarting ||
+                this._isConfigTabTourBusy('theme')
+            ) {
+                return;
+            }
+            if (!this.isConfigColorsTabActive()) return;
+            this.dismissOtherConfigTabTours('theme');
+            void this.maybeStartConfigThemeTour();
+        }, 550);
+    }
+
+    isConfigColorsTabActive() {
+        if (this.ui?._currentTab === 'colors') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'colors') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash === 'colors' || hash.startsWith('colors/');
+    }
+
+    configThemeTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigThemeTourFailedReload',
+            'no-colors-tab': 'config.resetConfigThemeTourFailedTab',
+            'dom-not-ready': 'config.resetConfigThemeTourFailedDom',
+            'render-failed': 'config.resetConfigThemeTourFailedDom',
+            'step-error': 'config.resetConfigThemeTourFailedDom',
+            blocked: 'config.resetConfigThemeTourFailedDom',
+            mobile: 'config.resetConfigThemeTourFailedMobile',
+            error: 'config.resetConfigThemeTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the Theme tour. Refresh the page and try again.',
+            'no-colors-tab': 'Could not start the Theme tour. Open the Theme tab first.',
+            'dom-not-ready':
+                'Could not start the Theme tour. The editor is still loading — refresh and try again.',
+            mobile:
+                'Could not start the Theme tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the Theme tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigThemeTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore
+        }
+        return fallbacks[reason] || 'Could not start the Theme tour. Open the Theme tab first.';
+    }
+
+    async maybeStartConfigThemeTour({ force = false } = {}) {
+        if (this._configThemeTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigThemeTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigThemeTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config Theme tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configThemeTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._isConfigTabTourBusy('theme')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigThemeTour()) return { ok: false, reason: 'completed' };
+
+        this.dismissOtherConfigTabTours('theme');
+
+        if (force) {
+            this.cancelConfigThemeTourSchedule();
+            window.ConfigThemeTour?.teardownStaleDom?.();
+            this._configThemeTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureColorsTabActive();
+            await this.ensureColorsEditor();
+        } else if (!this.isConfigColorsTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigThemeTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigThemeTour(),
+            onMarkSeen: () => this.markConfigThemeTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-colors-tab' : 'mobile' };
+        }
+
+        this._configThemeTourStarting = true;
+        this._configThemeTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configThemeTourActive = false;
+                window.ConfigThemeTour?.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigThemeTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config Theme tour failed to start', error);
+            this._configThemeTourActive = false;
+            window.ConfigThemeTour?.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configThemeTourStarting = false;
+        }
+    }
+
+    ensureColorsTabActive() {
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('colors');
+        } else {
+            const panel = document.querySelector('[data-tab-content="colors"]');
+            if (panel && !panel.classList.contains('active')) {
+                document.querySelector('.tab-button[data-tab="colors"]')?.click();
+            }
+        }
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        if (!hash.startsWith('colors')) {
+            window.history.replaceState(null, '', '#colors');
         }
     }
 
@@ -598,6 +2067,9 @@ class ConfigManager {
     }
 
     async guardColorsTabLeave(targetTab) {
+        if (this._configThemeTourActive || this._configThemeTourStarting) {
+            return true;
+        }
         if (this.ui._currentTab !== 'colors' || targetTab === 'colors') {
             if (targetTab === 'colors') await this.ensureColorsEditor();
             return true;
@@ -677,8 +2149,36 @@ class ConfigManager {
             if (typeof this.settingsData.configBookmarksTourCompleted === 'undefined') {
                 this.settingsData.configBookmarksTourCompleted = false;
             }
+            if (typeof this.settingsData.configFindersTourCompleted === 'undefined') {
+                this.settingsData.configFindersTourCompleted = false;
+            }
+            if (typeof this.settingsData.configStatsTourCompleted === 'undefined') {
+                this.settingsData.configStatsTourCompleted = false;
+            }
+            if (typeof this.settingsData.configCategoriesTourCompleted === 'undefined') {
+                this.settingsData.configCategoriesTourCompleted = false;
+            }
+            if (typeof this.settingsData.configTagsTourCompleted === 'undefined') {
+                this.settingsData.configTagsTourCompleted = false;
+            }
+            if (typeof this.settingsData.configPagesTourCompleted === 'undefined') {
+                this.settingsData.configPagesTourCompleted = false;
+            }
+            if (typeof this.settingsData.configCollectionsTourCompleted === 'undefined') {
+                this.settingsData.configCollectionsTourCompleted = false;
+            }
+            if (typeof this.settingsData.configThemeTourCompleted === 'undefined') {
+                this.settingsData.configThemeTourCompleted = false;
+            }
             this.syncConfigGeneralTourSeenFromServer();
             this.syncConfigBookmarksTourSeenFromServer();
+            this.syncConfigFindersTourSeenFromServer();
+            this.syncConfigStatsTourSeenFromServer();
+            this.syncConfigCategoriesTourSeenFromServer();
+            this.syncConfigTagsTourSeenFromServer();
+            this.syncConfigPagesTourSeenFromServer();
+            this.syncConfigCollectionsTourSeenFromServer();
+            this.syncConfigThemeTourSeenFromServer();
             if (typeof this.settingsData.packedColumns === 'undefined') {
                 this.settingsData.packedColumns = true;
             }
@@ -1120,6 +2620,340 @@ class ConfigManager {
                         this.configBookmarksTourFailureMessage('error'),
                         'error'
                     );
+                }
+            });
+        }
+
+        const resetConfigFindersTourBtn = document.getElementById('reset-config-finders-tour-btn');
+        if (resetConfigFindersTourBtn) {
+            resetConfigFindersTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigFindersTour?.teardownStaleDom?.();
+                    this._configFindersTourActive = false;
+
+                    if (typeof window.ConfigFindersTour?.resetSeen === 'function') {
+                        window.ConfigFindersTour.resetSeen();
+                    }
+                    this.settingsData.configFindersTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigFindersTour?.STORAGE_KEY || 'nextdash:config-finders-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureFindersTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigFindersTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigFindersTourSuccess')
+                            || 'Finders tour started.')
+                        : this.configFindersTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Finders tour failed', error);
+                    this._configFindersTourActive = false;
+                    window.ConfigFindersTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configFindersTourFailureMessage('error'),
+                        'error'
+                    );
+                }
+            });
+        }
+
+        const resetConfigStatsTourBtn = document.getElementById('reset-config-stats-tour-btn');
+        if (resetConfigStatsTourBtn) {
+            resetConfigStatsTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigStatsTour?.teardownStaleDom?.();
+                    this._configStatsTourActive = false;
+
+                    if (typeof window.ConfigStatsTour?.resetSeen === 'function') {
+                        window.ConfigStatsTour.resetSeen();
+                    }
+                    this.settingsData.configStatsTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigStatsTour?.STORAGE_KEY || 'nextdash:config-stats-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureStatsTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigStatsTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigStatsTourSuccess')
+                            || 'Stats tour started.')
+                        : this.configStatsTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Stats tour failed', error);
+                    this._configStatsTourActive = false;
+                    window.ConfigStatsTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configStatsTourFailureMessage('error'),
+                        'error'
+                    );
+                }
+            });
+        }
+
+        const resetConfigCategoriesTourBtn = document.getElementById('reset-config-categories-tour-btn');
+        if (resetConfigCategoriesTourBtn) {
+            resetConfigCategoriesTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigCategoriesTour?.teardownStaleDom?.();
+                    this._configCategoriesTourActive = false;
+
+                    if (typeof window.ConfigCategoriesTour?.resetSeen === 'function') {
+                        window.ConfigCategoriesTour.resetSeen();
+                    }
+                    this.settingsData.configCategoriesTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigCategoriesTour?.STORAGE_KEY ||
+                                'nextdash:config-categories-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureCategoriesTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigCategoriesTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigCategoriesTourSuccess') ||
+                              'Categories tour started.')
+                        : this.configCategoriesTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Categories tour failed', error);
+                    this._configCategoriesTourActive = false;
+                    window.ConfigCategoriesTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configCategoriesTourFailureMessage('error'),
+                        'error'
+                    );
+                }
+            });
+        }
+
+        const resetConfigTagsTourBtn = document.getElementById('reset-config-tags-tour-btn');
+        if (resetConfigTagsTourBtn) {
+            resetConfigTagsTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigTagsTour?.teardownStaleDom?.();
+                    this._configTagsTourActive = false;
+
+                    if (typeof window.ConfigTagsTour?.resetSeen === 'function') {
+                        window.ConfigTagsTour.resetSeen();
+                    }
+                    this.settingsData.configTagsTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigTagsTour?.STORAGE_KEY || 'nextdash:config-tags-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureTagsTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigTagsTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigTagsTourSuccess') || 'Tags tour started.')
+                        : this.configTagsTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Tags tour failed', error);
+                    this._configTagsTourActive = false;
+                    window.ConfigTagsTour?.teardownStaleDom?.();
+                    this.ui.showNotification(this.configTagsTourFailureMessage('error'), 'error');
+                }
+            });
+        }
+
+        const resetConfigPagesTourBtn = document.getElementById('reset-config-pages-tour-btn');
+        if (resetConfigPagesTourBtn) {
+            resetConfigPagesTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigPagesTour?.teardownStaleDom?.();
+                    this._configPagesTourActive = false;
+
+                    if (typeof window.ConfigPagesTour?.resetSeen === 'function') {
+                        window.ConfigPagesTour.resetSeen();
+                    }
+                    this.settingsData.configPagesTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigPagesTour?.STORAGE_KEY || 'nextdash:config-pages-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensurePagesTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigPagesTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigPagesTourSuccess') || 'Pages tour started.')
+                        : this.configPagesTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Pages tour failed', error);
+                    this._configPagesTourActive = false;
+                    window.ConfigPagesTour?.teardownStaleDom?.();
+                    this.ui.showNotification(this.configPagesTourFailureMessage('error'), 'error');
+                }
+            });
+        }
+
+        const resetConfigCollectionsTourBtn = document.getElementById('reset-config-collections-tour-btn');
+        if (resetConfigCollectionsTourBtn) {
+            resetConfigCollectionsTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigCollectionsTour?.teardownStaleDom?.();
+                    this._configCollectionsTourActive = false;
+
+                    if (typeof window.ConfigCollectionsTour?.resetSeen === 'function') {
+                        window.ConfigCollectionsTour.resetSeen();
+                    }
+                    this.settingsData.configCollectionsTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigCollectionsTour?.STORAGE_KEY ||
+                                'nextdash:config-collections-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureCollectionsTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigCollectionsTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigCollectionsTourSuccess') ||
+                              'Collections tour started.')
+                        : this.configCollectionsTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Collections tour failed', error);
+                    this._configCollectionsTourActive = false;
+                    window.ConfigCollectionsTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configCollectionsTourFailureMessage('error'),
+                        'error'
+                    );
+                }
+            });
+        }
+
+        const resetConfigThemeTourBtn = document.getElementById('reset-config-theme-tour-btn');
+        if (resetConfigThemeTourBtn) {
+            resetConfigThemeTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigThemeTour?.teardownStaleDom?.();
+                    this._configThemeTourActive = false;
+
+                    if (typeof window.ConfigThemeTour?.resetSeen === 'function') {
+                        window.ConfigThemeTour.resetSeen();
+                    }
+                    this.settingsData.configThemeTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigThemeTour?.STORAGE_KEY || 'nextdash:config-theme-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureColorsTabActive();
+                    await this.ensureColorsEditor();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigThemeTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigThemeTourSuccess') || 'Theme tour started.')
+                        : this.configThemeTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset Theme tour failed', error);
+                    this._configThemeTourActive = false;
+                    window.ConfigThemeTour?.teardownStaleDom?.();
+                    this.ui.showNotification(this.configThemeTourFailureMessage('error'), 'error');
                 }
             });
         }

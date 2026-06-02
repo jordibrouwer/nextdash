@@ -173,6 +173,13 @@ type Settings struct {
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
 	ConfigGeneralTourCompleted   bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted bool                             `json:"configBookmarksTourCompleted"`
+	ConfigFindersTourCompleted   bool                             `json:"configFindersTourCompleted"`
+	ConfigStatsTourCompleted     bool                             `json:"configStatsTourCompleted"`
+	ConfigCategoriesTourCompleted bool                            `json:"configCategoriesTourCompleted"`
+	ConfigTagsTourCompleted       bool                            `json:"configTagsTourCompleted"`
+	ConfigPagesTourCompleted      bool                            `json:"configPagesTourCompleted"`
+	ConfigCollectionsTourCompleted bool                           `json:"configCollectionsTourCompleted"`
+	ConfigThemeTourCompleted       bool                           `json:"configThemeTourCompleted"`
 	CustomKeyBindings           map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
 	BackgroundType              string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
 	BackgroundGradient          string                           `json:"backgroundGradient"`          // preset name used when type="gradient"

@@ -73,7 +73,7 @@
             if (!dash) return false;
             if (dash.onboardingStartedInSession) return false;
             if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
-            if (window.MobileExperience?.shouldSkipHeavyUi?.()) return false;
+            if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             try {
                 if (sessionStorage.getItem(SESSION_SHOWN_KEY) === '1') return false;
                 if (sessionStorage.getItem(SESSION_DEFER_KEY) === '1') return false;

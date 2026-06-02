@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.3 — June 2026](#v2026063--june-2026)
 - [v2026.06.2 — June 2026](#v2026062--june-2026)
 - [v2026.06.1 — June 2026](#v2026061--june-2026)
 - [v2026.05.7 — May 2026](#v2026057--may-2026)
@@ -29,6 +30,57 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No shipped release yet — items land here before the next version section._
+
+---
+
+## v2026.06.3 — June 2026
+
+**Config guided tours** for every major tab: one-time spotlight walkthroughs on desktop-width windows, with optional hands-on demos and automatic cleanup.
+
+### Tours (shared)
+
+- **new** **Nine tab tours** — first visit to **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, or **Theme** (`#colors`) can start a guided tour until completed or skipped.
+- **new** **Replay any tour** — Config → General → Advanced → System & tools → *Show … tour again* (open the matching tab first).
+- **new** **Completion sync** — per-tab flags in settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) plus matching `localStorage` keys.
+- **new** **Tour card placement** — on large highlights the step card docks to the bottom of the viewport; confirmation dialogs use the same bottom-docked pattern so modals stay readable.
+- **new** **Desktop only** — tours do not auto-start on the mobile config layout; rotating footer tips and promo banners are also hidden on mobile.
+- **fix** **Mutual exclusion** — only one config tab tour runs at a time; tours defer to each other and the dashboard feature tour.
+
+### Config → General
+
+- **new** **General tour (9 steps)** — Essentials vs Advanced, appearance, bookmarks, toolbar, smart collections, Advanced nav, other tabs, **Save**.
+
+### Config → Bookmarks
+
+- **new** **Extended Bookmarks tour** — structure, filters, optional consent for demo bookmarks in the editor, **+ Add**, quick-add **+** modal (including dashboard **+**), list search, bulk toolbar, favicon policy, cleanup of all demos, **Save**.
+
+### Config → Pages
+
+- **new** **Pages tour (8 steps)** — page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup.
+
+### Config → Categories
+
+- **new** **Categories tour (8 steps)** — per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder hint, remove, cleanup.
+
+### Config → Tags
+
+- **new** **Tags tour (8 steps)** — tag cloud, rename/delete/drill-down, optional demo bookmark with tag in Bookmarks tab, tags field, result on Tags tab, cleanup.
+
+### Config → Collections
+
+- **new** **Collections tour (11 steps)** — list, new collection, optional demo rule editor (tag/category/shortcut rules, AND/OR), save to dashboard, preview on dashboard, cleanup.
+
+### Config → Finders
+
+- **new** **Finders tour (8 steps)** — concept, fields, add finder, optional **Google** example (`?g`) after consent, dashboard usage, reorder/remove, **Save**.
+
+### Config → Stats
+
+- **new** **Stats tour (11 steps)** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, rot & cleanup, conflicts (Health link), search/status settings.
+
+### Config → Theme
+
+- **new** **Theme tour (9 steps)** — editor, dark/light/custom subtabs, add custom theme, auto **Tour demo** palette, live preview, **Save colors**, **General → Appearance** to activate, confirm removal and restore previous theme.
 
 ---
 
