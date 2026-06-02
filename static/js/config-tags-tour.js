@@ -264,20 +264,20 @@ class ConfigTagsTour {
 
     syncDemoInAllBookmarks(bookmark) {
         const mgr = window.configManager;
-        if (!mgr || !bookmark || !Array.isArray(mgr.allBookmarksData)) return;
-        const idx = mgr.allBookmarksData.findIndex((b) => b[ConfigTagsTour.DEMO_FLAG]);
-        const copy = { ...bookmark };
-        if (idx >= 0) {
-            mgr.allBookmarksData[idx] = copy;
-        } else {
-            mgr.allBookmarksData.push(copy);
+        if (!mgr?.bookmarkStore || !bookmark) return;
+        const existing = mgr.bookmarkStore.getAll().find((b) => b[ConfigTagsTour.DEMO_FLAG]);
+        if (existing) {
+            Object.assign(existing, bookmark);
+            return;
         }
+        const pageId = Number(mgr.currentPageId) || 1;
+        mgr.bookmarkStore.getPage(pageId).push({ ...bookmark, pageId });
     }
 
     removeDemoFromAllBookmarks() {
         const mgr = window.configManager;
-        if (!mgr || !Array.isArray(mgr.allBookmarksData)) return;
-        mgr.allBookmarksData = mgr.allBookmarksData.filter((b) => !b[ConfigTagsTour.DEMO_FLAG]);
+        if (!mgr?.bookmarkStore) return;
+        mgr.bookmarkStore.removeWhere((b) => b[ConfigTagsTour.DEMO_FLAG]);
     }
 
     applyDemoTagToBookmark(bookmark) {
@@ -425,7 +425,8 @@ class ConfigTagsTour {
         await this.reloadAllBookmarksForTagsView();
         if (mgr && Number.isFinite(Number(pageId))) {
             try {
-                mgr.bookmarksData = await mgr.data.loadBookmarksByPage(pageId);
+                mgr.currentPageId = Number(pageId);
+                await mgr.bookmarkStore.loadPage(pageId);
                 mgr.refreshBookmarksList?.({ skipFlush: true });
             } catch (error) {
                 console.warn('Tags tour: could not resync page bookmarks', error);

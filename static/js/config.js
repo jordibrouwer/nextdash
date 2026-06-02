@@ -25,8 +25,7 @@ class ConfigManager {
         this.originalPagesData = []; // Track original pages to detect deletions
         this.currentPageId = 1; // Default to page 1
         this.currentCategoriesPageId = 1; // Default to page 1 for categories
-        this.bookmarksData = [];
-        this.allBookmarksData = [];
+        this.bookmarkStore = new ConfigBookmarkStore(this.data);
         this.findersData = [];
         this.categoriesData = []; // Categories for the categories tab
         this.bookmarksPageCategories = []; // Categories for the bookmarks tab (read-only)
@@ -125,6 +124,24 @@ class ConfigManager {
         this._pagesRepairedOnLoad = false;
 
         this.init();
+    }
+
+    /** Active bookmarks page (mutable array shared with bookmarkStore). */
+    get bookmarksData() {
+        return this.bookmarkStore.getPage(this.currentPageId);
+    }
+
+    set bookmarksData(value) {
+        this.bookmarkStore.setPage(this.currentPageId, value);
+    }
+
+    /** All bookmarks across pages (same object refs as per-page lists). */
+    get allBookmarksData() {
+        return this.bookmarkStore.getAll();
+    }
+
+    set allBookmarksData(value) {
+        this.bookmarkStore.replaceAll(value);
     }
 
     async init() {
@@ -294,11 +311,7 @@ class ConfigManager {
 
     async reloadTagsTabData() {
         try {
-            const res = await fetch('/api/bookmarks?all=true');
-            if (res.ok) {
-                const data = await res.json();
-                this.allBookmarksData = Array.isArray(data) ? data : [];
-            }
+            await this.bookmarkStore.loadAll();
         } catch (error) {
             console.warn('Could not reload bookmarks for tags view', error);
         }
@@ -2091,15 +2104,13 @@ class ConfigManager {
             this.deviceSpecific = this.storage.getDeviceSpecificFlag();
             const { bookmarks, pages, settings } = await this.data.loadData(this.deviceSpecific);
 
-            this.bookmarksData = bookmarks;
             this.pagesData = this.applyPagesNormalization(pages, { trackRepair: true });
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.findersData = await this.data.loadFinders();
-            try {
-                const allBookmarksResponse = await fetch('/api/bookmarks?all=true');
-                this.allBookmarksData = allBookmarksResponse.ok ? await allBookmarksResponse.json() : [];
-            } catch (error) {
-                this.allBookmarksData = [];
+            await this.bookmarkStore.loadAll();
+            if (this.bookmarkStore.getAll().length === 0 && Array.isArray(bookmarks) && bookmarks.length > 0) {
+                const seedPageId = Number(settings?.currentPage) || Number(this.currentPageId) || 1;
+                this.bookmarkStore.setPage(seedPageId, bookmarks);
             }
             this.settingsData = { ...this.settingsData, ...settings };
             this._persistedTheme = String(this.settingsData.theme || '');
@@ -2277,110 +2288,34 @@ class ConfigManager {
         }
     }
 
-    /**
-     * Find a bookmark in the cross-page cache (matched by page + URL).
-     */
     findBookmarkInAllCaches(bookmark, pageId = null) {
-        const pid = Number(pageId ?? bookmark?.pageId ?? this.currentPageId);
-        const urlKey = String(bookmark?.url || '').trim().toLowerCase();
-        if (!Number.isFinite(pid) || pid < 1 || !urlKey) return null;
-        return this.allBookmarksData.find((b) => {
-            if (Number(b.pageId) !== pid) return false;
-            return String(b.url || '').trim().toLowerCase() === urlKey;
-        }) || null;
+        return this.bookmarkStore.findByUrl(bookmark, pageId ?? this.currentPageId);
     }
 
-    /** Copy tag edits from allBookmarksData into the current page (tags tab → bookmarks list). */
-    syncTagsFromAllBookmarksIntoCurrentPage() {
-        const pageId = this.getResolvedBookmarksPageId();
-        for (const bm of this.bookmarksData) {
-            const match = this.findBookmarkInAllCaches(bm, pageId);
-            if (!match) continue;
-            bm.tags = Array.isArray(match.tags) ? [...match.tags] : [];
-        }
-    }
-
-    /**
-     * Tags tab edits live in allBookmarksData; detail panel edits in bookmarksData.
-     * Prefer the cross-page cache when it has a tags array (including [] after delete).
-     */
-    resolveBookmarkTagsForSave(bookmark, matchInAll) {
-        const fromPage = Array.isArray(bookmark?.tags) ? bookmark.tags : [];
-        const fromAll =
-            matchInAll && Array.isArray(matchInAll.tags) ? matchInAll.tags : [];
-        if (fromPage.length > 0 && fromAll.length === 0) {
-            return [...fromPage];
-        }
-        if (fromAll.length > 0) {
-            return [...fromAll];
-        }
-        return [...fromPage];
-    }
-
-    /** Ensure every bookmark in a page payload includes tags (omitted keys wipe tags on the server). */
-    prepareBookmarksForPageSave(bookmarks, pageId) {
-        const pid = Number(pageId);
-        return (Array.isArray(bookmarks) ? bookmarks : []).map((bm) => {
-            const match = Number.isFinite(pid) ? this.findBookmarkInAllCaches(bm, pid) : null;
-            const tags = this.resolveBookmarkTagsForSave(bm, match);
-            return { ...bm, tags };
-        });
-    }
+    /** @deprecated Single store — no separate caches to sync. */
+    syncTagsFromAllBookmarksIntoCurrentPage() {}
 
     async saveBookmarksPage(pageId, bookmarks) {
-        const prepared = this.prepareBookmarksForPageSave(bookmarks, pageId);
-        await this.withRetry(() => this.data.saveBookmarks(prepared, pageId));
-    }
-
-    /** Keep one bookmark's tags in sync between page list and cross-page cache. */
-    syncBookmarkTagsToAllCaches(bookmark, pageId = null) {
-        const pid = Number(pageId ?? bookmark?.pageId ?? this.currentPageId);
-        const match = this.findBookmarkInAllCaches(bookmark, pid);
-        if (!match) return;
-        match.tags = Array.isArray(bookmark.tags) ? [...bookmark.tags] : [];
-    }
-
-    /** Merge in-memory edits for the active bookmarks page into allBookmarksData. */
-    mergeCurrentPageIntoAllBookmarksData() {
-        const pageId = this.getResolvedBookmarksPageId();
-        const others = this.allBookmarksData.filter((b) => Number(b.pageId) !== pageId);
-        const current = this.bookmarksData.map((bm) => {
-            const match = this.findBookmarkInAllCaches(bm, pageId);
-            const tags = this.resolveBookmarkTagsForSave(bm, match);
-            return { ...(match || {}), ...bm, pageId, tags };
-        });
-        this.allBookmarksData = [...others, ...current];
-    }
-
-    /** Persist every page's bookmarks (tags tab edits can span pages). */
-    async saveAllBookmarkPages() {
-        this.mergeCurrentPageIntoAllBookmarksData();
-        const pageIds = [
-            ...new Set(
-                this.allBookmarksData
-                    .map((b) => Number(b.pageId))
-                    .filter((id) => Number.isFinite(id) && id >= 1)
-            ),
-        ].sort((a, b) => a - b);
-        for (const pageId of pageIds) {
-            const bookmarks = this.allBookmarksData.filter((b) => Number(b.pageId) === pageId);
-            await this.saveBookmarksPage(pageId, bookmarks);
+        if (Array.isArray(bookmarks)) {
+            this.bookmarkStore.setPage(pageId, bookmarks);
         }
+        await this.bookmarkStore.persistPage(pageId, (fn) => this.withRetry(fn));
     }
 
-    syncPageBookmarksIntoAllCache(pageId) {
-        const pid = Number(pageId);
-        if (!Number.isFinite(pid) || pid < 1) return;
-        const others = this.allBookmarksData.filter((b) => Number(b.pageId) !== pid);
-        const current = (this.bookmarksData || []).map((bm) => ({ ...bm, pageId: pid }));
-        this.allBookmarksData = [...others, ...current];
+    /** @deprecated Single store — bookmark objects are shared across tabs. */
+    syncBookmarkTagsToAllCaches() {}
+
+    async saveAllBookmarkPages() {
+        await this.bookmarkStore.persistAllPages((fn) => this.withRetry(fn));
     }
+
+    /** @deprecated Single store — page loads update the store directly. */
+    syncPageBookmarksIntoAllCache() {}
 
     async loadPageBookmarks(pageId) {
         try {
             this.currentPageId = parseInt(pageId);
-            this.bookmarksData = await this.data.loadBookmarksByPage(pageId);
-            this.syncPageBookmarksIntoAllCache(pageId);
+            await this.bookmarkStore.loadPage(pageId);
             this.bookmarksPageCategories = (await this.data.loadCategoriesByPage(pageId)).map(cat => ({ ...cat }));
 
             if (this.bookmarks) {
@@ -5589,10 +5524,9 @@ class ConfigManager {
             }
             this.refreshSmartCollectionCounters();
             try {
-                const allBookmarksResponse = await fetch('/api/bookmarks?all=true');
-                this.allBookmarksData = allBookmarksResponse.ok ? await allBookmarksResponse.json() : [];
+                await this.bookmarkStore.loadAll();
             } catch (error) {
-                // keep previous cache
+                // keep previous store state
             }
             if (this.stats && window.location.hash === '#stats') {
                 this.stats.refresh(this);

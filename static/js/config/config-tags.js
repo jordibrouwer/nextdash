@@ -385,9 +385,6 @@ class ConfigTags {
     // ── Save helpers ──────────────────────────────────────────────────────────
 
     _saveAndRefresh(manager) {
-        if (manager && typeof manager.syncTagsFromAllBookmarksIntoCurrentPage === 'function') {
-            manager.syncTagsFromAllBookmarksIntoCurrentPage();
-        }
         if (manager && typeof manager.markDirty === 'function') {
             manager.markDirty();
         }
