@@ -1947,9 +1947,10 @@
                             <h3 class="section-title" data-i18n="config.helpPageSearchTitle">Search & Input Modes</h3>
                             <ul data-i18n="config.helpPageSearchItems">
                                 <li><code>&gt;</code> open normal search, <code>:</code> commands, <code>?</code> finders.</li>
-                                <li><code>/</code> fuzzy search behavior depends on the configured search mode.</li>
+                                <li><code>/</code> on dashboard (tag cloud on, desktop) opens tag word cloud; otherwise fuzzy per search mode.</li>
+                                <li><code>:tag work</code> browses by tag in the command palette only; dashboard stays complete.</li>
                                 <li>Use commands like <code>:layout</code>, <code>:density</code>, <code>:packed</code> (tight columns), and <code>:buttons</code> for quick UI changes.</li>
-                                <li>Use filters in search: <code>category:work</code>, <code>status:online</code>, <code>page:2</code>.</li>
+                                <li>Use filters in search: <code>tag:work</code>, <code>category:work</code>, <code>status:online</code>, <code>page:2</code>.</li>
                                 <li>Turn on "Keep search open when empty" for fast repeated searches.</li>
                             </ul>
                         </section>
@@ -1982,7 +1983,8 @@
                             <ul data-i18n="config.helpPageTagsItems">
                                 <li>Add tags to any bookmark in config → Bookmarks (comma-separated).</li>
                                 <li>Tags are normalised: trimmed, lowercased, and deduplicated on save.</li>
-                                <li>Filter by tag in search with <code>tag:work</code> syntax.</li>
+                                <li><code>tag:work</code> in search filters overlay results; <code>/</code> tag cloud filters dashboard tiles (desktop).</li>
+                                <li><code>:tag work</code> lists bookmarks by tag in the command palette without changing the dashboard.</li>
                                 <li>Enable tag collections in config → General → Smart Collections to auto-generate one collection per tag.</li>
                             </ul>
                         </section>

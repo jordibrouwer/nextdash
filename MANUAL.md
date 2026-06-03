@@ -385,22 +385,34 @@ Three input modes share one overlay; switch with keys or footer chips.
 | `page:` | `page:2`, `page:all`, `page:current` |
 | `status:` | `status:online`, `status:broken`, `status:pinned`, … |
 
-### 10.2 Fuzzy search (`/`)
+### 10.2 Tag word cloud (`/`, desktop)
 
-Ranked matching on name, URL domain, tags, and note. Best for “I know part of the name”.
+When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on by default on desktop):
 
-### 10.3 Global search (`@`)
+- Press **`/`** on the dashboard (search closed) or click the **/** FAB to open a word cloud of all tags (size = usage).
+- **Arrow keys** move between tags and **Clear tag filter**; **Enter** applies a dashboard filter (only matching tiles stay visible).
+- **Escape** or **Clear tag filter** removes the filter and returns focus to bookmarks.
+- Hidden on mobile / narrow layouts.
+
+With tag cloud off, or inside the search overlay, **`/`** follows your fuzzy/interleave search setting (see below).
+
+### 10.3 Fuzzy search (`/`)
+
+When tag cloud does not take precedence: ranked matching on name, URL domain, tags, and note. Best for “I know part of the name”.
+
+### 10.4 Global search (`@`)
 
 Search **all pages**; each result shows which page it belongs to.
 
-### 10.4 Commands (`:`) — selected examples
+### 10.5 Commands (`:`) — selected examples
 
 | Command | Description |
 |---------|-------------|
 | `:new` | New-bookmark modal |
 | `:note` | Edit note on selected bookmark |
 | `:pin` / `:unpin` | Toggle pin |
-| `:tag <name>` | Add/remove tag on selection |
+| `:tag` | List tags; browse by tag in palette (`:tag work`, `:tag:work`) without changing dashboard |
+| `:tag +name` / `:tag -name` | Add/remove tag on keyboard-selected bookmark |
 | `:remove` | Delete selected |
 | `:sort order\|az\|recent\|custom` | Sort mode |
 | `:open all` | Open all on page (safe batch cap) |
@@ -416,13 +428,13 @@ Search **all pages**; each result shows which page it belongs to.
 | `:save` / `:saved` | Save / list saved searches |
 | `:history` / `:history clear` | Search history |
 
-### 10.5 Finders (`?`)
+### 10.6 Finders (`?`)
 
 Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https://www.google.com/search?q=%s`.
 
 Configure finders in **config → finders**.
 
-### 10.6 In-page filter (`:find`)
+### 10.7 In-page filter (`:find`)
 
 Temporarily hides bookmark tiles that do not match. Run `:find` alone to clear.
 
@@ -470,8 +482,10 @@ Click category header or chevron. **Always collapse categories** can be set in g
 
 - Comma-separated in modal, inline edit, or config detail.  
 - Stored lowercase, trimmed, deduplicated.  
-- Filter: `tag:work` in search.  
-- **config → tags**: rename, merge, delete, tag cloud.  
+- **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
+- **Dashboard tag cloud (desktop):** `/` or / FAB — filters **dashboard tiles**; keyboard navigation; Clear returns focus to bookmarks.  
+- **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
+- **config → tags**: rename, merge, delete, tag cloud overview.  
 - **Tag collections**: optional dashboard group per tag (general settings).
 
 ### Notes

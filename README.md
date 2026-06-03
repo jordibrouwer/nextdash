@@ -101,7 +101,8 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)
 - `:note` — edit the note of the focused bookmark
 - `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
-- `:tag <tagname>` — add or remove a tag on the selected bookmark
+- `:tag` — list tags; `:tag <name>` or `:tag:<name>` browse bookmarks by tag in the command palette only (dashboard unchanged); `:tag +name` / `:tag -name` add or remove on the keyboard-selected bookmark
+- `/` (desktop, tag cloud on) — open tag word cloud on dashboard; filters tiles by tag (Escape or Clear clears)
 - `:open all` — open all bookmarks on the current page in new tabs
 - `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
 - `:remove` — delete the focused bookmark

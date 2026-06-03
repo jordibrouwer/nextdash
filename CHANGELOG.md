@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.5 — May 2026](#v2026065--may-2026)
 - [v2026.06.4 — May 2026](#v2026064--may-2026)
 - [v2026.06.3 — June 2026](#v2026063--june-2026)
 - [v2026.06.2 — June 2026](#v2026062--june-2026)
@@ -34,6 +35,39 @@ _No shipped release yet — items land here before the next version section._
 
 ---
 
+## v2026.06.5 — May 2026
+
+**Dashboard tag word cloud** (`/`), **keyboard-driven tag filter**, and **`:tag` browse in the command palette** — plus help and settings updates.
+
+### Dashboard — tag word cloud
+
+- **new** **Tag cloud (/)** — optional `/` FAB (stacked with What's new on desktop); opens an anchored word-cloud modal of all library tags (size = usage, `#` prefix on every tag).
+- **new** **`/` shortcut** — on the dashboard (search closed), `/` opens the tag cloud when the feature is enabled; with tag cloud off, `/` keeps the existing fuzzy/interleave search behaviour.
+- **new** **Keyboard in the modal** — arrow keys move between tags and **Clear tag filter**; Enter applies; Escape closes; clearing the filter closes the modal and restores focus to the selected bookmark row.
+- **new** **Dashboard tag filter** — picking a tag shows only matching bookmarks in an animated temporary layout (chunks of 10, equal column widths); Escape clears the filter when the modal is closed.
+- **fix** **Corner FAB stack** — tag cloud sits directly above What's new; launcher moves up one slot when the tag cloud is enabled on docked button-bar corners.
+
+### Search & commands
+
+- **new** **`:tag` browse** — in command mode, `:tag` lists tags; `:tag work` or `:tag:work` shows matching bookmarks **inside the palette only** (full dashboard unchanged). Partial tag names supported.
+- **new** **`:tag +name` / `:tag -name`** — add or remove a tag on the keyboard-selected bookmark (replaces the old “toggle tag on selection”-only flow for named tags).
+
+### Config → General
+
+- **new** **Tag cloud (/)** toggle under Header & Buttons — ℹ explains desktop-only behaviour and keyboard use.
+- **new** **Default on** — enabled for new installs; one-time migration turns it on for existing installs (`tagCloudDefaultMigrated`).
+
+### Help & docs
+
+- **new** **In-app help** — Search, Tags, dashboard bookmarks, troubleshooting, config ℹ, rotating tip, and cheat sheet row updated (EN / NL / DE / FR).
+- **new** **README & MANUAL** — tag cloud section, `:tag` command table, and three-way tag browse (`tag:` search, `/` dashboard, `:tag` palette).
+
+### Mobile
+
+- **new** **Desktop only** — tag cloud FAB and `/` handler are hidden on the mobile layout; dashboard tag filter is not offered on touch/narrow viewports.
+
+---
+
 ## v2026.06.4 — May 2026
 
 **Bookmark sync reliability**, **Stats tags**, **dashboard page-tab polish**, and a major **Health beta** upgrade (shortcut conflicts, page filter, smarter merge, clearer errors, config-style action toolbars).
@@ -45,7 +79,8 @@ _No shipped release yet — items land here before the next version section._
 
 ### Config → Stats
 
-- **new** **Tags section** — tag usage overview (total tags, most-used tag, untagged bookmarks) plus a per-tag breakdown with counts. Index link, stats tour step, and EN/NL/DE/FR strings.
+- **new** **Tags section** — tag usage overview (total tags, most-used tag, untagged bookmarks) plus a per-tag breakdown with counts. Index link and EN/NL/DE/FR strings.
+- **update** **Stats tour (12 steps)** — adds a **Tag usage** step after the new Tags section (tour was 11 steps in v2026.06.3).
 
 ### Dashboard
 
@@ -114,7 +149,7 @@ _No shipped release yet — items land here before the next version section._
 
 ### Config → Stats
 
-- **new** **Stats tour (11 steps)** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, rot & cleanup, conflicts (Health link), search/status settings.
+- **new** **Stats tour (11 steps at release)** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, rot & cleanup, conflicts (Health link), search/status settings. Extended to **12 steps** in v2026.06.4 (Tag usage step).
 
 ### Config → Theme
 

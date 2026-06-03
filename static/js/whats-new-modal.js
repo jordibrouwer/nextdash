@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v39';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v40';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -82,12 +82,40 @@
     function buildHtml() {
         return `<div class="wn-content">` + buildIntroHtml() + [
 
+            release('v2026.06.5', 'May 2026', [
+                {
+                    title: 'Dashboard — tag word cloud',
+                    items: [
+                        { badge: 'new', text: '<strong>Tag cloud (/)</strong> — optional FAB on desktop opens a word cloud of all tags (size = usage, <code>#</code> on every tag). Toggle under Config → General → Header &amp; Buttons; on by default.' },
+                        { badge: 'new', text: '<strong>/ shortcut</strong> — on the dashboard (search closed), <kbd>/</kbd> opens the tag cloud when enabled; otherwise <kbd>/</kbd> keeps fuzzy/interleave search.' },
+                        { badge: 'new', text: '<strong>Keyboard in the modal</strong> — arrows move between tags and <em>Clear tag filter</em>; Enter applies; Escape closes; clearing restores focus to the selected bookmark.' },
+                        { badge: 'new', text: '<strong>Tag filter view</strong> — pick a tag to see only matching bookmarks in an animated temporary layout; Escape clears when the modal is closed.' },
+                        { badge: 'fix', text: '<strong>Corner FAB stack</strong> — tag cloud sits directly above What\'s new; launcher moves up when the tag cloud is on.' },
+                    ]
+                },
+                {
+                    title: 'Search &amp; commands',
+                    items: [
+                        { badge: 'new', text: '<strong>:tag browse</strong> — <code>:tag</code> lists tags; <code>:tag work</code> or <code>:tag:work</code> shows matching bookmarks in the palette only (dashboard unchanged).' },
+                        { badge: 'new', text: '<strong>:tag +name / :tag -name</strong> — add or remove a tag on the keyboard-selected bookmark.' },
+                    ]
+                },
+                {
+                    title: 'Help &amp; mobile',
+                    items: [
+                        { badge: 'new', text: '<strong>Help &amp; docs</strong> — in-app help, cheat sheet, README, and MANUAL updated for tag cloud and <code>:tag</code> (EN / NL / DE / FR).' },
+                        { badge: 'new', text: '<strong>Desktop only</strong> — tag cloud FAB and <kbd>/</kbd> are hidden on the mobile layout.' },
+                    ]
+                },
+            ]),
+
             release('v2026.06.4', 'May 2026', [
                 {
                     title: 'Config — bookmarks &amp; stats',
                     items: [
                         { badge: 'fix', text: '<strong>Bookmark store</strong> — one central cache in config so page lists and the Tags tab always share the same data; fixes tags appearing empty after restart or a guided tour.' },
-                        { badge: 'new', text: '<strong>Stats → Tags</strong> — tag counts, most-used tag, untagged bookmarks, and a per-tag breakdown; new index link and tour step.' },
+                        { badge: 'new', text: '<strong>Stats → Tags</strong> — tag counts, most-used tag, untagged bookmarks, and a per-tag breakdown; new index link.' },
+                        { badge: 'new', text: '<strong>Stats tour (12 steps)</strong> — new <em>Tag usage</em> step after the Tags section (was 11 steps in v2026.06.3).' },
                     ]
                 },
                 {
