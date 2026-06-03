@@ -294,6 +294,27 @@
     white-space: nowrap;
 }
 
+.buttons-visibility-table td.buttons-visibility-name {
+    vertical-align: middle;
+}
+
+.buttons-visibility-table td.buttons-visibility-show {
+    vertical-align: middle;
+}
+
+.buttons-visibility-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.4em;
+    line-height: 1.35;
+}
+
+.buttons-visibility-label .info-button {
+    flex-shrink: 0;
+    margin: 0;
+    vertical-align: unset;
+}
 
 .buttons-visibility-table th:not(:first-child) {
     text-align: center;

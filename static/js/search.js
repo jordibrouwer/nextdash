@@ -333,8 +333,15 @@ class SearchComponent {
             return;
         }
 
-        // Handle / key to start fuzzy search
+        // / toggles dashboard tag cloud when enabled; otherwise interleave fuzzy prefix
         if (key === '/') {
+            const dash = window.dashboardInstance;
+            if (!this.searchActive && dash && window.DashboardTagCloud?.isEligible?.()) {
+                return;
+            }
+            if (!this.interleaveMode) {
+                return;
+            }
             e.preventDefault();
             this.addToQuery('/');
             return;
@@ -1414,6 +1421,20 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
             this.commandsComponent.resetState();
             this.updateSearch();
+        }
+    }
+
+    /** Open search with a tag: filter (dashboard tag cloud, config tags tab, etc.). */
+    openSearchWithTagFilter(tag) {
+        const normalized = String(tag || '').trim().toLowerCase();
+        if (!normalized) return;
+        window.dashboardInstance?.markInlineTipUsed?.('search_open');
+        this.commandsComponent.resetState();
+        this.currentQuery = `tag:${normalized}`;
+        this.selectedMatchIndex = 0;
+        this.updateSearch();
+        if (!this.searchActive) {
+            this.showSearch();
         }
     }
 

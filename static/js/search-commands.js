@@ -155,6 +155,12 @@ class SearchCommandsComponent {
         if (potentialCommand === 'previews') potentialCommand = 'preview';
         if (potentialCommand === 'unpin') potentialCommand = 'pin';
 
+        // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
+        const tagShorthand = potentialCommand.match(/^tag:(.+)$/i);
+        if (tagShorthand && this.availableCommands.tag) {
+            return this.availableCommands.tag([tagShorthand[1], ...parts.slice(1)], query);
+        }
+
         // Check if it's a complete command
         if (this.availableCommands[potentialCommand]) {
             return this.availableCommands[potentialCommand](parts.slice(1), query);
@@ -272,46 +278,155 @@ class SearchCommandsComponent {
         }];
     }
 
-    // ─── :tag ─────────────────────────────────────────────────────────────────
+    // ─── :tag (browse by tag in palette; +/− mutates focused bookmark) ───────
 
-    handleTagCommand(args, fullQuery) {
+    _t(key, fallback) {
+        const v = this.language?.t?.(key);
+        return v && v !== key ? v : fallback;
+    }
+
+    _normalizeTagQuery(raw) {
+        let s = String(raw || '').trim().toLowerCase();
+        if (s.startsWith('tag:')) {
+            s = s.slice(4).trim();
+        }
+        return s;
+    }
+
+    _getTagBookmarkPool() {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+        if (dash.settings?.globalShortcuts && Array.isArray(dash.allBookmarks) && dash.allBookmarks.length) {
+            return dash.allBookmarks;
+        }
+        const seen = new Set();
+        const out = [];
+        for (const bookmark of [...(this.currentBookmarks || []), ...(this.allBookmarks || [])]) {
+            const url = String(bookmark?.url || '').trim();
+            if (!url || seen.has(url)) continue;
+            seen.add(url);
+            out.push(bookmark);
+        }
+        return out;
+    }
+
+    _getRankedTags() {
+        const counts = new Map();
+        for (const bookmark of this._getTagBookmarkPool()) {
+            for (const raw of bookmark?.tags || []) {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (!tag) continue;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            }
+        }
+        return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    }
+
+    _bookmarkMatchesTagQuery(bookmark, tagQuery) {
+        const q = this._normalizeTagQuery(tagQuery);
+        if (!q) return false;
+        return (bookmark?.tags || []).some((tag) => String(tag).toLowerCase().includes(q));
+    }
+
+    _getTagNameCompletionRows(partial) {
+        const q = this._normalizeTagQuery(partial);
+        const ranked = this._getRankedTags();
+        const filtered = q
+            ? ranked.filter(([tag]) => tag.includes(q))
+            : ranked;
+        return filtered.slice(0, 16).map(([tag, count]) => {
+            const countLabel =
+                count === 1
+                    ? this._t('commands.tagBookmarkCountOne', '1 bookmark')
+                    : this._t('commands.tagBookmarkCountMany', '{count} bookmarks').replace('{count}', String(count));
+            return {
+                name: `#${tag}`,
+                shortcut: ':TAG',
+                completion: `:tag ${tag} `,
+                type: 'command-completion',
+                meta: countLabel,
+            };
+        });
+    }
+
+    _getTagBrowseBookmarkRows(tagQuery) {
+        const q = this._normalizeTagQuery(tagQuery);
+        const matches = this._getTagBookmarkPool().filter((bookmark) => this._bookmarkMatchesTagQuery(bookmark, q));
+        const cap = 45;
+        const dash = window.dashboardInstance;
+
+        if (!matches.length) {
+            return [{
+                name: this._t('commands.tagNoBookmarks', 'No bookmarks with tag “{tag}”').replace('{tag}', q || tagQuery),
+                shortcut: ':TAG',
+                type: 'command',
+                action: () => true,
+            }];
+        }
+
+        const rows = matches.slice(0, cap).map((bookmark, i) => {
+            const tags = (bookmark.tags || []).filter((t) => String(t).toLowerCase().includes(q));
+            return {
+                name: bookmark.name || bookmark.url,
+                shortcut:
+                    bookmark.shortcut && String(bookmark.shortcut).trim()
+                        ? String(bookmark.shortcut).trim()
+                        : `#${i + 1}`,
+                bookmark,
+                type: 'bookmark',
+                meta: tags.map((t) => `#${t}`).join(' '),
+            };
+        });
+
+        if (matches.length > cap) {
+            rows.push({
+                name: this._t('commands.tagBrowseTruncated', 'Showing {shown} of {total} — refine the tag name')
+                    .replace('{shown}', String(cap))
+                    .replace('{total}', String(matches.length)),
+                shortcut: '…',
+                type: 'command',
+                action: () => true,
+            });
+        }
+
+        return rows;
+    }
+
+    _handleTagMutate(rawName, forceAdd) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
         const ctx = this.contextBookmark;
-        const tagName = args.join(' ').trim().toLowerCase();
+        const tagName = this._normalizeTagQuery(rawName);
 
         if (!ctx) {
             return [{
-                name: 'No bookmark selected — navigate to one first',
+                name: this._t('commands.tagNoSelection', 'No bookmark selected — navigate to one first'),
                 shortcut: ':TAG',
                 action: () => true,
-                type: 'command'
+                type: 'command',
             }];
         }
 
         if (!tagName) {
-            const existing = Array.isArray(ctx.tags) && ctx.tags.length
-                ? ctx.tags.map(t => `#${t}`).join(' ')
-                : 'none';
             return [{
-                name: `"${ctx.name}" — tags: ${existing}`,
+                name: this._t('commands.tagMutateNeedName', 'Type :tag +name or :tag -name to add or remove a tag'),
                 shortcut: ':TAG',
-                completion: ':tag ',
-                type: 'command-completion'
+                completion: ':tag +',
+                type: 'command-completion',
             }];
         }
 
         const tags = Array.isArray(ctx.tags) ? [...ctx.tags] : [];
         const idx = tags.indexOf(tagName);
-        let newTags;
-        let label;
-        if (idx >= 0) {
-            newTags = tags.filter((_, i) => i !== idx);
-            label = `Remove tag "#${tagName}" from "${ctx.name}"`;
-        } else {
-            newTags = [...tags, tagName];
-            label = `Add tag "#${tagName}" to "${ctx.name}"`;
-        }
+        const remove = forceAdd === false || (forceAdd !== true && idx >= 0);
+        const newTags = remove ? tags.filter((t) => t !== tagName) : [...tags, tagName];
+        const label = remove
+            ? this._t('commands.tagRemoveLabel', 'Remove tag "#{tag}" from "{name}"')
+                  .replace('{tag}', tagName)
+                  .replace('{name}', ctx.name)
+            : this._t('commands.tagAddLabel', 'Add tag "#{tag}" to "{name}"')
+                  .replace('{tag}', tagName)
+                  .replace('{name}', ctx.name);
 
         return [{
             name: label,
@@ -320,10 +435,96 @@ class SearchCommandsComponent {
             action: () => {
                 ctx.tags = newTags;
                 this._persistBookmarkField(ctx, { tags: newTags });
-                dashboard.showNotification(idx >= 0 ? `Tag "#${tagName}" removed.` : `Tag "#${tagName}" added.`, 'success');
+                dashboard.showNotification(
+                    remove
+                        ? this._t('commands.tagRemovedToast', 'Tag "#{tag}" removed.').replace('{tag}', tagName)
+                        : this._t('commands.tagAddedToast', 'Tag "#{tag}" added.').replace('{tag}', tagName),
+                    'success'
+                );
                 return true;
-            }
+            },
         }];
+    }
+
+    handleTagCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const rawJoined = args.join(' ').trim();
+        if (rawJoined.startsWith('+')) {
+            return this._handleTagMutate(rawJoined.slice(1).trim(), true);
+        }
+        if (rawJoined.startsWith('-')) {
+            return this._handleTagMutate(rawJoined.slice(1).trim(), false);
+        }
+
+        const tagQuery = this._normalizeTagQuery(
+            args.map((part) => this._normalizeTagQuery(part)).filter(Boolean).join(' ') || rawJoined
+        );
+
+        if (!tagQuery) {
+            const rows = this._getTagNameCompletionRows('');
+            const ctx = this.contextBookmark;
+            if (ctx) {
+                const existing =
+                    Array.isArray(ctx.tags) && ctx.tags.length
+                        ? ctx.tags.map((t) => `#${t}`).join(' ')
+                        : this._t('commands.tagNoneOnBookmark', 'none');
+                rows.unshift({
+                    name: `"${ctx.name}" — ${this._t('commands.tagCurrentOnBookmark', 'tags')}: ${existing}`,
+                    shortcut: ':TAG',
+                    completion: ':tag ',
+                    type: 'command-completion',
+                });
+                rows.unshift({
+                    name: this._t(
+                        'commands.tagMutateHint',
+                        'On this bookmark: :tag +name to add, :tag -name to remove'
+                    ),
+                    shortcut: ':TAG',
+                    type: 'command',
+                    action: () => true,
+                });
+            }
+            if (!rows.length) {
+                return [{
+                    name: this._t('commands.tagLibraryEmpty', 'No tags yet — add tags in config → bookmarks'),
+                    shortcut: ':TAG',
+                    type: 'command',
+                    action: () => true,
+                }];
+            }
+            return rows;
+        }
+
+        const rows = [];
+        const ranked = this._getRankedTags();
+        const exactTag = ranked.some(([tag]) => tag === tagQuery);
+        const prefixOnly = ranked.filter(([tag]) => tag.startsWith(tagQuery) && tag !== tagQuery);
+
+        if (!exactTag && prefixOnly.length > 0) {
+            rows.push(
+                ...prefixOnly.slice(0, 8).map(([tag, count]) => {
+                    const countLabel =
+                        count === 1
+                            ? this._t('commands.tagBookmarkCountOne', '1 bookmark')
+                            : this._t('commands.tagBookmarkCountMany', '{count} bookmarks').replace(
+                                  '{count}',
+                                  String(count)
+                              );
+                    return {
+                        name: `#${tag}`,
+                        shortcut: ':TAG',
+                        completion: `:tag ${tag} `,
+                        type: 'command-completion',
+                        meta: countLabel,
+                    };
+                })
+            );
+        }
+
+        rows.push(...this._getTagBrowseBookmarkRows(tagQuery));
+        return rows;
     }
 
     // ─── :open ────────────────────────────────────────────────────────────────

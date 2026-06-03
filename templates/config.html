@@ -773,15 +773,26 @@
                                     <td><input type="checkbox" id="show-recent-button-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
                                 </tr>
                                 <tr>
+                                    <td class="buttons-visibility-name">
+                                        <span class="buttons-visibility-label">
+                                            <span data-i18n="config.tagCloudButtonLabel">Tag cloud (/)</span>
+                                            <button type="button" id="show-tag-cloud-button-info-btn" class="info-button" data-i18n-aria="config.showTagCloudButtonInfoTitle">ℹ</button>
+                                        </span>
+                                    </td>
+                                    <td class="buttons-visibility-show"><input type="checkbox" id="show-tag-cloud-button-checkbox"></td>
+                                </tr>
+                                <tr>
                                     <td data-i18n="config.configButtonLabel">Config</td>
                                     <td><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <span data-i18n="config.healthLinkButtonLabel">Health link</span>
-                                        <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
+                                    <td class="buttons-visibility-name">
+                                        <span class="buttons-visibility-label">
+                                            <span data-i18n="config.healthLinkButtonLabel">Health link</span>
+                                            <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
+                                        </span>
                                     </td>
-                                    <td><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
+                                    <td class="buttons-visibility-show"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
                                 </tr>
                             </tbody>
                         </table>

@@ -102,6 +102,8 @@ type Settings struct {
 	ShowCommandsButton          bool                             `json:"showCommandsButton"`
 	ShowRecentButton            bool                             `json:"showRecentButton"`
 	ShowTips                    bool                             `json:"showTips"`
+	ShowTagCloudButton          bool                             `json:"showTagCloudButton"` // Dashboard / key: horizontal tag cloud toggle
+	TagCloudDefaultMigrated     bool                             `json:"tagCloudDefaultMigrated,omitempty"` // one-time: enable tag cloud for existing installs
 	ShowSearchFlowBanner        bool                             `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton        bool                             `json:"showCheatSheetButton"`
 	ShowSearchButtonText        bool                             `json:"showSearchButtonText"`
@@ -347,6 +349,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowCommandsButton:          true,
 			ShowRecentButton:            false,
 			ShowTips:                    true,
+			ShowTagCloudButton:          true,
 			ShowSearchFlowBanner:        true,
 			ShowCheatSheetButton:        false,
 			ShowSearchButtonText:        true,
@@ -1220,6 +1223,10 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showTips"]; !ok {
 			settings.ShowTips = false
+		}
+		if !settings.TagCloudDefaultMigrated {
+			settings.ShowTagCloudButton = true
+			settings.TagCloudDefaultMigrated = true
 		}
 		if _, ok := rawSettings["showSearchFlowBanner"]; !ok {
 			settings.ShowSearchFlowBanner = true

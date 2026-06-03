@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="/static/css/config-general-tour.css">
     <link rel="stylesheet" href="/static/css/discoverability-queue.css">
     <link rel="stylesheet" href="/static/css/feature-tour.css">
+    <link rel="stylesheet" href="/static/css/dashboard-tag-cloud.css">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,9 +175,45 @@
         </div>
     </div>
 
+    <!-- Tag word cloud (desktop): / FAB opens anchored modal; tag pick filters dashboard tiles -->
+    <div id="dashboard-tag-cloud-wrap" class="dashboard-tag-cloud-wrap" aria-live="polite">
+        <button
+            type="button"
+            id="tag-cloud-toggle-btn"
+            class="tag-cloud-toggle-btn search-button"
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-controls="tag-cloud-modal"
+            data-i18n-tooltip="dashboard.tagCloudToggleTooltip"
+            data-tooltip="/ tags"
+            title="/ tags"
+        >
+            <span class="search-button-icon">/</span>
+        </button>
+        <div id="tag-cloud-modal-backdrop" class="tag-cloud-modal-backdrop" hidden aria-hidden="true"></div>
+        <div
+            id="tag-cloud-modal"
+            class="tag-cloud-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tag-cloud-modal-title"
+            aria-hidden="true"
+            hidden
+        >
+            <div class="tag-cloud-modal-header">
+                <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
+                <button type="button" id="tag-cloud-modal-close" class="tag-cloud-modal-close" data-i18n-aria="dashboard.tagCloudModalClose">×</button>
+            </div>
+            <div id="tag-cloud-modal-body" class="tag-cloud-modal-body tag-cloud-wordcloud"></div>
+            <div class="tag-cloud-modal-footer">
+                <button type="button" id="tag-cloud-clear-filter" class="tag-cloud-clear-filter" hidden data-i18n="dashboard.tagCloudClearFilter">Clear tag filter</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Launcher view toggle FAB -->
     <button id="launcher-toggle-btn" class="launcher-toggle-btn"
-            data-i18n-tooltip="config.launcherToggleLabel" data-tooltip="launcher view">
+            data-i18n-aria="config.launcherToggleLabel" aria-label="Toggle launcher view">
         <span class="launcher-toggle-icon">&#8862;</span>
     </button>
 
@@ -224,6 +261,7 @@
     <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/pwa-install-hint.js"></script>
     <script src="/static/js/mobile-experience.js"></script>
+    <script src="/static/js/dashboard-tag-cloud.js"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/analytics.js"></script>

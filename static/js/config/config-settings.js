@@ -851,6 +851,11 @@ class ConfigSettings {
         this.bindInfoButton('always-collapse-categories-info-btn', 'config.alwaysCollapseCategoriesInfoTitle', 'config.alwaysCollapseCategoriesInfoMessage');
         this.bindInfoButton('global-shortcuts-info-btn', 'config.globalShortcutsInfoTitle', 'config.globalShortcutsInfoMessage');
         this.bindInfoButton('show-tips-info-btn', 'config.showTipsInfoTitle', 'config.showTipsInfoMessage');
+        this.bindInfoButton(
+            'show-tag-cloud-button-info-btn',
+            'config.showTagCloudButtonInfoTitle',
+            'config.showTagCloudButtonInfoMessage'
+        );
         this.bindInfoButton('keep-search-open-when-empty-info-btn', 'config.keepSearchOpenWhenEmptyInfoTitle', 'config.keepSearchOpenWhenEmptyInfoMessage');
         this.bindInfoButton('show-status-info-btn', 'config.showBookmarkStatusInfoTitle', 'config.showBookmarkStatusInfoMessage');
         this.bindInfoButton('show-health-dashboard-info-btn', 'config.showHealthDashboardInfoTitle', 'config.showHealthDashboardInfoMessage');
@@ -1198,6 +1203,14 @@ class ConfigSettings {
             });
         }
 
+        const showTagCloudButtonCheckbox = document.getElementById('show-tag-cloud-button-checkbox');
+        if (showTagCloudButtonCheckbox) {
+            showTagCloudButtonCheckbox.checked = settings.showTagCloudButton === true;
+            showTagCloudButtonCheckbox.addEventListener('change', (e) => {
+                settings.showTagCloudButton = e.target.checked;
+            });
+        }
+
         const showTipsCheckbox = document.getElementById('show-tips-checkbox');
         if (showTipsCheckbox) {
             showTipsCheckbox.checked = settings.showTips !== false;
@@ -1493,6 +1506,7 @@ class ConfigSettings {
         const showCommandsButtonCheckbox = document.getElementById('show-commands-button-checkbox');
         const showCheatSheetButtonCheckbox = document.getElementById('show-cheatsheet-button-checkbox');
         const showRecentButtonCheckbox = document.getElementById('show-recent-button-checkbox');
+        const showTagCloudButtonCheckbox = document.getElementById('show-tag-cloud-button-checkbox');
         const showTipsCheckbox = document.getElementById('show-tips-checkbox');
         const includeFindersInSearchCheckbox = document.getElementById('include-finders-in-search-checkbox');
         const showStatusCheckbox = document.getElementById('show-status-checkbox');
@@ -1554,6 +1568,7 @@ class ConfigSettings {
         if (showCommandsButtonCheckbox) settings.showCommandsButton = showCommandsButtonCheckbox.checked;
         if (showCheatSheetButtonCheckbox) settings.showCheatSheetButton = showCheatSheetButtonCheckbox.checked;
         if (showRecentButtonCheckbox) settings.showRecentButton = showRecentButtonCheckbox.checked;
+        if (showTagCloudButtonCheckbox) settings.showTagCloudButton = showTagCloudButtonCheckbox.checked;
         if (showTipsCheckbox) settings.showTips = showTipsCheckbox.checked;
         if (includeFindersInSearchCheckbox) settings.includeFindersInSearch = includeFindersInSearchCheckbox.checked;
         if (animationsEnabledCheckbox) settings.animationsEnabled = animationsEnabledCheckbox.checked;
@@ -2000,6 +2015,7 @@ class ConfigSettings {
         watch('show-search-button-checkbox', 'showSearchButton');
         watch('show-finders-button-checkbox', 'showFindersButton');
         watch('show-commands-button-checkbox', 'showCommandsButton');
+        watch('show-tag-cloud-button-checkbox', 'showTagCloudButton');
         watch('show-shortcuts-checkbox', 'showShortcuts');
         watch('show-icons-checkbox', 'showIcons');
         watch('show-link-preview-cards-checkbox', 'showLinkPreviewCards');
@@ -2038,6 +2054,7 @@ class ConfigSettings {
             showCommandsButton: true,
             showCheatSheetButton: true,
             showRecentButton: true,
+            showTagCloudButton: true,
             showTips: true,
             showSearchFlowBanner: true,
             showStatus: false,

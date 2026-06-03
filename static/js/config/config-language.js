@@ -84,14 +84,27 @@ class ConfigLanguage {
         });
 
         // Handle data-i18n-tooltip
+        const toolbarKbdTooltipIds = new Set([
+            'quick-add-toolbar-btn',
+            'search-button',
+            'commands-button',
+            'finders-button',
+            'recent-bookmarks-button',
+            'help-button',
+            'launcher-toggle-btn',
+        ]);
         const tooltipElements = document.querySelectorAll('[data-i18n-tooltip]');
         tooltipElements.forEach(element => {
+            if (toolbarKbdTooltipIds.has(element.id)) return;
             const key = element.getAttribute('data-i18n-tooltip');
             const translation = this.t(key);
             if (translation === key) {
                 return;
             }
             element.setAttribute('data-tooltip', translation);
+        });
+        toolbarKbdTooltipIds.forEach((id) => {
+            document.getElementById(id)?.removeAttribute('data-tooltip');
         });
 
         document.querySelectorAll('[data-i18n-aria]').forEach((element) => {

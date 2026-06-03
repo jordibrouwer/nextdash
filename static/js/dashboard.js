@@ -259,12 +259,14 @@ class Dashboard {
         this.renderPageNavigation();
         this.renderDashboard({ animate: false });
         this.setupPageShortcuts();
+        this.setupTagFilterEscapeShortcut();
         this.setupReorderUndoShortcut();
         this.setupPasteToQuickAdd();
         if (typeof QuickAddWidget === 'function') {
             this.quickAddWidget = new QuickAddWidget(this);
         }
         this.setupToolbarActions();
+        window.DashboardTagCloud?.init?.();
         this.refreshAddBookmarkToolbarLabel();
         this.setupHeaderEnhancements();
         this.setupConfigStructureReloadListener();
@@ -1053,6 +1055,112 @@ class Dashboard {
         return { grid, colCount, packed };
     }
 
+    _distributeDashboardColumnBlocks(container, columnBlocks, { animate = false, gridLayout = null } = {}) {
+        if (!container || !columnBlocks.length) {
+            return;
+        }
+
+        const colCount = gridLayout?.colCount ?? this.getEffectiveColumnsPerRow();
+        const shouldPackColumns = gridLayout?.packed ?? this.shouldPackDashboardColumns();
+
+        if (shouldPackColumns) {
+            const columns = Array.from({ length: colCount }, () => {
+                const col = document.createElement('div');
+                col.className = 'dashboard-column';
+                return col;
+            });
+            columnBlocks.forEach((el, i) => {
+                if (animate) {
+                    el.style.setProperty('--stagger-index', String(i));
+                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+                }
+                columns[i % colCount].appendChild(el);
+            });
+            columns.forEach((c) => container.appendChild(c));
+            return;
+        }
+
+        columnBlocks.forEach((el, i) => {
+            if (animate) {
+                el.style.setProperty('--stagger-index', String(i));
+                const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+            }
+            container.appendChild(el);
+        });
+    }
+
+    _copyDashboardGridLayoutToElement(target, sourceGrid) {
+        if (!target || !sourceGrid) {
+            return;
+        }
+        const layoutClasses = [...sourceGrid.classList].filter((cls) =>
+            cls === 'dashboard-grid'
+            || cls === 'packed-columns'
+            || cls.startsWith('columns-')
+            || cls.startsWith('layout-')
+            || cls.startsWith('density-')
+        );
+        target.className = `tag-filter-view-body ${layoutClasses.join(' ')}`.trim();
+        target.setAttribute('role', 'grid');
+        target.setAttribute(
+            'aria-label',
+            this.language?.t('dashboard.tagFilterGridLabel') || 'Filtered bookmarks'
+        );
+    }
+
+    /**
+     * Tag filter: one equal-width dashboard column per chunk (10 bookmarks), not round-robin.
+     */
+    _distributeTagFilterColumnBlocks(container, chunkBlocks, { animate = false, gridLayout = null } = {}) {
+        if (!container || !chunkBlocks.length) {
+            return;
+        }
+
+        const chunkColCount = chunkBlocks.length;
+        const shouldPackColumns = gridLayout?.packed ?? this.shouldPackDashboardColumns();
+        const gap = 'var(--gap, 1.5rem)';
+        const colMax = 'var(--dashboard-column-max, 300px)';
+
+        container.style.setProperty('--packed-columns', String(chunkColCount));
+        container.style.setProperty(
+            '--dashboard-grid-max-width',
+            `calc(${chunkColCount} * ${colMax} + ${Math.max(0, chunkColCount - 1)} * ${gap})`
+        );
+
+        if (shouldPackColumns) {
+            chunkBlocks.forEach((el, i) => {
+                if (animate) {
+                    el.style.setProperty('--stagger-index', String(i));
+                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+                }
+                const col = document.createElement('div');
+                col.className = 'dashboard-column tag-filter-dashboard-column';
+                col.appendChild(el);
+                container.appendChild(col);
+            });
+            return;
+        }
+
+        const colMin = 'var(--dashboard-column-min, 250px)';
+        if (chunkColCount === 1) {
+            container.style.gridTemplateColumns = 'minmax(0, 1fr)';
+        } else {
+            container.style.gridTemplateColumns = `repeat(${chunkColCount}, minmax(${colMin}, ${colMax}))`;
+        }
+
+        chunkBlocks.forEach((el, i) => {
+            if (animate) {
+                el.style.setProperty('--stagger-index', String(i));
+                const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+            }
+            container.appendChild(el);
+        });
+    }
+
     setupDOM() {
         // Control date visibility and set up if visible
         this.updateDateVisibility();
@@ -1073,6 +1181,10 @@ class Dashboard {
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
         document.body.setAttribute('data-show-tips', this.areRotatingTipsEnabled());
+        document.body.setAttribute(
+            'data-show-tag-cloud-button',
+            this.settings.showTagCloudButton === true ? 'true' : 'false'
+        );
         document.body.setAttribute('data-button-position', this.settings.buttonBarPosition || 'bottom');
 
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
@@ -1138,6 +1250,7 @@ class Dashboard {
             const bookmarksForSearch = this.settings.globalShortcuts ? this.allBookmarks : this.bookmarks;
             this.searchComponent.updateData(bookmarksForSearch, this.bookmarks, this.allBookmarks, this.settings, this.language, this.finders, this.pages);
         }
+        window.DashboardTagCloud?.syncFromSettings?.();
     }
 
     applyFindFilter(query) {
@@ -1155,6 +1268,123 @@ class Dashboard {
             const url  = (tile.getAttribute('data-bookmark-url') || '').toLowerCase();
             tile.classList.toggle('find-hidden', !name.includes(q) && !url.includes(q));
         });
+    }
+
+    applyTagFilter(tag, { animate = true } = {}) {
+        const normalized = String(tag || '').trim().toLowerCase();
+        const changed = this._tagFilter !== normalized;
+        this._tagFilter = normalized;
+
+        document.body.setAttribute('data-tag-filter-active', normalized ? 'true' : 'false');
+        if (normalized) {
+            document.body.setAttribute('data-tag-filter', normalized);
+        } else {
+            document.body.removeAttribute('data-tag-filter');
+        }
+        window.DashboardTagCloud?.setActiveTag?.(normalized);
+
+        if (changed) {
+            this.renderDashboard({ animate: Boolean(animate) });
+        }
+    }
+
+    clearTagFilter() {
+        this.applyTagFilter('', { animate: true });
+    }
+
+    getBookmarksForTagFilter(tag) {
+        const normalized = String(tag || '').trim().toLowerCase();
+        if (!normalized || !Array.isArray(this.bookmarks)) {
+            return [];
+        }
+        const seen = new Set();
+        const matched = [];
+        for (const bookmark of this.bookmarks) {
+            const tags = (bookmark.tags || [])
+                .map((raw) => String(raw || '').trim().toLowerCase())
+                .filter(Boolean);
+            if (!tags.includes(normalized)) {
+                continue;
+            }
+            const key = `${String(bookmark.url || '').trim()}|${String(bookmark.name || '').trim()}`;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            matched.push(bookmark);
+        }
+        return this.sortBookmarks(matched);
+    }
+
+    renderTagFilterDashboard(container, options = {}) {
+        const animate = options && options.animate === true;
+        this._renderAnimationsEnabled = animate;
+        const tag = this._tagFilter;
+        const matched = this.getBookmarksForTagFilter(tag);
+        const CHUNK_SIZE = 10;
+
+        container.innerHTML = '';
+        container.classList.remove('page-transition', 'tag-filter-layout');
+        const gridLayout = this.syncDashboardGridLayout();
+        container.classList.add('tag-filter-view');
+
+        const banner = document.createElement('div');
+        banner.className = 'tag-filter-banner';
+        const bannerLabel = this.language?.t?.('dashboard.tagFilterBanner', 'Tag: {tag} — {count} bookmarks')
+            .replace('{tag}', tag)
+            .replace('{count}', String(matched.length));
+        banner.textContent = `// ${bannerLabel}`;
+        container.appendChild(banner);
+
+        if (matched.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state empty-state--tag-filter';
+            empty.textContent = this.language?.t?.('dashboard.tagFilterEmpty', 'No bookmarks with this tag on this page.') || 'No bookmarks with this tag on this page.';
+            container.appendChild(empty);
+            if (this.language?.applyTranslations) {
+                this.language.applyTranslations();
+            }
+            this.updateSearchComponent();
+            return;
+        }
+
+        const chunkBlocks = [];
+        for (let offset = 0; offset < matched.length; offset += CHUNK_SIZE) {
+            const chunk = matched.slice(offset, offset + CHUNK_SIZE);
+            const chunkIndex = Math.floor(offset / CHUNK_SIZE);
+            chunkBlocks.push(
+                this.createCategoryElement(
+                    {
+                        id: `__tag_filter_chunk_${chunkIndex}`,
+                        name: '',
+                        tagFilterChunk: true,
+                    },
+                    chunk
+                )
+            );
+        }
+
+        const body = document.createElement('div');
+        this._copyDashboardGridLayoutToElement(body, container);
+        this._distributeTagFilterColumnBlocks(body, chunkBlocks, { animate, gridLayout });
+        container.appendChild(body);
+
+        if (animate) {
+            requestAnimationFrame(() => {
+                container.classList.add('page-transition');
+                setTimeout(() => container.classList.remove('page-transition'), ANIM.PAGE_TRANSITION);
+            });
+        }
+
+        this.updateSearchComponent();
+        if (this.statusMonitor) {
+            if (this.statusMonitorInitialized) {
+                this.statusMonitor.updateBookmarks(matched);
+            } else {
+                this.statusMonitor.init(matched);
+                this.statusMonitorInitialized = true;
+            }
+        }
     }
 
     initializeStatusMonitor() {
@@ -1220,6 +1450,13 @@ class Dashboard {
             if (this.isModalOpen()) {
                 return;
             }
+
+            if (window.DashboardTagCloud?.modalOpen) {
+                if (e.key === '/' && window.DashboardTagCloud.handleSlashKey?.(e)) {
+                    return;
+                }
+                return;
+            }
             
             // Don't trigger if Ctrl, Alt, or Meta are pressed (but allow Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
@@ -1245,8 +1482,15 @@ class Dashboard {
                 return;
             }
 
-            // Check if a number key (1-9) was pressed
             const key = e.key;
+
+            if (key === '/') {
+                if (window.DashboardTagCloud?.handleSlashKey?.(e)) {
+                    return;
+                }
+            }
+
+            // Check if a number key (1-9) was pressed
             if (key === '>') this.markInlineTipUsed('search_open');
             if (key === '?') this.markInlineTipUsed('finder_open');
             if (key === ':') this.markInlineTipUsed('command_open');
@@ -1309,11 +1553,26 @@ class Dashboard {
         });
     }
 
+    setupTagFilterEscapeShortcut() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (window.DashboardTagCloud?.modalOpen) return;
+            if (this.isModalOpen()) return;
+            if (this.searchComponent && this.searchComponent.isActive()) return;
+            if (!this._tagFilter) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.DashboardTagCloud?.clearDashboardFilter?.();
+        });
+    }
+
     setupReorderUndoShortcut() {
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            if (window.DashboardTagCloud?.modalOpen) return;
             if (this.isModalOpen()) return;
             if (this.searchComponent && this.searchComponent.isActive()) return;
+            if (this._tagFilter) return;
 
             if (!this.pendingReorderSnapshot) return;
             e.preventDefault();
@@ -1473,6 +1732,7 @@ class Dashboard {
             toolbarButtons.push(btn);
             defByButton.set(btn, def);
             btn.removeAttribute('data-tooltip');
+            btn.removeAttribute('data-i18n-tooltip');
         });
 
         const hide = () => {
@@ -1819,7 +2079,14 @@ class Dashboard {
             'Tip: <code>&gt;</code> open search',
             'Tip: <code>?</code> open finders',
             'Tip: <code>:</code> open commands',
-            'Tip: <code>/</code> start fuzzy search',
+            ...(this.settings?.showTagCloudButton === true
+                ? [['dashboard.tipTagCloudSlash', 'Tip: press <code>/</code> for the tag word cloud (desktop) — pick a tag to filter bookmarks on the dashboard']]
+                    .map(([key, fallback]) => {
+                        const v = this.language?.t?.(key);
+                        return v && v !== key ? v : fallback;
+                    })
+                    .filter(Boolean)
+                : []),
             'Tip: <code>1-9</code> jump to page',
             'Tip: <code>,</code> page overview — see all pages with bookmark counts',
             'Tip: <code>&amp;</code> quick-add — naam | url | shortcut in één invoer',
@@ -2435,7 +2702,7 @@ class Dashboard {
             ]),
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
-                item('/', 'smFuzzySearch', 'Fuzzy search — ranked: exact → prefix → word-boundary → substring; also matches URL, tags and note'),
+                item('/', 'tagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search'),
                 item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
                 item(':', 'smCommandPalette', 'Command palette — type a command name to run it'),
                 item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
@@ -2447,7 +2714,7 @@ class Dashboard {
                 item(':new', 'cbNew', 'Open new-bookmark modal (same as + / Ctrl+Shift+A)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
-                item(':tag <name>', 'cbTag', 'Add or remove a tag on the focused bookmark; omit name to see current tags'),
+                item(':tag <name>', 'cbTag', 'Browse bookmarks by tag in the palette (e.g. :tag humor or :tag:humor); :tag +name / :tag -name add or remove on focused bookmark'),
                 item(':remove', 'cbRemove', 'Delete the focused bookmark'),
                 item(':find <text>', 'cbFind', 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL'),
                 item(':open all', 'cbOpenAll', 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)'),
@@ -2622,12 +2889,17 @@ class Dashboard {
 
         this.leaveBookmarkInlineEditFocusMode();
 
+        if (this._tagFilter) {
+            this.renderTagFilterDashboard(container, options);
+            return;
+        }
+
         // Group bookmarks by category
         const groupedBookmarks = this.groupBookmarksByCategory();
         
         // Clear container
         container.innerHTML = '';
-        container.classList.remove('page-transition');
+        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view');
 
         if (!Array.isArray(this.bookmarks) || this.bookmarks.length === 0) {
             const hasBookmarksOnOtherPages = Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0;
@@ -2774,33 +3046,7 @@ class Dashboard {
         });
 
         const gridLayout = this.syncDashboardGridLayout();
-        const colCount = gridLayout ? gridLayout.colCount : this.getEffectiveColumnsPerRow();
-        const shouldPackColumns = gridLayout ? gridLayout.packed : this.shouldPackDashboardColumns();
-        if (shouldPackColumns && columnBlocks.length > 0) {
-            const columns = Array.from({ length: colCount }, () => {
-                const col = document.createElement('div');
-                col.className = 'dashboard-column';
-                return col;
-            });
-            columnBlocks.forEach((el, i) => {
-                if (animate) {
-                    el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
-                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
-                }
-                columns[i % colCount].appendChild(el);
-            });
-            columns.forEach((c) => container.appendChild(c));
-        } else {
-            columnBlocks.forEach((el, i) => {
-                if (animate) {
-                    el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
-                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
-                }
-                container.appendChild(el);
-            });
-        }
+        this._distributeDashboardColumnBlocks(container, columnBlocks, { animate, gridLayout });
 
         if (animate) {
             requestAnimationFrame(() => {
@@ -3320,7 +3566,8 @@ class Dashboard {
     createCategoryElement(category, bookmarks) {
         const animate = this._renderAnimationsEnabled === true;
         const categoryDiv = document.createElement('div');
-        categoryDiv.className = 'category';
+        const isTagFilterChunk = category.tagFilterChunk === true;
+        categoryDiv.className = isTagFilterChunk ? 'category tag-filter-chunk' : 'category';
         if (animate) {
             categoryDiv.classList.add('animate-enter');
         }
@@ -3330,11 +3577,16 @@ class Dashboard {
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
         }
+        if (isTagFilterChunk) {
+            categoryDiv.setAttribute('data-tag-filter-chunk', 'true');
+        }
         const collapsedKey = isSmartCollection
             ? `smart:${category.id}`
             : `${this.currentPageId}:${category.id}`;
         let isCollapsed;
-        if (this.settings.alwaysCollapseCategories) {
+        if (isTagFilterChunk) {
+            isCollapsed = false;
+        } else if (this.settings.alwaysCollapseCategories) {
             isCollapsed = true;
         } else if (collapsedKey in this.collapsedCategories) {
             isCollapsed = this.collapsedCategories[collapsedKey];
@@ -3349,6 +3601,7 @@ class Dashboard {
         }
         categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'true' : 'false');
 
+        if (!isTagFilterChunk) {
         // Category title
         const titleElement = document.createElement('h2');
         titleElement.className = isSmartCollection ? 'category-title smart-collection-title' : 'category-title';
@@ -3426,6 +3679,7 @@ class Dashboard {
         }
 
         categoryDiv.appendChild(titleElement);
+        }
 
         // Bookmarks list
         const bookmarksList = document.createElement('div');
@@ -4145,6 +4399,14 @@ class Dashboard {
         row.className = 'bookmark-link reorder-item is-idle';
         row.setAttribute('role', 'row');
         row.setAttribute('data-bookmark-url', bookmark.url || '');
+        const tagList = (bookmark.tags || [])
+            .map((raw) => String(raw || '').trim().toLowerCase())
+            .filter(Boolean);
+        if (tagList.length) {
+            row.setAttribute('data-bookmark-tags', tagList.join(','));
+        } else {
+            row.removeAttribute('data-bookmark-tags');
+        }
         if (bookmarkIndex >= 0) {
             row.setAttribute('data-bookmark-index', String(bookmarkIndex));
         } else {

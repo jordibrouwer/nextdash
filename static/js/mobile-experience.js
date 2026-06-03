@@ -264,6 +264,7 @@
         if (dash && typeof dash.refreshAddBookmarkToolbarLabel === 'function') {
             dash.refreshAddBookmarkToolbarLabel();
         }
+        window.DashboardTagCloud?.syncFromSettings?.();
         if (window.configManager?.language?.applyTranslations) {
             window.configManager.language.applyTranslations();
         }

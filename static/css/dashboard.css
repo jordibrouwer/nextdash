@@ -293,6 +293,84 @@ body {
     display: none;
 }
 
+/* Tag filter view — same dashboard-grid / packed-columns as normal categories */
+#dashboard-layout.dashboard-grid.tag-filter-view {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    grid-template-columns: unset;
+    row-gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+.tag-filter-banner {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-semibold);
+    color: var(--accent-primary);
+    padding: 0.15rem 0.5rem 0.35rem;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {
+    width: 100%;
+    max-width: 100%;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
+    width: fit-content;
+    max-width: min(100%, var(--dashboard-grid-max-width, 100%));
+    margin-inline: auto;
+}
+
+.category.tag-filter-chunk {
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Equal-width columns: one chunk (10 bookmarks) per dashboard-column */
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns {
+    column-gap: var(--gap, 1.5rem);
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column {
+    flex: 1 1 0;
+    flex-basis: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
+    );
+    max-width: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
+    );
+    width: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
+    );
+    min-width: 0;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
+    width: 100%;
+    max-width: 100%;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
+    width: 100%;
+    max-width: 100%;
+}
+
+.empty-state--tag-filter {
+    padding: 1.5rem 0.5rem;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-text);
+}
+
 /* ── Page navigation ─────────────────────────────────────────────────────── */
 .page-navigation {
     display: flex;
@@ -1227,6 +1305,12 @@ body[data-button-position="bottom-right"] .launcher-toggle-btn {
 body[data-button-position="bottom-right"] .launcher-toggle-btn[data-tooltip]::after {
     left: 0;
     right: auto;
+}
+
+/* Tag cloud direct boven what's new: launcher één slot hoger op dezelfde hoek */
+body[data-show-tag-cloud-button="true"][data-button-position="bottom-left"] .launcher-toggle-btn,
+body[data-show-tag-cloud-button="true"][data-button-position="bottom-right"] .launcher-toggle-btn {
+    bottom: calc(var(--corner-fab-edge) + 2 * (var(--corner-fab-height) + var(--corner-fab-gap)));
 }
 
 /* ─── What's new FAB ──────────────────────────────────────────────────────── */
