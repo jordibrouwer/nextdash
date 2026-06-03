@@ -77,6 +77,10 @@ class ConfigTagsTour {
         if (window.configManager) {
             window.configManager._configTagsTourActive = false;
         }
+        document.body.removeAttribute('data-config-tags-tour-bookmarks-phase');
+        document.querySelectorAll('.tag-ac-dropdown').forEach((el) => el.remove());
+        window.ConfigTourRuntime?.removeTourPortalIfEmpty?.();
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
     }
 
     isTagsTabActive() {
@@ -118,6 +122,44 @@ class ConfigTagsTour {
         if (hash !== 'bookmarks' && !hash.startsWith('bookmarks/')) {
             window.history.replaceState(null, '', '#bookmarks');
         }
+        document.body.setAttribute('data-config-tags-tour-bookmarks-phase', 'true');
+    }
+
+    isBookmarksPhaseStep(step) {
+        const id = step?.id;
+        return id === 'bookmarks-intro' || id === 'tags-field';
+    }
+
+    async waitForBookmarksTabActive(maxAttempts = 50) {
+        for (let left = maxAttempts; left > 0; left -= 1) {
+            this.ensureBookmarksTabActive();
+            const panel = document.querySelector('[data-tab-content="bookmarks"]');
+            const addBtn = document.getElementById('add-bookmark-btn');
+            if (panel?.classList.contains('active') && addBtn) {
+                return true;
+            }
+            await this.waitMs(80);
+        }
+        return Boolean(
+            document.querySelector('[data-tab-content="bookmarks"]')?.classList.contains('active') &&
+                document.getElementById('add-bookmark-btn')
+        );
+    }
+
+    dismissTagAutocompleteOverlays() {
+        document.querySelectorAll('.tag-ac-dropdown').forEach((el) => el.remove());
+        const tagsEl = document.getElementById('detail-tags');
+        if (tagsEl && typeof window.TagAutocomplete?.detach === 'function') {
+            window.TagAutocomplete.detach(tagsEl);
+        }
+    }
+
+    ensureTourCardInteractive() {
+        document.body.classList.remove('guided-flow-modal-open');
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
+        if (this.card) {
+            window.ConfigTourRuntime?.reaffirmTourCard?.(this.card);
+        }
     }
 
     ensurePageReady() {
@@ -128,6 +170,16 @@ class ConfigTagsTour {
                 document.body.classList.remove('loading');
             }
         }
+    }
+
+    async waitForDetailTagsField(maxAttempts = 30) {
+        for (let i = 0; i < maxAttempts; i += 1) {
+            const tags = document.getElementById('detail-tags');
+            const form = document.getElementById('bookmark-detail-form');
+            if (tags && form && form.style.display !== 'none') return tags;
+            await this.waitMs(60);
+        }
+        return document.getElementById('detail-tags');
     }
 
     async waitForTagsTabActive(maxAttempts = 40) {
@@ -184,12 +236,15 @@ class ConfigTagsTour {
     }
 
     getScrollMetrics() {
-        const cardH = this.card?.getBoundingClientRect().height || 220;
-        const stickyTop = 72;
         const margin = 24;
+        const stickyTop = 72;
+        const cardRect = this.card?.getBoundingClientRect();
+        const cardH = cardRect?.height > 1 ? cardRect.height : 240;
+        const cardTop =
+            cardRect?.height > 1 ? cardRect.top : window.innerHeight - cardH - margin;
         return {
             viewTop: stickyTop + margin,
-            viewBottom: window.innerHeight - cardH - margin,
+            viewBottom: Math.min(cardTop - margin, window.innerHeight - cardH - margin),
         };
     }
 
@@ -197,7 +252,68 @@ class ConfigTagsTour {
         const rect = element?.getBoundingClientRect();
         if (!rect || rect.height < 1) return false;
         const { viewTop, viewBottom } = this.getScrollMetrics();
+        if (viewBottom <= viewTop + 40) return false;
         return rect.top >= viewTop - 8 && rect.bottom <= viewBottom + 8;
+    }
+
+    findTagsFieldHighlightElement() {
+        const tagsInput = document.getElementById('detail-tags');
+        return tagsInput?.closest('.bookmark-detail-section') || tagsInput || null;
+    }
+
+    ensureTargetClearOfCard(element) {
+        if (!element || !this.card) return;
+        const targetRect = element.getBoundingClientRect();
+        const cardRect = this.card.getBoundingClientRect();
+        const overlaps =
+            targetRect.bottom > cardRect.top - 12 && targetRect.top < cardRect.bottom + 12;
+        if (!overlaps) return;
+
+        const detailForm = document.getElementById('bookmark-detail-form');
+        if (element.closest('#bookmark-detail-form') && detailForm) {
+            const { viewBottom } = this.getScrollMetrics();
+            if (targetRect.bottom > viewBottom) {
+                detailForm.scrollTop += Math.round(targetRect.bottom - viewBottom + 24);
+            }
+            return;
+        }
+
+        const scrollRoot = document.scrollingElement || document.documentElement;
+        if (!scrollRoot) return;
+        if (cardRect.top <= targetRect.bottom && cardRect.top >= targetRect.top - 40) {
+            scrollRoot.scrollTop += Math.round(targetRect.bottom - cardRect.top + 28);
+        }
+    }
+
+    ensureTagsFieldInView(element) {
+        const target = this.findTagsFieldHighlightElement() || element;
+        if (!target) return;
+
+        window.ConfigTourRuntime?.positionCardAtViewportBottom?.(this);
+
+        const detailForm = document.getElementById('bookmark-detail-form');
+        const { viewTop, viewBottom } = this.getScrollMetrics();
+
+        const nudgeForm = () => {
+            if (!detailForm) return;
+            const rect = target.getBoundingClientRect();
+            if (rect.bottom > viewBottom) {
+                detailForm.scrollTop += Math.round(rect.bottom - viewBottom + 24);
+            }
+            const afterDown = target.getBoundingClientRect();
+            if (afterDown.top < viewTop) {
+                detailForm.scrollTop = Math.max(
+                    0,
+                    detailForm.scrollTop - Math.round(viewTop - afterDown.top + 24)
+                );
+            }
+        };
+
+        nudgeForm();
+        const scrollParent = detailForm || this.getScrollableAncestor(target);
+        this.adjustScrollForViewBand(target, scrollParent);
+        nudgeForm();
+        this.ensureTargetClearOfCard(target);
     }
 
     getScrollableAncestor(element) {
@@ -297,6 +413,7 @@ class ConfigTagsTour {
             tagsEl.value = tag;
             tagsEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
+        this.dismissTagAutocompleteOverlays();
         this.syncDemoInAllBookmarks(bookmark);
     }
 
@@ -440,10 +557,11 @@ class ConfigTagsTour {
 
         if (prompt) {
             this.unlockScroll();
-            let confirmed = false;
-            try {
-                if (window.AppModal?.confirm) {
-                    confirmed = await window.AppModal.confirm({
+        let confirmed = false;
+        try {
+            if (window.AppModal?.confirm) {
+                confirmed = await window.ConfigTourRuntime?.withAppModal?.(() =>
+                    window.AppModal.confirm({
                         title: this.t('configTagsTourCleanupConfirmTitle', 'Remove the demo bookmark?'),
                         message: this.t(
                             'configTagsTourCleanupConfirmMessage',
@@ -451,8 +569,9 @@ class ConfigTagsTour {
                         ),
                         confirmText: this.t('configTagsTourCleanupConfirmYes', 'Remove demo'),
                         cancelText: this.t('config.cancel', 'Cancel'),
-                    });
-                } else {
+                    })
+                );
+            } else {
                     confirmed = window.confirm(
                         this.t(
                             'configTagsTourCleanupConfirmMessage',
@@ -463,6 +582,7 @@ class ConfigTagsTour {
             } catch {
                 confirmed = false;
             }
+            window.GuidedFlowGuard?.syncModalOpenClass?.();
             if (!confirmed) return false;
         }
 
@@ -475,7 +595,6 @@ class ConfigTagsTour {
     }
 
     async promptAddTourDemoBookmark() {
-        this.unlockScroll();
         const title = this.t('configTagsTourDemoConsentTitle', 'Try adding a tag on a new bookmark?');
         const message = this.t(
             'configTagsTourDemoConsentMessage',
@@ -485,28 +604,48 @@ class ConfigTagsTour {
         let confirmed = false;
         try {
             if (window.AppModal?.confirm) {
-                confirmed = await window.AppModal.confirm({
-                    title,
-                    message,
-                    confirmText: this.t('configTagsTourDemoConsentYes', 'Show me'),
-                    cancelText: this.t('configTagsTourDemoConsentNo', 'Skip demo'),
-                });
+                confirmed = await window.ConfigTourRuntime?.withAppModal?.(() =>
+                    window.AppModal.confirm({
+                        title,
+                        message,
+                        confirmText: this.t('configTagsTourDemoConsentYes', 'Show me'),
+                        cancelText: this.t('configTagsTourDemoConsentNo', 'Skip demo'),
+                    })
+                );
             } else {
                 confirmed = window.confirm(`${title}\n\n${message}`);
             }
         } catch {
             confirmed = false;
         }
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
+        document.body.classList.remove('guided-flow-modal-open');
         return confirmed;
     }
 
+    restoreTourCardAfterDialog() {
+        document.body.classList.remove('guided-flow-modal-open');
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
+        if (this.card) {
+            window.ConfigTourRuntime?.elevateTourCard?.(this.card);
+        }
+    }
+
     async handleBookmarksIntroStep(step) {
-        if (this._demoAddHandled) return;
+        if (this._demoAddHandled) {
+            this.ensureTourCardInteractive();
+            return;
+        }
         this._demoAddHandled = true;
 
+        /* Switch to Bookmarks first so consent + highlight are on the same tab as the tour card. */
+        await this.waitForBookmarksTabActive();
+        this.ensureTourCardInteractive();
+        await this.waitMs(120);
+
         const confirmed = await this.promptAddTourDemoBookmark();
-        this.ensureBookmarksTabActive();
-        await this.waitMs(100);
+        this.restoreTourCardAfterDialog();
+        this.dismissTagAutocompleteOverlays();
 
         if (confirmed) {
             const added = await this.addTourDemoBookmark();
@@ -533,13 +672,18 @@ class ConfigTagsTour {
             step.selector = '#add-bookmark-btn';
             step.getTarget = null;
         }
+
+        this.ensureTourCardInteractive();
     }
 
     async handleTagsFieldStep(step) {
-        if (this._demoTagApplied) return;
+        if (this._demoTagApplied) {
+            this.ensureTourCardInteractive();
+            return;
+        }
         this._demoTagApplied = true;
 
-        this.ensureBookmarksTabActive();
+        await this.waitForBookmarksTabActive();
         await this.waitMs(80);
 
         const bookmark = this.findDemoBookmark();
@@ -552,7 +696,9 @@ class ConfigTagsTour {
                     window.configManager.bookmarksPageCategories
                 );
             }
+            await this.waitForDetailTagsField();
             this.applyDemoTagToBookmark(bookmark);
+            await this.waitMs(80);
             step.body = this.t(
                 'configTagsTourTagsFieldDoneBody',
                 'This Tags field is where you attach labels to a bookmark. We used “tour-demo” — add more with commas. They power search, filters, and dynamic collections.'
@@ -563,13 +709,14 @@ class ConfigTagsTour {
                 'Select a bookmark in the list, then type comma-separated tags here — for example work, dev, personal. Tags are trimmed and lowercased when you save.'
             );
         }
-        const tagsInput = document.getElementById('detail-tags');
-        step.getTarget = () => tagsInput?.closest('.bookmark-detail-section') || tagsInput;
+        step.getTarget = () => this.findTagsFieldHighlightElement();
         step.selector = null;
-        step.scrollBlock = 'nearest';
+        step.scrollBlock = 'start';
+        this.ensureTourCardInteractive();
     }
 
     async handleTagsResultStep(step) {
+        document.body.removeAttribute('data-config-tags-tour-bookmarks-phase');
         this.ensureTagsTabActive();
         await this.waitMs(120);
         this.ensureTagsDataReady();
@@ -641,32 +788,58 @@ class ConfigTagsTour {
         return element;
     }
 
-    async scrollToStepTarget(element, { block = 'center' } = {}) {
+    async scrollToStepTarget(element, step = {}, options = {}) {
         if (!element || typeof element.scrollIntoView !== 'function') return;
 
-        this.unlockScroll();
+        const bookmarksPhase = this.isBookmarksPhaseStep(step);
+        const scrollLocked = document.documentElement.classList.contains(
+            'config-tags-tour-scroll-lock'
+        );
+        if (!scrollLocked && !bookmarksPhase) {
+            this.unlockScroll();
+        }
 
-        const scrollParent = this.getScrollableAncestor(element);
-        const scrollTarget = element.closest('.bookmark-detail-section') || element;
-        const needsScroll = !this.isElementInViewBand(element);
+        window.ConfigTourRuntime?.applyCardPlacement?.(this, element, step);
+        await this.waitMs(16);
+
+        const block = options.block || step.scrollBlock || 'center';
+        const detailForm = document.getElementById('bookmark-detail-form');
+        const scrollParent = this.getScrollableAncestor(element) || detailForm;
+        const scrollTarget =
+            element.closest('.bookmark-detail-section') ||
+            element.closest('.bookmarks-splitview') ||
+            element;
+        const tagsFieldStep = step?.id === 'tags-field';
+        const needsScroll = tagsFieldStep || !this.isElementInViewBand(element);
 
         if (needsScroll || scrollParent) {
             const style = window.getComputedStyle ? window.getComputedStyle(element) : null;
             const isFixedLike = style && (style.position === 'fixed' || style.position === 'sticky');
+            const scrollBlock =
+                tagsFieldStep && scrollParent === detailForm
+                    ? 'start'
+                    : scrollParent || isFixedLike
+                      ? 'nearest'
+                      : block;
 
             (scrollTarget || element).scrollIntoView({
                 behavior: 'auto',
-                block: scrollParent || isFixedLike ? 'nearest' : block,
+                block: scrollBlock,
                 inline: 'nearest',
             });
 
             this.adjustScrollForViewBand(element, scrollParent);
 
-            await this.waitMs(32);
+            await this.waitMs(24);
             this.adjustScrollForViewBand(element, scrollParent);
             await this.waitMs(16);
         }
 
+        if (tagsFieldStep || element.closest('#bookmark-detail-form')) {
+            this.ensureTagsFieldInView(element);
+        }
+
+        window.ConfigTourRuntime?.applyCardPlacement?.(this, element, step);
         this.lockScroll();
     }
 
@@ -680,6 +853,7 @@ class ConfigTagsTour {
                 ),
                 selector: '.tags-tab',
                 scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: async () => {
                     this.ensureTagsDataReady();
                 },
@@ -692,6 +866,7 @@ class ConfigTagsTour {
                 ),
                 selector: '#tags-cloud',
                 scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: async () => {
                     this.ensureTagsDataReady();
                 },
@@ -704,33 +879,36 @@ class ConfigTagsTour {
                 ),
                 selector: '#tags-list',
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: async () => {
                     this.ensureTagsDataReady();
                 },
             },
             {
                 id: 'bookmarks-intro',
+                phase: 'bookmarks',
                 title: this.t('configTagsTourBookmarksTitle', 'Add tags in Bookmarks'),
                 body: this.t(
                     'configTagsTourBookmarksIntroBody',
                     'Tags are set per bookmark in Config → Bookmarks. Next we can add a sample bookmark and tag it for you — only if you agree.'
                 ),
-                selector: '.bookmarks-splitview',
+                selector: '#add-bookmark-btn',
+                getTarget: () => document.getElementById('add-bookmark-btn'),
                 scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleBookmarksIntroStep(step),
             },
             {
                 id: 'tags-field',
+                phase: 'bookmarks',
                 title: this.t('configTagsTourTagsFieldTitle', 'Tags field'),
                 body: this.t(
                     'configTagsTourTagsFieldIntroBody',
                     'The Tags field lives in the bookmark editor on the right. Comma-separated values become normalised tags when you save.'
                 ),
-                getTarget: () => {
-                    const tagsInput = document.getElementById('detail-tags');
-                    return tagsInput?.closest('.bookmark-detail-section') || tagsInput;
-                },
-                scrollBlock: 'nearest',
+                getTarget: () => this.findTagsFieldHighlightElement(),
+                scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleTagsFieldStep(step),
             },
             {
@@ -742,6 +920,7 @@ class ConfigTagsTour {
                 ),
                 selector: '#tags-cloud',
                 scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleTagsResultStep(step),
             },
             {
@@ -753,6 +932,7 @@ class ConfigTagsTour {
                 ),
                 selector: '#tags-list',
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleCleanupStep(step),
             },
         ];
@@ -803,6 +983,7 @@ class ConfigTagsTour {
         }
         document.body.setAttribute('data-config-tags-tour-active', 'true');
         document.body.classList.remove('config-tags-tour-ready');
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
         try {
             await this.showStep(0);
             document.body.classList.add('config-tags-tour-ready');
@@ -843,6 +1024,7 @@ class ConfigTagsTour {
         `;
         document.body.appendChild(card);
         this.card = card;
+        window.ConfigTourRuntime?.elevateTourCard?.(card);
 
         card.querySelector('.config-general-tour-back').textContent = this.t('configGeneralTourBack', 'Back');
         card.querySelector('.config-general-tour-skip').textContent = this.t('configGeneralTourSkip', 'Skip tour');
@@ -902,12 +1084,25 @@ class ConfigTagsTour {
 
         if (hadHighlight) {
             this.clearHighlight();
-            this.unlockScroll();
+            if (!this.isBookmarksPhaseStep(step)) {
+                this.unlockScroll();
+            }
+        }
+
+        if (step.phase === 'bookmarks') {
+            document.body.setAttribute('data-config-tags-tour-bookmarks-phase', 'true');
+        } else {
+            document.body.removeAttribute('data-config-tags-tour-bookmarks-phase');
         }
 
         if (typeof step.onBeforeShow === 'function') {
             await step.onBeforeShow(step);
             if (runId !== this._stepRunId) return;
+            this.restoreTourCardAfterDialog();
+        }
+
+        if (this.isBookmarksPhaseStep(step)) {
+            window.ConfigTourRuntime?.positionCardAtViewportBottom?.(this);
         }
 
         const element = this.revealTarget(step);
@@ -915,16 +1110,23 @@ class ConfigTagsTour {
         if (runId !== this._stepRunId) return;
 
         if (element) {
-            await this.scrollToStepTarget(element, { block: step.scrollBlock || 'center' });
+            await this.scrollToStepTarget(element, step, { block: step.scrollBlock || 'center' });
             if (runId !== this._stepRunId) return;
             element.classList.add('config-tags-tour-highlight');
             this.highlightedElement = element;
+            if (step.id === 'tags-field') {
+                this.ensureTagsFieldInView(element);
+            }
         } else {
             this.lockScroll();
         }
 
+        window.ConfigTourRuntime?.positionCardAtViewportBottom?.(this);
+
         if (runId !== this._stepRunId) return;
         this.updateStepContent(step, this.currentStep);
+        document.body.classList.add('config-tags-tour-ready');
+        this.ensureTourCardInteractive();
     }
 
     nextStep() {
@@ -983,8 +1185,12 @@ class ConfigTagsTour {
             mgr._configTagsTourStarting = false;
         }
         document.body.removeAttribute('data-config-tags-tour-active');
+        document.body.removeAttribute('data-config-tags-tour-bookmarks-phase');
         document.body.classList.remove('config-tags-tour-ready');
+        this.dismissTagAutocompleteOverlays();
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
         this.card?.remove();
+        window.ConfigTourRuntime?.removeTourPortalIfEmpty?.();
         this.card = null;
         if (this.keyHandler) {
             document.removeEventListener('keydown', this.keyHandler);

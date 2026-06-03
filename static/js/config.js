@@ -5739,14 +5739,14 @@ class ConfigManager {
             { id: 'utilities', name: 'Utilities' }
         ];
         const resetDefaultBookmarks = [
-            { name: 'GitHub', url: 'https://github.com', shortcut: 'G', category: 'development' },
-            { name: 'GitHub Issues', url: 'https://github.com/issues', shortcut: 'GI', category: 'development' },
-            { name: 'GitHub Pull Requests', url: 'https://github.com/pulls', shortcut: 'GP', category: 'development' },
-            { name: 'YouTube', url: 'https://youtube.com', shortcut: 'Y', category: 'media' },
-            { name: 'YouTube Studio', url: 'https://studio.youtube.com', shortcut: 'YS', category: 'media' },
-            { name: 'Facebook', url: 'https://facebook.com', shortcut: 'F', category: 'social' },
-            { name: 'Instagram', url: 'https://instagram.com', shortcut: 'INS', category: 'social' },
-            { name: 'Google', url: 'https://google.com', shortcut: '', category: 'search' }
+            { name: 'GitHub', url: 'https://github.com', shortcut: 'G', category: 'development', tags: ['dev', 'code'] },
+            { name: 'GitHub Issues', url: 'https://github.com/issues', shortcut: 'GI', category: 'development', tags: ['dev', 'github'] },
+            { name: 'GitHub Pull Requests', url: 'https://github.com/pulls', shortcut: 'GP', category: 'development', tags: ['dev', 'github'] },
+            { name: 'YouTube', url: 'https://youtube.com', shortcut: 'Y', category: 'media', tags: ['video', 'entertainment'] },
+            { name: 'YouTube Studio', url: 'https://studio.youtube.com', shortcut: 'YS', category: 'media', tags: ['video', 'creator'] },
+            { name: 'Facebook', url: 'https://facebook.com', shortcut: 'F', category: 'social', tags: ['social'] },
+            { name: 'Instagram', url: 'https://instagram.com', shortcut: 'INS', category: 'social', tags: ['social', 'photos'] },
+            { name: 'Google', url: 'https://google.com', shortcut: '', category: 'search', tags: ['search'] }
         ];
         const confirmed = await window.AppModal.danger({
             title: tx('config.resetAllDataTitle', 'Reset all data'),

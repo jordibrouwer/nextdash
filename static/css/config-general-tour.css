@@ -119,6 +119,16 @@ body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.58) !important;
 }
 
+/* Bookmarks editor: extra bottom scroll margin for the viewport-bottom tour card */
+.config-bookmarks-tour-highlight {
+    scroll-margin: 5rem 1rem min(22rem, calc(100vh - 12rem));
+}
+
+/* Tags tour — Tags field step on Bookmarks tab (detail form scroll) */
+body[data-config-tags-tour-bookmarks-phase] .config-tags-tour-highlight {
+    scroll-margin: 5rem 1rem min(22rem, calc(100vh - 12rem));
+}
+
 /* Docked beside a target — top/left set via inline styles in JS */
 .config-general-tour-card.is-docked,
 .config-bookmarks-tour-card.is-docked,
@@ -139,19 +149,78 @@ body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-
     z-index: 12551 !important;
 }
 
-/* Tour card hidden while AppModal confirm is open — dialog is docked at bottom */
-.config-bookmarks-tour-card.is-suppressed-for-dialog {
-    visibility: hidden !important;
+/* Tags tour on Bookmarks tab: keep tour card above detail panel + dirty sticky bar */
+body[data-config-tags-tour-active] .config-tags-tour-card,
+body[data-config-tags-tour-active] #config-tour-portal .config-tags-tour-card {
+    z-index: 2147483000 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+body[data-config-tags-tour-active] .config-save-sticky,
+body[data-config-tags-tour-bookmarks-phase] .config-save-sticky {
     pointer-events: none !important;
 }
 
-/* AppModal (consent / cleanup) above tour card, anchored to bottom */
+body[data-config-tags-tour-bookmarks-phase] .tag-ac-dropdown {
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+body[data-config-bookmarks-tour-active] #app-modal.modal-overlay.show {
+    z-index: 2147483100 !important;
+}
+
+body[data-config-bookmarks-tour-active] #app-modal.modal-overlay.show,
+body[data-config-bookmarks-tour-active] #app-modal.modal-overlay.show * {
+    pointer-events: auto !important;
+}
+
+body[data-config-bookmarks-tour-active] .config-bookmarks-tour-card,
+body[data-config-bookmarks-tour-active] [data-config-tour-card].config-bookmarks-tour-card {
+    pointer-events: auto !important;
+    visibility: visible !important;
+    z-index: 2147483000 !important;
+}
+
+body[data-config-bookmarks-tour-active] .config-bookmarks-tour-card .config-general-tour-btn,
+body[data-config-bookmarks-tour-active] [data-config-tour-card].config-bookmarks-tour-card .config-general-tour-btn {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
+body[data-config-bookmarks-tour-active] #config-save-sticky,
+body[data-config-bookmarks-tour-active].config-is-dirty #config-save-sticky.is-scroll-active {
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+
+body[data-config-bookmarks-tour-active] .tag-ac-dropdown {
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* Legacy: ensure suppressed class never blocks clicks if left behind */
+.config-bookmarks-tour-card.is-suppressed-for-dialog:not(.config-bookmarks-tour-card--companion) {
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* AppModal (consent / cleanup) above tour layers — keep bottom anchoring only */
 body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show,
 body.config-theme-tour-dialog-open #app-modal.modal-overlay.show {
-    z-index: 12850 !important;
+    z-index: 2147483100 !important;
+    pointer-events: auto !important;
     align-items: flex-end;
     justify-content: center;
     padding: 0 1rem max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show .modal,
+body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show .modal-button,
+body.config-theme-tour-dialog-open #app-modal.modal-overlay.show .modal,
+body.config-theme-tour-dialog-open #app-modal.modal-overlay.show .modal-button {
+    pointer-events: auto !important;
 }
 
 body.config-bookmarks-tour-dialog-open #app-modal.modal-overlay.show .modal,
@@ -160,14 +229,64 @@ body.config-theme-tour-dialog-open #app-modal.modal-overlay.show .modal {
     max-height: min(70vh, calc(100vh - 10rem));
 }
 
+/* While AppModal is open: backdrop inert; tour card only disabled when modal is actually visible */
+body.config-bookmarks-tour-dialog-open:has(#app-modal.modal-overlay.show) .config-tour-backdrop,
+body.guided-flow-modal-open:has(#app-modal.modal-overlay.show) .config-tour-backdrop {
+    pointer-events: none !important;
+    z-index: 2147481990 !important;
+}
+
+body.config-bookmarks-tour-dialog-open:has(#app-modal.modal-overlay.show) .config-bookmarks-tour-card,
+body.guided-flow-modal-open:has(#app-modal.modal-overlay.show) .config-bookmarks-tour-card {
+    pointer-events: none !important;
+    z-index: 2147482990 !important;
+}
+
 .config-theme-tour-card.is-suppressed-for-dialog {
     visibility: hidden !important;
     pointer-events: none !important;
 }
 
-/* + bookmark modal above highlight dim, tour card stays at bottom (12700) */
-body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal .modal-overlay.show {
-    z-index: 12680 !important;
+/* Quick-add (+) modal: centered, below tour card; display-only during companion steps */
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal #new-bookmark-modal.modal-overlay.show {
+    z-index: 2147482800 !important;
+    pointer-events: none !important;
+}
+
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
+    #new-bookmark-modal.modal-overlay.show
+    .modal-new-bookmark,
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
+    #new-bookmark-modal.modal-overlay.show
+    .modal-new-bookmark
+    * {
+    pointer-events: none !important;
+}
+
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal .config-tour-backdrop {
+    pointer-events: none !important;
+    z-index: 2147482700 !important;
+}
+
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
+    .config-bookmarks-tour-card,
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
+    .config-bookmarks-tour-card.config-bookmarks-tour-card--companion {
+    z-index: 2147483200 !important;
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
+    transform: translateX(-50%) !important;
+    max-width: min(640px, calc(100vw - 2rem));
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
+    .config-bookmarks-tour-card.is-docked {
+    top: auto !important;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
 }
 
 html.config-general-tour-scroll-lock,

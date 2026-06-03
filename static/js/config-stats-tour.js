@@ -394,6 +394,7 @@ class ConfigStatsTour {
         `;
         document.body.appendChild(card);
         this.card = card;
+        window.ConfigTourRuntime?.elevateTourCard?.(card);
 
         card.querySelector('.config-general-tour-back').textContent = this.t('configGeneralTourBack', 'Back');
         card.querySelector('.config-general-tour-skip').textContent = this.t('configGeneralTourSkip', 'Skip tour');

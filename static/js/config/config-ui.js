@@ -149,6 +149,8 @@ class ConfigUI {
                     targetTab === 'bookmarks' &&
                     !mgr._configBookmarksTourActive &&
                     !mgr._configBookmarksTourStarting &&
+                    !mgr._configTagsTourActive &&
+                    !mgr._configTagsTourStarting &&
                     !mgr._configPagesTourActive &&
                     !mgr._configPagesTourStarting &&
                     !mgr._configCollectionsTourActive &&

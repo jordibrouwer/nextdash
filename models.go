@@ -306,14 +306,14 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{ID: "utilities", Name: "Utilities"},
 			},
 			Bookmarks: []Bookmark{
-				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: false},
-				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false},
-				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false},
-				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false},
-				{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false},
-				{Name: "Facebook", URL: "https://facebook.com", Shortcut: "F", Category: "social", CheckStatus: false},
-				{Name: "Instagram", URL: "https://instagram.com", Shortcut: "INS", Category: "social", CheckStatus: false},
-				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false},
+				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: false, Tags: []string{"dev", "code"}},
+				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
+				{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
+				{Name: "Facebook", URL: "https://facebook.com", Shortcut: "F", Category: "social", CheckStatus: false, Tags: []string{"social"}},
+				{Name: "Instagram", URL: "https://instagram.com", Shortcut: "INS", Category: "social", CheckStatus: false, Tags: []string{"social", "photos"}},
+				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
 			},
 		}
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")

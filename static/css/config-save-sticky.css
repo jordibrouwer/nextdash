@@ -1,3 +1,39 @@
+:root {
+    /* Visible sticky bar ≈ padding + button row + safe area */
+    --config-save-sticky-height: 4.25rem;
+    --config-save-sticky-reserve: calc(
+        var(--config-save-sticky-height) + 1.5rem + env(safe-area-inset-bottom, 0px)
+    );
+}
+
+/* Keep tab content clear of the fixed save footer when it slides in */
+#config-main.config-main {
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+body.config-is-dirty #config-main.config-main {
+    padding-bottom: var(--config-save-sticky-reserve);
+}
+
+html:has(#config-save-sticky) {
+    scroll-padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+html:has(#config-save-sticky) body.config-is-dirty {
+    scroll-padding-bottom: var(--config-save-sticky-reserve);
+}
+
+/* Bookmarks split-view fills the viewport — shorten when the sticky bar can appear */
+body.config-is-dirty .bookmarks-splitview {
+    grid-template-rows: calc(
+        100vh - 180px - var(--config-save-sticky-height) - env(safe-area-inset-bottom, 0px)
+    );
+}
+
+body.config-is-dirty .bookmark-detail-form {
+    padding-bottom: calc(var(--config-save-sticky-height) + 0.75rem);
+}
+
 .config-save-sticky {
     position: fixed;
     left: 0;
@@ -47,4 +83,11 @@ body.config-is-dirty .config-save-sticky.is-scroll-active {
 /* Match header save — solid surface on blurred footer */
 .config-save-sticky-actions .btn.btn-success {
     background: var(--background-primary);
+}
+
+@media (max-width: 1024px) {
+    body.config-is-dirty .bookmarks-splitview {
+        grid-template-rows: auto auto;
+        margin-bottom: var(--config-save-sticky-reserve);
+    }
 }

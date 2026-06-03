@@ -176,11 +176,19 @@ class ConfigCollectionsTour {
             return;
         }
 
+        const placement = step.cardPlacement || 'auto';
+        if (
+            placement === 'viewport-bottom' ||
+            (placement === 'auto' && window.ConfigTourRuntime?.isOversizedHighlight?.(element))
+        ) {
+            window.ConfigTourRuntime?.positionCardAtViewportBottom?.(this);
+            return;
+        }
+
         const viewportPadding = 16;
         const headerClearance = 72;
         const gap = 20;
         const targetRect = element.getBoundingClientRect();
-        const placement = step.cardPlacement || 'auto';
 
         this.resetCardPosition();
         const cardW = this.card.getBoundingClientRect().width || Math.min(640, window.innerWidth * 0.96);
@@ -491,21 +499,23 @@ class ConfigCollectionsTour {
                 let confirmed = false;
                 try {
                     if (window.AppModal?.confirm) {
-                        confirmed = await window.AppModal.confirm({
-                            title: this.t(
-                                'configCollectionsTourCleanupConfirmTitle',
-                                'Remove the demo collection?'
-                            ),
-                            message: this.t(
-                                'configCollectionsTourCleanupConfirmMessage',
-                                'We added a temporary collection only for this tour. Remove it now so your dashboard stays unchanged.'
-                            ),
-                            confirmText: this.t(
-                                'configCollectionsTourCleanupConfirmYes',
-                                'Remove demo'
-                            ),
-                            cancelText: this.t('config.cancel', 'Cancel'),
-                        });
+                        confirmed = await window.ConfigTourRuntime?.withAppModal?.(() =>
+                            window.AppModal.confirm({
+                                title: this.t(
+                                    'configCollectionsTourCleanupConfirmTitle',
+                                    'Remove the demo collection?'
+                                ),
+                                message: this.t(
+                                    'configCollectionsTourCleanupConfirmMessage',
+                                    'We added a temporary collection only for this tour. Remove it now so your dashboard stays unchanged.'
+                                ),
+                                confirmText: this.t(
+                                    'configCollectionsTourCleanupConfirmYes',
+                                    'Remove demo'
+                                ),
+                                cancelText: this.t('config.cancel', 'Cancel'),
+                            })
+                        );
                     } else {
                         confirmed = window.confirm(
                             this.t(
@@ -542,12 +552,14 @@ class ConfigCollectionsTour {
         let confirmed = false;
         try {
             if (window.AppModal?.confirm) {
-                confirmed = await window.AppModal.confirm({
-                    title,
-                    message,
-                    confirmText: this.t('configCollectionsTourDemoConsentYes', 'Show me'),
-                    cancelText: this.t('configCollectionsTourDemoConsentNo', 'Skip demo'),
-                });
+                confirmed = await window.ConfigTourRuntime?.withAppModal?.(() =>
+                    window.AppModal.confirm({
+                        title,
+                        message,
+                        confirmText: this.t('configCollectionsTourDemoConsentYes', 'Show me'),
+                        cancelText: this.t('configCollectionsTourDemoConsentNo', 'Skip demo'),
+                    })
+                );
             } else {
                 confirmed = window.confirm(`${title}\n\n${message}`);
             }
@@ -571,7 +583,7 @@ class ConfigCollectionsTour {
             );
             step.getTarget = () => document.getElementById('collections-edit-panel');
             step.selector = null;
-            step.cardPlacement = 'top';
+            step.cardPlacement = 'viewport-bottom';
             step.scrollBlock = 'start';
         } else {
             step.body = this.t(
@@ -713,12 +725,7 @@ class ConfigCollectionsTour {
             await this.waitMs(16);
         }
 
-        this.positionCardNearTarget(element, step);
-        await this.waitMs(16);
-        this.adjustScrollForViewBand(element, scrollParent);
-        this.ensureTargetClearOfCard(element);
-        await this.waitMs(8);
-        this.adjustScrollForViewBand(element, scrollParent);
+        window.ConfigTourRuntime?.applyCardPlacement?.(this, element, step);
 
         this.lockScroll();
     }
@@ -733,6 +740,7 @@ class ConfigCollectionsTour {
                 ),
                 selector: '[data-tab-content="collections"] .collections-tab',
                 scrollBlock: 'start',
+                cardPlacement: 'viewport-bottom',
             },
             {
                 title: this.t('configCollectionsTourListTitle', 'Your collections'),
@@ -744,6 +752,7 @@ class ConfigCollectionsTour {
                     document.getElementById('collections-list') ||
                     document.getElementById('collections-empty-state'),
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
             },
             {
                 title: this.t('configCollectionsTourAddTitle', 'New collection'),
@@ -753,6 +762,7 @@ class ConfigCollectionsTour {
                 ),
                 selector: '#add-collection-btn',
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
             },
             {
                 id: 'demo-open',
@@ -763,6 +773,7 @@ class ConfigCollectionsTour {
                 ),
                 selector: '#add-collection-btn',
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleDemoOpenStep(step),
             },
             {
@@ -773,7 +784,7 @@ class ConfigCollectionsTour {
                 ),
                 getTarget: () => this.findRuleRow('tag'),
                 scrollBlock: 'nearest',
-                cardPlacement: 'top',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: () => this.ensureEditPanelForRuleSteps(),
             },
             {
@@ -784,7 +795,7 @@ class ConfigCollectionsTour {
                 ),
                 getTarget: () => this.findRuleRow('category'),
                 scrollBlock: 'nearest',
-                cardPlacement: 'top',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: () => this.ensureEditPanelForRuleSteps(),
             },
             {
@@ -795,7 +806,7 @@ class ConfigCollectionsTour {
                 ),
                 getTarget: () => this.findRuleRow('shortcut'),
                 scrollBlock: 'nearest',
-                cardPlacement: 'top',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: () => this.ensureEditPanelForRuleSteps(),
             },
             {
@@ -806,7 +817,7 @@ class ConfigCollectionsTour {
                 ),
                 getTarget: () => document.getElementById('col-edit-logic'),
                 scrollBlock: 'nearest',
-                cardPlacement: 'top',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: () => this.ensureEditPanelForRuleSteps(),
             },
             {
@@ -819,7 +830,7 @@ class ConfigCollectionsTour {
                 getTarget: () => document.getElementById('col-edit-save'),
                 selector: null,
                 scrollBlock: 'nearest',
-                cardPlacement: 'top',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleSaveStep(step),
             },
             {
@@ -830,7 +841,7 @@ class ConfigCollectionsTour {
                 ),
                 getTarget: () => this.findDashboardBackLink(),
                 scrollBlock: 'start',
-                cardPlacement: 'bottom',
+                cardPlacement: 'viewport-bottom',
             },
             {
                 id: 'demo-cleanup',
@@ -843,6 +854,7 @@ class ConfigCollectionsTour {
                     document.getElementById('collections-list') ||
                     document.getElementById('collections-empty-state'),
                 scrollBlock: 'center',
+                cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleCleanupStep(step),
             },
         ];
@@ -893,6 +905,7 @@ class ConfigCollectionsTour {
 
         document.body.setAttribute('data-config-collections-tour-active', 'true');
         document.body.classList.remove('config-collections-tour-ready');
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
         if (window.configManager) {
             window.configManager._configCollectionsTourActive = true;
         }
@@ -936,6 +949,7 @@ class ConfigCollectionsTour {
         `;
         document.body.appendChild(card);
         this.card = card;
+        window.ConfigTourRuntime?.elevateTourCard?.(card);
 
         card.querySelector('.config-general-tour-back').textContent = this.t('configGeneralTourBack', 'Back');
         card.querySelector('.config-general-tour-skip').textContent = this.t('configGeneralTourSkip', 'Skip tour');
@@ -1013,12 +1027,15 @@ class ConfigCollectionsTour {
             element.classList.add('config-collections-tour-highlight');
             this.highlightedElement = element;
         } else {
-            this.resetCardPosition();
             this.lockScroll();
         }
 
+        window.ConfigTourRuntime?.positionCardAtViewportBottom?.(this);
+
         if (runId !== this._stepRunId) return;
         this.updateStepContent(step, this.currentStep);
+        window.ConfigTourRuntime?.elevateTourCard?.(this.card);
+        window.GuidedFlowGuard?.syncModalOpenClass?.();
     }
 
     nextStep() {
