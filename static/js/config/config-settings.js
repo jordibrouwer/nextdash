@@ -1216,6 +1216,7 @@ class ConfigSettings {
             showTipsCheckbox.checked = settings.showTips !== false;
             showTipsCheckbox.addEventListener('change', (e) => {
                 settings.showTips = e.target.checked;
+                window.TipsPolicy?.onUserPreference?.(e.target.checked);
             });
         }
 

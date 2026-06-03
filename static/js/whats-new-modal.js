@@ -100,13 +100,6 @@
                         { badge: 'new', text: '<strong>:tag +name / :tag -name</strong> — add or remove a tag on the keyboard-selected bookmark.' },
                     ]
                 },
-                {
-                    title: 'Help &amp; mobile',
-                    items: [
-                        { badge: 'new', text: '<strong>Help &amp; docs</strong> — in-app help, cheat sheet, README, and MANUAL updated for tag cloud and <code>:tag</code> (EN / NL / DE / FR).' },
-                        { badge: 'new', text: '<strong>Desktop only</strong> — tag cloud FAB and <kbd>/</kbd> are hidden on the mobile layout.' },
-                    ]
-                },
             ]),
 
             release('v2026.06.4', 'May 2026', [

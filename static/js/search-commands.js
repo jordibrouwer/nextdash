@@ -1153,6 +1153,10 @@ class SearchCommandsComponent {
 
     setTipsVisibility(dashboard, enabled) {
         dashboard.settings.showTips = enabled;
+        window.TipsPolicy?.onUserPreference?.(enabled);
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
         if (typeof dashboard.initializeButtonTipsRotation === 'function') {
             dashboard.initializeButtonTipsRotation();
         }

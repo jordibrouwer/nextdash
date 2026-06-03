@@ -30,6 +30,10 @@
             writeUntil(Date.now() + PROMO_MS);
         },
 
+        clearPromoPeriod() {
+            writeUntil(0);
+        },
+
         isPromoActive() {
             const until = readUntil();
             return until > 0 && Date.now() < until;
@@ -48,10 +52,18 @@
             return true;
         },
 
+        /** User config wins; promo only applies when showTips was never set (undefined). */
         shouldShowRotatingTips(settings) {
             if (!settings) return false;
-            if (settings.showTips !== false) return true;
+            if (settings.showTips === false) return false;
+            if (settings.showTips === true) return true;
             return this.isPromoActive();
+        },
+
+        onUserPreference(enabled) {
+            if (enabled === false) {
+                this.clearPromoPeriod();
+            }
         }
     };
 })();

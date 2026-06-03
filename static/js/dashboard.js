@@ -1180,7 +1180,7 @@ class Dashboard {
         document.body.setAttribute('data-show-finders-button', this.settings.showFindersButton);
         document.body.setAttribute('data-show-commands-button', this.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', this.settings.showRecentButton !== false);
-        document.body.setAttribute('data-show-tips', this.areRotatingTipsEnabled());
+        document.body.setAttribute('data-show-tips', this.areRotatingTipsEnabled() ? 'true' : 'false');
         document.body.setAttribute(
             'data-show-tag-cloud-button',
             this.settings.showTagCloudButton === true ? 'true' : 'false'
@@ -2050,7 +2050,7 @@ class Dashboard {
         }
 
         const tipsEnabled = this.areRotatingTipsEnabled();
-        document.body.setAttribute('data-show-tips', tipsEnabled);
+        document.body.setAttribute('data-show-tips', tipsEnabled ? 'true' : 'false');
         if (!tipsEnabled) {
             return;
         }
@@ -2137,14 +2137,14 @@ class Dashboard {
 
         let normalCounter = 0;
         const run = () => {
+            if (!this.areRotatingTipsEnabled()) {
+                document.body.setAttribute('data-show-tips', 'false');
+                return;
+            }
             const currentContextTips = this.getInlineContextTipsForCurrentPage();
             if (currentContextTips.length > 0) {
                 hintEl.innerHTML = currentContextTips[this.contextTipRotationIndex % currentContextTips.length];
                 this.contextTipRotationIndex += 1;
-            } else if (!tipsEnabled) {
-                // User disabled generic tips and no context tips remain.
-                document.body.setAttribute('data-show-tips', 'false');
-                return;
             } else {
                 const showPriority = normalCounter >= 5;
                 if (showPriority) {
