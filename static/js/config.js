@@ -3644,6 +3644,7 @@ class ConfigManager {
                 timestamp: Date.now()
             };
             localStorage.setItem(this.structureSyncEventKey, JSON.stringify(payload));
+            sessionStorage.setItem('nextdash:pending-dashboard-structure-sync', JSON.stringify(payload));
         } catch (error) {
             // Keep config functional even if storage access is blocked.
         }
@@ -3657,6 +3658,7 @@ class ConfigManager {
                 timestamp: Date.now()
             };
             localStorage.setItem(this.settingsSyncEventKey, JSON.stringify(payload));
+            sessionStorage.setItem('nextdash:pending-dashboard-settings-sync', JSON.stringify(payload));
         } catch (error) {
             // Keep config functional even if storage access is blocked.
         }

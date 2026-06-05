@@ -196,8 +196,14 @@ class Dashboard {
         this.inlineTipUsageStorageKey = 'nextdash-inline-context-tip-usage-v2';
         this.structureSyncEventKey = 'nextdash:config-structure-sync';
         this.settingsSyncEventKey = 'nextdash:config-settings-sync';
+        this.pendingStructureSyncKey = 'nextdash:pending-dashboard-structure-sync';
+        this.pendingSettingsSyncKey = 'nextdash:pending-dashboard-settings-sync';
         this.tabId = `dash-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         this.lastSyncToastAt = 0;
+        this.lastAppliedStructureSyncAt = 0;
+        this.lastAppliedSettingsSyncAt = 0;
+        this._configRefreshReady = false;
+        this._configReturnRefreshInFlight = false;
         this.language = new ConfigLanguage();
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
         this.weatherRefreshTimer = null;
@@ -270,6 +276,7 @@ class Dashboard {
         this.refreshAddBookmarkToolbarLabel();
         this.setupHeaderEnhancements();
         this.setupConfigStructureReloadListener();
+        this.setupConfigReturnRefreshListener();
         this.setupExtensionBookmarkSavedListener();
         this.scheduleBackupTip();
 
@@ -294,8 +301,12 @@ class Dashboard {
             if (!document.hidden) {
                 this.renderDateWeatherLine();
                 this.updateHealthBadge();
+                this.maybeRefreshAfterConfigReturn();
             }
         });
+
+        this._configRefreshReady = true;
+        this.markPendingConfigSyncAsAppliedAfterLoad();
 
         // Initialize follow-up UI immediately after first render (no extra frame delay).
         if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
@@ -352,17 +363,101 @@ class Dashboard {
                 }
                 if (event.key === this.structureSyncEventKey) {
                     await this.refreshAfterConfigStructureUpdate(payload);
+                    this.lastAppliedStructureSyncAt = payload?.timestamp || Date.now();
+                    this.lastAppliedSettingsSyncAt = Math.max(this.lastAppliedSettingsSyncAt, payload?.timestamp || 0);
+                    try {
+                        sessionStorage.removeItem(this.pendingStructureSyncKey);
+                        sessionStorage.removeItem(this.pendingSettingsSyncKey);
+                    } catch { /* ignore */ }
                     this.showSyncToast('Synced config changes.');
                     return;
                 }
                 if (event.key === this.settingsSyncEventKey) {
                     await this.refreshAfterConfigSettingsUpdate(payload);
+                    this.lastAppliedSettingsSyncAt = payload?.timestamp || Date.now();
+                    try {
+                        sessionStorage.removeItem(this.pendingSettingsSyncKey);
+                    } catch { /* ignore */ }
                     this.showSyncToast('Applied dashboard settings update.');
                 }
             } catch (error) {
                 window.location.reload();
             }
         });
+    }
+
+    setupConfigReturnRefreshListener() {
+        window.addEventListener('pageshow', () => {
+            this.maybeRefreshAfterConfigReturn();
+        });
+    }
+
+    readPendingConfigSync(key) {
+        try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) return null;
+            const payload = JSON.parse(raw);
+            return payload && Number(payload.timestamp) > 0 ? payload : null;
+        } catch {
+            return null;
+        }
+    }
+
+    markPendingConfigSyncAsAppliedAfterLoad() {
+        const structurePending = this.readPendingConfigSync(this.pendingStructureSyncKey);
+        const settingsPending = this.readPendingConfigSync(this.pendingSettingsSyncKey);
+        const now = Date.now();
+        if (structurePending) {
+            this.lastAppliedStructureSyncAt = Math.max(this.lastAppliedStructureSyncAt, structurePending.timestamp, now);
+            sessionStorage.removeItem(this.pendingStructureSyncKey);
+        }
+        if (settingsPending) {
+            this.lastAppliedSettingsSyncAt = Math.max(this.lastAppliedSettingsSyncAt, settingsPending.timestamp, now);
+            sessionStorage.removeItem(this.pendingSettingsSyncKey);
+        }
+        if (!structurePending && !settingsPending) {
+            this.lastAppliedStructureSyncAt = now;
+            this.lastAppliedSettingsSyncAt = now;
+        }
+    }
+
+    async maybeRefreshAfterConfigReturn() {
+        if (!this._configRefreshReady || this._configReturnRefreshInFlight) {
+            return;
+        }
+
+        const structurePending = this.readPendingConfigSync(this.pendingStructureSyncKey);
+        const settingsPending = this.readPendingConfigSync(this.pendingSettingsSyncKey);
+        const structureTs = structurePending?.timestamp || 0;
+        const settingsTs = settingsPending?.timestamp || 0;
+
+        if (structureTs <= this.lastAppliedStructureSyncAt && settingsTs <= this.lastAppliedSettingsSyncAt) {
+            return;
+        }
+
+        this._configReturnRefreshInFlight = true;
+        try {
+            if (structureTs > this.lastAppliedStructureSyncAt) {
+                await this.refreshAfterConfigStructureUpdate(structurePending || {});
+                this.lastAppliedStructureSyncAt = structureTs;
+                sessionStorage.removeItem(this.pendingStructureSyncKey);
+                if (settingsTs > 0) {
+                    this.lastAppliedSettingsSyncAt = Math.max(this.lastAppliedSettingsSyncAt, settingsTs);
+                    sessionStorage.removeItem(this.pendingSettingsSyncKey);
+                }
+                this.showSyncToast('Synced config changes.');
+                return;
+            }
+
+            if (settingsTs > this.lastAppliedSettingsSyncAt) {
+                await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
+                this.lastAppliedSettingsSyncAt = settingsTs;
+                sessionStorage.removeItem(this.pendingSettingsSyncKey);
+                this.showSyncToast('Applied dashboard settings update.');
+            }
+        } finally {
+            this._configReturnRefreshInFlight = false;
+        }
     }
 
     showSyncToast(message) {
