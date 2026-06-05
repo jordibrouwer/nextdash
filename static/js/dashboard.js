@@ -4610,8 +4610,9 @@ class Dashboard {
         lead.setAttribute('role', 'gridcell');
         const reorderHandle = document.createElement('div');
         reorderHandle.className = 'bookmark-reorder-handle';
-        reorderHandle.setAttribute('aria-label', 'Drag to reorder');
-        reorderHandle.title = 'Drag to reorder';
+        const dragLabel = this.formatDashboardLabel('dragToReorderAria', {}, 'Drag to reorder');
+        reorderHandle.setAttribute('aria-label', dragLabel);
+        reorderHandle.title = dragLabel;
         lead.appendChild(reorderHandle);
 
         if (this.settings.showIcons) {
@@ -4699,7 +4700,8 @@ class Dashboard {
             shortcutSpan.dataset.shortcut = shortcutText;
         }
         {
-            let linkLabel = bookmark.name || bookmark.url || 'Bookmark';
+            let linkLabel = bookmark.name || bookmark.url
+                || this.formatDashboardLabel('bookmarkLinkFallback', {}, 'Bookmark');
             if (shortcutText) {
                 const shortcutPrefix = this.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
                 linkLabel = `${linkLabel}, ${shortcutPrefix} ${shortcutText}`;
@@ -4713,8 +4715,8 @@ class Dashboard {
         const showPinIcon = this.settings.showPinIcon === true;
         if (showPinIcon && bookmark.pinned) {
             pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
-            pinBadge.title = 'Pinned';
-            pinBadge.setAttribute('aria-label', 'Pinned bookmark');
+            pinBadge.title = this.formatDashboardLabel('pinnedBookmarkTitle', {}, 'Pinned');
+            pinBadge.setAttribute('aria-label', this.formatDashboardLabel('pinnedBookmarkAria', {}, 'Pinned bookmark'));
             pinBadge.setAttribute('role', 'img');
         } else {
             pinBadge.textContent = '';
@@ -4728,8 +4730,11 @@ class Dashboard {
         const openCount = Number(bookmark.openCount || 0);
         if (openCount > 0) {
             openCountBadge.textContent = openCount >= 1000 ? `${Math.floor(openCount / 1000)}k` : String(openCount);
-            openCountBadge.title = `Opened ${openCount} time${openCount === 1 ? '' : 's'}`;
-            openCountBadge.setAttribute('aria-label', `Opened ${openCount} times`);
+            const openCountLabel = openCount === 1
+                ? this.formatDashboardLabel('openCountOnce', {}, 'Opened once')
+                : this.formatDashboardLabel('openCountMany', { count: openCount }, `Opened ${openCount} times`);
+            openCountBadge.title = openCountLabel;
+            openCountBadge.setAttribute('aria-label', openCountLabel);
         } else {
             openCountBadge.classList.add('is-empty');
             openCountBadge.setAttribute('aria-hidden', 'true');
@@ -4740,7 +4745,7 @@ class Dashboard {
         noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
         if (hasNote) {
-            const label = this.language.t('bookmark.hasNote') || 'Has note';
+            const label = this.language?.t('bookmark.hasNote') || 'Has note';
             const noteText = String(bookmark.note || '').trim();
             const tooltipText = noteText.length > 200 ? noteText.slice(0, 200) + '…' : noteText;
             noteBadge.setAttribute('data-note-tooltip', tooltipText);
