@@ -1963,6 +1963,10 @@
         "noteModalPlaceholder": "Notitie toevoegen…",
         "noteModalHint": "Ctrl+Enter om op te slaan · Esc om te annuleren",
         "noteModalSave": "Notitie opslaan",
-        "noteSavedToast": "Notitie opgeslagen."
+        "noteSavedToast": "Notitie opgeslagen.",
+        "pinLabel": "\"{name}\" vastpinnen",
+        "unpinLabel": "\"{name}\" losmaken",
+        "pinnedToast": "\"{name}\" vastgepind.",
+        "unpinnedToast": "\"{name}\" losgemaakt."
     }
 }

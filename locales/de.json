@@ -1959,6 +1959,10 @@
         "noteModalPlaceholder": "Notiz hinzufügen…",
         "noteModalHint": "Strg+Eingabe speichern · Esc abbrechen",
         "noteModalSave": "Notiz speichern",
-        "noteSavedToast": "Notiz gespeichert."
+        "noteSavedToast": "Notiz gespeichert.",
+        "pinLabel": "„{name}“ anheften",
+        "unpinLabel": "„{name}“ lösen",
+        "pinnedToast": "„{name}“ angeheftet.",
+        "unpinnedToast": "„{name}“ gelöst."
     }
 }

@@ -1972,6 +1972,10 @@
         "noteModalPlaceholder": "Add a note…",
         "noteModalHint": "Ctrl+Enter to save · Esc to cancel",
         "noteModalSave": "Save note",
-        "noteSavedToast": "Note saved."
+        "noteSavedToast": "Note saved.",
+        "pinLabel": "Pin \"{name}\"",
+        "unpinLabel": "Unpin \"{name}\"",
+        "pinnedToast": "Pinned \"{name}\".",
+        "unpinnedToast": "Unpinned \"{name}\"."
     }
 }

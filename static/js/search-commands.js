@@ -254,7 +254,7 @@ class SearchCommandsComponent {
 
         if (!ctx) {
             return [{
-                name: isUnpin ? 'No bookmark selected — navigate to one first' : 'No bookmark selected — navigate to one first',
+                name: this._t('commands.tagNoSelection', 'No bookmark selected — navigate to one first'),
                 shortcut: isUnpin ? ':UNPIN' : ':PIN',
                 action: () => true,
                 type: 'command'
@@ -263,7 +263,10 @@ class SearchCommandsComponent {
 
         const currentlyPinned = Boolean(ctx.pinned);
         const willPin = isUnpin ? false : !currentlyPinned;
-        const label = willPin ? `Pin "${ctx.name}"` : `Unpin "${ctx.name}"`;
+        const name = ctx.name || ctx.url || '';
+        const label = willPin
+            ? this._t('commands.pinLabel', 'Pin "{name}"').replace('{name}', name)
+            : this._t('commands.unpinLabel', 'Unpin "{name}"').replace('{name}', name);
 
         return [{
             name: label,
@@ -272,7 +275,10 @@ class SearchCommandsComponent {
             action: () => {
                 ctx.pinned = willPin;
                 this._persistBookmarkField(ctx, { pinned: willPin });
-                dashboard.showNotification(willPin ? `Pinned "${ctx.name}".` : `Unpinned "${ctx.name}".`, 'success');
+                const toast = willPin
+                    ? this._t('commands.pinnedToast', 'Pinned "{name}".').replace('{name}', name)
+                    : this._t('commands.unpinnedToast', 'Unpinned "{name}".').replace('{name}', name);
+                dashboard.showNotification(toast, 'success');
                 return true;
             }
         }];

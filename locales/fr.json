@@ -1958,6 +1958,10 @@
         "noteModalPlaceholder": "Ajouter une note…",
         "noteModalHint": "Ctrl+Entrée pour enregistrer · Échap pour annuler",
         "noteModalSave": "Enregistrer la note",
-        "noteSavedToast": "Note enregistrée."
+        "noteSavedToast": "Note enregistrée.",
+        "pinLabel": "Épingler « {name} »",
+        "unpinLabel": "Désépingler « {name} »",
+        "pinnedToast": "« {name} » épinglé.",
+        "unpinnedToast": "« {name} » désépinglé."
     }
 }
