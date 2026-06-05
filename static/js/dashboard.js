@@ -517,7 +517,7 @@ class Dashboard {
                 this.settings.densityMode = 'compact';
             }
             if (window.DashboardFont) {
-                this.settings.fontPreset = window.DashboardFont.normalizePresetId(this.settings.fontPreset);
+                window.DashboardFont.normalizeFontSettings(this.settings);
             } else if (!this.settings.fontPreset) {
                 this.settings.fontPreset = 'source-code-pro';
             }

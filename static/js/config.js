@@ -2272,7 +2272,7 @@ class ConfigManager {
                 this.settingsData.smartMostUsedLimit = Number(this.settingsData.smartMostUsedLimit);
             }
             if (window.DashboardFont) {
-                this.settingsData.fontPreset = window.DashboardFont.normalizePresetId(this.settingsData.fontPreset);
+                window.DashboardFont.normalizeFontSettings(this.settingsData);
             } else if (!this.settingsData.fontPreset) {
                 this.settingsData.fontPreset = 'source-code-pro';
             }

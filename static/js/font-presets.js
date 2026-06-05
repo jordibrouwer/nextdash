@@ -1,5 +1,5 @@
 /**
- * Preset UI fonts + optional custom upload (via same settings shape).
+ * Preset UI fonts + optional custom upload (via fontPreset "custom" + customFontPath).
  * Sets --font-family-main; loads Google Fonts when needed.
  */
 (function (global) {
@@ -31,9 +31,49 @@
         system: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     };
 
-    function normalizePresetId(id) {
+    function hasCustomFontPath(settings) {
+        return !!(settings && settings.customFontPath && String(settings.customFontPath).trim());
+    }
+
+    function normalizePresetId(id, customFontPath) {
         const k = String(id || '').toLowerCase().trim();
+        if (k === 'custom') {
+            return customFontPath ? 'custom' : 'source-code-pro';
+        }
         return PRESET_IDS.includes(k) ? k : 'source-code-pro';
+    }
+
+    /** Sync fontPreset + enableCustomFont from stored settings (legacy enableCustomFont supported). */
+    function normalizeFontSettings(settings) {
+        if (!settings) return;
+        const path = hasCustomFontPath(settings) ? String(settings.customFontPath).trim() : '';
+
+        if (settings.fontPreset === 'custom') {
+            if (path) {
+                settings.enableCustomFont = true;
+            } else {
+                settings.fontPreset = 'source-code-pro';
+                settings.enableCustomFont = false;
+            }
+            return;
+        }
+
+        if (path && settings.enableCustomFont === true) {
+            const preset = String(settings.fontPreset || '').toLowerCase().trim();
+            if (!preset || !PRESET_IDS.includes(preset)) {
+                settings.fontPreset = 'custom';
+                settings.enableCustomFont = true;
+                return;
+            }
+        }
+
+        settings.fontPreset = normalizePresetId(settings.fontPreset, path);
+        settings.enableCustomFont = false;
+    }
+
+    function resolveActiveFontPreset(settings) {
+        normalizeFontSettings(settings);
+        return settings?.fontPreset || 'source-code-pro';
     }
 
     function ensureGoogleStylesheet(queryPart) {
@@ -61,6 +101,7 @@
             .then((loadedFace) => {
                 document.fonts.add(loadedFace);
                 document.documentElement.style.setProperty('--font-family-main', `'${fontName}', monospace`);
+                document.documentElement.setAttribute('data-font-preset', 'custom');
             })
             .catch((err) => {
                 console.error('Error loading custom font:', err);
@@ -68,12 +109,13 @@
     }
 
     /**
-     * @param {Object} settings - enableCustomFont, customFontPath, fontPreset
+     * @param {Object} settings - fontPreset, customFontPath, enableCustomFont (legacy)
      */
     function applyMainFont(settings) {
         const s = settings || {};
+        normalizeFontSettings(s);
 
-        if (s.enableCustomFont && s.customFontPath) {
+        if (s.fontPreset === 'custom' && hasCustomFontPath(s)) {
             if (global.ConfigFont && typeof global.ConfigFont.applyFont === 'function') {
                 global.ConfigFont.applyFont(s.customFontPath);
             } else {
@@ -82,7 +124,7 @@
             return;
         }
 
-        const preset = normalizePresetId(s.fontPreset);
+        const preset = normalizePresetId(s.fontPreset, s.customFontPath);
         document.documentElement.setAttribute('data-font-preset', preset);
         const googlePart = GOOGLE_QUERY[preset];
         if (googlePart) {
@@ -94,7 +136,10 @@
 
     global.DashboardFont = {
         PRESET_IDS,
+        hasCustomFontPath,
         normalizePresetId,
+        normalizeFontSettings,
+        resolveActiveFontPreset,
         applyMainFont,
         applyCustomFontFile
     };

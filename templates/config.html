@@ -243,6 +243,12 @@
                                 <option value="dm-sans" data-i18n="config.fontPresetDmSans">DM Sans (sans)</option>
                                 <option value="system" data-i18n="config.fontPresetSystem">System UI (sans)</option>
                             </select>
+                            <div class="font-upload-row">
+                                <label for="custom-font-input" data-i18n="config.uploadFontLabel">Upload font:</label>
+                                <label for="custom-font-input" class="btn btn-secondary btn-small file-input-btn" data-i18n="config.chooseFile">Choose file</label>
+                                <input type="file" id="custom-font-input" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden>
+                                <span id="custom-font-status" class="setting-hint font-upload-status" aria-live="polite"></span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label data-i18n="config.fontSizeLabel">Font size:</label>
@@ -2076,7 +2082,8 @@
                             <ul data-i18n="config.helpPageBrandingItems">
                                 <li>Choose theme, font size, font weight, and layout preset.</li>
                                 <li>Enable auto dark mode to follow system appearance and switch between the default dark/light variants instantly.</li>
-                                <li>Upload custom favicon and custom font.</li>
+                                <li>Pick a UI font from the dropdown in Essentials, or upload a custom font — it stays available as <em>Custom font (uploaded)</em> in that list.</li>
+                                <li>Upload custom favicon in Advanced → Branding.</li>
                             </ul>
                         </section>
 

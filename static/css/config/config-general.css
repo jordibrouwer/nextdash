@@ -268,6 +268,20 @@ body {
 }
 
 /* Match .checkbox-tree-item: text and button sit side-by-side with 0.5rem gap (not pushed to viewport edge). */
+.font-upload-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.font-upload-status {
+    flex: 1 1 100%;
+    font-size: calc(var(--font-size-controls) * 0.9);
+    color: var(--text-secondary);
+}
+
 .config-advanced-action-row {
     display: flex;
     flex-direction: row;

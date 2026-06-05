@@ -122,6 +122,57 @@ class ConfigSettings {
         return 'dark';
     }
 
+    syncFontPresetDropdown(settings) {
+        const select = document.getElementById('font-preset-select');
+        if (!select || !window.DashboardFont) return;
+
+        const path = settings.customFontPath && String(settings.customFontPath).trim();
+        let customOpt = select.querySelector('option[value="custom"]');
+
+        if (path) {
+            if (!customOpt) {
+                customOpt = document.createElement('option');
+                customOpt.value = 'custom';
+                customOpt.setAttribute('data-i18n', 'config.fontPresetCustom');
+                select.appendChild(customOpt);
+            }
+            const label = this.t('config.fontPresetCustom', 'Custom font (uploaded)');
+            customOpt.textContent = label !== 'config.fontPresetCustom' ? label : 'Custom font (uploaded)';
+        } else if (customOpt) {
+            customOpt.remove();
+        }
+
+        window.DashboardFont.normalizeFontSettings(settings);
+        const resolved = window.DashboardFont.resolveActiveFontPreset(settings);
+        settings.fontPreset = resolved;
+        settings.enableCustomFont = resolved === 'custom';
+
+        if (select.querySelector(`option[value="${resolved}"]`)) {
+            select.value = resolved;
+        } else {
+            select.value = 'source-code-pro';
+            settings.fontPreset = 'source-code-pro';
+            settings.enableCustomFont = false;
+        }
+        select.disabled = false;
+        this.updateCustomFontStatus(settings);
+    }
+
+    updateCustomFontStatus(settings) {
+        const statusEl = document.getElementById('custom-font-status');
+        if (!statusEl) return;
+        const path = settings.customFontPath && String(settings.customFontPath).trim();
+        if (!path) {
+            statusEl.textContent = '';
+            return;
+        }
+        const fileName = path.split('/').pop() || path;
+        const hint = this.t('config.uploadFontAvailableHint', 'Uploaded font available in the dropdown above.');
+        statusEl.textContent = hint !== 'config.uploadFontAvailableHint'
+            ? `${fileName} — ${hint}`
+            : `${fileName} — uploaded font available in the dropdown above.`;
+    }
+
     getThemeDisplayName(themeId, value) {
         if (themeId === 'dark') {
             return 'Old Default [dark]';
@@ -747,15 +798,53 @@ class ConfigSettings {
 
         const fontPresetSelect = document.getElementById('font-preset-select');
         if (fontPresetSelect && window.DashboardFont) {
-            const normalized = window.DashboardFont.normalizePresetId(settings.fontPreset);
-            settings.fontPreset = normalized;
-            fontPresetSelect.value = normalized;
-            fontPresetSelect.disabled = false;
+            this.syncFontPresetDropdown(settings);
             fontPresetSelect.addEventListener('change', (e) => {
-                const v = window.DashboardFont.normalizePresetId(e.target.value);
+                const path = settings.customFontPath && String(settings.customFontPath).trim();
+                const v = window.DashboardFont.normalizePresetId(e.target.value, path);
                 settings.fontPreset = v;
+                settings.enableCustomFont = v === 'custom';
                 fontPresetSelect.value = v;
                 if (callbacks.onFontPresetChange) callbacks.onFontPresetChange(v);
+            });
+        }
+
+        const customFontInput = document.getElementById('custom-font-input');
+        if (customFontInput) {
+            customFontInput.addEventListener('change', async (e) => {
+                const file = e.target.files && e.target.files[0];
+                e.target.value = '';
+                if (!file || !window.ConfigFont || typeof window.ConfigFont.uploadFont !== 'function') {
+                    return;
+                }
+                try {
+                    const path = await window.ConfigFont.uploadFont(file);
+                    settings.customFontPath = path;
+                    settings.fontPreset = 'custom';
+                    settings.enableCustomFont = true;
+                    this.syncFontPresetDropdown(settings);
+                    if (window.DashboardFont) {
+                        window.DashboardFont.applyMainFont(settings);
+                    }
+                    const ok = await this.saveSettingsToServer(settings);
+                    if (ok) {
+                        if (window.ConfigManager?.signalDashboardSettingsUpdated) {
+                            window.ConfigManager.signalDashboardSettingsUpdated('settings-updated');
+                        }
+                        const msg = this.t('config.fontUploadSuccess', 'Font uploaded. Select it from the UI font dropdown anytime.');
+                        if (window.ConfigManager?.ui?.showNotification) {
+                            window.ConfigManager.ui.showNotification(msg, 'success');
+                        }
+                    } else {
+                        throw new Error('save failed');
+                    }
+                } catch (error) {
+                    console.error('Error uploading font:', error);
+                    const msg = this.t('config.fontUploadError', 'Font upload failed. Use .woff, .woff2, .ttf, or .otf (max 5 MB).');
+                    if (window.ConfigManager?.ui?.showNotification) {
+                        window.ConfigManager.ui.showNotification(msg, 'error');
+                    }
+                }
             });
         }
 
@@ -1550,6 +1639,7 @@ class ConfigSettings {
         const weatherUnitSelect = document.getElementById('weather-unit-select');
         const weatherRefreshSelect = document.getElementById('weather-refresh-select');
         const densityModeSelect = document.getElementById('density-mode-select');
+        const fontPresetSelect = document.getElementById('font-preset-select');
 
         if (themeSelect) settings.theme = themeSelect.value;
         if (columnsInput) settings.columnsPerRow = parseInt(columnsInput.value);
@@ -1638,6 +1728,11 @@ class ConfigSettings {
             settings.densityMode = ['comfortable', 'compact', 'dense', 'auto'].includes(densityModeSelect.value)
                 ? densityModeSelect.value
                 : 'compact';
+        }
+        if (fontPresetSelect && window.DashboardFont) {
+            const path = settings.customFontPath && String(settings.customFontPath).trim();
+            settings.fontPreset = window.DashboardFont.normalizePresetId(fontPresetSelect.value, path);
+            settings.enableCustomFont = settings.fontPreset === 'custom';
         }
         const packedColumnsCheckbox = document.getElementById('packed-columns-checkbox');
         if (packedColumnsCheckbox) settings.packedColumns = packedColumnsCheckbox.checked;

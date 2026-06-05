@@ -198,7 +198,7 @@ type ThemeIconStylingEntry struct {
 
 func isValidFontPreset(s string) bool {
 	switch s {
-	case "source-code-pro", "jetbrains-mono", "ibm-plex-mono", "inter", "ibm-plex-sans", "dm-sans", "system":
+	case "source-code-pro", "jetbrains-mono", "ibm-plex-mono", "inter", "ibm-plex-sans", "dm-sans", "system", "custom":
 		return true
 	default:
 		return false
@@ -1315,9 +1315,14 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["weatherRefreshMinutes"]; !ok || settings.WeatherRefreshMinutes <= 0 {
 			settings.WeatherRefreshMinutes = 30
 		}
-		if _, ok := rawSettings["fontPreset"]; !ok || !isValidFontPreset(settings.FontPreset) {
+		if settings.EnableCustomFont && settings.CustomFontPath != "" {
+			settings.FontPreset = "custom"
+		} else if settings.FontPreset == "custom" && settings.CustomFontPath == "" {
+			settings.FontPreset = "source-code-pro"
+		} else if _, ok := rawSettings["fontPreset"]; !ok || !isValidFontPreset(settings.FontPreset) {
 			settings.FontPreset = "source-code-pro"
 		}
+		settings.EnableCustomFont = settings.FontPreset == "custom" && settings.CustomFontPath != ""
 		if _, ok := rawSettings["backgroundType"]; !ok {
 			settings.BackgroundType = "none"
 		}
