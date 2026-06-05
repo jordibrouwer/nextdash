@@ -161,7 +161,7 @@
             this.markSessionShown();
 
             if (itemId === 'whats-new') {
-                this.runWhatsNew(meta, onDefer, onComplete);
+                this.runWhatsNew(onComplete);
             } else if (itemId === 'recent-open-spotlight') {
                 this.runRecentOpenSpotlight(meta, onDefer, onComplete);
             } else if (itemId === 'tour-spotlight') {
@@ -169,19 +169,14 @@
             }
         }
 
-        runWhatsNew(meta, onDefer, onComplete) {
-            const dash = this.dashboard;
+        runWhatsNew(onComplete) {
             this._activeClose = () => window.AppModal?.hide?.();
             window.openWhatsNewModal({
                 force: false,
-                markSeenOnConfirm: true,
-                queueMeta: meta,
-                onDefer,
                 onClose: () => {
                     onComplete();
                     this._activeClose = null;
                 },
-                skipLaterText: t(dash, 'dashboard.discoverabilitySkipLater', 'Skip for later'),
             });
         }
 

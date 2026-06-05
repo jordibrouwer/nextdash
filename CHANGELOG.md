@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.6 — May 2026](#v2026066--may-2026)
 - [v2026.06.5 — May 2026](#v2026065--may-2026)
 - [v2026.06.4 — May 2026](#v2026064--may-2026)
 - [v2026.06.3 — June 2026](#v2026063--june-2026)
@@ -32,6 +33,46 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No shipped release yet — items land here before the next version section._
+
+---
+
+## v2026.06.6 — May 2026
+
+**Bookmark grid accessibility**, **custom font upload**, **config → dashboard save flow**, broad **i18n**, **mobile help**, and **guided-tour polish**.
+
+### Accessibility — bookmark grid
+
+- **new** **`role="grid"` deepening** — category titles as `rowheader`; one primary `gridcell` per row; stable cell IDs; `aria-rowindex` / `aria-rowcount`; `aria-activedescendant` on the grid when a row is selected.
+- **new** **Grid navigation keys** — `Home` / `End` (first/last bookmark in category); `Ctrl+Home` / `Ctrl+End` (first/last on page); `Page Up` / `Page Down` (~one screen); documented in the keyboard cheat sheet (`!`).
+
+### Config & sync
+
+- **new** **Custom font upload** — upload `.woff`, `.woff2`, `.ttf`, or `.otf` (max 5 MB) in General → Appearance; appears as **Custom font (uploaded)** in the UI font dropdown.
+- **new** **Save → Open dashboard** — after **Save**, the toast offers **Open dashboard** instead of opening a preview tab; duplicate-URL warning uses the same action.
+- **new** **Dashboard sync on return** — pending structure/settings updates are stored in `sessionStorage` and applied when you return to the dashboard (`pageshow` / storage events).
+- **fix** **Device-specific settings** — cleaner merge of server vs. local visual prefs when device-specific mode is on.
+
+### Localization (EN / NL / DE / FR)
+
+- **new** Dashboard footer and search overlay — mode tab labels and ARIA (`search`, `commands`, `finders`, …).
+- **new** Command palette — `:pin` / `:unpin` / `:note` labels and toasts; `page:current` / `page:all` filter hints.
+- **new** Bookmark rows — drag/pin/open-count/note labels; inline edit fields aligned with config; category rename and delete confirm.
+
+### Mobile & help
+
+- **new** **Phone vs desktop** — MANUAL §19 table + Config → Help section (`#help-mobile`): footer limits, search overlay tabs, desktop-only tag cloud and full config.
+- **new** In-app help index link for the mobile section (all four languages).
+
+### Guided tours & defaults
+
+- **fix** **Tour guard** — backdrop no longer steals clicks; tour cards and modals stay interactive; companion mode for quick-add demos.
+- **fix** **Sticky save bar** — extra bottom padding on config main and bookmarks split-view when dirty.
+- **new** Default install bookmarks include example tags (`dev`, `github`, `video`, …).
+
+### Cleanup
+
+- **fix** Removed unused **`GET /api/analytics`** and dead analytics UI — open counts and insights live in **Config → Stats** and **`/health`** only.
+- **fix** Removed deprecated bookmark cache sync no-ops from config.
 
 ---
 
