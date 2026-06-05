@@ -152,6 +152,8 @@
         "filterByStatusFull": "Filtrer par statut (online/offline/vérifié/non vérifié/épinglé/désépinglé/cassé/ok)",
         "filterCompletionCategory": "Catégorie : {value}",
         "filterCompletionPage": "Page : {value}",
+        "filterPageCurrent": "page actuelle",
+        "filterPageAll": "toutes les pages",
         "filterCompletionTag": "Tag : {value}",
         "filterStatusOnline": "Favoris accessibles",
         "filterStatusOffline": "Favoris inaccessibles",

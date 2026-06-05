@@ -153,6 +153,8 @@
         "filterByStatusFull": "Filter op status (online/offline/gecontroleerd/ongecheckt/vastgemaakt/los/kapot/ok)",
         "filterCompletionCategory": "Categorie: {value}",
         "filterCompletionPage": "Pagina: {value}",
+        "filterPageCurrent": "huidige pagina",
+        "filterPageAll": "alle pagina's",
         "filterCompletionTag": "Tag: {value}",
         "filterStatusOnline": "Bereikbare bladwijzers",
         "filterStatusOffline": "Onbereikbare bladwijzers",

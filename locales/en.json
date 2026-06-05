@@ -153,6 +153,8 @@
         "filterByStatusFull": "Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)",
         "filterCompletionCategory": "Category: {value}",
         "filterCompletionPage": "Page: {value}",
+        "filterPageCurrent": "current page",
+        "filterPageAll": "all pages",
         "filterCompletionTag": "Tag: {value}",
         "filterStatusOnline": "Reachable bookmarks",
         "filterStatusOffline": "Unreachable bookmarks",

@@ -504,17 +504,61 @@ class SearchComponent {
         };
     }
 
+    dashboardLabel(key, fallback, vars = {}) {
+        const fullKey = key.startsWith('dashboard.') ? key : `dashboard.${key}`;
+        let text = (this.language?.t?.(fullKey) && this.language.t(fullKey) !== fullKey)
+            ? this.language.t(fullKey)
+            : fallback;
+        Object.entries(vars).forEach(([name, value]) => {
+            text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
+        });
+        return text;
+    }
+
+    formatFilterPageValueLabel(pageValue) {
+        if (pageValue === 'current') {
+            return this.dashboardLabel('filterPageCurrent', 'current page');
+        }
+        if (pageValue === 'all') {
+            return this.dashboardLabel('filterPageAll', 'all pages');
+        }
+        return pageValue;
+    }
+
+    getFilterHintItems() {
+        return [
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel('filterByCategory', 'Filter by category (example: category:work)'),
+                completion: 'category: ',
+                type: 'filter-completion',
+            },
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel(
+                    'filterByStatusFull',
+                    'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)',
+                ),
+                completion: 'status: ',
+                type: 'filter-completion',
+            },
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel('filterByPage', 'Filter by page (current/all/number)'),
+                completion: 'page: ',
+                type: 'filter-completion',
+            },
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel('filterByTag', 'Filter by tag (example: tag:work)'),
+                completion: 'tag: ',
+                type: 'filter-completion',
+            },
+        ];
+    }
+
     getFilterAutocompleteMatches(rawQuery) {
-        const t = (key, fallback, vars = {}) => {
-            const fullKey = `dashboard.${key}`;
-            let text = (this.language?.t?.(fullKey) && this.language.t(fullKey) !== fullKey)
-                ? this.language.t(fullKey)
-                : fallback;
-            Object.entries(vars).forEach(([name, value]) => {
-                text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
-            });
-            return text;
-        };
+        const t = (key, fallback, vars = {}) => this.dashboardLabel(key, fallback, vars);
 
         const query = String(rawQuery || '');
         const parts = query.split(/\s+/);
@@ -592,7 +636,9 @@ class SearchComponent {
                 .slice(0, 10)
                 .map((pageValue) => toCompletion(
                     `page:${pageValue}`,
-                    t('filterCompletionPage', 'Page: {value}', { value: pageValue })
+                    t('filterCompletionPage', 'Page: {value}', {
+                        value: this.formatFilterPageValueLabel(pageValue),
+                    })
                 ));
         }
 
@@ -685,11 +731,10 @@ class SearchComponent {
             // Handle global search across all pages
             const query = this.currentQuery.slice(1).trim();
             if (!query) {
-                const t = (key, fb) => this.language ? (this.language.t(key) || fb) : fb;
                 this.searchMatches = [{
                     type: 'command-group-header',
                     groupId: 'global-hint',
-                    label: t('dashboard.globalSearchHint', 'Search across all pages — type to start'),
+                    label: this.dashboardLabel('globalSearchHint', 'Search across all pages — type to start'),
                     count: 0,
                     expanded: false
                 }];
@@ -727,7 +772,7 @@ class SearchComponent {
                     {
                         type: 'command-group-header',
                         groupId: 'empty_filters',
-                        label: this.language ? (this.language.t('dashboard.filtersGroupLabel') || 'Filters') : 'Filters',
+                        label: this.dashboardLabel('filtersGroupLabel', 'Filters'),
                         count: filterAutocompleteMatches.length,
                         expanded: filtersIsExpanded,
                         _emptyStateGroup: 'filters'
@@ -846,12 +891,11 @@ class SearchComponent {
             const raw = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
             const filterAutocompleteMatches = this.getFilterAutocompleteMatches(raw);
             if (filterAutocompleteMatches.length > 0) {
-                const tLabel = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
                 const filtersIsExpanded = !this.emptyStateExpandedGroups.has('inline_filters');
                 const filterHeader = {
                     type: 'command-group-header',
                     groupId: 'inline_filters',
-                    label: tLabel('dashboard.filtersGroupLabel', 'Filters'),
+                    label: this.dashboardLabel('filtersGroupLabel', 'Filters'),
                     count: filterAutocompleteMatches.length,
                     expanded: filtersIsExpanded,
                     _emptyStateGroup: 'inline_filters'
@@ -1536,23 +1580,18 @@ class SearchComponent {
     }
 
     getEmptyStateMatches() {
-        const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
+        const t = (key, fallback, vars) => this.dashboardLabel(key, fallback, vars);
         const result = [];
         const historyMatches = this.getSearchHistoryMatches();
         const recentCommandMatches = this.getRecentCommandMatches();
         const savedMatches = this.getSavedSearchMatches();
 
-        const filterItems = [
-            { shortcut: '↳', name: t('dashboard.filterByCategory', 'Filter by category (example: category:work)'), completion: 'category: ', type: 'filter-completion' },
-            { shortcut: '↳', name: t('dashboard.filterByStatus', 'Filter by status (online/offline/pinned/broken…)'), completion: 'status: ', type: 'filter-completion' },
-            { shortcut: '↳', name: t('dashboard.filterByPage', 'Filter by page (current/all/number)'), completion: 'page: ', type: 'filter-completion' },
-            { shortcut: '↳', name: t('dashboard.filterByTag', 'Filter by tag (example: tag:work)'), completion: 'tag: ', type: 'filter-completion' }
-        ];
+        const filterItems = this.getFilterHintItems();
 
         const commandItems = [
-            { shortcut: '↳', name: t('dashboard.emptyStateCommandNew', 'Add via command'), completion: ':new ', type: 'command-completion' },
-            { shortcut: '↳', name: t('dashboard.emptyStateCommandTag', 'Browse by tag'), completion: ':tag ', type: 'command-completion' },
-            { shortcut: '↳', name: t('dashboard.emptyStateCommandNote', 'Edit note'), completion: ':note ', type: 'command-completion' },
+            { shortcut: '↳', name: t('emptyStateCommandNew', 'Add via command'), completion: ':new ', type: 'command-completion' },
+            { shortcut: '↳', name: t('emptyStateCommandTag', 'Browse by tag'), completion: ':tag ', type: 'command-completion' },
+            { shortcut: '↳', name: t('emptyStateCommandNote', 'Edit note'), completion: ':note ', type: 'command-completion' },
         ];
 
         const finderItems = this.settings.includeFindersInSearch
@@ -1563,18 +1602,18 @@ class SearchComponent {
             ? [{
                 type: 'whats-new',
                 shortcut: '★',
-                name: t('dashboard.emptyStateWhatsNewItem', 'See latest release notes')
+                name: t('emptyStateWhatsNewItem', 'See latest release notes')
             }]
             : [];
 
         const groups = [
-            { id: 'whats-new', label: t('dashboard.emptyStateWhatsNewLabel', "What's new"), items: whatsNewItems, defaultOpen: true },
-            { id: 'recent', label: t('dashboard.emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
-            { id: 'recent-commands', label: t('dashboard.emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
-            { id: 'saved', label: t('dashboard.emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
-            { id: 'commands', label: t('dashboard.emptyStateCommandsGroupLabel', 'Commands'), items: commandItems, defaultOpen: false },
-            { id: 'filters', label: t('dashboard.filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },
-            { id: 'finders', label: t('dashboard.emptyStateFindersLabel', 'Finders'), items: finderItems, defaultOpen: false }
+            { id: 'whats-new', label: t('emptyStateWhatsNewLabel', "What's new"), items: whatsNewItems, defaultOpen: true },
+            { id: 'recent', label: t('emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
+            { id: 'recent-commands', label: t('emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
+            { id: 'saved', label: t('emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
+            { id: 'commands', label: t('emptyStateCommandsGroupLabel', 'Commands'), items: commandItems, defaultOpen: false },
+            { id: 'filters', label: t('filtersGroupLabel', 'Filters'), items: filterItems, defaultOpen: false },
+            { id: 'finders', label: t('emptyStateFindersLabel', 'Finders'), items: finderItems, defaultOpen: false }
         ];
 
         for (const group of groups) {

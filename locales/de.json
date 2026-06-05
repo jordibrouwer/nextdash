@@ -152,6 +152,8 @@
         "filterByStatusFull": "Nach Status filtern (online/offline/geprüft/ungeprüft/angeheftet/los/defekt/ok)",
         "filterCompletionCategory": "Kategorie: {value}",
         "filterCompletionPage": "Seite: {value}",
+        "filterPageCurrent": "aktuelle Seite",
+        "filterPageAll": "alle Seiten",
         "filterCompletionTag": "Tag: {value}",
         "filterStatusOnline": "Erreichbare Lesezeichen",
         "filterStatusOffline": "Nicht erreichbare Lesezeichen",
