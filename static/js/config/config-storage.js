@@ -9,7 +9,8 @@ class ConfigStorage {
      * @returns {boolean}
      */
     getDeviceSpecificFlag() {
-        return localStorage.getItem('deviceSpecificSettings') === 'true';
+        return window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+            || localStorage.getItem('deviceSpecificSettings') === 'true';
     }
 
     /**
@@ -25,15 +26,22 @@ class ConfigStorage {
      * @returns {Object|null}
      */
     getDeviceSettings() {
+        if (window.DeviceSettingsMerge?.getDeviceSettingsRaw) {
+            return window.DeviceSettingsMerge.getDeviceSettingsRaw();
+        }
         const stored = localStorage.getItem('dashboardSettings');
         return stored ? JSON.parse(stored) : null;
     }
 
     /**
-     * Save device-specific settings to localStorage
+     * Save device-local settings (strips server-authoritative keys)
      * @param {Object} settings
      */
     saveDeviceSettings(settings) {
+        if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+            window.DeviceSettingsMerge.saveDeviceLocalSettings(settings);
+            return;
+        }
         localStorage.setItem('dashboardSettings', JSON.stringify(settings));
     }
 
@@ -41,7 +49,22 @@ class ConfigStorage {
      * Clear device-specific settings from localStorage
      */
     clearDeviceSettings() {
+        if (window.DeviceSettingsMerge?.clearDeviceLocalSettings) {
+            window.DeviceSettingsMerge.clearDeviceLocalSettings();
+            return;
+        }
         localStorage.removeItem('dashboardSettings');
+    }
+
+    mergeServerAndDeviceSettings(serverSettings, deviceSettings) {
+        if (window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
+            return window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
+        }
+        return deviceSettings ? { ...serverSettings, ...deviceSettings } : { ...serverSettings };
+    }
+
+    pruneDeviceCacheAfterServerSave() {
+        window.DeviceSettingsMerge?.pruneDeviceCacheAfterServerSave?.();
     }
 }
 

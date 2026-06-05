@@ -31,16 +31,7 @@ class ConfigData {
             let settings;
             if (deviceSpecific) {
                 const deviceSettings = this.storage.getDeviceSettings();
-                settings = deviceSettings ? { ...serverSettings, ...deviceSettings } : serverSettings;
-                // Always use favicon settings from server, regardless of device-specific
-                settings.enableCustomFavicon = serverSettings.enableCustomFavicon;
-                settings.customFaviconPath = serverSettings.customFaviconPath;
-                // Always use font settings from server, regardless of device-specific
-                settings.enableCustomFont = serverSettings.enableCustomFont;
-                settings.customFontPath = serverSettings.customFontPath;
-                settings.fontPreset = serverSettings.fontPreset;
-                // Always use collections from server (shared across devices)
-                settings.collections = serverSettings.collections;
+                settings = this.storage.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
             } else {
                 settings = serverSettings;
             }
@@ -178,6 +169,8 @@ class ConfigData {
             const errorText = await response.text();
             throw new Error(`Failed to save settings: ${errorText}`);
         }
+
+        window.DeviceSettingsMerge?.pruneDeviceCacheAfterServerSave?.();
         
         return await response.json();
     }

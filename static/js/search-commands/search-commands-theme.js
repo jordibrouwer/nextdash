@@ -136,7 +136,11 @@ class SearchCommandTheme {
                     showBackgroundDots = parsed.showBackgroundDots !== false;
                     // Update theme in localStorage
                     parsed.theme = safeTheme;
-                    localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                        window.DeviceSettingsMerge.saveDeviceLocalSettings(parsed);
+                    } else {
+                        localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);
                 }

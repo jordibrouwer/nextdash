@@ -2282,6 +2282,7 @@ class ConfigSettings {
                 console.error('Settings save failed:', response.status);
                 return false;
             }
+            window.DeviceSettingsMerge?.pruneDeviceCacheAfterServerSave?.();
             if (settings?.showSearchFlowBanner !== false) {
                 try {
                     sessionStorage.removeItem('nextDashSearchFlowHintDismissedV2');

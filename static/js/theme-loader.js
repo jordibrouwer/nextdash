@@ -45,7 +45,11 @@
                     // Persist migrated theme for device-specific users.
                     if (parsedSettings.theme !== normalizedTheme) {
                         parsedSettings.theme = normalizedTheme;
-                        localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                            window.DeviceSettingsMerge.saveDeviceLocalSettings(parsedSettings);
+                        } else {
+                            localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        }
                     }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);

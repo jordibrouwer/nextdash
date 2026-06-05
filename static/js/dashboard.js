@@ -543,14 +543,14 @@ class Dashboard {
             const serverSettings = await settingsRes.json();
             
             // Load settings from localStorage or server based on device-specific flag
-            const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-            if (deviceSpecific) {
+            const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+                || localStorage.getItem('deviceSpecificSettings') === 'true';
+            if (deviceSpecific && window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
+                const deviceSettings = window.DeviceSettingsMerge.getDeviceSettingsRaw?.();
+                this.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
+            } else if (deviceSpecific) {
                 const deviceSettings = localStorage.getItem('dashboardSettings');
                 this.settings = deviceSettings ? { ...serverSettings, ...JSON.parse(deviceSettings) } : serverSettings;
-                // Always use favicon settings from server, regardless of device-specific
-                this.settings.enableCustomFavicon = serverSettings.enableCustomFavicon;
-                this.settings.customFaviconPath = serverSettings.customFaviconPath;
-                this.settings.fontPreset = serverSettings.fontPreset;
             } else {
                 this.settings = serverSettings;
             }
@@ -815,9 +815,12 @@ class Dashboard {
                 throw new Error('Failed to save settings');
             }
             
-            // Also save to localStorage if device-specific is enabled
-            const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-            if (deviceSpecific) {
+            // Also save device-local subset when device-specific is enabled
+            const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+                || localStorage.getItem('deviceSpecificSettings') === 'true';
+            if (deviceSpecific && window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                window.DeviceSettingsMerge.saveDeviceLocalSettings(this.settings);
+            } else if (deviceSpecific) {
                 localStorage.setItem('dashboardSettings', JSON.stringify(this.settings));
             }
         } catch (error) {

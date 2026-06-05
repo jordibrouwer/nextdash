@@ -2494,12 +2494,7 @@ class ConfigManager {
             onLauncherIconSizeChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
                 if (this.deviceSpecific) {
-                    const settingsToSave = { ...this.settingsData };
-                    delete settingsToSave.enableCustomFavicon;
-                    delete settingsToSave.customFaviconPath;
-                    delete settingsToSave.enableCustomFont;
-                    delete settingsToSave.customFontPath;
-                    this.storage.saveDeviceSettings(settingsToSave);
+                    this.storage.saveDeviceSettings(this.settingsData);
                 } else {
                     await this.settings.saveSettingsToServer(this.settingsData);
                 }
@@ -2519,12 +2514,7 @@ class ConfigManager {
                 this.settings.updateFromUI(this.settingsData);
                 let ok = true;
                 if (this.deviceSpecific) {
-                    const settingsToSave = { ...this.settingsData };
-                    delete settingsToSave.enableCustomFavicon;
-                    delete settingsToSave.customFaviconPath;
-                    delete settingsToSave.enableCustomFont;
-                    delete settingsToSave.customFontPath;
-                    this.storage.saveDeviceSettings(settingsToSave);
+                    this.storage.saveDeviceSettings(this.settingsData);
                 } else {
                     ok = await this.settings.saveSettingsToServer(this.settingsData);
                 }
@@ -3784,12 +3774,7 @@ class ConfigManager {
         let ok = false;
         try {
             if (this.deviceSpecific) {
-                const settingsToSave = { ...this.settingsData };
-                delete settingsToSave.enableCustomFavicon;
-                delete settingsToSave.customFaviconPath;
-                delete settingsToSave.enableCustomFont;
-                delete settingsToSave.customFontPath;
-                this.storage.saveDeviceSettings(settingsToSave);
+                this.storage.saveDeviceSettings(this.settingsData);
                 ok = true;
             } else {
                 ok = await this.settings.saveSettingsToServer(this.settingsData);
@@ -3897,7 +3882,13 @@ class ConfigManager {
                     if (!this.settings?.updateFromUI) return;
                     this.suppressDirtyTracking = true;
                     this.settings.updateFromUI(this.settingsData);
-                    const ok = await this.settings.saveSettingsToServer(this.settingsData);
+                    let ok = false;
+                    if (this.deviceSpecific) {
+                        this.storage.saveDeviceSettings(this.settingsData);
+                        ok = true;
+                    } else {
+                        ok = await this.settings.saveSettingsToServer(this.settingsData);
+                    }
                     this.suppressDirtyTracking = false;
                     if (ok) {
                         this.flashSavedIndicator();
@@ -5488,15 +5479,10 @@ class ConfigManager {
             }
             
             if (this.deviceSpecific) {
-                // Don't save global settings in localStorage
-                const settingsToSave = { ...this.settingsData };
-                delete settingsToSave.enableCustomFavicon;
-                delete settingsToSave.customFaviconPath;
-                delete settingsToSave.enableCustomFont;
-                delete settingsToSave.customFontPath;
-                this.storage.saveDeviceSettings(settingsToSave);
+                this.storage.saveDeviceSettings(this.settingsData);
             } else {
                 await this.data.saveSettings(this.settingsData);
+                this.storage.clearDeviceSettings();
             }
 
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));

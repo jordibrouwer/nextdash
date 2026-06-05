@@ -92,7 +92,11 @@ class SearchCommandColumns {
                     const parsed = JSON.parse(settings);
                     // Update columnsPerRow in localStorage
                     parsed.columnsPerRow = parseInt(columns);
-                    localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                        window.DeviceSettingsMerge.saveDeviceLocalSettings(parsed);
+                    } else {
+                        localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);
                 }

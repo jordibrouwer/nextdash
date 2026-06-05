@@ -88,7 +88,11 @@ class SearchCommandFontSize {
                     const parsed = JSON.parse(settings);
                     // Update fontSize in localStorage
                     parsed.fontSize = fontSize;
-                    localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                        window.DeviceSettingsMerge.saveDeviceLocalSettings(parsed);
+                    } else {
+                        localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+                    }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);
                 }
