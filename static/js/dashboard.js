@@ -1470,6 +1470,8 @@ class Dashboard {
 
         this.updateSearchComponent();
         this.updateTagFilterIndicator();
+        this.syncBookmarkGridA11y();
+        this.keyboardNavigation?.scheduleUpdate?.();
         if (this.statusMonitor) {
             if (this.statusMonitorInitialized) {
                 this.statusMonitor.updateBookmarks(matched);
@@ -2864,6 +2866,9 @@ class Dashboard {
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
                 item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),
                 item('← / →', 'navFocusLeftRight', 'Move focus left / right in grid'),
+                item('Home / End', 'navCategoryHomeEnd', 'First / last bookmark in the focused category'),
+                item('Ctrl + Home / End', 'navGridHomeEnd', 'First / last bookmark on the page'),
+                item('Page Up / Page Down', 'navPageScroll', 'Jump one screen up / down through bookmarks'),
                 item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
                 item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category'),
                 item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
@@ -3249,8 +3254,9 @@ class Dashboard {
         this.initializeCategoryReorder();
         // this.initializeDashboardCategoryReorder();
 
-        // Update search component with current data
         this.updateSearchComponent();
+        this.syncBookmarkGridA11y();
+        this.keyboardNavigation?.scheduleUpdate?.();
         
         // Initialize or update status monitoring after rendering
         if (this.statusMonitor) {
@@ -3798,6 +3804,8 @@ class Dashboard {
         const titleDomId = `category-title-${String(category.id || 'uncategorized').replace(/[^a-zA-Z0-9_-]/g, '-')}`;
         titleElement.id = titleDomId;
         categoryDiv.setAttribute('aria-labelledby', titleDomId);
+        titleElement.setAttribute('role', 'rowheader');
+        titleElement.tabIndex = -1;
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
@@ -4606,7 +4614,7 @@ class Dashboard {
 
         const lead = document.createElement('div');
         lead.className = 'bookmark-lead';
-        lead.setAttribute('role', 'gridcell');
+        lead.setAttribute('role', 'presentation');
         const reorderHandle = document.createElement('div');
         reorderHandle.className = 'bookmark-reorder-handle';
         const dragLabel = this.formatDashboardLabel('dragToReorderAria', {}, 'Drag to reorder');
@@ -4653,6 +4661,7 @@ class Dashboard {
         const openLink = document.createElement('a');
         openLink.className = 'bookmark-open';
         openLink.href = bookmark.url || '#';
+        openLink.id = this.bookmarkCellId(bookmark, bookmarkIndex, categoryId);
         openLink.setAttribute('role', 'gridcell');
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
@@ -4686,7 +4695,7 @@ class Dashboard {
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
-        shortcutSpan.setAttribute('role', 'gridcell');
+        shortcutSpan.setAttribute('role', 'presentation');
         const showShortcuts = this.settings.showShortcuts !== false;
         const shortcutText = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
             ? String(bookmark.shortcut).toUpperCase()
@@ -5742,6 +5751,63 @@ class Dashboard {
     bookmarkFallbackName() {
         return this.configLabel('detailBookmarkFallback', '')
             || this.formatDashboardLabel('bookmarkLinkFallback', {}, 'Bookmark');
+    }
+
+    _hashForA11yId(value) {
+        const str = String(value || '');
+        let hash = 0;
+        for (let i = 0; i < str.length; i += 1) {
+            hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+        }
+        return Math.abs(hash).toString(36) || '0';
+    }
+
+    bookmarkCellId(bookmark, bookmarkIndex, categoryId) {
+        const pageId = Number(this.currentPageId) || 0;
+        const cat = String(categoryId ?? 'x').replace(/[^a-zA-Z0-9_-]/g, '') || 'x';
+        if (bookmarkIndex >= 0) {
+            return `bookmark-cell-p${pageId}-${cat}-i${bookmarkIndex}`;
+        }
+        const url = String(bookmark?.url || '').trim();
+        const seed = url || String(bookmark?.name || 'bookmark');
+        return `bookmark-cell-p${pageId}-${cat}-u${this._hashForA11yId(seed)}`;
+    }
+
+    getBookmarkGridElement() {
+        const root = document.getElementById('dashboard-layout');
+        if (!root) {
+            return null;
+        }
+        return root.querySelector('.tag-filter-view-body[role="grid"]') || root;
+    }
+
+    syncBookmarkGridA11y() {
+        const grid = this.getBookmarkGridElement();
+        if (!grid || grid.getAttribute('role') !== 'grid') {
+            return;
+        }
+
+        const rowgroups = grid.querySelectorAll('.category[role="rowgroup"]');
+        let totalRows = 0;
+        rowgroups.forEach((group) => {
+            const rows = group.querySelectorAll('.bookmark-link[data-bookmark-url]');
+            group.setAttribute('aria-rowcount', String(rows.length));
+            rows.forEach((row, idx) => {
+                row.setAttribute('aria-rowindex', String(idx + 1));
+                const openLink = row.querySelector('a.bookmark-open');
+                if (openLink) {
+                    openLink.setAttribute('aria-colindex', '1');
+                    openLink.setAttribute('aria-colcount', '1');
+                }
+            });
+            totalRows += rows.length;
+        });
+
+        grid.setAttribute('aria-rowcount', String(totalRows));
+        const layoutCols = typeof this.getEffectiveColumnsPerRow === 'function'
+            ? this.getEffectiveColumnsPerRow()
+            : 1;
+        grid.setAttribute('aria-colcount', String(Math.max(1, layoutCols)));
     }
 
     /**

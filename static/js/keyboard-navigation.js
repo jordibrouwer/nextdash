@@ -51,6 +51,21 @@ class KeyboardNavigation {
                 return;
             }
 
+            // WAI-ARIA grid: Ctrl+Home / Ctrl+End — first / last bookmark
+            if (e.ctrlKey && !e.altKey && !e.metaKey && (e.key === 'Home' || e.key === 'End')) {
+                if (this.navigableElements.length === 0) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (e.key === 'Home') {
+                    this.navigateCtrlHome();
+                } else {
+                    this.navigateCtrlEnd();
+                }
+                return;
+            }
+
             // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
@@ -78,7 +93,50 @@ class KeyboardNavigation {
                 childList: true,
                 subtree: true
             });
+
+            dashboardLayout.addEventListener('focusin', (e) => {
+                const link = e.target.closest?.('a.bookmark-open');
+                if (!link) {
+                    return;
+                }
+                const row = link.closest('.bookmark-link');
+                if (!row) {
+                    return;
+                }
+                this.updateNavigableElements();
+                const idx = this.navigableElements.indexOf(row);
+                if (idx >= 0 && idx !== this.currentIndex) {
+                    this.currentIndex = idx;
+                    this.highlightCurrentElement({ focus: false });
+                }
+            });
         }
+    }
+
+    getGridElement() {
+        if (this.dashboard && typeof this.dashboard.getBookmarkGridElement === 'function') {
+            return this.dashboard.getBookmarkGridElement();
+        }
+        const root = document.getElementById('dashboard-layout');
+        if (!root) {
+            return null;
+        }
+        return root.querySelector('.tag-filter-view-body[role="grid"]') || root;
+    }
+
+    syncGridActiveDescendant() {
+        const grid = this.getGridElement();
+        if (!grid || grid.getAttribute('role') !== 'grid') {
+            return;
+        }
+        if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
+            const openLink = this.navigableElements[this.currentIndex].querySelector?.('a.bookmark-open');
+            if (openLink?.id) {
+                grid.setAttribute('aria-activedescendant', openLink.id);
+                return;
+            }
+        }
+        grid.removeAttribute('aria-activedescendant');
     }
 
     // Cleanup method to prevent memory leaks
@@ -103,6 +161,112 @@ class KeyboardNavigation {
         this.updateTimeout = setTimeout(() => {
             this.updateNavigableElements();
         }, 100);
+    }
+
+    getCategoryRows(categoryElement) {
+        if (!categoryElement) {
+            return [];
+        }
+        return this.navigableElements.filter((row) => categoryElement.contains(row));
+    }
+
+    getCurrentCategoryElement() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) {
+            return null;
+        }
+        return this.navigableElements[this.currentIndex].closest?.('.category[role="rowgroup"]') || null;
+    }
+
+    navigateCategoryHome() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        const category = this.getCurrentCategoryElement();
+        const rows = category ? this.getCategoryRows(category) : [];
+        const target = rows[0] || this.navigableElements[0];
+        this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
+        this.highlightCurrentElement();
+    }
+
+    navigateCategoryEnd() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        const category = this.getCurrentCategoryElement();
+        const rows = category ? this.getCategoryRows(category) : [];
+        const target = rows.length ? rows[rows.length - 1] : this.navigableElements[this.navigableElements.length - 1];
+        this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
+        this.highlightCurrentElement();
+    }
+
+    navigateCtrlHome() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        this.currentIndex = 0;
+        this.highlightCurrentElement();
+    }
+
+    navigateCtrlEnd() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        this.currentIndex = this.navigableElements.length - 1;
+        this.highlightCurrentElement();
+    }
+
+    navigatePageUp() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        if (this.currentIndex < 0) {
+            this.currentIndex = 0;
+            this.highlightCurrentElement();
+            return;
+        }
+        const current = this.navigableElements[this.currentIndex];
+        const rowTop = current.getBoundingClientRect().top;
+        const page = Math.max(window.innerHeight * 0.85, 240);
+        let targetIndex = 0;
+        for (let i = this.currentIndex - 1; i >= 0; i -= 1) {
+            targetIndex = i;
+            const top = this.navigableElements[i].getBoundingClientRect().top;
+            if (rowTop - top >= page) {
+                break;
+            }
+        }
+        this.currentIndex = targetIndex;
+        this.highlightCurrentElement();
+    }
+
+    navigatePageDown() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return;
+        }
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.navigableElements.length - 1;
+            this.highlightCurrentElement();
+            return;
+        }
+        const current = this.navigableElements[this.currentIndex];
+        const rowBottom = current.getBoundingClientRect().bottom;
+        const page = Math.max(window.innerHeight * 0.85, 240);
+        let targetIndex = this.navigableElements.length - 1;
+        for (let i = this.currentIndex + 1; i < this.navigableElements.length; i += 1) {
+            targetIndex = i;
+            const bottom = this.navigableElements[i].getBoundingClientRect().bottom;
+            if (bottom - rowBottom >= page) {
+                break;
+            }
+        }
+        this.currentIndex = targetIndex;
+        this.highlightCurrentElement();
     }
 
     syncRovingTabStops(options = {}) {
@@ -139,7 +303,11 @@ class KeyboardNavigation {
         if (this.currentIndex >= this.navigableElements.length) {
             this.currentIndex = -1;
         }
+        if (this.dashboard && typeof this.dashboard.syncBookmarkGridA11y === 'function') {
+            this.dashboard.syncBookmarkGridA11y();
+        }
         this.syncRovingTabStops({ focus: false });
+        this.syncGridActiveDescendant();
     }
 
     handleKeyPress(e) {
@@ -193,6 +361,26 @@ class KeyboardNavigation {
             case 'ArrowLeft':
                 e.preventDefault();
                 this.navigateLeft();
+                break;
+
+            case 'Home':
+                e.preventDefault();
+                this.navigateCategoryHome();
+                break;
+
+            case 'End':
+                e.preventDefault();
+                this.navigateCategoryEnd();
+                break;
+
+            case 'PageUp':
+                e.preventDefault();
+                this.navigatePageUp();
+                break;
+
+            case 'PageDown':
+                e.preventDefault();
+                this.navigatePageDown();
                 break;
 
             case 'Enter':
@@ -498,7 +686,8 @@ class KeyboardNavigation {
         return bestMatch;
     }
 
-    highlightCurrentElement() {
+    highlightCurrentElement(options = {}) {
+        const doFocus = options.focus !== false;
         // Dismiss any open keyboard-triggered preview card when moving to a new row
         if (this.dashboard && typeof this.dashboard.hideBookmarkPreviewCard === 'function') {
             this.dashboard.hideBookmarkPreviewCard();
@@ -524,10 +713,11 @@ class KeyboardNavigation {
                 block: 'nearest',
                 inline: 'nearest'
             });
-            this.syncRovingTabStops({ focus: true });
+            this.syncRovingTabStops({ focus: doFocus });
         } else {
             this.syncRovingTabStops({ focus: false });
         }
+        this.syncGridActiveDescendant();
     }
 
     togglePreviewCardForCurrent() {
@@ -667,10 +857,12 @@ class KeyboardNavigation {
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
             element.removeAttribute('aria-current');
+            element.setAttribute('aria-selected', 'false');
         });
         
         this.currentIndex = -1;
         this.syncRovingTabStops({ focus: false });
+        this.syncGridActiveDescendant();
     }
 
     // Public methods
