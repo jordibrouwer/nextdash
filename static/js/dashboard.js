@@ -3637,7 +3637,7 @@ class Dashboard {
         input.type = 'text';
         input.className = 'category-rename-input';
         input.value = originalName;
-        input.setAttribute('aria-label', 'Rename category');
+        input.setAttribute('aria-label', this.formatDashboardLabel('renameCategoryAria', {}, 'Rename category'));
         nameSpan.replaceWith(input);
         input.focus();
         input.select();
@@ -4699,8 +4699,7 @@ class Dashboard {
             shortcutSpan.dataset.shortcut = shortcutText;
         }
         {
-            let linkLabel = bookmark.name || bookmark.url
-                || this.formatDashboardLabel('bookmarkLinkFallback', {}, 'Bookmark');
+            let linkLabel = bookmark.name || bookmark.url || this.bookmarkFallbackName();
             if (shortcutText) {
                 const shortcutPrefix = this.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
                 linkLabel = `${linkLabel}, ${shortcutPrefix} ${shortcutText}`;
@@ -4837,6 +4836,8 @@ class Dashboard {
         const form = document.createElement('div');
         form.className = 'bookmark-inline-form';
 
+        const cfg = (key, fallback) => this.configLabel(key, fallback);
+
         const mkField = (labelText, inputEl) => {
             const wrap = document.createElement('div');
             wrap.className = 'bookmark-inline-field';
@@ -4852,13 +4853,13 @@ class Dashboard {
         nameInput.type = 'text';
         nameInput.className = 'bookmark-inline-input';
         nameInput.value = bookmark.name || '';
-        form.appendChild(mkField('Name', nameInput));
+        form.appendChild(mkField(cfg('bookmarkName', 'Name'), nameInput));
 
         const urlInput = document.createElement('input');
         urlInput.type = 'url';
         urlInput.className = 'bookmark-inline-input';
         urlInput.value = bookmark.url || '';
-        form.appendChild(mkField('URL', urlInput));
+        form.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput));
 
         let pendingIcon = String(bookmark.icon || '').trim();
         const iconPreview = document.createElement('div');
@@ -4867,7 +4868,7 @@ class Dashboard {
         const iconUrlInput = document.createElement('input');
         iconUrlInput.type = 'text';
         iconUrlInput.className = 'bookmark-inline-input';
-        iconUrlInput.placeholder = 'https://.../icon.png';
+        iconUrlInput.placeholder = cfg('detailIconUrlPlaceholder', 'https://.../icon.png');
         iconUrlInput.value = pendingIcon ? `/data/icons/${pendingIcon}` : '';
 
         const iconActions = document.createElement('div');
@@ -4876,19 +4877,19 @@ class Dashboard {
         const setIconBtn = document.createElement('button');
         setIconBtn.type = 'button';
         setIconBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
-        setIconBtn.textContent = 'Set';
+        setIconBtn.textContent = cfg('detailSetIconUrlBtn', 'Set URL');
 
         const fetchIconBtn = document.createElement('button');
         fetchIconBtn.type = 'button';
         fetchIconBtn.className = 'bookmark-inline-action-btn';
-        fetchIconBtn.textContent = this.language.t('config.fetch') || 'Fetch';
+        fetchIconBtn.textContent = cfg('fetch', 'Fetch');
         let inlineAutoFetchTimer = null;
         let inlineAutoFetchInFlight = false;
 
         const uploadIconBtn = document.createElement('button');
         uploadIconBtn.type = 'button';
         uploadIconBtn.className = 'bookmark-inline-action-btn';
-        uploadIconBtn.textContent = 'Upload';
+        uploadIconBtn.textContent = cfg('detailUploadIconBtn', 'Upload');
 
         const iconFileInput = document.createElement('input');
         iconFileInput.type = 'file';
@@ -4898,7 +4899,7 @@ class Dashboard {
         const clearIconBtn = document.createElement('button');
         clearIconBtn.type = 'button';
         clearIconBtn.className = 'bookmark-inline-action-btn';
-        clearIconBtn.textContent = 'Clear';
+        clearIconBtn.textContent = cfg('detailClearIconBtn', 'Clear');
 
         const iconState = document.createElement('span');
         iconState.className = 'bookmark-inline-icon-state';
@@ -4913,7 +4914,7 @@ class Dashboard {
             if (pendingIcon) {
                 iconPreview.innerHTML = `<img src="/data/icons/${pendingIcon}" alt="">`;
             } else {
-                iconPreview.innerHTML = '<span>No icon</span>';
+                iconPreview.innerHTML = `<span>${cfg('iconNone', 'No icon')}</span>`;
             }
         };
 
@@ -5031,7 +5032,7 @@ class Dashboard {
         iconActions.appendChild(clearIconBtn);
         iconActions.appendChild(iconState);
         iconActions.appendChild(iconFetchState);
-        const iconWrap = mkField('Icon URL', iconUrlInput);
+        const iconWrap = mkField(cfg('iconUrlOptional', 'Icon URL (opt)'), iconUrlInput);
         iconWrap.appendChild(iconPreview);
         iconWrap.appendChild(iconFileInput);
         iconWrap.appendChild(iconActions);
@@ -5047,9 +5048,9 @@ class Dashboard {
         const tagsInput = document.createElement('input');
         tagsInput.type = 'text';
         tagsInput.className = 'bookmark-inline-input';
-        tagsInput.placeholder = 'work, dev, personal…';
+        tagsInput.placeholder = cfg('detailTagsPlaceholder', 'work, dev, personal…');
         tagsInput.value = (Array.isArray(bookmark.tags) ? bookmark.tags : []).join(', ');
-        form.appendChild(mkField('Tags', tagsInput));
+        form.appendChild(mkField(cfg('detailTagsLabel', 'Tags'), tagsInput));
         // Seed session pool from loaded bookmarks
         (this.allBookmarks?.length ? this.allBookmarks : this.bookmarks ?? []).forEach(bm => (bm.tags || []).forEach(t => _sessionTags.add(t)));
         TagAutocomplete.attach(tagsInput, () => {
@@ -5077,7 +5078,7 @@ class Dashboard {
             syncShortcutConflict(e.target.value);
         });
         syncShortcutConflict(shortcutInput.value);
-        const shortcutField = mkField('Shortcut', shortcutInput);
+        const shortcutField = mkField(cfg('shortcut', 'Shortcut'), shortcutInput);
         shortcutField.appendChild(shortcutConflictHint);
         form.appendChild(shortcutField);
 
@@ -5096,7 +5097,7 @@ class Dashboard {
             }
             catSelect.appendChild(o);
         });
-        form.appendChild(mkField('Category', catSelect));
+        form.appendChild(mkField(cfg('category', 'Category'), catSelect));
 
         const pageSelect = document.createElement('select');
         pageSelect.className = 'bookmark-inline-select';
@@ -5108,7 +5109,7 @@ class Dashboard {
             if (Number(page.id) === currentPageId) o.selected = true;
             pageSelect.appendChild(o);
         });
-        form.appendChild(mkField('Page', pageSelect));
+        form.appendChild(mkField(cfg('page', 'Page'), pageSelect));
 
         const reloadCatSelectForPage = async (pageId) => {
             const isCurrentPage = Number(pageId) === currentPageId;
@@ -5145,7 +5146,7 @@ class Dashboard {
         pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
         const pinLabel = document.createElement('label');
         pinLabel.htmlFor = pinInput.id;
-        pinLabel.textContent = 'Pinned';
+        pinLabel.textContent = cfg('pinnedShort', 'Pinned');
         pinWrap.appendChild(pinInput);
         pinWrap.appendChild(pinLabel);
         form.appendChild(pinWrap);
@@ -5158,7 +5159,7 @@ class Dashboard {
         statusWrap.className = 'bookmark-inline-field bookmark-inline-check';
         const statusLabel = document.createElement('label');
         statusLabel.htmlFor = statusInput.id;
-        statusLabel.textContent = 'Check status';
+        statusLabel.textContent = cfg('statusCheck', 'Status check');
         statusWrap.appendChild(statusInput);
         statusWrap.appendChild(statusLabel);
         form.appendChild(statusWrap);
@@ -5169,7 +5170,7 @@ class Dashboard {
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
-        saveBtn.textContent = 'Save';
+        saveBtn.textContent = cfg('saveChanges', 'Save');
         saveBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             await this.commitBookmarkInlineEdit(bookmarkRef, {
@@ -5190,7 +5191,7 @@ class Dashboard {
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'bookmark-inline-action-btn';
-        cancelBtn.textContent = 'Cancel';
+        cancelBtn.textContent = this.formatDashboardLabel('cancel', {}, 'Cancel');
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             this.cancelBookmarkInlineEdit(row, bookmarkRef);
@@ -5199,7 +5200,7 @@ class Dashboard {
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
-        deleteBtn.textContent = 'Delete';
+        deleteBtn.textContent = cfg('delete', 'Delete');
         if (bookmarkRef.scope !== 'current') {
             deleteBtn.style.display = 'none';
         }
@@ -5214,7 +5215,11 @@ class Dashboard {
 
         const hint = document.createElement('span');
         hint.className = 'bookmark-inline-hint';
-        hint.innerHTML = '<kbd>Ctrl+Enter</kbd> save &nbsp;·&nbsp; <kbd>Esc</kbd> cancel';
+        hint.textContent = this.formatDashboardLabel(
+            'inlineEditHint',
+            {},
+            'Ctrl+Enter to save · Esc to cancel'
+        );
         actions.appendChild(hint);
 
         form.appendChild(actions);
@@ -5633,15 +5638,15 @@ class Dashboard {
 
         let confirmed = false;
         if (window.AppModal && typeof window.AppModal.danger === 'function') {
-            const safeName = String(bookmark.name || 'Bookmark').replace(/</g, '');
+            const safeName = String(bookmark.name || this.bookmarkFallbackName()).replace(/</g, '');
             confirmed = await window.AppModal.danger({
-                title: 'Delete bookmark',
-                message: `Remove "${safeName}"?`,
-                confirmText: 'Delete',
-                cancelText: 'Cancel'
+                title: this.configLabel('removeBookmarkTitle', 'Remove bookmark'),
+                message: this.formatDashboardLabel('deleteBookmarkConfirm', { name: safeName }, `Remove "${safeName}"?`),
+                confirmText: this.configLabel('delete', 'Delete'),
+                cancelText: this.formatDashboardLabel('cancel', {}, 'Cancel')
             });
         } else {
-            confirmed = window.confirm('Delete this bookmark?');
+            confirmed = window.confirm(this.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));
         }
 
         if (!confirmed) {
@@ -5726,6 +5731,17 @@ class Dashboard {
             text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
         });
         return text;
+    }
+
+    configLabel(key, fallback = '') {
+        const fullKey = `config.${key}`;
+        const value = this.language?.t(fullKey);
+        return value && value !== fullKey ? value : fallback;
+    }
+
+    bookmarkFallbackName() {
+        return this.configLabel('detailBookmarkFallback', '')
+            || this.formatDashboardLabel('bookmarkLinkFallback', {}, 'Bookmark');
     }
 
     /**
@@ -5855,7 +5871,7 @@ class Dashboard {
                 ${openToolbarHtml}
                 <div class="recent-bookmarks-modal-list">
                     ${recentBookmarks.map((bookmark, index) => {
-                        const safeName = this.escapeHtml(bookmark.name || 'Bookmark');
+                        const safeName = this.escapeHtml(bookmark.name || this.bookmarkFallbackName());
                         const safeUrl = this.escapeHtml(bookmark.url || '#');
                         const safeCategory = this.escapeHtml(bookmark.category || (this.language.t('dashboard.uncategorized') || 'Other'));
                         const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';

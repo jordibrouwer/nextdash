@@ -2288,13 +2288,6 @@ class ConfigManager {
         }
     }
 
-    findBookmarkInAllCaches(bookmark, pageId = null) {
-        return this.bookmarkStore.findByUrl(bookmark, pageId ?? this.currentPageId);
-    }
-
-    /** @deprecated Single store — no separate caches to sync. */
-    syncTagsFromAllBookmarksIntoCurrentPage() {}
-
     async saveBookmarksPage(pageId, bookmarks) {
         if (Array.isArray(bookmarks)) {
             this.bookmarkStore.setPage(pageId, bookmarks);
@@ -2302,15 +2295,9 @@ class ConfigManager {
         await this.bookmarkStore.persistPage(pageId, (fn) => this.withRetry(fn));
     }
 
-    /** @deprecated Single store — bookmark objects are shared across tabs. */
-    syncBookmarkTagsToAllCaches() {}
-
     async saveAllBookmarkPages() {
         await this.bookmarkStore.persistAllPages((fn) => this.withRetry(fn));
     }
-
-    /** @deprecated Single store — page loads update the store directly. */
-    syncPageBookmarksIntoAllCache() {}
 
     async loadPageBookmarks(pageId) {
         try {
