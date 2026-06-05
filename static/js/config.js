@@ -5387,52 +5387,34 @@ class ConfigManager {
         });
     }
 
-    /** Settings that visibly change the dashboard — offer preview after save when any differ. */
-    _dashboardPreviewSettingKeys() {
-        return [
-            'theme', 'layoutPreset', 'densityMode', 'fontSize', 'fontPreset', 'fontWeight',
-            'packedColumns', 'backgroundOpacity', 'showBackgroundDots', 'animationsEnabled',
-            'showIcons', 'showTitle', 'hyprMode', 'showPageTabs', 'showPageNamesInTabs',
-            'autoDarkMode', 'sortMethod', 'alwaysCollapseCategories', 'showLinkPreviewCards',
-            'linkPreviewHoverDelayMs', 'buttonBarPosition', 'themeIconStyling',
-            'enableCustomFont', 'customFontPath', 'dashboardTitle', 'customTitle',
-        ];
+    _configT(key, fallback) {
+        const value = this.language?.t(key);
+        return value && value !== key ? value : fallback;
     }
 
-    shouldOfferDashboardPreview(preSaveSnapshot) {
-        if (!preSaveSnapshot?.settingsData) return false;
-
-        const before = preSaveSnapshot.settingsData;
-        const after = this.settingsData || {};
-
-        for (const key of this._dashboardPreviewSettingKeys()) {
-            const prev = before[key];
-            const next = after[key];
-            if (key === 'themeIconStyling') {
-                if (JSON.stringify(prev || {}) !== JSON.stringify(next || {})) return true;
-            } else if (prev !== next) {
-                return true;
-            }
-        }
-
-        const pageVisualKeys = ['name', 'icon', 'color'];
-        const beforePages = preSaveSnapshot.pagesData || [];
-        const afterPages = this.pagesData || [];
-        if (beforePages.length !== afterPages.length) return true;
-        for (let i = 0; i < beforePages.length; i += 1) {
-            const bp = beforePages[i];
-            const ap = afterPages.find((p) => Number(p?.id) === Number(bp?.id));
-            if (!ap) return true;
-            for (const key of pageVisualKeys) {
-                if ((bp?.[key] || '') !== (ap?.[key] || '')) return true;
-            }
-        }
-
-        return false;
+    goToDashboard() {
+        window.location.href = '/';
     }
 
-    openDashboardPreview() {
-        window.open('/', '_blank', 'noopener,noreferrer');
+    buildConfigSaveFeedback(duplicateUrls = []) {
+        const hasDuplicates = Array.isArray(duplicateUrls) && duplicateUrls.length > 0;
+        return {
+            message: hasDuplicates
+                ? this._configT(
+                    'config.configSavedReturnDashboardDuplicates',
+                    'Settings saved. Duplicate bookmark URLs detected — return to the dashboard to review.'
+                )
+                : this._configT(
+                    'config.configSavedReturnDashboard',
+                    'Settings saved — return to the dashboard to see changes.'
+                ),
+            type: hasDuplicates ? 'warning' : 'success',
+            options: {
+                actionLabel: this._configT('config.goToDashboard', 'Open dashboard'),
+                durationMs: 10000,
+                onAction: () => this.goToDashboard(),
+            },
+        };
     }
 
     async saveChanges() {
@@ -5440,7 +5422,6 @@ class ConfigManager {
         if (conflicts.hasConflicts) {
             return;
         }
-        const preSaveSnapshot = this.savedSnapshot;
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
             saveStatus.textContent = 'Saving...';
@@ -5488,18 +5469,8 @@ class ConfigManager {
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.refreshPageDropdowns();
             this.signalDashboardSettingsUpdated('settings-saved');
-            const savedMessage = duplicateUrls.length > 0
-                ? 'Configuration saved. Duplicate bookmark URLs detected.'
-                : this.language.t('config.configSaved');
-            const savedType = duplicateUrls.length > 0 ? 'warning' : 'success';
-            const toastOptions = this.shouldOfferDashboardPreview(preSaveSnapshot)
-                ? {
-                    actionLabel: this.language.t('config.previewDashboard'),
-                    durationMs: 10000,
-                    onAction: () => this.openDashboardPreview(),
-                }
-                : {};
-            this.ui.showNotification(savedMessage, savedType, toastOptions);
+            const saveFeedback = this.buildConfigSaveFeedback(duplicateUrls);
+            this.ui.showNotification(saveFeedback.message, saveFeedback.type, saveFeedback.options);
             this.clearDirty();
             this.flashSavedIndicator();
             this.undoSnapshot = null;

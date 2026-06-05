@@ -370,7 +370,7 @@ class Dashboard {
                         sessionStorage.removeItem(this.pendingStructureSyncKey);
                         sessionStorage.removeItem(this.pendingSettingsSyncKey);
                     } catch { /* ignore */ }
-                    this.showSyncToast('Synced config changes.');
+                    this.showSyncToast(this.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
                     return;
                 }
                 if (event.key === this.settingsSyncEventKey) {
@@ -379,7 +379,7 @@ class Dashboard {
                     try {
                         sessionStorage.removeItem(this.pendingSettingsSyncKey);
                     } catch { /* ignore */ }
-                    this.showSyncToast('Applied dashboard settings update.');
+                    this.showSyncToast(this.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
                 }
             } catch (error) {
                 window.location.reload();
@@ -446,7 +446,7 @@ class Dashboard {
                     this.lastAppliedSettingsSyncAt = Math.max(this.lastAppliedSettingsSyncAt, settingsTs);
                     sessionStorage.removeItem(this.pendingSettingsSyncKey);
                 }
-                this.showSyncToast('Synced config changes.');
+                this.showSyncToast(this.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
                 return;
             }
 
@@ -454,7 +454,7 @@ class Dashboard {
                 await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
                 this.lastAppliedSettingsSyncAt = settingsTs;
                 sessionStorage.removeItem(this.pendingSettingsSyncKey);
-                this.showSyncToast('Applied dashboard settings update.');
+                this.showSyncToast(this.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
             }
         } finally {
             this._configReturnRefreshInFlight = false;
