@@ -124,18 +124,18 @@
             </div>
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             <div id="search-matches" class="search-matches"></div>
-            <div class="search-mode-tabs" aria-label="Switch search mode">
+            <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
                 <button class="search-mode-tab" data-mode="search" type="button">
                     <span class="search-mode-tab-key">&gt;</span>
-                    <span class="search-mode-tab-label">search</span>
+                    <span class="search-mode-tab-label" data-i18n="dashboard.searchLabel">search</span>
                 </button>
                 <button class="search-mode-tab" data-mode="command" type="button">
                     <span class="search-mode-tab-key">:</span>
-                    <span class="search-mode-tab-label">commands</span>
+                    <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
                 </button>
                 <button class="search-mode-tab" data-mode="finder" type="button">
                     <span class="search-mode-tab-key">?</span>
-                    <span class="search-mode-tab-label">finders</span>
+                    <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
                 </button>
             </div>
         </div>
@@ -152,25 +152,25 @@
                 <span class="search-button-icon">+</span>
                 <span class="search-button-label" data-i18n="dashboard.addBookmarkShort">bookmark</span>
             </button>
-            <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
+            <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
                 <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
                 <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
             </button>
-            <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" aria-label="Open commands" data-tooltip=": commands">
+            <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands" data-tooltip=": commands">
                 <span class="search-button-icon">:</span>
                 <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
             </button>
-            <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" aria-label="Open finders" data-tooltip="? finders">
+            <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders" data-tooltip="? finders">
                 <span class="search-button-icon">?</span>
                 <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
             </button>
         </div>
         <div class="btn-group btn-group-secondary">
-            <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
+            <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
                 <span class="search-button-icon">*</span>
                 <span class="search-button-label" data-i18n="dashboard.recentLabel">recent</span>
             </button>
-            <button id="help-button" type="button" class="search-button search-button-labeled help-button" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
+            <button id="help-button" type="button" class="search-button search-button-labeled help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
                 <span class="search-button-icon">!</span>
                 <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
             </button>
@@ -186,6 +186,7 @@
             aria-expanded="false"
             aria-haspopup="dialog"
             aria-controls="tag-cloud-modal"
+            data-i18n-aria="dashboard.tagCloudToggleAria"
             data-i18n-tooltip="dashboard.tagCloudToggleTooltip"
             data-tooltip="/ tags"
             title="/ tags"
@@ -221,7 +222,7 @@
     </button>
 
     <!-- What's new FAB (opposite corner from button bar) -->
-    <button id="whats-new-btn" class="whats-new-btn" aria-label="What's new" data-tooltip="what's new">
+    <button id="whats-new-btn" class="whats-new-btn" data-i18n-aria="dashboard.whatsNewAria" aria-label="What's new" data-tooltip="what's new">
         <svg class="whats-new-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>
