@@ -1882,6 +1882,15 @@
         "tagNoneOnBookmark": "none",
         "tagCurrentOnBookmark": "tags",
         "tagMutateHint": "On this bookmark: :tag +name to add, :tag -name to remove",
-        "tagLibraryEmpty": "No tags yet — add tags in config → bookmarks"
+        "tagLibraryEmpty": "No tags yet — add tags in config → bookmarks",
+        "noteNoMatch": "No bookmarks matching \"{query}\"",
+        "noteNoBookmarks": "No bookmarks found",
+        "noteMetaNoNote": "no note",
+        "noteMetaHasNote": "note",
+        "noteModalTitle": "Edit note — {name}",
+        "noteModalPlaceholder": "Add a note…",
+        "noteModalHint": "Ctrl+Enter to save · Esc to cancel",
+        "noteModalSave": "Save note",
+        "noteSavedToast": "Note saved."
     }
 }

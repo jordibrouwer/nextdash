@@ -115,7 +115,8 @@ class Modal {
             showCancel = true,
             modalClass = '',
             modalMaxWidth = '',
-            modalWidth = ''
+            modalWidth = '',
+            initialFocusSelector = null
         } = options;
 
         // Set content
@@ -199,8 +200,19 @@ class Modal {
         document.body.addEventListener('touchmove', this.preventScrollHandler, { passive: false });
         document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
         
-        // Focus on confirm button for keyboard navigation
+        // Focus initial element or confirm button for keyboard navigation
         setTimeout(() => {
+            if (initialFocusSelector) {
+                const initialEl = this.modal.querySelector(initialFocusSelector);
+                if (initialEl && typeof initialEl.focus === 'function') {
+                    initialEl.focus();
+                    if (typeof initialEl.setSelectionRange === 'function' && typeof initialEl.value === 'string') {
+                        const len = initialEl.value.length;
+                        initialEl.setSelectionRange(len, len);
+                    }
+                    return;
+                }
+            }
             confirmButton.focus();
         }, 100);
     }

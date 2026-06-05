@@ -1862,6 +1862,15 @@
         "tagNoneOnBookmark": "keine",
         "tagCurrentOnBookmark": "Tags",
         "tagMutateHint": "An diesem Lesezeichen: :tag +name hinzufügen, :tag -name entfernen",
-        "tagLibraryEmpty": "Noch keine Tags — in Konfig → Lesezeichen hinzufügen"
+        "tagLibraryEmpty": "Noch keine Tags — in Konfig → Lesezeichen hinzufügen",
+        "noteNoMatch": "Keine Lesezeichen passend zu \"{query}\"",
+        "noteNoBookmarks": "Keine Lesezeichen gefunden",
+        "noteMetaNoNote": "keine Notiz",
+        "noteMetaHasNote": "Notiz",
+        "noteModalTitle": "Notiz bearbeiten — {name}",
+        "noteModalPlaceholder": "Notiz hinzufügen…",
+        "noteModalHint": "Strg+Eingabe speichern · Esc abbrechen",
+        "noteModalSave": "Notiz speichern",
+        "noteSavedToast": "Notiz gespeichert."
     }
 }

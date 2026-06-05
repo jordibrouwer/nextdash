@@ -1861,6 +1861,15 @@
         "tagNoneOnBookmark": "aucun",
         "tagCurrentOnBookmark": "tags",
         "tagMutateHint": "Sur ce favori : :tag +nom pour ajouter, :tag -nom pour retirer",
-        "tagLibraryEmpty": "Pas encore de tags — ajoutez-en dans config → favoris"
+        "tagLibraryEmpty": "Pas encore de tags — ajoutez-en dans config → favoris",
+        "noteNoMatch": "Aucun favori correspondant à « {query} »",
+        "noteNoBookmarks": "Aucun favori trouvé",
+        "noteMetaNoNote": "pas de note",
+        "noteMetaHasNote": "note",
+        "noteModalTitle": "Modifier la note — {name}",
+        "noteModalPlaceholder": "Ajouter une note…",
+        "noteModalHint": "Ctrl+Entrée pour enregistrer · Échap pour annuler",
+        "noteModalSave": "Enregistrer la note",
+        "noteSavedToast": "Note enregistrée."
     }
 }

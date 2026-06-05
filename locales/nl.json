@@ -1870,6 +1870,15 @@
         "tagNoneOnBookmark": "geen",
         "tagCurrentOnBookmark": "tags",
         "tagMutateHint": "Op deze bladwijzer: :tag +naam toevoegen, :tag -naam verwijderen",
-        "tagLibraryEmpty": "Nog geen tags — voeg tags toe in config → bladwijzers"
+        "tagLibraryEmpty": "Nog geen tags — voeg tags toe in config → bladwijzers",
+        "noteNoMatch": "Geen bladwijzers die overeenkomen met \"{query}\"",
+        "noteNoBookmarks": "Geen bladwijzers gevonden",
+        "noteMetaNoNote": "geen notitie",
+        "noteMetaHasNote": "notitie",
+        "noteModalTitle": "Notitie bewerken — {name}",
+        "noteModalPlaceholder": "Notitie toevoegen…",
+        "noteModalHint": "Ctrl+Enter om op te slaan · Esc om te annuleren",
+        "noteModalSave": "Notitie opslaan",
+        "noteSavedToast": "Notitie opgeslagen."
     }
 }
