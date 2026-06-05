@@ -1543,16 +1543,6 @@ func (fs *FileStore) SaveColors(colors ColorTheme) {
 	os.WriteFile(fs.colorsFile, data, 0644)
 }
 
-// Analytics and metadata types
-type BookmarkAnalytics struct {
-	MostOpened     []BookmarkWithCount `json:"mostOpened"`
-	LeastUsed      []BookmarkWithCount `json:"leastUsed"`
-	StaleBookmarks []BookmarkWithCount `json:"staleBookmarks"`
-	TotalBookmarks int                 `json:"totalBookmarks"`
-	UnusedCount    int                 `json:"unusedCount"`
-	StaleCount     int                 `json:"staleCount"`
-}
-
 type HealthSummary struct {
 	TotalBookmarks      int `json:"totalBookmarks"`
 	HealthyCount        int `json:"healthyCount"`
@@ -1594,14 +1584,6 @@ type BookmarkHealthReport struct {
 	Summary         HealthSummary    `json:"summary"`
 	Issues          []HealthIssue    `json:"issues"`
 	DuplicateGroups []DuplicateGroup `json:"duplicateGroups"`
-}
-
-type BookmarkWithCount struct {
-	Name       string `json:"name"`
-	URL        string `json:"url"`
-	OpenCount  int    `json:"openCount"`
-	LastOpened int64  `json:"lastOpened,omitempty"`
-	PageID     int    `json:"pageId,omitempty"`
 }
 
 type DuplicateWarning struct {

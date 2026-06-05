@@ -64,7 +64,6 @@ func main() {
 	r.HandleFunc("/api/ping", handlers.PingURL).Methods("GET")
 
 	// New feature endpoints
-	r.HandleFunc("/api/analytics", handlers.GetAnalytics).Methods("GET")
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")

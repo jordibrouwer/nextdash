@@ -282,8 +282,7 @@ class Dashboard {
         this.scheduleBackupTip();
 
             // Initialize new features
-            this.analytics = new BookmarkAnalytics(this);
-            this.analytics.loadAnalytics();
+            this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
             this.buildSearchIndex();
         
