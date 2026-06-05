@@ -95,7 +95,7 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 - `:` — command palette
 - `?` — finders (e.g. `?g query` to search Google)
 - `*` — recent bookmarks panel
-- `! or F1 or Ctrl+/` — keyboard cheat sheet (filterable with a type-to-search input)
+- `! or F1` — keyboard cheat sheet (filterable with a type-to-search input)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
 - `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)

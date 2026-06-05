@@ -1555,11 +1555,6 @@ class Dashboard {
             
             // Don't trigger if Ctrl, Alt, or Meta are pressed (but allow Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
-                if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.showKeyboardCheatSheet();
-                }
                 return;
             }
 
@@ -1903,7 +1898,7 @@ class Dashboard {
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'Ctrl+/'] },
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
             { id: 'launcher-toggle-btn', labelKey: 'dashboard.tooltipLauncher', keys: ['⊞'] }
         ];
 
@@ -2254,7 +2249,7 @@ class Dashboard {
             ['tipCheatsheetBang', 'Tip: <code>!</code> cheatsheet'],
             ['tipNavigateArrows', 'Tip: <code>↑/↓</code> navigate bookmarks'],
             ['tipEditSemicolon', 'Tip: <code>;</code> edit bookmark (highlighted row or focused link)'],
-            ['tipCheatsheetCtrlSlash', 'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet'],
+            ['tipCheatsheetCtrlSlash', 'Tip: <code>F1</code> cheatsheet'],
             ['tipPreviewBracket', 'Tip: <code>[</code> preview card on keyboard-selected bookmark'],
             ['tipCopyUrlCtrlC', 'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark'],
             ['tipDragStripInlineEdit', 'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'],
@@ -2927,7 +2922,7 @@ class Dashboard {
                 item(':sort <method>', 'caSort', 'Change sort order — order / az / recent / custom'),
             ]),
             section('sectionOther', 'Other', [
-                item('! or F1 or Ctrl + /', 'otCheatSheet', 'This cheat sheet'),
+                item('! or F1', 'otCheatSheet', 'This cheat sheet'),
                 item('★ (corner button)', 'otWhatsNew', 'Open what\'s new release notes'),
                 item('Ctrl + V (dashboard)', 'otPasteUrlDashboard', 'Paste URL anywhere on the dashboard to quick-add a bookmark'),
                 item('1–8 (config page)', 'otConfigTabs', 'Jump between config tabs'),

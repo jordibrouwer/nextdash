@@ -203,7 +203,7 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 | `?` | `?` | Finders (external search shortcuts) |
 | `>` | `>` | Search |
 | `*` | `*` | Recent bookmarks on this page |
-| `!` | `!` / `F1` / `Ctrl+/` | Keyboard cheat sheet |
+| `!` | `!` / `F1` | Keyboard cheat sheet |
 | `⊞` | — | Toggle launcher layout (if enabled) |
 | `+` | `+` | Full new-bookmark modal |
 
@@ -354,7 +354,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 ### 9.4 Cheat sheet
 
-Press **`!`**, **`F1`**, or **`Ctrl+/`**. Type in the filter box to narrow the list.
+Press **`!`** or **`F1`**. Type in the filter box to narrow the list.
 
 Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link).
 
@@ -744,7 +744,7 @@ nextDash switches to the mobile layout on narrow viewports (≤768px), portrait 
 | **Dashboard footer** | **Search** + **+ Bookmark** only | Search, Commands, Finders, Recent, Help, tag cloud `/`, rotating tips |
 | **Commands (`:`) & finders (`?`)** | Open Search → overlay tabs `>` / `:` / `?` | Footer buttons or keys |
 | **Recent bookmarks (`*`)** | `:open recent …` in command mode (or `*` with a keyboard) | Recent footer button or `*` |
-| **Cheat sheet (`!`)** | — | Footer Help or `!` / `Ctrl+/` |
+| **Cheat sheet (`!`)** | — | Footer Help or `!` / `F1` |
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
 | **Page tabs in header** | **Pages** overview sheet only | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
