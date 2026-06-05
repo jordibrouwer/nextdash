@@ -305,13 +305,124 @@ body {
 }
 
 .tag-filter-banner {
-    font-family: var(--font-family-main);
-    font-size: var(--font-size-category);
-    font-weight: var(--font-weight-semibold);
-    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
     padding: 0.15rem 0.5rem 0.35rem;
     flex-shrink: 0;
     width: 100%;
+}
+
+.tag-filter-indicator-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0.22rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.92);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+.tag-filter-indicator-prefix {
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+.tag-filter-indicator-tag {
+    color: var(--accent-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-filter-indicator-count {
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-normal);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    white-space: nowrap;
+}
+
+.tag-filter-indicator-count::before {
+    content: '·';
+    margin-right: 0.28rem;
+    opacity: 0.55;
+}
+
+.tag-filter-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.tag-filter-indicator-chip {
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.tag-filter-indicator-chip:hover,
+.tag-filter-indicator-chip:focus-visible {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-secondary));
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.tag-filter-indicator-clear {
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    color: var(--text-secondary);
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.tag-filter-indicator-clear:hover,
+.tag-filter-indicator-clear:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    outline: none;
+}
+
+body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
+    flex-wrap: wrap;
+    row-gap: 0.15rem;
+    max-width: min(9rem, calc(100vw - 2 * var(--corner-fab-edge)));
+}
+
+.tag-cloud-active-badge {
+    display: block;
+    width: 100%;
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-semibold);
+    color: var(--accent-primary);
+    line-height: 1.1;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
 }
 
 #dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {

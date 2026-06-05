@@ -266,6 +266,7 @@ class Dashboard {
         this.renderDashboard({ animate: false });
         this.setupPageShortcuts();
         this.setupTagFilterEscapeShortcut();
+        this.setupTagFilterIndicator();
         this.setupReorderUndoShortcut();
         this.setupPasteToQuickAdd();
         if (typeof QuickAddWidget === 'function') {
@@ -1380,6 +1381,7 @@ class Dashboard {
             document.body.removeAttribute('data-tag-filter');
         }
         window.DashboardTagCloud?.setActiveTag?.(normalized);
+        this.updateTagFilterIndicator();
 
         if (changed) {
             this.renderDashboard({ animate: Boolean(animate) });
@@ -1426,14 +1428,6 @@ class Dashboard {
         const gridLayout = this.syncDashboardGridLayout();
         container.classList.add('tag-filter-view');
 
-        const banner = document.createElement('div');
-        banner.className = 'tag-filter-banner';
-        const bannerLabel = this.language?.t?.('dashboard.tagFilterBanner', 'Tag: {tag} — {count} bookmarks')
-            .replace('{tag}', tag)
-            .replace('{count}', String(matched.length));
-        banner.textContent = `// ${bannerLabel}`;
-        container.appendChild(banner);
-
         if (matched.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'empty-state empty-state--tag-filter';
@@ -1443,6 +1437,7 @@ class Dashboard {
                 this.language.applyTranslations();
             }
             this.updateSearchComponent();
+            this.updateTagFilterIndicator();
             return;
         }
 
@@ -1475,6 +1470,7 @@ class Dashboard {
         }
 
         this.updateSearchComponent();
+        this.updateTagFilterIndicator();
         if (this.statusMonitor) {
             if (this.statusMonitorInitialized) {
                 this.statusMonitor.updateBookmarks(matched);
@@ -1662,6 +1658,87 @@ class Dashboard {
             e.stopPropagation();
             window.DashboardTagCloud?.clearDashboardFilter?.();
         });
+    }
+
+    setupTagFilterIndicator() {
+        this.updateTagFilterIndicator();
+    }
+
+    formatTagFilterCountLabel(count) {
+        if (count === 1) {
+            return this.language?.t('dashboard.tagFilterCountOne') || '1 bookmark';
+        }
+        return (this.language?.t('dashboard.tagFilterCountMany') || '{count} bookmarks')
+            .replace('{count}', String(count));
+    }
+
+    updateTagFilterIndicator() {
+        const wrap = document.getElementById('tag-filter-indicator');
+        if (!wrap) return;
+        this.tagFilterIndicator = wrap;
+
+        const tag = this._tagFilter;
+        wrap.replaceChildren();
+
+        if (!tag) {
+            wrap.hidden = true;
+            this.tagFilterIndicatorChip = null;
+            this.tagFilterIndicatorClear = null;
+            return;
+        }
+
+        const count = this.getBookmarksForTagFilter(tag).length;
+        const countLabel = this.formatTagFilterCountLabel(count);
+        const chipAria = (this.language?.t('dashboard.tagFilterChipAria')
+            || 'Tag filter active: {tag}, {count} on this page')
+            .replace('{tag}', tag)
+            .replace('{count}', countLabel);
+        const clearAria = this.language?.t('dashboard.tagFilterChipClear') || 'Clear tag filter';
+
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'tag-filter-indicator-chip';
+        chip.setAttribute('aria-label', chipAria);
+
+        const prefix = document.createElement('span');
+        prefix.className = 'tag-filter-indicator-prefix';
+        prefix.setAttribute('aria-hidden', 'true');
+        prefix.textContent = '#';
+
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag-filter-indicator-tag';
+        tagEl.textContent = tag;
+
+        const countEl = document.createElement('span');
+        countEl.className = 'tag-filter-indicator-count';
+        countEl.textContent = countLabel;
+
+        chip.append(prefix, tagEl, countEl);
+        chip.addEventListener('click', () => {
+            if (window.DashboardTagCloud?.isEligible?.()) {
+                window.DashboardTagCloud.openModal();
+            }
+        });
+
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'tag-filter-indicator-clear';
+        clearBtn.setAttribute('aria-label', clearAria);
+        clearBtn.textContent = '×';
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.clearTagFilter();
+            window.DashboardTagCloud?.restoreBookmarkFocus?.();
+        });
+
+        wrap.append(chip, clearBtn);
+        wrap.hidden = false;
+
+        this.tagFilterIndicatorChip = chip;
+        this.tagFilterIndicatorTag = tagEl;
+        this.tagFilterIndicatorCount = countEl;
+        this.tagFilterIndicatorClear = clearBtn;
     }
 
     setupReorderUndoShortcut() {
@@ -3002,6 +3079,8 @@ class Dashboard {
             this.renderTagFilterDashboard(container, options);
             return;
         }
+
+        this.updateTagFilterIndicator();
 
         // Group bookmarks by category
         const groupedBookmarks = this.groupBookmarksByCategory();

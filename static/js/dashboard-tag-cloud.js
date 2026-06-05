@@ -350,6 +350,28 @@
             this.toggle.classList.toggle('is-active', this.modalOpen || filtered);
             this.toggle.setAttribute('aria-expanded', this.modalOpen ? 'true' : 'false');
             document.body.setAttribute('data-tag-cloud-modal-open', this.modalOpen ? 'true' : 'false');
+            document.body.setAttribute('data-tag-filter-active', filtered ? 'true' : 'false');
+
+            const badge = document.getElementById('tag-cloud-active-badge');
+            if (badge) {
+                if (filtered && this.activeTag) {
+                    badge.hidden = false;
+                    badge.textContent = `#${this.activeTag}`;
+                    badge.setAttribute('aria-hidden', 'false');
+                } else {
+                    badge.hidden = true;
+                    badge.textContent = '';
+                    badge.setAttribute('aria-hidden', 'true');
+                }
+            }
+
+            if (filtered && this.activeTag) {
+                const tip = t('dashboard.tagFilterActiveTooltip', 'Filtering: #{tag}').replace('{tag}', this.activeTag);
+                this.toggle.setAttribute('data-tooltip', tip);
+            } else {
+                const defaultTip = t('dashboard.tagCloudToggleTooltip', '/ tags');
+                this.toggle.setAttribute('data-tooltip', defaultTip);
+            }
         },
 
         onToggleClick() {
