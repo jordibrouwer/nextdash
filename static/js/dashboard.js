@@ -1748,6 +1748,14 @@ class Dashboard {
         this.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
     }
 
+    openEmptyStateCommand(commandPrefix) {
+        if (!this.searchComponent || !commandPrefix) return;
+        this.searchComponent.openSearchInterface();
+        this.searchComponent.currentQuery = commandPrefix;
+        this.searchComponent.updateSearch();
+        this.searchComponent.renderSearchMatches();
+    }
+
     refreshAddBookmarkToolbarLabel() {
         const btn = document.getElementById('quick-add-toolbar-btn');
         const label = btn?.querySelector('.search-button-label');
@@ -2153,85 +2161,86 @@ class Dashboard {
             return;
         }
 
-        const priorityTips = [
-            'Tip: <code>*</code> recent',
-            ...[
-                ['dashboard.tipOpenLastRecent', 'Tip: <code>*</code> shows recent bookmarks — <code>:open last 5</code> in command mode opens them in tabs'],
-            ].map(([key, fallback]) => {
-                const v = this.language?.t?.(key);
-                return v && v !== key ? v : fallback;
-            }).filter(Boolean),
-            'Tip: <code>!</code> cheatsheet',
-            'Tip: <code>↑/↓</code> navigate bookmarks',
-            'Tip: <code>;</code> edit bookmark (highlighted row or focused link)',
-            'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet',
-            'Tip: <code>[</code> preview card on keyboard-selected bookmark',
-            'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark',
-            'Tip: left strip = drag reorder; long-press row (not strip) = inline edit',
-            ...[
-                ['dashboard.tipNewBookmarkAmpersand', null],
-            ].map(([key]) => { const v = this.language?.t?.(key); return v && v !== key ? v : null; }).filter(Boolean),
-        ];
-        const normalTips = [
-            'Tip: <code>&gt;</code> search, <code>:</code> commands, <code>?</code> finders',
-            'Tip: <code>&gt;</code> open search',
-            'Tip: <code>?</code> open finders',
-            'Tip: <code>:</code> open commands',
-            ...(this.settings?.showTagCloudButton === true
-                ? [['dashboard.tipTagCloudSlash', 'Tip: press <code>/</code> for the tag word cloud (desktop) — pick a tag to filter bookmarks on the dashboard']]
-                    .map(([key, fallback]) => {
-                        const v = this.language?.t?.(key);
-                        return v && v !== key ? v : fallback;
-                    })
-                    .filter(Boolean)
-                : []),
-            'Tip: <code>1-9</code> jump to page',
-            'Tip: <code>,</code> page overview — see all pages with bookmark counts',
-            'Tip: <code>&amp;</code> quick-add — naam | url | shortcut in één invoer',
-            'Tip: <code>Shift+←/→</code> switch page',
-            'Tip: <code>Enter</code> open selected bookmark',
-            'Tip: <code>Space</code> open selected bookmark',
-            'Tip: <code>;</code> inline-edit selected bookmark',
-            'Tip: hover bookmark (name/icon area) to load preview when enabled',
-            'Tip: <code>Esc</code> cancel current state',
-            'Tip: <code>Alt+↑/↓</code> reorder in config',
-            'Tip: use <code>category:work</code> in search',
-            'Tip: use <code>tag:work</code> in search to filter by tag',
-            'Tip: use <code>status:online</code> in search',
-            'Tip: use <code>page:2</code> in search',
-            'Tip: use <code>?g term</code> finder shortcut',
-            'Tip: add tags to bookmarks in <code>config</code> → bookmarks',
-            'Tip: create dynamic collections in <code>config</code> → collections',
-            'Tip: enable tag collections in <code>config</code> → general → Smart Collections',
-            'Tip: backups under <code>config</code> → general → Backup & restore',
-            'Tip: click a category header to collapse or expand it',
-            'Tip: global shortcuts from all pages in <code>config</code> → general → Dashboard',
-            'Tip: layout preset & density in <code>config</code> → general → Basics',
-            'Tip: long-press a bookmark row (not the drag strip) to edit inline',
-            'Tip: visit <code>health</code> page to find broken links and duplicates',
-            'Tip: use filters in <code>health</code> page to focus on specific issues',
-            'Tip: <code>refresh</code> in health page re-scans all bookmarks',
-            'Tip: check health page <code>stale</code> bookmarks you haven\'t used recently',
-            'Tip: merge duplicate bookmarks in health page bulk actions',
-            'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly',
-            'Tip: double-click a page tab or category title to rename it inline',
-            ...[['dashboard.tipUndoDelete', null]].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean),
-            'Tip: hover a preview card and click the clipboard icon to copy the URL',
-            'Tip: compact/dense mode shows an open-count badge on each bookmark',
-            'Tip: use the search bar in config → bookmarks to filter by name, URL, tag, or note',
-            'Tip: the dark/light toggle button in the header flips the theme variant instantly',
-            'Tip: use <code>favicon</code> button in health view to refresh a bookmark\'s icon',
-            'Tip: add tags when creating a bookmark via <code>:new</code> — autocomplete suggests existing tags',
-            ...[
-                ['dashboard.tipFaviconToggle', null],
-                ['dashboard.tipPackedColumns', null],
-                ['dashboard.tipHideShortcutPin', null],
-                ['dashboard.tipKeyboardTab', null],
-                ['dashboard.tipDisableTips', null],
-                ['dashboard.tipDisableTipsAlt', null],
-                ['dashboard.tipNewBookmarkAmpersandShort', null],
-            ].map(([key]) => { const v = this.language.t(key); return v !== key ? v : null; }).filter(Boolean)
-        ];
+        const tip = (key, fallback = '') => {
+            const fullKey = `dashboard.${key}`;
+            const v = this.language?.t?.(fullKey);
+            if (v && v !== fullKey) return v;
+            return fallback || null;
+        };
+        const tips = (...entries) => entries.map(([key, fb]) => tip(key, fb)).filter(Boolean);
+        const tipKeys = (...keys) => keys.map((key) => tip(key)).filter(Boolean);
+
+        const priorityTips = tips(
+            ['tipRecentStarShort', 'Tip: <code>*</code> recent'],
+            ['tipOpenLastRecent', 'Tip: <code>*</code> shows recent bookmarks — <code>:open last 5</code> in command mode opens them in tabs'],
+            ['tipCheatsheetBang', 'Tip: <code>!</code> cheatsheet'],
+            ['tipNavigateArrows', 'Tip: <code>↑/↓</code> navigate bookmarks'],
+            ['tipEditSemicolon', 'Tip: <code>;</code> edit bookmark (highlighted row or focused link)'],
+            ['tipCheatsheetCtrlSlash', 'Tip: <code>Ctrl+/</code> or <code>F1</code> cheatsheet'],
+            ['tipPreviewBracket', 'Tip: <code>[</code> preview card on keyboard-selected bookmark'],
+            ['tipCopyUrlCtrlC', 'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark'],
+            ['tipDragStripInlineEdit', 'Tip: left strip = drag reorder; long-press row (not strip) = inline edit'],
+        ).concat(tipKeys('tipNewBookmarkAmpersand'));
+
+        const normalTips = tips(
+            ['tipSearchCommandFinder', 'Tip: <code>&gt;</code> search, <code>:</code> commands, <code>?</code> finders'],
+            ['tipOpenSearch', 'Tip: <code>&gt;</code> open search'],
+            ['tipOpenFinders', 'Tip: <code>?</code> open finders'],
+            ['tipOpenCommands', 'Tip: <code>:</code> open commands'],
+            ['tipJumpToPage', 'Tip: <code>1-9</code> jump to page'],
+            ['tipPageOverview', 'Tip: <code>,</code> page overview — see all pages with bookmark counts'],
+            ['tipQuickAddAmpersand', 'Tip: <code>&amp;</code> quick-add — name | url | shortcut in one field'],
+            ['tipSwitchPage', 'Tip: <code>Shift+←/→</code> switch page'],
+            ['tipEnterOpenBookmark', 'Tip: <code>Enter</code> open selected bookmark'],
+            ['tipSpaceOpenBookmark', 'Tip: <code>Space</code> open selected bookmark'],
+            ['tipInlineEditSemicolon', 'Tip: <code>;</code> inline-edit selected bookmark'],
+            ['tipHoverPreview', 'Tip: hover bookmark (name/icon area) to load preview when enabled'],
+            ['tipEscCancel', 'Tip: <code>Esc</code> cancel current state'],
+            ['tipAltReorderConfig', 'Tip: <code>Alt+↑/↓</code> reorder in config'],
+            ['tipSearchCategory', 'Tip: use <code>category:work</code> in search'],
+            ['tipSearchTag', 'Tip: use <code>tag:work</code> in search to filter by tag'],
+            ['tipSearchStatus', 'Tip: use <code>status:online</code> in search'],
+            ['tipSearchPage', 'Tip: use <code>page:2</code> in search'],
+            ['tipFinderShortcut', 'Tip: use <code>?g term</code> finder shortcut'],
+            ['tipAddTagsConfig', 'Tip: add tags to bookmarks in <code>config</code> → bookmarks'],
+            ['tipDynamicCollections', 'Tip: create dynamic collections in <code>config</code> → collections'],
+            ['tipTagCollections', 'Tip: enable tag collections in <code>config</code> → general → Smart Collections'],
+            ['tipBackupsConfig', 'Tip: backups under <code>config</code> → general → Backup & restore'],
+            ['tipCollapseCategory', 'Tip: click a category header to collapse or expand it'],
+            ['tipGlobalShortcuts', 'Tip: global shortcuts from all pages in <code>config</code> → general → Dashboard'],
+            ['tipLayoutPreset', 'Tip: layout preset & density in <code>config</code> → general → Basics'],
+            ['tipLongPressInlineEdit', 'Tip: long-press a bookmark row (not the drag strip) to edit inline'],
+            ['tipHealthPage', 'Tip: visit <code>health</code> page to find broken links and duplicates'],
+            ['tipHealthFilters', 'Tip: use filters in <code>health</code> page to focus on specific issues'],
+            ['tipHealthRefresh', 'Tip: <code>refresh</code> in health page re-scans all bookmarks'],
+            ['tipHealthStale', 'Tip: check health page <code>stale</code> bookmarks you haven\'t used recently'],
+            ['tipHealthMerge', 'Tip: merge duplicate bookmarks in health page bulk actions'],
+            ['tipCommandNote', 'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly'],
+            ['tipInlineRename', 'Tip: double-click a page tab or category title to rename it inline'],
+            ['tipPreviewCopyUrl', 'Tip: hover a preview card and click the clipboard icon to copy the URL'],
+            ['tipCompactBadge', 'Tip: compact/dense mode shows an open-count badge on each bookmark'],
+            ['tipConfigSearchBar', 'Tip: use the search bar in config → bookmarks to filter by name, URL, tag, or note'],
+            ['tipThemeToggle', 'Tip: the dark/light toggle button in the header flips the theme variant instantly'],
+            ['tipHealthFavicon', 'Tip: use <code>favicon</code> button in health view to refresh a bookmark\'s icon'],
+            ['tipNewBookmarkTags', 'Tip: add tags when creating a bookmark via <code>:new</code> — autocomplete suggests existing tags'],
+        );
+        if (this.settings?.showTagCloudButton === true) {
+            normalTips.push(...tips(
+                ['tipTagCloudSlash', 'Tip: press <code>/</code> for the tag word cloud (desktop) — pick a tag to filter bookmarks on the dashboard'],
+            ));
+        }
+        normalTips.push(
+            ...tipKeys(
+                'tipUndoDelete',
+                'tipFaviconToggle',
+                'tipPackedColumns',
+                'tipHideShortcutPin',
+                'tipKeyboardTab',
+                'tipDisableTips',
+                'tipDisableTipsAlt',
+                'tipNewBookmarkAmpersandShort',
+            ),
+        );
 
         let normalCounter = 0;
         const run = () => {
@@ -2800,7 +2809,7 @@ class Dashboard {
             ]),
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
-                item('/', 'tagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search'),
+                item('/', 'smTagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search'),
                 item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
                 item(':', 'smCommandPalette', 'Command palette — type a command name to run it'),
                 item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
@@ -2812,7 +2821,9 @@ class Dashboard {
                 item(':new', 'cbNew', 'Open new-bookmark modal (same as + / Ctrl+Shift+A)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
-                item(':tag <name>', 'cbTag', 'Browse bookmarks by tag in the palette (e.g. :tag humor or :tag:humor); :tag +name / :tag -name add or remove on focused bookmark'),
+                item(':tag', 'cbTagList', 'List all tags in the command palette (dashboard layout unchanged)'),
+                item(':tag <name>', 'cbTagBrowse', 'Browse bookmarks by tag in the palette — :tag work or :tag:work'),
+                item(':tag +name / :tag -name', 'cbTagMutate', 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name'),
                 item(':remove', 'cbRemove', 'Delete the focused bookmark'),
                 item(':find <text>', 'cbFind', 'Filter bookmark tiles on the current page — hides tiles that don\'t match name or URL'),
                 item(':open all', 'cbOpenAll', 'Open every bookmark on the current page in new tabs (capped at 15; offers "open all" above that)'),
@@ -3010,11 +3021,15 @@ class Dashboard {
             const emptyPageText = this.language?.t('dashboard.emptyPage') || 'This page is empty';
             const searchLabel = this.language?.t('dashboard.searchLabel') || 'Search';
             const commandNewLabel = this.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
+            const commandTagLabel = this.language?.t('dashboard.emptyStateCommandTag') || 'Browse by tag';
             const searchActionHtml = showKeyboardActions
                 ? `<button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>`
                 : `<button class="empty-state-action-btn" id="empty-state-search" type="button">${searchLabel}</button>`;
             const commandNewHtml = showKeyboardActions
                 ? `<button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>`
+                : '';
+            const commandTagHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-command-tag" type="button"><kbd>:tag</kbd> ${commandTagLabel}</button>`
                 : '';
 
             if (hasBookmarksOnOtherPages) {
@@ -3026,6 +3041,7 @@ class Dashboard {
                             <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark" type="button">${addLabel}</button>
                             ${searchActionHtml}
                             ${commandNewHtml}
+                            ${commandTagHtml}
                         </div>
                         <p class="empty-state-hint">${addHint}</p>
                     </div>
@@ -3037,12 +3053,10 @@ class Dashboard {
                     this.searchComponent?.openSearchInterface();
                 });
                 container.querySelector('#empty-state-command-new')?.addEventListener('click', () => {
-                    if (this.searchComponent) {
-                        this.searchComponent.openSearchInterface();
-                        this.searchComponent.currentQuery = ':new';
-                        this.searchComponent.updateSearch();
-                        this.searchComponent.renderSearchMatches();
-                    }
+                    this.openEmptyStateCommand(':new');
+                });
+                container.querySelector('#empty-state-command-tag')?.addEventListener('click', () => {
+                    this.openEmptyStateCommand(':tag');
                 });
             } else {
                 const freshText = this.language?.t('dashboard.emptyFresh') || 'No bookmarks yet';
