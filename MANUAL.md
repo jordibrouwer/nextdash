@@ -733,13 +733,33 @@ See `extension/README.md` for development notes.
 
 On small screens, config limits to **General** and **Help**; use desktop for full bookmark editing and for **guided config tours** (General and Bookmarks).
 
+Within **General** on phone you only get **language**, **theme**, and **layout basics** — not the full Essentials/Advanced layers.
+
+### Phone vs desktop
+
+nextDash switches to the mobile layout on narrow viewports (≤768px), portrait tablets, or coarse touch pointers. A dismissible banner on dashboard and config summarizes the limits.
+
+| Feature | Phone / touch | Desktop |
+|---------|---------------|---------|
+| **Dashboard footer** | **Search** + **+ Bookmark** only | Search, Commands, Finders, Recent, Help, tag cloud `/`, rotating tips |
+| **Commands (`:`) & finders (`?`)** | Open Search → overlay tabs `>` / `:` / `?` | Footer buttons or keys |
+| **Recent bookmarks (`*`)** | `:open recent …` in command mode (or `*` with a keyboard) | Recent footer button or `*` |
+| **Cheat sheet (`!`)** | — | Footer Help or `!` / `Ctrl+/` |
+| **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
+| **Page tabs in header** | **Pages** overview sheet only | Tab strip + keys `1`–`9` |
+| **Health badge** | Hidden — fix links in config on desktop | Header link |
+| **Config tabs** | **General** (language, theme, layout) + **Help** | Bookmarks, pages, backup, stats, health, theme editor, tours, all settings |
+| **Link preview on hover** | Off | When enabled in settings |
+| **Guided tours & footer tips** | Skipped / hidden | Optional on first visit |
+
 ### Touch gestures
 
 | Gesture | Action |
 |---------|--------|
 | Long-press row | Inline edit |
 | Swipe (if enabled) | Change page |
-| Tap footer buttons | Same as desktop (labels under icons) |
+| Tap **Search** | Open search overlay (with mode tabs on phone) |
+| Tap **+ Bookmark** | Full add-bookmark modal |
 
 Keyboard hints in empty states are hidden on touch.
 
