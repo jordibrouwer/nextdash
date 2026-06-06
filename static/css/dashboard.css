@@ -918,11 +918,6 @@ body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
     white-space: normal;
 }
 
-.dashboard-grid.layout-cards .bookmark-link:hover {
-    border-color: var(--border-primary);
-    transform: translateX(2px);
-}
-
 .dashboard-grid.layout-terminal {
     row-gap: 2rem;
     column-gap: 1.5rem;
@@ -1111,7 +1106,6 @@ body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
 .dashboard-grid.layout-widgets .bookmark-link {
     padding: 0.6rem;
     border-radius: 8px;
-    background: transparent;
 }
 
 /* Preset-driven CSS variables applied via body attributes */
@@ -1224,7 +1218,6 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     white-space: normal;
 }
 .layout-launcher .bookmark-link:hover {
-    background: var(--hover-bg, rgba(255,255,255,0.07));
     transform: translateY(-2px);
 }
 
@@ -1801,7 +1794,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     text-decoration: none;
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
-    transition: transform 140ms ease, opacity 120ms ease, color 140ms ease;
+    transition: transform 140ms ease, opacity 120ms ease, color 140ms ease, background 140ms ease;
     position: relative;
     padding: 0.5rem 0;
     color: var(--text-primary);
@@ -2015,10 +2008,6 @@ a.bookmark-open:hover {
 
 .bookmark-link.bookmark-inline-editing.keyboard-selected {
     background: none;
-}
-
-.bookmark-link.bookmark-inline-editing.keyboard-selected::before {
-    display: none;
 }
 
 /*
@@ -2312,31 +2301,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     width: 0.85em;
     height: 0.85em;
     vertical-align: -0.05em;
-}
-
-.bookmark-link::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 2px;
-    bottom: 2px;
-    width: 2px;
-    background: transparent;
-    border-radius: 4px 0 0 4px;
-    z-index: 1;
-    transition: background 140ms ease;
-}
-
-.bookmark-link:hover {
-    color: var(--text-primary);
-    transform: none;
-    background: color-mix(in srgb, var(--accent-primary) 5%, transparent);
-    border-radius: 4px;
-    overflow: visible;
-}
-
-.bookmark-link:hover::before {
-    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .bookmark-link.smart-recent-promote {
@@ -2691,45 +2655,15 @@ body.no-animations .layout-launcher .bookmark-link.bookmark-pulse {
     animation: none;
 }
 
-/* Keyboard navigation highlight */
+/* Keyboard navigation — row highlight lives in theme.css */
 .bookmark-link.keyboard-selected {
-    color: var(--text-primary);
     position: relative;
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-    border-radius: 4px;
-}
-
-a.bookmark-open:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: 4px;
-    position: relative;
-    z-index: 2;
-}
-
-.bookmark-link.keyboard-selected a.bookmark-open {
-    outline: 2px solid color-mix(in srgb, var(--accent-primary) 70%, transparent);
-    outline-offset: 2px;
-    border-radius: 4px;
 }
 
 .layout-launcher .bookmark-link.keyboard-selected,
 .layout-launcher .bookmark-link:focus-within {
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-}
-
-.bookmark-link.keyboard-selected::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--accent-primary);
-    border-radius: 4px 0 0 4px;
-    z-index: 1;
+    outline: none;
+    box-shadow: none;
 }
 
 .bookmark-shortcut {
@@ -2747,16 +2681,6 @@ a.bookmark-open:focus-visible {
     white-space: nowrap;
     opacity: 1;
 }
-
-.bookmark-link:hover .bookmark-shortcut,
-.bookmark-link.keyboard-selected .bookmark-shortcut {
-    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    color: var(--text-secondary);
-}
-
-
-
-
 
 /* Loading */
 .loading {

@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v42';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v43';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,17 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.8', 'June 2026', '2026-06-07', [
+                {
+                    title: 'Dashboard — bookmark rows',
+                    items: [
+                        { badge: 'fix', text: '<strong>No hover shift</strong> — bookmarks no longer jump ~1 px right on hover; the row highlight stays aligned edge to edge.' },
+                        { badge: 'new', text: '<strong>Full-row selection</strong> — hover and keyboard focus light up the whole row: icon, title, pin/note/ping badges, and shortcut.' },
+                        { badge: 'new', text: '<strong>Theme gradient</strong> — left-to-right accent tint using your active theme colors; fades smoothly toward the right.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.7', 'June 2026', '2026-06-06', [
                 {

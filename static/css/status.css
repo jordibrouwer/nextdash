@@ -165,15 +165,6 @@ body.no-animations .bookmark-link.status-transition-flash {
     border-left: 2px solid var(--border-primary);
 }
 
-/* Animation for status changes */
-.bookmark-link {
-    transition: color 0.3s ease, transform 0.2s ease;
-}
-
-.bookmark-link:hover {
-    transform: translateX(2px);
-}
-
 /* Refresh button for manual status check */
 .status-refresh-btn {
     margin-left: 0.5rem;

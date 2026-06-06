@@ -9,6 +9,8 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.8 — June 2026](#v2026068--june-2026)
+- [v2026.06.7 — June 2026](#v2026067--june-2026)
 - [v2026.06.6 — May 2026](#v2026066--may-2026)
 - [v2026.06.5 — May 2026](#v2026065--may-2026)
 - [v2026.06.4 — May 2026](#v2026064--may-2026)
@@ -31,6 +33,27 @@ For install and security, see the [README](README.md). For how to use features, 
 ---
 
 ## Unreleased
+
+_(Nothing yet.)_
+
+---
+
+## v2026.06.8 — June 2026
+
+**Dashboard bookmark row hover and keyboard selection** — full-row highlight, theme-aware gradient, no layout shift.
+
+### Dashboard — bookmark rows
+
+- **fix** **No hover shift** — removed a conflicting `translateX` on bookmark hover (from status styles) that nudged rows ~1–2 px right and clipped the highlight at the row edge.
+- **new** **Full-row selection** — hover and keyboard focus highlight the entire row: icon, title, pin/note/ping badges, and shortcut chip (not just the title link).
+- **new** **Left-to-right gradient** — theme-aware accent gradient (`--accent-primary` mixed with `--background-primary` / `--background-secondary`); stronger tint on the left, fading to the right.
+- **fix** **Layout overrides** — widgets layout no longer forces a transparent row background that hid the hover state; selection styles load last so presets cannot override them.
+
+---
+
+## v2026.06.7 — June 2026
+
+**Config → General redesign** — merged bookmark panels, collapsible tour resets, accessibility fixes.
 
 ### Config → General — redesigned
 
