@@ -36,7 +36,6 @@ For install and security, see the [README](README.md). For how to use features, 
 
 - **new** **Bookmarks merged** — "Bookmarks — Display" and "Bookmarks — Behavior" are now a single section. A visual rule separates the display group from the sorting/navigation group; the Essentials layer still shows the same streamlined subset as before.
 - **new** **Tours & onboarding — collapsible** — 13 individual tour-reset buttons are grouped into a single `<details>` element ("Tours & onboarding"). Reset-all, feature tour, context tips, and per-tab resets all live inside; the section is collapsed by default so the Advanced layer is no longer dominated by maintenance actions.
-- **new** **2-column layout on wide screens** — on viewports ≥ 1280 px the settings cards render side by side, halving the scroll distance. Smart Collections, Header & Buttons, and Reset remain full-width.
 - **new** **Ko-fi support link moved** — relocated from the top of the General tab to the Help tab, where it sits alongside the project signature. The General tab opens directly on settings without preamble.
 - **fix** **"Show all sections" button** — was an `<a href="#">` (incorrect semantics); replaced with `<button type="button">` and matching CSS button-reset styles.
 - **fix** **Smart collection toggles** — `onclick="event.stopPropagation()"` removed from HTML; replaced by a JS event listener registered during `ConfigGeneralLayers.init()`.

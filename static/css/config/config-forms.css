@@ -389,17 +389,6 @@
     margin-top: 0.55rem;
 }
 
-@media (min-width: 1280px) {
-    .general-layout {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .general-layout > [data-general-panel="reset"],
-    .general-layout > [data-general-panel="smart-collections"],
-    .general-layout > [data-general-panel="search-buttons"] {
-        grid-column: 1 / -1;
-    }
-}
 
 @media (max-width: 991px) {
     .general-layout {

@@ -633,7 +633,6 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 #### Layout and structure
 
-- On screens **≥ 1280 px** the General panels display in a **2-column grid**; Smart Collections, Header & Buttons, and Reset stay full-width.  
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (icons, new-tab, sort, quick-add, page tabs).  
 - **Tours & onboarding** — all 9 tab tour-reset buttons are grouped in a collapsible **Tours & onboarding** block inside Advanced → System & tools. Expand it to reset individual tab tours.
 

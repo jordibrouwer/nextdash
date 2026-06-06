@@ -95,7 +95,6 @@
                     items: [
                         { badge: 'new', text: '<strong>Bookmarks merged</strong> — "Display" and "Behavior" are now one section; a divider separates the two groups. Essentials still shows the same lightweight subset.' },
                         { badge: 'new', text: '<strong>Tours & onboarding — collapsible</strong> — 13 tour-reset buttons grouped into a single expandable <em>Tours &amp; onboarding</em> block. Advanced tab no longer dominated by maintenance actions.' },
-                        { badge: 'new', text: '<strong>2-column layout on wide screens</strong> — cards side by side on viewports ≥ 1280 px; Smart Collections, Header &amp; Buttons, and Reset stay full-width.' },
                         { badge: 'fix', text: '<strong>Accessibility</strong> — "Show all sections" is now a <code>&lt;button&gt;</code>; smart-collection toggles use a JS event listener instead of inline <code>onclick</code>.' },
                         { badge: 'fix', text: '<strong>General tour</strong> — no longer waits for the removed intro element; step 0 now highlights the settings layout. Startup delay eliminated.' },
                     ]
