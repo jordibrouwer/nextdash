@@ -77,6 +77,8 @@ func main() {
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/search-index", handlers.BuildSearchIndex).Methods("POST")
 	r.HandleFunc("/api/bookmark-preview", handlers.GetBookmarkPreview).Methods("GET")
+	r.HandleFunc("/api/previews/clear", handlers.ClearAllBookmarkPreviews).Methods("POST")
+	r.HandleFunc("/api/previews/refresh", handlers.RefreshAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")
 
 	// Data files (for uploaded favicons, etc.)

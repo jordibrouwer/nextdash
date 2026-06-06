@@ -37,6 +37,7 @@ class ConfigGeneralLayers {
         this.restructurePanels();
         this.setupLayerSwitcher();
         this.setupSmartCollectionsMaster();
+        this.setupSmartCollectionLabelPropagation();
         this.setupAdvancedNav();
         this.refreshCheckboxTreeSymbols();
         this.applyLayer(this.getStoredLayer(), { updateHash: false });
@@ -128,8 +129,7 @@ class ConfigGeneralLayers {
         if (this.root.querySelector('[data-general-panel="bookmarks-essentials"]')) return;
 
         const display = this.root.querySelector('[data-general-panel="bookmarks-display"]');
-        const behavior = this.root.querySelector('[data-general-panel="bookmarks-behavior"]');
-        if (!display || !behavior) return;
+        if (!display) return;
 
         const essentials = document.createElement('section');
         essentials.className = 'general-card';
@@ -140,20 +140,20 @@ class ConfigGeneralLayers {
             <p class="general-card-intro" data-i18n="config.generalBookmarksEssentialsIntro">Everyday bookmark display and navigation.</p>
         `;
 
-        const sortGroup = behavior.querySelector('.form-group');
+        const sortGroup = display.querySelector('#sort-method-select')?.closest('.form-group');
         if (sortGroup) essentials.appendChild(sortGroup);
 
         const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
         if (iconsItem) essentials.appendChild(iconsItem);
 
         ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'show-page-tabs-checkbox'].forEach((id) => {
-            const item = behavior.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
+            const item = display.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
             if (item) essentials.appendChild(item);
         });
-        const pageNamesItem = behavior.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
+        const pageNamesItem = display.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
         if (pageNamesItem) essentials.appendChild(pageNamesItem);
 
-        behavior.parentNode.insertBefore(essentials, display);
+        display.parentNode.insertBefore(essentials, display);
     }
 
     createSmartCollectionsSummary() {
@@ -245,6 +245,7 @@ class ConfigGeneralLayers {
             'appearance-advanced': 'advanced',
             'bookmarks-display': 'advanced',
             'bookmarks-behavior': 'advanced',
+            bookmarks: 'advanced',
             'smart-collections': 'advanced',
             status: 'advanced',
             branding: 'advanced',
@@ -268,7 +269,6 @@ class ConfigGeneralLayers {
             'search-buttons',
             'appearance-advanced',
             'bookmarks-display',
-            'bookmarks-behavior',
             'smart-collections',
             'status',
             'branding',
@@ -458,6 +458,12 @@ class ConfigGeneralLayers {
                 const panel = btn.getAttribute('data-jump-panel');
                 this.applyLayer('advanced', { updateHash: true, scrollPanel: panel });
             });
+        });
+    }
+
+    setupSmartCollectionLabelPropagation() {
+        this.root.querySelectorAll('.smart-collection-toggle').forEach((label) => {
+            label.addEventListener('click', (e) => e.stopPropagation());
         });
     }
 

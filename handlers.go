@@ -1207,24 +1207,14 @@ func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(index)
 }
 
-// Get bookmark preview metadata
-func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
-	if rawURL == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "URL required"})
-		return
-	}
-
+func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
+	rawURL = strings.TrimSpace(rawURL)
 	cacheKey := canonicalBookmarkURLKey(rawURL)
-	cache := h.loadPreviewCache()
-	if entry, ok := cache.Cache[cacheKey]; ok {
-		if time.Now().UnixMilli()-entry.FetchedAt < previewCacheTTLMs {
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(entry)
-			return
+	if useCache && cache != nil {
+		if entry, ok := cache.Cache[cacheKey]; ok {
+			if time.Now().UnixMilli()-entry.FetchedAt < previewCacheTTLMs {
+				return entry
+			}
 		}
 	}
 
@@ -1237,17 +1227,13 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{Timeout: 8 * time.Second}
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(preview)
-		return
+		return preview
 	}
 	req.Header.Set("User-Agent", "nextDash PreviewBot/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(preview)
-		return
+		return preview
 	}
 	defer resp.Body.Close()
 
@@ -1258,9 +1244,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
 	if err != nil {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(preview)
-		return
+		return preview
 	}
 
 	htmlBody := string(bodyBytes)
@@ -1281,11 +1265,124 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 		preview.Icon = h.resolveRelativeURL(preview.URL, preview.Icon)
 	}
 
-	cache.Cache[cacheKey] = preview
+	if cache != nil {
+		cache.Cache[cacheKey] = preview
+	}
+	return preview
+}
+
+func bookmarkHasPreviewMetadata(bm Bookmark) bool {
+	return strings.TrimSpace(bm.PreviewTitle) != "" ||
+		strings.TrimSpace(bm.PreviewDesc) != "" ||
+		strings.TrimSpace(bm.PreviewImage) != ""
+}
+
+func applyPreviewToBookmark(bm *Bookmark, preview BookmarkPreview) {
+	bm.PreviewTitle = strings.TrimSpace(preview.Title)
+	bm.PreviewDesc = strings.TrimSpace(preview.Description)
+	bm.PreviewImage = strings.TrimSpace(preview.Image)
+}
+
+func clearBookmarkPreviewFields(bm *Bookmark) {
+	bm.PreviewTitle = ""
+	bm.PreviewDesc = ""
+	bm.PreviewImage = ""
+}
+
+// Get bookmark preview metadata
+func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if rawURL == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "URL required"})
+		return
+	}
+
+	cache := h.loadPreviewCache()
+	forceRefresh := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
+		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
+	preview := h.fetchBookmarkPreview(rawURL, &cache, !forceRefresh)
 	h.savePreviewCache(cache)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(preview)
+}
+
+// ClearAllBookmarkPreviews removes stored preview metadata from every bookmark and empties the server cache.
+func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	cleared := 0
+	for _, page := range h.store.GetPages() {
+		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		changed := false
+		for i := range bookmarks {
+			if !bookmarkHasPreviewMetadata(bookmarks[i]) {
+				continue
+			}
+			clearBookmarkPreviewFields(&bookmarks[i])
+			cleared++
+			changed = true
+		}
+		if changed {
+			h.store.SaveBookmarksByPage(page.ID, bookmarks)
+		}
+	}
+
+	h.savePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "completed",
+		"cleared": cleared,
+	})
+}
+
+// RefreshAllBookmarkPreviews re-fetches preview metadata for every bookmark with a URL.
+func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
+	refreshed := 0
+	skipped := 0
+
+	for _, page := range h.store.GetPages() {
+		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		changed := false
+		for i := range bookmarks {
+			rawURL := strings.TrimSpace(bookmarks[i].URL)
+			if rawURL == "" {
+				skipped++
+				continue
+			}
+			preview := h.fetchBookmarkPreview(rawURL, &cache, false)
+			applyPreviewToBookmark(&bookmarks[i], preview)
+			refreshed++
+			changed = true
+		}
+		if changed {
+			h.store.SaveBookmarksByPage(page.ID, bookmarks)
+		}
+	}
+
+	h.savePreviewCache(cache)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":    "completed",
+		"refreshed": refreshed,
+		"skipped":   skipped,
+	})
 }
 
 func extractDomain(url string) string {

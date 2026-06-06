@@ -2515,7 +2515,18 @@ class ConfigManager {
                     this.language.t(on ? 'config.packedColumnsSavedOn' : 'config.packedColumnsSavedOff'),
                     'success'
                 );
-            }
+            },
+            onNotify: (message, type) => {
+                this.ui.showNotification(message, type);
+            },
+            onBookmarkPreviewsChanged: async () => {
+                if (this.bookmarkStore) {
+                    await this.bookmarkStore.loadAll();
+                }
+                const pageId = this.currentPageId || 1;
+                await this.loadPageBookmarks(pageId);
+                this.refreshBookmarksList({ skipFlush: true });
+            },
         });
 
 

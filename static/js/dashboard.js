@@ -6078,13 +6078,17 @@ class Dashboard {
                 preview.tags = Array.isArray(bookmark.tags) ? bookmark.tags.filter(Boolean) : [];
                 preview.openCount = Number(bookmark.openCount || 0);
                 preview.lastOpened = bookmark.lastOpened || null;
-                this.showBookmarkPreviewCard(preview, event);
+                this.showBookmarkPreviewCard(preview, event, { openLink, bookmark });
             }, hoverDelay);
         });
 
         openLink.addEventListener('mousemove', (event) => {
             if (this.previewCardElement && this.previewCardElement.classList.contains('is-visible')) {
                 this.positionBookmarkPreviewCard(event.clientX, event.clientY);
+                const ctx = this.previewCardElement._previewContext;
+                if (ctx) {
+                    ctx.pointer = { clientX: event.clientX, clientY: event.clientY };
+                }
             }
         });
 
@@ -6102,17 +6106,29 @@ class Dashboard {
                 clearTimeout(openLink._previewHoverTimer);
                 openLink._previewHoverTimer = null;
             }
-            this.hideBookmarkPreviewCard();
+            this.scheduleHideBookmarkPreviewCard();
         });
     }
 
-    async fetchBookmarkPreviewData(openLink, bookmark) {
-        if (openLink._previewData) {
+    scheduleHideBookmarkPreviewCard() {
+        if (this._previewHideTimer) {
+            clearTimeout(this._previewHideTimer);
+        }
+        this._previewHideTimer = setTimeout(() => {
+            this._previewHideTimer = null;
+            if (!this._previewCardHovered) {
+                this.hideBookmarkPreviewCard();
+            }
+        }, 140);
+    }
+
+    async fetchBookmarkPreviewData(openLink, bookmark, { forceRefresh = false } = {}) {
+        if (!forceRefresh && openLink._previewData) {
             return openLink._previewData;
         }
         try {
             let preview = null;
-            if (bookmark.previewTitle || bookmark.previewDesc || bookmark.previewImage) {
+            if (!forceRefresh && (bookmark.previewTitle || bookmark.previewDesc || bookmark.previewImage)) {
                 preview = {
                     title: bookmark.previewTitle || bookmark.name || '',
                     description: bookmark.previewDesc || '',
@@ -6121,12 +6137,16 @@ class Dashboard {
                     url: bookmark.url
                 };
             } else {
-                const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}`);
+                const refreshParam = forceRefresh ? '&refresh=1' : '';
+                const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`);
                 if (!response.ok) return null;
                 preview = await response.json();
                 bookmark.previewTitle = preview.title || bookmark.previewTitle || '';
                 bookmark.previewDesc = preview.description || bookmark.previewDesc || '';
                 bookmark.previewImage = preview.image || bookmark.previewImage || '';
+                if (forceRefresh) {
+                    this.persistBookmarkPreviewMetadata(bookmark);
+                }
             }
 
             const title = preview.title || bookmark.name || '';
@@ -6145,6 +6165,71 @@ class Dashboard {
         }
     }
 
+    persistBookmarkPreviewMetadata(bookmark) {
+        if (!bookmark) return;
+
+        const updatedUrl = String(bookmark.url || '').trim();
+        if (!updatedUrl) return;
+
+        (this.bookmarks || []).forEach((bm) => {
+            if (String(bm.url || '').trim() === updatedUrl) {
+                bm.previewTitle = bookmark.previewTitle || '';
+                bm.previewDesc = bookmark.previewDesc || '';
+                bm.previewImage = bookmark.previewImage || '';
+            }
+        });
+        (this.allBookmarks || []).forEach((bm) => {
+            if (String(bm.url || '').trim() === updatedUrl) {
+                bm.previewTitle = bookmark.previewTitle || '';
+                bm.previewDesc = bookmark.previewDesc || '';
+                bm.previewImage = bookmark.previewImage || '';
+            }
+        });
+
+        if (this.pendingPreviewSave) {
+            clearTimeout(this.pendingPreviewSave);
+        }
+        this.pendingPreviewSave = setTimeout(() => {
+            this.pendingPreviewSave = null;
+            fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.bookmarks)
+            }).catch((error) => {
+                console.error('Failed to save bookmark preview metadata:', error);
+            });
+        }, 800);
+    }
+
+    async refreshVisibleBookmarkPreview() {
+        const card = this.previewCardElement;
+        const ctx = card?._previewContext;
+        if (!card || !ctx?.openLink || !ctx?.bookmark) return false;
+
+        const refreshBtn = card.querySelector('.bookmark-preview-card-refresh');
+        refreshBtn?.classList.add('is-loading');
+        refreshBtn?.setAttribute('disabled', 'true');
+
+        try {
+            delete ctx.openLink._previewData;
+            delete ctx.openLink.dataset.previewLoaded;
+            const preview = await this.fetchBookmarkPreviewData(ctx.openLink, ctx.bookmark, { forceRefresh: true });
+            if (!preview) return false;
+
+            preview.note = ctx.bookmark.note || '';
+            preview.tags = Array.isArray(ctx.bookmark.tags) ? ctx.bookmark.tags.filter(Boolean) : [];
+            preview.openCount = Number(ctx.bookmark.openCount || 0);
+            preview.lastOpened = ctx.bookmark.lastOpened || null;
+
+            const pointer = ctx.pointer || { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 };
+            this.showBookmarkPreviewCard(preview, pointer, ctx);
+            return true;
+        } finally {
+            refreshBtn?.classList.remove('is-loading');
+            refreshBtn?.removeAttribute('disabled');
+        }
+    }
+
     extractDomainFromUrl(url) {
         try {
             return new URL(url).hostname || '';
@@ -6160,6 +6245,12 @@ class Dashboard {
         const card = document.createElement('div');
         card.className = 'bookmark-preview-card';
         card.innerHTML = `
+            <button type="button" class="bookmark-preview-card-refresh" aria-label="Refresh preview">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+                    <polyline points="21 3 21 9 15 9"/>
+                </svg>
+            </button>
             <div class="bookmark-preview-card-image-wrap"><img class="bookmark-preview-card-image" alt="" /></div>
             <div class="bookmark-preview-card-content">
                 <div class="bookmark-preview-card-title"></div>
@@ -6171,13 +6262,50 @@ class Dashboard {
                 <div class="bookmark-preview-card-usage"></div>
             </div>
         `;
+        const refreshBtn = card.querySelector('.bookmark-preview-card-refresh');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.refreshVisibleBookmarkPreview();
+            });
+        }
+        card.addEventListener('mouseenter', () => {
+            this._previewCardHovered = true;
+            if (this._previewHideTimer) {
+                clearTimeout(this._previewHideTimer);
+                this._previewHideTimer = null;
+            }
+        });
+        card.addEventListener('mouseleave', () => {
+            this._previewCardHovered = false;
+            this.scheduleHideBookmarkPreviewCard();
+        });
         document.body.appendChild(card);
         this.previewCardElement = card;
         return card;
     }
 
-    showBookmarkPreviewCard(preview, event) {
+    showBookmarkPreviewCard(preview, event, context = null) {
         const card = this.ensureBookmarkPreviewCard();
+        const refreshBtn = card.querySelector('.bookmark-preview-card-refresh');
+        if (refreshBtn) {
+            const label = this.language?.t?.('dashboard.previewCardRefreshAria');
+            refreshBtn.setAttribute(
+                'aria-label',
+                label && label !== 'dashboard.previewCardRefreshAria' ? label : 'Refresh preview'
+            );
+        }
+        if (context?.openLink && context?.bookmark) {
+            card._previewContext = {
+                openLink: context.openLink,
+                bookmark: context.bookmark,
+                pointer: {
+                    clientX: event?.clientX ?? context.pointer?.clientX ?? 0,
+                    clientY: event?.clientY ?? context.pointer?.clientY ?? 0,
+                },
+            };
+        }
         const titleEl = card.querySelector('.bookmark-preview-card-title');
         const descEl = card.querySelector('.bookmark-preview-card-description');
         const domainEl = card.querySelector('.bookmark-preview-card-domain');
@@ -6307,6 +6435,8 @@ class Dashboard {
     hideBookmarkPreviewCard() {
         if (!this.previewCardElement) return;
         this.previewCardElement.classList.remove('is-visible');
+        this.previewCardElement._previewContext = null;
+        this._previewCardHovered = false;
         document.body.classList.remove('preview-card-active');
     }
 

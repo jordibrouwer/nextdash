@@ -1573,6 +1573,120 @@ class ConfigSettings {
                 settings.smartMostUsedLimit = Number.isFinite(value) && value >= 0 ? value : 25;
             });
         }
+
+        this.setupBookmarkPreviewMaintenance(callbacks);
+    }
+
+    setupBookmarkPreviewMaintenance(callbacks = {}) {
+        const refreshBtn = document.getElementById('refresh-all-bookmark-previews-btn');
+        const clearBtn = document.getElementById('clear-all-bookmark-previews-btn');
+        if (!refreshBtn && !clearBtn) return;
+
+        this.bindInfoButton(
+            'bookmark-preview-maintenance-info-btn',
+            'config.bookmarkPreviewMaintenanceInfoTitle',
+            'config.bookmarkPreviewMaintenanceInfoMessage'
+        );
+
+        const t = (key, fallback, vars) => {
+            const lang = window.configManager?.language;
+            let text = fallback;
+            if (lang && typeof lang.t === 'function') {
+                const full = `config.${key}`;
+                const val = lang.t(full);
+                if (val && val !== full) text = val;
+            }
+            if (vars) {
+                Object.entries(vars).forEach(([k, v]) => {
+                    text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+                });
+            }
+            return text;
+        };
+
+        const notify = (message, type = 'info') => {
+            if (typeof callbacks.onNotify === 'function') {
+                callbacks.onNotify(message, type);
+                return;
+            }
+            window.configManager?.ui?.showNotification?.(message, type);
+        };
+
+        const setBusy = (busy) => {
+            [refreshBtn, clearBtn].forEach((btn) => {
+                if (btn) {
+                    btn.disabled = busy;
+                    btn.classList.toggle('btn-loading', busy);
+                }
+            });
+        };
+
+        const afterChange = async () => {
+            if (typeof callbacks.onBookmarkPreviewsChanged === 'function') {
+                await callbacks.onBookmarkPreviewsChanged();
+            }
+        };
+
+        const runAction = async ({ confirmOptions, url, successKey, successFallback, countField }) => {
+            if (!window.AppModal) return;
+            const confirmed = await window.AppModal.confirm(confirmOptions);
+            if (!confirmed) return;
+
+            setBusy(true);
+            try {
+                const response = await fetch(url, { method: 'POST' });
+                const data = response.ok ? await response.json().catch(() => ({})) : null;
+                if (!response.ok || !data) {
+                    notify(t('bookmarkPreviewMaintenanceFailed', 'Could not update bookmark previews.'), 'error');
+                    return;
+                }
+                const count = Number(data[countField] ?? 0);
+                notify(
+                    t(successKey, successFallback, { count }),
+                    'success'
+                );
+                await afterChange();
+            } catch {
+                notify(t('bookmarkPreviewMaintenanceFailed', 'Could not update bookmark previews.'), 'error');
+            } finally {
+                setBusy(false);
+            }
+        };
+
+        refreshBtn?.addEventListener('click', () => {
+            runAction({
+                confirmOptions: {
+                    title: t('bookmarkPreviewRefreshAllConfirmTitle', 'Refresh all bookmark previews?'),
+                    message: t(
+                        'bookmarkPreviewRefreshAllConfirmMessage',
+                        'Re-fetches title, description and image for every bookmark with a URL. This may take a while for large libraries.'
+                    ),
+                    confirmText: t('bookmarkPreviewRefreshAll', 'Refresh all previews'),
+                },
+                url: '/api/previews/refresh',
+                successKey: 'bookmarkPreviewRefreshAllDone',
+                successFallback: 'Refreshed preview metadata for {count} bookmarks.',
+                countField: 'refreshed',
+            });
+        });
+
+        clearBtn?.addEventListener('click', () => {
+            runAction({
+                confirmOptions: {
+                    title: t('bookmarkPreviewClearAllConfirmTitle', 'Clear all bookmark previews?'),
+                    message: t(
+                        'bookmarkPreviewClearAllConfirmMessage',
+                        'Removes stored preview title, description and image from every bookmark and clears the server preview cache. Hover cards will fetch again on next use.'
+                    ),
+                    confirmText: t('bookmarkPreviewClearAll', 'Clear all previews'),
+                    confirmClass: 'danger',
+                },
+                url: '/api/previews/clear',
+                successKey: 'bookmarkPreviewClearAllDone',
+                successFallback: 'Cleared preview metadata from {count} bookmarks.',
+                countField: 'cleared',
+            });
+        });
     }
 
     /**

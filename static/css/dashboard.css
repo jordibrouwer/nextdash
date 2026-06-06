@@ -2382,6 +2382,49 @@ body.no-animations .bookmarks-list.reorder-container::after {
 
 .bookmark-preview-card.is-visible {
     display: block;
+    pointer-events: auto;
+}
+
+.bookmark-preview-card-refresh {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+    color: var(--text-secondary);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.bookmark-preview-card-refresh:hover,
+.bookmark-preview-card-refresh:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: var(--background-primary);
+    outline: none;
+}
+
+.bookmark-preview-card-refresh:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.bookmark-preview-card-refresh.is-loading svg {
+    animation: bookmark-preview-refresh-spin 0.8s linear infinite;
+}
+
+@keyframes bookmark-preview-refresh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .bookmark-preview-card-image-wrap {

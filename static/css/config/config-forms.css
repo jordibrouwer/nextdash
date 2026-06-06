@@ -389,10 +389,104 @@
     margin-top: 0.55rem;
 }
 
+@media (min-width: 1280px) {
+    .general-layout {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .general-layout > [data-general-panel="reset"],
+    .general-layout > [data-general-panel="smart-collections"],
+    .general-layout > [data-general-panel="search-buttons"] {
+        grid-column: 1 / -1;
+    }
+}
+
 @media (max-width: 991px) {
     .general-layout {
         grid-template-columns: 1fr;
     }
+}
+
+/* Bookmarks section: visual divider between display and behavior groups */
+.section-group-divider {
+    border: none;
+    border-top: 1px solid var(--border-primary);
+    margin: 0.85rem 0 0.65rem;
+    opacity: 0.6;
+}
+
+/* Tour resets collapsible */
+.tour-resets-wrapper {
+    display: block;
+    padding: 0;
+}
+
+.tour-resets-details {
+    border: 1px solid var(--border-primary);
+    width: 100%;
+}
+
+.tour-resets-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.tour-resets-summary::-webkit-details-marker { display: none; }
+
+.tour-resets-summary::before {
+    content: '▸';
+    font-size: 0.7em;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.tour-resets-details[open] > .tour-resets-summary::before {
+    transform: rotate(90deg);
+}
+
+.tour-resets-body {
+    padding: 0.45rem 0.75rem 0.6rem;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tour-resets-tab-label {
+    margin: 0.25rem 0 0.2rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+}
+
+.tour-resets-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+/* Help tab support block */
+.help-support-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin: 1.5rem 0 0.5rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.help-support-label {
+    color: var(--text-tertiary);
 }
 
 .form-group {
@@ -582,7 +676,6 @@
 }
 
 .checkbox-tree-child {
-    padding-left: 0;
     padding-left: 0.85rem;
     border-left: 1px dashed var(--border-primary);
     margin-left: 0.2rem;
@@ -1014,4 +1107,17 @@
     color: var(--text-primary);
     font-family: inherit;
     font-size: var(--font-size-controls);
+}
+
+.bookmark-preview-maintenance {
+    margin-top: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.bookmark-preview-maintenance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.45rem;
 }

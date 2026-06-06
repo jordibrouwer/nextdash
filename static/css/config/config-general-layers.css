@@ -49,6 +49,11 @@
     text-decoration: underline;
     text-underline-offset: 2px;
     margin-left: auto;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
 }
 
 .general-layer-show-all:hover {

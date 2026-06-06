@@ -139,15 +139,15 @@ class ConfigGeneralTour {
         return new Promise((resolve) => {
             const tick = (left) => {
                 const layersReady = window.configManager?.generalLayers?.root?.dataset?.layersReady === '1';
-                const hasIntro = Boolean(document.querySelector('.general-tab-intro'));
+                const hasToolbar = Boolean(document.querySelector('#general-layer-toolbar'));
                 const hasLayout = Boolean(document.querySelector('.general-layout'));
                 const hasBasics = Boolean(document.querySelector('[data-general-panel="basics-core"]'));
-                if (hasIntro && hasLayout && (hasBasics || layersReady || left <= 0)) {
+                if (hasToolbar && hasLayout && (hasBasics || layersReady || left <= 0)) {
                     resolve(true);
                     return;
                 }
                 if (left <= 0) {
-                    resolve(hasIntro && hasLayout);
+                    resolve(hasToolbar && hasLayout);
                     return;
                 }
                 setTimeout(() => tick(left - 1), 80);
@@ -278,7 +278,7 @@ class ConfigGeneralTour {
                     'configGeneralTourWelcomeBody',
                     'This page controls how your dashboard looks and behaves. Changes apply after you click Save — the dashboard updates without a full reload.'
                 ),
-                selector: '.general-tab-intro',
+                selector: '.general-layout',
                 layer: 'essentials',
                 scrollBlock: 'start',
             },

@@ -118,38 +118,22 @@
             </div>
             <div class="tab-content active" data-tab-content="general">
             <div>
-                <div class="general-tab-intro">
-                    <p data-i18n="config.generalTabIntro">Manage all dashboard settings from this page — appearance, layout, bookmarks, search, smart collections, and more. Click Save to apply changes; the dashboard updates without a full page reload.</p>
-                    <div class="general-tab-intro-support">
-                        <span class="general-tab-intro-support-label">nextDash is free and open-source.</span>
-                        <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn">
-                            <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                            Support me on Ko-fi
-                        </a>
-                    </div>
-                </div>
-
                 <div id="general-layer-toolbar" class="general-layer-toolbar" role="tablist" aria-label="Settings layer">
                     <div class="general-layer-switch">
                         <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" role="tab" aria-selected="true" data-i18n="config.generalLayerEssentials">Essentials</button>
                         <button type="button" class="general-layer-btn" data-general-layer="advanced" role="tab" aria-selected="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
                     </div>
-                    <a href="#" id="general-layer-show-all" class="general-layer-show-all" data-i18n="config.generalLayerShowAll">Show all sections on one page</a>
+                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
                 </div>
                 <p id="general-layer-intro-essentials" class="general-layer-intro">
                     <span data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</span>
-                    <span class="general-layer-intro-hint" data-i18n="config.generalEssentialsHint">Tip: use ℹ next to a setting for help. Switch to Advanced for power features, or show all sections below.</span>
-                    <span class="general-layer-intro-hint" data-i18n="config.generalNestedTreeHint">Indented options (├── / └──) belong to the setting directly above.</span>
                 </p>
                 <p id="general-layer-intro-advanced" class="general-layer-intro" hidden>
                     <span data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</span>
-                    <span class="general-layer-intro-hint" data-i18n="config.generalAdvancedHint">Use the section links above to jump. Essentials covers everyday options.</span>
-                    <span class="general-layer-intro-hint" data-i18n="config.generalNestedTreeHint">Indented options (├── / └──) belong to the setting directly above.</span>
                 </p>
                 <nav id="general-advanced-nav" class="general-advanced-nav" hidden aria-label="Advanced sections">
                     <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance</a>
                     <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks</a>
-                    <a href="#" data-advanced-nav="bookmarks-behavior" data-i18n="config.advancedNavBookmarkBehavior">Behavior</a>
                     <a href="#" data-advanced-nav="smart-collections" data-i18n="config.advancedNavSmart">Smart</a>
                     <a href="#" data-advanced-nav="status" data-i18n="config.advancedNavStatus">Status</a>
                     <a href="#" data-advanced-nav="branding" data-i18n="config.advancedNavBranding">Branding</a>
@@ -381,10 +365,10 @@
                         </div>
                     </section>
 
-                    <!-- 3. Bookmarks — Display -->
+                    <!-- 3. Bookmarks — Display & Behavior -->
                     <section class="general-card" data-general-panel="bookmarks-display">
-                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks — Display</h3>
-                        <p class="general-card-intro" data-i18n="config.generalBookmarksDisplayIntro">Icons, shortcuts, badges, and link preview appearance.</p>
+                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks</h3>
+                        <p class="general-card-intro" data-i18n="config.generalBookmarksDisplayIntro">Icons, shortcuts, badges, link preview, sorting, and navigation.</p>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
@@ -424,7 +408,7 @@
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label for="link-preview-hover-delay-select" data-i18n="config.linkPreviewHoverDelayLabel">Preview hover delay:</label>
-                            <button type="button" id="link-preview-hover-delay-info-btn" class="info-button" data-i18n-aria="config.linkPreviewHoverDelayInfoTitle">ℹ</button>
+                                <button type="button" id="link-preview-hover-delay-info-btn" class="info-button" data-i18n-aria="config.linkPreviewHoverDelayInfoTitle">ℹ</button>
                                 <select id="link-preview-hover-delay-select">
                                     <option value="100" data-i18n="config.linkPreviewDelayFast">Fast (100ms)</option>
                                     <option value="150" data-i18n="config.linkPreviewDelayBalanced">Balanced (150ms)</option>
@@ -432,12 +416,16 @@
                                 </select>
                             </div>
                         </div>
-                    </section>
-
-                    <!-- 4. Bookmarks — Behavior (incl. Navigation) -->
-                    <section class="general-card" data-general-panel="bookmarks-behavior">
-                        <h3 class="section-title" data-i18n="config.generalBookmarksBehaviorTitle">Bookmarks — Behavior</h3>
-                        <p class="general-card-intro" data-i18n="config.generalBookmarksBehaviorIntro">Sorting, tab behavior, categories, shortcuts, and page navigation.</p>
+                        <div class="form-group bookmark-preview-maintenance">
+                            <label class="bookmark-detail-label" data-i18n="config.bookmarkPreviewMaintenanceLabel">Stored preview metadata</label>
+                            <button type="button" id="bookmark-preview-maintenance-info-btn" class="info-button" data-i18n-aria="config.bookmarkPreviewMaintenanceInfoTitle">ℹ</button>
+                            <p class="form-hint" data-i18n="config.bookmarkPreviewMaintenanceHint">Refresh or clear title, description and image stored on bookmarks for hover cards and tooltips on the dashboard.</p>
+                            <div class="bookmark-preview-maintenance-actions">
+                                <button type="button" id="refresh-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewRefreshAll">Refresh all previews</button>
+                                <button type="button" id="clear-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewClearAll">Clear all previews</button>
+                            </div>
+                        </div>
+                        <hr class="section-group-divider" aria-hidden="true">
                         <div class="form-group">
                             <label for="sort-method-select" data-i18n="config.bookmarkSortingLabel">Bookmark sorting:</label>
                             <button type="button" id="sort-method-info-btn" class="info-button" data-i18n-aria="config.bookmarkSortingInfoTitle">ℹ</button>
@@ -503,6 +491,9 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- bookmarks-behavior: retained as hidden source for JS panel splitting -->
+                    <section class="general-card" data-general-panel="bookmarks-behavior" hidden aria-hidden="true"></section>
 
                     <!-- 5. Localization: language, date/time, weather -->
                     <section class="general-card" data-general-panel="localization">
@@ -606,7 +597,7 @@
 
                         <details class="smart-collection-group">
                             <summary class="smart-collection-summary">
-                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                <label class="checkbox-label smart-collection-toggle">
                                     <input type="checkbox" id="show-smart-today-collection-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSmartTodayCollection">Smart: Today (Smart Start)</span>
                                 </label>
@@ -646,7 +637,7 @@
 
                         <details class="smart-collection-group">
                             <summary class="smart-collection-summary">
-                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                <label class="checkbox-label smart-collection-toggle">
                                     <input type="checkbox" id="show-smart-recent-collection-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSmartRecentCollection">Smart: Recently opened</span>
                                 </label>
@@ -672,7 +663,7 @@
 
                         <details class="smart-collection-group">
                             <summary class="smart-collection-summary">
-                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                <label class="checkbox-label smart-collection-toggle">
                                     <input type="checkbox" id="show-smart-stale-collection-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSmartStaleCollection">Smart: Stale bookmarks</span>
                                 </label>
@@ -698,7 +689,7 @@
 
                         <details class="smart-collection-group">
                             <summary class="smart-collection-summary">
-                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                <label class="checkbox-label smart-collection-toggle">
                                     <input type="checkbox" id="show-smart-most-used-collection-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showSmartMostUsedCollection">Smart: Most used</span>
                                 </label>
@@ -724,7 +715,7 @@
 
                         <details class="smart-collection-group">
                             <summary class="smart-collection-summary">
-                                <label class="checkbox-label smart-collection-toggle" onclick="event.stopPropagation()">
+                                <label class="checkbox-label smart-collection-toggle">
                                     <input type="checkbox" id="show-tag-collections-checkbox">
                                     <span class="checkbox-text" data-i18n="config.showTagCollections">Smart: Tag collections (one per tag)</span>
                                 </label>
@@ -970,110 +961,49 @@
                                     <button type="button" id="include-finders-in-search-info-btn" class="info-button" data-i18n-aria="config.includeFindersInSearchInfoTitle">ℹ</button>
                                 </label>
                             </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text config-onboarding-reset-hint" data-i18n="config.resetOnboardingHint">Run the first-run wizard again on the dashboard. Saves immediately.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-onboarding-btn" class="btn btn-secondary btn-small" data-i18n="config.resetOnboardingButton">Show onboarding wizard again</button>
+                            <div class="checkbox-tree-item tour-resets-wrapper">
+                                <details class="tour-resets-details">
+                                    <summary class="tour-resets-summary" data-i18n="config.tourResetsTitle">Tours &amp; onboarding</summary>
+                                    <div class="tour-resets-body">
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text config-onboarding-reset-hint" data-i18n="config.resetOnboardingHint">Run the first-run wizard again on the dashboard. Saves immediately.</p>
+                                            <div class="config-advanced-action-actions">
+                                                <button type="button" id="reset-onboarding-btn" class="btn btn-secondary btn-small" data-i18n="config.resetOnboardingButton">Show onboarding wizard again</button>
+                                            </div>
+                                        </div>
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text" data-i18n="config.featureTourHint">Start the interactive tour: learn search, finders, commands and key settings.</p>
+                                            <div class="config-advanced-action-actions">
+                                                <a href="/?tour=1" class="btn btn-secondary btn-small" data-i18n="config.startFeatureTour">Start tour</a>
+                                                <button type="button" id="reset-tour-notification-btn" class="btn btn-secondary btn-small" data-i18n="config.resetTourNotification">Reset notification</button>
+                                            </div>
+                                        </div>
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text" data-i18n="config.resetContextTipsHint">Reset all dismissed context tips so they appear again on the dashboard.</p>
+                                            <div class="config-advanced-action-actions">
+                                                <button type="button" id="reset-context-tips-btn" class="btn btn-secondary btn-small" data-i18n="config.resetContextTipsButton">Reset context tips</button>
+                                            </div>
+                                        </div>
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text">See a summary of recent features and updates.</p>
+                                            <div class="config-advanced-action-actions">
+                                                <button type="button" id="config-show-whats-new-btn" class="btn btn-secondary btn-small">What's new</button>
+                                            </div>
+                                        </div>
+                                        <p class="tour-resets-tab-label" data-i18n="config.tourResetsTabLabel">Reset individual tab tours:</p>
+                                        <div class="tour-resets-grid">
+                                            <button type="button" id="reset-config-general-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigGeneralTourButton">General</button>
+                                            <button type="button" id="reset-config-bookmarks-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigBookmarksTourButton">Bookmarks</button>
+                                            <button type="button" id="reset-config-finders-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigFindersTourButton">Finders</button>
+                                            <button type="button" id="reset-config-stats-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigStatsTourButton">Stats</button>
+                                            <button type="button" id="reset-config-categories-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigCategoriesTourButton">Categories</button>
+                                            <button type="button" id="reset-config-tags-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigTagsTourButton">Tags</button>
+                                            <button type="button" id="reset-config-pages-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigPagesTourButton">Pages</button>
+                                            <button type="button" id="reset-config-collections-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigCollectionsTourButton">Collections</button>
+                                            <button type="button" id="reset-config-theme-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigThemeTourButton">Theme</button>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigGeneralTourHint">Show the General settings tour again the next time you open the General tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-general-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigGeneralTourButton">Show General tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigBookmarksTourHint">Show the Bookmarks editor tour again the next time you open the Bookmarks tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-bookmarks-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigBookmarksTourButton">Show Bookmarks tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigFindersTourHint">Show the Finders tour again the next time you open the Finders tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-finders-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigFindersTourButton">Show Finders tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigStatsTourHint">Show the Stats tour again the next time you open the Stats tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-stats-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigStatsTourButton">Show Stats tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigCategoriesTourHint">Show the Categories tour again the next time you open the Categories tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-categories-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigCategoriesTourButton">Show Categories tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigTagsTourHint">Show the Tags tour again the next time you open the Tags tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-tags-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigTagsTourButton">Show Tags tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigPagesTourHint">Show the Pages tour again the next time you open the Pages tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-pages-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigPagesTourButton">Show Pages tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigCollectionsTourHint">Show the Collections tour again the next time you open the Collections tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-collections-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigCollectionsTourButton">Show Collections tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetConfigThemeTourHint">Show the Theme tour again the next time you open the Theme tab.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-config-theme-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigThemeTourButton">Show Theme tour again</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.featureTourHint">Start the interactive tour: learn search, finders, commands and key settings.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <a href="/?tour=1" class="btn btn-secondary btn-small" data-i18n="config.startFeatureTour">Start tour</a>
-                                        <button type="button" id="reset-tour-notification-btn" class="btn btn-secondary btn-small" data-i18n="config.resetTourNotification">Reset notification</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.resetContextTipsHint">Reset all dismissed context tips so they appear again on the dashboard.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="reset-context-tips-btn" class="btn btn-secondary btn-small" data-i18n="config.resetContextTipsButton">Reset context tips</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text">See a summary of recent features and updates.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <button type="button" id="config-show-whats-new-btn" class="btn btn-secondary btn-small">What's new</button>
-                                    </div>
-                                </div>
+                                </details>
                             </div>
                         </div>
                     </section>
@@ -2117,6 +2047,13 @@
                             <p data-i18n="config.helpPageTroubleshootFooter">Found a bug or have feedback? Visit the <a href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer"><code>GitHub repository</code></a> to report issues or suggest improvements.</p>
                         </section>
 
+                        <div class="help-support-block">
+                            <span class="help-support-label">nextDash is free and open-source.</span>
+                            <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn">
+                                <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
+                                Support me on Ko-fi
+                            </a>
+                        </div>
                         <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">jordibrw.nl</a></p>
                     </div>
                 </div>

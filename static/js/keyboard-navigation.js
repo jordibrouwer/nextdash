@@ -759,7 +759,7 @@ class KeyboardNavigation {
 
         if (openLink._previewData) {
             const preview = { ...openLink._previewData, note: bookmark.note || '', tags: bookmark.tags || [], openCount: bookmark.openCount || 0, lastOpened: bookmark.lastOpened || null };
-            dash.showBookmarkPreviewCard(preview, { clientX: fakeX, clientY: fakeY });
+            dash.showBookmarkPreviewCard(preview, { clientX: fakeX, clientY: fakeY }, { openLink, bookmark });
         } else {
             dash.fetchBookmarkPreviewData(openLink, bookmark).then(preview => {
                 if (!preview) return;
@@ -767,7 +767,7 @@ class KeyboardNavigation {
                 // Only show if the same row is still selected
                 if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex] === row) {
                     const r = row.getBoundingClientRect();
-                    dash.showBookmarkPreviewCard(enriched, { clientX: r.right + 16, clientY: r.top + r.height / 2 });
+                    dash.showBookmarkPreviewCard(enriched, { clientX: r.right + 16, clientY: r.top + r.height / 2 }, { openLink, bookmark });
                 }
             });
         }
