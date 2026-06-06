@@ -42,6 +42,7 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix** **General tour** — step 0 previously targeted `.general-tab-intro` (removed); now highlights `.general-layout`. `waitForGeneralReady()` no longer waits for the intro element, eliminating a ~2.4 s startup delay.
 - **fix** **CSS deduplication** — removed redundant `padding-left: 0` line immediately overridden in `.checkbox-tree-child`.
 - **fix** **Layer intro** — shortened from three `<span>` lines to one per layer; redundant nested-tree-hint removed.
+- **new** **Favicon harmonization moved to Essentials** — "Favicon harmonization (per theme)" moved from Advanced → Appearance fine-tuning to the Essentials Appearance & Style panel so the setting is reachable without switching layers.
 
 ---
 

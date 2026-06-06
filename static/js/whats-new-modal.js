@@ -97,6 +97,7 @@
                         { badge: 'new', text: '<strong>Tours & onboarding — collapsible</strong> — 13 tour-reset buttons grouped into a single expandable <em>Tours &amp; onboarding</em> block. Advanced tab no longer dominated by maintenance actions.' },
                         { badge: 'fix', text: '<strong>Accessibility</strong> — "Show all sections" is now a <code>&lt;button&gt;</code>; smart-collection toggles use a JS event listener instead of inline <code>onclick</code>.' },
                         { badge: 'fix', text: '<strong>General tour</strong> — no longer waits for the removed intro element; step 0 now highlights the settings layout. Startup delay eliminated.' },
+                        { badge: 'new', text: '<strong>Favicon harmonization in Essentials</strong> — moved from Advanced to the Essentials Appearance &amp; Style panel so it\'s reachable without switching layers.' },
                     ]
                 },
             ]),

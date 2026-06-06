@@ -626,7 +626,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Essentials vs Advanced (general)
 
-- **Essentials** — Language, appearance, layout, everyday bookmark options.  
+- **Essentials** — Language, appearance (including favicon styling), layout, everyday bookmark options.  
 - **Advanced** — Smart collections, status, branding, backups pointers, system tools (tours, onboarding replay), feature tour, what’s new.  
 - **Show all sections** button — toggles a flat view with every panel visible regardless of layer.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
