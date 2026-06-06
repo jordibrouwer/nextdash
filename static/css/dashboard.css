@@ -1625,6 +1625,13 @@ body.no-animations .category-body > .bookmarks-list {
     content: '▾';
 }
 
+.category-title:hover {
+    background: color-mix(in srgb, var(--hover-bg) 65%, transparent);
+    border-radius: 4px;
+    padding-left: 0.25rem;
+    margin-left: -0.25rem;
+}
+
 .category-title:hover .category-chevron {
     opacity: 0.7;
 }
@@ -2307,10 +2314,29 @@ body.no-animations .bookmarks-list.reorder-container::after {
     vertical-align: -0.05em;
 }
 
+.bookmark-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    width: 2px;
+    background: transparent;
+    border-radius: 4px 0 0 4px;
+    z-index: 1;
+    transition: background 140ms ease;
+}
+
 .bookmark-link:hover {
     color: var(--text-primary);
-    transform: translateX(4px);
-    overflow: visible; /* Allow the selector to be visible */
+    transform: none;
+    background: color-mix(in srgb, var(--accent-primary) 5%, transparent);
+    border-radius: 4px;
+    overflow: visible;
+}
+
+.bookmark-link:hover::before {
+    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .bookmark-link.smart-recent-promote {
@@ -2665,10 +2691,24 @@ a.bookmark-open:focus-visible {
 
 .bookmark-shortcut {
     flex-shrink: 0;
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    opacity: 0.7;
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--text-tertiary);
+    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 65%, transparent);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    line-height: 1.6;
+    letter-spacing: 0.03em;
     white-space: nowrap;
+    opacity: 1;
+}
+
+.bookmark-link:hover .bookmark-shortcut,
+.bookmark-link.keyboard-selected .bookmark-shortcut {
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    color: var(--text-secondary);
 }
 
 
