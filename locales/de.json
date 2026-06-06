@@ -338,6 +338,7 @@
         "tipSpaceOpenBookmark": "Tipp: <code>Leertaste</code> ausgewähltes Lesezeichen öffnen",
         "tipInlineEditSemicolon": "Tipp: <code>;</code> ausgewähltes Lesezeichen inline bearbeiten",
         "tipHoverPreview": "Tipp: über Lesezeichen (Name/Symbol) hovern für Vorschau, wenn aktiviert",
+        "tipEnableLinkPreview": "Tipp: Link-Vorschaukarten in Konfig → Allgemein → Erweitert → Lesezeichen aktivieren",
         "tipEscCancel": "Tipp: <code>Esc</code> aktuellen Zustand abbrechen",
         "tipAltReorderConfig": "Tipp: <code>Alt+↑/↓</code> in Konfiguration umsortieren",
         "tipSearchCategory": "Tipp: <code>category:arbeit</code> in der Suche verwenden",

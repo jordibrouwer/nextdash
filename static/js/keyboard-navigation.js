@@ -731,7 +731,7 @@ class KeyboardNavigation {
             return;
         }
 
-        if (dash.settings && dash.settings.showLinkPreviewCards === false) return;
+        if (dash.settings && dash.settings.showLinkPreviewCards !== true) return;
 
         const row = this.navigableElements[this.currentIndex];
         const openLink = row && row.querySelector('a.bookmark-open');

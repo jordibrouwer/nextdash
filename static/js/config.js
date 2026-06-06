@@ -75,7 +75,7 @@ class ConfigManager {
             fuzzySuggestionsStartWith: false,
             keepSearchOpenWhenEmpty: false,
             showIcons: false,
-            showLinkPreviewCards: true,
+            showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             showShortcuts: true,
             showPinIcon: false,
@@ -2145,7 +2145,7 @@ class ConfigManager {
                 this.settingsData.showSearchFlowBanner = true;
             }
             if (typeof this.settingsData.showLinkPreviewCards === 'undefined') {
-                this.settingsData.showLinkPreviewCards = true;
+                this.settingsData.showLinkPreviewCards = false;
             }
             if (![100, 150, 250].includes(Number(this.settingsData.linkPreviewHoverDelayMs))) {
                 this.settingsData.linkPreviewHoverDelayMs = 150;

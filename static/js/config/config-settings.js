@@ -975,7 +975,7 @@ class ConfigSettings {
         const showLinkPreviewCardsCheckbox = document.getElementById('show-link-preview-cards-checkbox');
         const linkPreviewHoverDelaySelect = document.getElementById('link-preview-hover-delay-select');
         if (showLinkPreviewCardsCheckbox) {
-            showLinkPreviewCardsCheckbox.checked = settings.showLinkPreviewCards !== false;
+            showLinkPreviewCardsCheckbox.checked = settings.showLinkPreviewCards === true;
             showLinkPreviewCardsCheckbox.addEventListener('change', (e) => {
                 settings.showLinkPreviewCards = e.target.checked;
                 this.setDependentControlState(['link-preview-hover-delay-select'], e.target.checked);
@@ -985,7 +985,7 @@ class ConfigSettings {
             const currentDelay = Number(settings.linkPreviewHoverDelayMs ?? 150);
             const normalizedDelay = [100, 150, 250].includes(currentDelay) ? currentDelay : 150;
             linkPreviewHoverDelaySelect.value = String(normalizedDelay);
-            this.setDependentControlState(['link-preview-hover-delay-select'], settings.showLinkPreviewCards !== false);
+            this.setDependentControlState(['link-preview-hover-delay-select'], settings.showLinkPreviewCards === true);
             linkPreviewHoverDelaySelect.addEventListener('change', (e) => {
                 const value = Number(e.target.value);
                 settings.linkPreviewHoverDelayMs = [100, 150, 250].includes(value) ? value : 150;
@@ -2274,7 +2274,7 @@ class ConfigSettings {
             showNoteIcon: true,
             showShortcuts: true,
             showIcons: false,
-            showLinkPreviewCards: true,
+            showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             globalShortcuts: true,
             hyprMode: false,

@@ -338,6 +338,7 @@
         "tipSpaceOpenBookmark": "Astuce : <code>Espace</code> ouvrir le favori sélectionné",
         "tipInlineEditSemicolon": "Astuce : <code>;</code> édition inline du favori sélectionné",
         "tipHoverPreview": "Astuce : survolez le favori (nom/icône) pour l'aperçu si activé",
+        "tipEnableLinkPreview": "Astuce : activer les cartes d'aperçu dans config → général → avancé → favoris",
         "tipEscCancel": "Astuce : <code>Échap</code> annuler l'état actuel",
         "tipAltReorderConfig": "Astuce : <code>Alt+↑/↓</code> réorganiser dans config",
         "tipSearchCategory": "Astuce : utilisez <code>category:travail</code> dans la recherche",

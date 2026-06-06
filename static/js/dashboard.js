@@ -133,7 +133,7 @@ class Dashboard {
             fuzzySuggestionsStartWith: false,
             keepSearchOpenWhenEmpty: false,
             showIcons: false,
-            showLinkPreviewCards: true,
+            showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             sortMethod: 'order',
             layoutPreset: 'default',
@@ -596,7 +596,7 @@ class Dashboard {
             }
 
             if (typeof this.settings.showLinkPreviewCards === 'undefined') {
-                this.settings.showLinkPreviewCards = true;
+                this.settings.showLinkPreviewCards = false;
             }
             if (![100, 150, 250].includes(Number(this.settings.linkPreviewHoverDelayMs))) {
                 this.settings.linkPreviewHoverDelayMs = 150;
@@ -2268,6 +2268,7 @@ class Dashboard {
             ['tipSpaceOpenBookmark', 'Tip: <code>Space</code> open selected bookmark'],
             ['tipInlineEditSemicolon', 'Tip: <code>;</code> inline-edit selected bookmark'],
             ['tipHoverPreview', 'Tip: hover bookmark (name/icon area) to load preview when enabled'],
+            ['tipEnableLinkPreview', 'Tip: enable link preview cards in config → general → advanced → bookmarks'],
             ['tipEscCancel', 'Tip: <code>Esc</code> cancel current state'],
             ['tipAltReorderConfig', 'Tip: <code>Alt+↑/↓</code> reorder in config'],
             ['tipSearchCategory', 'Tip: use <code>category:work</code> in search'],
@@ -6045,7 +6046,7 @@ class Dashboard {
         const initialTitle = bookmark.previewTitle || bookmark.name || '';
         const initialDescription = bookmark.previewDesc || '';
 
-        if (this.settings.showLinkPreviewCards === false) {
+        if (this.settings.showLinkPreviewCards !== true) {
             openLink.title = this.buildBookmarkTooltip(bookmark, initialTitle, initialDescription);
             if (openLink.dataset.previewLoaded === 'true') return;
             openLink.addEventListener('mouseenter', async () => {
@@ -6069,7 +6070,7 @@ class Dashboard {
                 ? Number(this.settings.linkPreviewHoverDelayMs)
                 : 150;
             openLink._previewHoverTimer = setTimeout(async () => {
-                if (!openLink._previewHoverActive || this.settings.showLinkPreviewCards === false) {
+                if (!openLink._previewHoverActive || this.settings.showLinkPreviewCards !== true) {
                     return;
                 }
                 const preview = await this.fetchBookmarkPreviewData(openLink, bookmark);
@@ -6151,7 +6152,7 @@ class Dashboard {
 
             const title = preview.title || bookmark.name || '';
             const description = preview.description || '';
-            if (this.settings.showLinkPreviewCards === false) {
+            if (this.settings.showLinkPreviewCards !== true) {
                 openLink.title = `${title}${description ? `\n${description}` : ''}`;
             } else {
                 openLink.removeAttribute('title');

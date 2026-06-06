@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.9 — June 2026](#v2026069--june-2026)
 - [v2026.06.8 — June 2026](#v2026068--june-2026)
 - [v2026.06.7 — June 2026](#v2026067--june-2026)
 - [v2026.06.6 — May 2026](#v2026066--may-2026)
@@ -35,6 +36,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _(Nothing yet.)_
+
+---
+
+## v2026.06.9 — June 2026
+
+**Link preview cards default off** — opt-in via Config → General → Advanced → Bookmarks; rotating tip for discoverability.
+
+### Config — bookmarks
+
+- **new** **Off by default** — `Show link preview cards on hover` is unchecked for new installs.
+- **fix** **Existing installs migrated** — one-time server migration sets the option to off (including users who previously had it on); re-enable manually if you want hover cards back.
+
+### Dashboard — tips
+
+- **new** **Rotating tip** — footer tips include where to turn preview cards on: Config → General → Advanced → Bookmarks (EN / NL / DE / FR).
 
 ---
 

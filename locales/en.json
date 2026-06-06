@@ -339,6 +339,7 @@
         "tipSpaceOpenBookmark": "Tip: <code>Space</code> open selected bookmark",
         "tipInlineEditSemicolon": "Tip: <code>;</code> inline-edit selected bookmark",
         "tipHoverPreview": "Tip: hover bookmark (name/icon area) to load preview when enabled",
+        "tipEnableLinkPreview": "Tip: enable link preview cards in config → general → advanced → bookmarks",
         "tipEscCancel": "Tip: <code>Esc</code> cancel current state",
         "tipAltReorderConfig": "Tip: <code>Alt+↑/↓</code> reorder in config",
         "tipSearchCategory": "Tip: use <code>category:work</code> in search",

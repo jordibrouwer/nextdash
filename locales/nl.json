@@ -339,6 +339,7 @@
         "tipSpaceOpenBookmark": "Tip: <code>Spatie</code> open geselecteerde bladwijzer",
         "tipInlineEditSemicolon": "Tip: <code>;</code> inline bewerken van geselecteerde bladwijzer",
         "tipHoverPreview": "Tip: hover over bladwijzer (naam/icoon) voor preview indien ingeschakeld",
+        "tipEnableLinkPreview": "Tip: link preview-kaarten aanzetten via config → algemeen → geavanceerd → bladwijzers",
         "tipEscCancel": "Tip: <code>Esc</code> annuleer huidige status",
         "tipAltReorderConfig": "Tip: <code>Alt+↑/↓</code> herschikken in config",
         "tipSearchCategory": "Tip: gebruik <code>category:werk</code> in zoeken",

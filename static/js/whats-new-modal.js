@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v43';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v44';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,17 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.9', 'June 2026', '2026-06-08', [
+                {
+                    title: 'Config &amp; tips',
+                    items: [
+                        { badge: 'new', text: '<strong>Link preview cards off by default</strong> — hover preview cards are disabled for new installs; existing installs are migrated to off on server start (opt-in again anytime).' },
+                        { badge: 'new', text: '<strong>Where to enable</strong> — Config → General → Advanced → Bookmarks → <em>Show link preview cards on hover</em>.' },
+                        { badge: 'new', text: '<strong>Rotating tip</strong> — footer tips mention the config path when preview cards are off.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.8', 'June 2026', '2026-06-07', [
                 {

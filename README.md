@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.6**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.9**.
 
 ---
 
@@ -176,7 +176,7 @@ Dynamic bookmark groups that appear automatically:
 - ★ What's New star button in the corner opposite the button bar — always visible, opens release notes
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
-- Hover preview cards with configurable delay
+- Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay
 - Background image or gradient support
 - Clickable date/time header showing a week-overview popover; optional calendar URL link
 
@@ -193,7 +193,7 @@ Dynamic bookmark groups that appear automatically:
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
-- Hover preview card shows full URL, open count, and last-opened date
+- Hover preview card (opt-in) shows full URL, open count, and last-opened date when enabled in config
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
@@ -219,7 +219,7 @@ Full UI translations available for English, Dutch, German, and French.
 |---|---|
 | Drag the left strip of a bookmark | Reorder within category or move to another category |
 | Long press a bookmark row (~500 ms) | Open inline edit |
-| Hover over a bookmark | Show preview card (if enabled) |
+| Hover over a bookmark | Show preview card when enabled (Config → General → Advanced → Bookmarks) |
 | Double-click a page tab | Rename the page |
 | Double-click a category header | Rename the category |
 

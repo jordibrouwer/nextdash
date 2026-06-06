@@ -104,6 +104,7 @@ type Settings struct {
 	ShowTips                    bool                             `json:"showTips"`
 	ShowTagCloudButton          bool                             `json:"showTagCloudButton"` // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated     bool                             `json:"tagCloudDefaultMigrated,omitempty"` // one-time: enable tag cloud for existing installs
+	LinkPreviewCardsOffMigrated bool                             `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
 	ShowSearchFlowBanner        bool                             `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton        bool                             `json:"showCheatSheetButton"`
 	ShowSearchButtonText        bool                             `json:"showSearchButtonText"`
@@ -379,7 +380,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			FuzzySuggestionsStartWith:   false,
 			KeepSearchOpenWhenEmpty:     false,
 			ShowIcons:                   true,
-			ShowLinkPreviewCards:        true,
+			ShowLinkPreviewCards:        false,
 			LinkPreviewHoverDelayMs:     150,
 			ShowShortcuts:               true,
 			ShowPinIcon:                 false,
@@ -437,6 +438,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 
 	// One-time migration: remove existing custom themes and reset active custom theme to dark.
 	fs.migrateCustomThemesToUserManaged()
+	fs.migrateLinkPreviewCardsDefaultOff()
 
 }
 
@@ -456,6 +458,35 @@ func (fs *FileStore) migrateCustomThemesToUserManaged() {
 	}
 
 	_ = os.WriteFile(fs.customThemesMigrationMarker, []byte("migrated"), 0644)
+}
+
+func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var settings Settings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return
+	}
+	if settings.LinkPreviewCardsOffMigrated {
+		return
+	}
+
+	settings.ShowLinkPreviewCards = false
+	settings.LinkPreviewCardsOffMigrated = true
+
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(fs.settingsFile, out, 0644)
 }
 
 func (fs *FileStore) ensureDataDir() {
@@ -1143,7 +1174,7 @@ func (fs *FileStore) GetSettings() Settings {
 			FuzzySuggestionsStartWith: false,
 			KeepSearchOpenWhenEmpty:   false,
 			ShowIcons:                 true,
-			ShowLinkPreviewCards:      true,
+			ShowLinkPreviewCards:      false,
 			LinkPreviewHoverDelayMs:   150,
 			ShowShortcuts:             true,
 			ShowPinIcon:               false,
@@ -1192,7 +1223,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowShortcuts = true
 		}
 		if _, ok := rawSettings["showLinkPreviewCards"]; !ok {
-			settings.ShowLinkPreviewCards = true
+			settings.ShowLinkPreviewCards = false
 		}
 		if _, ok := rawSettings["linkPreviewHoverDelayMs"]; !ok {
 			settings.LinkPreviewHoverDelayMs = 150

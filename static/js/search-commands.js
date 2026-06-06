@@ -1020,7 +1020,7 @@ class SearchCommandsComponent {
 
         const stateArg = (args[0] || '').toLowerCase();
         const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
-        const enabled = dashboard.settings.showLinkPreviewCards !== false;
+        const enabled = dashboard.settings.showLinkPreviewCards === true;
 
         const actions = [];
         if (!stateArg || 'on'.startsWith(stateArg)) {
