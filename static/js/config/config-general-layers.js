@@ -98,7 +98,7 @@ class ConfigGeneralLayers {
         core.dataset.configTier = 'essentials';
         core.innerHTML = `
             <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
-            <p class="general-card-intro" data-i18n="config.generalEssentialsAppearanceIntro">Theme, font size, animations, and tips.</p>
+            <p class="general-card-intro" data-i18n="config.generalEssentialsAppearanceIntro">Theme, font size, favicon styling, animations, and tips.</p>
         `;
 
         const advanced = document.createElement('section');
@@ -107,14 +107,14 @@ class ConfigGeneralLayers {
         advanced.dataset.configTier = 'advanced';
         advanced.innerHTML = `
             <h3 class="section-title" data-i18n="config.generalAppearanceAdvancedTitle">Appearance — fine-tuning</h3>
-            <p class="general-card-intro" data-i18n="config.generalAppearanceAdvancedIntro">Background, fonts, and icon styling.</p>
+            <p class="general-card-intro" data-i18n="config.generalAppearanceAdvancedIntro">Background and fonts.</p>
         `;
 
         const moveToCore = [];
         const moveToAdvanced = [];
         basics.querySelectorAll('.form-group, .checkbox-tree').forEach((el) => {
             const isCore = Boolean(
-                el.querySelector('#theme-select, #auto-dark-mode-checkbox, .font-size-selector, #animations-enabled-checkbox, #show-tips-checkbox')
+                el.querySelector('#theme-select, #auto-dark-mode-checkbox, .font-size-selector, #animations-enabled-checkbox, #theme-iconstyling-enable, #show-tips-checkbox')
             );
             if (isCore) moveToCore.push(el);
             else moveToAdvanced.push(el);
