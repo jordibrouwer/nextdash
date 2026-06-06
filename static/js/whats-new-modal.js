@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v41';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v42';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,19 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.7', 'June 2026', '2026-06-06', [
+                {
+                    title: 'Config → General — redesigned',
+                    items: [
+                        { badge: 'new', text: '<strong>Bookmarks merged</strong> — "Display" and "Behavior" are now one section; a divider separates the two groups. Essentials still shows the same lightweight subset.' },
+                        { badge: 'new', text: '<strong>Tours & onboarding — collapsible</strong> — 13 tour-reset buttons grouped into a single expandable <em>Tours &amp; onboarding</em> block. Advanced tab no longer dominated by maintenance actions.' },
+                        { badge: 'new', text: '<strong>2-column layout on wide screens</strong> — cards side by side on viewports ≥ 1280 px; Smart Collections, Header &amp; Buttons, and Reset stay full-width.' },
+                        { badge: 'fix', text: '<strong>Accessibility</strong> — "Show all sections" is now a <code>&lt;button&gt;</code>; smart-collection toggles use a JS event listener instead of inline <code>onclick</code>.' },
+                        { badge: 'fix', text: '<strong>General tour</strong> — no longer waits for the removed intro element; step 0 now highlights the settings layout. Startup delay eliminated.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.6', 'May 2026', '2026-06-05', [
                 {

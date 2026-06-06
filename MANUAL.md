@@ -610,7 +610,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 | Tab | Purpose |
 |-----|---------|
-| **general** | Language, appearance, layout, bookmarks behaviour, smart collections, status, branding, search — split **Essentials** / **Advanced** |
+| **general** | Language, appearance, layout, bookmarks (display + behaviour merged), smart collections, status, branding, search — split **Essentials** / **Advanced** |
 | **theme** | Built-in theme picker |
 | **collections** | Custom collection rules |
 | **pages** | Add, rename, archive, reorder pages |
@@ -628,7 +628,14 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 - **Essentials** — Language, appearance, layout, everyday bookmark options.  
 - **Advanced** — Smart collections, status, branding, backups pointers, system tools (tours, onboarding replay), feature tour, what’s new.  
+- **Show all sections** button — toggles a flat view with every panel visible regardless of layer.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
+
+#### Layout and structure
+
+- On screens **≥ 1280 px** the General panels display in a **2-column grid**; Smart Collections, Header & Buttons, and Reset stay full-width.  
+- **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (icons, new-tab, sort, quick-add, page tabs).  
+- **Tours & onboarding** — all 9 tab tour-reset buttons are grouped in a collapsible **Tours & onboarding** block inside Advanced → System & tools. Expand it to reset individual tab tours.
 
 ### Guided config tours
 
@@ -636,7 +643,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
-| **General** (9 steps) | First visit to **config → general** | Welcome, Essentials vs Advanced, appearance, bookmark behaviour, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
+| **General** (9 steps) | First visit to **config → general** | Settings layout overview, Essentials vs Advanced, appearance, bookmarks section, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
 | **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, structure, filters, optional demo bookmarks (editor, **+** modal, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
@@ -648,7 +655,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.
 
-**Replay** — Open **config → general → Advanced** → **System & tools**. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start.
+**Replay** — Open **config → general → Advanced** → **System & tools** and expand the **Tours & onboarding** block. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start.
 
 **Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips and promo banners are also hidden on mobile.
 
@@ -844,7 +851,7 @@ Click **Save** in config (sticky bar). Some fields autosave — watch for “uns
 
 - Use a **wider browser window** or turn off mobile device emulation.  
 - Open the correct tab (**general**, **bookmarks**, **theme** / `#colors`, **finders**, **stats**, …) before replaying from **System & tools**.  
-- If you already completed the tour, use the matching **Show … tour again** button in **config → general → Advanced → System & tools** (e.g. **Show Theme tour again**).  
+- If you already completed the tour, expand the **Tours & onboarding** block in **config → general → Advanced → System & tools** and use the matching **Show … tour again** button (e.g. **Show Theme tour again**).  
 - Refresh the page if the editor is still loading, then try again.
 
 ### Weather not showing
