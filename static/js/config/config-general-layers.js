@@ -207,12 +207,7 @@ class ConfigGeneralLayers {
         summary.dataset.configTier = 'essentials';
         summary.innerHTML = `
             <h3 class="section-title" data-i18n="config.statusEssentialsTitle">Status monitoring</h3>
-            <div class="status-essentials-overview" aria-labelledby="status-essentials-summary-line">
-                <div class="status-essentials-overview-row">
-                    <p id="status-essentials-summary-line" class="status-essentials-summary-line" aria-live="polite"></p>
-                    <a href="/health" id="status-essentials-health-link" class="btn btn-secondary btn-small status-essentials-health-link" hidden data-i18n="config.statusEssentialsOpenHealth">Health →</a>
-                </div>
-            </div>
+            <p id="status-essentials-summary-line" class="status-essentials-summary-line" aria-live="polite"></p>
             <div class="checkbox-tree">
                 <div class="checkbox-tree-item" id="status-essentials-toggle-slot"></div>
                 <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row">
@@ -220,6 +215,7 @@ class ConfigGeneralLayers {
                     <div class="config-advanced-action-row">
                         <p class="config-advanced-action-text" data-i18n="config.statusEssentialsHint">Per-bookmark checks (as in onboarding) live under Bookmarks. Health shows issues across all pages. Advanced: retries, colors, and ping.</p>
                         <div class="config-advanced-action-actions">
+                            <a href="/health" id="status-essentials-health-link" class="btn btn-secondary btn-small status-essentials-health-link" hidden data-i18n="config.statusEssentialsOpenHealth">Health →</a>
                             <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="status" data-i18n="config.configureStatusAdvanced">Advanced settings →</button>
                             <a href="#bookmarks" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
                         </div>

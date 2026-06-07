@@ -303,7 +303,9 @@ body {
 .config-advanced-action-actions {
     display: flex;
     flex-shrink: 0;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 0.5rem;
 }
 
 .config-onboarding-reset-hint {
@@ -319,18 +321,8 @@ body {
     min-width: 0;
 }
 
-.status-essentials-overview-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
 .status-essentials-summary-line {
-    margin: 0;
-    flex: 1 1 12rem;
+    margin: 0 0 0.75rem;
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold, 600);
     color: var(--text-primary);
