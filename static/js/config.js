@@ -5077,57 +5077,30 @@ class ConfigManager {
     }
 
     openConfigCommandPalette() {
-        const html = `
-            <div class="keyboard-cheat-sheet-list">
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('search-settings')">${this.language.t('config.commandSearchSettings') || 'Search settings…'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-essentials')">${this.language.t('config.commandLayerEssentials') || 'General: Essentials'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-advanced')">${this.language.t('config.commandLayerAdvanced') || 'General: Advanced'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-all')">${this.language.t('config.commandLayerAll') || 'General: Show all sections'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-page')">${this.language.t('config.commandNewPage') || 'New page'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-category')">${this.language.t('config.commandNewCategory') || 'New category'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('add-bookmark')">${this.language.t('config.commandNewBookmark') || 'New bookmark'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('show-archived')">${this.language.t('config.commandShowArchived') || 'Show archived'}</button>
-                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('refresh-favicon-selection')">${this.language.t('config.commandRefreshFavicons') || 'Refresh favicons'}</button>
-            </div>
-        `;
-        window.tempConfigCommand = async (command) => {
-            if (command === 'search-settings') {
-                delete window.tempConfigCommand;
-                window.AppModal.hide();
-                window.ConfigSettingsSearch?.focusSearch?.();
-                return;
+        window.ConfigCommandPalette?.open?.(this);
+    }
+
+    async runPaletteAction(command) {
+        if (command === 'search-settings') {
+            window.ConfigSettingsSearch?.focusSearch?.();
+            return;
+        }
+        if (command === 'add-page') await this.addPage();
+        if (command === 'add-category') await this.addCategory();
+        if (command === 'add-bookmark') this.addBookmark();
+        if (command === 'show-archived') {
+            const countTemplate = this.language.t('config.archivedPagesCount') || '{count} archived';
+            this.ui.showNotification(countTemplate.replace('{count}', String(this.getArchivedPageIds().length)), 'info');
+        }
+        if (command === 'refresh-favicon-selection') {
+            const refreshed = await this.bookmarks.bulkRefreshFavicons(this.bookmarksData);
+            if (refreshed > 0) {
+                const refreshedShort = this.language.t('config.refreshedBookmarksCountShort') || 'Refreshed {count}';
+                this.ui.showNotification(refreshedShort.replace('{count}', String(refreshed)), 'success');
+            } else {
+                this.ui.showNotification(this.language.t('config.selectBookmarksFirst') || 'Select bookmarks first.', 'info');
             }
-            if (command === 'layer-essentials') this.generalLayers?.goToLayer('essentials');
-            if (command === 'layer-advanced') this.generalLayers?.goToLayer('advanced');
-            if (command === 'layer-all') this.generalLayers?.goToLayer('all');
-            if (command === 'add-page') await this.addPage();
-            if (command === 'add-category') await this.addCategory();
-            if (command === 'add-bookmark') this.addBookmark();
-            if (command === 'show-archived') {
-                const countTemplate = this.language.t('config.archivedPagesCount') || '{count} archived';
-                this.ui.showNotification(countTemplate.replace('{count}', String(this.getArchivedPageIds().length)), 'info');
-            }
-            if (command === 'refresh-favicon-selection') {
-                const refreshed = await this.bookmarks.bulkRefreshFavicons(this.bookmarksData);
-                if (refreshed > 0) {
-                    const refreshedShort = this.language.t('config.refreshedBookmarksCountShort') || 'Refreshed {count}';
-                    this.ui.showNotification(refreshedShort.replace('{count}', String(refreshed)), 'success');
-                } else {
-                    this.ui.showNotification(this.language.t('config.selectBookmarksFirst') || 'Select bookmarks first.', 'info');
-                }
-            }
-            delete window.tempConfigCommand;
-            window.AppModal.hide();
-        };
-        window.AppModal.show({
-            title: this.language.t('config.commandPaletteTitle') || 'Command palette',
-            htmlMessage: html,
-            confirmText: this.language.t('config.close') || 'Close',
-            showCancel: false,
-            onConfirm: () => {
-                delete window.tempConfigCommand;
-            }
-        });
+        }
     }
 
     getCategoriesFromDOM() {

@@ -317,11 +317,11 @@
             return;
         }
 
-        const placeholder = t('settingsSearchPlaceholder', 'Search settings…');
-        const shortcutHint = t('settingsSearchShortcut', 'Shortcut: Ctrl+Shift+K');
+        const placeholder = t('settingsSearchPlaceholder', 'Find settings, tabs, help…');
+        const shortcutHint = t('settingsSearchShortcut', 'Navigate — Ctrl+Shift+K · Actions Ctrl+K');
         inputEl.placeholder = placeholder;
-        inputEl.setAttribute('aria-label', placeholder);
-        inputEl.title = `${placeholder} (${shortcutHint})`;
+        inputEl.setAttribute('aria-label', t('settingsSearchLabel', 'Find settings'));
+        inputEl.title = shortcutHint;
         if (emptyEl) {
             emptyEl.textContent = t('settingsSearchNoResults', 'No settings match your search.');
         }

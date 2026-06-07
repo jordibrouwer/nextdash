@@ -117,6 +117,68 @@
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
+.config-command-palette-hint {
+    margin: 0 0 0.65rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.config-command-palette-input {
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
+    border-radius: 0.4rem;
+    background: var(--input-bg, var(--bg-secondary, #1e293b));
+    color: var(--text-primary, inherit);
+    font: inherit;
+    font-size: 0.88rem;
+}
+
+.config-command-palette-input:focus {
+    outline: 2px solid var(--accent-color, #3b82f6);
+    outline-offset: 1px;
+    border-color: transparent;
+}
+
+.config-command-palette-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 14rem;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.25));
+    border-radius: 0.45rem;
+}
+
+.config-command-palette-item {
+    padding: 0.5rem 0.65rem;
+    cursor: pointer;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));
+}
+
+.config-command-palette-item:last-child {
+    border-bottom: none;
+}
+
+.config-command-palette-item.is-active,
+.config-command-palette-item:hover {
+    background: color-mix(in srgb, var(--accent-color, #3b82f6) 12%, transparent);
+}
+
+.config-command-palette-item.is-bridge {
+    color: var(--accent-color, #60a5fa);
+    font-weight: 600;
+}
+
+.config-command-palette-empty {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #94a3b8);
+}
+
 .config-settings-search-highlight {
     animation: config-settings-search-pulse 2.4s ease-out;
 }

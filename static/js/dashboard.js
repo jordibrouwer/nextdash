@@ -2999,7 +2999,8 @@ class Dashboard {
                 item('1–8 (config page)', 'otConfigTabs', 'Jump between config tabs'),
                 item('S (config page)', 'otConfigSave', 'Save config changes'),
                 item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
-                item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Open config command palette'),
+                item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
+                item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Quick actions on config (new page, bookmark, …)'),
             ]),
         ];
     }
