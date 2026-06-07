@@ -2096,11 +2096,17 @@ class Dashboard {
         if (typeof window.FeatureSpotlight !== 'function') return;
         if (this.onboardingStartedInSession) return;
 
+        const dash = this;
         const spotlight = new window.FeatureSpotlight({
             language: this.language,
             onTry: () => {
-                const handler = this.searchComponent?.commandsComponent?.newCommandHandler;
+                const handler = dash.searchComponent?.commandsComponent?.newCommandHandler;
                 if (handler) handler.openModal();
+            },
+            onDismiss: () => {
+                if (dash.pasteSpotlight === spotlight) {
+                    dash.pasteSpotlight = null;
+                }
             },
         });
         spotlight.show(1400);
@@ -2131,10 +2137,13 @@ class Dashboard {
             return;
         }
         const dash = this;
+        const allBookmarks = Array.isArray(this.allBookmarks) ? this.allBookmarks : [];
         const onboarding = new window.Onboarding({
-            hasBookmarks: Array.isArray(this.bookmarks) && this.bookmarks.length > 0,
+            hasBookmarks: allBookmarks.length > 0 || (Array.isArray(this.bookmarks) && this.bookmarks.length > 0),
             pagesCount: Array.isArray(this.pages) ? this.pages.length : 1,
+            pages: this.pages,
             bookmarks: this.bookmarks,
+            allBookmarks,
             serverCompleted: dash.settings?.onboardingCompleted === true,
             settings: dash.settings,
             language: dash.language,
@@ -2148,20 +2157,50 @@ class Dashboard {
                 dash.updateSearchComponent();
                 dash.onboardingStartedInSession = false;
             },
-            onApplyBookmarks: async (updatedBookmarks) => {
-                dash.bookmarks = updatedBookmarks;
-                dash.renderDashboard();
-                dash.updateStatusMonitor();
-                try {
-                    const response = await fetch(`/api/bookmarks?page=${dash.currentPageId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedBookmarks),
-                    });
-                    if (!response.ok) return;
-                    if (dash.settings.globalShortcuts) {
-                        await dash.loadAllBookmarks();
+            onApplyBookmarks: async (selection, meta = {}) => {
+                if (!selection || typeof selection !== 'object') return;
+
+                const applyCheckStatus = (bookmark) => {
+                    if (!bookmark?.url || !(bookmark.url in selection)) {
+                        return { ...bookmark };
                     }
+                    return { ...bookmark, checkStatus: selection[bookmark.url] === true };
+                };
+
+                try {
+                    if (meta.scope === 'all' && Array.isArray(dash.allBookmarks) && dash.allBookmarks.length > 0) {
+                        const merged = dash.allBookmarks.map(applyCheckStatus);
+                        const byPage = new Map();
+                        merged.forEach((bookmark) => {
+                            const pageId = String(bookmark.pageId ?? dash.currentPageId);
+                            if (!byPage.has(pageId)) byPage.set(pageId, []);
+                            byPage.get(pageId).push(bookmark);
+                        });
+                        for (const [pageId, pageBookmarks] of byPage) {
+                            const response = await fetch(`/api/bookmarks?page=${pageId}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(pageBookmarks),
+                            });
+                            if (!response.ok) return;
+                        }
+                        dash.allBookmarks = merged;
+                        dash.bookmarks = byPage.get(String(dash.currentPageId)) || dash.bookmarks;
+                    } else {
+                        const updatedBookmarks = dash.bookmarks.map(applyCheckStatus);
+                        const response = await fetch(`/api/bookmarks?page=${dash.currentPageId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updatedBookmarks),
+                        });
+                        if (!response.ok) return;
+                        dash.bookmarks = updatedBookmarks;
+                        if (dash.settings.globalShortcuts) {
+                            await dash.loadAllBookmarks();
+                        }
+                    }
+                    dash.renderDashboard();
+                    dash.updateStatusMonitor();
                 } catch {
                     // Non-blocking during onboarding finish.
                 }

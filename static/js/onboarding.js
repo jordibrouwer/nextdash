@@ -11,6 +11,12 @@ class Onboarding {
         this.bookmarks = Array.isArray(options.bookmarks)
             ? options.bookmarks.map((bookmark) => ({ ...bookmark }))
             : [];
+        this.allBookmarks = Array.isArray(options.allBookmarks)
+            ? options.allBookmarks.map((bookmark) => ({ ...bookmark }))
+            : [];
+        this.pages = Array.isArray(options.pages) ? options.pages : [];
+        this.statusMonitorBookmarks = this.allBookmarks.length > 0 ? this.allBookmarks : this.bookmarks;
+        this.usesAllPagesStatusMonitor = this.allBookmarks.length > 0;
         this.mobileCompact = options.mobileCompact === true
             || (typeof window.MobileExperience?.shouldSkipHeavyUi === 'function' && window.MobileExperience.shouldSkipHeavyUi());
         this.localSettings = this.buildInitialSettings(options.settings || {});
@@ -268,7 +274,7 @@ class Onboarding {
     }
 
     buildStatusMonitoringStep() {
-        const hasBookmarks = this.bookmarks.length > 0;
+        const hasBookmarks = this.statusMonitorBookmarks.length > 0;
         const selector = document.querySelector('.health-link a')
             ? '.health-link a'
             : (document.querySelector('#dashboard-mini-status')
@@ -314,13 +320,38 @@ class Onboarding {
     }
 
     getStatusMonitorBookmarkList(maxItems = 10) {
-        const sorted = [...this.bookmarks].sort((a, b) => {
+        const sorted = [...this.statusMonitorBookmarks].sort((a, b) => {
             const aGithub = String(a?.url || '').includes('github.com') ? 0 : 1;
             const bGithub = String(b?.url || '').includes('github.com') ? 0 : 1;
             if (aGithub !== bGithub) return aGithub - bGithub;
             return String(a?.name || '').localeCompare(String(b?.name || ''));
         });
         return sorted.slice(0, maxItems);
+    }
+
+    getStatusMonitorScopeNote(shownCount, totalCount) {
+        if (totalCount <= shownCount) {
+            if (this.usesAllPagesStatusMonitor && this.pagesCount > 1) {
+                return this.t(
+                    'onboarding.statusMonitorAllPagesNote',
+                    'Bookmarks from all pages — enable more per bookmark in config → Bookmarks.'
+                );
+            }
+            return '';
+        }
+        const template = this.t(
+            'onboarding.statusMonitorTruncatedNote',
+            'Showing {shown} of {total} bookmarks across all pages. Enable more per bookmark in config → Bookmarks.'
+        );
+        return template
+            .replace('{shown}', String(shownCount))
+            .replace('{total}', String(totalCount));
+    }
+
+    getPageLabel(pageId) {
+        const page = this.pages.find((entry) => String(entry.id) === String(pageId));
+        if (page?.name) return page.name;
+        return this.t('onboarding.statusMonitorPageFallback', 'Page {id}').replace('{id}', String(pageId));
     }
 
     buildStatusMonitorSelection(bookmarks) {
@@ -410,7 +441,7 @@ class Onboarding {
             showTips: settings.onboardingCompleted ? (settings.showTips !== false) : true,
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
-            statusMonitorSelection: this.buildStatusMonitorSelection(this.bookmarks),
+            statusMonitorSelection: this.buildStatusMonitorSelection(this.statusMonitorBookmarks),
             layoutVersion: window.LayoutVersionUtils
                 ? window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion)
                 : (settings.layoutVersion === 'modern' ? 'modern' : 'classic'),
@@ -551,16 +582,24 @@ class Onboarding {
                 `;
             }
             if (field.type === 'bookmark-checklist') {
-                const items = this.getStatusMonitorBookmarkList(field.maxItems || 10);
+                const maxItems = field.maxItems || 10;
+                const items = this.getStatusMonitorBookmarkList(maxItems);
+                const totalCount = this.statusMonitorBookmarks.length;
+                const scopeNote = this.getStatusMonitorScopeNote(items.length, totalCount);
                 const selection = this.localSettings.statusMonitorSelection || {};
+                const showPageLabels = this.usesAllPagesStatusMonitor && this.pagesCount > 1;
                 return `
                     <fieldset class="onboarding-fieldset onboarding-bookmark-checklist" data-field-id="${field.id}">
                         <legend class="onboarding-field-label">${field.label}</legend>
+                        ${scopeNote ? `<p class="onboarding-status-monitor-scope-note">${scopeNote}</p>` : ''}
                         <div class="onboarding-bookmark-checklist-items">
                             ${items.map((bookmark) => {
                                 const url = bookmark.url || '';
                                 const checked = selection[url] === true;
                                 const isExample = field.exampleUrl && url.replace(/\/$/, '') === field.exampleUrl.replace(/\/$/, '');
+                                const pageLabel = showPageLabels
+                                    ? `<span class="onboarding-bookmark-check-page">${this.escapeHtml(this.getPageLabel(bookmark.pageId))}</span>`
+                                    : '';
                                 return `
                                     <label class="onboarding-bookmark-check-option${isExample ? ' is-example' : ''}">
                                         <input
@@ -570,6 +609,7 @@ class Onboarding {
                                         >
                                         <span class="onboarding-bookmark-check-label">
                                             <span class="onboarding-bookmark-check-name">${this.escapeHtml(bookmark.name || url)}</span>
+                                            ${pageLabel}
                                             ${isExample && field.exampleHint
                                                 ? `<span class="onboarding-bookmark-check-hint">${field.exampleHint}</span>`
                                                 : ''}
@@ -817,13 +857,11 @@ class Onboarding {
             this.onApplySettings(this.settings);
         }
 
-        if (this.onApplyBookmarks && this.bookmarks.length > 0) {
+        if (this.onApplyBookmarks && this.statusMonitorBookmarks.length > 0) {
             const selection = this.localSettings.statusMonitorSelection || {};
-            const updatedBookmarks = this.bookmarks.map((bookmark) => ({
-                ...bookmark,
-                checkStatus: selection[bookmark.url] === true,
-            }));
-            Promise.resolve(this.onApplyBookmarks(updatedBookmarks)).catch(() => {});
+            Promise.resolve(this.onApplyBookmarks(selection, {
+                scope: this.usesAllPagesStatusMonitor ? 'all' : 'page',
+            })).catch(() => {});
         }
 
         try {

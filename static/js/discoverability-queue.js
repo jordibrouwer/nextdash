@@ -140,8 +140,11 @@
                 return;
             }
 
-            spotlight.onDismiss = onComplete;
-            this._activeClose = () => spotlight._dismiss(false);
+            spotlight.onDismiss = () => {
+                dash.layoutModernNudge = null;
+                onComplete();
+            };
+            this._activeClose = () => spotlight.dismiss(false);
 
             const started = spotlight.show(800, {
                 canShow: () => {
@@ -159,5 +162,12 @@
         }
     }
 
+    DiscoverabilityQueue.resetSessionState = function resetSessionState() {
+        try {
+            sessionStorage.removeItem(SESSION_DEFER_KEY);
+        } catch { /* ignore */ }
+    };
+
     window.DiscoverabilityQueue = DiscoverabilityQueue;
+    window.DiscoverabilityQueue.SESSION_DEFER_KEY = SESSION_DEFER_KEY;
 })();

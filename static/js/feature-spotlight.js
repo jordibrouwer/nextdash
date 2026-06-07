@@ -115,7 +115,14 @@
         }
 
         _dismiss(persist = true) {
-            if (!this.el) return;
+            clearTimeout(this._showTimer);
+            this._showTimer = null;
+            if (!this.el) {
+                if (typeof this.onDismiss === 'function') {
+                    this.onDismiss();
+                }
+                return;
+            }
             if (persist) {
                 try {
                     localStorage.setItem(this.storageKey, '1');
@@ -126,8 +133,14 @@
                 this.onDismiss();
             }
             const el = this.el;
-            setTimeout(() => el.remove(), 320);
+            setTimeout(() => {
+                if (el.isConnected) el.remove();
+            }, 320);
             this.el = null;
+        }
+
+        dismiss(persist = true) {
+            this._dismiss(persist);
         }
 
         show(delayMs = 1400, options = {}) {
@@ -162,6 +175,25 @@
             try {
                 localStorage.removeItem(this.storageKey);
             } catch { /* ignore */ }
+        }
+
+        static resetStorage(storageKey = DEFAULT_STORAGE_KEY) {
+            try {
+                localStorage.removeItem(storageKey);
+            } catch { /* ignore */ }
+        }
+
+        static resetPasteSpotlight() {
+            FeatureSpotlight.resetStorage(DEFAULT_STORAGE_KEY);
+        }
+
+        static dismissVisible() {
+            document.querySelectorAll('.feature-spotlight.show').forEach((el) => {
+                el.classList.remove('show');
+                setTimeout(() => {
+                    if (el.isConnected) el.remove();
+                }, 320);
+            });
         }
     }
 

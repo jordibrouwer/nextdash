@@ -2832,12 +2832,45 @@ class ConfigManager {
             resetLayoutModernNudgeBtn.addEventListener('click', () => {
                 window.LayoutModernNudge?.reset?.();
                 if (window.dashboardInstance) {
-                    window.dashboardInstance._layoutModernNudgeScheduled = false;
+                    window.dashboardInstance.layoutModernNudge?.dismiss?.(false);
                     window.dashboardInstance.layoutModernNudge = null;
+                    window.dashboardInstance.discoverabilityQueue?.scheduleRun?.();
                 }
                 this.ui.showNotification(
                     this.language.t('config.resetLayoutModernNudgeSuccess')
                         || 'Layout prompt reset — reload the dashboard to see it again.',
+                    'success'
+                );
+            });
+        }
+
+        const resetPasteSpotlightBtn = document.getElementById('reset-paste-spotlight-btn');
+        if (resetPasteSpotlightBtn) {
+            resetPasteSpotlightBtn.addEventListener('click', () => {
+                window.FeatureSpotlight?.resetPasteSpotlight?.();
+                if (window.dashboardInstance) {
+                    window.dashboardInstance.pasteSpotlight?.dismiss?.(false);
+                    window.dashboardInstance.pasteSpotlight = null;
+                    window.dashboardInstance.maybeShowPasteSpotlight?.();
+                }
+                this.ui.showNotification(
+                    this.language.t('config.resetPasteSpotlightSuccess')
+                        || 'Paste spotlight reset — reload the dashboard if it does not appear.',
+                    'success'
+                );
+            });
+        }
+
+        const resetDiscoverabilitySessionBtn = document.getElementById('reset-discoverability-session-btn');
+        if (resetDiscoverabilitySessionBtn) {
+            resetDiscoverabilitySessionBtn.addEventListener('click', () => {
+                window.DiscoverabilityQueue?.resetSessionState?.();
+                if (window.dashboardInstance?.discoverabilityQueue) {
+                    window.dashboardInstance.discoverabilityQueue.scheduleRun({ delay: 300 });
+                }
+                this.ui.showNotification(
+                    this.language.t('config.resetDiscoverabilitySessionSuccess')
+                        || 'Discoverability queue reset for this browser session.',
                     'success'
                 );
             });
