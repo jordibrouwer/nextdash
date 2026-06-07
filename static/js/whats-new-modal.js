@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v46';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v47';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -105,6 +105,7 @@
                     items: [
                         { badge: 'fix', text: '<strong>Health write APIs</strong> — auto-heal apply, cache scan, and status persistence respect the write token when set.' },
                         { badge: 'fix', text: '<strong>Factory reset</strong> — reset all data no longer deadlocks while rebuilding default files.' },
+                        { badge: 'new', text: '<strong>Default bookmark favicons</strong> — on first install or factory reset, the server downloads favicons for the sample bookmarks before the dashboard loads, so icons are visible before onboarding starts.' },
                     ]
                 },
                 {

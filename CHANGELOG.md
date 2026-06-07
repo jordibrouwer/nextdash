@@ -57,6 +57,7 @@ _(Nothing yet.)_
 
 - **fix** **Health write token** — `POST /api/health/auto-heal-apply`, `cache-scan`, and `update-status` gated when token is set; `health.js` sends `nextDashWriteHeaders`.
 - **fix** **Reset deadlock** — `ResetAllData()` releases the store lock before `initializeDefaultFiles()` to avoid re-entrant mutex deadlock.
+- **new** **Default bookmark favicons** — on first install or factory reset, the server prefetches favicons for the sample bookmarks (preview URL, then `/favicon.ico` fallback) before serving the dashboard, so icons appear before onboarding.
 
 ### Search, extension & polish
 
