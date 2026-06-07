@@ -42,7 +42,7 @@ _(Nothing yet.)_
 
 ## v2026.06.10 — June 2026
 
-**Config settings search, discoverability polish, status essentials** — find any setting with Ctrl+Shift+K; quick actions stay on Ctrl+K; onboarding and post-setup flows simplified.
+**Config settings search, Classic/Modern layout, discoverability polish, status essentials** — find any setting with Ctrl+Shift+K; switch layout version in config or via `:layoutversion`; onboarding and post-setup flows simplified.
 
 ### Config — settings search & quick actions
 
@@ -50,6 +50,14 @@ _(Nothing yet.)_
 - **new** **Advanced while on Essentials** — the search index includes hidden Advanced panels; results switch layer and scroll to the target.
 - **new** **Quick actions palette** — `Ctrl/Cmd+K` runs actions only (save, open dashboard, tour resets); settings navigation is separate from the command palette mental model.
 - **fix** **Index refresh** — rebuilds after stats/colors tab open, General layer switch, language change, bookmarks render, and config init.
+
+### Dashboard — Classic / Modern layout
+
+- **new** **Layout version** — **Classic** keeps the original dashboard styling; **Modern** applies refreshed visuals with the same bookmark structure. Active theme still controls all colors.
+- **new** **Switch in config** — **General → Layout → Layout version** dropdown with live description; searchable via **Search settings** (`Ctrl/Cmd+Shift+K`).
+- **new** **Command mode** — `:layoutversion`, `:layoutversion modern`, `:layoutversion classic`, or `:layoutversion toggle` on the dashboard (separate from `:layout` presets such as launcher or compact).
+- **new** **Onboarding step** — first-run wizard includes layout version with a live preview.
+- **new** **Layout-modern nudge** — classic users who skip modern in onboarding may see a one-time spotlight after What's new; replay reset in **Advanced → System & tools**.
 
 ### Dashboard — onboarding & discoverability
 

@@ -99,6 +99,15 @@
                     ]
                 },
                 {
+                    title: 'Dashboard — Classic / Modern layout',
+                    items: [
+                        { badge: 'new', text: '<strong>Layout version</strong> — choose <em>Classic</em> (original look) or <em>Modern</em> (refreshed visuals, same structure). Themes still control all colors.' },
+                        { badge: 'new', text: '<strong>Switch anytime</strong> — Config → General → Layout → <em>Layout version</em>, or command mode <code>:layoutversion modern</code> / <code>:layoutversion classic</code> / <code>:layoutversion toggle</code> on the dashboard.' },
+                        { badge: 'new', text: '<strong>Onboarding preview</strong> — first-run wizard includes a layout step with a live preview while you choose.' },
+                        { badge: 'new', text: '<strong>Layout tip</strong> — classic users who skip modern in onboarding may see a one-time spotlight after <em>What\'s new</em>; try it or keep classic — switch later in config anytime.' },
+                    ]
+                },
+                {
                     title: 'Onboarding &amp; discoverability',
                     items: [
                         { badge: 'new', text: '<strong>Shorter onboarding</strong> — keyboard and mouse bookmark tips merged into one step; the finish step covers pages and first bookmarks (no separate post-setup wizard).' },

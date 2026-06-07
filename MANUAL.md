@@ -420,7 +420,9 @@ Search **all pages**; each result shows which page it belongs to.
 | `:stale [days]` | List stale bookmarks |
 | `:find <text>` | Hide non-matching tiles on page |
 | `:goto <url>` | Navigate to URL or domain |
-| `:layout …` | default, compact, cards, masonry, list, launcher, … |
+| `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not Classic/Modern) |
+| `:layoutversion` | List classic / modern |
+| `:layoutversion modern` / `classic` / `toggle` | Switch layout version |
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
@@ -532,6 +534,26 @@ When enabled, one auto-group per tag that meets minimum count.
 ---
 
 ## 14. Layouts, themes, and appearance
+
+### Layout version (Classic / Modern)
+
+nextDash has two **layout versions** — same bookmark grid and categories, different visual polish:
+
+| Version | What it does |
+|---------|----------------|
+| **Classic** | Original dashboard styling and spacing (default). |
+| **Modern** | Refreshed visuals — updated row highlights, tooltips, and chrome — same structure underneath. |
+
+**Themes control all colors** in both versions; switching layout version does not change your theme.
+
+**Where to switch**
+
+- **Config → General → Layout → Layout version** — dropdown with a live description under the control.  
+- **First-run onboarding** — dedicated layout step with a live preview.  
+- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` flips between them.  
+  (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
+
+**Discoverability** — If you keep classic during onboarding, a one-time **Try the modern layout** spotlight may appear after **What's new**. You can try modern, keep classic, or change later in config. Reset the spotlight from **config → general → Advanced → System & tools**.
 
 ### Layout presets
 
@@ -884,6 +906,7 @@ arrows nav  Enter open    ; edit       Shift+M move
 ```
 Ctrl/Cmd+K          quick actions (save, open dashboard, tours)
 Ctrl/Cmd+Shift+K    find any setting, tab, or help section
+:layoutversion      switch Classic / Modern layout (dashboard)
 ```
 
 ### Important URLs
