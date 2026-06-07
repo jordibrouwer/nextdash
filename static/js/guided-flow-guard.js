@@ -195,7 +195,7 @@
         if (document.querySelector('.post-setup-overlay, .post-setup-card')) {
             return true;
         }
-        if (document.querySelector('.feature-spotlight')) {
+        if (document.querySelector('.feature-spotlight.show')) {
             return true;
         }
         const attrs = document.body.getAttributeNames();
@@ -293,7 +293,7 @@
         }
         const focusRoot =
             document.querySelector('[data-config-tour-card], [class$="-tour-card"]') ||
-            document.querySelector('.onboarding-card, .feature-tour-card, .post-setup-card, .feature-spotlight');
+            document.querySelector('.onboarding-card, .feature-tour-card, .post-setup-card, .feature-spotlight.show');
         const primary =
             focusRoot?.querySelector(
                 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'

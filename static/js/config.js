@@ -2839,6 +2839,22 @@ class ConfigManager {
             });
         }
 
+        const resetLayoutModernNudgeBtn = document.getElementById('reset-layout-modern-nudge-btn');
+        if (resetLayoutModernNudgeBtn) {
+            resetLayoutModernNudgeBtn.addEventListener('click', () => {
+                window.LayoutModernNudge?.reset?.();
+                if (window.dashboardInstance) {
+                    window.dashboardInstance._layoutModernNudgeScheduled = false;
+                    window.dashboardInstance.layoutModernNudge = null;
+                }
+                this.ui.showNotification(
+                    this.language.t('config.resetLayoutModernNudgeSuccess')
+                        || 'Layout prompt reset — reload the dashboard to see it again.',
+                    'success'
+                );
+            });
+        }
+
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 
         this.settings.attachSettingResetButtons(this.settingsData, () => this.markDirty());
@@ -3183,6 +3199,7 @@ class ConfigManager {
         this.setupStickySaveBar();
         this.setupNavigationGuards();
         window.ConfigHelpSearch?.init(this.language);
+        window.ConfigSettingsSearch?.init(this.language);
         this.updateHealthBadge();
         // Initialize theme icon styling controls
         try {

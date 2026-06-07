@@ -9,7 +9,7 @@
     border: 1px solid var(--border-primary);
     border-radius: 0.5rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
-    z-index: 2000;
+    z-index: 2147482900;
     opacity: 0;
     visibility: hidden;
     transform: translateY(12px);

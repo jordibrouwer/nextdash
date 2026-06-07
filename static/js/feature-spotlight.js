@@ -125,18 +125,36 @@
             if (typeof this.onDismiss === 'function') {
                 this.onDismiss();
             }
+            const el = this.el;
+            setTimeout(() => el.remove(), 320);
+            this.el = null;
         }
 
-        show(delayMs = 1400) {
+        show(delayMs = 1400, options = {}) {
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             try {
                 if (localStorage.getItem(this.storageKey)) return false;
             } catch { /* ignore */ }
-            if (!this.el) this._build();
-            clearTimeout(this._showTimer);
-            this._showTimer = setTimeout(() => {
+
+            const canShow = typeof options.canShow === 'function' ? options.canShow : null;
+            const maxWaitMs = Number.isFinite(options.maxWaitMs) ? options.maxWaitMs : 120000;
+            const startedAt = Date.now();
+
+            const attemptShow = () => {
+                if (Date.now() - startedAt > maxWaitMs) return;
+                if (canShow && !canShow()) {
+                    this._showTimer = setTimeout(attemptShow, 600);
+                    return;
+                }
+                try {
+                    if (localStorage.getItem(this.storageKey)) return;
+                } catch { /* ignore */ }
+                if (!this.el) this._build();
                 if (this.el) this.el.classList.add('show');
-            }, delayMs);
+            };
+
+            clearTimeout(this._showTimer);
+            this._showTimer = setTimeout(attemptShow, delayMs);
             return true;
         }
 

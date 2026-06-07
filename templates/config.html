@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css">
+    <link rel="stylesheet" href="/static/css/config/config-settings-search.css">
     <link rel="stylesheet" href="/static/css/colors.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
@@ -73,6 +74,18 @@
                         <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
                         <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
                     </div>
+                </div>
+
+                <div class="config-settings-search" role="search">
+                    <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
+                    <div class="config-settings-search-field">
+                        <input type="search" id="config-settings-search-input" class="config-settings-search-input"
+                               data-i18n-placeholder="config.settingsSearchPlaceholder"
+                               placeholder="Search all settings…" autocomplete="off" spellcheck="false"
+                               aria-controls="config-settings-search-results" aria-expanded="false" aria-autocomplete="list">
+                        <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
+                    </div>
+                    <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
                 </div>
 
                 <div class="tabs-scroll-wrapper">
@@ -1024,6 +1037,12 @@
                                             <p class="config-advanced-action-text" data-i18n="config.resetContextTipsHint">Reset all dismissed context tips so they appear again on the dashboard.</p>
                                             <div class="config-advanced-action-actions">
                                                 <button type="button" id="reset-context-tips-btn" class="btn btn-secondary btn-small" data-i18n="config.resetContextTipsButton">Reset context tips</button>
+                                            </div>
+                                        </div>
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text" data-i18n="config.resetLayoutModernNudgeHint">Show the “Try modern layout” spotlight again on the dashboard (classic layout only).</p>
+                                            <div class="config-advanced-action-actions">
+                                                <button type="button" id="reset-layout-modern-nudge-btn" class="btn btn-secondary btn-small" data-i18n="config.resetLayoutModernNudgeButton">Reset layout prompt</button>
                                             </div>
                                         </div>
                                         <div class="config-advanced-action-row">
@@ -2151,6 +2170,7 @@
     <script src="/static/js/config-collections-tour.js"></script>
     <script src="/static/js/config-theme-tour.js"></script>
     <script src="/static/js/config/config-help-search.js"></script>
+    <script src="/static/js/config/config-settings-search.js"></script>
     <script src="/static/js/config/config-setting-info.js"></script>
     <script src="/static/js/config/config-custom-themes.js"></script>
     <script src="/static/js/colors.js"></script>

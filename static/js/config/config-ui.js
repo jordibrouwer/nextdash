@@ -100,6 +100,7 @@ class ConfigUI {
                     mgr.stats.refresh(mgr);
                 } else if (targetTab === 'keyboard' && mgr.keyboard) {
                     mgr.keyboard.refresh(mgr);
+                    window.ConfigSettingsSearch?.refreshIndex?.();
                 } else if (targetTab === 'tags') {
                     if (mgr._configTagsTourActive || mgr._configTagsTourStarting) {
                         mgr.tags?.refresh(mgr);

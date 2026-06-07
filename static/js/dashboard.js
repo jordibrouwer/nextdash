@@ -328,6 +328,7 @@ class Dashboard {
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
             this.discoverabilityQueue?.scheduleRun();
         }
+        this.scheduleLayoutModernNudgeWhenIdle();
     }
 
     setupExtensionBookmarkSavedListener() {
@@ -2107,6 +2108,51 @@ class Dashboard {
         this.pasteSpotlight = spotlight;
     }
 
+    scheduleLayoutModernNudgeWhenIdle() {
+        if (this._layoutModernNudgeScheduled) return;
+        if (typeof window.LayoutModernNudge?.shouldOffer !== 'function') return;
+        if (!window.LayoutModernNudge.shouldOffer(this)) return;
+        this._layoutModernNudgeScheduled = true;
+
+        const attempt = () => {
+            if (!window.LayoutModernNudge?.shouldOffer(this)) {
+                this._layoutModernNudgeScheduled = false;
+                return;
+            }
+            if (this.onboardingStartedInSession) {
+                setTimeout(attempt, 600);
+                return;
+            }
+            if (typeof this.isModalOpen === 'function' && this.isModalOpen()) {
+                setTimeout(attempt, 600);
+                return;
+            }
+            this.maybeShowLayoutModernNudge(1200);
+        };
+
+        setTimeout(attempt, 1500);
+    }
+
+    maybeShowLayoutModernNudge(delayMs = 1200) {
+        if (typeof window.LayoutModernNudge?.shouldOffer !== 'function') return;
+        if (!window.LayoutModernNudge.shouldOffer(this)) return;
+        if (this.layoutModernNudge?.el) return;
+
+        const spotlight = window.LayoutModernNudge.create(this);
+        if (!spotlight) return;
+
+        const dash = this;
+        spotlight.show(delayMs, {
+            canShow: () => {
+                if (!window.LayoutModernNudge?.shouldOffer(dash)) return false;
+                if (dash.onboardingStartedInSession) return false;
+                if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
+                return true;
+            },
+        });
+        this.layoutModernNudge = spotlight;
+    }
+
     maybeShowWhatsNew() {
         if (this.onboardingStartedInSession || (typeof this.isModalOpen === 'function' && this.isModalOpen())) {
             return;
@@ -2166,13 +2212,13 @@ class Dashboard {
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
                     dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
                 }
+                dash.scheduleLayoutModernNudgeWhenIdle();
             }
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
         if (this.onboardingStartedInSession) {
             try {
                 localStorage.removeItem('nextdash:feature-tour-spotlight-v1');
-                localStorage.removeItem('nextdash:recent-open-spotlight-v1');
                 localStorage.removeItem('nextdash:search-flow-hint-v1');
             } catch {}
         }
