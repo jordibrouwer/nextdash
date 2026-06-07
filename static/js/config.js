@@ -5081,19 +5081,44 @@ class ConfigManager {
         window.ConfigCommandPalette?.open?.(this);
     }
 
+    async preparePaletteBookmarksContext() {
+        this.ensureBookmarksTabActive();
+        const pageId = Number(this.currentPageId) || 1;
+        await this.loadPageBookmarks(pageId);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+
+    async preparePaletteCategoriesContext() {
+        this.ensureCategoriesTabActive();
+        const pageId = Number(this.currentCategoriesPageId) || Number(this.currentPageId) || 1;
+        if (!this.categoriesListHydrated || !Array.isArray(this.categoriesData)) {
+            await this.loadPageCategories(pageId);
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+
     async runPaletteAction(command) {
         if (command === 'search-settings') {
             window.ConfigSettingsSearch?.focusSearch?.();
             return;
         }
-        if (command === 'add-page') await this.addPage();
-        if (command === 'add-category') await this.addCategory();
-        if (command === 'add-bookmark') this.addBookmark();
-        if (command === 'show-archived') {
-            const countTemplate = this.language.t('config.archivedPagesCount') || '{count} archived';
-            this.ui.showNotification(countTemplate.replace('{count}', String(this.getArchivedPageIds().length)), 'info');
+        if (command === 'add-page') {
+            this.ensurePagesTabActive();
+            await this.addPage();
+            return;
+        }
+        if (command === 'add-category') {
+            await this.preparePaletteCategoriesContext();
+            await this.addCategory();
+            return;
+        }
+        if (command === 'add-bookmark') {
+            await this.preparePaletteBookmarksContext();
+            this.addBookmark();
+            return;
         }
         if (command === 'refresh-favicon-selection') {
+            await this.preparePaletteBookmarksContext();
             const refreshed = await this.bookmarks.bulkRefreshFavicons(this.bookmarksData);
             if (refreshed > 0) {
                 const refreshedShort = this.language.t('config.refreshedBookmarksCountShort') || 'Refreshed {count}';

@@ -15,7 +15,6 @@
         { id: 'add-page', labelKey: 'commandNewPage', fallback: 'New page' },
         { id: 'add-category', labelKey: 'commandNewCategory', fallback: 'New category' },
         { id: 'add-bookmark', labelKey: 'commandNewBookmark', fallback: 'New bookmark' },
-        { id: 'show-archived', labelKey: 'commandShowArchived', fallback: 'Show archived pages' },
         { id: 'refresh-favicon-selection', labelKey: 'commandRefreshFavicons', fallback: 'Refresh favicons' },
     ];
 
@@ -47,6 +46,7 @@
             const li = document.createElement('li');
             li.className = 'config-command-palette-item';
             if (action.isBridge) li.classList.add('is-bridge');
+            li.id = `config-command-palette-option-${index}`;
             li.dataset.actionId = action.id;
             li.setAttribute('role', 'option');
             li.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
@@ -58,7 +58,7 @@
         });
     }
 
-    function setActiveItem(listEl, nextIndex) {
+    function setActiveItem(listEl, inputEl, nextIndex) {
         const items = listEl ? [...listEl.querySelectorAll('.config-command-palette-item')] : [];
         if (!items.length) return null;
         const index = Math.max(0, Math.min(nextIndex, items.length - 1));
@@ -67,8 +67,14 @@
             el.classList.toggle('is-active', active);
             el.setAttribute('aria-selected', active ? 'true' : 'false');
         });
-        items[index]?.scrollIntoView({ block: 'nearest' });
-        return { index, item: items[index] };
+        const activeEl = items[index];
+        if (inputEl && activeEl?.id) {
+            inputEl.setAttribute('aria-activedescendant', activeEl.id);
+        } else if (inputEl) {
+            inputEl.removeAttribute('aria-activedescendant');
+        }
+        activeEl?.scrollIntoView({ block: 'nearest' });
+        return { index, item: activeEl };
     }
 
     function open(configManager) {
@@ -97,8 +103,13 @@
             </div>
         `;
 
+        let detachPaletteKeys = () => {};
+
         const runAction = async (actionId) => {
+            detachPaletteKeys();
             window.AppModal.hide();
+            // Let the modal finish closing before opening tabs / detail panels.
+            await new Promise((resolve) => setTimeout(resolve, 0));
             await configManager.runPaletteAction?.(actionId);
         };
 
@@ -108,6 +119,7 @@
             confirmText: t(lang, 'close', 'Close'),
             showCancel: false,
             modalClass: 'config-command-palette-modal',
+            initialFocusSelector: '#config-command-palette-input',
         });
 
         lang?.applyTranslations?.();
@@ -118,9 +130,12 @@
         if (!inputEl || !listEl) return;
 
         inputEl.placeholder = t(lang, 'commandPaletteFilterPlaceholder', 'Filter actions…');
+        inputEl.setAttribute('aria-haspopup', 'listbox');
         if (emptyEl) {
             emptyEl.textContent = t(lang, 'commandPaletteNoActions', 'No actions match your filter.');
         }
+
+        const getItems = () => [...listEl.querySelectorAll('.config-command-palette-item')];
 
         const refresh = () => {
             const matches = filterActions(allActions, inputEl.value);
@@ -128,53 +143,87 @@
                 listEl.hidden = true;
                 if (emptyEl) emptyEl.hidden = !inputEl.value.trim();
                 activeIndex = 0;
+                inputEl.removeAttribute('aria-activedescendant');
                 return;
             }
             if (emptyEl) emptyEl.hidden = true;
             listEl.hidden = false;
             renderList(listEl, matches, runAction);
-            const active = setActiveItem(listEl, activeIndex);
+            if (activeIndex >= matches.length) {
+                activeIndex = 0;
+            }
+            const active = setActiveItem(listEl, inputEl, activeIndex);
             activeIndex = active?.index ?? 0;
         };
+
+        const paletteKeyHandler = (e) => {
+            if (!window.AppModal?.modal?.classList.contains('show')
+                || !window.AppModal?.modalPanel?.classList.contains('config-command-palette-modal')) {
+                detachPaletteKeys();
+                return;
+            }
+
+            const items = getItems();
+
+            if (e.key === 'ArrowDown' && items.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                const active = setActiveItem(listEl, inputEl, activeIndex + 1);
+                activeIndex = active?.index ?? 0;
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && items.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                const active = setActiveItem(listEl, inputEl, activeIndex <= 0 ? items.length - 1 : activeIndex - 1);
+                activeIndex = active?.index ?? 0;
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                if (e.target?.closest?.('.modal-button')) {
+                    detachPaletteKeys();
+                    return;
+                }
+                const active = items[activeIndex] || items[0];
+                if (active) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void runAction(active.dataset.actionId);
+                }
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                detachPaletteKeys();
+            }
+        };
+
+        detachPaletteKeys = () => {
+            document.removeEventListener('keydown', paletteKeyHandler, true);
+        };
+        document.addEventListener('keydown', paletteKeyHandler, true);
+
+        const closeBtn = document.querySelector('#modal-actions .modal-button');
+        if (closeBtn) {
+            const previousCloseHandler = closeBtn.onclick;
+            closeBtn.onclick = () => {
+                detachPaletteKeys();
+                if (typeof previousCloseHandler === 'function') {
+                    previousCloseHandler();
+                } else {
+                    window.AppModal.hide();
+                }
+            };
+        }
 
         inputEl.addEventListener('input', () => {
             activeIndex = 0;
             refresh();
         });
 
-        inputEl.addEventListener('keydown', (e) => {
-            const items = [...listEl.querySelectorAll('.config-command-palette-item')];
-            if (e.key === 'ArrowDown' && items.length) {
-                e.preventDefault();
-                const active = setActiveItem(listEl, activeIndex + 1);
-                activeIndex = active?.index ?? 0;
-                return;
-            }
-            if (e.key === 'ArrowUp' && items.length) {
-                e.preventDefault();
-                const active = setActiveItem(listEl, activeIndex <= 0 ? items.length - 1 : activeIndex - 1);
-                activeIndex = active?.index ?? 0;
-                return;
-            }
-            if (e.key === 'Enter') {
-                const active = items[activeIndex] || items[0];
-                if (active) {
-                    e.preventDefault();
-                    void runAction(active.dataset.actionId);
-                }
-                return;
-            }
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                window.AppModal.hide();
-            }
-        });
-
         refresh();
-        setTimeout(() => {
-            inputEl.focus({ preventScroll: true });
-            inputEl.select?.();
-        }, 0);
     }
 
     window.ConfigCommandPalette = {

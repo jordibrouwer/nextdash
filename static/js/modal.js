@@ -56,6 +56,10 @@ class Modal {
                     return;
                 }
                 if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT') {
+                    // Config command palette handles Enter on its filter input (list selection).
+                    if (this.modalPanel?.classList.contains('config-command-palette-modal')) {
+                        return;
+                    }
                     e.preventDefault();
                     const confirmBtn = this.modal.querySelector('.modal-button.danger, .modal-button:first-child');
                     if (confirmBtn && confirmBtn !== e.target) confirmBtn.click();

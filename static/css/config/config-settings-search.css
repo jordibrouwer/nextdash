@@ -18,8 +18,9 @@
     flex: 0 0 auto;
     margin-left: auto;
     position: relative;
-    width: 13.5rem;
-    max-width: 34vw;
+    /* Fit longest locale placeholder (e.g. "Find settings, tabs, help…") without clipping */
+    width: min(24rem, 46vw);
+    min-width: 22rem;
 }
 
 .config-settings-search-label {
@@ -65,8 +66,8 @@
     z-index: 50;
     top: calc(100% + 0.25rem);
     right: 0;
-    left: auto;
-    width: min(20rem, 72vw);
+    left: 0;
+    width: 100%;
     max-height: 16rem;
     overflow-y: auto;
     margin: 0;
@@ -107,9 +108,9 @@
     position: absolute;
     top: calc(100% + 0.25rem);
     right: 0;
-    left: auto;
-    width: max-content;
-    max-width: min(20rem, 72vw);
+    left: 0;
+    width: auto;
+    max-width: 100%;
     margin: 0;
     padding: 0.35rem 0.5rem;
     font-size: var(--font-size-small, 0.75rem);
