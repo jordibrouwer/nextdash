@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v44';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v45';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,32 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.10', 'June 2026', '2026-06-09', [
+                {
+                    title: 'Config — find settings &amp; quick actions',
+                    items: [
+                        { badge: 'new', text: '<strong>Search settings</strong> — <kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd> in the breadcrumb bar finds tabs, General panels (including Advanced while on Essentials), stats sections, colors groups, keyboard bindings, and Help blocks.' },
+                        { badge: 'new', text: '<strong>Quick actions palette</strong> — <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd> runs save, open dashboard, and tour resets only — settings navigation lives in search.' },
+                        { badge: 'fix', text: '<strong>Search index stays fresh</strong> — rebuilds after tab opens, layer switches, language changes, and bookmark list renders.' },
+                    ]
+                },
+                {
+                    title: 'Onboarding &amp; discoverability',
+                    items: [
+                        { badge: 'new', text: '<strong>Shorter onboarding</strong> — keyboard and mouse bookmark tips merged into one step; the finish step covers pages and first bookmarks (no separate post-setup wizard).' },
+                        { badge: 'new', text: '<strong>Chained prompts</strong> — after onboarding, <em>What\'s new</em> and (classic layout) a layout tip may appear one after another in the same session. <em>Skip for later</em> defers the rest until next session.' },
+                        { badge: 'fix', text: '<strong>Cleanup</strong> — removed dead post-setup wizard, tour spotlight, and recent-bookmarks spotlight code.' },
+                    ]
+                },
+                {
+                    title: 'Config → General — status',
+                    items: [
+                        { badge: 'new', text: '<strong>Status essentials</strong> — compact monitoring overview under Essentials (monitored count + toggle); full tuning stays in Advanced.' },
+                        { badge: 'new', text: '<strong>Health link</strong> — opens from the Essentials status summary when the Health dashboard is enabled.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.9', 'June 2026', '2026-06-08', [
                 {

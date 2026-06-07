@@ -111,10 +111,10 @@ Data is stored under `./data` by default.
 ```
 Install → Open URL in browser → Onboarding wizard (optional)
     → Dashboard (may be empty) → Config to add pages/bookmarks
-    → Optional: config guided tours (General / Bookmarks / Theme / …), feature tour, tuning wizard, browser extension
+    → Optional: What's new + layout tip (chained), config guided tours, feature tour, browser extension
 ```
 
-1. **Onboarding** — Language, open-in-new-tab, weather/date, search behaviour. You can skip and change everything later in **Config → General**.
+1. **Onboarding** — Language, links, weather/date, classic or modern layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
 3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
 4. **Guided config tours** — The first time you open **General**, **Bookmarks**, **Theme**, **Finders**, or other config tabs on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
@@ -570,7 +570,7 @@ The first time you open the **Theme** tab on a desktop-width window, a **9-step 
 
 ### Per-bookmark status (dashboard)
 
-When enabled, bookmarks can show online/offline from ping checks. Configure in **general → status monitor**.
+When enabled, bookmarks can show online/offline from ping checks. **Essentials** shows a compact overview (monitored count + toggle); per-bookmark options live under **Bookmarks**, full tuning under **Advanced → Status**. Re-check interval is configurable (1–30 minutes, default 5).
 
 ### Health page (`/health`)
 
@@ -626,10 +626,15 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Essentials vs Advanced (general)
 
-- **Essentials** — Language, appearance (including favicon styling), layout, everyday bookmark options.  
-- **Advanced** — Smart collections, status, branding, backups pointers, system tools (tours, onboarding replay), feature tour, what’s new.  
+- **Essentials** — Language, appearance (including favicon styling), layout, everyday bookmark options, smart collections, and a compact **status monitoring overview** (monitored count + toggle; **Health →** when enabled).  
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, discoverability reset), feature tour, what’s new.  
 - **Show all sections** button — toggles a flat view with every panel visible regardless of layer.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
+
+### Find settings & quick actions (desktop config)
+
+- **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer and scroll there.  
+- **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
 
 #### Layout and structure
 
@@ -658,7 +663,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips and promo banners are also hidden on mobile.
 
-**Not the same as** — The dashboard **feature tour** (search, finders, commands — launched from the discoverability spotlight after What’s new), the **tuning wizard** (language → theme → extension on the dashboard), or **first-run onboarding**. Those are separate one-time flows.
+**Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`). After onboarding, **What’s new** and (classic layout) a **layout tip** may chain in one session — separate from config tab tours.
 
 ### Config keyboard
 
@@ -667,7 +672,8 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | `1`–`8` | Switch tabs |
 | `S` | Save |
 | `Alt+↑` / `Alt+↓` | Reorder bookmark in list |
-| `Ctrl/Cmd+K` | Command palette |
+| `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard, tour resets) |
+| `Ctrl/Cmd+Shift+K` | Find settings (tabs, panels, labels, help sections) |
 
 ---
 
@@ -871,6 +877,13 @@ Verify server URL, CORS/network, and that nextDash is running. Check browser con
 > search    : commands    ? finders    & quick-add    + new modal
 1-9 pages   , overview    * recent     ! cheat sheet
 arrows nav  Enter open    ; edit       Shift+M move
+```
+
+### Config (desktop)
+
+```
+Ctrl/Cmd+K          quick actions (save, open dashboard, tours)
+Ctrl/Cmd+Shift+K    find any setting, tab, or help section
 ```
 
 ### Important URLs

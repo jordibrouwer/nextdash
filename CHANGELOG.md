@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.10 — June 2026](#v20260610--june-2026)
 - [v2026.06.9 — June 2026](#v2026069--june-2026)
 - [v2026.06.8 — June 2026](#v2026068--june-2026)
 - [v2026.06.7 — June 2026](#v2026067--june-2026)
@@ -36,6 +37,31 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _(Nothing yet.)_
+
+---
+
+## v2026.06.10 — June 2026
+
+**Config settings search, discoverability polish, status essentials** — find any setting with Ctrl+Shift+K; quick actions stay on Ctrl+K; onboarding and post-setup flows simplified.
+
+### Config — settings search & quick actions
+
+- **new** **Search settings** — breadcrumb search field on desktop config (`Ctrl/Cmd+Shift+K`) jumps to tabs, General panels, labels, stats sections, colors groups, keyboard bindings, and Help blocks.
+- **new** **Advanced while on Essentials** — the search index includes hidden Advanced panels; results switch layer and scroll to the target.
+- **new** **Quick actions palette** — `Ctrl/Cmd+K` runs actions only (save, open dashboard, tour resets); settings navigation is separate from the command palette mental model.
+- **fix** **Index refresh** — rebuilds after stats/colors tab open, General layer switch, language change, bookmarks render, and config init.
+
+### Dashboard — onboarding & discoverability
+
+- **new** **Shorter onboarding** — keyboard and mouse bookmark tips merged into one step; finish step covers pages and first bookmarks when you start empty.
+- **new** **Chained discoverability** — after onboarding, What's new and (classic layout) a layout-modern nudge may appear one after another in the same session.
+- **new** **Skip for later** — defers remaining discoverability prompts until the next session.
+- **fix** **Dead code removed** — post-setup wizard, tour spotlight, recent-bookmarks spotlight, and related i18n/CSS/guard selectors.
+
+### Config → General — status essentials
+
+- **new** **Compact overview** — Essentials shows monitored bookmark count and enable toggle; full status tuning stays in Advanced.
+- **new** **Health link** — Essentials status summary includes a Health → button when the Health dashboard is enabled.
 
 ---
 
@@ -777,7 +803,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard); nextDa
 ## How releases are numbered
 
 - **Calendar versions** — `v2026.MM.P` = year, month, patch (e.g. `v2026.05.7`).
-- **In-app token** — `2026.06-dashboard-release-v36` in `whats-new-modal.js` tracks the dashboard “seen” state separately from git tags.
+- **In-app token** — `2026.06-dashboard-release-v45` in `whats-new-modal.js` tracks the dashboard “seen” state separately from git tags.
 - **Unreleased** — work on `main` not yet tied to a numbered release; may appear in README *Unreleased* until shipped.
 
 When you ship a release, add a dated section here, bump the What's new modal, and clear **Unreleased** items that are included.
