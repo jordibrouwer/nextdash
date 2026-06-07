@@ -130,15 +130,6 @@ class ConfigUI {
                     }
                 }
                 if (
-                    targetTab === 'general' &&
-                    !mgr._configGeneralTourActive &&
-                    !mgr._configGeneralTourStarting &&
-                    !mgr._configThemeTourActive &&
-                    !mgr._configThemeTourStarting
-                ) {
-                    mgr.scheduleConfigGeneralTour?.();
-                }
-                if (
                     targetTab === 'colors' &&
                     !mgr._configThemeTourActive &&
                     !mgr._configThemeTourStarting

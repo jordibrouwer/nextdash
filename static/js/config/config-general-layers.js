@@ -456,8 +456,7 @@ class ConfigGeneralLayers {
         }
 
         card.classList.remove('is-collapsed');
-        const tourActive = document.body.hasAttribute('data-config-general-tour-active');
-        card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     setupSmartCollectionsMaster() {

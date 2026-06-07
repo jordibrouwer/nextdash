@@ -15,7 +15,7 @@
 
     function findActiveTourCard() {
         return document.querySelector(
-            '[data-config-tour-card], .config-bookmarks-tour-card, .config-tags-tour-card, .config-collections-tour-card, .config-general-tour-card, .config-pages-tour-card, .config-theme-tour-card, .config-categories-tour-card, .config-finders-tour-card, .config-stats-tour-card, [class$="-tour-card"]'
+            '[data-config-tour-card], .config-bookmarks-tour-card, .config-tags-tour-card, .config-collections-tour-card, .config-pages-tour-card, .config-theme-tour-card, .config-categories-tour-card, .config-finders-tour-card, .config-stats-tour-card, [class$="-tour-card"]'
         );
     }
 

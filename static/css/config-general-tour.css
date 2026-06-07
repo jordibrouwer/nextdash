@@ -1,6 +1,5 @@
 /* Config guided tours — dim via highlight box-shadow (no JS-positioned hole panels) */
 
-body[data-config-general-tour-active]:not(.config-general-tour-ready) .config-general-tour-card,
 body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .config-bookmarks-tour-card,
 body[data-config-finders-tour-active]:not(.config-finders-tour-ready) .config-finders-tour-card,
 body[data-config-stats-tour-active]:not(.config-stats-tour-ready) .config-stats-tour-card,
@@ -12,7 +11,6 @@ body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-
     visibility: hidden;
 }
 
-.config-general-tour-card,
 .config-bookmarks-tour-card,
 .config-finders-tour-card,
 .config-stats-tour-card,
@@ -38,7 +36,6 @@ body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-
 }
 
 /* Default: anchored to bottom center (also for oversized highlights) */
-.config-general-tour-card:not(.is-docked),
 .config-bookmarks-tour-card:not(.is-docked),
 .config-finders-tour-card:not(.is-docked),
 .config-stats-tour-card:not(.is-docked),
@@ -101,7 +98,6 @@ body[data-config-theme-tour-active]:not(.config-theme-tour-ready) .config-theme-
 }
 
 /* Cutout dim + green frame — moves with the element, no separate overlay sync */
-.config-general-tour-highlight,
 .config-bookmarks-tour-highlight,
 .config-finders-tour-highlight,
 .config-stats-tour-highlight,
@@ -130,7 +126,6 @@ body[data-config-tags-tour-bookmarks-phase] .config-tags-tour-highlight {
 }
 
 /* Docked beside a target — top/left set via inline styles in JS */
-.config-general-tour-card.is-docked,
 .config-bookmarks-tour-card.is-docked,
 .config-finders-tour-card.is-docked,
 .config-stats-tour-card.is-docked,
@@ -289,7 +284,6 @@ body[data-config-bookmarks-tour-active].config-bookmarks-tour-interactive-modal
     bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
 }
 
-html.config-general-tour-scroll-lock,
 html.config-bookmarks-tour-scroll-lock,
 html.config-finders-tour-scroll-lock,
 html.config-stats-tour-scroll-lock,
@@ -298,7 +292,6 @@ html.config-tags-tour-scroll-lock,
 html.config-pages-tour-scroll-lock,
 html.config-collections-tour-scroll-lock,
 html.config-theme-tour-scroll-lock,
-html.config-general-tour-scroll-lock body,
 html.config-bookmarks-tour-scroll-lock body,
 html.config-finders-tour-scroll-lock body,
 html.config-stats-tour-scroll-lock body,
@@ -310,7 +303,6 @@ html.config-theme-tour-scroll-lock body {
     overflow: hidden;
 }
 
-html.config-general-tour-scroll-lock body,
 html.config-bookmarks-tour-scroll-lock body,
 html.config-finders-tour-scroll-lock body,
 html.config-stats-tour-scroll-lock body,
