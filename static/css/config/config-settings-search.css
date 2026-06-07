@@ -40,23 +40,24 @@
 
 .config-settings-search-input {
     width: 100%;
+    box-sizing: border-box;
     padding: 0.32rem 0.5rem;
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
-    border-radius: 0.4rem;
-    background: var(--input-bg, var(--bg-secondary, #1e293b));
-    color: var(--text-primary, inherit);
-    font: inherit;
-    font-size: 0.78rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-controls);
+    outline: none;
 }
 
 .config-settings-search-input:focus {
-    outline: 2px solid var(--accent-color, #3b82f6);
-    outline-offset: 1px;
-    border-color: transparent;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
 }
 
 .config-settings-search-input::placeholder {
-    color: var(--text-muted, #94a3b8);
+    color: var(--text-tertiary);
 }
 
 .config-settings-search-results {
@@ -71,33 +72,35 @@
     margin: 0;
     padding: 0.25rem 0;
     list-style: none;
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
-    border-radius: 0.5rem;
-    background: var(--bg-primary, #0f172a);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--background-primary);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--background-modal, #000) 35%, transparent);
 }
 
 .config-settings-search-result {
     padding: 0.45rem 0.7rem;
     cursor: pointer;
+    color: var(--text-primary);
 }
 
 .config-settings-search-result:hover,
 .config-settings-search-result.is-active {
-    background: var(--hover-bg, rgba(59, 130, 246, 0.12));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .config-settings-search-result-title {
     display: block;
-    font-size: 0.88rem;
+    font-size: var(--font-size-controls);
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .config-settings-search-result-sub {
     display: block;
     margin-top: 0.1rem;
-    font-size: 0.75rem;
-    color: var(--text-muted, #94a3b8);
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
 }
 
 .config-settings-search-empty {
@@ -109,37 +112,42 @@
     max-width: min(20rem, 72vw);
     margin: 0;
     padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-muted, #94a3b8);
-    background: var(--bg-primary, #0f172a);
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
-    border-radius: 0.4rem;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--background-modal, #000) 30%, transparent);
 }
 
 .config-command-palette-hint {
     margin: 0 0 0.65rem;
-    font-size: 0.82rem;
+    font-size: var(--font-size-controls);
     line-height: 1.45;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary);
 }
 
 .config-command-palette-input {
     width: 100%;
+    box-sizing: border-box;
     padding: 0.45rem 0.55rem;
     margin-bottom: 0.5rem;
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
-    border-radius: 0.4rem;
-    background: var(--input-bg, var(--bg-secondary, #1e293b));
-    color: var(--text-primary, inherit);
-    font: inherit;
-    font-size: 0.88rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-controls);
+    outline: none;
 }
 
 .config-command-palette-input:focus {
-    outline: 2px solid var(--accent-color, #3b82f6);
-    outline-offset: 1px;
-    border-color: transparent;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.config-command-palette-input::placeholder {
+    color: var(--text-tertiary);
 }
 
 .config-command-palette-list {
@@ -148,15 +156,17 @@
     list-style: none;
     max-height: 14rem;
     overflow-y: auto;
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.25));
-    border-radius: 0.45rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--background-primary);
 }
 
 .config-command-palette-item {
     padding: 0.5rem 0.65rem;
     cursor: pointer;
-    font-size: 0.88rem;
-    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 65%, transparent);
 }
 
 .config-command-palette-item:last-child {
@@ -165,18 +175,18 @@
 
 .config-command-palette-item.is-active,
 .config-command-palette-item:hover {
-    background: color-mix(in srgb, var(--accent-color, #3b82f6) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .config-command-palette-item.is-bridge {
-    color: var(--accent-color, #60a5fa);
+    color: var(--accent-primary);
     font-weight: 600;
 }
 
 .config-command-palette-empty {
     margin: 0.35rem 0 0;
-    font-size: 0.82rem;
-    color: var(--text-secondary, #94a3b8);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
 }
 
 .config-settings-search-highlight {
@@ -186,7 +196,7 @@
 @keyframes config-settings-search-pulse {
     0%,
     15% {
-        box-shadow: 0 0 0 2px var(--accent-color, #3b82f6);
+        box-shadow: 0 0 0 2px var(--accent-primary);
     }
     100% {
         box-shadow: none;
