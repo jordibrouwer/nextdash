@@ -6,6 +6,10 @@ class Onboarding {
         this.serverCompleted = options.serverCompleted === true;
         this.onPersist = typeof options.onPersist === 'function' ? options.onPersist : null;
         this.onApplySettings = typeof options.onApplySettings === 'function' ? options.onApplySettings : null;
+        this.onApplyBookmarks = typeof options.onApplyBookmarks === 'function' ? options.onApplyBookmarks : null;
+        this.bookmarks = Array.isArray(options.bookmarks)
+            ? options.bookmarks.map((bookmark) => ({ ...bookmark }))
+            : [];
         this.mobileCompact = options.mobileCompact === true
             || (typeof window.MobileExperience?.shouldSkipHeavyUi === 'function' && window.MobileExperience.shouldSkipHeavyUi());
         this.localSettings = this.buildInitialSettings(options.settings || {});
@@ -189,6 +193,7 @@ class Onboarding {
                     }
                 ]
             },
+            this.buildStatusMonitoringStep(),
             {
                 title: this.t('onboarding.keyboardBookmarksStepTitle', 'Bookmarks: keyboard'),
                 body: this.t(
@@ -224,6 +229,72 @@ class Onboarding {
                 }
             }
         ];
+    }
+
+    buildStatusMonitoringStep() {
+        const hasBookmarks = this.bookmarks.length > 0;
+        const selector = document.querySelector('.health-link a')
+            ? '.health-link a'
+            : (document.querySelector('#dashboard-mini-status')
+                ? '#dashboard-mini-status'
+                : '#dashboard-layout');
+
+        const step = {
+            title: this.t('onboarding.statusMonitorStepTitle', 'Which bookmarks to monitor?'),
+            body: hasBookmarks
+                ? this.t(
+                    'onboarding.statusMonitorStepBody',
+                    'Status checks ping selected bookmarks in the background and show online/offline on each row. Optional — change anytime in config or on the health page.'
+                )
+                : this.t(
+                    'onboarding.statusMonitorStepBodyEmpty',
+                    'When you add bookmarks, enable status per row to see online/offline indicators. GitHub is a good example to try first. Visit the health page anytime for broken links.'
+                ),
+            selector,
+            placement: 'bottom',
+            optionalNote: this.t(
+                'onboarding.statusMonitorStepOptional',
+                'Optional — skip or leave all unchecked; status stays available in config.'
+            ),
+        };
+
+        if (hasBookmarks) {
+            step.fields = [
+                {
+                    id: 'statusMonitorSelection',
+                    type: 'bookmark-checklist',
+                    label: this.t('onboarding.statusMonitorListLabel', 'Monitor these bookmarks'),
+                    maxItems: 10,
+                    exampleUrl: 'https://github.com',
+                    exampleHint: this.t(
+                        'onboarding.statusMonitorGithubHint',
+                        'Good example — pings reliably and shows how status dots work.'
+                    ),
+                },
+            ];
+        }
+
+        return step;
+    }
+
+    getStatusMonitorBookmarkList(maxItems = 10) {
+        const sorted = [...this.bookmarks].sort((a, b) => {
+            const aGithub = String(a?.url || '').includes('github.com') ? 0 : 1;
+            const bGithub = String(b?.url || '').includes('github.com') ? 0 : 1;
+            if (aGithub !== bGithub) return aGithub - bGithub;
+            return String(a?.name || '').localeCompare(String(b?.name || ''));
+        });
+        return sorted.slice(0, maxItems);
+    }
+
+    buildStatusMonitorSelection(bookmarks) {
+        const selection = {};
+        bookmarks.forEach((bookmark) => {
+            if (bookmark?.url) {
+                selection[bookmark.url] = bookmark.checkStatus === true;
+            }
+        });
+        return selection;
     }
 
     buildMobileSteps() {
@@ -302,7 +373,8 @@ class Onboarding {
             interleaveMode: settings.interleaveMode === true,
             showTips: settings.onboardingCompleted ? (settings.showTips !== false) : true,
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
-            showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true
+            showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
+            statusMonitorSelection: this.buildStatusMonitorSelection(this.bookmarks),
         };
     }
 
@@ -366,6 +438,9 @@ class Onboarding {
 
         title.textContent = step.title;
         body.textContent = step.body;
+        if (step.optionalNote) {
+            body.textContent = `${step.body} ${step.optionalNote}`;
+        }
         progress.textContent = `${this.currentStep + 1}/${this.steps.length}`;
 
         back.disabled = this.currentStep === 0;
@@ -436,6 +511,37 @@ class Onboarding {
                     </label>
                 `;
             }
+            if (field.type === 'bookmark-checklist') {
+                const items = this.getStatusMonitorBookmarkList(field.maxItems || 10);
+                const selection = this.localSettings.statusMonitorSelection || {};
+                return `
+                    <fieldset class="onboarding-fieldset onboarding-bookmark-checklist" data-field-id="${field.id}">
+                        <legend class="onboarding-field-label">${field.label}</legend>
+                        <div class="onboarding-bookmark-checklist-items">
+                            ${items.map((bookmark) => {
+                                const url = bookmark.url || '';
+                                const checked = selection[url] === true;
+                                const isExample = field.exampleUrl && url.replace(/\/$/, '') === field.exampleUrl.replace(/\/$/, '');
+                                return `
+                                    <label class="onboarding-bookmark-check-option${isExample ? ' is-example' : ''}">
+                                        <input
+                                            type="checkbox"
+                                            data-monitor-url="${this.escapeHtml(url)}"
+                                            ${checked ? 'checked' : ''}
+                                        >
+                                        <span class="onboarding-bookmark-check-label">
+                                            <span class="onboarding-bookmark-check-name">${this.escapeHtml(bookmark.name || url)}</span>
+                                            ${isExample && field.exampleHint
+                                                ? `<span class="onboarding-bookmark-check-hint">${field.exampleHint}</span>`
+                                                : ''}
+                                        </span>
+                                    </label>
+                                `;
+                            }).join('')}
+                        </div>
+                    </fieldset>
+                `;
+            }
             return '';
         }).join('');
 
@@ -473,9 +579,28 @@ class Onboarding {
                     });
                 });
             }
+            if (field.type === 'bookmark-checklist') {
+                const selection = { ...(this.localSettings.statusMonitorSelection || {}) };
+                container.querySelectorAll('[data-monitor-url]').forEach((checkbox) => {
+                    const url = checkbox.getAttribute('data-monitor-url');
+                    if (!url) return;
+                    checkbox.addEventListener('change', () => {
+                        selection[url] = checkbox.checked;
+                        this.localSettings.statusMonitorSelection = selection;
+                    });
+                });
+            }
         });
 
         this.refreshDependentFields(container);
+    }
+
+    escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     refreshDependentFields(container) {
@@ -522,6 +647,16 @@ class Onboarding {
                 const selected = fieldsContainer.querySelector(`input[name="onboarding-${field.id}"]:checked`);
                 if (!selected) return;
                 this.localSettings[field.id] = this.parseFieldValue(field.id, selected.value);
+                return;
+            }
+            if (field.type === 'bookmark-checklist') {
+                const selection = { ...(this.localSettings.statusMonitorSelection || {}) };
+                fieldsContainer.querySelectorAll('[data-monitor-url]').forEach((checkbox) => {
+                    const url = checkbox.getAttribute('data-monitor-url');
+                    if (!url) return;
+                    selection[url] = checkbox.checked;
+                });
+                this.localSettings.statusMonitorSelection = selection;
             }
         });
     }
@@ -579,7 +714,15 @@ class Onboarding {
         if (!selector) {
             return;
         }
-        let element = document.querySelector(selector);
+        let element = null;
+        selector.split(',').map((part) => part.trim()).some((part) => {
+            const candidate = document.querySelector(part);
+            if (candidate) {
+                element = candidate;
+                return true;
+            }
+            return false;
+        });
         if (!element) {
             return;
         }
@@ -629,6 +772,15 @@ class Onboarding {
 
         if (this.onApplySettings) {
             this.onApplySettings(this.settings);
+        }
+
+        if (this.onApplyBookmarks && this.bookmarks.length > 0) {
+            const selection = this.localSettings.statusMonitorSelection || {};
+            const updatedBookmarks = this.bookmarks.map((bookmark) => ({
+                ...bookmark,
+                checkStatus: selection[bookmark.url] === true,
+            }));
+            Promise.resolve(this.onApplyBookmarks(updatedBookmarks)).catch(() => {});
         }
 
         try {

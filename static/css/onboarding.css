@@ -98,6 +98,46 @@
     font-size: var(--font-size-controls);
 }
 
+.onboarding-bookmark-checklist-items {
+    display: grid;
+    gap: 0.35rem;
+    max-height: 11rem;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+.onboarding-bookmark-check-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.onboarding-bookmark-check-option.is-example {
+    padding: 0.35rem 0.4rem;
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+.onboarding-bookmark-check-label {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.onboarding-bookmark-check-name {
+    font-size: var(--font-size-controls);
+    font-weight: 600;
+}
+
+.onboarding-bookmark-check-hint {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.72rem);
+    line-height: 1.4;
+}
+
 .onboarding-actions {
     display: flex;
     gap: 0.5rem;

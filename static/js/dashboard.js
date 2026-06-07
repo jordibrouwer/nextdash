@@ -2179,6 +2179,7 @@ class Dashboard {
         const dash = this;
         const onboarding = new window.Onboarding({
             hasBookmarks: Array.isArray(this.bookmarks) && this.bookmarks.length > 0,
+            bookmarks: this.bookmarks,
             serverCompleted: dash.settings?.onboardingCompleted === true,
             settings: dash.settings,
             language: dash.language,
@@ -2191,6 +2192,24 @@ class Dashboard {
                 dash.renderDashboard();
                 dash.updateSearchComponent();
                 dash.onboardingStartedInSession = false;
+            },
+            onApplyBookmarks: async (updatedBookmarks) => {
+                dash.bookmarks = updatedBookmarks;
+                dash.renderDashboard();
+                dash.updateStatusMonitor();
+                try {
+                    const response = await fetch(`/api/bookmarks?page=${dash.currentPageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedBookmarks),
+                    });
+                    if (!response.ok) return;
+                    if (dash.settings.globalShortcuts) {
+                        await dash.loadAllBookmarks();
+                    }
+                } catch {
+                    // Non-blocking during onboarding finish.
+                }
             },
             onPersist: async () => {
                 dash.settings.onboardingCompleted = true;
