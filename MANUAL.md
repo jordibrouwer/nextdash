@@ -711,6 +711,8 @@ Includes pages, bookmarks (with tags), categories, settings, themes.
 
 Do not rename files inside the ZIP.
 
+Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when localhost bookmarks are disabled) are **skipped** during import; the UI shows how many were skipped alongside new and conflict counts.
+
 ### Browser HTML import
 
 1. Export bookmarks from Chrome, Firefox, or Edge as **HTML**.  
@@ -879,6 +881,8 @@ Routine bookmark edits, config save, and dashboard use are **not** token-gated. 
 ### Localhost bookmarks
 
 **Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
+
+Server-side **pings**, **link previews**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off).
 
 ---
 

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.11 — June 2026](#v20260611--june-2026)
 - [v2026.06.10 — June 2026](#v20260610--june-2026)
 - [v2026.06.9 — June 2026](#v2026069--june-2026)
 - [v2026.06.8 — June 2026](#v2026068--june-2026)
@@ -37,6 +38,39 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _(Nothing yet.)_
+
+---
+
+## v2026.06.11 — June 2026
+
+**Security hardening, write-token parity, search/health fixes** — optional `NEXTDASH_WRITE_TOKEN`, SSRF-safe redirects, import URL validation, XSS fixes in search, `:history` command, extension write token.
+
+### Security & self-hosting
+
+- **new** **Optional write token** — environment variable `NEXTDASH_WRITE_TOKEN`; protected endpoints require header `X-NextDash-Token`. Config and Health pages inject the token via meta tag (same origin).
+- **new** **Allow localhost bookmarks** — `allowLocalBookmarks` in settings (Advanced → Bookmarks area); **on by default** for local dev; turn off on shared/LAN exposure to tighten SSRF boundaries for status/preview fetches.
+- **fix** **ZIP import validation** — bookmarks with disallowed URLs are skipped during restore; UI reports `skippedBookmarks` count.
+- **fix** **Redirect SSRF** — shared `safeRedirectCheck` on ping, bookmark preview, page-title fetch, auto-heal redirect detection, and icon-from-URL (follows only public hosts when local bookmarks are off).
+- **fix** **Search XSS** — `highlightFuzzyMatch` and search `meta` escaped; icon filenames sanitized server-side and filtered client-side in search results.
+
+### Health & reliability
+
+- **fix** **Health write token** — `POST /api/health/auto-heal-apply`, `cache-scan`, and `update-status` gated when token is set; `health.js` sends `nextDashWriteHeaders`.
+- **fix** **Reset deadlock** — `ResetAllData()` releases the store lock before `initializeDefaultFiles()` to avoid re-entrant mutex deadlock.
+
+### Search, extension & polish
+
+- **new** **`:history` command** — browse recent searches from command mode; `:history clear` wipes all; per-row × in empty search overlay.
+- **new** **Extension write token** — optional field in extension Settings; sent on bookmark add when configured.
+- **fix** **Locale parity** — DE/FR missing keys closed; empty `help` objects removed.
+- **fix** **Font size normalization** — legacy values `small`/`medium`/`large` map to `s`/`m`/`l` on load and save.
+- **fix** **Markup & cleanup** — dashboard duplicate `<head>` removed; obsolete `templates/colors.html` and unused static assets removed (`/colors` still redirects to `config#colors`).
+- **fix** **Health UI** — back link to config; config search theming aligned with design tokens.
+
+### Tests & docs
+
+- **new** Go tests for URL safety, write token, reset (no deadlock), backup import sanitization, fontSize normalization, manifest.
+- **new** `README.md`, `MANUAL.md` §21, `docker-compose.yml`, and extension README updated for write token and localhost bookmarks.
 
 ---
 

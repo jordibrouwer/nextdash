@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v45';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v46';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,35 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.11', 'June 2026', '2026-06-10', [
+                {
+                    title: 'Security &amp; self-hosting',
+                    items: [
+                        { badge: 'new', text: '<strong>Optional write token</strong> — set <code>NEXTDASH_WRITE_TOKEN</code> on the server; destructive and health write APIs then require <code>X-NextDash-Token</code>. Config and Health pages send it automatically in the browser.' },
+                        { badge: 'new', text: '<strong>Localhost bookmarks</strong> — Config → General → Advanced → <em>Allow localhost &amp; private-network bookmarks</em> (on by default for dev). Turn off if nextDash is reachable on a shared network.' },
+                        { badge: 'fix', text: '<strong>Import hardening</strong> — ZIP restore skips bookmarks with invalid URLs and reports how many were skipped.' },
+                        { badge: 'fix', text: '<strong>SSRF redirects</strong> — pings, link previews, and auto-heal only follow redirects to allowed hosts.' },
+                        { badge: 'fix', text: '<strong>Search XSS</strong> — fuzzy match highlights and search metadata are escaped; bookmark icon filenames are validated on save.' },
+                    ]
+                },
+                {
+                    title: 'Health &amp; reliability',
+                    items: [
+                        { badge: 'fix', text: '<strong>Health write APIs</strong> — auto-heal apply, cache scan, and status persistence respect the write token when set.' },
+                        { badge: 'fix', text: '<strong>Factory reset</strong> — reset all data no longer deadlocks while rebuilding default files.' },
+                    ]
+                },
+                {
+                    title: 'Search, extension &amp; polish',
+                    items: [
+                        { badge: 'new', text: '<strong>:history</strong> — command mode lists recent searches; <code>:history clear</code> wipes all. Empty search also shows history with a × per row.' },
+                        { badge: 'new', text: '<strong>Extension write token</strong> — optional field in extension Settings when your server uses <code>NEXTDASH_WRITE_TOKEN</code>.' },
+                        { badge: 'fix', text: '<strong>Locales &amp; font size</strong> — DE/FR parity restored; legacy <code>small</code>/<code>medium</code>/<code>large</code> font sizes normalize to <code>s</code>/<code>m</code>/<code>l</code>.' },
+                        { badge: 'fix', text: '<strong>Cleanup</strong> — removed obsolete standalone colors page template and other unused static assets.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.10', 'June 2026', '2026-06-09', [
                 {
