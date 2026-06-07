@@ -1581,7 +1581,7 @@
         "helpFilterPlaceholder": "Help-secties filteren…",
         "helpFilterNoResults": "Geen secties gevonden.",
         "settingsSearchLabel": "Instellingen zoeken",
-        "settingsSearchPlaceholder": "Alle instellingen doorzoeken…",
+        "settingsSearchPlaceholder": "Instellingen zoeken…",
         "settingsSearchNoResults": "Geen instellingen gevonden.",
         "settingsSearchTabEntry": "Tab",
         "helpPageNavItems": "<li><a href=\"#help-quick-start\">Snelstart</a></li><li><a href=\"#help-onboarding\">Eerste start (onboarding)</a></li><li><a href=\"#help-config-general\">Algemene instellingen</a></li><li><a href=\"#help-navigation\">Navigatie</a></li><li><a href=\"#help-mobile\">Telefoon vs desktop</a></li><li><a href=\"#help-keyboard\">Toetsenbord-sneltoetsen</a></li><li><a href=\"#help-bookmarks-dashboard\">Dashboardbladwijzers</a></li><li><a href=\"#help-search\">Zoeken &amp; modi</a></li><li><a href=\"#help-date-weather\">Datum &amp; weer</a></li><li><a href=\"#help-smart\">Slimme collecties</a></li><li><a href=\"#help-tags\">Tags</a></li><li><a href=\"#help-collections\">Collecties</a></li><li><a href=\"#help-sorting\">Sorteren &amp; vastgezet</a></li><li><a href=\"#help-manage\">Bladwijzers beheren</a></li><li><a href=\"#help-finders\">Finders</a></li><li><a href=\"#help-status\">Statusmonitor</a></li><li><a href=\"#help-health\">Bladwijzer gezondheid</a></li><li><a href=\"#help-tips\">Roteertips</a></li><li><a href=\"#help-backup\">Backup &amp; herstel</a></li><li><a href=\"#help-branding\">Thema &amp; branding</a></li><li><a href=\"#help-data\">Data &amp; sync</a></li><li><a href=\"#help-troubleshoot\">Problemen oplossen</a></li>",

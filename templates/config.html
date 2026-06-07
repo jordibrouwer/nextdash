@@ -98,17 +98,19 @@
     <!-- Contenedor 3: Contenido de la página -->
     <div class="config-section section-content">
         <div class="container">
-            <div id="config-breadcrumb" class="config-breadcrumb" aria-label="Location"></div>
-            <div class="config-settings-search" role="search">
-                <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
-                <div class="config-settings-search-field">
-                    <input type="search" id="config-settings-search-input" class="config-settings-search-input"
-                           data-i18n-placeholder="config.settingsSearchPlaceholder"
-                           placeholder="Search all settings…" autocomplete="off" spellcheck="false"
-                           aria-controls="config-settings-search-results" aria-expanded="false" aria-autocomplete="list">
-                    <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
+            <div class="config-breadcrumb-row">
+                <div id="config-breadcrumb" class="config-breadcrumb" aria-label="Location"></div>
+                <div class="config-settings-search" role="search">
+                    <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
+                    <div class="config-settings-search-field">
+                        <input type="search" id="config-settings-search-input" class="config-settings-search-input"
+                               data-i18n-placeholder="config.settingsSearchPlaceholder"
+                               placeholder="Search settings…" autocomplete="off" spellcheck="false"
+                               aria-controls="config-settings-search-results" aria-expanded="false" aria-autocomplete="list">
+                        <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
+                        <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
+                    </div>
                 </div>
-                <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
             </div>
             <main id="config-main" class="config-main" tabindex="-1" aria-busy="true">
             <div class="skeleton-root skeleton-config-panel" data-skeleton-root aria-hidden="true">

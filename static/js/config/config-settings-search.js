@@ -307,7 +307,7 @@
             return;
         }
 
-        const placeholder = t('settingsSearchPlaceholder', 'Search all settings…');
+        const placeholder = t('settingsSearchPlaceholder', 'Search settings…');
         inputEl.placeholder = placeholder;
         inputEl.setAttribute('aria-label', placeholder);
         if (emptyEl) {

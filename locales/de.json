@@ -1577,7 +1577,7 @@
         "helpFilterPlaceholder": "Hilfe-Abschnitte filtern…",
         "helpFilterNoResults": "Keine passenden Abschnitte.",
         "settingsSearchLabel": "Einstellungen suchen",
-        "settingsSearchPlaceholder": "Alle Einstellungen durchsuchen…",
+        "settingsSearchPlaceholder": "Einstellungen suchen…",
         "settingsSearchNoResults": "Keine passenden Einstellungen.",
         "settingsSearchTabEntry": "Tab",
         "helpPageNavItems": "<li><a href=\"#help-quick-start\">Schnellstart</a></li><li><a href=\"#help-onboarding\">Ersteinrichtung</a></li><li><a href=\"#help-config-general\">Allgemeine Einstellungen</a></li><li><a href=\"#help-navigation\">Navigation</a></li><li><a href=\"#help-mobile\">Handy vs Desktop</a></li><li><a href=\"#help-keyboard\">Tastaturkürzel</a></li><li><a href=\"#help-bookmarks-dashboard\">Dashboard-Lesezeichen</a></li><li><a href=\"#help-search\">Suche &amp; Modi</a></li><li><a href=\"#help-date-weather\">Datum &amp; Wetter</a></li><li><a href=\"#help-smart\">Smart-Sammlungen</a></li><li><a href=\"#help-tags\">Tags</a></li><li><a href=\"#help-collections\">Sammlungen</a></li><li><a href=\"#help-sorting\">Sortierung &amp; angeheftet</a></li><li><a href=\"#help-manage\">Lesezeichen verwalten</a></li><li><a href=\"#help-finders\">Finder</a></li><li><a href=\"#help-status\">Statusmonitor</a></li><li><a href=\"#help-health\">Lesezeichen-Gesundheit</a></li><li><a href=\"#help-tips\">Rotierende Tipps</a></li><li><a href=\"#help-backup\">Backup &amp; Wiederherstellung</a></li><li><a href=\"#help-branding\">Theme &amp; Branding</a></li><li><a href=\"#help-data\">Daten &amp; Sync</a></li><li><a href=\"#help-troubleshoot\">Fehlerbehebung</a></li>",

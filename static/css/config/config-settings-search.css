@@ -1,7 +1,25 @@
+.config-breadcrumb-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    min-height: 1.75rem;
+}
+
+.config-breadcrumb-row .config-breadcrumb {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
 .config-settings-search {
-    margin: 0 0 1rem;
+    flex: 0 0 auto;
+    margin-left: auto;
     position: relative;
-    max-width: 28rem;
+    width: 13.5rem;
+    max-width: 34vw;
 }
 
 .config-settings-search-label {
@@ -22,13 +40,13 @@
 
 .config-settings-search-input {
     width: 100%;
-    padding: 0.45rem 0.65rem;
+    padding: 0.32rem 0.5rem;
     border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
-    border-radius: 0.45rem;
+    border-radius: 0.4rem;
     background: var(--input-bg, var(--bg-secondary, #1e293b));
     color: var(--text-primary, inherit);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
 }
 
 .config-settings-search-input:focus {
@@ -45,8 +63,9 @@
     position: absolute;
     z-index: 50;
     top: calc(100% + 0.25rem);
-    left: 0;
-    width: min(100%, 26rem);
+    right: 0;
+    left: auto;
+    width: min(20rem, 72vw);
     max-height: 16rem;
     overflow-y: auto;
     margin: 0;
@@ -82,9 +101,20 @@
 }
 
 .config-settings-search-empty {
-    margin: 0.35rem 0 0;
-    font-size: 0.82rem;
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    left: auto;
+    width: max-content;
+    max-width: min(20rem, 72vw);
+    margin: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
     color: var(--text-muted, #94a3b8);
+    background: var(--bg-primary, #0f172a);
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
+    border-radius: 0.4rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
 .config-settings-search-highlight {
@@ -102,5 +132,11 @@
 }
 
 body[data-mobile-layout="true"] .config-settings-search {
-    display: none;
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .config-settings-search {
+        display: none !important;
+    }
 }
