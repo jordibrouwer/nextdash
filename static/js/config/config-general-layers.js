@@ -288,7 +288,6 @@ class ConfigGeneralLayers {
             'search-buttons': 'essentials',
             'appearance-advanced': 'advanced',
             'bookmarks-display': 'advanced',
-            'bookmarks-behavior': 'advanced',
             bookmarks: 'advanced',
             'smart-collections': 'advanced',
             status: 'advanced',
