@@ -2109,15 +2109,21 @@ class ConfigSettings {
 
     refreshStatusEssentialsSummary(settings, allBookmarks = []) {
         const line = document.getElementById('status-essentials-summary-line');
+        const healthLink = document.getElementById('status-essentials-health-link');
         if (!line) return;
 
         const bookmarks = Array.isArray(allBookmarks) ? allBookmarks : [];
         const monitored = bookmarks.filter((b) => b?.checkStatus === true).length;
+        const statusOn = settings?.showStatus !== false;
 
-        if (!settings?.showStatus) {
+        if (!statusOn) {
             line.textContent = this.t('config.statusEssentialsSummaryOff', 'Off');
+            if (healthLink) healthLink.hidden = true;
             return;
         }
+
+        if (healthLink) healthLink.hidden = false;
+
         if (monitored === 0) {
             line.textContent = this.t('config.statusEssentialsSummaryOnNone', 'On · no bookmarks with status checks yet');
             return;

@@ -294,6 +294,16 @@
         return items[activeIndex];
     }
 
+    function focusSearch() {
+        if (window.MobileExperience?.isMobileLayout?.()) return false;
+        const inputEl = document.getElementById('config-settings-search-input');
+        if (!inputEl) return false;
+        if (!indexReady) buildIndex();
+        inputEl.focus({ preventScroll: true });
+        inputEl.select?.();
+        return true;
+    }
+
     function init(lang) {
         language = lang;
         const inputEl = document.getElementById('config-settings-search-input');
@@ -308,8 +318,10 @@
         }
 
         const placeholder = t('settingsSearchPlaceholder', 'Search settings…');
+        const shortcutHint = t('settingsSearchShortcut', 'Shortcut: Ctrl+Shift+K');
         inputEl.placeholder = placeholder;
         inputEl.setAttribute('aria-label', placeholder);
+        inputEl.title = `${placeholder} (${shortcutHint})`;
         if (emptyEl) {
             emptyEl.textContent = t('settingsSearchNoResults', 'No settings match your search.');
         }
@@ -367,6 +379,7 @@
 
     window.ConfigSettingsSearch = {
         init,
+        focusSearch,
         refreshIndex,
         rebuildIndex: buildIndex,
     };

@@ -1,6 +1,7 @@
 class Onboarding {
     constructor(options = {}) {
         this.hasBookmarks = options.hasBookmarks === true;
+        this.pagesCount = Number.isFinite(options.pagesCount) ? options.pagesCount : 1;
         this.settings = options.settings || {};
         this.language = options.language || null;
         this.serverCompleted = options.serverCompleted === true;
@@ -99,8 +100,8 @@ class Onboarding {
                 ]
             },
             {
-                title: this.t('onboarding.weatherLayoutStepTitle', 'Date, weather, and layout'),
-                body: this.t('onboarding.weatherLayoutStepBody', 'Choose weather display and tight columns behavior.'),
+                title: this.t('onboarding.weatherStepTitle', 'Date & weather'),
+                body: this.t('onboarding.weatherStepBody', 'Choose weather display and tight columns behavior.'),
                 selector: '#date-element',
                 fields: [
                     {
@@ -138,6 +139,40 @@ class Onboarding {
                         ]
                     }
                 ]
+            },
+            {
+                title: this.t('onboarding.layoutStepTitle', 'Layout version'),
+                body: this.t(
+                    'onboarding.layoutStepBody',
+                    'Choose classic or modern dashboard styling. Same structure — only visuals change.'
+                ),
+                selector: '#dashboard-layout',
+                placement: 'bottom',
+                optionalNote: this.t(
+                    'onboarding.layoutStepOptional',
+                    'Optional — change anytime in config → General → Layout.'
+                ),
+                fields: [
+                    {
+                        id: 'layoutVersion',
+                        type: 'radio',
+                        label: this.t('onboarding.layoutVersionLabel', 'Layout version'),
+                        hint: this.t(
+                            'onboarding.layoutStepHint',
+                            'Modern refreshes spacing and surfaces; classic keeps the original look.'
+                        ),
+                        options: [
+                            {
+                                value: 'classic',
+                                label: this.t('onboarding.layoutClassicLabel', 'Classic — original styling'),
+                            },
+                            {
+                                value: 'modern',
+                                label: this.t('onboarding.layoutModernLabel', 'Modern — refreshed visuals'),
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 title: this.t('onboarding.searchTipsStepTitle', 'Search & tips'),
@@ -195,19 +230,10 @@ class Onboarding {
             },
             this.buildStatusMonitoringStep(),
             {
-                title: this.t('onboarding.keyboardBookmarksStepTitle', 'Bookmarks: keyboard'),
+                title: this.t('onboarding.bookmarksInputStepTitle', 'Bookmarks: keyboard & mouse'),
                 body: this.t(
-                    'onboarding.keyboardBookmarksStepBody',
-                    'Use the arrow keys to move the highlight across the bookmark grid. Press Enter or Space to open. Press the semicolon key (;) to edit: works when a row is highlighted or when Tab has moved focus onto a bookmark link.'
-                ),
-                selector: '#dashboard-layout',
-                placement: 'bottom'
-            },
-            {
-                title: this.t('onboarding.mouseBookmarksStepTitle', 'Bookmarks: mouse'),
-                body: this.t(
-                    'onboarding.mouseBookmarksStepBody',
-                    'Use the narrow strip on the left as a drag handle to reorder bookmarks or drop them into another category. Press and hold on the bookmark row itself (not on that strip) for about half a second to open the inline editor.'
+                    'onboarding.bookmarksInputStepBody',
+                    'Arrow keys move the highlight; Enter or Space opens; semicolon (;) edits. Drag the left strip to reorder; press and hold a row (not the strip) for about half a second for inline edit. More in Help → Dashboard bookmarks.'
                 ),
                 selector: '#dashboard-layout',
                 placement: 'bottom'
@@ -216,9 +242,7 @@ class Onboarding {
                 title: this.hasBookmarks
                     ? this.t('onboarding.finishTitleReady', 'You are ready')
                     : this.t('onboarding.finishTitleStart', 'Ready to start'),
-                body: this.hasBookmarks
-                    ? this.t('onboarding.finishBodyReady', 'Setup complete. You can change anything later in config.')
-                    : this.t('onboarding.finishBodyStart', 'Setup complete. Open config to add bookmarks or restore from a backup.'),
+                body: this.buildFinishBody(),
                 selector: this.hasBookmarks ? '#search-button' : '.config-link a',
                 primaryLabel: this.t('onboarding.finishSetup', 'Finish setup'),
                 secondaryAction: {
@@ -229,6 +253,18 @@ class Onboarding {
                 }
             }
         ];
+    }
+
+    buildFinishBody() {
+        const key = this.hasBookmarks ? 'onboarding.finishBodyReady' : 'onboarding.finishBodyStart';
+        const fallback = this.hasBookmarks
+            ? 'Setup complete. You can change anything later in config. Keyboard and mouse bookmark tips are in Help → Dashboard bookmarks.'
+            : 'Setup complete. You have {count} page(s) — organize them in config → Pages. Press + for the full bookmark form, or & for a quick add. Keyboard and mouse tips are in Help → Dashboard bookmarks.';
+        let body = this.t(key, fallback);
+        if (body.includes('{count}')) {
+            body = body.replace('{count}', String(this.pagesCount));
+        }
+        return body;
     }
 
     buildStatusMonitoringStep() {
@@ -375,6 +411,9 @@ class Onboarding {
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
             statusMonitorSelection: this.buildStatusMonitorSelection(this.bookmarks),
+            layoutVersion: window.LayoutVersionUtils
+                ? window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion)
+                : (settings.layoutVersion === 'modern' ? 'modern' : 'classic'),
         };
     }
 
@@ -575,6 +614,9 @@ class Onboarding {
                     radio.checked = String(value) === String(radio.value);
                     radio.addEventListener('change', () => {
                         this.localSettings[field.id] = this.parseFieldValue(field.id, radio.value);
+                        if (field.id === 'layoutVersion' && window.LayoutVersionUtils) {
+                            window.LayoutVersionUtils.applyLayoutVersionToDOM(this.localSettings.layoutVersion);
+                        }
                         this.refreshDependentFields(container);
                     });
                 });
@@ -767,7 +809,8 @@ class Onboarding {
             interleaveMode: this.localSettings.interleaveMode,
             showTips: this.localSettings.showTips,
             showSmartTodayCollection: this.localSettings.showSmartTodayCollection,
-            showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection
+            showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection,
+            layoutVersion: this.localSettings.layoutVersion || 'classic',
         });
 
         if (this.onApplySettings) {

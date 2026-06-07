@@ -1,53 +1,13 @@
 /**
- * Post-onboarding discoverability queue — one prompt per session, priority order.
- * Journey: what's new → feature-tour spotlight
+ * Post-onboarding discoverability queue — prompts chain after each closes.
+ * Journey: what's new → layout-modern-nudge (classic users who skipped layout in onboarding).
  */
 (function () {
     'use strict';
 
-    const JOURNEY = ['whats-new', 'tour-spotlight'];
-    const SESSION_SHOWN_KEY = 'nextdash:discoverability-session-shown';
+    const JOURNEY = ['whats-new', 'layout-modern-nudge'];
     const SESSION_DEFER_KEY = 'nextdash:discoverability-deferred';
-    const TOUR_SPOTLIGHT_KEY = 'nextdash:feature-tour-spotlight-v1';
     const WHATS_NEW_STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
-
-    function t(dashboard, key, fallback, vars) {
-        const raw = dashboard?.language?.t?.(key);
-        let text = raw && raw !== key ? raw : fallback;
-        if (vars) {
-            Object.entries(vars).forEach(([k, v]) => {
-                text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-            });
-        }
-        return text;
-    }
-
-    function injectQueueBar(container, meta, onDefer, dashboard) {
-        if (!container || !meta) return;
-        container.querySelector('.discoverability-queue-bar')?.remove();
-        const bar = document.createElement('div');
-        bar.className = 'discoverability-queue-bar';
-        bar.setAttribute('role', 'status');
-        const stepText = t(
-            dashboard,
-            'dashboard.discoverabilityStep',
-            'Step {step} of {total}',
-            { step: meta.step, total: meta.total }
-        );
-        const deferLabel = t(dashboard, 'dashboard.discoverabilitySkipLater', 'Skip for later');
-        bar.innerHTML = `
-            <span class="discoverability-queue-step">${stepText}</span>
-            <button type="button" class="discoverability-queue-defer">${deferLabel}</button>
-        `;
-        bar.querySelector('.discoverability-queue-defer')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDefer();
-        });
-        container.insertBefore(bar, container.firstChild);
-    }
-
-    window.DiscoverabilityQueueBar = { inject: injectQueueBar };
 
     class DiscoverabilityQueue {
         constructor(dashboard) {
@@ -58,26 +18,23 @@
 
         scheduleRun(options = {}) {
             clearTimeout(this._runTimer);
-            const delay = options.afterOnboarding ? 450 : 900;
+            let delay = 900;
+            if (options.afterOnboarding) delay = 600;
+            else if (options.chained) delay = 1200;
+            else if (Number.isFinite(options.delay)) delay = options.delay;
             this._runTimer = setTimeout(() => this.runNext(), delay);
         }
 
-        canRunThisSession() {
+        canRun() {
             const dash = this.dashboard;
             if (!dash) return false;
             if (dash.onboardingStartedInSession) return false;
             if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             try {
-                if (sessionStorage.getItem(SESSION_SHOWN_KEY) === '1') return false;
                 if (sessionStorage.getItem(SESSION_DEFER_KEY) === '1') return false;
             } catch { /* ignore */ }
             return true;
-        }
-
-        buildMeta(itemId) {
-            const step = JOURNEY.indexOf(itemId) + 1;
-            return { step: step > 0 ? step : 1, total: JOURNEY.length, itemId };
         }
 
         deferRemaining() {
@@ -88,12 +45,6 @@
                 this._activeClose();
                 this._activeClose = null;
             }
-        }
-
-        markSessionShown() {
-            try {
-                sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
-            } catch { /* ignore */ }
         }
 
         getNextItem() {
@@ -121,45 +72,47 @@
                 }
                 return true;
             }
-            if (id === 'tour-spotlight') {
-                try {
-                    if (localStorage.getItem(TOUR_SPOTLIGHT_KEY)) return false;
-                } catch {
-                    return false;
-                }
-                return true;
+
+            if (id === 'layout-modern-nudge') {
+                return window.LayoutModernNudge?.shouldOffer?.(dash) === true;
             }
+
             return false;
         }
 
         runNext() {
-            if (!this.canRunThisSession()) {
-                this.dashboard?.scheduleLayoutModernNudgeWhenIdle?.();
+            if (!this.canRun()) {
+                this.scheduleRun({ delay: 600 });
                 return;
             }
             const itemId = this.getNextItem();
             if (!itemId) {
-                this.dashboard?.scheduleLayoutModernNudgeWhenIdle?.();
                 return;
             }
 
-            const meta = this.buildMeta(itemId);
-            const onDefer = () => this.deferRemaining();
             const onComplete = () => {
                 this._activeClose = null;
-                this.dashboard?.scheduleLayoutModernNudgeWhenIdle?.();
+                this.scheduleRun({ chained: true });
             };
-
-            this.markSessionShown();
 
             if (itemId === 'whats-new') {
                 this.runWhatsNew(onComplete);
-            } else if (itemId === 'tour-spotlight') {
-                this.runTourSpotlight(meta, onDefer, onComplete);
+            } else if (itemId === 'layout-modern-nudge') {
+                this.runLayoutModernNudge(onComplete);
             }
         }
 
         runWhatsNew(onComplete) {
+            const dash = this.dashboard;
+            if (!this.shouldShowItem('whats-new')) {
+                onComplete();
+                return;
+            }
+            if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) {
+                this.scheduleRun({ delay: 600 });
+                return;
+            }
+
             this._activeClose = () => window.AppModal?.hide?.();
             window.openWhatsNewModal({
                 force: false,
@@ -170,72 +123,39 @@
             });
         }
 
-        runTourSpotlight(meta, onDefer, onComplete) {
+        runLayoutModernNudge(onComplete) {
             const dash = this.dashboard;
-            const _t = (key, fallback) => t(dash, 'dashboard.' + key, fallback);
-
-            const el = document.createElement('div');
-            el.className = 'feature-spotlight';
-            el.setAttribute('role', 'complementary');
-            el.setAttribute('aria-label', _t('tourSpotlightAriaLabel', 'Discover nextDash features'));
-            el.innerHTML = `
-                <div class="feature-spotlight-stripe"></div>
-                <div class="feature-spotlight-body">
-                    <div class="feature-spotlight-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-                        </svg>
-                    </div>
-                    <div class="feature-spotlight-content">
-                        <p class="feature-spotlight-title"></p>
-                        <p class="feature-spotlight-text"></p>
-                    </div>
-                </div>
-                <div class="feature-spotlight-actions">
-                    <button class="feature-spotlight-try" type="button"></button>
-                    <button class="feature-spotlight-close" type="button"></button>
-                </div>
-            `;
-            injectQueueBar(el, meta, onDefer, dash);
-            el.querySelector('.feature-spotlight-title').textContent =
-                _t('tourSpotlightTitle', 'Discover search, finders and commands');
-            el.querySelector('.feature-spotlight-text').textContent =
-                _t('tourSpotlightBody', 'Follow a short interactive tour to learn the most powerful features of nextDash.');
-            el.querySelector('.feature-spotlight-try').textContent =
-                _t('tourSpotlightStart', 'Start tour');
-            el.querySelector('.feature-spotlight-close').textContent =
-                _t('tourSpotlightLater', 'Later');
-
-            const showPasteAfterDelay = () => setTimeout(() => dash.maybeShowPasteSpotlight?.(), 2000);
-
-            const dismiss = () => {
-                try { localStorage.setItem(TOUR_SPOTLIGHT_KEY, '1'); } catch { /* ignore */ }
-                el.classList.remove('show');
-                setTimeout(() => el.remove(), 320);
-            };
-
-            this._activeClose = () => {
-                dismiss();
+            if (!window.LayoutModernNudge?.shouldOffer?.(dash)) {
                 onComplete();
-                this._activeClose = null;
-            };
+                return;
+            }
+            if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) {
+                this.scheduleRun({ delay: 600 });
+                return;
+            }
 
-            el.querySelector('.feature-spotlight-try').addEventListener('click', () => {
-                dismiss();
+            const spotlight = window.LayoutModernNudge.create(dash);
+            if (!spotlight) {
                 onComplete();
-                this._activeClose = null;
-                dash.startFeatureTour(showPasteAfterDelay);
+                return;
+            }
+
+            spotlight.onDismiss = onComplete;
+            this._activeClose = () => spotlight._dismiss(false);
+
+            const started = spotlight.show(800, {
+                canShow: () => {
+                    if (!window.LayoutModernNudge?.shouldOffer?.(dash)) return false;
+                    if (dash.onboardingStartedInSession) return false;
+                    if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
+                    return true;
+                },
             });
-            el.querySelector('.feature-spotlight-close').addEventListener('click', () => {
-                dismiss();
+            if (!started) {
                 onComplete();
-                this._activeClose = null;
-                showPasteAfterDelay();
-            });
-
-            document.body.appendChild(el);
-            requestAnimationFrame(() => el.classList.add('show'));
+                return;
+            }
+            dash.layoutModernNudge = spotlight;
         }
     }
 

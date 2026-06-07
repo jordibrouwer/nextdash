@@ -2827,18 +2827,6 @@ class ConfigManager {
             });
         }
 
-        const resetTourNotificationBtn = document.getElementById('reset-tour-notification-btn');
-        if (resetTourNotificationBtn) {
-            resetTourNotificationBtn.addEventListener('click', () => {
-                try {
-                    localStorage.removeItem('nextdash:feature-tour-spotlight-v1');
-                } catch {
-                    // ignore
-                }
-                this.ui.showNotification('Rondleiding melding gereset — verschijnt opnieuw bij de volgende paginalading.', 'success');
-            });
-        }
-
         const resetLayoutModernNudgeBtn = document.getElementById('reset-layout-modern-nudge-btn');
         if (resetLayoutModernNudgeBtn) {
             resetLayoutModernNudgeBtn.addEventListener('click', () => {
@@ -2992,6 +2980,7 @@ class ConfigManager {
                 }
                 this.refreshBookmarksList({ skipFlush: true });
                 this.markDirty();
+                this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
             });
         }
 
@@ -3090,7 +3079,14 @@ class ConfigManager {
             });
         }
         document.addEventListener('keydown', (e) => {
-            if (!(e.ctrlKey || e.metaKey) || String(e.key).toLowerCase() !== 'k') return;
+            const key = String(e.key).toLowerCase();
+            const mod = e.ctrlKey || e.metaKey;
+            if (mod && e.shiftKey && key === 'k') {
+                e.preventDefault();
+                window.ConfigSettingsSearch?.focusSearch?.();
+                return;
+            }
+            if (!mod || e.shiftKey || key !== 'k') return;
             e.preventDefault();
             this.openConfigCommandPalette();
         });
@@ -5050,6 +5046,7 @@ class ConfigManager {
     openConfigCommandPalette() {
         const html = `
             <div class="keyboard-cheat-sheet-list">
+                <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('search-settings')">${this.language.t('config.commandSearchSettings') || 'Search settings…'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-essentials')">${this.language.t('config.commandLayerEssentials') || 'General: Essentials'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-advanced')">${this.language.t('config.commandLayerAdvanced') || 'General: Advanced'}</button>
                 <button class="btn btn-secondary btn-small" onclick="window.tempConfigCommand('layer-all')">${this.language.t('config.commandLayerAll') || 'General: Show all sections'}</button>
@@ -5061,6 +5058,12 @@ class ConfigManager {
             </div>
         `;
         window.tempConfigCommand = async (command) => {
+            if (command === 'search-settings') {
+                delete window.tempConfigCommand;
+                window.AppModal.hide();
+                window.ConfigSettingsSearch?.focusSearch?.();
+                return;
+            }
             if (command === 'layer-essentials') this.generalLayers?.goToLayer('essentials');
             if (command === 'layer-advanced') this.generalLayers?.goToLayer('advanced');
             if (command === 'layer-all') this.generalLayers?.goToLayer('all');

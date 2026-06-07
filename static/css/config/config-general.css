@@ -319,11 +319,25 @@ body {
     min-width: 0;
 }
 
+.status-essentials-overview-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
 .status-essentials-summary-line {
-    margin: 0 0 0.75rem;
+    margin: 0;
+    flex: 1 1 12rem;
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold, 600);
     color: var(--text-primary);
+}
+
+.status-essentials-health-link[hidden] {
+    display: none;
 }
 
 .smart-collections-action-row .config-advanced-action-row {

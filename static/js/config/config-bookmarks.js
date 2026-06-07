@@ -629,6 +629,10 @@ class ConfigBookmarks {
             bookmark.checkStatus = e.target.checked;
             this._syncRow(index, bookmark);
             if (window.configManager?.markDirty) window.configManager.markDirty();
+            window.configManager?.settings?.refreshStatusEssentialsSummary?.(
+                window.configManager.settingsData,
+                window.configManager.allBookmarksData
+            );
         }, { signal });
 
         if (noteEl) noteEl.addEventListener('input', (e) => {
