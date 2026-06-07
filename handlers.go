@@ -115,10 +115,14 @@ func findShortcutConflictWithExisting(bookmarks []Bookmark, shortcut string) *Bo
 }
 
 func NewHandlers(store Store, files embed.FS) *Handlers {
-	return &Handlers{
+	h := &Handlers{
 		store: store,
 		files: files,
 	}
+	if store.TakeDefaultBookmarkIconPrefetch() {
+		h.prefetchDefaultBookmarkIcons()
+	}
+	return h
 }
 
 func (h *Handlers) HealthPage(w http.ResponseWriter, r *http.Request) {
@@ -942,6 +946,7 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error resetting data", http.StatusInternalServerError)
 		return
 	}
+	h.prefetchDefaultBookmarkIcons()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -265,76 +264,13 @@ func (h *Handlers) UploadIconFromURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsedURL, err := url.Parse(sourceURL)
-	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.Hostname() == "" {
-		http.Error(w, "Invalid icon URL", http.StatusBadRequest)
-		return
-	}
-
-	if !isPublicHost(parsedURL.Hostname()) {
-		http.Error(w, "Host is not allowed", http.StatusBadRequest)
-		return
-	}
-
-	client := &http.Client{
-		Timeout:       8 * time.Second,
-		CheckRedirect: safeRedirectCheck(false, 3),
-	}
-
-	req, err := http.NewRequest(http.MethodGet, sourceURL, nil)
+	fileName, err := downloadIconFromURL(sourceURL, false)
 	if err != nil {
 		http.Error(w, "Unable to fetch icon URL", http.StatusBadRequest)
 		return
 	}
-	req.Header.Set("User-Agent", "nextDash-icon-fetcher/1.0")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Unable to fetch icon URL", http.StatusBadRequest)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "Icon URL returned non-200 status", http.StatusBadRequest)
-		return
-	}
-
-	contentType := strings.ToLower(strings.TrimSpace(strings.Split(resp.Header.Get("Content-Type"), ";")[0]))
-	ext, ok := iconExtensionFromContentType(contentType)
-	if !ok {
-		http.Error(w, "URL does not point to a supported image", http.StatusBadRequest)
-		return
-	}
-
-	const maxIconSize = 2 << 20 // 2MB
-	limitedBody := io.LimitReader(resp.Body, maxIconSize+1)
-	data, err := io.ReadAll(limitedBody)
-	if err != nil {
-		http.Error(w, "Unable to read icon data", http.StatusBadRequest)
-		return
-	}
-	if len(data) == 0 {
-		http.Error(w, "Icon data is empty", http.StatusBadRequest)
-		return
-	}
-	if len(data) > maxIconSize {
-		http.Error(w, "Icon too large (max 2MB)", http.StatusBadRequest)
-		return
-	}
-
-	iconsDir := "data/icons"
-	if _, err := os.Stat(iconsDir); os.IsNotExist(err) {
-		if mkErr := os.MkdirAll(iconsDir, 0755); mkErr != nil {
-			http.Error(w, "Unable to prepare icon storage", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	fileName := "icon-" + randomHex(8) + ext
-	filePath := filepath.Join(iconsDir, fileName)
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		http.Error(w, "Unable to save icon file", http.StatusInternalServerError)
+	if fileName == "" {
+		http.Error(w, "Icon URL returned no usable image", http.StatusBadRequest)
 		return
 	}
 

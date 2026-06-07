@@ -284,6 +284,8 @@ type Store interface {
 	SaveColors(colors ColorTheme)
 	// Reset
 	ResetAllData() error
+	// TakeDefaultBookmarkIconPrefetch reports whether default bookmarks were just created and clears the flag.
+	TakeDefaultBookmarkIconPrefetch() bool
 }
 
 type FileStore struct {
@@ -293,6 +295,7 @@ type FileStore struct {
 	dataDir                     string
 	customThemesMigrationMarker string
 	mutex                       sync.RWMutex
+	prefetchDefaultBookmarkIcons bool
 }
 
 func NewStore() Store {
@@ -341,6 +344,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 		}
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
 		os.WriteFile(mainPageBookmarksFile, data, 0644)
+		fs.prefetchDefaultBookmarkIcons = true
 	}
 
 	// Initialize settings if file doesn't exist
@@ -1122,6 +1126,16 @@ func (fs *FileStore) ResetAllData() error {
 	// initializeDefaultFiles runs migrations that acquire fs.mutex themselves.
 	fs.initializeDefaultFiles()
 	return nil
+}
+
+func (fs *FileStore) TakeDefaultBookmarkIconPrefetch() bool {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if !fs.prefetchDefaultBookmarkIcons {
+		return false
+	}
+	fs.prefetchDefaultBookmarkIcons = false
+	return true
 }
 
 func (fs *FileStore) DeletePage(pageID int) error {
