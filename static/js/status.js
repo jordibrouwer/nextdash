@@ -1,4 +1,16 @@
 // Status Monitoring JavaScript
+function normalizeStatusOfflineRetries(value) {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed)) return 3;
+    return Math.min(10, Math.max(1, parsed));
+}
+
+function normalizeStatusOfflineRetryDelayMs(value) {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed)) return 450;
+    return Math.min(3000, Math.max(100, parsed));
+}
+
 class StatusMonitor {
     constructor(settings = {}) {
         this.settings = settings;
@@ -13,9 +25,24 @@ class StatusMonitor {
         this._pingObserverBookmarks = null;
         /** Pixels beyond viewport edges to still treat a row as “visible” for initial / interval pings */
         this.viewportPingMarginPx = 220;
-        /** Failed ping attempts per check before marking a bookmark offline */
-        this.offlineRetryCount = 3;
-        this.offlineRetryDelayMs = 450;
+        this.applyRetrySettings();
+        this.applyStatusColorMode();
+    }
+
+    resolveStatusRowElement(bookmarkElement, bookmarkUrl = '') {
+        if (bookmarkElement?.isConnected) {
+            return bookmarkElement;
+        }
+        const url = String(bookmarkUrl || bookmarkElement?.getAttribute?.('data-bookmark-url') || '').trim();
+        if (!url) {
+            return null;
+        }
+        return this.getStatusTargetElement({ url });
+    }
+
+    applyRetrySettings() {
+        this.offlineRetryCount = normalizeStatusOfflineRetries(this.settings.statusOfflineRetries);
+        this.offlineRetryDelayMs = normalizeStatusOfflineRetryDelayMs(this.settings.statusOfflineRetryDelayMs);
     }
 
     async runChecksWithConcurrency(bookmarks, fn) {
@@ -42,6 +69,7 @@ class StatusMonitor {
     updateSettings(settings) {
         const wasStatusEnabled = this.settings.showStatus;
         this.settings = settings;
+        this.applyRetrySettings();
         this.applyStatusColorMode();
         if (!this.settings.showStatus) {
             this.clearAllStatuses();
@@ -63,6 +91,9 @@ class StatusMonitor {
 
     applyStatusColorMode() {
         document.body.classList.toggle('status-color-lock', this.settings.colorizeStatus === false);
+        if (this.settings.showStatus && window.dashboardInstance?.bookmarks) {
+            this.applyCachedStatuses(window.dashboardInstance.bookmarks);
+        }
     }
 
     getBookmarkSelectorValue(url) {
@@ -252,7 +283,7 @@ class StatusMonitor {
             return null;
         }
 
-        this.setBookmarkStatus(bookmarkElement, 'checking', '');
+        this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
 
         let lastResult = { status: 'offline', ping: null, errorDetail: 'Unreachable' };
 
@@ -266,13 +297,13 @@ class StatusMonitor {
                     confirmed: true
                 });
                 const pingText = this.settings.showPing && lastResult.ping ? `${lastResult.ping}ms` : '';
-                this.setBookmarkStatus(bookmarkElement, 'online', pingText);
+                this.setBookmarkStatus(bookmarkElement, 'online', pingText, bookmark.url);
                 await this.persistBookmarkStatus(bookmark, 'online');
                 return { status: 'online', ping: lastResult.ping };
             }
 
             if (attempt < this.offlineRetryCount) {
-                this.setBookmarkStatus(bookmarkElement, 'checking', '');
+                this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
                 await this.delay(this.offlineRetryDelayMs);
             }
         }
@@ -284,12 +315,17 @@ class StatusMonitor {
             confirmed: true,
             errorDetail: lastResult.errorDetail
         });
-        this.setBookmarkStatus(bookmarkElement, 'offline', '');
+        this.setBookmarkStatus(bookmarkElement, 'offline', '', bookmark.url);
         await this.persistBookmarkStatus(bookmark, 'offline', lastResult.errorDetail);
         return { status: 'offline', ping: null };
     }
 
-    setBookmarkStatus(bookmarkElement, status, text = '') {
+    setBookmarkStatus(bookmarkElement, status, text = '', bookmarkUrl = '') {
+        const target = this.resolveStatusRowElement(bookmarkElement, bookmarkUrl);
+        if (!target) {
+            return;
+        }
+        bookmarkElement = target;
         const previousStatus = bookmarkElement.classList.contains('status-online')
             ? 'online'
             : bookmarkElement.classList.contains('status-offline')
@@ -383,6 +419,7 @@ class StatusMonitor {
             console.error('Error checking bookmarks:', error);
         }
 
+        this.applyCachedStatuses(bookmarks);
         this.isChecking = false;
         this.hideLoadingIndicator();
     }
@@ -548,6 +585,7 @@ class StatusMonitor {
             console.error('Error checking bookmarks:', error);
         }
 
+        this.applyCachedStatuses(bookmarks);
         this.isChecking = false;
         this.hideLoadingIndicator();
     }
@@ -564,3 +602,5 @@ class StatusMonitor {
 
 // Export for use in other modules
 window.StatusMonitor = StatusMonitor;
+window.normalizeStatusOfflineRetries = normalizeStatusOfflineRetries;
+window.normalizeStatusOfflineRetryDelayMs = normalizeStatusOfflineRetryDelayMs;

@@ -118,9 +118,11 @@ class Dashboard {
             showSyncToasts: false,
             showCheatSheetButton: true,
             showAddBookmarkButton: true,
-            showStatus: false,
+            showStatus: true,
             colorizeStatus: true,
-            showPing: false,
+            showPing: true,
+            statusOfflineRetries: 3,
+            statusOfflineRetryDelayMs: 450,
             globalShortcuts: true,
             hyprMode: false,
             enableCustomFavicon: false,
@@ -627,7 +629,23 @@ class Dashboard {
                 this.settings.showNoteIcon = true;
             }
             if (typeof this.settings.showStatus === 'undefined') {
-                this.settings.showStatus = false;
+                this.settings.showStatus = true;
+            }
+            if (typeof this.settings.colorizeStatus === 'undefined') {
+                this.settings.colorizeStatus = true;
+            }
+            if (typeof this.settings.showPing === 'undefined') {
+                this.settings.showPing = true;
+            }
+            if (typeof window.normalizeStatusOfflineRetries === 'function') {
+                this.settings.statusOfflineRetries = window.normalizeStatusOfflineRetries(this.settings.statusOfflineRetries);
+            } else {
+                this.settings.statusOfflineRetries = 3;
+            }
+            if (typeof window.normalizeStatusOfflineRetryDelayMs === 'function') {
+                this.settings.statusOfflineRetryDelayMs = window.normalizeStatusOfflineRetryDelayMs(this.settings.statusOfflineRetryDelayMs);
+            } else {
+                this.settings.statusOfflineRetryDelayMs = 450;
             }
             if (typeof this.settings.onboardingCompleted === 'undefined') {
                 this.settings.onboardingCompleted = true;

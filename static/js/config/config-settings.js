@@ -1012,6 +1012,8 @@ class ConfigSettings {
         this.bindInfoButton('show-status-info-btn', 'config.showBookmarkStatusInfoTitle', 'config.showBookmarkStatusInfoMessage');
         this.bindInfoButton('show-health-dashboard-info-btn', 'config.showHealthDashboardInfoTitle', 'config.showHealthDashboardInfoMessage');
         this.bindInfoButton('skip-fast-ping-info-btn', 'config.skipFastPingInfoTitle', 'config.skipFastPingInfoMessage');
+        this.bindInfoButton('status-offline-retries-info-btn', 'config.statusOfflineRetriesInfoTitle', 'config.statusOfflineRetriesInfoMessage');
+        this.bindInfoButton('status-offline-retry-delay-info-btn', 'config.statusOfflineRetryDelayInfoTitle', 'config.statusOfflineRetryDelayInfoMessage');
         this.bindInfoButton('show-sync-toasts-info-btn', 'config.showSyncToastsInfoTitle', 'config.showSyncToastsInfoMessage');
         this.bindAllSettingInfoButtons();
 
@@ -1443,6 +1445,24 @@ class ConfigSettings {
             });
         }
 
+        const statusOfflineRetriesInput = document.getElementById('status-offline-retries-input');
+        if (statusOfflineRetriesInput) {
+            statusOfflineRetriesInput.value = this.normalizeStatusOfflineRetries(settings.statusOfflineRetries);
+            statusOfflineRetriesInput.addEventListener('input', (e) => {
+                settings.statusOfflineRetries = this.normalizeStatusOfflineRetries(e.target.value);
+                statusOfflineRetriesInput.value = settings.statusOfflineRetries;
+            });
+        }
+
+        const statusOfflineRetryDelayInput = document.getElementById('status-offline-retry-delay-input');
+        if (statusOfflineRetryDelayInput) {
+            statusOfflineRetryDelayInput.value = this.normalizeStatusOfflineRetryDelayMs(settings.statusOfflineRetryDelayMs);
+            statusOfflineRetryDelayInput.addEventListener('input', (e) => {
+                settings.statusOfflineRetryDelayMs = this.normalizeStatusOfflineRetryDelayMs(e.target.value);
+                statusOfflineRetryDelayInput.value = settings.statusOfflineRetryDelayMs;
+            });
+        }
+
         // Global shortcuts checkbox
         const globalShortcutsCheckbox = document.getElementById('global-shortcuts-checkbox');
         if (globalShortcutsCheckbox) {
@@ -1846,6 +1866,14 @@ class ConfigSettings {
         if (showPingCheckbox) settings.showPing = showPingCheckbox.checked;
         if (showStatusLoadingCheckbox) settings.showStatusLoading = showStatusLoadingCheckbox.checked;
         if (skipFastPingCheckbox) settings.skipFastPing = skipFastPingCheckbox.checked;
+        const statusOfflineRetriesInput = document.getElementById('status-offline-retries-input');
+        const statusOfflineRetryDelayInput = document.getElementById('status-offline-retry-delay-input');
+        if (statusOfflineRetriesInput) {
+            settings.statusOfflineRetries = this.normalizeStatusOfflineRetries(statusOfflineRetriesInput.value);
+        }
+        if (statusOfflineRetryDelayInput) {
+            settings.statusOfflineRetryDelayMs = this.normalizeStatusOfflineRetryDelayMs(statusOfflineRetryDelayInput.value);
+        }
         if (globalShortcutsCheckbox) settings.globalShortcuts = globalShortcutsCheckbox.checked;
         if (enableCustomTitleCheckbox) settings.enableCustomTitle = enableCustomTitleCheckbox.checked;
         if (customTitleInput) settings.customTitle = customTitleInput.value;
@@ -2036,14 +2064,35 @@ class ConfigSettings {
             if (!sibling.classList.contains('checkbox-tree-child')) break;
 
             sibling.classList.toggle('is-disabled', !showStatus);
-            sibling.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-                input.disabled = !showStatus;
+            sibling.querySelectorAll('input, select, button.number-input-up, button.number-input-down').forEach((control) => {
+                if (control.matches('input[type="checkbox"]')) {
+                    control.disabled = !showStatus;
+                    return;
+                }
+                if (control.matches('input:not([type="checkbox"]), select')) {
+                    control.disabled = !showStatus;
+                }
+                if (control.matches('button.number-input-up, button.number-input-down')) {
+                    control.disabled = !showStatus;
+                }
             });
             if (!showStatus) {
                 const ping = sibling.querySelector('#show-ping-checkbox');
                 if (ping) ping.checked = false;
             }
         }
+    }
+
+    normalizeStatusOfflineRetries(value) {
+        const parsed = Number.parseInt(String(value), 10);
+        if (!Number.isFinite(parsed)) return 3;
+        return Math.min(10, Math.max(1, parsed));
+    }
+
+    normalizeStatusOfflineRetryDelayMs(value) {
+        const parsed = Number.parseInt(String(value), 10);
+        if (!Number.isFinite(parsed)) return 450;
+        return Math.min(3000, Math.max(100, parsed));
     }
 
     /**
@@ -2330,9 +2379,11 @@ class ConfigSettings {
             showTagCloudButton: true,
             showTips: true,
             showSearchFlowBanner: true,
-            showStatus: false,
+            showStatus: true,
             colorizeStatus: true,
-            showPing: false,
+            showPing: true,
+            statusOfflineRetries: 3,
+            statusOfflineRetryDelayMs: 450,
             showPinIcon: false,
             showNoteIcon: true,
             showShortcuts: true,

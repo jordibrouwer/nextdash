@@ -115,6 +115,8 @@ type Settings struct {
 	ShowPing                    bool                             `json:"showPing"`
 	ShowStatusLoading           bool                             `json:"showStatusLoading"`
 	SkipFastPing                bool                             `json:"skipFastPing"`
+	StatusOfflineRetries        int                              `json:"statusOfflineRetries"`        // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs   int                              `json:"statusOfflineRetryDelayMs"`   // Delay between retry pings in ms (100-3000)
 	GlobalShortcuts             bool                             `json:"globalShortcuts"`             // Use shortcuts from all pages
 	HyprMode                    bool                             `json:"hyprMode"`                    // Launcher mode for PWA usage
 	AnimationsEnabled           bool                             `json:"animationsEnabled"`           // Enable or disable animations globally
@@ -310,7 +312,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{ID: "utilities", Name: "Utilities"},
 			},
 			Bookmarks: []Bookmark{
-				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: false, Tags: []string{"dev", "code"}},
+				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
 				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
@@ -357,11 +359,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSearchButtonText:        true,
 			ShowFindersButtonText:       true,
 			ShowCommandsButtonText:      true,
-			ShowStatus:                  false,
+			ShowStatus:                  true,
 			ColorizeStatus:              true,
-			ShowPing:                    false,
+			ShowPing:                    true,
 			ShowStatusLoading:           false,
 			SkipFastPing:                false,
+			StatusOfflineRetries:        3,
+			StatusOfflineRetryDelayMs:   450,
 			GlobalShortcuts:             true,
 			HyprMode:                    false,
 			AnimationsEnabled:           true,
@@ -1152,11 +1156,13 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSearchButtonText:      true,
 			ShowFindersButtonText:     true,
 			ShowCommandsButtonText:    true,
-			ShowStatus:                false,
+			ShowStatus:                true,
 			ColorizeStatus:            true,
-			ShowPing:                  false,
+			ShowPing:                  true,
 			ShowStatusLoading:         false,
 			SkipFastPing:              false,
+			StatusOfflineRetries:      3,
+			StatusOfflineRetryDelayMs: 450,
 			GlobalShortcuts:           true,
 			HyprMode:                  false,
 			AnimationsEnabled:         true,
@@ -1222,6 +1228,18 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["colorizeStatus"]; !ok {
 			settings.ColorizeStatus = true
+		}
+		if _, ok := rawSettings["showStatus"]; !ok {
+			settings.ShowStatus = true
+		}
+		if _, ok := rawSettings["showPing"]; !ok {
+			settings.ShowPing = true
+		}
+		if _, ok := rawSettings["statusOfflineRetries"]; !ok || settings.StatusOfflineRetries < 1 || settings.StatusOfflineRetries > 10 {
+			settings.StatusOfflineRetries = 3
+		}
+		if _, ok := rawSettings["statusOfflineRetryDelayMs"]; !ok || settings.StatusOfflineRetryDelayMs < 100 || settings.StatusOfflineRetryDelayMs > 3000 {
+			settings.StatusOfflineRetryDelayMs = 450
 		}
 		if _, ok := rawSettings["showShortcuts"]; !ok {
 			settings.ShowShortcuts = true

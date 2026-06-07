@@ -57,10 +57,12 @@ class ConfigManager {
             showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,
-            showStatus: false,
+            showStatus: true,
             colorizeStatus: true,
-            showPing: false,
+            showPing: true,
             skipFastPing: false,
+            statusOfflineRetries: 3,
+            statusOfflineRetryDelayMs: 450,
             globalShortcuts: true,
             hyprMode: false,
             showPageNamesInTabs: false,
@@ -2145,11 +2147,30 @@ class ConfigManager {
             if (typeof this.settingsData.showSearchFlowBanner === 'undefined') {
                 this.settingsData.showSearchFlowBanner = true;
             }
+            if (typeof this.settingsData.showStatus === 'undefined') {
+                this.settingsData.showStatus = true;
+            }
+            if (typeof this.settingsData.colorizeStatus === 'undefined') {
+                this.settingsData.colorizeStatus = true;
+            }
+            if (typeof this.settingsData.showPing === 'undefined') {
+                this.settingsData.showPing = true;
+            }
             if (typeof this.settingsData.showLinkPreviewCards === 'undefined') {
                 this.settingsData.showLinkPreviewCards = false;
             }
             if (![100, 150, 250].includes(Number(this.settingsData.linkPreviewHoverDelayMs))) {
                 this.settingsData.linkPreviewHoverDelayMs = 150;
+            }
+            if (typeof window.normalizeStatusOfflineRetries === 'function') {
+                this.settingsData.statusOfflineRetries = window.normalizeStatusOfflineRetries(this.settingsData.statusOfflineRetries);
+            } else {
+                this.settingsData.statusOfflineRetries = 3;
+            }
+            if (typeof window.normalizeStatusOfflineRetryDelayMs === 'function') {
+                this.settingsData.statusOfflineRetryDelayMs = window.normalizeStatusOfflineRetryDelayMs(this.settingsData.statusOfflineRetryDelayMs);
+            } else {
+                this.settingsData.statusOfflineRetryDelayMs = 450;
             }
             if (typeof this.settingsData.showSyncToasts === 'undefined') {
                 this.settingsData.showSyncToasts = false;
@@ -5721,7 +5742,7 @@ class ConfigManager {
             { id: 'utilities', name: 'Utilities' }
         ];
         const resetDefaultBookmarks = [
-            { name: 'GitHub', url: 'https://github.com', shortcut: 'G', category: 'development', tags: ['dev', 'code'] },
+            { name: 'GitHub', url: 'https://github.com', shortcut: 'G', category: 'development', checkStatus: true, tags: ['dev', 'code'] },
             { name: 'GitHub Issues', url: 'https://github.com/issues', shortcut: 'GI', category: 'development', tags: ['dev', 'github'] },
             { name: 'GitHub Pull Requests', url: 'https://github.com/pulls', shortcut: 'GP', category: 'development', tags: ['dev', 'github'] },
             { name: 'YouTube', url: 'https://youtube.com', shortcut: 'Y', category: 'media', tags: ['video', 'entertainment'] },

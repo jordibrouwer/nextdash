@@ -856,6 +856,26 @@
                                     <button type="button" id="skip-fast-ping-info-btn" class="info-button" data-i18n-aria="config.skipFastPingInfoTitle">ℹ</button>
                                 </label>
                             </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="status-offline-retries-input" data-i18n="config.statusOfflineRetries">Offline retries:</label>
+                                <button type="button" id="status-offline-retries-info-btn" class="info-button" data-i18n-aria="config.statusOfflineRetriesInfoTitle">ℹ</button>
+                                <div class="number-input-wrapper">
+                                    <button type="button" class="number-input-down" data-input="status-offline-retries-input">−</button>
+                                    <input type="number" id="status-offline-retries-input" min="1" max="10" value="3">
+                                    <button type="button" class="number-input-up" data-input="status-offline-retries-input">+</button>
+                                </div>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="status-offline-retry-delay-input" data-i18n="config.statusOfflineRetryDelay">Retry delay (ms):</label>
+                                <button type="button" id="status-offline-retry-delay-info-btn" class="info-button" data-i18n-aria="config.statusOfflineRetryDelayInfoTitle">ℹ</button>
+                                <div class="number-input-wrapper">
+                                    <button type="button" class="number-input-down" data-input="status-offline-retry-delay-input">−</button>
+                                    <input type="number" id="status-offline-retry-delay-input" min="100" max="3000" step="50" value="450">
+                                    <button type="button" class="number-input-up" data-input="status-offline-retry-delay-input">+</button>
+                                </div>
+                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-sync-toasts-checkbox">
