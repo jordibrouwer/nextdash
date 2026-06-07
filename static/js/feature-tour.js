@@ -114,7 +114,7 @@ class FeatureTour {
             },
             {
                 title: this._t('step8Title', 'Ready to use'),
-                body: this._t('step8Body', 'The tour is complete. All features are fully configurable via Config: themes, layout, finders, smart collections and bookmark management.'),
+                body: this._t('step8Body', 'The tour is complete. All features are fully configurable via Config: themes, layout version (Classic/Modern), layout presets, finders, smart collections and bookmark management.'),
                 selector: '.config-link a',
                 primaryLabel: this._t('step8Finish', 'Finish'),
                 secondaryAction: {

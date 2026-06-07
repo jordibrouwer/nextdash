@@ -125,6 +125,48 @@
         return fontSize;
     }
     
+    function normalizeLayoutVersion(value) {
+        const normalized = (value || '').toLowerCase().trim();
+        return normalized === 'modern' ? 'modern' : 'classic';
+    }
+
+    /**
+     * Gets the layoutVersion setting
+     * @returns {string} The layout version ('classic' or 'modern')
+     */
+    function getLayoutVersion() {
+        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+        let layoutVersion = 'classic';
+
+        if (deviceSpecific) {
+            const settings = localStorage.getItem('dashboardSettings');
+            if (settings) {
+                try {
+                    const parsed = JSON.parse(settings);
+                    layoutVersion = parsed.layoutVersion || 'classic';
+                } catch (e) {
+                    console.error('Error parsing dashboard settings:', e);
+                }
+            }
+        } else {
+            const htmlAttr = document.documentElement.getAttribute('data-layout-version');
+            if (htmlAttr) {
+                layoutVersion = htmlAttr;
+            }
+        }
+
+        return normalizeLayoutVersion(layoutVersion);
+    }
+
+    function applyLayoutVersion(layoutVersion = 'classic') {
+        const version = normalizeLayoutVersion(layoutVersion);
+        document.documentElement.setAttribute('data-layout-version', version);
+        if (document.body) {
+            document.body.setAttribute('data-layout-version', version);
+        }
+        return version;
+    }
+
     /**
      * Applies critical theme styles to prevent FOUC
      * @param {string} theme - The theme to apply ('dark' or 'light')
@@ -261,11 +303,13 @@
         }
     }
 
-    // Apply theme and fontSize immediately
+    // Apply theme, fontSize, and layout version immediately
     const theme = getTheme();
     const showBackgroundDots = getShowBackgroundDots();
     const fontSize = getFontSize();
+    const layoutVersion = getLayoutVersion();
     applyTheme(theme, showBackgroundDots, fontSize);
+    applyLayoutVersion(layoutVersion);
     
     document.addEventListener('DOMContentLoaded', function() {
         if (!window.DashboardFont || typeof window.DashboardFont.applyMainFont !== 'function') {
@@ -284,7 +328,9 @@
         getTheme: getTheme,
         getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,
+        getLayoutVersion: getLayoutVersion,
         applyTheme: applyTheme,
+        applyLayoutVersion: applyLayoutVersion,
         onThemeChange: function(cb) {
             if (typeof cb !== 'function') return function() {};
             const handler = (e) => cb(e?.detail?.theme);

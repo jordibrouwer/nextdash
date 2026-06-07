@@ -1,0 +1,280 @@
+/* Modern health page — aligned with config-modern.css patterns */
+
+body[data-layout-version="modern"] {
+    --layout-radius-sm: 8px;
+    --layout-radius-md: 12px;
+    --layout-radius-lg: 16px;
+    --layout-radius-pill: 999px;
+    --layout-shadow-sm: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
+    --layout-shadow-md: 0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --layout-surface: var(--background-secondary);
+    --layout-surface-inset: var(--background-primary);
+    --layout-surface-border: var(--border-primary);
+    --config-tab-gap: 0.85rem;
+}
+
+/* ─── Page shell ──────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-shell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+body[data-layout-version="modern"] .health-header,
+body[data-layout-version="modern"] .health-summary,
+body[data-layout-version="modern"] .health-filters,
+body[data-layout-version="modern"] .health-bulk-actions,
+body[data-layout-version="modern"] .health-issues-panel,
+body[data-layout-version="modern"] .health-duplicates-panel {
+    margin: 0;
+}
+
+body[data-layout-version="modern"] .health-header {
+    padding-bottom: 1.15rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+}
+
+body[data-layout-version="modern"] .health-header h1,
+body[data-layout-version="modern"] .health-header .title {
+    opacity: 0.8;
+}
+
+body[data-layout-version="modern"] .back-link,
+body[data-layout-version="modern"] .back-link-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.8rem;
+    border-radius: var(--layout-radius-pill);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    text-decoration: none;
+    transition:
+        color var(--layout-transition),
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .back-link:hover,
+body[data-layout-version="modern"] .back-link-button:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+/* ─── Unified surfaces (stacked cards) ────────────────────────────────────── */
+
+body[data-layout-version="modern"] :is(
+    .health-intro,
+    .health-card,
+    .health-filters,
+    .health-bulk-actions,
+    .health-issues-panel,
+    .health-duplicates-panel
+) {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .health-intro {
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .health-subtitle {
+    margin: 0;
+    max-width: none;
+    opacity: 1;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+}
+
+body[data-layout-version="modern"] .health-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .health-card {
+    padding: 0.9rem 1rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-layout-version="modern"] .health-filters,
+body[data-layout-version="modern"] .health-bulk-actions,
+body[data-layout-version="modern"] .health-issues-panel,
+body[data-layout-version="modern"] .health-duplicates-panel {
+    padding: 0.9rem 1rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-layout-version="modern"] .health-panel-header {
+    margin-bottom: 0.75rem;
+}
+
+body[data-layout-version="modern"] .health-panel-header h2 {
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
+/* ─── Forms & filters ─────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-search-wrap label,
+body[data-layout-version="modern"] .health-page-filter-wrap label {
+    margin-bottom: 0.4rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+}
+
+body[data-layout-version="modern"] .health-search-wrap input,
+body[data-layout-version="modern"] .health-page-filter,
+body[data-layout-version="modern"] .health-sort-select {
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+    padding: 0.5rem 0.65rem;
+    transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-search-wrap input:focus,
+body[data-layout-version="modern"] .health-page-filter:focus,
+body[data-layout-version="modern"] .health-sort-select:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="modern"] .health-pill {
+    border-radius: var(--layout-radius-pill);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-pill:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .health-pill.active {
+    background: color-mix(in srgb, var(--accent-success) 14%, var(--layout-surface));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .health-pill span {
+    border-radius: var(--layout-radius-pill);
+    background: color-mix(in srgb, var(--text-secondary) 12%, var(--layout-surface-inset));
+}
+
+/* ─── Issue & duplicate rows ──────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-issues {
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .health-issue,
+body[data-layout-version="modern"] .health-duplicate-group {
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="modern"] .health-issue {
+    padding: 0.85rem 1rem;
+}
+
+body[data-layout-version="modern"] .health-duplicate-group {
+    padding: 0.85rem 1rem;
+    margin-bottom: 0;
+}
+
+body[data-layout-version="modern"] .health-duplicates {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .health-score {
+    border-radius: var(--layout-radius-sm);
+    background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .health-issue-meta span,
+body[data-layout-version="modern"] .health-times span,
+body[data-layout-version="modern"] .health-reasons span,
+body[data-layout-version="modern"] .health-duplicate-items span {
+    border-radius: var(--layout-radius-pill);
+    background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .health-issue-actions {
+    border-radius: var(--layout-radius-sm);
+    border-color: color-mix(in srgb, var(--border-primary) 40%, transparent);
+    background: var(--layout-surface);
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .health-issue-toolbar-heal {
+    background: color-mix(in srgb, var(--layout-surface-inset) 55%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .health-empty {
+    border-radius: var(--layout-radius-sm);
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
+    background: var(--layout-surface-inset);
+    opacity: 1;
+    color: var(--text-secondary);
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-bulk-button,
+body[data-layout-version="modern"] .health-action-link,
+body[data-layout-version="modern"] .health-keep-first-btn,
+body[data-layout-version="modern"] .health-merge-pick-btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-bulk-button:hover:not(:disabled),
+body[data-layout-version="modern"] .health-action-link:hover,
+body[data-layout-version="modern"] .health-keep-first-btn:hover:not(:disabled),
+body[data-layout-version="modern"] .health-merge-pick-btn:hover {
+    box-shadow: var(--layout-shadow-sm);
+    transform: none;
+}
+
+body[data-layout-version="modern"] .health-bulk-status {
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+}
+
+/* ─── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    body[data-layout-version="modern"] .health-shell {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+    }
+
+    body[data-layout-version="modern"] .health-intro {
+        display: none;
+    }
+}

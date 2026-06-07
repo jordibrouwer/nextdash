@@ -142,6 +142,7 @@ type Settings struct {
 	IncludeFindersInSearch      bool                             `json:"includeFindersInSearch"`      // Include finders in normal search
 	SortMethod                  string                           `json:"sortMethod"`                  // Sort method for bookmarks: order, az, recent, custom
 	LayoutPreset                string                           `json:"layoutPreset"`                // Dashboard layout preset
+	LayoutVersion               string                           `json:"layoutVersion"`               // Dashboard layout version: classic, modern
 	DensityMode                 string                           `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense
 	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
 	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
@@ -388,6 +389,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:      false,
 			SortMethod:                  "order",
 			LayoutPreset:                "default",
+			LayoutVersion:               "classic",
 			BackgroundOpacity:           1,
 			FontWeight:                  "normal",
 			FontPreset:                  "source-code-pro",
@@ -1198,6 +1200,8 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartStalePageIds:         []int{},
 			ArchivedPageIds:           []int{},
 			FaviconRefreshPolicy:      "on-save",
+			LayoutPreset:              "default",
+			LayoutVersion:             "classic",
 			DensityMode:               "compact",
 			PackedColumns:             true,
 			BackgroundType:            "none",
@@ -1309,6 +1313,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
+		}
+		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern") {
+			settings.LayoutVersion = "classic"
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"

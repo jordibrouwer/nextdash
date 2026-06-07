@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,19 +19,20 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css">
     <link rel="stylesheet" href="/static/css/health.css">
+    <link rel="stylesheet" href="/static/css/health-modern.css">
+    <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{.ShowBackgroundDots}}">
     <div class="health-shell">
         <header class="health-header">
             <div>
                 <p class="health-kicker" data-i18n="health.kicker">overview</p>
                 <h1 class="title" data-i18n="health.title">health beta</h1>
-                <p class="health-subtitle" data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
             </div>
             <div class="header-links">
                 <button id="refresh-health-btn" class="back-link back-link-button" type="button" data-i18n="health.refresh">refresh</button>
@@ -39,6 +40,10 @@
                 <a href="/" class="back-link" data-i18n="health.backToDashboard">← back to dashboard</a>
             </div>
         </header>
+
+        <section class="health-intro">
+            <p class="health-subtitle" data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
+        </section>
 
         <section class="health-summary" id="health-summary">
             <div class="skeleton-root skeleton-health-summary" data-skeleton-root aria-hidden="true">

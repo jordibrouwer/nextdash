@@ -13,6 +13,7 @@ const SETTING_INFO_DEFS = [
     { type: 'labelFor', labelFor: 'font-weight-select', btnId: 'font-weight-info-btn', title: 'fontWeightInfoTitle', message: 'fontWeightInfoMessage' },
     { type: 'checkbox', targetId: 'theme-iconstyling-enable', btnId: 'theme-iconstyling-info-btn', title: 'iconStylingInfoTitle', message: 'iconStylingInfoMessage' },
     { type: 'labelFor', labelFor: 'columns-input', btnId: 'columns-info-btn', title: 'columnsInfoTitle', message: 'columnsInfoMessage' },
+    { type: 'labelFor', labelFor: 'layout-version-select', btnId: 'layout-version-info-btn', title: 'layoutVersionInfoTitle', message: 'layoutVersionInfoMessage' },
     { type: 'labelFor', labelFor: 'layout-preset-select', btnId: 'layout-preset-info-btn', title: 'layoutPresetInfoTitle', message: 'layoutPresetInfoMessage' },
     { type: 'labelFor', labelFor: 'density-mode-select', btnId: 'density-mode-info-btn', title: 'densityModeInfoTitle', message: 'densityModeInfoMessage' },
     { type: 'checkbox', targetId: 'show-title-checkbox', btnId: 'show-title-info-btn', title: 'showDashboardTitleInfoTitle', message: 'showDashboardTitleInfoMessage' },

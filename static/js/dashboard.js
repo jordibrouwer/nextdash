@@ -137,6 +137,7 @@ class Dashboard {
             linkPreviewHoverDelayMs: 150,
             sortMethod: 'order',
             layoutPreset: 'default',
+            layoutVersion: 'classic',
             densityMode: 'compact',
             packedColumns: true,
             backgroundOpacity: 1,
@@ -1146,10 +1147,6 @@ class Dashboard {
             grid.style.gridTemplateColumns = `repeat(${colCount}, minmax(${colMin}, ${colMax}))`;
         }
 
-        if (typeof this._syncLauncherBtn === 'function') {
-            this._syncLauncherBtn();
-        }
-
         return { grid, colCount, packed };
     }
 
@@ -1289,6 +1286,16 @@ class Dashboard {
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
         document.body.setAttribute('data-show-note-icon', this.settings.showNoteIcon === false ? 'false' : 'true');
         document.body.setAttribute('data-layout-preset', this.settings.layoutPreset || 'default');
+        const layoutVersion = window.LayoutVersionUtils
+            ? window.LayoutVersionUtils.normalizeLayoutVersion(this.settings.layoutVersion)
+            : ((this.settings.layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic');
+        this.settings.layoutVersion = layoutVersion;
+        if (window.LayoutVersionUtils) {
+            window.LayoutVersionUtils.applyLayoutVersionToDOM(layoutVersion);
+        } else {
+            document.documentElement.setAttribute('data-layout-version', layoutVersion);
+            document.body.setAttribute('data-layout-version', layoutVersion);
+        }
         document.body.setAttribute('data-density-mode', this.settings.densityMode || 'compact');
 
         // Apply font size
@@ -1898,8 +1905,7 @@ class Dashboard {
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
-            { id: 'launcher-toggle-btn', labelKey: 'dashboard.tooltipLauncher', keys: ['⊞'] }
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] }
         ];
 
         const toolbarButtons = [];
@@ -1998,26 +2004,6 @@ class Dashboard {
         if (recentButton) {
             recentButton.addEventListener('click', () => {
                 this.toggleRecentBookmarksModal();
-            });
-        }
-
-        // Launcher view FAB (rechtsonder — enige launcher-schakelaar)
-        const launcherBtn = document.getElementById('launcher-toggle-btn');
-        if (launcherBtn) {
-            this._syncLauncherBtn = () => {
-                const isLauncher = this.settings.layoutPreset === 'launcher';
-                launcherBtn.classList.toggle('is-active', isLauncher);
-            };
-            this._syncLauncherBtn();
-            launcherBtn.addEventListener('click', () => {
-                if (this.settings.layoutPreset === 'launcher') {
-                    const prev = localStorage.getItem('nextdash:prevLayout') || 'default';
-                    window.LayoutUtils.applyLayoutPreset(this.settings, prev, { syncDashboard: true, saveDashboard: true });
-                } else {
-                    localStorage.setItem('nextdash:prevLayout', this.settings.layoutPreset || 'default');
-                    window.LayoutUtils.applyLayoutPreset(this.settings, 'launcher', { syncDashboard: true, saveDashboard: true });
-                }
-                this._syncLauncherBtn();
             });
         }
 

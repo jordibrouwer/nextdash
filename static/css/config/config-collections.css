@@ -36,6 +36,11 @@
     background: color-mix(in srgb, var(--background-primary) 25%, transparent);
 }
 
+.collections-list:empty {
+    display: none;
+    border: none;
+}
+
 .collection-item {
     border-bottom: 1px solid var(--border-primary);
 }

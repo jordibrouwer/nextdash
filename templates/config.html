@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,12 +39,14 @@
     <link rel="stylesheet" href="/static/css/colors.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
+    <link rel="stylesheet" href="/static/css/config-modern.css">
+    <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{.ShowBackgroundDots}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
     <!-- Contenedor 1: Title y nav links -->
     <div class="config-section section-header">
@@ -314,6 +316,12 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label for="layout-version-select" data-i18n="config.layoutVersionLabel">Layout version:</label>
+                            <button type="button" id="layout-version-info-btn" class="info-button" data-i18n-aria="config.layoutVersionInfoTitle">ℹ</button>
+                            <select id="layout-version-select"></select>
+                        </div>
+                        <p id="layout-version-description" class="setting-description" aria-live="polite"></p>
                         <div class="form-group">
                             <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
                             <button type="button" id="layout-preset-info-btn" class="info-button" data-i18n-aria="config.layoutPresetInfoTitle">ℹ</button>
@@ -2071,6 +2079,7 @@
 
     <script src="/static/js/modal.js"></script>
     <script src="/static/js/whats-new-modal.js"></script>
+    <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
     <script src="/static/js/select.js"></script>

@@ -304,6 +304,17 @@ class ConfigGeneralTour {
                 scrollBlock: 'center',
             },
             {
+                title: this.t('configGeneralTourLayoutTitle', 'Layout'),
+                body: this.t(
+                    'configGeneralTourLayoutBody',
+                    'Choose Classic or Modern styling, then pick a layout preset and density. On the dashboard, switch quickly with :LAYOUTVERSION or :LAYOUTVERSION toggle.'
+                ),
+                selector: '[data-general-panel="layout"]',
+                layer: 'essentials',
+                panel: 'layout',
+                scrollBlock: 'center',
+            },
+            {
                 title: this.t('configGeneralTourBookmarksTitle', 'Bookmarks'),
                 body: this.t(
                     'configGeneralTourBookmarksBody',

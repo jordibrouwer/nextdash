@@ -1,0 +1,830 @@
+/* Modern config page overrides — scoped to body[data-layout-version="modern"] */
+
+body[data-layout-version="modern"] {
+    --layout-radius-sm: 8px;
+    --layout-radius-md: 12px;
+    --layout-radius-lg: 16px;
+    --layout-radius-pill: 999px;
+    --layout-shadow-sm: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
+    --layout-shadow-md: 0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --layout-surface: var(--background-secondary);
+    --layout-surface-inset: var(--background-primary);
+    --layout-surface-border: var(--border-primary);
+    --config-tab-gap: 0.85rem;
+}
+
+/* ─── Page chrome (sticky header area) ────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-actions-top {
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+    padding: 0.85rem 1rem;
+}
+
+body[data-layout-version="modern"] .config-controls-wrapper {
+    background: var(--background-primary);
+}
+
+body[data-layout-version="modern"] .tabs-scroll-wrapper::after {
+    background: linear-gradient(to right, transparent, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .config-save-sticky {
+    background: var(--layout-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-top-color: var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .config-main {
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .general-layout {
+    gap: var(--config-tab-gap);
+}
+
+/* ─── Header & navigation ─────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-section.section-header {
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+    padding-bottom: 1.15rem;
+}
+
+body[data-layout-version="modern"] .header-links .back-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.8rem;
+    border-radius: var(--layout-radius-pill);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    transition:
+        color var(--layout-transition),
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .header-links .back-link:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+/* ─── Tabs ────────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-controls-wrapper .tabs {
+    gap: 0.3rem;
+    padding: 0.3rem;
+    border-radius: var(--layout-radius-md);
+    border-color: var(--border-primary);
+    background: var(--background-secondary);
+}
+
+body[data-layout-version="modern"] .tab-button {
+    border-radius: var(--layout-radius-pill);
+    border-bottom: none;
+    padding: 0.42rem 0.85rem;
+    transition:
+        color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .tab-button:hover {
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+}
+
+body[data-layout-version="modern"] .tab-button.active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 32%, transparent),
+        var(--layout-shadow-sm);
+}
+
+/* ─── Unified surfaces (all config tabs) ──────────────────────────────────── */
+
+body[data-layout-version="modern"] :is(
+    .general-card,
+    .general-tab-intro,
+    .general-layer-toolbar,
+    .general-layer-intro,
+    .general-advanced-nav,
+    .stats-page-intro,
+    .stats-index,
+    .stats-block,
+    .help-index,
+    .help-block,
+    .backups-tab-intro,
+    .backups-section,
+    .structure-column,
+    .page-selector-wrapper
+) {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .general-card-danger,
+body[data-layout-version="modern"] .backups-section-danger {
+    background: color-mix(in srgb, var(--accent-error) 7%, var(--layout-surface));
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-error) 22%, transparent);
+}
+
+body[data-layout-version="modern"] .help-block--spotlight {
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--layout-surface));
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+}
+
+/* ─── General tab (layer toolbar, intro, section nav) ─────────────────────── */
+
+body[data-layout-version="modern"] .tab-content[data-tab-content="general"] > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .general-layer-toolbar,
+body[data-layout-version="modern"] .general-layer-intro,
+body[data-layout-version="modern"] .general-advanced-nav {
+    margin: 0;
+}
+
+body[data-layout-version="modern"] .general-card {
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .general-layer-toolbar {
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .general-layer-switch {
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+    overflow: visible;
+}
+
+body[data-layout-version="modern"] .general-layer-btn {
+    border-radius: var(--layout-radius-pill);
+    transition:
+        color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .general-layer-btn + .general-layer-btn {
+    border-left: none;
+}
+
+body[data-layout-version="modern"] .general-layer-btn.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--layout-surface));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .general-layer-intro {
+    padding: 0.9rem 1rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+body[data-layout-version="modern"] .general-advanced-nav {
+    padding: 0.75rem 1rem;
+    background: var(--layout-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .general-advanced-nav a {
+    border-radius: var(--layout-radius-pill);
+    padding: 0.32rem 0.65rem;
+    transition:
+        color var(--layout-transition),
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .general-advanced-nav a:hover {
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    border-color: var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .general-advanced-nav a.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--layout-surface));
+    border-color: color-mix(in srgb, var(--accent-primary) 32%, transparent);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+/* ─── List tabs (pages, categories, finders, tags, collections) ─────────────
+   Stacked cards — same rhythm as .general-card / .help-block, not one fused panel. */
+
+body[data-layout-version="modern"] .simple-tab,
+body[data-layout-version="modern"] .collections-tab,
+body[data-layout-version="modern"] .tags-tab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"] :is(
+    .simple-toolbar,
+    .collections-toolbar,
+    .tags-toolbar,
+    .simple-list,
+    .collections-list,
+    .tags-cloud,
+    .tags-list
+) {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .simple-toolbar,
+body[data-layout-version="modern"] .collections-toolbar,
+body[data-layout-version="modern"] .tags-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .simple-list,
+body[data-layout-version="modern"] .collections-list,
+body[data-layout-version="modern"] .tags-list {
+    overflow: hidden;
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .tags-cloud {
+    padding: 0.85rem 1rem;
+}
+
+body[data-layout-version="modern"] .simple-tab-intro,
+body[data-layout-version="modern"] .tags-tab-intro,
+body[data-layout-version="modern"] .collections-tab-intro {
+    flex: 1 1 0;
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+body[data-layout-version="modern"] .simple-tab-hint {
+    color: var(--text-tertiary);
+    opacity: 1;
+}
+
+body[data-layout-version="modern"] .collections-tab .collections-edit-panel {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .collections-tab .collections-empty-state,
+body[data-layout-version="modern"] .tags-tab .tags-empty-state {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .backups-tab {
+    gap: var(--config-tab-gap);
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .stats-layout {
+    gap: var(--config-tab-gap);
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .help-layout {
+    gap: var(--config-tab-gap);
+}
+
+/* ─── Forms & inputs ──────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .form-group input[type="text"],
+body[data-layout-version="modern"] .form-group input[type="number"],
+body[data-layout-version="modern"] .form-group input[type="url"],
+body[data-layout-version="modern"] .form-group input[type="search"],
+body[data-layout-version="modern"] .form-group input[type="email"],
+body[data-layout-version="modern"] .form-group input[type="password"],
+body[data-layout-version="modern"] .form-group select,
+body[data-layout-version="modern"] .form-group textarea,
+body[data-layout-version="modern"] .general-card input[type="text"],
+body[data-layout-version="modern"] .general-card input[type="number"],
+body[data-layout-version="modern"] .general-card input[type="url"],
+body[data-layout-version="modern"] .general-card input[type="search"],
+body[data-layout-version="modern"] .general-card select,
+body[data-layout-version="modern"] .general-card textarea {
+    border-radius: var(--layout-radius-sm);
+    transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .form-group input:focus,
+body[data-layout-version="modern"] .form-group select:focus,
+body[data-layout-version="modern"] .form-group textarea:focus,
+body[data-layout-version="modern"] .help-search-filter:focus,
+body[data-layout-version="modern"] .page-selector:focus,
+body[data-layout-version="modern"] .color-text-input:focus,
+body[data-layout-version="modern"] .color-text-input-full:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="modern"] .help-search-filter,
+body[data-layout-version="modern"] .page-selector,
+body[data-layout-version="modern"] .color-text-input,
+body[data-layout-version="modern"] .color-text-input-full {
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .checkbox-label {
+    border-radius: var(--layout-radius-sm);
+    transition: background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .checkbox-label:hover {
+    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
+}
+
+body[data-layout-version="modern"] .number-input-btn {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .config-controls-wrapper .tabs {
+    margin-top: 0.5rem;
+}
+
+body[data-layout-version="modern"] .simple-list .page-item,
+body[data-layout-version="modern"] .simple-list .category-item,
+body[data-layout-version="modern"] .simple-list .finder-item,
+body[data-layout-version="modern"] .collections-list .collection-item-row,
+body[data-layout-version="modern"] .tags-list .tag-item-row {
+    background: transparent;
+    border-radius: 0;
+    margin-bottom: 0;
+    transition: background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .simple-list .page-item:hover,
+body[data-layout-version="modern"] .simple-list .category-item:hover,
+body[data-layout-version="modern"] .simple-list .finder-item:hover,
+body[data-layout-version="modern"] .collections-list .collection-item-row:hover,
+body[data-layout-version="modern"] .tags-list .tag-item-row:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .simple-list .page-item input,
+body[data-layout-version="modern"] .simple-list .category-item input,
+body[data-layout-version="modern"] .simple-list .finder-item input:not([type="checkbox"]),
+body[data-layout-version="modern"] .collections-list .bookmark-detail-input,
+body[data-layout-version="modern"] .tags-list .tag-item input {
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .simple-list .page-item input:focus,
+body[data-layout-version="modern"] .simple-list .category-item input:focus,
+body[data-layout-version="modern"] .simple-list .finder-item input:not([type="checkbox"]):focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="modern"] .pages-list-empty-hint {
+    padding: 0.9rem 1rem;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+body[data-layout-version="modern"] .structure-list-item {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .structure-list-item:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .structure-list-item.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .page-archived-badge {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .info-button {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .setting-preview {
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
+    padding: 0.35rem 0.55rem;
+}
+
+/* ─── Save bar & actions ───────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-save-sticky.is-visible {
+    border-top-color: var(--layout-surface-border);
+    box-shadow: 0 -4px 20px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+body[data-layout-version="modern"] .btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .btn:hover:not(:disabled) {
+    box-shadow: var(--layout-shadow-sm);
+    transform: none;
+}
+
+body[data-layout-version="modern"] .stats-period-btn {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .stats-period-btn.active {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--layout-surface));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .stats-index-list li a {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .stats-index-list li a.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .unsaved-badge {
+    border-radius: var(--layout-radius-pill);
+}
+
+/* ─── Help tab ────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .help-block {
+    padding: 1rem 1.1rem;
+}
+
+body[data-layout-version="modern"] .help-index li a {
+    border-radius: var(--layout-radius-sm);
+    padding: 0.28rem 0.4rem;
+    transition: background-color var(--layout-transition), color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .help-index li a:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
+}
+
+/* ─── Theme / colors editor ───────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .theme-colors-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"] :is(
+    .theme-colors-intro,
+    .theme-colors-toolbar,
+    .colors-tab-panel
+) {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .theme-colors-intro {
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .theme-colors-intro .simple-tab-intro {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+body[data-layout-version="modern"] .theme-colors-intro .simple-tab-hint {
+    color: var(--text-tertiary);
+    opacity: 1;
+}
+
+body[data-layout-version="modern"] .theme-colors-toolbar {
+    padding: 0.9rem 1rem;
+    border-bottom: none;
+}
+
+body[data-layout-version="modern"] .colors-tab-panel {
+    padding: 0.9rem 1rem;
+}
+
+body[data-layout-version="modern"] .colors-tab-panel .config-section {
+    padding: 0;
+    border: none;
+}
+
+body[data-layout-version="modern"] .colors-panel-hint,
+body[data-layout-version="modern"] .colors-tab-panel > .config-section > .help-text {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+}
+
+body[data-layout-version="modern"] .colors-tab-panel .page-selector-wrapper {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"] .colors-tab-panel #custom-themes-list.categories-list {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-sm);
+    background: var(--layout-surface-inset);
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .colors-tab-panel .custom-theme-colors-section {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+}
+
+body[data-layout-version="modern"] .colors-subtabs {
+    gap: 0.3rem;
+    padding: 0.3rem;
+    border-radius: var(--layout-radius-md);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+body[data-layout-version="modern"] .colors-tab-button {
+    border-radius: var(--layout-radius-pill);
+    border-bottom: none;
+    transition:
+        color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .colors-tab-button:hover {
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+}
+
+body[data-layout-version="modern"] .colors-tab-button.active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 32%, transparent);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .color-input-wrapper input[type="text"],
+body[data-layout-version="modern"] .color-input-wrapper input[type="color"] {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .theme-preview-card {
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+    border-color: var(--border-primary);
+}
+
+body[data-layout-version="modern"] .help-support-block {
+    border-radius: var(--layout-radius-md);
+}
+
+/* ─── Keyboard tab ──────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .keyboard-binding-row {
+    background: var(--layout-surface);
+    border-color: var(--layout-surface-border);
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .keyboard-binding-row--fixed {
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="modern"] .binding-key {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
+    color: var(--accent-primary);
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .binding-key.custom {
+    background: color-mix(in srgb, var(--accent-success) 14%, var(--layout-surface-inset));
+    border-color: color-mix(in srgb, var(--accent-success) 38%, var(--border-primary));
+    color: var(--accent-success);
+}
+
+body[data-layout-version="modern"] .binding-key--fixed {
+    background: var(--layout-surface-inset);
+    border-color: var(--border-primary);
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .binding-edit-btn.listening {
+    background: color-mix(in srgb, var(--accent-warning) 16%, var(--layout-surface-inset));
+    border-color: color-mix(in srgb, var(--accent-warning) 42%, var(--border-primary));
+    color: var(--accent-warning);
+}
+
+body[data-layout-version="modern"] .tag-cloud-chip {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .tag-cloud-chip:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .collections-edit-header {
+    background: color-mix(in srgb, var(--layout-surface-inset) 40%, var(--layout-surface));
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+}
+
+body[data-layout-version="modern"] .collections-edit-body {
+    background: var(--layout-surface);
+    padding: 0.75rem 1rem;
+}
+
+body[data-layout-version="modern"] .collections-edit-body .bookmark-detail-input,
+body[data-layout-version="modern"] .collections-edit-body .bookmark-detail-select {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .collections-edit-actions {
+    background: color-mix(in srgb, var(--layout-surface-inset) 35%, var(--layout-surface));
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+    padding: 0.75rem 1rem;
+}
+
+body[data-layout-version="modern"] .tags-section-divider {
+    background: color-mix(in srgb, var(--layout-surface-inset) 45%, var(--layout-surface));
+    color: var(--text-tertiary);
+    padding: 0.45rem 1rem;
+}
+
+/* ─── Bookmarks split-view ─────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .bookmarks-splitview {
+    gap: 0;
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    overflow: hidden;
+    box-shadow: var(--layout-shadow-sm);
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-list,
+body[data-layout-version="modern"] .bookmarks-splitview-detail {
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: none;
+    border: none;
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-list {
+    border-right: 1px solid var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .bookmarks-list-controls {
+    background: var(--layout-surface);
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-list .bookmark-item {
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-detail {
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="modern"] .bookmarks-search-input,
+body[data-layout-version="modern"] .bookmark-detail-input,
+body[data-layout-version="modern"] .bookmark-detail-shortcut,
+body[data-layout-version="modern"] .bookmark-detail-note {
+    border-radius: var(--layout-radius-sm);
+    transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .bookmarks-search-input:focus,
+body[data-layout-version="modern"] .bookmark-detail-input:focus,
+body[data-layout-version="modern"] .bookmark-detail-shortcut:focus,
+body[data-layout-version="modern"] .bookmark-detail-note:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-list .bookmark-item:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="modern"] .bookmarks-splitview-list .bookmark-item.is-selected-detail {
+    border-left-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .bookmark-row-cat {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .bookmark-row-favicon {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .bookmark-detail-header {
+    background: var(--layout-surface);
+}
+
+body[data-layout-version="modern"] .structure-workspace {
+    gap: var(--config-tab-gap);
+    margin-bottom: var(--config-tab-gap);
+}
+
+body[data-layout-version="modern"] .bulk-toolbar .btn-small,
+body[data-layout-version="modern"] .bulk-toolbar .btn-icon-only,
+body[data-layout-version="modern"] .bulk-select {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .config-link-preview-card {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--border-primary);
+    box-shadow: var(--layout-shadow-sm);
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .config-link-preview-card-image-wrap {
+    border-radius: var(--layout-radius-sm) var(--layout-radius-sm) 0 0;
+}
+
+body[data-layout-version="modern"] .config-bookmark-preview-tile.bookmark-link {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .config-bookmark-preview-popover {
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-md);
+}
+
+/* ─── Mobile config (modern) ───────────────────────────────────────────────── */
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    body[data-layout-version="modern"][data-mobile-layout="true"] .config-controls-wrapper .tabs {
+        border-radius: var(--layout-radius-sm);
+    }
+
+    body[data-layout-version="modern"][data-mobile-layout="true"] .general-card {
+        padding: 0.85rem;
+    }
+}

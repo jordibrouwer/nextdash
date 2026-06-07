@@ -82,6 +82,7 @@ class ConfigManager {
             showNoteIcon: true,
             sortMethod: 'order',
             layoutPreset: 'default',
+            layoutVersion: 'classic',
             packedColumns: true,
             backgroundOpacity: 1,
             fontWeight: 'normal',
@@ -2417,6 +2418,17 @@ class ConfigManager {
         } else {
             document.body.setAttribute('data-layout-preset', this.settingsData.layoutPreset || 'default');
         }
+        if (window.LayoutVersionUtils) {
+            this.settingsData.layoutVersion = window.LayoutVersionUtils.applyLayoutVersion(
+                this.settingsData,
+                this.settingsData.layoutVersion || 'classic'
+            );
+        } else {
+            const layoutVersion = (this.settingsData.layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic';
+            this.settingsData.layoutVersion = layoutVersion;
+            document.documentElement.setAttribute('data-layout-version', layoutVersion);
+            document.body.setAttribute('data-layout-version', layoutVersion);
+        }
         document.body.setAttribute('data-density-mode', this.settingsData.densityMode || 'compact');
         this.settings.applyBackgroundOpacity(this.settingsData.backgroundOpacity);
         this.settings.applyFontWeight(this.settingsData.fontWeight);
@@ -2448,6 +2460,19 @@ class ConfigManager {
             },
             onAnimationsChange: (enabled) => {
                 this.settings.applyAnimations(enabled);
+            },
+            onLayoutVersionChange: (layoutVersion) => {
+                if (window.LayoutVersionUtils) {
+                    this.settingsData.layoutVersion = window.LayoutVersionUtils.applyLayoutVersion(
+                        this.settingsData,
+                        layoutVersion || 'classic'
+                    );
+                } else {
+                    const version = (layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic';
+                    this.settingsData.layoutVersion = version;
+                    document.documentElement.setAttribute('data-layout-version', version);
+                    document.body.setAttribute('data-layout-version', version);
+                }
             },
             onLayoutPresetChange: (preset) => {
                 if (window.LayoutUtils) {

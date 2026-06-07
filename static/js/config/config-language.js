@@ -91,7 +91,6 @@ class ConfigLanguage {
             'finders-button',
             'recent-bookmarks-button',
             'help-button',
-            'launcher-toggle-btn',
         ]);
         const tooltipElements = document.querySelectorAll('[data-i18n-tooltip]');
         tooltipElements.forEach(element => {

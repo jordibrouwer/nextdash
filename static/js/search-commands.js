@@ -32,7 +32,7 @@ class SearchCommandsComponent {
             {
                 id: 'view',
                 label: 'View',
-                commands: ['theme', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons', 'buttonbar']
+                commands: ['theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons', 'buttonbar']
             },
             {
                 id: 'dashboard',
@@ -56,6 +56,7 @@ class SearchCommandsComponent {
             'save': this.handleSaveSearchCommand.bind(this),
             'saved': this.handleSavedSearchesCommand.bind(this),
             'sort': this.handleSortCommand.bind(this),
+            'layoutversion': this.handleLayoutVersionCommand.bind(this),
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
@@ -788,6 +789,50 @@ class SearchCommandsComponent {
         return [{ name: `Sorting set to ${method}`, shortcut: ':SORT', action: () => false, type: 'command' }];
     }
 
+    handleLayoutVersionCommand(args) {
+        const versionQuery = (args[0] || '').toLowerCase();
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) {
+            return [];
+        }
+
+        const versions = window.LayoutVersionUtils
+            ? window.LayoutVersionUtils.getLayoutVersions()
+            : ['classic', 'modern'];
+
+        if (!versionQuery) {
+            return versions.map((version) => ({
+                name: version,
+                shortcut: ':LAYOUTVERSION',
+                action: () => this.applyLayoutVersion(dashboard, version),
+                type: 'command'
+            }));
+        }
+
+        if (versionQuery === 'toggle') {
+            const current = window.LayoutVersionUtils
+                ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
+                : 'classic';
+            const next = current === 'modern' ? 'classic' : 'modern';
+            return [{
+                name: `Toggle to ${next}`,
+                shortcut: ':LAYOUTVERSION',
+                action: () => this.applyLayoutVersion(dashboard, next),
+                type: 'command'
+            }];
+        }
+
+        const matches = versions.filter((version) => version.startsWith(versionQuery));
+        if (matches.length === 0) return [];
+
+        return matches.map((version) => ({
+            name: version,
+            shortcut: ':LAYOUTVERSION',
+            action: () => this.applyLayoutVersion(dashboard, version),
+            type: 'command'
+        }));
+    }
+
     handleLayoutCommand(args, fullQuery) {
         const layout = (args[0] || '').toLowerCase();
         const dashboard = window.dashboardInstance;
@@ -1095,6 +1140,27 @@ class SearchCommandsComponent {
             action: () => this.setPackedColumnsVisibility(dashboard, explicitState),
             type: 'command'
         }];
+    }
+
+    applyLayoutVersion(dashboard, version) {
+        if (window.LayoutVersionUtils) {
+            window.LayoutVersionUtils.applyLayoutVersion(dashboard.settings, version, {
+                syncDashboard: true,
+                saveDashboard: true
+            });
+        } else {
+            const nextVersion = (version || 'classic') === 'modern' ? 'modern' : 'classic';
+            dashboard.settings.layoutVersion = nextVersion;
+            document.documentElement.setAttribute('data-layout-version', nextVersion);
+            document.body.setAttribute('data-layout-version', nextVersion);
+            if (typeof dashboard.setupDOM === 'function') {
+                dashboard.setupDOM();
+            }
+            if (typeof dashboard.saveSettings === 'function') {
+                dashboard.saveSettings();
+            }
+        }
+        return false;
     }
 
     applyLayoutPreset(dashboard, preset) {

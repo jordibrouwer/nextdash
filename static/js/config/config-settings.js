@@ -341,7 +341,7 @@ class ConfigSettings {
         });
     }
 
-    updateLayoutDensityPreview(layoutPreset, densityMode) {
+    updateLayoutDensityPreview(layoutPreset, densityMode, layoutVersion) {
         const cfg = (suffix, fallback = '') => {
             const flat = this.language?.translations?.config?.[suffix];
             if (typeof flat === 'string') return flat;
@@ -352,19 +352,27 @@ class ConfigSettings {
         };
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
+        const layoutVersions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
         const densityModes = ['comfortable', 'compact', 'dense', 'auto'];
         const layoutKey = layoutPresets.includes(layoutPreset) ? layoutPreset : 'default';
+        const versionKey = layoutVersions.includes(layoutVersion) ? layoutVersion : 'classic';
         const densityKey = densityModes.includes(densityMode) ? densityMode : 'compact';
 
+        const layoutVersionDescription = document.getElementById('layout-version-description');
         const layoutDescription = document.getElementById('layout-preset-description');
         const densityDescription = document.getElementById('density-mode-description');
         const previewText = document.getElementById('layout-density-preview-text');
 
+        const versionDesc = cfg(`layoutVersionDesc.${versionKey}`, '');
         const layoutDesc = cfg(`layoutPresetDesc.${layoutKey}`, '');
         const densityDesc = cfg(`densityDesc.${densityKey}`, '');
+        const versionLabel = cfg(`layoutVersionName.${versionKey}`, versionKey);
         const layoutLabel = cfg(`layoutPresetName.${layoutKey}`, layoutKey);
         const densityLabel = cfg(`densityName.${densityKey}`, densityKey);
 
+        if (layoutVersionDescription) {
+            layoutVersionDescription.textContent = versionDesc || cfg('layoutVersionDescIntro', '');
+        }
         if (layoutDescription) {
             layoutDescription.textContent = layoutDesc || cfg('layoutPresetDescIntro', '');
         }
@@ -374,9 +382,10 @@ class ConfigSettings {
         if (previewText) {
             const template = cfg(
                 'layoutDensityPreview',
-                '{layout} + {density}: {detail}'
+                '{version} · {layout} + {density}: {detail}'
             );
             previewText.textContent = template
+                .replace('{version}', versionLabel)
                 .replace('{layout}', layoutLabel)
                 .replace('{density}', densityLabel)
                 .replace('{detail}', (layoutDesc || '').toLowerCase());
@@ -645,6 +654,44 @@ class ConfigSettings {
             });
         }
 
+        const layoutVersionSelect = document.getElementById('layout-version-select');
+        if (layoutVersionSelect) {
+            const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
+            const VERSION_LABELS = {
+                classic: 'Classic',
+                modern: 'Modern'
+            };
+            layoutVersionSelect.innerHTML = versions.map((version) => {
+                const label = VERSION_LABELS[version] || (version.charAt(0).toUpperCase() + version.slice(1));
+                return `<option value="${version}">${label}</option>`;
+            }).join('');
+            if (window.LayoutVersionUtils) {
+                settings.layoutVersion = window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion || 'classic');
+            }
+            layoutVersionSelect.value = settings.layoutVersion || 'classic';
+            if (callbacks.onLayoutVersionChange) {
+                callbacks.onLayoutVersionChange(layoutVersionSelect.value);
+            }
+            this.updateLayoutDensityPreview(
+                settings.layoutPreset || 'default',
+                settings.densityMode || 'compact',
+                settings.layoutVersion || 'classic'
+            );
+            layoutVersionSelect.addEventListener('change', (e) => {
+                settings.layoutVersion = window.LayoutVersionUtils
+                    ? window.LayoutVersionUtils.normalizeLayoutVersion(e.target.value)
+                    : e.target.value;
+                if (callbacks.onLayoutVersionChange) {
+                    callbacks.onLayoutVersionChange(settings.layoutVersion);
+                }
+                this.updateLayoutDensityPreview(
+                    settings.layoutPreset || 'default',
+                    settings.densityMode || 'compact',
+                    settings.layoutVersion
+                );
+            });
+        }
+
         const layoutPresetSelect = document.getElementById('layout-preset-select');
         if (layoutPresetSelect) {
             if (window.LayoutUtils) {
@@ -669,13 +716,21 @@ class ConfigSettings {
             if (callbacks.onLayoutPresetChange) {
                 callbacks.onLayoutPresetChange(layoutPresetSelect.value);
             }
-            this.updateLayoutDensityPreview(settings.layoutPreset || 'default', settings.densityMode || 'compact');
+            this.updateLayoutDensityPreview(
+                settings.layoutPreset || 'default',
+                settings.densityMode || 'compact',
+                settings.layoutVersion || 'classic'
+            );
             layoutPresetSelect.addEventListener('change', (e) => {
                 settings.layoutPreset = window.LayoutUtils
                     ? window.LayoutUtils.normalizeLayoutPreset(e.target.value)
                     : e.target.value;
                 if (callbacks.onLayoutPresetChange) callbacks.onLayoutPresetChange(settings.layoutPreset);
-                this.updateLayoutDensityPreview(settings.layoutPreset, settings.densityMode || 'compact');
+                this.updateLayoutDensityPreview(
+                    settings.layoutPreset,
+                    settings.densityMode || 'compact',
+                    settings.layoutVersion || 'classic'
+                );
             });
         }
 
@@ -693,13 +748,21 @@ class ConfigSettings {
             const normalizedDensity = DENSITIES.includes(settings.densityMode) ? settings.densityMode : 'compact';
             settings.densityMode = normalizedDensity;
             densityModeSelect.value = normalizedDensity;
-            this.updateLayoutDensityPreview(settings.layoutPreset || 'default', normalizedDensity);
+            this.updateLayoutDensityPreview(
+                settings.layoutPreset || 'default',
+                normalizedDensity,
+                settings.layoutVersion || 'classic'
+            );
 
             densityModeSelect.addEventListener('change', (e) => {
                 const value = DENSITIES.includes(e.target.value) ? e.target.value : 'compact';
                 settings.densityMode = value;
                 if (callbacks.onDensityModeChange) callbacks.onDensityModeChange(value);
-                this.updateLayoutDensityPreview(settings.layoutPreset || 'default', value);
+                this.updateLayoutDensityPreview(
+                    settings.layoutPreset || 'default',
+                    value,
+                    settings.layoutVersion || 'classic'
+                );
             });
         }
 
