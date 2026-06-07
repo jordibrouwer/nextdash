@@ -4765,6 +4765,11 @@ class Dashboard {
             this.statusMonitor.setBookmarkStatus(row, cached.status, pingText);
             return;
         }
+        const persisted = this.statusMonitor.getPersistedStatus(bookmark);
+        if (persisted) {
+            this.statusMonitor.setBookmarkStatus(row, persisted, '');
+            return;
+        }
         // No cache yet (or URL changed): run a fresh check so status color returns without page refresh.
         this.statusMonitor.refreshBookmarkStatus(bookmark.url);
     }

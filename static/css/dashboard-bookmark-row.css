@@ -30,3 +30,20 @@
 a.bookmark-open:focus-visible {
     outline: none;
 }
+
+/* Status signal must stay visible over default row hover */
+.bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 16%, var(--background-primary));
+    box-shadow: inset 3px 0 0 var(--accent-error);
+}
+
+.bookmark-link.status-online:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, var(--background-primary));
+}
+
+.bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, var(--background-primary));
+}

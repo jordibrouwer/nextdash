@@ -15,7 +15,7 @@
 
 .bookmark-link.status-offline {
     position: relative;
-    transition: color var(--transition-normal), opacity var(--transition-normal);
+    transition: color var(--transition-normal), opacity var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
     animation: fadeInStatus var(--transition-normal);
 }
 
@@ -26,10 +26,13 @@
 
 .bookmark-link.status-offline {
     color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 11%, var(--background-primary));
+    box-shadow: inset 3px 0 0 var(--accent-error);
 }
 
 .bookmark-link.status-checking {
     color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 8%, var(--background-primary));
 }
 
 .bookmark-link.status-transition-flash {
@@ -51,11 +54,21 @@
     }
 }
 
-/* Hover overrides: status color yields to text-primary on hover */
-.bookmark-link.status-online:hover,
-.bookmark-link.status-offline:hover,
-.bookmark-link.status-checking:hover {
-    color: var(--text-primary);
+/* Hover: keep status signal visible (row hover styles must not hide offline/online) */
+.bookmark-link.status-online:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, var(--background-primary));
+}
+
+.bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 16%, var(--background-primary));
+    box-shadow: inset 3px 0 0 var(--accent-error);
+}
+
+.bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, var(--background-primary));
 }
 
 /* Optional: preserve bookmark row colors while still showing status state/ping */
@@ -63,6 +76,8 @@ body.status-color-lock .bookmark-link.status-online,
 body.status-color-lock .bookmark-link.status-offline,
 body.status-color-lock .bookmark-link.status-checking {
     color: inherit;
+    background: none;
+    box-shadow: none;
 }
 
 body.status-color-lock .bookmark-link.status-online .status-text,

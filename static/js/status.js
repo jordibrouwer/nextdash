@@ -13,6 +13,9 @@ class StatusMonitor {
         this._pingObserverBookmarks = null;
         /** Pixels beyond viewport edges to still treat a row as “visible” for initial / interval pings */
         this.viewportPingMarginPx = 220;
+        /** Failed ping attempts per check before marking a bookmark offline */
+        this.offlineRetryCount = 3;
+        this.offlineRetryDelayMs = 450;
     }
 
     async runChecksWithConcurrency(bookmarks, fn) {
@@ -32,6 +35,10 @@ class StatusMonitor {
         await Promise.all(Array.from({ length: limit }, () => worker()));
     }
 
+    delay(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
     updateSettings(settings) {
         const wasStatusEnabled = this.settings.showStatus;
         this.settings = settings;
@@ -47,7 +54,7 @@ class StatusMonitor {
                 this.attachViewportPingObserver(window.dashboardInstance.bookmarks);
             }
         }
-        
+
         // Hide loading indicator if the option is disabled
         if (!this.settings.showStatusLoading) {
             this.hideLoadingIndicator();
@@ -153,26 +160,12 @@ class StatusMonitor {
         });
     }
 
-    async checkBookmarkStatus(bookmark) {
-        if (!this.settings.showStatus || !bookmark.checkStatus) {
-            return null;
-        }
-
-        const bookmarkElement = this.getStatusTargetElement(bookmark);
-        if (!bookmarkElement) {
-            return null;
-        }
-
-        // Set checking state - no text, just yellow color
-        this.setBookmarkStatus(bookmarkElement, 'checking', '');
+    async pingBookmarkOnce(bookmark) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
 
         try {
-            // Create abort controller for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout (reduced from 8s)
-
-            // Use the server-side ping API which can handle HTTPS certificates
-            const response = await fetch(`/api/ping?url=${encodeURIComponent(bookmark.url)}${this.settings.skipFastPing ? "&skipFastPing=1" : ""}`, {
+            const response = await fetch(`/api/ping?url=${encodeURIComponent(bookmark.url)}${this.settings.skipFastPing ? '&skipFastPing=1' : ''}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -187,37 +180,113 @@ class StatusMonitor {
             }
 
             const result = await response.json();
-
-            // Cache the result
-            this.statusCache.set(bookmark.url, {
-                status: result.status,
-                ping: result.ping,
-                timestamp: Date.now()
-            });
-
-            // Update UI
-            const pingText = this.settings.showPing && result.ping ? `${result.ping}ms` : '';
-            this.setBookmarkStatus(bookmarkElement, result.status, pingText);
-
-            return { status: result.status, ping: result.ping };
-
+            return {
+                status: result.status === 'online' ? 'online' : 'offline',
+                ping: result.ping ?? null,
+                errorDetail: result.errorDetail || result.error || ''
+            };
         } catch (error) {
+            clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
                 console.warn('Ping timeout for', bookmark.url);
             } else {
                 console.error('Ping error for', bookmark.url, ':', error);
             }
-
-            // Cache the result
-            this.statusCache.set(bookmark.url, {
+            return {
                 status: 'offline',
                 ping: null,
-                timestamp: Date.now()
-            });
-
-            this.setBookmarkStatus(bookmarkElement, 'offline', '');
-            return { status: 'offline', ping: null };
+                errorDetail: 'Unreachable'
+            };
         }
+    }
+
+    async persistBookmarkStatus(bookmark, status, errorDetail = '') {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard || typeof dashboard.resolveBookmarkIndex !== 'function') {
+            return;
+        }
+        const index = dashboard.resolveBookmarkIndex(bookmark);
+        const pageId = Number(dashboard.currentPageId);
+        if (index < 0 || !Number.isFinite(pageId) || pageId <= 0) {
+            return;
+        }
+
+        const payload = {
+            pageId,
+            index,
+            status: status === 'online' ? 'online' : 'offline',
+            error: status === 'online' ? '' : (errorDetail || 'Unreachable')
+        };
+
+        try {
+            await fetch('/api/health/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.warn('Failed to persist bookmark status', error);
+        }
+
+        const local = dashboard.bookmarks?.[index];
+        if (local) {
+            local.lastChecked = Date.now();
+            local.lastError = status === 'online' ? '' : payload.error;
+        }
+    }
+
+    cacheStatusResult(bookmarkUrl, entry) {
+        this.statusCache.set(bookmarkUrl, {
+            ...entry,
+            timestamp: Date.now()
+        });
+    }
+
+    async checkBookmarkStatus(bookmark) {
+        if (!this.settings.showStatus || !bookmark.checkStatus) {
+            return null;
+        }
+
+        const bookmarkElement = this.getStatusTargetElement(bookmark);
+        if (!bookmarkElement) {
+            return null;
+        }
+
+        this.setBookmarkStatus(bookmarkElement, 'checking', '');
+
+        let lastResult = { status: 'offline', ping: null, errorDetail: 'Unreachable' };
+
+        for (let attempt = 1; attempt <= this.offlineRetryCount; attempt += 1) {
+            lastResult = await this.pingBookmarkOnce(bookmark);
+            if (lastResult.status === 'online') {
+                this.cacheStatusResult(bookmark.url, {
+                    status: 'online',
+                    ping: lastResult.ping,
+                    failStreak: 0,
+                    confirmed: true
+                });
+                const pingText = this.settings.showPing && lastResult.ping ? `${lastResult.ping}ms` : '';
+                this.setBookmarkStatus(bookmarkElement, 'online', pingText);
+                await this.persistBookmarkStatus(bookmark, 'online');
+                return { status: 'online', ping: lastResult.ping };
+            }
+
+            if (attempt < this.offlineRetryCount) {
+                this.setBookmarkStatus(bookmarkElement, 'checking', '');
+                await this.delay(this.offlineRetryDelayMs);
+            }
+        }
+
+        this.cacheStatusResult(bookmark.url, {
+            status: 'offline',
+            ping: null,
+            failStreak: this.offlineRetryCount,
+            confirmed: true,
+            errorDetail: lastResult.errorDetail
+        });
+        this.setBookmarkStatus(bookmarkElement, 'offline', '');
+        await this.persistBookmarkStatus(bookmark, 'offline', lastResult.errorDetail);
+        return { status: 'offline', ping: null };
     }
 
     setBookmarkStatus(bookmarkElement, status, text = '') {
@@ -230,7 +299,7 @@ class StatusMonitor {
                     : '';
         // Remove existing status classes
         bookmarkElement.classList.remove('status-online', 'status-offline', 'status-checking');
-        
+
         // Add new status class
         bookmarkElement.classList.add(`status-${status}`);
         if (previousStatus && previousStatus !== status) {
@@ -269,6 +338,14 @@ class StatusMonitor {
         }
 
         // Status indicator dot removed - no longer used
+    }
+
+    getPersistedStatus(bookmark) {
+        const error = String(bookmark?.lastError || '').trim();
+        if (error) {
+            return 'offline';
+        }
+        return null;
     }
 
     async checkAllBookmarks(bookmarks, options = {}) {
@@ -315,7 +392,7 @@ class StatusMonitor {
         const bookmarkElements = document.querySelectorAll('.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]');
         bookmarkElements.forEach(element => {
             element.classList.remove('status-online', 'status-offline', 'status-checking');
-            
+
             const statusText = element.querySelector('.status-text');
             if (statusText) {
                 statusText.remove();
@@ -332,7 +409,7 @@ class StatusMonitor {
 
     startPeriodicChecks(intervalMinutes = 5) {
         this.stopPeriodicChecks();
-        
+
         if (this.settings.showStatus) {
             this.checkInterval = setInterval(() => {
                 if (window.dashboardInstance && window.dashboardInstance.bookmarks) {
@@ -434,15 +511,24 @@ class StatusMonitor {
     // Apply cached statuses to bookmarks that already have them
     applyCachedStatuses(bookmarks) {
         bookmarks.forEach(bookmark => {
-            if (bookmark.checkStatus) {
-                const cached = this.statusCache.get(bookmark.url);
-                if (cached) {
-                    const bookmarkElement = this.getStatusTargetElement(bookmark);
-                    if (bookmarkElement) {
-                        const pingText = this.settings.showPing && cached.ping ? `${cached.ping}ms` : '';
-                        this.setBookmarkStatus(bookmarkElement, cached.status, pingText);
-                    }
-                }
+            if (!bookmark.checkStatus) {
+                return;
+            }
+            const bookmarkElement = this.getStatusTargetElement(bookmark);
+            if (!bookmarkElement) {
+                return;
+            }
+
+            const cached = this.statusCache.get(bookmark.url);
+            if (cached) {
+                const pingText = this.settings.showPing && cached.ping ? `${cached.ping}ms` : '';
+                this.setBookmarkStatus(bookmarkElement, cached.status, pingText);
+                return;
+            }
+
+            const persisted = this.getPersistedStatus(bookmark);
+            if (persisted) {
+                this.setBookmarkStatus(bookmarkElement, persisted, '');
             }
         });
     }
