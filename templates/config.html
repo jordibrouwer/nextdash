@@ -76,18 +76,6 @@
                     </div>
                 </div>
 
-                <div class="config-settings-search" role="search">
-                    <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
-                    <div class="config-settings-search-field">
-                        <input type="search" id="config-settings-search-input" class="config-settings-search-input"
-                               data-i18n-placeholder="config.settingsSearchPlaceholder"
-                               placeholder="Search all settings…" autocomplete="off" spellcheck="false"
-                               aria-controls="config-settings-search-results" aria-expanded="false" aria-autocomplete="list">
-                        <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
-                    </div>
-                    <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
-                </div>
-
                 <div class="tabs-scroll-wrapper">
                 <div class="tabs">
                     <button class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
@@ -111,6 +99,17 @@
     <div class="config-section section-content">
         <div class="container">
             <div id="config-breadcrumb" class="config-breadcrumb" aria-label="Location"></div>
+            <div class="config-settings-search" role="search">
+                <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
+                <div class="config-settings-search-field">
+                    <input type="search" id="config-settings-search-input" class="config-settings-search-input"
+                           data-i18n-placeholder="config.settingsSearchPlaceholder"
+                           placeholder="Search all settings…" autocomplete="off" spellcheck="false"
+                           aria-controls="config-settings-search-results" aria-expanded="false" aria-autocomplete="list">
+                    <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
+                </div>
+                <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
+            </div>
             <main id="config-main" class="config-main" tabindex="-1" aria-busy="true">
             <div class="skeleton-root skeleton-config-panel" data-skeleton-root aria-hidden="true">
                 <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>

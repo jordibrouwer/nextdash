@@ -1,6 +1,7 @@
 .config-settings-search {
-    margin: 0.65rem 0 0.35rem;
+    margin: 0 0 1rem;
     position: relative;
+    max-width: 28rem;
 }
 
 .config-settings-search-label {
@@ -21,7 +22,6 @@
 
 .config-settings-search-input {
     width: 100%;
-    max-width: 22rem;
     padding: 0.45rem 0.65rem;
     border: 1px solid var(--border-color, rgba(148, 163, 184, 0.35));
     border-radius: 0.45rem;
@@ -43,7 +43,7 @@
 
 .config-settings-search-results {
     position: absolute;
-    z-index: 40;
+    z-index: 50;
     top: calc(100% + 0.25rem);
     left: 0;
     width: min(100%, 26rem);
