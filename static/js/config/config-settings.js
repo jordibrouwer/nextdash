@@ -1014,6 +1014,7 @@ class ConfigSettings {
         this.bindInfoButton('skip-fast-ping-info-btn', 'config.skipFastPingInfoTitle', 'config.skipFastPingInfoMessage');
         this.bindInfoButton('status-offline-retries-info-btn', 'config.statusOfflineRetriesInfoTitle', 'config.statusOfflineRetriesInfoMessage');
         this.bindInfoButton('status-offline-retry-delay-info-btn', 'config.statusOfflineRetryDelayInfoTitle', 'config.statusOfflineRetryDelayInfoMessage');
+        this.bindInfoButton('status-recheck-interval-info-btn', 'config.statusRecheckIntervalInfoTitle', 'config.statusRecheckIntervalInfoMessage');
         this.bindInfoButton('show-sync-toasts-info-btn', 'config.showSyncToastsInfoTitle', 'config.showSyncToastsInfoMessage');
         this.bindAllSettingInfoButtons();
 
@@ -1409,6 +1410,7 @@ class ConfigSettings {
             showStatusCheckbox.addEventListener('change', (e) => {
                 settings.showStatus = e.target.checked;
                 if (callbacks.onStatusVisibilityChange) callbacks.onStatusVisibilityChange();
+                this.refreshStatusEssentialsSummary(settings, window.configManager?.allBookmarksData);
             });
         }
         if (colorizeStatusCheckbox) {
@@ -1462,6 +1464,20 @@ class ConfigSettings {
                 statusOfflineRetryDelayInput.value = settings.statusOfflineRetryDelayMs;
             });
         }
+
+        const statusRecheckIntervalSelect = document.getElementById('status-recheck-interval-select');
+        if (statusRecheckIntervalSelect) {
+            const allowed = [1, 3, 5, 10, 15, 30];
+            const current = this.normalizeStatusRecheckIntervalMinutes(settings.statusRecheckIntervalMinutes);
+            settings.statusRecheckIntervalMinutes = current;
+            statusRecheckIntervalSelect.value = String(current);
+            statusRecheckIntervalSelect.addEventListener('change', (e) => {
+                settings.statusRecheckIntervalMinutes = this.normalizeStatusRecheckIntervalMinutes(e.target.value);
+                statusRecheckIntervalSelect.value = String(settings.statusRecheckIntervalMinutes);
+            });
+        }
+
+        this.refreshStatusEssentialsSummary(settings, window.configManager?.allBookmarksData);
 
         // Global shortcuts checkbox
         const globalShortcutsCheckbox = document.getElementById('global-shortcuts-checkbox');
@@ -1874,6 +1890,10 @@ class ConfigSettings {
         if (statusOfflineRetryDelayInput) {
             settings.statusOfflineRetryDelayMs = this.normalizeStatusOfflineRetryDelayMs(statusOfflineRetryDelayInput.value);
         }
+        const statusRecheckIntervalSelect = document.getElementById('status-recheck-interval-select');
+        if (statusRecheckIntervalSelect) {
+            settings.statusRecheckIntervalMinutes = this.normalizeStatusRecheckIntervalMinutes(statusRecheckIntervalSelect.value);
+        }
         if (globalShortcutsCheckbox) settings.globalShortcuts = globalShortcutsCheckbox.checked;
         if (enableCustomTitleCheckbox) settings.enableCustomTitle = enableCustomTitleCheckbox.checked;
         if (customTitleInput) settings.customTitle = customTitleInput.value;
@@ -2050,36 +2070,21 @@ class ConfigSettings {
      * @param {boolean} showStatus
      */
     updateStatusOptionsVisibility(showStatus) {
-        const showStatusCheckbox = document.getElementById('show-status-checkbox');
-        if (!showStatusCheckbox) return;
+        const enabled = Boolean(showStatus);
+        const statusPanel = document.querySelector('[data-general-panel="status"]');
+        if (!statusPanel) return;
 
-        const parentItem = showStatusCheckbox.closest('.checkbox-tree-item');
-        if (!parentItem?.parentNode) return;
+        statusPanel.querySelectorAll('.checkbox-tree-child').forEach((row) => {
+            row.classList.toggle('is-disabled', !enabled);
+        });
 
-        const siblings = [...parentItem.parentNode.children];
-        const startIndex = siblings.indexOf(parentItem);
+        statusPanel.querySelectorAll('input, select, button.number-input-up, button.number-input-down').forEach((control) => {
+            control.disabled = !enabled;
+        });
 
-        for (let i = startIndex + 1; i < siblings.length; i++) {
-            const sibling = siblings[i];
-            if (!sibling.classList.contains('checkbox-tree-child')) break;
-
-            sibling.classList.toggle('is-disabled', !showStatus);
-            sibling.querySelectorAll('input, select, button.number-input-up, button.number-input-down').forEach((control) => {
-                if (control.matches('input[type="checkbox"]')) {
-                    control.disabled = !showStatus;
-                    return;
-                }
-                if (control.matches('input:not([type="checkbox"]), select')) {
-                    control.disabled = !showStatus;
-                }
-                if (control.matches('button.number-input-up, button.number-input-down')) {
-                    control.disabled = !showStatus;
-                }
-            });
-            if (!showStatus) {
-                const ping = sibling.querySelector('#show-ping-checkbox');
-                if (ping) ping.checked = false;
-            }
+        if (!enabled) {
+            const ping = document.getElementById('show-ping-checkbox');
+            if (ping) ping.checked = false;
         }
     }
 
@@ -2093,6 +2098,32 @@ class ConfigSettings {
         const parsed = Number.parseInt(String(value), 10);
         if (!Number.isFinite(parsed)) return 450;
         return Math.min(3000, Math.max(100, parsed));
+    }
+
+    normalizeStatusRecheckIntervalMinutes(value) {
+        const allowed = [1, 3, 5, 10, 15, 30];
+        const parsed = Number.parseInt(String(value), 10);
+        if (!Number.isFinite(parsed) || !allowed.includes(parsed)) return 5;
+        return parsed;
+    }
+
+    refreshStatusEssentialsSummary(settings, allBookmarks = []) {
+        const line = document.getElementById('status-essentials-summary-line');
+        if (!line) return;
+
+        const bookmarks = Array.isArray(allBookmarks) ? allBookmarks : [];
+        const monitored = bookmarks.filter((b) => b?.checkStatus === true).length;
+
+        if (!settings?.showStatus) {
+            line.textContent = this.t('config.statusEssentialsSummaryOff', 'Off');
+            return;
+        }
+        if (monitored === 0) {
+            line.textContent = this.t('config.statusEssentialsSummaryOnNone', 'On · no bookmarks with status checks yet');
+            return;
+        }
+        const template = this.t('config.statusEssentialsSummaryOnCount', 'On · {count} bookmarks monitored');
+        line.textContent = template.replace('{count}', String(monitored));
     }
 
     /**
@@ -2384,6 +2415,7 @@ class ConfigSettings {
             showPing: true,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
+            statusRecheckIntervalMinutes: 5,
             showPinIcon: false,
             showNoteIcon: true,
             showShortcuts: true,

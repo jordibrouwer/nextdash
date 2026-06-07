@@ -96,10 +96,20 @@
             'Too many redirects': 'health.errorTooManyRedirects',
             'Unreachable': 'health.errorUnreachable',
             'Invalid URL': 'health.errorInvalidUrl',
-            'ping failed': 'health.errorPingFailed'
+            'ping failed': 'health.errorPingFailed',
+            'Request timeout': 'health.errorTimeout',
+            'Network error': 'health.errorUnreachable'
         };
-        const key = reasonKeys[reason];
-        return key ? t(key, reason) : reason;
+        const trimmed = String(reason || '').trim();
+        const key = reasonKeys[trimmed];
+        if (key) return t(key, trimmed);
+
+        const embeddedHttp = trimmed.match(/HTTP\s+(\d{3})/i);
+        if (embeddedHttp) {
+            return t('health.errorHttp', 'HTTP {status}', { status: embeddedHttp[1] });
+        }
+
+        return trimmed;
     }
 
     function escapeHtml(value) {

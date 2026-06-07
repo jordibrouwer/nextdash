@@ -11,6 +11,13 @@ function normalizeStatusOfflineRetryDelayMs(value) {
     return Math.min(3000, Math.max(100, parsed));
 }
 
+function normalizeStatusRecheckIntervalMinutes(value) {
+    const allowed = [1, 3, 5, 10, 15, 30];
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed) || !allowed.includes(parsed)) return 5;
+    return parsed;
+}
+
 class StatusMonitor {
     constructor(settings = {}) {
         this.settings = settings;
@@ -43,6 +50,44 @@ class StatusMonitor {
     applyRetrySettings() {
         this.offlineRetryCount = normalizeStatusOfflineRetries(this.settings.statusOfflineRetries);
         this.offlineRetryDelayMs = normalizeStatusOfflineRetryDelayMs(this.settings.statusOfflineRetryDelayMs);
+        this.recheckIntervalMinutes = normalizeStatusRecheckIntervalMinutes(this.settings.statusRecheckIntervalMinutes);
+    }
+
+    statusT(key, fallback, replacements = {}) {
+        const lang = window.dashboardInstance?.language;
+        if (!lang || typeof lang.t !== 'function') {
+            return Object.entries(replacements).reduce(
+                (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+                fallback
+            );
+        }
+        const fullKey = key.startsWith('dashboard.') ? key : `dashboard.${key}`;
+        let text = lang.t(fullKey);
+        if (text === fullKey) text = fallback;
+        return Object.entries(replacements).reduce(
+            (out, [name, value]) => out.replaceAll(`{${name}}`, String(value)),
+            text
+        );
+    }
+
+    showNoBookmarksStatusHint() {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard || typeof dashboard.showNotification !== 'function') return;
+        const actionLabel = this.statusT('statusOpenBookmarksConfig', 'Open bookmarks');
+        dashboard.showNotification(
+            this.statusT(
+                'statusNoBookmarksChecked',
+                'Status is enabled, but no bookmarks have status checks turned on. Enable them per bookmark in Config.'
+            ),
+            'error',
+            {
+                duration: 9000,
+                actionLabel,
+                onAction: () => {
+                    window.location.href = '/config#bookmarks';
+                }
+            }
+        );
     }
 
     async runChecksWithConcurrency(bookmarks, fn) {
@@ -81,6 +126,9 @@ class StatusMonitor {
             if (window.dashboardInstance && window.dashboardInstance.bookmarks) {
                 this.attachViewportPingObserver(window.dashboardInstance.bookmarks);
             }
+        } else if (this.settings.showStatus) {
+            this.stopPeriodicChecks();
+            this.startPeriodicChecks();
         }
 
         // Hide loading indicator if the option is disabled
@@ -397,8 +445,8 @@ class StatusMonitor {
         if (bookmarksToCheck.length === 0) {
             this.isChecking = false;
             this.hideLoadingIndicator();
-            if (!this.emptyStatusHintShown && window.dashboardInstance && typeof window.dashboardInstance.showNotification === 'function') {
-                window.dashboardInstance.showNotification('Status is enabled, but no bookmarks have status checks turned on.', 'error');
+            if (!this.emptyStatusHintShown) {
+                this.showNoBookmarksStatusHint();
                 this.emptyStatusHintShown = true;
             }
             return;
@@ -444,15 +492,19 @@ class StatusMonitor {
         this.statusCache.clear();
     }
 
-    startPeriodicChecks(intervalMinutes = 5) {
+    startPeriodicChecks(intervalMinutes) {
         this.stopPeriodicChecks();
 
         if (this.settings.showStatus) {
+            const minutes = normalizeStatusRecheckIntervalMinutes(
+                intervalMinutes ?? this.recheckIntervalMinutes ?? this.settings.statusRecheckIntervalMinutes
+            );
+            this.recheckIntervalMinutes = minutes;
             this.checkInterval = setInterval(() => {
                 if (window.dashboardInstance && window.dashboardInstance.bookmarks) {
                     this.checkAllBookmarks(window.dashboardInstance.bookmarks, { full: false });
                 }
-            }, intervalMinutes * 60 * 1000);
+            }, minutes * 60 * 1000);
         }
     }
 
@@ -604,3 +656,4 @@ class StatusMonitor {
 window.StatusMonitor = StatusMonitor;
 window.normalizeStatusOfflineRetries = normalizeStatusOfflineRetries;
 window.normalizeStatusOfflineRetryDelayMs = normalizeStatusOfflineRetryDelayMs;
+window.normalizeStatusRecheckIntervalMinutes = normalizeStatusRecheckIntervalMinutes;

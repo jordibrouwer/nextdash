@@ -71,7 +71,7 @@
                         <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator" aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
                         <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
                         <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
-                        <span id="save-status-indicator" class="save-status-indicator" aria-live="polite">Saved</span>
+                        <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
                     </div>
                 </div>
 
@@ -816,6 +816,7 @@
                     <section class="general-card" data-general-panel="status">
                         <h3 class="section-title" data-i18n="config.generalDiagnosticsTitle">Diagnostics & Status</h3>
                         <p class="general-card-intro" data-i18n="config.generalDiagnosticsIntro">Bookmark network status, health indicators, and sync notifications.</p>
+                        <p class="form-hint status-two-level-hint" data-i18n="config.statusTwoLevelHint">Dashboard status is global. Each bookmark also needs its own status check enabled under Config → Bookmarks.</p>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
@@ -875,6 +876,19 @@
                                     <input type="number" id="status-offline-retry-delay-input" min="100" max="3000" step="50" value="450">
                                     <button type="button" class="number-input-up" data-input="status-offline-retry-delay-input">+</button>
                                 </div>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="status-recheck-interval-select" data-i18n="config.statusRecheckInterval">Re-check interval:</label>
+                                <button type="button" id="status-recheck-interval-info-btn" class="info-button" data-i18n-aria="config.statusRecheckIntervalInfoTitle">ℹ</button>
+                                <select id="status-recheck-interval-select">
+                                    <option value="1" data-i18n="config.statusRecheckInterval1">Every 1 minute</option>
+                                    <option value="3" data-i18n="config.statusRecheckInterval3">Every 3 minutes</option>
+                                    <option value="5" data-i18n="config.statusRecheckInterval5">Every 5 minutes (default)</option>
+                                    <option value="10" data-i18n="config.statusRecheckInterval10">Every 10 minutes</option>
+                                    <option value="15" data-i18n="config.statusRecheckInterval15">Every 15 minutes</option>
+                                    <option value="30" data-i18n="config.statusRecheckInterval30">Every 30 minutes</option>
+                                </select>
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">

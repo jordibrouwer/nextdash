@@ -63,6 +63,7 @@ class ConfigManager {
             skipFastPing: false,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
+            statusRecheckIntervalMinutes: 5,
             globalShortcuts: true,
             hyprMode: false,
             showPageNamesInTabs: false,
@@ -174,6 +175,8 @@ class ConfigManager {
             this.generalLayers.init();
             this.language.applyTranslations();
             this.generalLayers.applyHash(window.location.hash);
+            this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
+            this.settings?.updateStatusOptionsVisibility?.(this.settingsData.showStatus);
         }
         if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
             window.installSettingInfoButtons(this.settings);
@@ -213,6 +216,7 @@ class ConfigManager {
         }
         this.savedSnapshot = this.captureUndoSnapshot();
         this.refreshSmartCollectionCounters();
+        this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
         this.validateBookmarkConflicts({ showToast: false });
 
         if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
@@ -2172,6 +2176,11 @@ class ConfigManager {
             } else {
                 this.settingsData.statusOfflineRetryDelayMs = 450;
             }
+            if (typeof window.normalizeStatusRecheckIntervalMinutes === 'function') {
+                this.settingsData.statusRecheckIntervalMinutes = window.normalizeStatusRecheckIntervalMinutes(this.settingsData.statusRecheckIntervalMinutes);
+            } else {
+                this.settingsData.statusRecheckIntervalMinutes = 5;
+            }
             if (typeof this.settingsData.showSyncToasts === 'undefined') {
                 this.settingsData.showSyncToasts = false;
             }
@@ -2523,6 +2532,7 @@ class ConfigManager {
             },
             onStatusVisibilityChange: () => {
                 this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
+                this.settings.refreshStatusEssentialsSummary(this.settingsData, this.allBookmarksData);
             },
             onLauncherIconSizeChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
@@ -3986,7 +3996,7 @@ class ConfigManager {
             badge.classList.toggle('is-visible', this.isDirty);
         }
         if (saveStatus) {
-            saveStatus.textContent = 'Saved';
+            saveStatus.textContent = this.language?.t('config.savedShort') || 'Saved';
             saveStatus.classList.toggle('is-unsaved', this.isDirty);
             saveStatus.classList.toggle('is-hidden', this.isDirty);
         }
@@ -4064,7 +4074,7 @@ class ConfigManager {
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
         // Panels open by default; everything else starts collapsed.
-        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout']);
+        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout', 'status-essentials-summary']);
         const DEFAULT_OPEN_ADVANCED = new Set([]);
         const layer = this.generalLayers?.layer || 'essentials';
         const DEFAULT_OPEN = layer === 'advanced'
@@ -5468,7 +5478,7 @@ class ConfigManager {
         }
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
-            saveStatus.textContent = 'Saving...';
+            saveStatus.textContent = this.language?.t('config.savingChanges') || 'Saving changes...';
             saveStatus.classList.remove('is-unsaved');
         }
         this.ui.showNotification(this.language.t('config.savingChanges'), 'info');
@@ -5531,6 +5541,7 @@ class ConfigManager {
             } catch (error) {
                 // keep previous store state
             }
+            this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
             if (this.stats && window.location.hash === '#stats') {
                 this.stats.refresh(this);
             }

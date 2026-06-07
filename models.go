@@ -117,6 +117,7 @@ type Settings struct {
 	SkipFastPing                bool                             `json:"skipFastPing"`
 	StatusOfflineRetries        int                              `json:"statusOfflineRetries"`        // Failed pings per check before marking offline (1-10)
 	StatusOfflineRetryDelayMs   int                              `json:"statusOfflineRetryDelayMs"`   // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes int                             `json:"statusRecheckIntervalMinutes"` // Background re-check interval in minutes (1-60)
 	GlobalShortcuts             bool                             `json:"globalShortcuts"`             // Use shortcuts from all pages
 	HyprMode                    bool                             `json:"hyprMode"`                    // Launcher mode for PWA usage
 	AnimationsEnabled           bool                             `json:"animationsEnabled"`           // Enable or disable animations globally
@@ -366,6 +367,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SkipFastPing:                false,
 			StatusOfflineRetries:        3,
 			StatusOfflineRetryDelayMs:   450,
+			StatusRecheckIntervalMinutes: 5,
 			GlobalShortcuts:             true,
 			HyprMode:                    false,
 			AnimationsEnabled:           true,
@@ -1163,6 +1165,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SkipFastPing:              false,
 			StatusOfflineRetries:      3,
 			StatusOfflineRetryDelayMs: 450,
+			StatusRecheckIntervalMinutes: 5,
 			GlobalShortcuts:           true,
 			HyprMode:                  false,
 			AnimationsEnabled:         true,
@@ -1240,6 +1243,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["statusOfflineRetryDelayMs"]; !ok || settings.StatusOfflineRetryDelayMs < 100 || settings.StatusOfflineRetryDelayMs > 3000 {
 			settings.StatusOfflineRetryDelayMs = 450
+		}
+		if _, ok := rawSettings["statusRecheckIntervalMinutes"]; !ok || settings.StatusRecheckIntervalMinutes < 1 || settings.StatusRecheckIntervalMinutes > 60 {
+			settings.StatusRecheckIntervalMinutes = 5
 		}
 		if _, ok := rawSettings["showShortcuts"]; !ok {
 			settings.ShowShortcuts = true

@@ -54,6 +54,7 @@ class ConfigGeneralLayers {
         this.splitBasicsPanel();
         this.createBookmarksEssentialsPanel();
         this.createSmartCollectionsSummary();
+        this.createStatusEssentialsSummary();
         this.splitAdvancedGeneralPanel();
         this.assignPanelTiers();
         this.reorderPanels();
@@ -194,6 +195,47 @@ class ConfigGeneralLayers {
         }
     }
 
+    createStatusEssentialsSummary() {
+        if (this.root.querySelector('[data-general-panel="status-essentials-summary"]')) return;
+
+        const full = this.root.querySelector('[data-general-panel="status"]');
+        if (!full) return;
+
+        const summary = document.createElement('section');
+        summary.className = 'general-card general-card-compact';
+        summary.dataset.generalPanel = 'status-essentials-summary';
+        summary.dataset.configTier = 'essentials';
+        summary.innerHTML = `
+            <h3 class="section-title" data-i18n="config.statusEssentialsTitle">Status monitoring</h3>
+            <p id="status-essentials-summary-line" class="status-essentials-summary-line" aria-live="polite"></p>
+            <div class="checkbox-tree">
+                <div class="checkbox-tree-item" id="status-essentials-toggle-slot"></div>
+                <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row">
+                    <span class="tree-symbol">└──</span>
+                    <div class="config-advanced-action-row">
+                        <p class="config-advanced-action-text" data-i18n="config.statusEssentialsHint">Turns dashboard status on or off. Enable per-bookmark checks under Bookmarks. Advanced controls retries, colors, and ping display.</p>
+                        <div class="config-advanced-action-actions">
+                            <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="status" data-i18n="config.configureStatusAdvanced">Advanced settings →</button>
+                            <a href="#bookmarks" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        full.parentNode.insertBefore(summary, full);
+
+        const toggleSlot = summary.querySelector('#status-essentials-toggle-slot');
+        const showStatusItem = full.querySelector('#show-status-checkbox')?.closest('.checkbox-tree-item');
+        if (toggleSlot && showStatusItem) {
+            toggleSlot.replaceWith(showStatusItem);
+        }
+
+        if (full.dataset.configTier !== 'advanced') {
+            full.dataset.configTier = 'advanced';
+        }
+    }
+
     splitAdvancedGeneralPanel() {
         const old = this.root.querySelector('[data-general-panel="advanced-general"]');
         if (!old || this.root.querySelector('[data-general-panel="search-input"]')) return;
@@ -241,6 +283,7 @@ class ConfigGeneralLayers {
             layout: 'essentials',
             'bookmarks-essentials': 'essentials',
             'smart-collections-summary': 'essentials',
+            'status-essentials-summary': 'essentials',
             'search-buttons': 'essentials',
             'appearance-advanced': 'advanced',
             'bookmarks-display': 'advanced',
@@ -266,6 +309,7 @@ class ConfigGeneralLayers {
             'layout',
             'bookmarks-essentials',
             'smart-collections-summary',
+            'status-essentials-summary',
             'search-buttons',
             'appearance-advanced',
             'bookmarks-display',

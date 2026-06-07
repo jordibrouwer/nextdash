@@ -319,6 +319,13 @@ body {
     min-width: 0;
 }
 
+.status-essentials-summary-line {
+    margin: 0 0 0.75rem;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary);
+}
+
 .smart-collections-action-row .config-advanced-action-row {
     flex: 1 1 auto;
     min-width: 0;

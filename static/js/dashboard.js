@@ -123,6 +123,7 @@ class Dashboard {
             showPing: true,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
+            statusRecheckIntervalMinutes: 5,
             globalShortcuts: true,
             hyprMode: false,
             enableCustomFavicon: false,
@@ -646,6 +647,11 @@ class Dashboard {
                 this.settings.statusOfflineRetryDelayMs = window.normalizeStatusOfflineRetryDelayMs(this.settings.statusOfflineRetryDelayMs);
             } else {
                 this.settings.statusOfflineRetryDelayMs = 450;
+            }
+            if (typeof window.normalizeStatusRecheckIntervalMinutes === 'function') {
+                this.settings.statusRecheckIntervalMinutes = window.normalizeStatusRecheckIntervalMinutes(this.settings.statusRecheckIntervalMinutes);
+            } else {
+                this.settings.statusRecheckIntervalMinutes = 5;
             }
             if (typeof this.settings.onboardingCompleted === 'undefined') {
                 this.settings.onboardingCompleted = true;
