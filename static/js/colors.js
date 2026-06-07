@@ -301,7 +301,10 @@ class ColorsEditor {
         if (!confirmed) return;
 
         try {
-            const response = await fetch('/api/colors/reset', { method: 'POST' });
+            const response = await fetch('/api/colors/reset', {
+                method: 'POST',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
             if (!response.ok) throw new Error('Failed to reset');
             this.colorsData = await response.json();
             this.populateColorInputs();

@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Configuration</title>
+    <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/theme-loader.js"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
     <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
@@ -973,6 +975,13 @@
                             </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
+                                    <input type="checkbox" id="allow-local-bookmarks-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.allowLocalBookmarks">Allow localhost &amp; private-network bookmarks</span>
+                                    <button type="button" id="allow-local-bookmarks-info-btn" class="info-button" data-i18n-aria="config.allowLocalBookmarksInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="keep-search-open-when-empty-checkbox">
                                     <span class="checkbox-text" data-i18n="config.keepSearchOpenWhenEmpty">Keep search open when empty</span>
                                     <button type="button" id="keep-search-open-when-empty-info-btn" class="info-button" data-i18n-aria="config.keepSearchOpenWhenEmptyInfoTitle">ℹ</button>
@@ -1055,9 +1064,9 @@
                                             </div>
                                         </div>
                                         <div class="config-advanced-action-row">
-                                            <p class="config-advanced-action-text">See a summary of recent features and updates.</p>
+                                            <p class="config-advanced-action-text" data-i18n="config.showWhatsNewHint">See a short summary of recent features and updates.</p>
                                             <div class="config-advanced-action-actions">
-                                                <button type="button" id="config-show-whats-new-btn" class="btn btn-secondary btn-small">What's new</button>
+                                                <button type="button" id="config-show-whats-new-btn" class="btn btn-secondary btn-small" data-i18n="config.showWhatsNewLink">What's new</button>
                                             </div>
                                         </div>
                                         <p class="tour-resets-tab-label" data-i18n="config.tourResetsTabLabel">Reset individual tab tours:</p>
@@ -1863,30 +1872,7 @@
                 <div class="help-layout">
                     <aside class="help-index">
                         <h3 class="section-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
-                        <ul data-i18n="config.helpPageNavItems">
-                            <li><a href="#help-quick-start">Quick start</a></li>
-                            <li><a href="#help-onboarding">First-run onboarding</a></li>
-                            <li><a href="#help-config-general">General settings</a></li>
-                            <li><a href="#help-navigation">Navigation</a></li>
-                            <li><a href="#help-mobile">Phone vs desktop</a></li>
-                            <li><a href="#help-keyboard">Keyboard shortcuts</a></li>
-                            <li><a href="#help-bookmarks-dashboard">Dashboard bookmarks</a></li>
-                            <li><a href="#help-search">Search &amp; modes</a></li>
-                            <li><a href="#help-date-weather">Date &amp; weather</a></li>
-                            <li><a href="#help-smart">Smart collections</a></li>
-                            <li><a href="#help-tags">Tags</a></li>
-                            <li><a href="#help-collections">Collections</a></li>
-                            <li><a href="#help-sorting">Sorting &amp; pinned</a></li>
-                            <li><a href="#help-manage">Manage bookmarks</a></li>
-                            <li><a href="#help-finders">Finders</a></li>
-                            <li><a href="#help-status">Status monitor</a></li>
-                            <li><a href="#help-health">Bookmark health</a></li>
-                            <li><a href="#help-tips">Tips rotation</a></li>
-                            <li><a href="#help-backup">Backup &amp; restore</a></li>
-                            <li><a href="#help-branding">Theme &amp; branding</a></li>
-                            <li><a href="#help-data">Data &amp; sync</a></li>
-                            <li><a href="#help-troubleshoot">Troubleshooting</a></li>
-                        </ul>
+                        <ul data-i18n="config.helpPageNavItems"></ul>
                     </aside>
                     <div class="help-content">
                         <section id="help-quick-start" class="help-block">

@@ -370,8 +370,11 @@ async function loadSettings() {
         'defaultPage',
         'defaultCategory',
         'extensionAllowDuplicateUrls',
+        'writeToken',
     ]);
     document.getElementById('server-url').value = settings.serverUrl || '';
+    const writeTokenInput = document.getElementById('write-token');
+    if (writeTokenInput) writeTokenInput.value = settings.writeToken || '';
     extAllowDuplicateUrls = Boolean(settings.extensionAllowDuplicateUrls);
     const allowCheckbox = document.getElementById('extension-allow-duplicate-urls');
     if (allowCheckbox) allowCheckbox.checked = extAllowDuplicateUrls;
@@ -634,12 +637,14 @@ async function saveSettings(event) {
         document.getElementById('extension-allow-duplicate-urls')?.checked
     );
     extAllowDuplicateUrls = allowDuplicateUrls;
+    const writeToken = String(document.getElementById('write-token')?.value || '').trim();
 
     await chrome.storage.sync.set({
         serverUrl: serverUrl,
         defaultPage: defaultPage,
         defaultCategory: defaultCategory,
         extensionAllowDuplicateUrls: allowDuplicateUrls,
+        writeToken: writeToken,
     });
 
     try {
@@ -709,6 +714,8 @@ async function resetSettings() {
     
     // Reset form fields
     document.getElementById('server-url').value = '';
+    const writeTokenInput = document.getElementById('write-token');
+    if (writeTokenInput) writeTokenInput.value = '';
     document.getElementById('default-page').innerHTML = '';
     document.getElementById('default-category').innerHTML = '';
     

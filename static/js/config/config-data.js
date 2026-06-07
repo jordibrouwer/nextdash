@@ -146,7 +146,8 @@ class ConfigData {
      */
     async deletePage(pageId) {
         const response = await fetch(`/api/pages/${pageId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
         });
         
         if (!response.ok) {

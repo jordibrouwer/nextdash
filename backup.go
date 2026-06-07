@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,23 +25,44 @@ func extractPageIDFromCategoriesFilename(filename string) (int, bool) {
 	return pageID, true
 }
 
-// validateBookmarkURL checks if the bookmark URL has a safe scheme (http or https)
-func validateBookmarkURL(bookmarkURL string) error {
+// validateBookmarkURL checks scheme and optionally blocks private/loopback hosts.
+func validateBookmarkURL(bookmarkURL string, allowLocal bool) error {
 	if bookmarkURL == "" {
 		return nil // Allow empty URLs
 	}
+	return validateHTTPURL(bookmarkURL, allowLocal)
+}
 
-	parsedURL, err := url.Parse(bookmarkURL)
+// sanitizeImportedBookmarkFile removes bookmarks with disallowed URLs from an import payload.
+func sanitizeImportedBookmarkFile(content []byte, allowLocal bool) ([]byte, int, error) {
+	var page PageWithBookmarks
+	if err := json.Unmarshal(content, &page); err != nil {
+		return nil, 0, err
+	}
+	if len(page.Bookmarks) == 0 {
+		return content, 0, nil
+	}
+
+	filtered := make([]Bookmark, 0, len(page.Bookmarks))
+	skipped := 0
+	for _, bookmark := range page.Bookmarks {
+		if err := validateBookmarkURL(bookmark.URL, allowLocal); err != nil {
+			skipped++
+			continue
+		}
+		bookmark.Icon = sanitizeBookmarkIcon(bookmark.Icon)
+		filtered = append(filtered, bookmark)
+	}
+	if skipped == 0 {
+		return content, 0, nil
+	}
+
+	page.Bookmarks = filtered
+	out, err := json.MarshalIndent(page, "", "  ")
 	if err != nil {
-		return fmt.Errorf("invalid URL format")
+		return nil, skipped, err
 	}
-
-	// Only allow http and https schemes
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return fmt.Errorf("URL scheme '%s' is not allowed. Only http and https are permitted", parsedURL.Scheme)
-	}
-
-	return nil
+	return out, skipped, nil
 }
 
 // isValidImportFilename validates that the filename is safe and allowed for import
@@ -123,6 +143,10 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 
 // Import handles the import of backup files
 func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
 	// Ensure base data directory exists before writing imported files.
 	if err := os.MkdirAll("data", 0755); err != nil {
 		http.Error(w, "Failed to prepare data directory", http.StatusInternalServerError)
@@ -144,6 +168,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	importedCategoriesByPage := make(map[int][]Category)
+	skippedBookmarks := 0
 
 	// Process each file
 	for _, fileHeader := range files {
@@ -197,6 +222,16 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		if _, ok := parseBookmarkPageIDFromFilename(filepath.Base(filename)); ok {
+			sanitized, skipped, err := sanitizeImportedBookmarkFile(content, h.store.GetSettings().AllowLocalBookmarks)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid bookmarks JSON in file: %s", filename), http.StatusBadRequest)
+				return
+			}
+			content = sanitized
+			skippedBookmarks += skipped
+		}
+
 		// Determine destination path
 		var destPath string
 		if strings.HasPrefix(filename, "favicon.") {
@@ -241,8 +276,12 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		h.store.SaveCategoriesByPage(pageID, categories)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Import successful"))
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":            "success",
+		"skippedBookmarks": skippedBookmarks,
+	})
 }
 
 // Backup creates a zip file with all data from the data directory

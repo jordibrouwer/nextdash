@@ -7,6 +7,8 @@ services:
       - ./data:/app/data
     environment:
       - PORT=8080
+      # Optional: require X-NextDash-Token on destructive/write API calls (reset, import, colors reset, delete page, health write endpoints, clear/refresh previews)
+      # - NEXTDASH_WRITE_TOKEN=change-me
     restart: unless-stopped
     container_name: nextdash
     

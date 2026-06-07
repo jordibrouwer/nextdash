@@ -35,6 +35,9 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 	if err != nil || parsed.Host == "" {
 		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
 	}
+	if err := validateHTTPURL(urlStr, h.allowLocalBookmarks()); err != nil {
+		return PingResult{Status: "offline", ErrorDetail: "URL host is not allowed"}
+	}
 
 	start := time.Now()
 	client := &http.Client{
@@ -45,12 +48,7 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 			TLSHandshakeTimeout:   2 * time.Second,
 			ResponseHeaderTimeout: 2 * time.Second,
 		},
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 5 {
-				return errors.New("too many redirects")
-			}
-			return nil
-		},
+		CheckRedirect: safeRedirectCheck(h.allowLocalBookmarks(), 5),
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, urlStr, nil)

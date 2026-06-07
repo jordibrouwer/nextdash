@@ -920,12 +920,19 @@ body.no-animations .search-mode-tab {
     padding: 0.4rem 1.25rem 0.5rem;
 }
 
+.search-history-chip-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    max-width: 100%;
+}
+
 .search-history-chip {
     display: inline-flex;
     align-items: center;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
-    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    border: 1px solid var(--border-primary);
     background: transparent;
     color: var(--text-secondary);
     font-size: 0.72rem;
@@ -940,23 +947,69 @@ body.no-animations .search-mode-tab {
 }
 
 .search-history-chip:hover {
-    background: var(--hover-bg, rgba(255,255,255,0.08));
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     border-color: var(--text-secondary);
     color: var(--text-primary);
 }
 
-body.no-animations .search-history-chip {
+.search-history-chip-remove,
+.search-history-remove {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.search-history-chip-wrap:hover .search-history-chip-remove,
+.search-match.history-entry:hover .search-history-remove,
+.search-history-chip-remove:focus-visible,
+.search-history-remove:focus-visible {
+    opacity: 1;
+}
+
+.search-history-chip-remove:hover,
+.search-history-remove:hover {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 12%, transparent);
+}
+
+.search-match.history-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.search-match.history-entry .search-match-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.no-animations .search-history-chip,
+body.no-animations .search-history-chip-remove,
+body.no-animations .search-history-remove {
     transition: none !important;
 }
 
 .search-command-chip {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.68rem;
-    color: var(--accent-color, #6ea8fe);
-    border-color: color-mix(in srgb, var(--accent-color, #6ea8fe) 35%, transparent);
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
 .search-command-chip:hover {
-    color: var(--accent-color, #6ea8fe);
-    border-color: var(--accent-color, #6ea8fe);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
 }

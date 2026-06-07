@@ -82,7 +82,7 @@ type Settings struct {
 	Theme                       string                           `json:"theme"`       // "light" or "dark"
 	OpenInNewTab                bool                             `json:"openInNewTab"`
 	ColumnsPerRow               int                              `json:"columnsPerRow"`
-	FontSize                    string                           `json:"fontSize"` // "small", "medium", or "large"
+	FontSize                    string                           `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
 	ShowBackgroundDots          bool                             `json:"showBackgroundDots"`
 	ShowTitle                   bool                             `json:"showTitle"`
 	ShowDate                    bool                             `json:"showDate"`
@@ -193,6 +193,7 @@ type Settings struct {
 	BackgroundImageUrl          string                           `json:"backgroundImageUrl"`          // URL used when type="image"
 	ThemeIconStyling            map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd            bool                             `json:"pasteUrlQuickAdd"`            // Enable paste URL to quick-add bookmark on dashboard
+	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
 }
 
 type ThemeIconStylingEntry struct {
@@ -215,6 +216,21 @@ func normalizeFontPreset(s string) string {
 		return s
 	}
 	return "source-code-pro"
+}
+
+func normalizeFontSize(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "xs", "s", "sm", "m", "lg", "l", "xl":
+		return strings.ToLower(strings.TrimSpace(s))
+	case "small":
+		return "s"
+	case "medium":
+		return "m"
+	case "large":
+		return "l"
+	default:
+		return "m"
+	}
 }
 
 type ColorTheme struct {
@@ -334,7 +350,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			Theme:                       "cherry-graphite-dark",
 			OpenInNewTab:                true,
 			ColumnsPerRow:               3,
-			FontSize:                    "medium",
+			FontSize:                    "m",
 			ShowBackgroundDots:          true,
 			ShowTitle:                   true,
 			ShowDate:                    true,
@@ -422,6 +438,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ButtonBarPosition:           "bottom",
 			ShowDockLayoutSelector:      true,
 			PasteUrlQuickAdd:            true,
+			AllowLocalBookmarks:         true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		os.WriteFile(fs.settingsFile, data, 0644)
@@ -1072,13 +1089,12 @@ func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) {
 	os.WriteFile(fileName, data, 0644)
 }
 
-func (fs *FileStore) ResetAllData() error {
+func (fs *FileStore) resetAllDataLocked() error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
 
-	// Delete all bookmarks-*.json files
 	entries, err := os.ReadDir(fs.dataDir)
 	if err != nil {
 		return err
@@ -1089,19 +1105,22 @@ func (fs *FileStore) ResetAllData() error {
 		}
 	}
 
-	// Reset finders
 	os.WriteFile(fmt.Sprintf("%s/finders.json", fs.dataDir), []byte("[]"), 0644)
 
-	// Reset page order to just page 1
 	data, _ := json.MarshalIndent(PageOrder{Order: []int{1}}, "", "  ")
 	os.WriteFile(fs.pageOrderFile, data, 0644)
 
-	// Reset settings to defaults
 	os.Remove(fs.settingsFile)
 
-	// Re-initialize default files (creates bookmarks-1.json with defaults)
-	fs.initializeDefaultFiles()
+	return nil
+}
 
+func (fs *FileStore) ResetAllData() error {
+	if err := fs.resetAllDataLocked(); err != nil {
+		return err
+	}
+	// initializeDefaultFiles runs migrations that acquire fs.mutex themselves.
+	fs.initializeDefaultFiles()
 	return nil
 }
 
@@ -1218,6 +1237,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundImageUrl:        "",
 			ThemeIconStyling:          map[string]ThemeIconStylingEntry{},
 			PasteUrlQuickAdd:          true,
+			AllowLocalBookmarks:       true,
 		}
 	}
 
@@ -1397,6 +1417,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["pasteUrlQuickAdd"]; !ok {
 			settings.PasteUrlQuickAdd = true
 		}
+		if _, ok := rawSettings["allowLocalBookmarks"]; !ok {
+			settings.AllowLocalBookmarks = true
+		}
 	}
 
 	// Set default language if empty
@@ -1407,6 +1430,7 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.Theme = "cherry-graphite-dark"
 	}
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
+	settings.FontSize = normalizeFontSize(settings.FontSize)
 
 	return settings
 }
@@ -1418,6 +1442,7 @@ func (fs *FileStore) SaveSettings(settings Settings) {
 	fs.ensureDataDir()
 
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
+	settings.FontSize = normalizeFontSize(settings.FontSize)
 
 	data, _ := json.MarshalIndent(settings, "", "  ")
 	os.WriteFile(fs.settingsFile, data, 0644)

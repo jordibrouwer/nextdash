@@ -27,7 +27,7 @@ class SearchCommandsComponent {
             {
                 id: 'bookmarks',
                 label: 'Bookmarks',
-                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'sort', 'open', 'stale', 'duplicates', 'goto', 'find']
+                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'history', 'sort', 'open', 'stale', 'duplicates', 'goto', 'find']
             },
             {
                 id: 'view',
@@ -55,6 +55,7 @@ class SearchCommandsComponent {
             'columns': this.handleColumnsCommand.bind(this),
             'save': this.handleSaveSearchCommand.bind(this),
             'saved': this.handleSavedSearchesCommand.bind(this),
+            'history': this.handleHistoryCommand.bind(this),
             'sort': this.handleSortCommand.bind(this),
             'layoutversion': this.handleLayoutVersionCommand.bind(this),
             'layout': this.handleLayoutCommand.bind(this),
@@ -754,6 +755,48 @@ class SearchCommandsComponent {
             shortcut: ':SAVED',
             completion: entry.completion,
             type: 'saved-search'
+        }));
+    }
+
+    handleHistoryCommand(args) {
+        const dashboard = window.dashboardInstance;
+        const searchComponent = dashboard?.searchComponent;
+        if (!searchComponent) {
+            return [];
+        }
+
+        const sub = (args[0] || '').toLowerCase();
+        if (sub === 'clear') {
+            return [{
+                name: this.language?.t('dashboard.searchHistoryClear') || 'Clear search history',
+                shortcut: ':HISTORY',
+                action: () => {
+                    searchComponent.searchHistory = [];
+                    searchComponent.saveSearchHistory();
+                    if (typeof searchComponent.updateSearch === 'function') {
+                        searchComponent.updateSearch();
+                    }
+                    return true;
+                },
+                type: 'command',
+            }];
+        }
+
+        const history = Array.isArray(searchComponent.searchHistory) ? searchComponent.searchHistory : [];
+        if (history.length === 0) {
+            return [{
+                name: this.language?.t('dashboard.noRecentSearches') || 'No recent searches',
+                shortcut: ':HISTORY',
+                action: () => false,
+                type: 'command',
+            }];
+        }
+
+        return history.map((entry) => ({
+            name: entry,
+            shortcut: ':HISTORY',
+            completion: entry,
+            type: 'history',
         }));
     }
 

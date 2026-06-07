@@ -836,7 +836,7 @@ Keep hands on home row: **`>`** search → **Enter** open → **Esc** → **`&`*
 
 ## 21. Security and self-hosting
 
-nextDash has **no built-in authentication**. Anyone who can reach the URL can read and change data.
+nextDash has **no user accounts**. Anyone who can reach the URL can read data and change bookmarks/settings unless you add network or token protection.
 
 **Recommended:**
 
@@ -847,6 +847,38 @@ nextDash has **no built-in authentication**. Anyone who can reach the URL can re
 | **localhost + SSH tunnel** | Local dev only |
 
 **Do not** port-forward plain HTTP to the public internet without auth.
+
+### Optional `NEXTDASH_WRITE_TOKEN`
+
+For Docker or bare-metal on a **LAN or VPS**, set:
+
+```yaml
+environment:
+  - NEXTDASH_WRITE_TOKEN=your-long-random-secret
+```
+
+When set, destructive API calls require header `X-NextDash-Token: your-long-random-secret`. Opening **Config** or **Health** in the browser supplies this header automatically via a meta tag (same origin only).
+
+| Protected action | Endpoint |
+|------------------|----------|
+| Reset all data | `POST /api/reset` (+ JSON `{"confirm":true}`) |
+| Import ZIP backup | `POST /api/import` |
+| Delete page | `DELETE /api/pages/{id}` |
+| Health: delete bookmark | `POST /api/health/delete-bookmark` |
+| Health: retest all | `POST /api/health/retest-all` |
+| Health: merge duplicates | `POST /api/health/merge-duplicates` |
+| Health: auto-heal apply | `POST /api/health/auto-heal-apply` |
+| Health: cache scan result | `POST /api/health/cache-scan` |
+| Health: update bookmark status | `POST /api/health/update-status` |
+| Clear all preview metadata | `POST /api/previews/clear` |
+| Refresh all preview metadata | `POST /api/previews/refresh` |
+| Reset theme colours | `POST /api/colors/reset` |
+
+Routine bookmark edits, config save, and dashboard use are **not** token-gated. The browser extension can store the same token under **Settings → Write token**.
+
+### Localhost bookmarks
+
+**Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
 
 ---
 

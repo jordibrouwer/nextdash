@@ -620,8 +620,10 @@ class ConfigBackup {
                 formData.append('files', content, normalizedName);
             }
 
+            const importHeaders = typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {};
             const response = await fetch('/api/import', {
                 method: 'POST',
+                headers: importHeaders,
                 body: formData
             });
 
@@ -630,8 +632,18 @@ class ConfigBackup {
                 throw new Error(errText || `Import failed: ${response.status} ${response.statusText}`);
             }
 
+            const result = await response.json().catch(() => ({}));
+            const skipped = Number(result.skippedBookmarks) || 0;
+
             if (typeof configManager !== 'undefined' && configManager.ui) {
-                configManager.ui.showNotification(this.t('config.importSuccess'), 'success');
+                if (skipped > 0) {
+                    const msg = (this.t('config.importSuccessSkipped')
+                        || 'Import completed. {count} bookmark(s) with disallowed URLs were skipped.')
+                        .replace('{count}', String(skipped));
+                    configManager.ui.showNotification(msg, 'warning');
+                } else {
+                    configManager.ui.showNotification(this.t('config.importSuccess'), 'success');
+                }
             }
 
             setTimeout(() => {

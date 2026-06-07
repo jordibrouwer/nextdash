@@ -28,6 +28,7 @@ const SETTING_INFO_DEFS = [
     { type: 'labelFor', labelFor: 'sort-method-select', btnId: 'sort-method-info-btn', title: 'bookmarkSortingInfoTitle', message: 'bookmarkSortingInfoMessage' },
     { type: 'checkbox', targetId: 'new-tab-checkbox', btnId: 'new-tab-info-btn', title: 'openLinksInNewTabInfoTitle', message: 'openLinksInNewTabInfoMessage' },
     { type: 'checkbox', targetId: 'paste-url-quick-add-checkbox', btnId: 'paste-url-quick-add-info-btn', title: 'pasteUrlQuickAddInfoTitle', message: 'pasteUrlQuickAddInfoMessage' },
+    { type: 'checkbox', targetId: 'allow-local-bookmarks-checkbox', btnId: 'allow-local-bookmarks-info-btn', title: 'allowLocalBookmarksInfoTitle', message: 'allowLocalBookmarksInfoMessage' },
     { type: 'labelFor', labelFor: 'language-select', btnId: 'language-select-info-btn', title: 'languageInfoTitle', message: 'languageInfoMessage' },
     { type: 'checkbox', targetId: 'show-date-checkbox', btnId: 'show-date-info-btn', title: 'showDateInfoTitle', message: 'showDateInfoMessage' },
     { type: 'labelFor', labelFor: 'date-format-select', btnId: 'date-format-info-btn', title: 'dateFormatInfoTitle', message: 'dateFormatInfoMessage' },

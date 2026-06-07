@@ -20,6 +20,7 @@ A browser extension that allows you to save bookmarks directly to your nextDash 
 1. Click the extension icon in your browser toolbar
 2. In the **Settings** tab:
    - Enter your nextDash server URL (e.g., `http://localhost:8080`)
+   - If your server uses `NEXTDASH_WRITE_TOKEN`, paste the same value in **Write token (optional)**
    - Select your default page for saving bookmarks
    - Click "Save Settings"
 3. In the **Save** tab:

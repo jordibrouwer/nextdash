@@ -974,6 +974,14 @@ class ConfigSettings {
         }
 
         // HyprMode checkbox
+        const allowLocalBookmarksCheckbox = document.getElementById('allow-local-bookmarks-checkbox');
+        if (allowLocalBookmarksCheckbox) {
+            allowLocalBookmarksCheckbox.checked = settings.allowLocalBookmarks !== false;
+            allowLocalBookmarksCheckbox.addEventListener('change', (e) => {
+                settings.allowLocalBookmarks = e.target.checked;
+            });
+        }
+
         const hyprModeCheckbox = document.getElementById('hypr-mode-checkbox');
         if (hyprModeCheckbox) {
             hyprModeCheckbox.checked = settings.hyprMode || false;
@@ -1733,7 +1741,12 @@ class ConfigSettings {
 
             setBusy(true);
             try {
-                const response = await fetch(url, { method: 'POST' });
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: typeof nextDashWriteHeaders === 'function'
+                        ? nextDashWriteHeaders()
+                        : {},
+                });
                 const data = response.ok ? await response.json().catch(() => ({})) : null;
                 if (!response.ok || !data) {
                     notify(t('bookmarkPreviewMaintenanceFailed', 'Could not update bookmark previews.'), 'error');
@@ -1859,6 +1872,8 @@ class ConfigSettings {
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
         const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
+        const allowLocalEl = document.getElementById('allow-local-bookmarks-checkbox');
+        if (allowLocalEl) settings.allowLocalBookmarks = allowLocalEl.checked;
         if (hyprModeCheckbox) settings.hyprMode = hyprModeCheckbox.checked;
         if (showTitleCheckbox) settings.showTitle = showTitleCheckbox.checked;
         if (showDateCheckbox) settings.showDate = showDateCheckbox.checked;

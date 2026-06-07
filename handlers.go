@@ -128,10 +128,8 @@ func (h *Handlers) HealthPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	settings := h.store.GetSettings()
-
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, settings); err != nil {
+	if err := tmpl.Execute(&buf, h.htmlPageData(h.store.GetSettings())); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 		return
 	}
@@ -423,10 +421,8 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	settings := h.store.GetSettings()
-
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, settings); err != nil {
+	if err := tmpl.Execute(&buf, h.htmlPageData(h.store.GetSettings())); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 		return
 	}
@@ -439,7 +435,27 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) setCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-NextDash-Token")
+}
+
+type htmlPageData struct {
+	Settings
+	WriteToken string `json:"-"`
+}
+
+func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
+	return htmlPageData{
+		Settings:   settings,
+		WriteToken: writeAccessToken(),
+	}
+}
+
+func (h *Handlers) allowLocalBookmarks() bool {
+	return h.store.GetSettings().AllowLocalBookmarks
+}
+
+func (h *Handlers) validateBookmarkURL(bookmarkURL string) error {
+	return validateBookmarkURL(bookmarkURL, h.allowLocalBookmarks())
 }
 
 func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -490,7 +506,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	// Validate each bookmark URL
 	for _, bookmark := range bookmarks {
-		if err := validateBookmarkURL(bookmark.URL); err != nil {
+		if err := h.validateBookmarkURL(bookmark.URL); err != nil {
 			http.Error(w, fmt.Sprintf("Invalid bookmark URL: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -547,6 +563,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	for i := range bookmarks {
 		bookmarks[i].Tags = normalizeTags(bookmarks[i].Tags)
+		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
 	}
 
 	h.store.SaveBookmarksByPage(pageID, bookmarks)
@@ -570,7 +587,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate the bookmark URL
-	if err := validateBookmarkURL(request.Bookmark.URL); err != nil {
+	if err := h.validateBookmarkURL(request.Bookmark.URL); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid bookmark URL: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -609,6 +626,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
+	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
 
 	h.store.AddBookmarkToPage(request.Page, request.Bookmark)
 	w.Header().Set("Content-Type", "application/json")
@@ -672,7 +690,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 	}
 
 	for _, bm := range request.Bookmarks {
-		if err := validateBookmarkURL(bm.URL); err != nil {
+		if err := h.validateBookmarkURL(bm.URL); err != nil {
 			http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -868,6 +886,10 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
 	vars := mux.Vars(r)
 	pageIDStr := vars["id"]
 
@@ -904,6 +926,18 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var req struct {
+		Confirm bool `json:"confirm"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || !req.Confirm {
+		http.Error(w, "Confirmation required", http.StatusBadRequest)
+		return
+	}
+
 	if err := h.store.ResetAllData(); err != nil {
 		http.Error(w, "Error resetting data", http.StatusInternalServerError)
 		return
@@ -981,6 +1015,10 @@ func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ResetColors(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
 	// Get current colors to preserve custom themes
 	currentColors := h.store.GetColors()
 
@@ -1207,8 +1245,18 @@ func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(index)
 }
 
+func (h *Handlers) outboundHTTPClient(timeout time.Duration, maxRedirects int) *http.Client {
+	return &http.Client{
+		Timeout:       timeout,
+		CheckRedirect: safeRedirectCheck(h.allowLocalBookmarks(), maxRedirects),
+	}
+}
+
 func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
 	rawURL = strings.TrimSpace(rawURL)
+	if err := validateHTTPURL(rawURL, h.allowLocalBookmarks()); err != nil {
+		return BookmarkPreview{URL: rawURL, FetchedAt: time.Now().UnixMilli()}
+	}
 	cacheKey := canonicalBookmarkURLKey(rawURL)
 	if useCache && cache != nil {
 		if entry, ok := cache.Cache[cacheKey]; ok {
@@ -1224,7 +1272,7 @@ func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, 
 		FetchedAt: time.Now().UnixMilli(),
 	}
 
-	client := &http.Client{Timeout: 8 * time.Second}
+	client := h.outboundHTTPClient(8*time.Second, 5)
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return preview
@@ -1299,6 +1347,11 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "URL required"})
 		return
 	}
+	if err := validateHTTPURL(rawURL, h.allowLocalBookmarks()); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
 
 	cache := h.loadPreviewCache()
 	forceRefresh := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
@@ -1314,6 +1367,9 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -1348,6 +1404,9 @@ func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Reque
 func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -1577,6 +1636,9 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 
 	var req struct {
 		URL    string `json:"url"`
@@ -1627,6 +1689,9 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 
 	var req struct {
 		PageID int    `json:"pageId"`
@@ -1672,6 +1737,9 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 
@@ -1809,6 +1877,9 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -1866,6 +1937,9 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 
@@ -1946,6 +2020,9 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 
 	var req struct {
 		PageID       int    `json:"pageId"`
@@ -1972,7 +2049,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	appliedURL := false
 	updatedURL := strings.TrimSpace(req.NewURL)
 	if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
-		if err := validateBookmarkURL(updatedURL); err != nil {
+		if err := h.validateBookmarkURL(updatedURL); err != nil {
 			http.Error(w, fmt.Sprintf("Invalid fix URL: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -2013,6 +2090,9 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) detectRedirectURL(urlStr string) string {
+	if err := validateHTTPURL(strings.TrimSpace(urlStr), h.allowLocalBookmarks()); err != nil {
+		return ""
+	}
 	client := &http.Client{
 		Timeout: 6 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -2030,14 +2110,16 @@ func (h *Handlers) detectRedirectURL(urlStr string) string {
 				if parseErr == nil && locErr == nil {
 					resolved := base.ResolveReference(locURL).String()
 					if strings.TrimSpace(resolved) != strings.TrimSpace(urlStr) {
-						return resolved
+						if err := validateHTTPURL(resolved, h.allowLocalBookmarks()); err == nil {
+							return resolved
+						}
 					}
 				}
 			}
 		}
 	}
 
-	followClient := &http.Client{Timeout: 7 * time.Second}
+	followClient := h.outboundHTTPClient(7*time.Second, 5)
 	resp, err = followClient.Get(urlStr)
 	if err != nil || resp == nil {
 		return ""
@@ -2046,7 +2128,9 @@ func (h *Handlers) detectRedirectURL(urlStr string) string {
 	if resp.Request != nil && resp.Request.URL != nil {
 		finalURL := strings.TrimSpace(resp.Request.URL.String())
 		if finalURL != "" && finalURL != strings.TrimSpace(urlStr) {
-			return finalURL
+			if err := validateHTTPURL(finalURL, h.allowLocalBookmarks()); err == nil {
+				return finalURL
+			}
 		}
 	}
 	return ""
@@ -2057,7 +2141,10 @@ func (h *Handlers) fetchPageTitleSafe(urlStr string) string {
 	if urlStr == "" {
 		return ""
 	}
-	client := &http.Client{Timeout: 8 * time.Second}
+	if err := validateHTTPURL(urlStr, h.allowLocalBookmarks()); err != nil {
+		return ""
+	}
+	client := h.outboundHTTPClient(8*time.Second, 5)
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return ""

@@ -114,6 +114,10 @@
                 <label for="default-category" data-i18n="labelDefaultCategory">Default Category:</label>
                 <select id="default-category"></select>
 
+                <label for="write-token" data-i18n="labelWriteToken">Write token (optional):</label>
+                <input type="password" id="write-token" autocomplete="off" spellcheck="false" data-i18n-placeholder="writeTokenPlaceholder" placeholder="Same as NEXTDASH_WRITE_TOKEN on server">
+                <p class="ext-setting-hint" data-i18n="settingWriteTokenHint">Only needed when your nextDash server requires X-NextDash-Token for write API calls.</p>
+
                 <label class="ext-setting-checkbox" for="extension-allow-duplicate-urls">
                     <input type="checkbox" id="extension-allow-duplicate-urls">
                     <span data-i18n="settingAllowDuplicateUrls">Allow duplicate URLs without asking</span>

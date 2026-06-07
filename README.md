@@ -37,6 +37,8 @@ services:
       - ./data:/app/data
     environment:
       - PORT=8080
+      # Optional on LAN/VPS — require X-NextDash-Token on destructive API calls (see Security):
+      # - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
     restart: unless-stopped
 ```
 
@@ -54,13 +56,21 @@ go build -o nextDash && ./nextDash
 
 ## Security
 
-nextDash is built for **personal or small-team use on a trusted network**. There are no built-in user accounts or access control — anyone who can reach the URL can read and modify your data.
+nextDash is built for **personal or small-team use on a trusted network**. There are no user accounts — anyone who can reach the URL can read and change data unless you add protection.
 
 **Do not expose nextDash directly to the public internet.** Recommended setups:
 
 - **Private overlay network** — [Tailscale](https://tailscale.com/) or another mesh VPN so nextDash never gets a public listener.
 - **Reverse proxy with auth** — Traefik, Caddy, or nginx inside your home/lab/VPC, with HTTP basic auth, OAuth2 Proxy, or SSO in front.
 - **Local-only** — bind to `127.0.0.1` and use SSH port forwarding or a same-machine browser.
+
+### Optional write token (LAN / VPS)
+
+Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Destructive endpoints then require header `X-NextDash-Token` with that value. The config and health pages inject the token automatically when you open them in a browser.
+
+Protected actions include: **reset all data** (also requires `{"confirm":true}`), **import backup**, **delete page**, **health delete / retest / merge / auto-heal / cache-scan / update-status**, **clear or refresh all bookmark previews**, and **reset theme colours**.
+
+Normal bookmark editing and settings save stay open so day-to-day use is not blocked. The browser extension can store the same write token in **Settings → Write token**.
 
 ---
 

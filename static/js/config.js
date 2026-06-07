@@ -5613,7 +5613,11 @@ class ConfigManager {
         }
 
         try {
-            const response = await fetch('/api/reset', { method: 'POST' });
+            const response = await fetch('/api/reset', {
+                method: 'POST',
+                headers: nextDashWriteHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ confirm: true }),
+            });
             if (!response.ok) throw new Error('Reset failed');
         } catch (error) {
             console.error('Error resetting all data:', error);

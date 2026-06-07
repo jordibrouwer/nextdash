@@ -542,7 +542,10 @@
             btn.classList.add('is-loading');
             btn.textContent = t('health.retesting', 'retesting...');
             try {
-                const response = await fetch('/api/health/retest-all', { method: 'POST' });
+                const response = await fetch('/api/health/retest-all', {
+                    method: 'POST',
+                    headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+                });
                 if (response.ok) {
                     const result = await response.json();
                     showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
@@ -746,7 +749,9 @@
         try {
             const response = await fetch('/api/health/merge-duplicates', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: typeof nextDashWriteHeaders === 'function'
+                    ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+                    : { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     targetPageId: target.pageId,
                     targetIndex: target.index,
@@ -771,11 +776,17 @@
         }
     }
 
+    function writeJsonHeaders() {
+        return typeof nextDashWriteHeaders === 'function'
+            ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+            : { 'Content-Type': 'application/json' };
+    }
+
     async function cacheScanResult(url, status, pingMs, error) {
         try {
             await fetch('/api/health/cache-scan', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: writeJsonHeaders(),
                 body: JSON.stringify({
                     url: url,
                     status: status,
@@ -792,7 +803,7 @@
         try {
             await fetch('/api/health/update-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: writeJsonHeaders(),
                 body: JSON.stringify({ pageId, index, status, error })
             });
         } catch (e) {
@@ -811,7 +822,7 @@
     async function applyAutoHeal(pageId, index, payload = {}) {
         const response = await fetch('/api/health/auto-heal-apply', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: writeJsonHeaders(),
             body: JSON.stringify({
                 pageId,
                 index,
@@ -905,7 +916,9 @@
         try {
             const response = await fetch('/api/health/delete-bookmark', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: typeof nextDashWriteHeaders === 'function'
+                    ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+                    : { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pageId, index })
             });
             if (!response.ok) {

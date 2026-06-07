@@ -4,6 +4,24 @@ function normalizeServerUrl(serverUrl) {
   return String(serverUrl || '').trim().replace(/\/+$/, '');
 }
 
+async function getStoredWriteToken() {
+  try {
+    const sync = await chrome.storage.sync.get(['writeToken']);
+    return String(sync.writeToken || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+async function apiWriteHeaders(extraHeaders = {}) {
+  const headers = { ...(extraHeaders || {}) };
+  const token = await getStoredWriteToken();
+  if (token) {
+    headers['X-NextDash-Token'] = token;
+  }
+  return headers;
+}
+
 function isBookmarkableUrl(url) {
   if (!url || typeof url !== 'string') return false;
   try {
@@ -122,7 +140,7 @@ async function postAddBookmark(serverUrl, pageId, name, url, category, note, tag
   if (extras.previewImage) bookmark.previewImage = extras.previewImage;
   return fetch(new URL('/api/bookmarks/add', base), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await apiWriteHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       page: parseInt(pageId, 10),
       bookmark,

@@ -137,6 +137,14 @@ class FuzzySearchComponent {
         }));
     }
 
+    _escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     /**
      * Highlights the best matching substring in fuzzy search results.
      * Prefers highlighting the earliest word-boundary match over a random substring.
@@ -145,7 +153,7 @@ class FuzzySearchComponent {
      * @returns {string} HTML string with highlighted match
      */
     highlightFuzzyMatch(name, query) {
-        if (!query) return name;
+        if (!query) return this._escHtml(name);
         const lowerName = name.toLowerCase();
         const lowerQuery = query.toLowerCase();
 
@@ -157,11 +165,11 @@ class FuzzySearchComponent {
             ? lowerName.indexOf(lowerQuery, wordBoundaryIdx)
             : lowerName.indexOf(lowerQuery);
 
-        if (matchIdx === -1) return name;
+        if (matchIdx === -1) return this._escHtml(name);
         const before = name.substring(0, matchIdx);
         const highlighted = name.substring(matchIdx, matchIdx + query.length);
         const after = name.substring(matchIdx + query.length);
-        return `${before}<span class="fuzzy-highlight">${highlighted}</span>${after}`;
+        return `${this._escHtml(before)}<span class="fuzzy-highlight">${this._escHtml(highlighted)}</span>${this._escHtml(after)}`;
     }
 }
 

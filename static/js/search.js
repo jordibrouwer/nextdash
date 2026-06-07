@@ -261,7 +261,7 @@ class SearchComponent {
             return '';
         }
         const iconName = (match?.bookmark?.icon || '').trim();
-        if (!iconName) {
+        if (!iconName || !/^[\w.\-]+$/.test(iconName)) {
             return '';
         }
         const entry = this.getThemeIconStylingEntry();
@@ -1188,6 +1188,11 @@ class SearchComponent {
                 const chipRow = document.createElement('div');
                 chipRow.className = 'search-history-chip-row command-group-child';
                 match.queries.forEach((q) => {
+                    const wrap = document.createElement('div');
+                    wrap.className = match.type === 'history-chips'
+                        ? 'search-history-chip-wrap'
+                        : 'search-history-chip-wrap search-command-chip-wrap';
+
                     const chip = document.createElement('button');
                     chip.type = 'button';
                     chip.className = match.type === 'command-chips'
@@ -1200,7 +1205,23 @@ class SearchComponent {
                         this.selectedMatchIndex = 0;
                         this.updateSelectionHighlight();
                     });
-                    chipRow.appendChild(chip);
+                    wrap.appendChild(chip);
+
+                    if (match.type === 'history-chips') {
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'search-history-chip-remove';
+                        removeBtn.setAttribute('aria-label', this.historyRemoveLabel());
+                        removeBtn.textContent = '×';
+                        removeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.removeSearchHistoryEntry(q);
+                            this.updateSearch();
+                        });
+                        wrap.appendChild(removeBtn);
+                    }
+
+                    chipRow.appendChild(wrap);
                 });
                 fragment.appendChild(chipRow);
                 this.matchElements.push(chipRow);
@@ -1249,13 +1270,26 @@ class SearchComponent {
                 ? `<span class="search-match-use-count">${match.useCount}</span>`
                 : '';
 
+            const historyRemoveHtml = match.type === 'history'
+                ? `<button type="button" class="search-history-remove" aria-label="${this._escHtml(this.historyRemoveLabel())}">×</button>`
+                : '';
+
             matchElement.innerHTML = `
                 ${shortcutHtml}
                 ${bookmarkIconHtml}
-                <span class="search-match-name">${displayName}${match.meta ? `<span class="search-match-meta">${match.meta}</span>` : ''}</span>
+                <span class="search-match-name">${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
                 ${finderUseBadge}
+                ${historyRemoveHtml}
             `;
-            
+
+            if (match.type === 'history') {
+                matchElement.querySelector('.search-history-remove')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removeSearchHistoryEntry(match.completion || match.name);
+                    this.updateSearch();
+                });
+            }
+
             matchElement.addEventListener('click', () => {
                 if (match.type === 'config') {
                     this.openConfig();
@@ -1516,6 +1550,17 @@ class SearchComponent {
 
     saveSearchHistory() {
         localStorage.setItem('dashboardSearchHistory', JSON.stringify(this.searchHistory.slice(0, 15)));
+    }
+
+    removeSearchHistoryEntry(query) {
+        const cleaned = (query || '').trim();
+        if (!cleaned) return;
+        this.searchHistory = this.searchHistory.filter((entry) => entry !== cleaned);
+        this.saveSearchHistory();
+    }
+
+    historyRemoveLabel() {
+        return this.language?.t('dashboard.removeSearchHistoryEntry') || 'Remove from search history';
     }
 
     recordSearchHistory(query) {

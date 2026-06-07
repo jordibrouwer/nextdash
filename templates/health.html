@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>health beta</title>
+    <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/theme-loader.js"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
     <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
@@ -36,7 +38,7 @@
             </div>
             <div class="header-links">
                 <button id="refresh-health-btn" class="back-link back-link-button" type="button" data-i18n="health.refresh">refresh</button>
-                <a href="/config" class="back-link" data-i18n="colors.backToConfig">← back to config</a>
+                <a href="/config" class="back-link" data-i18n="health.backToConfig">← back to config</a>
                 <a href="/" class="back-link" data-i18n="health.backToDashboard">← back to dashboard</a>
             </div>
         </header>

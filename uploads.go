@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -279,16 +277,8 @@ func (h *Handlers) UploadIconFromURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{
-		Timeout: 8 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 3 {
-				return fmt.Errorf("too many redirects")
-			}
-			if !isPublicHost(req.URL.Hostname()) {
-				return fmt.Errorf("redirect host is not allowed")
-			}
-			return nil
-		},
+		Timeout:       8 * time.Second,
+		CheckRedirect: safeRedirectCheck(false, 3),
 	}
 
 	req, err := http.NewRequest(http.MethodGet, sourceURL, nil)
@@ -379,26 +369,3 @@ func randomHex(byteLen int) string {
 	return hex.EncodeToString(b)
 }
 
-func isPublicHost(host string) bool {
-	host = strings.TrimSpace(strings.ToLower(host))
-	if host == "" || host == "localhost" {
-		return false
-	}
-
-	ips, err := net.LookupIP(host)
-	if err != nil || len(ips) == 0 {
-		return false
-	}
-
-	for _, ip := range ips {
-		addr, ok := netip.AddrFromSlice(ip)
-		if !ok {
-			return false
-		}
-		if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() || addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
-			return false
-		}
-	}
-
-	return true
-}
