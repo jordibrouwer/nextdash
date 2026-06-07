@@ -7,14 +7,12 @@ body.guided-flow-locked #config-main {
 }
 
 body.guided-flow-locked .onboarding-overlay,
-body.guided-flow-locked .feature-tour-overlay,
-body.guided-flow-locked .post-setup-overlay {
+body.guided-flow-locked .feature-tour-overlay {
     pointer-events: none;
 }
 
 body.guided-flow-locked .onboarding-card,
 body.guided-flow-locked .feature-tour-card,
-body.guided-flow-locked .post-setup-card,
 body.guided-flow-locked .feature-spotlight,
 body.guided-flow-locked [class$="-tour-card"],
 body.guided-flow-locked .modal.whats-new-modal {

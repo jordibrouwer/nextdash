@@ -26,6 +26,7 @@ class ConfigLanguage {
                 this.translations = await response.json();
                 this.currentLanguage = lang;
                 this.applyTranslations();
+                window.ConfigSettingsSearch?.refreshIndex?.();
             } else {
                 console.error(`Failed to load translations for ${lang}`);
             }

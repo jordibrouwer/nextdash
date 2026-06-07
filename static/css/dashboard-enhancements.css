@@ -61,41 +61,6 @@ kbd,
     justify-content: center;
 }
 
-.post-setup-card {
-    top: 50%;
-    bottom: auto;
-    transform: translate(-50%, -50%);
-}
-
-.post-setup-overlay {
-    z-index: 2195;
-}
-
-.post-setup-card {
-    z-index: 2196;
-}
-
-.post-tuning-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 0.75rem 0;
-}
-
-.post-tuning-fields select {
-    width: 100%;
-    padding: 0.35rem 0.5rem;
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font: inherit;
-}
-
-.post-tuning-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
 /* Dashboard discoverability: header, mobile bar, mini status, a11y */
 
 .skip-to-content {

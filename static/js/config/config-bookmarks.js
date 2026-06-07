@@ -135,6 +135,7 @@ class ConfigBookmarks {
         });
 
         this.updateBulkSelectionToolbar();
+        window.ConfigSettingsSearch?.refreshIndex?.();
     }
 
     moveStaleBookmarksToArchive() {

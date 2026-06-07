@@ -61,7 +61,6 @@
     const CARD_ROOT_SELECTORS = [
         '.onboarding-card',
         '.feature-tour-card',
-        '.post-setup-card',
         '.feature-spotlight',
         '[data-config-tour-card]',
         '[class$="-tour-card"]',
@@ -192,9 +191,6 @@
         if (document.querySelector('.feature-tour-overlay, .feature-tour-card')) {
             return true;
         }
-        if (document.querySelector('.post-setup-overlay, .post-setup-card')) {
-            return true;
-        }
         if (document.querySelector('.feature-spotlight.show')) {
             return true;
         }
@@ -293,7 +289,7 @@
         }
         const focusRoot =
             document.querySelector('[data-config-tour-card], [class$="-tour-card"]') ||
-            document.querySelector('.onboarding-card, .feature-tour-card, .post-setup-card, .feature-spotlight.show');
+            document.querySelector('.onboarding-card, .feature-tour-card, .feature-spotlight.show');
         const primary =
             focusRoot?.querySelector(
                 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'

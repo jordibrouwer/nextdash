@@ -826,7 +826,7 @@ nextDash has **no built-in authentication**. Anyone who can reach the URL can re
 
 ### Dashboard empty after install
 
-Normal. Add bookmarks via **&**, **+**, import, or config. Run onboarding or post-setup wizard if offered.
+Normal. Add bookmarks via **&**, **+**, import, or config. Run onboarding if offered — the finish step covers pages and first bookmarks.
 
 ### Shortcut does not open bookmark
 

@@ -254,6 +254,7 @@ class ConfigManager {
             this.scheduleConfigThemeTour();
         }
 
+        window.ConfigSettingsSearch?.refreshIndex?.();
     }
 
     _isConfigTabTourBusy(exclude) {

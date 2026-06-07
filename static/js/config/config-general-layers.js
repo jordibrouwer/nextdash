@@ -416,6 +416,7 @@ class ConfigGeneralLayers {
             this.getBreadcrumbSubsection()
         );
         window.configManager?.ui?.initBreadcrumbObserver?.('general');
+        window.ConfigSettingsSearch?.refreshIndex?.();
     }
 
     getBreadcrumbSubsection() {

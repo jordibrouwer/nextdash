@@ -98,6 +98,7 @@ class ConfigUI {
                     void mgr.onConfigCategoriesTabOpened();
                 } else if (targetTab === 'stats' && mgr.stats) {
                     mgr.stats.refresh(mgr);
+                    window.ConfigSettingsSearch?.refreshIndex?.();
                 } else if (targetTab === 'keyboard' && mgr.keyboard) {
                     mgr.keyboard.refresh(mgr);
                     window.ConfigSettingsSearch?.refreshIndex?.();
@@ -121,7 +122,9 @@ class ConfigUI {
                         void mgr.onConfigCollectionsTabOpened();
                     }
                 } else if (targetTab === 'colors') {
-                    void mgr.ensureColorsEditor?.();
+                    void mgr.ensureColorsEditor?.().then(() => {
+                        window.ConfigSettingsSearch?.refreshIndex?.();
+                    });
                     if (
                         !mgr._configThemeTourActive &&
                         !mgr._configThemeTourStarting &&
