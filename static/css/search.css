@@ -891,6 +891,12 @@ mark.search-highlight {
     background: color-mix(in srgb, var(--background-secondary) 60%, transparent);
 }
 
+.search-mode-tab:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 999px;
+}
+
 .search-mode-tab-key {
     font-weight: var(--font-weight-bold);
     font-size: 1em;
@@ -967,6 +973,12 @@ body.no-animations .search-mode-tab {
     color: var(--text-primary);
 }
 
+.search-history-chip:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 999px;
+}
+
 .search-history-chip-remove,
 .search-history-remove {
     flex-shrink: 0;
@@ -992,6 +1004,9 @@ body.no-animations .search-mode-tab {
 .search-history-chip-remove:focus-visible,
 .search-history-remove:focus-visible {
     opacity: 1;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+    border-radius: 999px;
 }
 
 .search-history-chip-remove:hover,
