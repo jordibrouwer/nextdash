@@ -44,6 +44,8 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix** **Write-token coverage** — `requireWriteAccess` is now enforced on all mutating endpoints that were missing it: `SaveBookmarks`, `AddBookmark`, `ImportBrowserBookmarks`, `DeleteBookmark`, `SaveFinders`, `SaveCategories`, `SavePages`, `SaveSettings`, `SaveColors`, and all four upload handlers (`UploadFavicon`, `UploadFont`, `UploadIcon`, `UploadIconFromURL`).
 - **fix** **Security headers** — all responses now include `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIGIN` via a global middleware.
 - **fix** **Request body limit** — non-multipart (JSON) request bodies are capped at 4 MB; upload and backup endpoints retain their own higher limits via `ParseMultipartForm`.
+- **fix** **SVG stored XSS** — uploaded SVG icon files are sanitized server-side before storage: `<script>` blocks, `on*` event-handler attributes (double/single/unquoted), and `javascript:` hrefs are stripped. Discovered via container black-box testing.
+- **fix** **Content-type spoofing on icon/favicon upload** — the server now validates uploaded image files by reading their magic bytes (`detectImageType`) instead of trusting the client-supplied `Content-Type` header; files with unrecognised signatures are rejected with 400.
 
 ---
 

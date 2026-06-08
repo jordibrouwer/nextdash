@@ -18,34 +18,27 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	// Parse multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB max
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
 
-	file, header, err := r.FormFile("favicon")
+	file, _, err := r.FormFile("favicon")
 	if err != nil {
 		http.Error(w, "Error retrieving file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
-	// Validate file type (should be image)
-	contentType := header.Header.Get("Content-Type")
-	if contentType != "image/x-icon" && contentType != "image/png" && contentType != "image/jpeg" && contentType != "image/gif" {
-		http.Error(w, "Invalid file type. Only ico, png, jpg, gif allowed", http.StatusBadRequest)
+	// Read content for magic-byte detection
+	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
+	if err != nil {
+		http.Error(w, "Unable to read file", http.StatusInternalServerError)
 		return
 	}
 
-	// Create data directory if it doesn't exist
-	dataDir := "data"
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		os.MkdirAll(dataDir, 0755)
-	}
-
-	// Determine file extension
+	contentType := detectImageType(data)
 	var ext string
 	switch contentType {
 	case "image/x-icon":
@@ -57,25 +50,21 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 	case "image/gif":
 		ext = ".gif"
 	default:
-		ext = filepath.Ext(header.Filename)
-	}
-
-	// Save file as favicon with appropriate extension
-	faviconPath := filepath.Join(dataDir, "favicon"+ext)
-	dst, err := os.Create(faviconPath)
-	if err != nil {
-		http.Error(w, "Unable to save file", http.StatusInternalServerError)
-		return
-	}
-	defer dst.Close()
-
-	_, err = io.Copy(dst, file)
-	if err != nil {
-		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+		http.Error(w, "Invalid file type. Only ico, png, jpg, gif allowed", http.StatusBadRequest)
 		return
 	}
 
-	// Update settings with the new favicon path
+	if err := os.MkdirAll("data", 0755); err != nil {
+		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
+		return
+	}
+
+	faviconPath := filepath.Join("data", "favicon"+ext)
+	if err := os.WriteFile(faviconPath, data, 0644); err != nil {
+		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+		return
+	}
+
 	settings := h.store.GetSettings()
 	settings.CustomFaviconPath = "/data/favicon" + ext
 	h.store.SaveSettings(settings)
@@ -180,8 +169,7 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	// Parse multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB max
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
@@ -194,20 +182,14 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Validate file type (should be image)
-	contentType := header.Header.Get("Content-Type")
-	if contentType != "image/x-icon" && contentType != "image/png" && contentType != "image/jpeg" && contentType != "image/gif" && contentType != "image/svg+xml" {
-		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, svg allowed", http.StatusBadRequest)
+	// Read content for magic-byte detection (before trusting client Content-Type)
+	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
+	if err != nil {
+		http.Error(w, "Unable to read file", http.StatusInternalServerError)
 		return
 	}
 
-	// Create data/icons directory if it doesn't exist
-	iconsDir := "data/icons"
-	if _, err := os.Stat(iconsDir); os.IsNotExist(err) {
-		os.MkdirAll(iconsDir, 0755)
-	}
-
-	// Determine file extension
+	contentType := detectImageType(data)
 	var ext string
 	switch contentType {
 	case "image/x-icon":
@@ -220,36 +202,32 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 		ext = ".gif"
 	case "image/svg+xml":
 		ext = ".svg"
+		// Strip <script> blocks and event-handler attributes from SVG
+		data = sanitizeSVGContent(data)
 	default:
-		ext = filepath.Ext(header.Filename)
+		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, svg allowed", http.StatusBadRequest)
+		return
 	}
 
-	// Generate unique filename based on original filename (without extension)
+	if err := os.MkdirAll("data/icons", 0755); err != nil {
+		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
+		return
+	}
+
+	// Sanitize filename: strip path traversal characters
 	baseName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
-	// Sanitize filename to prevent path traversal
 	baseName = strings.ReplaceAll(baseName, "..", "")
 	baseName = strings.ReplaceAll(baseName, "/", "")
 	baseName = strings.ReplaceAll(baseName, "\\", "")
 
-	// Check if file already exists
 	fileName := baseName + ext
-	filePath := filepath.Join(iconsDir, fileName)
+	filePath := filepath.Join("data/icons", fileName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		// File doesn't exist, save it
-		dst, err := os.Create(filePath)
-		if err != nil {
-			http.Error(w, "Unable to save file", http.StatusInternalServerError)
-			return
-		}
-		defer dst.Close()
-
-		_, err = io.Copy(dst, file)
-		if err != nil {
+		if err := os.WriteFile(filePath, data, 0644); err != nil {
 			http.Error(w, "Unable to save file", http.StatusInternalServerError)
 			return
 		}
 	}
-	// If file exists, we reuse it (no need to save again)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "icon": fileName})
