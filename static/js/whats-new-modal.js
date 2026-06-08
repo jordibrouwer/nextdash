@@ -119,6 +119,22 @@
                         { badge: 'new', text: '<strong>Focus-visible outlines</strong> — search pill buttons and history chips now show a visible focus ring on keyboard navigation.' },
                     ]
                 },
+                {
+                    title: 'Categories &amp; search',
+                    items: [
+                        { badge: 'new', text: '<strong>Hide empty categories</strong> — Config → General → Bookmarks; on by default. Categories with no bookmarks are hidden from the dashboard. Existing installs are migrated automatically.' },
+                        { badge: 'new', text: '<strong>Bookmark name tooltip</strong> — truncated bookmark titles show the full name on hover via the native tooltip.' },
+                        { badge: 'new', text: '<strong>Search result ellipsis</strong> — long names in the search overlay now truncate cleanly with an ellipsis and tooltip.' },
+                    ]
+                },
+                {
+                    title: 'Reliability &amp; accessibility',
+                    items: [
+                        { badge: 'new', text: '<strong>Notification queue</strong> — rapid notifications are queued and shown one at a time with a fade gap; no more simultaneous toasts.' },
+                        { badge: 'new', text: '<strong><code>prefers-reduced-motion</code></strong> — spring curves, pulse animations, and entrance effects respect the OS reduced-motion setting across the whole UI.' },
+                        { badge: 'fix', text: '<strong>Collapsed category state</strong> — localStorage errors (private browsing, quota) no longer break collapse persistence; state is kept in-memory for the session.' },
+                    ]
+                },
             ]),
 
             release('v2026.06.11', 'June 2026', '2026-06-10', [

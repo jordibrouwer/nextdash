@@ -83,6 +83,18 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new** **Font upload status icons** — `#custom-font-status` in config shows a ✓ or ✕ icon alongside the status text after a custom font upload succeeds or fails.
 - **new** **Focus-visible outlines** — search mode pill buttons (Search / Commands / Finders) and history chips now show a 2 px `--accent-primary` outline on `:focus-visible`; there was previously no visible keyboard focus indicator on these controls.
 
+### Dashboard — categories & search
+
+- **new** **Hide empty categories** — new setting in Config → General → Bookmarks (visible in Essentials layer), enabled by default for new installs and automatically migrated to `true` for existing ones; categories with no bookmarks are omitted entirely from the dashboard render.
+- **new** **Bookmark name tooltip** — truncated bookmark titles now carry a native `title` attribute so the full name appears on hover, matching the category-name tooltip added in this release.
+- **new** **Search result ellipsis** — long bookmark names in the search overlay now truncate with `text-overflow: ellipsis` (added missing `min-width: 0` on the flex child) and show the full name via `title` on hover.
+
+### Reliability & accessibility
+
+- **new** **Notification queue** — rapid successive calls to `AppNotification.show()` are queued (max 3 pending; newest replaces oldest when full) and displayed one at a time with a 260 ms fade gap between entries; explicit `hide()` clears the queue.
+- **fix** **Collapsed category persistence** — `loadCollapsedStates` and `saveCollapsedStates` now wrap localStorage calls in try/catch; collapse state is kept in-memory for the session when storage is unavailable (private browsing, quota exceeded).
+- **new** **`prefers-reduced-motion`** — spring entrance curves, drag-placeholder scale, swipe-hint pulse, skeleton shimmer, category/bookmark entrance animations, and the notification slide now respect the OS reduced-motion preference; motion is replaced by opacity fades or instant transitions across `search.css`, `dashboard.css`, `responsive.css`, `modal.css`, `app-notification.css`, and `config-forms.css`.
+
 ---
 
 ## v2026.06.11 — June 2026
