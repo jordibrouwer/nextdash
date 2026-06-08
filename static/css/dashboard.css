@@ -2883,6 +2883,53 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     color: var(--text-secondary);
 }
 
+.recent-bookmarks-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recent-bookmarks-skeleton-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    padding: 0.5rem 0.625rem;
+    border-radius: 2px;
+}
+
+.recent-bookmarks-skeleton-name,
+.recent-bookmarks-skeleton-meta {
+    display: block;
+    border-radius: 3px;
+    background: linear-gradient(
+        90deg,
+        var(--background-secondary) 25%,
+        color-mix(in srgb, var(--background-secondary) 60%, var(--text-tertiary) 40%) 50%,
+        var(--background-secondary) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.recent-bookmarks-skeleton-name {
+    height: 0.85em;
+    width: 55%;
+}
+
+.recent-bookmarks-skeleton-meta {
+    height: 0.75em;
+    width: 18%;
+    flex-shrink: 0;
+}
+
+@keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 @keyframes nextdashStaleFlash {
     0% {
         box-shadow: 0 0 0 0 var(--accent-primary, rgba(100, 180, 255, 0.65));

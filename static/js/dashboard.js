@@ -92,6 +92,7 @@ const THEME_BACKGROUND_MAP = {
 class Dashboard {
     constructor() {
         this.bookmarks = [];
+        this._bookmarksReady = false;
         /** All pages — search / global shortcuts; not for getRecentBookmarks (page-local recent UX). */
         this.allBookmarks = [];
         this.finders = [];
@@ -816,6 +817,12 @@ class Dashboard {
             // Reset keyboard navigation to first element when changing pages
             if (this.keyboardNavigation) {
                 this.keyboardNavigation.resetToFirst();
+            }
+
+            this._bookmarksReady = true;
+            if (this._pendingRecentModalRefresh && this.isRecentBookmarksModalOpen()) {
+                this._pendingRecentModalRefresh = false;
+                this._fillRecentBookmarksModal();
             }
         } catch (error) {
             this.showErrorNotification('Failed to load bookmarks for this page.', {
@@ -6054,91 +6061,26 @@ class Dashboard {
     }
 
     toggleRecentBookmarksModal() {
-        if (!window.AppModal) {
-            return;
-        }
-
-        if (this.isModalOpen() && !this.isRecentBookmarksModalOpen()) {
-            return;
-        }
-
+        if (!window.AppModal) return;
+        if (this.isModalOpen() && !this.isRecentBookmarksModalOpen()) return;
         if (this.isRecentBookmarksModalOpen()) {
             window.AppModal.hide();
             return;
         }
 
-        // Page-local recent list (* modal) — always this.bookmarks, never allBookmarks.
-        const recentBookmarks = this.getRecentBookmarks(
-            this.bookmarks,
-            Dashboard.RECENT_MODAL_DISPLAY_LIMIT
-        );
-        const openInNewTab = this.settings.openInNewTab;
-        const noRecentText = this.language.t('dashboard.noRecentBookmarks') || 'No recent bookmarks yet.';
-        const shownWithUrls = this.getRecentBookmarksWithUrls(
-            this.bookmarks,
-            Dashboard.RECENT_MODAL_DISPLAY_LIMIT
-        );
-        const lastWithUrls = this.getRecentBookmarksWithUrls(
-            this.bookmarks,
-            Dashboard.OPEN_LAST_DEFAULT
-        );
-        const openPlans = [
-            ...this.buildOpenTabsPlans(shownWithUrls, {
-                all: 'recentOpenShown',
-                first: 'recentOpenShownFirst',
-            }),
-        ];
-        if (!this.sameBookmarkList(shownWithUrls, lastWithUrls)) {
-            openPlans.push(
-                ...this.buildOpenTabsPlans(lastWithUrls, {
-                    all: 'recentOpenLast',
-                    first: 'recentOpenLastFirst',
-                })
-            );
-        }
-        const openToolbarHtml = openPlans.length > 0
-            ? `
-                <div class="recent-bookmarks-modal-toolbar" role="toolbar" aria-label="${this.escapeHtml(this.formatDashboardLabel('recentOpenToolbar', {}, 'Open recent bookmarks'))}">
-                    <div class="recent-bookmarks-open-actions">
-                        ${openPlans.map((plan, index) => `
-                            <button type="button" class="recent-bookmarks-open-btn modal-button" data-open-plan="${index}">
-                                <span class="modal-button-name">${this.escapeHtml(plan.label)}</span>
-                            </button>
-                        `).join('')}
-                    </div>
-                    <p class="recent-bookmarks-open-hint">${this.escapeHtml(
-                        this.formatDashboardLabel(
-                            'recentOpenCommandHint',
-                            { n: Dashboard.OPEN_LAST_DEFAULT },
-                            `:open last ${Dashboard.OPEN_LAST_DEFAULT} in command mode`
-                        )
-                    )}</p>
-                </div>
-            `
-            : '';
-        const modalHtml = recentBookmarks.length > 0
-            ? `
-                ${openToolbarHtml}
-                <div class="recent-bookmarks-modal-list">
-                    ${recentBookmarks.map((bookmark, index) => {
-                        const safeName = this.escapeHtml(bookmark.name || this.bookmarkFallbackName());
-                        const safeUrl = this.escapeHtml(bookmark.url || '#');
-                        const safeCategory = this.escapeHtml(bookmark.category || (this.language.t('dashboard.uncategorized') || 'Other'));
-                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
-                        return `
-                            <a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
-                                <span class="recent-bookmarks-modal-name">${safeName}</span>
-                                <span class="recent-bookmarks-modal-meta">${safeCategory}</span>
-                            </a>
-                        `;
-                    }).join('')}
-                </div>
-            `
-            : `<div class="recent-bookmarks-empty">${this.escapeHtml(noRecentText)}</div>`;
+        const skeletonCount = 5;
+        const skeletonHtml = `<div class="recent-bookmarks-skeleton" aria-hidden="true">${
+            Array.from({ length: skeletonCount }, () =>
+                `<div class="recent-bookmarks-skeleton-row">
+                    <span class="recent-bookmarks-skeleton-name"></span>
+                    <span class="recent-bookmarks-skeleton-meta"></span>
+                </div>`
+            ).join('')
+        }</div>`;
 
         window.AppModal.show({
             title: this.language.t('dashboard.recentBookmarksTitle') || 'Recent bookmarks',
-            htmlMessage: modalHtml,
+            htmlMessage: skeletonHtml,
             confirmText: this.language.t('dashboard.close') || 'Close',
             showCancel: false,
             modalClass: 'recent-bookmarks-modal',
@@ -6146,9 +6088,64 @@ class Dashboard {
             modalWidth: '92vw'
         });
 
+        if (!this._bookmarksReady) {
+            this._pendingRecentModalRefresh = true;
+            return;
+        }
+
+        requestAnimationFrame(() => this._fillRecentBookmarksModal());
+    }
+
+    _fillRecentBookmarksModal() {
+        const body = document.querySelector('.recent-bookmarks-modal .modal-body');
+        if (!body) return;
+
+        const recentBookmarks = this.getRecentBookmarks(this.bookmarks, Dashboard.RECENT_MODAL_DISPLAY_LIMIT);
+        const openInNewTab = this.settings.openInNewTab;
+        const noRecentText = this.language.t('dashboard.noRecentBookmarks') || 'No recent bookmarks yet.';
+        const shownWithUrls = this.getRecentBookmarksWithUrls(this.bookmarks, Dashboard.RECENT_MODAL_DISPLAY_LIMIT);
+        const lastWithUrls = this.getRecentBookmarksWithUrls(this.bookmarks, Dashboard.OPEN_LAST_DEFAULT);
+
+        const openPlans = [
+            ...this.buildOpenTabsPlans(shownWithUrls, { all: 'recentOpenShown', first: 'recentOpenShownFirst' }),
+        ];
+        if (!this.sameBookmarkList(shownWithUrls, lastWithUrls)) {
+            openPlans.push(...this.buildOpenTabsPlans(lastWithUrls, { all: 'recentOpenLast', first: 'recentOpenLastFirst' }));
+        }
+
+        const openToolbarHtml = openPlans.length > 0
+            ? `<div class="recent-bookmarks-modal-toolbar" role="toolbar" aria-label="${this.escapeHtml(this.formatDashboardLabel('recentOpenToolbar', {}, 'Open recent bookmarks'))}">
+                    <div class="recent-bookmarks-open-actions">
+                        ${openPlans.map((plan, index) => `
+                            <button type="button" class="recent-bookmarks-open-btn modal-button" data-open-plan="${index}">
+                                <span class="modal-button-name">${this.escapeHtml(plan.label)}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                    <p class="recent-bookmarks-open-hint">${this.escapeHtml(this.formatDashboardLabel('recentOpenCommandHint', { n: Dashboard.OPEN_LAST_DEFAULT }, `:open last ${Dashboard.OPEN_LAST_DEFAULT} in command mode`))}</p>
+                </div>`
+            : '';
+
+        const listHtml = recentBookmarks.length > 0
+            ? `${openToolbarHtml}
+               <div class="recent-bookmarks-modal-list">
+                   ${recentBookmarks.map((bookmark, index) => {
+                       const safeName = this.escapeHtml(bookmark.name || this.bookmarkFallbackName());
+                       const safeUrl = this.escapeHtml(bookmark.url || '#');
+                       const safeCategory = this.escapeHtml(bookmark.category || (this.language.t('dashboard.uncategorized') || 'Other'));
+                       const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+                       return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
+                                   <span class="recent-bookmarks-modal-name">${safeName}</span>
+                                   <span class="recent-bookmarks-modal-meta">${safeCategory}</span>
+                               </a>`;
+                   }).join('')}
+               </div>`
+            : `<div class="recent-bookmarks-empty">${this.escapeHtml(noRecentText)}</div>`;
+
+        body.innerHTML = listHtml;
+
         if (recentBookmarks.length > 0) {
-            const items = document.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]');
-            items.forEach((item) => {
+            body.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {
                 item.addEventListener('click', (e) => {
                     const index = parseInt(e.currentTarget.getAttribute('data-recent-index'), 10);
                     if (!Number.isNaN(index) && recentBookmarks[index]) {
@@ -6156,13 +6153,11 @@ class Dashboard {
                     }
                 });
             });
-
-            document.querySelectorAll('.recent-bookmarks-open-btn[data-open-plan]').forEach((btn) => {
+            body.querySelectorAll('.recent-bookmarks-open-btn[data-open-plan]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const index = parseInt(btn.getAttribute('data-open-plan'), 10);
                     const plan = openPlans[index];
-                    if (!plan?.bookmarks?.length) return;
-                    this.openBookmarksInNewTabs(plan.bookmarks);
+                    if (plan?.bookmarks?.length) this.openBookmarksInNewTabs(plan.bookmarks);
                 });
             });
         }
