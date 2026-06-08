@@ -373,7 +373,8 @@
         "movedToCategory": "Verschoben nach \"{name}\"",
         "searchHistoryClear": "Suchverlauf löschen",
         "removeSearchHistoryEntry": "Aus Suchverlauf entfernen",
-        "deepLinkBookmarkNotFound": "Lesezeichen auf dieser Seite nicht gefunden (möglicherweise verschoben)."
+        "deepLinkBookmarkNotFound": "Lesezeichen auf dieser Seite nicht gefunden (möglicherweise verschoben).",
+        "deepLinkCategoryNotFound": "Kategorie nicht gefunden — sie wurde möglicherweise gelöscht. Alle Lesezeichen werden angezeigt."
     },
     "health": {
         "pageTitle": "health beta",

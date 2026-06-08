@@ -4504,7 +4504,13 @@ class Dashboard {
 
         if (link.categoryId) {
             const catEl = this.expandCategoryForDeepLink(link.categoryId);
-            catEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (catEl) {
+                catEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                const msg = this.language?.t?.('dashboard.deepLinkCategoryNotFound')
+                    || 'Category not found — it may have been deleted. Showing all bookmarks.';
+                this.showNotification(msg, 'info', { duration: 6000 });
+            }
         }
 
         const row = this.findBookmarkRowForDeepLink(link);

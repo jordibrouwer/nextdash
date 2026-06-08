@@ -47,6 +47,7 @@
         "emptyCategoryText": "no bookmarks yet",
         "emptyStateAddAction": "+ bookmark",
         "deepLinkBookmarkNotFound": "Bookmark not found on this page (it may have moved).",
+        "deepLinkCategoryNotFound": "Category not found — it may have been deleted. Showing all bookmarks.",
         "emptyPage": "This page is empty",
         "emptyFresh": "No bookmarks yet",
         "emptyStateCommandNew": "Add via command",
