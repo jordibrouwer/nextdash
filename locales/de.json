@@ -136,6 +136,7 @@
         "firstBookmarkGuide": "Fügen Sie Ihr erstes Lesezeichen mit + hinzu (& für Schnellzeile), oder richten Sie Seiten unter config → Seiten ein.",
         "emptyStateAddTouch": "Tippen Sie unten auf + Lesezeichen in der Leiste",
         "emptyStateAddDesktop": "Drücken Sie + für das volle Formular (& für Schnellzeile)",
+        "emptyCategoryText": "noch keine Lesezeichen",
         "emptyStateAddAction": "+ Lesezeichen",
         "emptyPage": "Diese Seite ist leer",
         "emptyFresh": "Noch keine Lesezeichen",

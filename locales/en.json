@@ -44,6 +44,7 @@
         "swipePagesHint": "swipe pages",
         "emptyStateAddTouch": "Tap + bookmark in the bar below",
         "emptyStateAddDesktop": "Press + for the full add-bookmark form (& for quick-add line)",
+        "emptyCategoryText": "no bookmarks yet",
         "emptyStateAddAction": "+ bookmark",
         "deepLinkBookmarkNotFound": "Bookmark not found on this page (it may have moved).",
         "emptyPage": "This page is empty",

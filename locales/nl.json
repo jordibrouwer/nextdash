@@ -44,6 +44,7 @@
         "swipePagesHint": "veeg tussen pagina's",
         "emptyStateAddTouch": "Tik op + bladwijzer in de balk hieronder",
         "emptyStateAddDesktop": "Druk op + voor het volledige formulier (& voor sneltoevoeg-regel)",
+        "emptyCategoryText": "nog geen bladwijzers",
         "emptyStateAddAction": "+ bladwijzer",
         "deepLinkBookmarkNotFound": "Bladwijzer niet gevonden op deze pagina (mogelijk verplaatst).",
         "emptyPage": "Deze pagina is leeg",

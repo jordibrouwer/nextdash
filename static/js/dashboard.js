@@ -3980,7 +3980,7 @@ class Dashboard {
         });
 
         if (bookmarks.length === 0) {
-            const t = (key, fallback) => this.language?.t?.(key) || fallback;
+            const t = (key, fallback) => { const v = this.language?.t?.(key); return (v && v !== key) ? v : (fallback ?? key); };
             if (isSmartCollection) {
                 const emptyMessages = {
                     '__smart_today__':     t('dashboard.smartEmptyToday',    'No bookmarks scheduled for today'),
