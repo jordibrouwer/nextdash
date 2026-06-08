@@ -7009,6 +7009,29 @@ class Dashboard {
             weatherLine.innerHTML = `<span class="weather-icon" aria-hidden="true">${weatherIcon}</span><span class="weather-text">${weatherPart}</span>`;
             dateElement.appendChild(weatherLine);
         }
+
+        // Compact mobile badge — only populated when the full .date block is hidden
+        const badge = document.getElementById('date-badge-mobile');
+        if (badge) {
+            const parts = [];
+            if (timePart) parts.push(timePart);
+            if (datePart && this.settings.showDate) {
+                const locale = String(this.settings.language || document.documentElement.getAttribute('data-lang') || 'en');
+                try {
+                    parts.push(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(now));
+                } catch (_) {
+                    parts.push(datePart);
+                }
+            }
+            const compact = parts.join(' · ');
+            badge.textContent = compact;
+            badge.setAttribute('aria-label', dateTimeText || compact);
+            if (!badge._dateBadgeListenerAttached) {
+                badge._dateBadgeListenerAttached = true;
+                badge.addEventListener('click', () => this.showDatePopover());
+                badge.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.showDatePopover(); } });
+            }
+        }
     }
 
     showMovePopover(anchorEl, bookmark, bookmarkIndex) {

@@ -72,6 +72,10 @@ body {
     color: var(--text-secondary);
 }
 
+.date-badge-mobile {
+    display: none;
+}
+
 .date-time-line,
 .date-weather-line {
     font-weight: var(--font-weight-semibold);

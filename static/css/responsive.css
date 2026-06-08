@@ -289,6 +289,30 @@
         display: none;
     }
 
+    .date-badge-mobile:not(:empty) {
+        display: flex;
+        align-items: center;
+        font-size: calc(var(--font-size-controls) * 0.88);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-secondary);
+        background: var(--background-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        padding: 0.18rem 0.6rem;
+        cursor: pointer;
+        white-space: nowrap;
+        user-select: none;
+        transition: border-color 0.12s ease, color 0.12s ease;
+        order: -1;
+    }
+
+    .date-badge-mobile:not(:empty):hover,
+    .date-badge-mobile:not(:empty):focus-visible {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+        outline: none;
+    }
+
     .title {
         font-size: var(--font-size-title);
     }
