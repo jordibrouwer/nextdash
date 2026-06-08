@@ -280,6 +280,22 @@ body {
     flex: 1 1 100%;
     font-size: calc(var(--font-size-controls) * 0.9);
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.font-upload-status.is-success {
+    color: var(--accent-success);
+}
+
+.font-upload-status.is-error {
+    color: var(--accent-error);
+}
+
+.font-upload-status-icon {
+    flex-shrink: 0;
+    font-style: normal;
 }
 
 .config-advanced-action-row {

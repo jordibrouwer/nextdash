@@ -158,19 +158,24 @@ class ConfigSettings {
         this.updateCustomFontStatus(settings);
     }
 
-    updateCustomFontStatus(settings) {
+    updateCustomFontStatus(settings, state = 'success') {
         const statusEl = document.getElementById('custom-font-status');
         if (!statusEl) return;
         const path = settings.customFontPath && String(settings.customFontPath).trim();
         if (!path) {
-            statusEl.textContent = '';
+            statusEl.innerHTML = '';
+            statusEl.className = 'setting-hint font-upload-status';
             return;
         }
         const fileName = path.split('/').pop() || path;
         const hint = this.t('config.uploadFontAvailableHint', 'Uploaded font available in the dropdown above.');
-        statusEl.textContent = hint !== 'config.uploadFontAvailableHint'
+        const hintText = hint !== 'config.uploadFontAvailableHint'
             ? `${fileName} — ${hint}`
             : `${fileName} — uploaded font available in the dropdown above.`;
+        const icon = state === 'error' ? '✕' : '✓';
+        const cls  = state === 'error' ? 'is-error' : 'is-success';
+        statusEl.className = `setting-hint font-upload-status ${cls}`;
+        statusEl.innerHTML = `<span class="font-upload-status-icon" aria-hidden="true">${icon}</span><span>${hintText}</span>`;
     }
 
     getThemeDisplayName(themeId, value) {
@@ -906,6 +911,11 @@ class ConfigSettings {
                     const msg = this.t('config.fontUploadError', 'Font upload failed. Use .woff, .woff2, .ttf, or .otf (max 5 MB).');
                     if (window.ConfigManager?.ui?.showNotification) {
                         window.ConfigManager.ui.showNotification(msg, 'error');
+                    }
+                    const statusEl = document.getElementById('custom-font-status');
+                    if (statusEl) {
+                        statusEl.className = 'setting-hint font-upload-status is-error';
+                        statusEl.innerHTML = `<span class="font-upload-status-icon" aria-hidden="true">✕</span><span>${msg}</span>`;
                     }
                 }
             });
