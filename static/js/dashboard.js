@@ -4929,7 +4929,7 @@ class Dashboard {
 
         const cfg = (key, fallback) => this.configLabel(key, fallback);
 
-        const mkField = (labelText, inputEl) => {
+        const mkField = (labelText, inputEl, errorEl) => {
             const wrap = document.createElement('div');
             wrap.className = 'bookmark-inline-field';
             const lab = document.createElement('label');
@@ -4937,20 +4937,31 @@ class Dashboard {
             lab.textContent = labelText;
             wrap.appendChild(lab);
             wrap.appendChild(inputEl);
+            if (errorEl) wrap.appendChild(errorEl);
             return wrap;
         };
+
+        const nameError = document.createElement('span');
+        nameError.className = 'bookmark-inline-conflict';
+        nameError.hidden = true;
+        nameError.textContent = cfg('nameRequired', 'Name is required');
 
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.className = 'bookmark-inline-input';
         nameInput.value = bookmark.name || '';
-        form.appendChild(mkField(cfg('bookmarkName', 'Name'), nameInput));
+        form.appendChild(mkField(cfg('bookmarkName', 'Name'), nameInput, nameError));
+
+        const urlError = document.createElement('span');
+        urlError.className = 'bookmark-inline-conflict';
+        urlError.hidden = true;
+        urlError.textContent = cfg('urlRequired', 'Valid URL required (e.g. https://example.com)');
 
         const urlInput = document.createElement('input');
         urlInput.type = 'url';
         urlInput.className = 'bookmark-inline-input';
         urlInput.value = bookmark.url || '';
-        form.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput));
+        form.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
 
         let pendingIcon = String(bookmark.icon || '').trim();
         const iconPreview = document.createElement('div');
@@ -5258,12 +5269,33 @@ class Dashboard {
         const actions = document.createElement('div');
         actions.className = 'bookmark-inline-actions';
 
+        const isValidURL = (val) => {
+            if (!val) return false;
+            try { const u = new URL(val); return u.protocol === 'http:' || u.protocol === 'https:'; } catch { return false; }
+        };
+
+        const validateForm = (showErrors = false) => {
+            const nameOk = Boolean(nameInput.value.trim());
+            const urlOk = isValidURL(urlInput.value.trim());
+            if (showErrors || nameInput.dataset.touched) {
+                nameInput.classList.toggle('input-error', !nameOk);
+                nameError.hidden = nameOk;
+            }
+            if (showErrors || urlInput.dataset.touched) {
+                urlInput.classList.toggle('input-error', !urlOk);
+                urlError.hidden = urlOk;
+            }
+            return nameOk && urlOk;
+        };
+
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
         saveBtn.textContent = cfg('saveChanges', 'Save');
+        saveBtn.disabled = !validateForm();
         saveBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            if (!validateForm(true)) return;
             await this.commitBookmarkInlineEdit(bookmarkRef, {
                 nameInput,
                 urlInput,
@@ -5278,6 +5310,11 @@ class Dashboard {
                 getPendingIcon: () => pendingIcon
             }, row);
         });
+
+        nameInput.addEventListener('input', () => { nameInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
+        urlInput.addEventListener('input', () => { urlInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
+        nameInput.addEventListener('blur', () => { nameInput.dataset.touched = '1'; validateForm(); });
+        urlInput.addEventListener('blur', () => { urlInput.dataset.touched = '1'; validateForm(); });
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';

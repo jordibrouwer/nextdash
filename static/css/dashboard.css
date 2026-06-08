@@ -2037,6 +2037,17 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
+.bookmark-inline-input.input-error {
+    border-color: var(--accent-error);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-error) 20%, transparent);
+}
+
+.bookmark-inline-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .bookmark-inline-actions {
     display: flex;
     flex-wrap: wrap;
