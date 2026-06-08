@@ -9,6 +9,7 @@
         "confirmMessage": "Are you sure?",
         "cancel": "Cancel",
         "ok": "OK",
+        "escToClose": "to close",
         "recentSearches": "Recent searches",
         "noRecentSearches": "No recent searches yet.",
         "checkingStatus": "checking status",

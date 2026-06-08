@@ -9,6 +9,7 @@
         "confirmMessage": "Sind Sie sicher?",
         "cancel": "Abbrechen",
         "ok": "OK",
+        "escToClose": "zum Schließen",
         "recentSearches": "Letzte Suchen",
         "noRecentSearches": "Noch keine letzten Suchen.",
         "checkingStatus": "Status wird geprüft",

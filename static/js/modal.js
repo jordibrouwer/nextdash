@@ -26,6 +26,7 @@ class Modal {
                     </div>
                     <div class="modal-actions" id="modal-actions">
                     </div>
+                    <div class="modal-esc-hint" id="modal-esc-hint" aria-hidden="true"></div>
                 </div>
             </div>
         `;
@@ -159,6 +160,13 @@ class Modal {
                 onCancel();
             };
             actionsContainer.appendChild(cancelButton);
+        }
+
+        // ESC hint
+        const escHintEl = document.getElementById('modal-esc-hint');
+        if (escHintEl) {
+            const hintText = this._t('dashboard.escToClose', 'to close');
+            escHintEl.innerHTML = `<kbd>ESC</kbd> ${hintText}`;
         }
 
         // Show modal

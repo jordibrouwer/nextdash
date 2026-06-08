@@ -342,6 +342,39 @@ body.no-animations .modal-button.danger.selected {
     color: var(--accent-error);
 }
 
+/* ESC to close hint */
+.modal-esc-hint {
+    text-align: center;
+    margin-top: 0.75rem;
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    user-select: none;
+    pointer-events: none;
+}
+
+.modal-esc-hint kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-semibold);
+    padding: 0.1rem 0.32rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    vertical-align: baseline;
+}
+
+.modal-esc-hint:empty {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .modal-esc-hint { display: none; }
+}
+
 /* Modal select styling */
 .modal-select {
     width: 100%;

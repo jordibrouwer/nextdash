@@ -9,6 +9,7 @@
         "confirmMessage": "Weet u het zeker?",
         "cancel": "Annuleren",
         "ok": "OK",
+        "escToClose": "om te sluiten",
         "recentSearches": "Recente zoekopdrachten",
         "noRecentSearches": "Nog geen recente zoekopdrachten.",
         "checkingStatus": "Status controleren...",
