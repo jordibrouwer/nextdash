@@ -754,7 +754,13 @@ class Dashboard {
             window.AppNotification.showErrorWithReload(message, options);
             return;
         }
-        this.showNotification(message, 'error', options);
+        const notifOpts = { ...options };
+        if (typeof options.retry === 'function') {
+            notifOpts.onAction = options.retry;
+            notifOpts.actionLabel = this.language?.t('dashboard.retry') || 'Retry';
+            delete notifOpts.retry;
+        }
+        this.showNotification(message, 'error', notifOpts);
     }
 
     loadCollapsedStates() {
@@ -808,7 +814,9 @@ class Dashboard {
                 this.keyboardNavigation.resetToFirst();
             }
         } catch (error) {
-            this.showErrorNotification('Failed to load bookmarks for this page.', { reload: true });
+            this.showErrorNotification('Failed to load bookmarks for this page.', {
+                retry: () => this.loadPageBookmarks(this.currentPageId),
+            });
         }
     }
 
@@ -816,13 +824,15 @@ class Dashboard {
         try {
             const allBookmarksRes = await fetch('/api/bookmarks?all=true');
             this.allBookmarks = await allBookmarksRes.json();
-            
+
             // Update search component with all bookmarks
             if (this.searchComponent) {
                 this.updateSearchComponent();
             }
         } catch (error) {
-            this.showErrorNotification('Failed to refresh global shortcuts.');
+            this.showErrorNotification('Failed to refresh global shortcuts.', {
+                retry: () => this.loadAllBookmarks(),
+            });
         }
     }
 

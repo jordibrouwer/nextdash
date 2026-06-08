@@ -1027,11 +1027,20 @@ class SearchComponent {
                 element.classList.remove('keyboard-selected');
             }
         });
-        
+
         // Force horizontal scroll position to 0 to prevent drift
         const matchesContainer = document.getElementById('search-matches');
         if (matchesContainer) {
             matchesContainer.scrollLeft = 0;
+        }
+
+        // Announce selected item to screen readers
+        const announceEl = document.getElementById('search-result-announce');
+        if (announceEl && this.matchElements.length > 0) {
+            const match = this.selectableMatches[this.selectedMatchIndex];
+            const label = match?.bookmark?.name || match?.name || '';
+            const pos = `${this.selectedMatchIndex + 1} of ${this.matchElements.length}`;
+            announceEl.textContent = label ? `${label}, ${pos}` : pos;
         }
     }
 

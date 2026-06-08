@@ -2037,9 +2037,22 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
-.bookmark-inline-input.input-error {
+.bookmark-inline-input.input-error,
+.bookmark-inline-input.field-conflict {
     border-color: var(--accent-error);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-error) 20%, transparent);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .bookmark-inline-action-btn:disabled {
