@@ -14,7 +14,7 @@
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.18s ease, visibility 0.18s ease;
+    transition: opacity 0.2s ease-out, visibility 0s linear 0.2s;
     background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
@@ -23,6 +23,7 @@
 .shortcut-search.show {
     opacity: 1;
     visibility: visible;
+    transition: opacity 0.2s ease-out, visibility 0s linear 0s;
 }
 
 .search-container {
@@ -40,14 +41,17 @@
     max-height: calc(100vh - 2rem);
     overflow: hidden;
     box-sizing: border-box;
-    transform: translateY(8px) scale(0.985);
+    /* exit: snel weg */
+    transform: translateY(20px) scale(0.95);
     opacity: 0;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
 
 .shortcut-search.show .search-container {
     transform: translateY(0) scale(1);
     opacity: 1;
+    /* entrance: spring — vertraagt soepel aan het einde */
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
 .search-prompt {
