@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [Unreleased](#unreleased) — CSS injection, TLS verification, write-token coverage, security headers, body limits
 - [v2026.06.11 — June 2026](#v20260611--june-2026)
 - [v2026.06.10 — June 2026](#v20260610--june-2026)
 - [v2026.06.9 — June 2026](#v2026069--june-2026)
@@ -37,7 +37,13 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet.)_
+### Security
+
+- **fix** **CSS injection** — color values stored via `/api/colors` are now validated against an allowlist (hex, rgb/rgba, hsl/hsla, named keywords) before being written into the generated `theme.css`; theme IDs are sanitized to alphanumeric/dash characters only.
+- **fix** **TLS verification** — `InsecureSkipVerify` removed from the HTTP client used for bookmark ping checks; certificate validation is now enforced.
+- **fix** **Write-token coverage** — `requireWriteAccess` is now enforced on all mutating endpoints that were missing it: `SaveBookmarks`, `AddBookmark`, `ImportBrowserBookmarks`, `DeleteBookmark`, `SaveFinders`, `SaveCategories`, `SavePages`, `SaveSettings`, `SaveColors`, and all four upload handlers (`UploadFavicon`, `UploadFont`, `UploadIcon`, `UploadIconFromURL`).
+- **fix** **Security headers** — all responses now include `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIGIN` via a global middleware.
+- **fix** **Request body limit** — non-multipart (JSON) request bodies are capped at 4 MB; upload and backup endpoints retain their own higher limits via `ParseMultipartForm`.
 
 ---
 
