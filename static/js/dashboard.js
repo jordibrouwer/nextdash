@@ -769,14 +769,22 @@ class Dashboard {
     }
 
     loadCollapsedStates() {
-        const stored = localStorage.getItem('collapsedCategories');
-        if (stored) {
-            this.collapsedCategories = JSON.parse(stored);
+        try {
+            const stored = localStorage.getItem('collapsedCategories');
+            if (stored) {
+                this.collapsedCategories = JSON.parse(stored);
+            }
+        } catch {
+            this.collapsedCategories = {};
         }
     }
 
     saveCollapsedStates() {
-        localStorage.setItem('collapsedCategories', JSON.stringify(this.collapsedCategories));
+        try {
+            localStorage.setItem('collapsedCategories', JSON.stringify(this.collapsedCategories));
+        } catch {
+            // localStorage unavailable (private browsing, quota exceeded) — state is kept in memory only
+        }
     }
 
     async loadPageBookmarks(pageId) {
