@@ -4807,6 +4807,7 @@ class Dashboard {
         const textSpan = document.createElement('span');
         textSpan.className = 'bookmark-text';
         textSpan.textContent = bookmark.name || '';
+        if (bookmark.name) textSpan.title = bookmark.name;
         openLink.appendChild(textSpan);
 
         openLink.addEventListener('click', (e) => {
