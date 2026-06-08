@@ -1285,10 +1285,11 @@ class SearchComponent {
                 ? `<button type="button" class="search-history-remove" aria-label="${this._escHtml(this.historyRemoveLabel())}">×</button>`
                 : '';
 
+            const plainName = this._escHtml(match.bookmark?.name || match.name || '');
             matchElement.innerHTML = `
                 ${shortcutHtml}
                 ${bookmarkIconHtml}
-                <span class="search-match-name">${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
+                <span class="search-match-name"${plainName ? ` title="${plainName}"` : ''}>${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
                 ${finderUseBadge}
                 ${historyRemoveHtml}
             `;
