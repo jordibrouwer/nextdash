@@ -1,9 +1,18 @@
 /**
  * Unified toast/notification helper for dashboard, config, colors, and health pages.
+ *
+ * Queue behaviour: at most one notification is visible at a time. Rapid calls to
+ * show() are queued (max _QUEUE_MAX items; oldest pending is replaced when full).
+ * After a notification auto-hides, the next queued item appears after a short gap
+ * so the CSS fade-out completes before the next one fades in.
+ * An explicit hide() clears the queue and dismisses the current notification.
  */
 const AppNotification = {
     _timeout: null,
-    _progressTimeout: null,
+    _queue: [],
+    _busy: false,
+    _QUEUE_MAX: 3,
+    _GAP_MS: 260, // slightly longer than the 0.24s CSS fade-out
 
     ensureHost() {
         let host = document.getElementById('app-notification');
@@ -58,10 +67,24 @@ const AppNotification = {
     },
 
     show(message, type = 'success', options = {}) {
+        if (this._busy) {
+            if (this._queue.length >= this._QUEUE_MAX) {
+                // Replace the last queued item instead of growing unboundedly
+                this._queue[this._queue.length - 1] = { message, type, options };
+            } else {
+                this._queue.push({ message, type, options });
+            }
+            return;
+        }
+        this._showNow(message, type, options);
+    },
+
+    _showNow(message, type, options) {
+        this._busy = true;
         const host = this.ensureHost();
         const messageEl = this._messageEl(host);
         const actionEl = this._actionEl(host);
-        if (!host || !messageEl) return;
+        if (!host || !messageEl) { this._busy = false; return; }
 
         const normalized = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
         const persist = options.persist === true;
@@ -98,8 +121,41 @@ const AppNotification = {
                 : Number.isFinite(Number(options.duration))
                     ? Number(options.duration)
                     : 5000;
-            this._timeout = setTimeout(() => this.hide(), duration);
+            this._timeout = setTimeout(() => this._advance(), duration);
         }
+    },
+
+    // Called when the current notification's timer fires (auto-advance through queue).
+    // Does NOT clear the queue — only explicit hide() does that.
+    _advance() {
+        if (this._timeout) {
+            clearTimeout(this._timeout);
+            this._timeout = null;
+        }
+        const host = document.getElementById('app-notification');
+        if (host) {
+            host.classList.remove('show', 'success', 'error', 'warning', 'info', 'has-action', 'persist');
+            host.setAttribute('aria-hidden', 'true');
+            const actionEl = this._actionEl(host);
+            if (actionEl) {
+                actionEl.hidden = true;
+                actionEl.textContent = '';
+                actionEl.onclick = null;
+            }
+        }
+        const next = this._queue.shift();
+        if (next) {
+            // Keep _busy = true during the gap so new show() calls queue correctly
+            setTimeout(() => this._showNow(next.message, next.type, next.options), this._GAP_MS);
+        } else {
+            this._busy = false;
+        }
+    },
+
+    // Explicit dismiss: clears the queue and hides immediately.
+    hide() {
+        this._queue = [];
+        this._advance();
     },
 
     showErrorWithReload(message, options = {}) {
@@ -109,23 +165,6 @@ const AppNotification = {
             onAction: () => window.location.reload(),
         });
     },
-
-    hide() {
-        const host = document.getElementById('app-notification');
-        if (!host) return;
-        host.classList.remove('show', 'success', 'error', 'warning', 'info', 'has-action', 'persist');
-        host.setAttribute('aria-hidden', 'true');
-        const actionEl = this._actionEl(host);
-        if (actionEl) {
-            actionEl.hidden = true;
-            actionEl.textContent = '';
-            actionEl.onclick = null;
-        }
-        if (this._timeout) {
-            clearTimeout(this._timeout);
-            this._timeout = null;
-        }
-    }
 };
 
 if (typeof window !== 'undefined') {

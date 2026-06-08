@@ -122,3 +122,8 @@ body.no-animations .app-notification {
 body.no-animations .app-notification.show:not(.persist)::after {
     animation: none !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .app-notification { transform: none !important; transition: opacity 0.15s ease, visibility 0.15s ease !important; }
+    .app-notification.show:not(.persist)::after { animation: none !important; }
+}
