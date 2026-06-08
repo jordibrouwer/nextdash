@@ -543,11 +543,12 @@
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-semibold);
     line-height: 1.35;
-    color: color-mix(in srgb, var(--accent-primary) 78%, var(--text-primary));
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary));
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 65%, var(--border-primary));
     border-radius: 999px;
     padding: 0.3rem 0.65rem 0.3rem 0.5rem;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .theme-preview-badge::before {
@@ -557,7 +558,13 @@
     height: 0.45rem;
     border-radius: 50%;
     background: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    animation: previewDotPulse 2s ease-in-out infinite;
+}
+
+@keyframes previewDotPulse {
+    0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 30%, transparent); }
+    50%       { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent-primary) 10%, transparent); }
 }
 
 .theme-preview-badge.is-visible,
