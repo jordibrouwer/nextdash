@@ -133,6 +133,8 @@ type Settings struct {
 	InterleaveMode              bool                             `json:"interleaveMode"`              // Interleave mode for search (/ for shortcuts, direct input for fuzzy)
 	ShowPageTabs                bool                             `json:"showPageTabs"`                // Show page navigation tabs
 	AlwaysCollapseCategories    bool                             `json:"alwaysCollapseCategories"`    // Always collapse categories on load
+	HideEmptyCategories         bool                             `json:"hideEmptyCategories"`         // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated bool                             `json:"hideEmptyCategoriesMigrated"` // Migration marker for hide-empty default-on
 	EnableFuzzySuggestions      bool                             `json:"enableFuzzySuggestions"`      // Enable fuzzy suggestions in shortcut search
 	FuzzySuggestionsStartWith   bool                             `json:"fuzzySuggestionsStartWith"`   // Fuzzy suggestions start with query instead of contains
 	KeepSearchOpenWhenEmpty     bool                             `json:"keepSearchOpenWhenEmpty"`     // Keep search interface open when query is empty
@@ -403,6 +405,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InterleaveMode:              false,
 			ShowPageTabs:                true,
 			AlwaysCollapseCategories:    false,
+			HideEmptyCategories:         true,
 			EnableFuzzySuggestions:      false,
 			FuzzySuggestionsStartWith:   false,
 			KeepSearchOpenWhenEmpty:     false,
@@ -468,6 +471,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// One-time migration: remove existing custom themes and reset active custom theme to dark.
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
+	fs.migrateHideEmptyCategoriesDefaultOn()
 
 }
 
@@ -510,6 +514,35 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 
 	settings.ShowLinkPreviewCards = false
 	settings.LinkPreviewCardsOffMigrated = true
+
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(fs.settingsFile, out, 0644)
+}
+
+func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var settings Settings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return
+	}
+	if settings.HideEmptyCategoriesMigrated {
+		return
+	}
+
+	settings.HideEmptyCategories = true
+	settings.HideEmptyCategoriesMigrated = true
 
 	out, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
@@ -1214,6 +1247,7 @@ func (fs *FileStore) GetSettings() Settings {
 			InterleaveMode:            false,
 			ShowPageTabs:              true,
 			AlwaysCollapseCategories:  false,
+			HideEmptyCategories:       true,
 			EnableFuzzySuggestions:    false,
 			FuzzySuggestionsStartWith: false,
 			KeepSearchOpenWhenEmpty:   false,

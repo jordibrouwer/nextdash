@@ -3323,6 +3323,7 @@ class Dashboard {
         this.categories.forEach(category => {
             const id = String(category.id);
             const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
+            if (this.settings.hideEmptyCategories && categoryBookmarks.length === 0) return;
             const categoryElement = this.createCategoryElement(category, categoryBookmarks);
             columnBlocks.push(categoryElement);
         });

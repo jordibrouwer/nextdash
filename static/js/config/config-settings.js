@@ -1018,6 +1018,7 @@ class ConfigSettings {
         this.bindInfoButton('packed-columns-info-btn', 'config.packedColumnsInfoTitle', 'config.packedColumnsInfoMessage');
         this.bindInfoButton('show-page-names-in-tabs-info-btn', 'config.showPageNamesInTabsInfoTitle', 'config.showPageNamesInTabsInfoMessage');
         this.bindInfoButton('show-page-tabs-info-btn', 'config.showPageTabsInfoTitle', 'config.showPageTabsInfoMessage');
+        this.bindInfoButton('hide-empty-categories-info-btn', 'config.hideEmptyCategoriesInfoTitle', 'config.hideEmptyCategoriesInfoMessage');
         this.bindInfoButton('always-collapse-categories-info-btn', 'config.alwaysCollapseCategoriesInfoTitle', 'config.alwaysCollapseCategoriesInfoMessage');
         this.bindInfoButton('global-shortcuts-info-btn', 'config.globalShortcutsInfoTitle', 'config.globalShortcutsInfoMessage');
         this.bindInfoButton('show-tips-info-btn', 'config.showTipsInfoTitle', 'config.showTipsInfoMessage');
@@ -1312,6 +1313,15 @@ class ConfigSettings {
             showPageTabsCheckbox.checked = settings.showPageTabs;
             showPageTabsCheckbox.addEventListener('change', (e) => {
                 settings.showPageTabs = e.target.checked;
+            });
+        }
+
+        // Hide empty categories checkbox
+        const hideEmptyCategoriesCheckbox = document.getElementById('hide-empty-categories-checkbox');
+        if (hideEmptyCategoriesCheckbox) {
+            hideEmptyCategoriesCheckbox.checked = settings.hideEmptyCategories !== false;
+            hideEmptyCategoriesCheckbox.addEventListener('change', (e) => {
+                settings.hideEmptyCategories = e.target.checked;
             });
         }
 
@@ -1926,6 +1936,8 @@ class ConfigSettings {
         if (showPageNamesInTabsCheckbox) settings.showPageNamesInTabs = showPageNamesInTabsCheckbox.checked;
         const showPageTabsCheckbox = document.getElementById('show-page-tabs-checkbox');
         if (showPageTabsCheckbox) settings.showPageTabs = showPageTabsCheckbox.checked;
+        const hideEmptyCategoriesCheckbox2 = document.getElementById('hide-empty-categories-checkbox');
+        if (hideEmptyCategoriesCheckbox2) settings.hideEmptyCategories = hideEmptyCategoriesCheckbox2.checked;
         const alwaysCollapseCategoriesCheckbox = document.getElementById('always-collapse-categories-checkbox');
         if (alwaysCollapseCategoriesCheckbox) settings.alwaysCollapseCategories = alwaysCollapseCategoriesCheckbox.checked;
         if (enableCustomFaviconCheckbox) settings.enableCustomFavicon = enableCustomFaviconCheckbox.checked;
@@ -2393,6 +2405,7 @@ class ConfigSettings {
         watch('animations-enabled-checkbox', 'animationsEnabled');
         watch('show-page-tabs-checkbox', 'showPageTabs');
         watch('show-page-names-in-tabs-checkbox', 'showPageNamesInTabs');
+        watch('hide-empty-categories-checkbox', 'hideEmptyCategories');
         watch('always-collapse-categories-checkbox', 'alwaysCollapseCategories');
         watch('global-shortcuts-checkbox', 'globalShortcuts');
         watch('show-add-bookmark-button-checkbox', 'showAddBookmarkButton');
@@ -2466,6 +2479,7 @@ class ConfigSettings {
             language: 'en',
             interleaveMode: false,
             showPageTabs: true,
+            hideEmptyCategories: true,
             alwaysCollapseCategories: false,
             backgroundOpacity: 1,
             fontWeight: 'normal',
