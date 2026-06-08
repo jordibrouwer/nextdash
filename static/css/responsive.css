@@ -322,14 +322,15 @@
         align-items: center;
         gap: 0.75rem;
         margin-left: auto;
+        min-width: 0;
     }
-    
+
     .header {
         flex-direction: column;
         align-items: center;
         gap: 0.75rem;
     }
-    
+
     .header .nav-links,
     .header .header-links {
         order: -1;
@@ -337,9 +338,24 @@
         flex-direction: column;
         gap: 0.75rem;
     }
-    
+
     .page-navigation {
         gap: 0.125rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        min-width: 0;
+    }
+
+    .page-navigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .page-nav-btn {
+        scroll-snap-align: start;
+        flex-shrink: 0;
     }
     
     .page-nav-btn {
@@ -737,12 +753,12 @@
     }
     
     .page-navigation {
-        flex-wrap: wrap;
-        overflow-x: visible;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 0.125rem;
-        justify-content: center;
+        justify-content: flex-start;
     }
-    
+
     .page-nav-btn {
         padding: 0.25rem 0.35rem;
         font-size: var(--font-size-controls);

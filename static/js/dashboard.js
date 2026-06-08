@@ -906,11 +906,13 @@ class Dashboard {
 
         container.innerHTML = '';
 
+        let activeBtn = null;
         this.pages.forEach((page, index) => {
             const pageBtn = document.createElement('button');
             pageBtn.className = 'page-nav-btn';
             if (page.id === this.currentPageId) {
                 pageBtn.classList.add('active');
+                activeBtn = pageBtn;
             }
             this._renderPageTabContent(pageBtn, page, index);
             pageBtn.addEventListener('click', () => {
@@ -919,6 +921,7 @@ class Dashboard {
                 this.loadPageBookmarks(page.id);
                 this.updatePageTitle(page.name);
                 this.markInlineTipUsed('page_switch');
+                pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
             pageBtn.addEventListener('dblclick', (e) => {
                 if (!this.allowsPageTabInlineEdit()) return;
@@ -927,6 +930,9 @@ class Dashboard {
             });
             container.appendChild(pageBtn);
         });
+        if (activeBtn) {
+            requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+        }
         this.updateMiniStatusLine();
     }
 
