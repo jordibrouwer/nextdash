@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v47';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v48';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,38 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.12', 'June 2026', '2026-06-08', [
+                {
+                    title: 'Dashboard — mobile &amp; navigation',
+                    items: [
+                        { badge: 'new', text: '<strong>Compact date badge</strong> — a date pill (<code>8 jun · 14:03</code>) appears in the header on phone when the full date line is hidden; tap to open the date/weather popover.' },
+                        { badge: 'new', text: '<strong>Page swipe hint</strong> — a pulsing <code>← →</code> indicator below the tab strip hints at horizontal swipe when you have multiple pages on touch.' },
+                        { badge: 'new', text: '<strong>Scroll-snap tabs</strong> — page tabs scroll horizontally with snap on narrow screens; the active tab scrolls into view automatically.' },
+                        { badge: 'new', text: '<strong>Category name tooltip</strong> — long category titles truncate with an ellipsis; hover reveals the full name.' },
+                        { badge: 'fix', text: '<strong>Empty category text</strong> — the raw locale key was shown instead of the translated "no bookmarks yet" text when the key was missing.' },
+                    ]
+                },
+                {
+                    title: 'Dashboard — bookmarks &amp; editing',
+                    items: [
+                        { badge: 'new', text: '<strong>Letter avatar</strong> — bookmarks without a favicon show a styled initial-letter tile instead of a blank icon.' },
+                        { badge: 'new', text: '<strong>Inline edit improvements</strong> — long-press inline edit shows field-level validation errors, dismisses on <kbd>ESC</kbd> or click-outside, and warns before discarding unsaved changes.' },
+                        { badge: 'new', text: '<strong>Note line-clamp</strong> — bookmark preview-card notes are capped at three lines; longer notes are hidden with an ellipsis.' },
+                    ]
+                },
+                {
+                    title: 'Modals, feedback &amp; polish',
+                    items: [
+                        { badge: 'new', text: '<strong>ESC hint in modals</strong> — a subtle <kbd>ESC</kbd> to close hint appears below modal buttons on pointer devices.' },
+                        { badge: 'new', text: '<strong>Skeleton loader</strong> — the recent bookmarks modal (<code>*</code>) shows a shimmer skeleton while data loads.' },
+                        { badge: 'new', text: '<strong>Spring animations</strong> — search entrance and drag-and-drop placeholder use spring <code>cubic-bezier</code> curves for a smoother feel.' },
+                        { badge: 'new', text: '<strong>Theme preview badge</strong> — the "Preview" badge in the theme editor now uses an accent-color background with a pulsing dot.' },
+                        { badge: 'new', text: '<strong>Font upload icons</strong> — custom font status shows ✓ or ✕ after upload.' },
+                        { badge: 'new', text: '<strong>Focus-visible outlines</strong> — search pill buttons and history chips now show a visible focus ring on keyboard navigation.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.11', 'June 2026', '2026-06-10', [
                 {

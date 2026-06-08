@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased) — CSS injection, TLS verification, write-token coverage, security headers, body limits
+- [v2026.06.12 — June 2026](#v20260612--june-2026)
 - [v2026.06.11 — June 2026](#v20260611--june-2026)
 - [v2026.06.10 — June 2026](#v20260610--june-2026)
 - [v2026.06.9 — June 2026](#v2026069--june-2026)
@@ -46,6 +47,41 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix** **Request body limit** — non-multipart (JSON) request bodies are capped at 4 MB; upload and backup endpoints retain their own higher limits via `ParseMultipartForm`.
 - **fix** **SVG stored XSS** — uploaded SVG icon files are sanitized server-side before storage: `<script>` blocks, `on*` event-handler attributes (double/single/unquoted), and `javascript:` hrefs are stripped. Discovered via container black-box testing.
 - **fix** **Content-type spoofing on icon/favicon upload** — the server now validates uploaded image files by reading their magic bytes (`detectImageType`) instead of trusting the client-supplied `Content-Type` header; files with unrecognised signatures are rejected with 400.
+
+---
+
+## v2026.06.12 — June 2026
+
+**UX polish, mobile improvements, inline edit, accessibility** — date badge, swipe hint, scroll-snap tabs, skeleton loader, spring animations, letter avatar, ESC hint in modals, focus-visible outlines.
+
+### Dashboard — mobile & navigation
+
+- **new** **Compact date badge** — a compact date pill (`8 jun · 14:03`) appears in the header on phone when the full date/weather line is hidden; tap to open the date/weather popover.
+- **new** **Page swipe hint** — a pulsing `← →` indicator appears below the tab strip on touch devices when the dashboard has more than one page, hinting at horizontal swipe navigation.
+- **new** **Page tabs scroll-snap** — the tab strip scrolls horizontally with `scroll-snap-type: x mandatory` on narrow screens; the active tab scrolls into view automatically on load and page change.
+- **new** **Category name tooltip** — long category titles truncate with `text-overflow: ellipsis` and expose the full name via the native `title` attribute on hover.
+- **fix** **Empty category text** — the translation key `dashboard.emptyCategoryText` was displayed raw (as the key string) when the locale entry was absent; locale key added to EN/NL/DE/FR and the fallback guard now checks `value !== key`.
+
+### Dashboard — bookmarks & editing
+
+- **new** **Letter avatar** — bookmarks without a favicon show a styled initial-letter tile in the icon slot instead of a blank or broken icon placeholder.
+- **new** **Inline edit improvements** — the long-press inline edit form now shows field-level validation errors, dismisses on **ESC** or click-outside without saving, and warns before discarding unsaved changes.
+- **new** **Note line-clamp** — bookmark preview-card notes are capped at three lines (`-webkit-line-clamp: 3`); longer notes are hidden with an ellipsis.
+
+### Dashboard — modals & feedback
+
+- **new** **ESC to close hint** — a subtle `[ESC] to close` micro-hint appears below modal action buttons on pointer devices (hidden on touch); text is translated in EN / NL / DE / FR.
+- **new** **Skeleton loader** — the recent bookmarks modal (`*`) shows a shimmer skeleton while waiting for the bookmark list to load; content fills in on the next animation frame once data is ready.
+- **new** **Deep-link notification** — navigating to a deleted or missing category anchor (`#category-slug`) now shows a user-friendly notification (`deepLinkCategoryNotFound`) instead of silently falling back to the full page.
+- **new** **Paste URL hint** — when `Ctrl+V` on the dashboard cannot open the new-bookmark form (no active page or paste handler), a notification now explains what paste does instead of failing silently.
+
+### Animations & config polish
+
+- **new** **Spring search animation** — the search/command modal entrance uses a `cubic-bezier(0.16, 1, 0.3, 1)` spring curve; the exit is a quick `ease-in`; on slower devices the transition was previously imperceptible.
+- **new** **Spring drag placeholder** — the drag-and-drop insertion marker animates in with `cubic-bezier(0.34, 1.56, 0.64, 1)` (slight overshoot) instead of stopping abruptly.
+- **new** **Theme preview badge** — the "Preview" badge in the config theme editor now uses an accent-color background with a pulsing dot animation; easier to notice when a temporary theme is active.
+- **new** **Font upload status icons** — `#custom-font-status` in config shows a ✓ or ✕ icon alongside the status text after a custom font upload succeeds or fails.
+- **new** **Focus-visible outlines** — search mode pill buttons (Search / Commands / Finders) and history chips now show a 2 px `--accent-primary` outline on `:focus-visible`; there was previously no visible keyboard focus indicator on these controls.
 
 ---
 

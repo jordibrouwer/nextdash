@@ -264,11 +264,11 @@ The modal includes page, category, preview, tags, note, pin, and status options.
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled.
+With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The form shows field-level validation errors while you type. Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -778,11 +778,12 @@ nextDash switches to the mobile layout on narrow viewports (≤768px), portrait 
 | Feature | Phone / touch | Desktop |
 |---------|---------------|---------|
 | **Dashboard footer** | **Search** + **+ Bookmark** only | Search, Commands, Finders, Recent, Help, tag cloud `/`, rotating tips |
+| **Date/time** | Compact date badge in header (tap to open popover) | Full date/weather line in footer |
 | **Commands (`:`) & finders (`?`)** | Open Search → overlay tabs `>` / `:` / `?` | Footer buttons or keys |
 | **Recent bookmarks (`*`)** | `:open recent …` in command mode (or `*` with a keyboard) | Recent footer button or `*` |
 | **Cheat sheet (`!`)** | — | Footer Help or `!` / `F1` |
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
-| **Page tabs in header** | **Pages** overview sheet only | Tab strip + keys `1`–`9` |
+| **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
 | **Config tabs** | **General** (language, theme, layout) + **Help** | Bookmarks, pages, backup, stats, health, theme editor, tours, all settings |
 | **Link preview on hover** | Off | When enabled in settings |
