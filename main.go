@@ -110,5 +110,5 @@ func main() {
 	log.Printf("Dashboard: http://localhost:%s", port)
 	log.Printf("Configuration: http://localhost:%s/config", port)
 
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Fatal(http.ListenAndServe(":"+port, securityHeaders(r)))
 }

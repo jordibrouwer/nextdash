@@ -496,6 +496,9 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	pageIDStr := r.URL.Query().Get("page")
 	if pageIDStr == "" {
 		http.Error(w, "Page ID is required", http.StatusBadRequest)
@@ -578,6 +581,9 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w)
 	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 	var request struct {
@@ -671,6 +677,9 @@ func slugify(s string) string {
 func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w)
 	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
 		return
 	}
 
@@ -768,6 +777,9 @@ func (h *Handlers) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var request struct {
 		Page     int      `json:"page"`
 		Bookmark Bookmark `json:"bookmark"`
@@ -815,6 +827,9 @@ func (h *Handlers) GetFinders(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var finders []Finder
 	if err := json.NewDecoder(r.Body).Decode(&finders); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -827,6 +842,9 @@ func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	pageIDStr := r.URL.Query().Get("page")
 	if pageIDStr == "" {
 		http.Error(w, "Page ID is required", http.StatusBadRequest)
@@ -861,6 +879,9 @@ func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var pages []Page
 	if err := json.NewDecoder(r.Body).Decode(&pages); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -958,6 +979,9 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var settings Settings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -1008,6 +1032,9 @@ func (h *Handlers) GetColors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var colors ColorTheme
 	if err := json.NewDecoder(r.Body).Decode(&colors); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -1055,91 +1082,43 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(themesMap)
 }
 
+func renderThemeCSSBlock(selector string, tc ThemeColors) string {
+	s := sanitizeThemeColors(tc)
+	return `html[data-theme="` + selector + `"] body {
+    --text-primary: ` + s.TextPrimary + `;
+    --text-secondary: ` + s.TextSecondary + `;
+    --text-tertiary: ` + s.TextTertiary + `;
+    --background-primary: ` + s.BackgroundPrimary + `;
+    --background-secondary: ` + s.BackgroundSecondary + `;
+    --background-dots: ` + s.BackgroundDots + `;
+    --background-modal: ` + s.BackgroundModal + `;
+    --border-primary: ` + s.BorderPrimary + `;
+    --border-secondary: ` + s.BorderSecondary + `;
+    --accent-success: ` + s.AccentSuccess + `;
+    --accent-primary: ` + s.AccentSuccess + `;
+    --accent-warning: ` + s.AccentWarning + `;
+    --accent-error: ` + s.AccentError + `;
+}
+`
+}
+
 func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 	colors := h.store.GetColors()
 
 	w.Header().Set("Content-Type", "text/css")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 
-	css := `/* Custom Theme Variables - Loaded from colors.json */
-
-/* Light Theme Variables */
-html[data-theme="light"] body {
-    /* Text Colors */
-    --text-primary: ` + colors.Light.TextPrimary + `;
-    --text-secondary: ` + colors.Light.TextSecondary + `;
-    --text-tertiary: ` + colors.Light.TextTertiary + `;
-    
-    /* Background Colors */
-    --background-primary: ` + colors.Light.BackgroundPrimary + `;
-    --background-secondary: ` + colors.Light.BackgroundSecondary + `;
-    --background-dots: ` + colors.Light.BackgroundDots + `;
-    --background-modal: ` + colors.Light.BackgroundModal + `;
-    
-    /* Border Colors */
-    --border-primary: ` + colors.Light.BorderPrimary + `;
-    --border-secondary: ` + colors.Light.BorderSecondary + `;
-    
-    /* Accent Colors */
-    --accent-success: ` + colors.Light.AccentSuccess + `;
-    --accent-primary: ` + colors.Light.AccentSuccess + `;
-    --accent-warning: ` + colors.Light.AccentWarning + `;
-    --accent-error: ` + colors.Light.AccentError + `;
-}
-
-/* Dark Theme Variables */
-html[data-theme="dark"] body {
-    /* Text Colors */
-    --text-primary: ` + colors.Dark.TextPrimary + `;
-    --text-secondary: ` + colors.Dark.TextSecondary + `;
-    --text-tertiary: ` + colors.Dark.TextTertiary + `;
-    
-    /* Background Colors */
-    --background-primary: ` + colors.Dark.BackgroundPrimary + `;
-    --background-secondary: ` + colors.Dark.BackgroundSecondary + `;
-    --background-dots: ` + colors.Dark.BackgroundDots + `;
-    --background-modal: ` + colors.Dark.BackgroundModal + `;
-    
-    /* Border Colors */
-    --border-primary: ` + colors.Dark.BorderPrimary + `;
-    --border-secondary: ` + colors.Dark.BorderSecondary + `;
-    
-    /* Accent Colors */
-    --accent-success: ` + colors.Dark.AccentSuccess + `;
-    --accent-primary: ` + colors.Dark.AccentSuccess + `;
-    --accent-warning: ` + colors.Dark.AccentWarning + `;
-    --accent-error: ` + colors.Dark.AccentError + `;
-}
-`
+	css := "/* Custom Theme Variables - Loaded from colors.json */\n\n"
+	css += "/* Light Theme Variables */\n" + renderThemeCSSBlock("light", colors.Light) + "\n"
+	css += "/* Dark Theme Variables */\n" + renderThemeCSSBlock("dark", colors.Dark) + "\n"
 
 	// Add custom themes CSS
 	for themeID, themeColors := range colors.Custom {
-		customThemeCSS := `
-/* Custom Theme: ` + themeID + ` */
-html[data-theme="` + themeID + `"] body {
-    /* Text Colors */
-    --text-primary: ` + themeColors.TextPrimary + `;
-    --text-secondary: ` + themeColors.TextSecondary + `;
-    --text-tertiary: ` + themeColors.TextTertiary + `;
-    
-    /* Background Colors */
-    --background-primary: ` + themeColors.BackgroundPrimary + `;
-    --background-secondary: ` + themeColors.BackgroundSecondary + `;
-    --background-dots: ` + themeColors.BackgroundDots + `;
-    --background-modal: ` + themeColors.BackgroundModal + `;
-    
-    /* Border Colors */
-    --border-primary: ` + themeColors.BorderPrimary + `;
-    --border-secondary: ` + themeColors.BorderSecondary + `;
-    
-    /* Accent Colors */
-    --accent-success: ` + themeColors.AccentSuccess + `;
-    --accent-primary: ` + themeColors.AccentSuccess + `;
-    --accent-warning: ` + themeColors.AccentWarning + `;
-    --accent-error: ` + themeColors.AccentError + `;
-}
-`
-		css += customThemeCSS
+		safeID := sanitizeCSSIdent(themeID)
+		if safeID == "" {
+			continue
+		}
+		css += "/* Custom Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, themeColors) + "\n"
 	}
 
 	// Add built-in themes CSS
@@ -1149,26 +1128,11 @@ html[data-theme="` + themeID + `"] body {
 	}
 	sort.Strings(builtInThemeIDs)
 	for _, themeID := range builtInThemeIDs {
-		themeColors := colors.BuiltIn[themeID]
-		builtInThemeCSS := `
-/* Built-in Theme: ` + themeID + ` */
-html[data-theme="` + themeID + `"] body {
-    --text-primary: ` + themeColors.TextPrimary + `;
-    --text-secondary: ` + themeColors.TextSecondary + `;
-    --text-tertiary: ` + themeColors.TextTertiary + `;
-    --background-primary: ` + themeColors.BackgroundPrimary + `;
-    --background-secondary: ` + themeColors.BackgroundSecondary + `;
-    --background-dots: ` + themeColors.BackgroundDots + `;
-    --background-modal: ` + themeColors.BackgroundModal + `;
-    --border-primary: ` + themeColors.BorderPrimary + `;
-    --border-secondary: ` + themeColors.BorderSecondary + `;
-    --accent-success: ` + themeColors.AccentSuccess + `;
-    --accent-primary: ` + themeColors.AccentSuccess + `;
-    --accent-warning: ` + themeColors.AccentWarning + `;
-    --accent-error: ` + themeColors.AccentError + `;
-}
-`
-		css += builtInThemeCSS
+		safeID := sanitizeCSSIdent(themeID)
+		if safeID == "" {
+			continue
+		}
+		css += "/* Built-in Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]) + "\n"
 	}
 
 	w.Write([]byte(css))

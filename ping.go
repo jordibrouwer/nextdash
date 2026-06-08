@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -43,8 +42,7 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 	client := &http.Client{
 		Timeout: 3 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			DialContext: (&net.Dialer{Timeout: 2 * time.Second}).DialContext,
+			DialContext:           (&net.Dialer{Timeout: 2 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   2 * time.Second,
 			ResponseHeaderTimeout: 2 * time.Second,
 		},

@@ -15,6 +15,9 @@ import (
 
 // UploadFavicon handles favicon file uploads
 func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
@@ -83,6 +86,9 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 
 // UploadFont handles custom font file uploads
 func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
@@ -171,6 +177,9 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 
 // UploadIcon handles bookmark icon file uploads
 func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
@@ -248,6 +257,9 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 
 // UploadIconFromURL handles bookmark icon download from URL and stores it locally.
 func (h *Handlers) UploadIconFromURL(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	type iconURLRequest struct {
 		URL string `json:"url"`
 	}
