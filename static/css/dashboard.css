@@ -3062,4 +3062,37 @@ body.no-animations .bookmark-move-out {
     color: var(--accent-error);
 }
 
+@media (prefers-reduced-motion: reduce) {
+    /* Spring drag-and-drop placeholder → instant appear, no scale */
+    .bookmark-drop-placeholder,
+    .bookmarks-list.reorder-container .bookmark-drop-placeholder {
+        animation: none !important;
+        opacity: 0.65 !important;
+        transform: none !important;
+    }
+    /* Drag reorder row transitions */
+    .bookmarks-list.reorder-container .bookmark-link,
+    .bookmarks-list.reorder-container .bookmark-link.bookmark-move-in,
+    .bookmarks-list.reorder-container::after {
+        transition: none !important;
+        animation: none !important;
+    }
+    /* Skeleton shimmer → static bar */
+    .recent-bookmarks-skeleton-name,
+    .recent-bookmarks-skeleton-meta { animation: none !important; }
+    /* Page / category / bookmark entrance animations */
+    #dashboard-layout.page-transition,
+    .category.animate-enter,
+    .bookmark-link.animate-enter,
+    .bookmark-inline-form,
+    .bookmark-move-out { animation: none !important; transform: none !important; opacity: 1 !important; }
+    /* Decorative looping */
+    .health-link a { animation: none !important; }
+    .bookmark-link.bookmark-deep-link-focus { animation: none !important; }
+    .bookmark-link.bookmark-copy-flash::after { animation: none !important; }
+    .layout-launcher .bookmark-link.bookmark-pulse { animation: none !important; }
+    /* Date popover entrance */
+    .date-popover { animation: none !important; }
+}
+
 

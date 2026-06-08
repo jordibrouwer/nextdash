@@ -523,3 +523,14 @@ body.no-animations .modal-button.danger.selected {
     overflow-wrap: anywhere;
     width: 60%;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Modal open/close → keep opacity fade, remove scale + translate */
+    .modal { transform: none !important; transition: opacity 0.15s ease !important; }
+    .modal-overlay.show .modal { transform: none !important; }
+    .modal-button,
+    .modal-button:hover,
+    .modal-button.selected,
+    .modal-button.danger:hover,
+    .modal-button.danger.selected { transition: none !important; transform: none !important; }
+}

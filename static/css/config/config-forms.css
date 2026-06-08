@@ -1117,3 +1117,8 @@
     gap: 0.5rem;
     margin-top: 0.45rem;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Theme preview badge pulsing dot */
+    .theme-preview-badge::before { animation: none !important; }
+}

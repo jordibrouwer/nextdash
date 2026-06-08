@@ -901,3 +901,8 @@
         flex: 1 1 100%;
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Swipe hint → show statically, no pulse animation */
+    .page-swipe-hint { animation: none !important; opacity: 0.55 !important; }
+}

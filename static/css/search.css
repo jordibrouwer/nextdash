@@ -1043,3 +1043,19 @@ body.no-animations .search-history-remove {
     color: var(--accent-primary);
     border-color: var(--accent-primary);
 }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Spring entrance → opacity-only fade; remove scale/translate */
+    .search-container {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+    .shortcut-search.show .search-container {
+        transition: opacity 0.2s ease !important;
+    }
+    /* Decorative blink cursor */
+    .search-cursor { animation: none !important; opacity: 1 !important; }
+    /* Staggered hint segments */
+    .sfh-seg { animation: none !important; opacity: 1 !important; clip-path: none !important; }
+    .search-flow-hint { transition: opacity 0.15s ease !important; }
+}
