@@ -3725,7 +3725,9 @@ class ConfigManager {
         clearTimeout(this._savedFlashTimer);
         this._savedFlashTimer = setTimeout(() => {
             saveStatus.classList.remove('is-saved-flash');
-            if (!this.isDirty) {
+            if (this.isDirty) {
+                saveStatus.classList.add('is-hidden');
+            } else {
                 saveStatus.textContent = this.language?.t('config.savedShort') || 'Saved';
             }
         }, 1500);

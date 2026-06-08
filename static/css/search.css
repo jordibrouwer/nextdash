@@ -347,9 +347,20 @@
 
 /* No-match state */
 .search-match.search-no-match-header {
-    opacity: 0.5;
+    opacity: 0.9;
     cursor: default;
     pointer-events: none;
+    padding: 0.45rem 0.75rem;
+}
+
+.search-no-match-label {
+    color: var(--text-secondary);
+    margin-right: 0.3em;
+}
+
+.search-no-match-query {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
 }
 
 .search-match.search-no-match-header:hover,

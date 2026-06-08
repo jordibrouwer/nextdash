@@ -172,9 +172,13 @@ class Dashboard {
             showPinIcon: false,
             showNoteIcon: true
         };
-        // Ensure any active preview is removed when navigating away
-        window.addEventListener('beforeunload', () => {
+        // Ensure any active preview is removed when navigating away; warn if inline edit is active
+        window.addEventListener('beforeunload', (e) => {
             try { this.dismissBookmarkPreviewInteractions(); } catch (_e) {}
+            if (this.inlineEditingBookmarkIndex !== null) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         });
         this.searchComponent = null;
         this.statusMonitor = null;
@@ -3280,8 +3284,6 @@ class Dashboard {
         this.categories.forEach(category => {
             const id = String(category.id);
             const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
-            if (categoryBookmarks.length === 0) return;
-
             const categoryElement = this.createCategoryElement(category, categoryBookmarks);
             columnBlocks.push(categoryElement);
         });
@@ -3977,19 +3979,31 @@ class Dashboard {
             bookmarksList.appendChild(bookmarkElement);
         });
 
-        if (isSmartCollection && bookmarks.length === 0) {
+        if (bookmarks.length === 0) {
             const t = (key, fallback) => this.language?.t?.(key) || fallback;
-            const emptyMessages = {
-                '__smart_today__':     t('dashboard.smartEmptyToday',    'No bookmarks scheduled for today'),
-                '__smart_recent__':    t('dashboard.smartEmptyRecent',   'No bookmarks opened recently'),
-                '__smart_stale__':     t('dashboard.smartEmptyStale',    'No stale bookmarks'),
-                '__smart_most_used__': t('dashboard.smartEmptyMostUsed', 'No bookmarks opened yet'),
-            };
-            const msg = emptyMessages[category.id] || t('dashboard.smartEmptyGeneric', 'No bookmarks');
-            const emptyEl = document.createElement('div');
-            emptyEl.className = 'smart-collection-empty';
-            emptyEl.textContent = msg;
-            bookmarksList.appendChild(emptyEl);
+            if (isSmartCollection) {
+                const emptyMessages = {
+                    '__smart_today__':     t('dashboard.smartEmptyToday',    'No bookmarks scheduled for today'),
+                    '__smart_recent__':    t('dashboard.smartEmptyRecent',   'No bookmarks opened recently'),
+                    '__smart_stale__':     t('dashboard.smartEmptyStale',    'No stale bookmarks'),
+                    '__smart_most_used__': t('dashboard.smartEmptyMostUsed', 'No bookmarks opened yet'),
+                };
+                const msg = emptyMessages[category.id] || t('dashboard.smartEmptyGeneric', 'No bookmarks');
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'smart-collection-empty';
+                emptyEl.textContent = msg;
+                bookmarksList.appendChild(emptyEl);
+            } else if (!isTagFilterChunk) {
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'empty-state--category';
+                const addLabel = t('dashboard.emptyStateAddAction', '+ bookmark');
+                emptyEl.innerHTML = `<span class="empty-state--category-text">${t('dashboard.emptyCategoryText', 'no bookmarks')}</span>
+                    <button type="button" class="empty-state--category-btn">${addLabel}</button>`;
+                emptyEl.querySelector('button')?.addEventListener('click', () => {
+                    window.dashboardInstance?.quickAddWidget?.open();
+                });
+                bookmarksList.appendChild(emptyEl);
+            }
         }
 
         const categoryBody = document.createElement('div');

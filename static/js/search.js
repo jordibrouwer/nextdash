@@ -1102,8 +1102,10 @@ class SearchComponent {
                 const noMatchElement = document.createElement('div');
                 noMatchElement.className = 'search-match search-no-match-header';
                 noMatchElement.innerHTML = `
-                    <span class="search-match-shortcut">—</span>
-                    <span class="search-match-name">${t('dashboard.noMatchesFound', 'No matches found')}</span>
+                    <span class="search-match-name">
+                        <span class="search-no-match-label">${t('dashboard.noMatchesFound', 'No matches found')}</span>
+                        <span class="search-no-match-query">&ldquo;${this._escHtml(q.slice(0, 40))}&rdquo;</span>
+                    </span>
                 `;
                 matchesContainer.appendChild(noMatchElement);
 
