@@ -5400,6 +5400,36 @@ class Dashboard {
         this.enterBookmarkInlineEditFocusMode();
         nameInput.focus();
         nameInput.select();
+
+        // Global ESC: close the form even when focus has drifted outside it
+        const onGlobalEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            if (!document.contains(form)) { globalCleanup(); return; }
+            if (this.isModalOpen()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            globalCleanup();
+            this.cancelBookmarkInlineEdit(row, bookmarkRef);
+        };
+
+        // Click-outside: close on mousedown anywhere outside the form
+        const onGlobalClickOutside = (e) => {
+            if (!document.contains(form)) { globalCleanup(); return; }
+            if (form.contains(e.target)) return;
+            globalCleanup();
+            this.cancelBookmarkInlineEdit(row, bookmarkRef);
+        };
+
+        const globalCleanup = () => {
+            document.removeEventListener('keydown', onGlobalEsc, true);
+            document.removeEventListener('mousedown', onGlobalClickOutside, true);
+            if (this._inlineEditGlobalCleanup === globalCleanup) this._inlineEditGlobalCleanup = null;
+        };
+
+        this._inlineEditGlobalCleanup = globalCleanup;
+        document.addEventListener('keydown', onGlobalEsc, true);
+        // Delay click-outside to skip the mousedown that may have opened the form
+        setTimeout(() => document.addEventListener('mousedown', onGlobalClickOutside, true), 0);
     }
 
     async commitBookmarkInlineEdit(bookmarkRef, fields, row) {
@@ -5463,6 +5493,7 @@ class Dashboard {
         if (bookmarkRef.scope === 'current') {
             this.ensureBookmarkMutationSnapshot();
             Object.assign(bookmark, nextBookmarkState);
+            this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
             this.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
             this.renderDashboard();
@@ -5475,6 +5506,7 @@ class Dashboard {
             return;
         }
 
+        this._inlineEditGlobalCleanup?.();
         this.inlineEditingBookmarkIndex = null;
         await this.loadAllBookmarks();
         this.renderDashboard();
@@ -5656,6 +5688,7 @@ class Dashboard {
     }
 
     cancelBookmarkInlineEdit(row, bookmarkRef) {
+        this._inlineEditGlobalCleanup?.();
         this.leaveBookmarkInlineEditFocusMode();
         const bookmark = bookmarkRef?.bookmark;
         if (!bookmark) {
@@ -5809,6 +5842,7 @@ class Dashboard {
         const deletedBookmark = { ...bookmark };
         const deletedIndex = bookmarkIndex;
         this.bookmarks.splice(bookmarkIndex, 1);
+        this._inlineEditGlobalCleanup?.();
         this.inlineEditingBookmarkIndex = null;
         this.renderDashboard();
 
