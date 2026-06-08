@@ -374,7 +374,8 @@
         "searchHistoryClear": "Suchverlauf löschen",
         "removeSearchHistoryEntry": "Aus Suchverlauf entfernen",
         "deepLinkBookmarkNotFound": "Lesezeichen auf dieser Seite nicht gefunden (möglicherweise verschoben).",
-        "deepLinkCategoryNotFound": "Kategorie nicht gefunden — sie wurde möglicherweise gelöscht. Alle Lesezeichen werden angezeigt."
+        "deepLinkCategoryNotFound": "Kategorie nicht gefunden — sie wurde möglicherweise gelöscht. Alle Lesezeichen werden angezeigt.",
+        "pasteUrlHint": "Fügen Sie eine URL ein, um direkt ein Lesezeichen zu erstellen."
     },
     "health": {
         "pageTitle": "health beta",

@@ -48,6 +48,7 @@
         "emptyStateAddAction": "+ bladwijzer",
         "deepLinkBookmarkNotFound": "Bladwijzer niet gevonden op deze pagina (mogelijk verplaatst).",
         "deepLinkCategoryNotFound": "Categorie niet gevonden — mogelijk verwijderd. Alle bladwijzers worden getoond.",
+        "pasteUrlHint": "Plak een URL om direct een bookmark aan te maken.",
         "emptyPage": "Deze pagina is leeg",
         "emptyFresh": "Nog geen bladwijzers",
         "emptyStateCommandNew": "Toevoegen via commando",

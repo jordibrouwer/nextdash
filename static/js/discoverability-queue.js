@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const JOURNEY = ['whats-new', 'layout-modern-nudge'];
+    const JOURNEY = ['whats-new', 'layout-modern-nudge', 'paste-spotlight'];
     const SESSION_DEFER_KEY = 'nextdash:discoverability-deferred';
     const WHATS_NEW_STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
@@ -77,6 +77,16 @@
                 return window.LayoutModernNudge?.shouldOffer?.(dash) === true;
             }
 
+            if (id === 'paste-spotlight') {
+                if (typeof window.FeatureSpotlight !== 'function') return false;
+                if (dash.settings?.pasteUrlQuickAdd === false) return false;
+                if (window.matchMedia?.('(pointer: coarse)').matches) return false;
+                try {
+                    if (localStorage.getItem(window.FeatureSpotlight.DEFAULT_STORAGE_KEY)) return false;
+                } catch { return false; }
+                return true;
+            }
+
             return false;
         }
 
@@ -99,6 +109,8 @@
                 this.runWhatsNew(onComplete);
             } else if (itemId === 'layout-modern-nudge') {
                 this.runLayoutModernNudge(onComplete);
+            } else if (itemId === 'paste-spotlight') {
+                this.runPasteSpotlight(onComplete);
             }
         }
 
@@ -121,6 +133,42 @@
                     this._activeClose = null;
                 },
             });
+        }
+
+        runPasteSpotlight(onComplete) {
+            const dash = this.dashboard;
+            if (!this.shouldShowItem('paste-spotlight')) {
+                onComplete();
+                return;
+            }
+
+            const spotlight = new window.FeatureSpotlight({
+                language: dash.language,
+                onTry: () => {
+                    const handler = dash.searchComponent?.commandsComponent?.newCommandHandler;
+                    if (handler) handler.openModal();
+                },
+                onDismiss: () => {
+                    if (dash.pasteSpotlight === spotlight) dash.pasteSpotlight = null;
+                    onComplete();
+                },
+                queueMeta: { current: JOURNEY.indexOf('paste-spotlight') + 1, total: JOURNEY.length },
+                onQueueDefer: () => this.deferRemaining(),
+            });
+
+            this._activeClose = () => spotlight.dismiss(false);
+            const started = spotlight.show(1000, {
+                canShow: () => {
+                    if (dash.onboardingStartedInSession) return false;
+                    if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
+                    return true;
+                },
+            });
+            if (!started) {
+                onComplete();
+                return;
+            }
+            dash.pasteSpotlight = spotlight;
         }
 
         runLayoutModernNudge(onComplete) {

@@ -1842,7 +1842,12 @@ class Dashboard {
             e.preventDefault();
 
             const handler = this.searchComponent?.commandsComponent?.newCommandHandler;
-            if (!handler) return;
+            if (!handler) {
+                const msg = this.language?.t?.('dashboard.pasteUrlHint')
+                    || 'Paste a URL to directly create a bookmark.';
+                this.showNotification(msg, 'info', { duration: 4000 });
+                return;
+            }
 
             handler.openModal({ url: trimmed });
         });

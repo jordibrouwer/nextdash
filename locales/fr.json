@@ -374,7 +374,8 @@
         "searchHistoryClear": "Effacer l'historique de recherche",
         "removeSearchHistoryEntry": "Retirer de l'historique de recherche",
         "deepLinkBookmarkNotFound": "Favori introuvable sur cette page (peut-être déplacé).",
-        "deepLinkCategoryNotFound": "Catégorie introuvable — elle a peut-être été supprimée. Affichage de tous les favoris."
+        "deepLinkCategoryNotFound": "Catégorie introuvable — elle a peut-être été supprimée. Affichage de tous les favoris.",
+        "pasteUrlHint": "Collez une URL pour créer directement un favori."
     },
     "health": {
         "pageTitle": "health beta",
