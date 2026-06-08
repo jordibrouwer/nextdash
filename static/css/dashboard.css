@@ -979,7 +979,10 @@ body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
     margin-top: 0.35rem;
     color: var(--text-tertiary);
     font-size: 0.85rem;
-    display: none;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
 }
 
 /* Tag autocomplete dropdown (appended to body by tag-autocomplete.js) */
