@@ -1459,10 +1459,25 @@ body[data-density-mode="dense"] .dashboard-grid {
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.05em;
     color: var(--text-tertiary);
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
 }
 
 .category-title::before {
     content: '// ';
+    flex-shrink: 0;
+}
+
+.category-title-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.category-chevron {
+    flex-shrink: 0;
 }
 
 /* ─── Category collapse — grid-template-rows transition ──────── */

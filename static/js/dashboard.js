@@ -3891,6 +3891,7 @@ class Dashboard {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'category-title-name';
         nameSpan.textContent = category.name.toLowerCase();
+        nameSpan.title = category.name;
 
         if (this.isUploadedCategoryIcon(categoryIcon)) {
             const iconImage = document.createElement('img');
