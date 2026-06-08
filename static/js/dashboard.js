@@ -4694,6 +4694,13 @@ class Dashboard {
             iconSlot.className = 'bookmark-icon-slot';
             lead.appendChild(iconSlot);
 
+            const createLetterAvatar = () => {
+                const letter = document.createElement('span');
+                letter.className = 'bookmark-icon-letter';
+                letter.textContent = (bookmark.name || '?').charAt(0);
+                return letter;
+            };
+
             if (bookmark.icon) {
                 const placeholder = document.createElement('span');
                 placeholder.className = 'icon-placeholder';
@@ -4709,6 +4716,7 @@ class Dashboard {
                 iconImg.addEventListener('error', () => {
                     placeholder.remove();
                     iconImg.remove();
+                    iconSlot.appendChild(createLetterAvatar());
                 });
                 iconSlot.appendChild(iconImg);
                 try {
@@ -4721,6 +4729,8 @@ class Dashboard {
                 } catch (e) {
                     // ignore
                 }
+            } else {
+                iconSlot.appendChild(createLetterAvatar());
             }
         }
         row.appendChild(lead);

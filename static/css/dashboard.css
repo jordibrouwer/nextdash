@@ -1895,6 +1895,24 @@ a.bookmark-open:hover {
     flex-shrink: 0;
 }
 
+.bookmark-icon-letter {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-secondary, rgba(128, 128, 128, 0.15));
+    color: var(--text-tertiary, currentColor);
+    font-size: 0.6em;
+    font-weight: 600;
+    border-radius: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
 .bookmark-link.bookmark-inline-editing {
     display: block;
     padding: 0.35rem 0;
