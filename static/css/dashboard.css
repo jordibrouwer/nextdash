@@ -493,6 +493,10 @@ body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
     gap: 0.25rem;
 }
 
+.page-swipe-hint {
+    display: none;
+}
+
 .page-nav-btn {
     padding: 0.4rem 0.6rem;
     font-size: var(--font-size-controls);

@@ -357,10 +357,30 @@
         scroll-snap-align: start;
         flex-shrink: 0;
     }
-    
+
     .page-nav-btn {
         padding: 0.3rem 0.45rem;
         font-size: var(--font-size-controls);
+    }
+
+    .page-swipe-hint {
+        display: flex;
+        align-items: center;
+        font-size: calc(var(--font-size-controls) * 0.82);
+        color: var(--text-tertiary);
+        white-space: nowrap;
+        flex-shrink: 0;
+        opacity: 0;
+        animation: swipeHintPulse 2.4s ease-in-out 0.6s 3 forwards;
+        pointer-events: none;
+        letter-spacing: 0.04em;
+    }
+
+    @keyframes swipeHintPulse {
+        0%   { opacity: 0; }
+        25%  { opacity: 0.7; }
+        75%  { opacity: 0.7; }
+        100% { opacity: 0; }
     }
     
     .config-link a {

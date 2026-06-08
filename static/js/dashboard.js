@@ -1567,6 +1567,19 @@ class Dashboard {
         } else {
             console.warn('SwipeNavigation not found. Make sure swipe-navigation.js is loaded.');
         }
+        this._updatePageSwipeHint();
+    }
+
+    _updatePageSwipeHint() {
+        const hint = document.getElementById('page-swipe-hint');
+        if (!hint) return;
+        const multiPage = Array.isArray(this.pages) && this.pages.length > 1;
+        const touch = this.isCoarsePointer();
+        if (multiPage && touch) {
+            hint.removeAttribute('hidden');
+        } else {
+            hint.setAttribute('hidden', '');
+        }
     }
 
     initializeHyprMode() {
