@@ -147,7 +147,7 @@ class ConfigGeneralLayers {
         const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
         if (iconsItem) essentials.appendChild(iconsItem);
 
-        ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'show-page-tabs-checkbox'].forEach((id) => {
+        ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'hide-empty-categories-checkbox', 'show-page-tabs-checkbox'].forEach((id) => {
             const item = display.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
             if (item) essentials.appendChild(item);
         });
