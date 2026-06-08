@@ -1688,7 +1688,8 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     border-radius: 4px;
     opacity: 0.45;
     pointer-events: none;
-    animation: placeholderIn 120ms ease-out forwards;
+    transform-origin: top center;
+    animation: placeholderIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Subtle highlight on all reorder containers while dragging */
@@ -2288,19 +2289,18 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     border-radius: 4px;
     opacity: 0.65;
     background: color-mix(in srgb, var(--background-primary) 85%, var(--text-secondary) 15%);
-    animation: placeholderIn 120ms ease-out forwards;
+    transform-origin: top center;
+    animation: placeholderIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 @keyframes placeholderIn {
     from {
         opacity: 0;
-        transform: scaleY(0.4);
-        transform-origin: top center;
+        transform: scaleY(0.3);
     }
     to {
         opacity: 0.65;
         transform: scaleY(1);
-        transform-origin: top center;
     }
 }
 
