@@ -51,6 +51,85 @@ func TestFindURLDuplicateGroupsUsesCanonicalKey(t *testing.T) {
 	}
 }
 
+func TestMergeBookmarkMetadataCombinesUsageAndFields(t *testing.T) {
+	t.Parallel()
+
+	keeper := Bookmark{Name: "Keeper", URL: "https://example.com", OpenCount: 2, Tags: []string{"work"}}
+	sources := []Bookmark{
+		{OpenCount: 5, Pinned: true, Note: "extra", Tags: []string{"home", "work"}, Shortcut: "ex"},
+		{Icon: "icon.png", PreviewTitle: "Preview", LastOpened: 9000},
+	}
+	mergeBookmarkMetadata(&keeper, sources)
+
+	if keeper.OpenCount != 7 {
+		t.Fatalf("OpenCount = %d, want 7", keeper.OpenCount)
+	}
+	if !keeper.Pinned {
+		t.Fatal("expected pinned")
+	}
+	if keeper.Shortcut != "ex" {
+		t.Fatalf("Shortcut = %q, want ex", keeper.Shortcut)
+	}
+	if keeper.Note != "extra" {
+		t.Fatalf("Note = %q", keeper.Note)
+	}
+	if keeper.Icon != "icon.png" {
+		t.Fatalf("Icon = %q", keeper.Icon)
+	}
+	if keeper.PreviewTitle != "Preview" {
+		t.Fatalf("PreviewTitle = %q", keeper.PreviewTitle)
+	}
+	if keeper.LastOpened != 9000 {
+		t.Fatalf("LastOpened = %d", keeper.LastOpened)
+	}
+	if len(keeper.Tags) != 2 {
+		t.Fatalf("tags = %v, want [home work]", keeper.Tags)
+	}
+}
+
+func TestMergeDuplicatesMergesIntoKeeperAndRemovesSources(t *testing.T) {
+	t.Parallel()
+
+	store := NewStore()
+	h := NewHandlers(store, embeddedFiles)
+
+	store.SaveBookmarksByPage(1, []Bookmark{
+		{Name: "Keeper", URL: "https://example.com", OpenCount: 2, Tags: []string{"work"}},
+		{Name: "Dup", URL: "https://example.com/", OpenCount: 5, Pinned: true, Note: "from dup", Tags: []string{"home"}, Shortcut: "ex"},
+	})
+	store.SaveBookmarksByPage(2, []Bookmark{
+		{Name: "Other", URL: "https://example.com", Icon: "icon.png", PreviewTitle: "Title"},
+	})
+
+	body, _ := json.Marshal(map[string]interface{}{
+		"targetPageId":  1,
+		"targetIndex":   0,
+		"sourcePageIds": []int{1, 2},
+		"sourceIndices": []int{1, 0},
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/health/merge-duplicates", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.MergeDuplicates(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+
+	page1 := store.GetBookmarksByPage(1)
+	if len(page1) != 1 {
+		t.Fatalf("page 1 len = %d, want 1", len(page1))
+	}
+	k := page1[0]
+	if k.OpenCount != 7 {
+		t.Fatalf("OpenCount = %d, want 7", k.OpenCount)
+	}
+	if !k.Pinned || k.Shortcut != "ex" || k.Icon != "icon.png" {
+		t.Fatalf("merged keeper = %+v", k)
+	}
+	if len(store.GetBookmarksByPage(2)) != 0 {
+		t.Fatal("expected page 2 bookmark removed")
+	}
+}
+
 func TestSaveBookmarksRejectsDuplicateURLsInPayload(t *testing.T) {
 	t.Parallel()
 

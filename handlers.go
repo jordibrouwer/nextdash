@@ -1857,16 +1857,49 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "sourcePageIds and sourceIndices length mismatch", http.StatusBadRequest)
 		return
 	}
+	if req.TargetPageID <= 0 {
+		http.Error(w, "Invalid target page ID", http.StatusBadRequest)
+		return
+	}
 
-	mergedCount := 0
+	targetBookmarks := h.store.GetBookmarksByPage(req.TargetPageID)
+	if req.TargetIndex < 0 || req.TargetIndex >= len(targetBookmarks) {
+		http.Error(w, "Invalid target index", http.StatusBadRequest)
+		return
+	}
 
+	keeper := targetBookmarks[req.TargetIndex]
+	keeperKey := canonicalBookmarkURLKey(keeper.URL)
+	if keeperKey == "" {
+		http.Error(w, "Invalid target bookmark URL", http.StatusBadRequest)
+		return
+	}
+
+	sources := make([]Bookmark, 0, len(req.SourcePageIDs))
 	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
 	for i := 0; i < len(req.SourcePageIDs); i++ {
-		deletes = append(deletes, mergeDeleteRef{
-			pageID: req.SourcePageIDs[i],
-			index:  req.SourceIndices[i],
-		})
+		pageID := req.SourcePageIDs[i]
+		index := req.SourceIndices[i]
+		if pageID == req.TargetPageID && index == req.TargetIndex {
+			continue
+		}
+		bookmarks := h.store.GetBookmarksByPage(pageID)
+		if index < 0 || index >= len(bookmarks) {
+			http.Error(w, "Invalid source index", http.StatusBadRequest)
+			return
+		}
+		src := bookmarks[index]
+		if canonicalBookmarkURLKey(src.URL) != keeperKey {
+			http.Error(w, "Source URL does not match target", http.StatusBadRequest)
+			return
+		}
+		sources = append(sources, src)
+		deletes = append(deletes, mergeDeleteRef{pageID: pageID, index: index})
 	}
+
+	merged := keeper
+	mergeBookmarkMetadata(&merged, sources)
+
 	sort.Slice(deletes, func(i, j int) bool {
 		if deletes[i].pageID != deletes[j].pageID {
 			return deletes[i].pageID < deletes[j].pageID
@@ -1874,15 +1907,28 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		return deletes[i].index > deletes[j].index
 	})
 
-	// Delete sources highest index first per page so indices stay valid.
+	targetIndex := req.TargetIndex
+	mergedCount := 0
 	for _, del := range deletes {
-		bookmarks := h.store.GetBookmarksByPage(del.pageID)
-		if del.index >= 0 && del.index < len(bookmarks) {
-			bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-			h.store.SaveBookmarksByPage(del.pageID, bookmarks)
-			mergedCount++
+		if del.pageID == req.TargetPageID && del.index < targetIndex {
+			targetIndex--
 		}
+		bookmarks := h.store.GetBookmarksByPage(del.pageID)
+		if del.index < 0 || del.index >= len(bookmarks) {
+			continue
+		}
+		bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
+		h.store.SaveBookmarksByPage(del.pageID, bookmarks)
+		mergedCount++
 	}
+
+	targetBookmarks = h.store.GetBookmarksByPage(req.TargetPageID)
+	if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
+		http.Error(w, "Target bookmark missing after merge", http.StatusInternalServerError)
+		return
+	}
+	targetBookmarks[targetIndex] = merged
+	h.store.SaveBookmarksByPage(req.TargetPageID, targetBookmarks)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
