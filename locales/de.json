@@ -994,6 +994,7 @@
         "backupInfo": "Lädt eine ZIP-Datei mit Lesezeichen, Seiten, Kategorien, Einstellungen und benutzerdefinierten Themen herunter.",
         "createBackup": "Backup erstellen",
         "backupCreated": "Backup erfolgreich erstellt!",
+        "lastBackupDate": "Letztes Backup: {date}",
         "backupInProgress": "Wird erstellt…",
         "backupError": "Backup konnte nicht erstellt werden. Bitte erneut versuchen.",
         "importDescription": "Daten importieren",

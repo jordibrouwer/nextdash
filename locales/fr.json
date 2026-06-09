@@ -994,6 +994,7 @@
         "backupInfo": "Télécharge un fichier ZIP contenant vos favoris, pages, catégories, paramètres et thèmes personnalisés.",
         "createBackup": "Créer une sauvegarde",
         "backupCreated": "Sauvegarde créée avec succès !",
+        "lastBackupDate": "Dernière sauvegarde : {date}",
         "backupInProgress": "Création…",
         "backupError": "Échec de création de la sauvegarde. Réessayez.",
         "importDescription": "Importer vos données",

@@ -997,6 +997,7 @@
         "backupInfo": "Dit downloadt een ZIP-bestand met al uw bladwijzers, pagina's, categorieën, instellingen en aangepaste thema's.",
         "createBackup": "Back-up maken",
         "backupCreated": "Back-up succesvol gemaakt!",
+        "lastBackupDate": "Laatste back-up: {date}",
         "backupInProgress": "Bezig…",
         "backupError": "Kan back-up niet maken. Probeer het opnieuw.",
         "importDescription": "Gegevens importeren",

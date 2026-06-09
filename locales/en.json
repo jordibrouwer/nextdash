@@ -995,6 +995,7 @@
         "backupInfo": "This will download a ZIP file containing all your bookmarks, pages, categories, settings, and custom themes.",
         "createBackup": "Create Backup",
         "backupCreated": "Backup created successfully!",
+        "lastBackupDate": "Last backup: {date}",
         "backupInProgress": "Creating…",
         "backupError": "Failed to create backup. Please try again.",
         "importDescription": "Import your data",

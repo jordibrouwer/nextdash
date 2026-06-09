@@ -79,6 +79,13 @@
     margin-top: 0.15rem;
 }
 
+.backups-last-date {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.4;
+}
+
 /* Browser HTML import confirm modal */
 .browser-import-modal {
     display: flex;

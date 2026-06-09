@@ -41,6 +41,24 @@ class ConfigBackup {
         }
     }
 
+    updateLastBackupDisplay() {
+        const el = document.getElementById('backup-last-date');
+        if (!el) return;
+        const iso = localStorage.getItem('nextdash-last-backup');
+        if (!iso) {
+            el.hidden = true;
+            return;
+        }
+        const date = new Date(iso);
+        if (isNaN(date.getTime())) { el.hidden = true; return; }
+        const formatted = new Intl.DateTimeFormat(undefined, {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        }).format(date);
+        el.textContent = (this.t('config.lastBackupDate') || 'Last backup: {date}').replace('{date}', formatted);
+        el.hidden = false;
+    }
+
     /**
      * Initialize the backup functionality
      */
@@ -49,6 +67,7 @@ class ConfigBackup {
         if (backupBtn) {
             backupBtn.addEventListener('click', () => this.createBackup());
         }
+        this.updateLastBackupDisplay();
 
         // Backup info button
         const backupInfoBtn = document.getElementById('backup-info-btn');
@@ -163,6 +182,8 @@ class ConfigBackup {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
+            localStorage.setItem('nextdash-last-backup', now.toISOString());
+            this.updateLastBackupDisplay();
             if (typeof configManager !== 'undefined' && configManager.ui) {
                 configManager.ui.showNotification(this.t('config.backupCreated') || 'Backup created successfully!', 'success');
             }
