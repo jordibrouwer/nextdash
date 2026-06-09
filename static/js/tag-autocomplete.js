@@ -46,10 +46,19 @@ class TagAutocomplete {
 
     _handleInput() {
         const token = this._currentToken();
-        if (!token) { this._close(); return; }
-
         const known = (this._getTagsFn() || []).map(t => t.toLowerCase());
         const used = this._usedTags();
+
+        if (!token) {
+            const candidates = known
+                .filter(t => !used.includes(t))
+                .sort((a, b) => a.localeCompare(b))
+                .slice(0, 8);
+            if (candidates.length === 0) { this._close(); return; }
+            this._open(candidates, '');
+            return;
+        }
+
         const candidates = known.filter(t =>
             t.startsWith(token) && t !== token && !used.includes(t)
         ).sort((a, b) => a.localeCompare(b)).slice(0, 8);
@@ -107,12 +116,15 @@ class TagAutocomplete {
             li.setAttribute('role', 'option');
             li.dataset.tag = tag;
 
-            // Bold the matching prefix
-            const bold = document.createElement('strong');
-            bold.textContent = tag.slice(0, token.length);
-            const rest = document.createTextNode(tag.slice(token.length));
-            li.appendChild(bold);
-            li.appendChild(rest);
+            if (token) {
+                // Bold the matching prefix
+                const bold = document.createElement('strong');
+                bold.textContent = tag.slice(0, token.length);
+                li.appendChild(bold);
+                li.appendChild(document.createTextNode(tag.slice(token.length)));
+            } else {
+                li.textContent = tag;
+            }
 
             li.addEventListener('mousedown', (e) => {
                 e.preventDefault(); // keep focus on input
