@@ -34,7 +34,7 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 		t.Fatal("expected false on fresh store")
 	}
 
-	fs.prefetchDefaultBookmarkIcons = true
+	fs.markDefaultBookmarkIconPrefetch()
 	if !fs.TakeDefaultBookmarkIconPrefetch() {
 		t.Fatal("expected true when flag set")
 	}

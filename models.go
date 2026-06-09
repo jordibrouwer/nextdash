@@ -288,6 +288,15 @@ type Store interface {
 	ResetAllData() error
 	// TakeDefaultBookmarkIconPrefetch reports whether default bookmarks were just created and clears the flag.
 	TakeDefaultBookmarkIconPrefetch() bool
+	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and icon is empty.
+	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
+}
+
+// PrefetchIconUpdate is a merge-safe favicon write keyed by bookmark index and canonical URL.
+type PrefetchIconUpdate struct {
+	Index  int
+	URLKey string
+	Icon   string
 }
 
 type FileStore struct {
@@ -346,7 +355,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 		}
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
 		os.WriteFile(mainPageBookmarksFile, data, 0644)
-		fs.prefetchDefaultBookmarkIcons = true
+		fs.markDefaultBookmarkIconPrefetch()
 	}
 
 	// Initialize settings if file doesn't exist
@@ -1182,6 +1191,12 @@ func (fs *FileStore) ResetAllData() error {
 	return nil
 }
 
+func (fs *FileStore) markDefaultBookmarkIconPrefetch() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	fs.prefetchDefaultBookmarkIcons = true
+}
+
 func (fs *FileStore) TakeDefaultBookmarkIconPrefetch() bool {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
@@ -1190,6 +1205,63 @@ func (fs *FileStore) TakeDefaultBookmarkIconPrefetch() bool {
 	}
 	fs.prefetchDefaultBookmarkIcons = false
 	return true
+}
+
+func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int {
+	if len(updates) == 0 {
+		return 0
+	}
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return 0
+	}
+
+	var pageWithBookmarks PageWithBookmarks
+	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		return 0
+	}
+	bookmarks := pageWithBookmarks.Bookmarks
+	if len(bookmarks) == 0 {
+		return 0
+	}
+
+	applied := 0
+	for _, update := range updates {
+		safeIcon := sanitizeBookmarkIcon(update.Icon)
+		if safeIcon == "" || update.Index < 0 || update.Index >= len(bookmarks) {
+			continue
+		}
+		if canonicalBookmarkURLKey(bookmarks[update.Index].URL) != update.URLKey {
+			continue
+		}
+		if strings.TrimSpace(bookmarks[update.Index].Icon) != "" {
+			continue
+		}
+		bookmarks[update.Index].Icon = safeIcon
+		bookmarks[update.Index].PageID = pageID
+		applied++
+	}
+
+	if applied == 0 {
+		return 0
+	}
+
+	pageWithBookmarks.Bookmarks = bookmarks
+	newData, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
+	if err != nil {
+		return 0
+	}
+	if err := os.WriteFile(filePath, newData, 0644); err != nil {
+		return 0
+	}
+	return applied
 }
 
 func (fs *FileStore) DeletePage(pageID int) error {

@@ -140,8 +140,9 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	}
 
 	type iconResult struct {
-		index int
-		icon  string
+		index  int
+		urlKey string
+		icon   string
 	}
 
 	var wg sync.WaitGroup
@@ -155,30 +156,29 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 		if urlStr == "" {
 			continue
 		}
+		urlKey := canonicalBookmarkURLKey(urlStr)
 		wg.Add(1)
-		go func(idx int, bookmarkURL string) {
+		go func(idx int, bookmarkURL, key string) {
 			defer wg.Done()
 			if icon := h.fetchAndStoreBookmarkIcon(bookmarkURL); icon != "" {
-				results <- iconResult{index: idx, icon: icon}
+				results <- iconResult{index: idx, urlKey: key, icon: icon}
 			}
-		}(i, urlStr)
+		}(i, urlStr, urlKey)
 	}
 
 	wg.Wait()
 	close(results)
 
-	changed := false
+	updates := make([]PrefetchIconUpdate, 0, len(bookmarks))
 	for result := range results {
-		safeIcon := sanitizeBookmarkIcon(result.icon)
-		if safeIcon == "" {
-			continue
-		}
-		bookmarks[result.index].Icon = safeIcon
-		changed = true
+		updates = append(updates, PrefetchIconUpdate{
+			Index:  result.index,
+			URLKey: result.urlKey,
+			Icon:   result.icon,
+		})
 	}
 
-	if changed {
-		h.store.SaveBookmarksByPage(pageID, bookmarks)
-		log.Printf("nextDash: prefetched favicons for default bookmarks on page %d", pageID)
+	if applied := h.store.MergePrefetchBookmarkIcons(pageID, updates); applied > 0 {
+		log.Printf("nextDash: prefetched favicons for %d default bookmarks on page %d", applied, pageID)
 	}
 }
