@@ -1524,6 +1524,27 @@
                     </div>
                 </div>
 
+                <div class="backups-section">
+                    <h3 class="section-title" data-i18n="config.settingsSection">Settings</h3>
+                    <div class="backups-actions-row">
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.settingsExportDescription">Export settings</p>
+                            <p class="backups-action-hint" data-i18n="config.settingsExportHint">Downloads your current settings as JSON. Does not include bookmarks, pages, or themes.</p>
+                            <div class="backups-action-buttons">
+                                <button id="settings-export-btn" class="btn btn-secondary btn-small" data-i18n="config.settingsExportBtn">Export Settings</button>
+                            </div>
+                        </div>
+                        <div class="backups-action-item">
+                            <p class="backups-action-label" data-i18n="config.settingsImportDescription">Import settings</p>
+                            <p class="backups-action-hint" data-i18n="config.settingsImportHint">Overwrites current settings with a previously exported JSON file.</p>
+                            <div class="backups-action-buttons">
+                                <input type="file" id="settings-import-file" accept=".json" style="display: none;">
+                                <button id="settings-import-btn" class="btn btn-danger btn-small" data-i18n="config.settingsImportBtn">Import Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             </div>
 

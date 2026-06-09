@@ -98,6 +98,24 @@ class ConfigBackup {
             });
         }
 
+        // Settings export
+        const settingsExportBtn = document.getElementById('settings-export-btn');
+        if (settingsExportBtn) {
+            settingsExportBtn.addEventListener('click', () => this.exportSettings());
+        }
+
+        // Settings import
+        const settingsImportBtn = document.getElementById('settings-import-btn');
+        const settingsImportFile = document.getElementById('settings-import-file');
+        if (settingsImportBtn && settingsImportFile) {
+            settingsImportBtn.addEventListener('click', () => settingsImportFile.click());
+            settingsImportFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) this.handleSettingsImportFile(file);
+                e.target.value = '';
+            });
+        }
+
         // Import info button
         const importInfoBtn = document.getElementById('import-info-btn');
         if (importInfoBtn) {
@@ -658,6 +676,84 @@ class ConfigBackup {
                     : (rawMessage || this.t('config.importError'));
                 configManager.ui.showNotification(displayMessage, 'error');
             }
+        }
+    }
+
+    async exportSettings() {
+        const btn = document.getElementById('settings-export-btn');
+        this.setButtonLoading(btn, true, this.t('config.settingsExportInProgress') || 'Exporting…');
+        try {
+            const response = await fetch('/api/settings', { method: 'GET' });
+            if (!response.ok) throw new Error(response.statusText);
+            const settings = await response.json();
+            const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `nextDash-settings-${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsExportSuccess') || 'Settings exported.', 'success');
+            }
+        } catch {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsExportError') || 'Failed to export settings.', 'error');
+            }
+        } finally {
+            this.setButtonLoading(btn, false);
+        }
+    }
+
+    async handleSettingsImportFile(file) {
+        let parsed;
+        try {
+            parsed = JSON.parse(await file.text());
+        } catch {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsImportInvalidJson') || 'Invalid JSON file.', 'error');
+            }
+            return;
+        }
+        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsImportInvalidFile') || 'Invalid settings file.', 'error');
+            }
+            return;
+        }
+        if (window.AppModal) {
+            const confirmed = await window.AppModal.danger({
+                title: this.t('config.settingsImportConfirmTitle') || 'Import Settings',
+                message: this.t('config.settingsImportConfirmMessage') || 'This will overwrite your current settings. Continue?',
+                confirmText: this.t('config.settingsImportConfirm') || 'Import',
+            });
+            if (!confirmed) return;
+        }
+        await this._doSettingsImport(parsed);
+    }
+
+    async _doSettingsImport(settings) {
+        const btn = document.getElementById('settings-import-btn');
+        this.setButtonLoading(btn, true, this.t('config.settingsImportInProgress') || 'Importing…');
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings),
+            });
+            if (!response.ok) throw new Error(response.statusText);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsImportSuccess') || 'Settings imported. Reloading…', 'success');
+            }
+            setTimeout(() => window.location.reload(), 1500);
+        } catch {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsImportError') || 'Failed to import settings.', 'error');
+            }
+            this.setButtonLoading(btn, false);
         }
     }
 }
