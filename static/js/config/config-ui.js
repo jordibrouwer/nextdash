@@ -241,6 +241,24 @@ class ConfigUI {
 
         this.switchToTab = switchToTab;
 
+        // 1–9: jump to the Nth visible tab (no modifiers, no form focus, no modal open)
+        document.addEventListener('keydown', (e) => {
+            if (e.key < '1' || e.key > '9') return;
+            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            if (document.activeElement?.isContentEditable) return;
+            if (document.querySelector('#app-modal .modal.show')) return;
+            const visible = Array.from(document.querySelectorAll('.tab-button:not([hidden])'));
+            const btn = visible[parseInt(e.key, 10) - 1];
+            if (!btn) return;
+            const target = btn.getAttribute('data-tab');
+            if (target && getAllowedTabs().includes(target)) {
+                e.preventDefault();
+                btn.click();
+            }
+        });
+
         // Fade mask: toggle is-scrolled-end on wrapper when tabs are fully scrolled
         const tabBar = document.querySelector('.config-controls-wrapper .tabs');
         const tabWrapper = document.querySelector('.tabs-scroll-wrapper');

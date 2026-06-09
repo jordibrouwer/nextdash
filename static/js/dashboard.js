@@ -3049,7 +3049,7 @@ class Dashboard {
                 item('! or F1', 'otCheatSheet', 'This cheat sheet'),
                 item('★ (corner button)', 'otWhatsNew', 'Open what\'s new release notes'),
                 item('Ctrl + V (dashboard)', 'otPasteUrlDashboard', 'Paste URL anywhere on the dashboard to quick-add a bookmark'),
-                item('1–8 (config page)', 'otConfigTabs', 'Jump between config tabs'),
+                item('1–9 (config page)', 'otConfigTabs', 'Jump between config tabs'),
                 item('S (config page)', 'otConfigSave', 'Save config changes'),
                 item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
                 item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
