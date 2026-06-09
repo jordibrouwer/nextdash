@@ -222,11 +222,9 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 
 	fileName := baseName + ext
 	filePath := filepath.Join("data/icons", fileName)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		if err := os.WriteFile(filePath, data, 0644); err != nil {
-			http.Error(w, "Unable to save file", http.StatusInternalServerError)
-			return
-		}
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

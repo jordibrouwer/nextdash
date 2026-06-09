@@ -149,17 +149,59 @@ func TestResolveImportAllowLocalBookmarksUsesStagedSettings(t *testing.T) {
 	}
 }
 
-func TestImportDataRelPath(t *testing.T) {
+func TestCanonicalDataAssetPath(t *testing.T) {
 	t.Parallel()
 
-	if got := importDataRelPath("settings.json"); got != "settings.json" {
+	if got := canonicalDataAssetPath("settings.json"); got != "settings.json" {
 		t.Fatalf("settings path = %q", got)
 	}
-	if got := importDataRelPath("icons/foo.png"); got != "icons/foo.png" {
+	if got := canonicalDataAssetPath("icons/foo.png"); got != "icons/foo.png" {
 		t.Fatalf("icons path = %q", got)
 	}
-	if got := importDataRelPath("legacy.png"); got != filepath.Join("icons", "legacy.png") {
+	if got := canonicalDataAssetPath("legacy.png"); got != "icons/legacy.png" {
 		t.Fatalf("root image path = %q", got)
+	}
+	if got := canonicalDataAssetPath("favicon.png"); got != "favicon.png" {
+		t.Fatalf("favicon path = %q", got)
+	}
+}
+
+func TestShouldSkipBackupRootImageDuplicate(t *testing.T) {
+	dataDir := t.TempDir()
+	iconsDir := filepath.Join(dataDir, "icons")
+	if err := os.MkdirAll(iconsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(iconsDir, "dup.png"), []byte("icons"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "dup.png"), []byte("root"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if !shouldSkipBackupRootImageDuplicate(dataDir, "dup.png") {
+		t.Fatal("expected to skip legacy root image when icons/ copy exists")
+	}
+	if shouldSkipBackupRootImageDuplicate(dataDir, "icons/dup.png") {
+		t.Fatal("icons/ path should not be treated as legacy root duplicate")
+	}
+	if shouldSkipBackupRootImageDuplicate(dataDir, "only-root.png") {
+		t.Fatal("expected to keep lone legacy root image for backup")
+	}
+}
+
+func TestMergePreparedImportsDedupesCanonicalPaths(t *testing.T) {
+	t.Parallel()
+
+	merged := mergePreparedImports([]preparedImportFile{
+		{relPath: importDataRelPath("dup.png"), content: []byte("root")},
+		{relPath: importDataRelPath("icons/dup.png"), content: []byte("icons")},
+	})
+	if len(merged) != 1 {
+		t.Fatalf("len = %d, want 1", len(merged))
+	}
+	if string(merged[0].content) != "icons" {
+		t.Fatalf("content = %q, want later entry to win", merged[0].content)
 	}
 }
 

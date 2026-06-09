@@ -135,16 +135,52 @@ func isImportRootImage(filename string) bool {
 	return false
 }
 
-// importDataRelPath maps a ZIP entry name to its path under data/.
-func importDataRelPath(filename string) string {
+// canonicalDataAssetPath is the canonical path under data/ for bookmark icons and backup ZIP entries.
+// Legacy root-level images (data/foo.png) map to icons/foo.png so backup/import round-trips stay stable.
+func canonicalDataAssetPath(filename string) string {
 	filename = normalizeImportFilename(filename)
 	if strings.HasPrefix(filename, "icons/") || strings.HasPrefix(filename, "favicon.") {
 		return filename
 	}
 	if isImportRootImage(filename) {
-		return filepath.Join("icons", filename)
+		return "icons/" + filepath.Base(filename)
 	}
 	return filename
+}
+
+func importDataRelPath(filename string) string {
+	return canonicalDataAssetPath(filename)
+}
+
+func isLegacyRootImagePath(relPath string) bool {
+	relPath = normalizeImportFilename(relPath)
+	return !strings.Contains(relPath, "/") && isImportRootImage(relPath)
+}
+
+func shouldSkipBackupRootImageDuplicate(dataDir, relPath string) bool {
+	if !isLegacyRootImagePath(relPath) {
+		return false
+	}
+	canonical := filepath.FromSlash(canonicalDataAssetPath(relPath))
+	if _, err := os.Stat(filepath.Join(dataDir, canonical)); err == nil {
+		return true
+	}
+	return false
+}
+
+func mergePreparedImports(prepared []preparedImportFile) []preparedImportFile {
+	indexByPath := make(map[string]int, len(prepared))
+	out := make([]preparedImportFile, 0, len(prepared))
+	for _, file := range prepared {
+		key := filepath.ToSlash(file.relPath)
+		if idx, ok := indexByPath[key]; ok {
+			out[idx] = file
+			continue
+		}
+		indexByPath[key] = len(out)
+		out = append(out, file)
+	}
+	return out
 }
 
 func prepareImportFromStaged(staged []stagedImportFile, allowLocal bool) ([]preparedImportFile, map[int][]Category, int, error) {
@@ -180,7 +216,7 @@ func prepareImportFromStaged(staged []stagedImportFile, allowLocal bool) ([]prep
 		})
 	}
 
-	return prepared, categories, skippedBookmarks, nil
+	return mergePreparedImports(prepared), categories, skippedBookmarks, nil
 }
 
 func importIconBasenames(prepared []preparedImportFile) map[string]bool {
@@ -522,8 +558,14 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
+		if shouldSkipBackupRootImageDuplicate(dataDir, relPath) {
+			return nil
+		}
+
+		zipEntryPath := strings.ReplaceAll(canonicalDataAssetPath(relPath), "\\", "/")
+
 		// Create zip file entry
-		zipFile, err := zipWriter.Create(relPath)
+		zipFile, err := zipWriter.Create(zipEntryPath)
 		if err != nil {
 			return err
 		}
