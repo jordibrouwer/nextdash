@@ -186,7 +186,7 @@ class Dashboard {
             }
         });
         window.addEventListener('pagehide', () => {
-            this.flushPendingBookmarkSaveOnExit();
+            this.flushPendingDashboardSavesOnExit();
         });
         this.searchComponent = null;
         this.statusMonitor = null;
@@ -202,7 +202,7 @@ class Dashboard {
         this._pendingCategorySave = null;
         this.pendingReorderSave = null;
         this.pendingReorderSnapshot = null;
-        this.pendingMetadataSave = null;
+        this.pendingPreviewSave = null;
         this.notificationTimeout = null;
         this.tipRotationTimer = null;
         this.backupTipTimer = null;
@@ -797,7 +797,7 @@ class Dashboard {
 
     async loadPageBookmarks(pageId) {
         try {
-            await this.flushPendingBookmarkSave();
+            await this.flushPendingDashboardSaves();
             const [bookmarksRes, categoriesRes] = await Promise.all([
                 fetch(`/api/bookmarks?page=${pageId}`),
                 fetch(`/api/categories?page=${pageId}`)
@@ -3830,12 +3830,34 @@ class Dashboard {
         await this.saveBookmarkOrder(options);
     }
 
-    flushPendingBookmarkSaveOnExit() {
-        if (!this.pendingReorderSave) {
+    async flushPendingDashboardSaves() {
+        await this.flushPendingBookmarkSave();
+        await this.flushPendingPreviewSave();
+    }
+
+    async flushPendingPreviewSave() {
+        if (!this.pendingPreviewSave) {
             return;
         }
-        clearTimeout(this.pendingReorderSave);
-        this.pendingReorderSave = null;
+        clearTimeout(this.pendingPreviewSave);
+        this.pendingPreviewSave = null;
+        await this.saveBookmarkPreviewMetadataNow();
+    }
+
+    flushPendingDashboardSavesOnExit() {
+        const hadReorder = Boolean(this.pendingReorderSave);
+        const hadPreview = Boolean(this.pendingPreviewSave);
+        if (this.pendingReorderSave) {
+            clearTimeout(this.pendingReorderSave);
+            this.pendingReorderSave = null;
+        }
+        if (this.pendingPreviewSave) {
+            clearTimeout(this.pendingPreviewSave);
+            this.pendingPreviewSave = null;
+        }
+        if (!hadReorder && !hadPreview) {
+            return;
+        }
         if (!Array.isArray(this.bookmarks) || !Number.isFinite(Number(this.currentPageId))) {
             return;
         }
@@ -3853,6 +3875,24 @@ class Dashboard {
             });
         } catch (_error) {
             // Best-effort on tab close; ignore network errors.
+        }
+    }
+
+    async saveBookmarkPreviewMetadataNow() {
+        if (!Array.isArray(this.bookmarks) || !Number.isFinite(Number(this.currentPageId))) {
+            return;
+        }
+        try {
+            const response = await dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.bookmarks)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to save bookmark preview metadata');
+            }
+        } catch (error) {
+            console.error('Failed to save bookmark preview metadata:', error);
         }
     }
 
@@ -6519,13 +6559,7 @@ class Dashboard {
         }
         this.pendingPreviewSave = setTimeout(() => {
             this.pendingPreviewSave = null;
-            dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.bookmarks)
-            }).catch((error) => {
-                console.error('Failed to save bookmark preview metadata:', error);
-            });
+            this.saveBookmarkPreviewMetadataNow();
         }, 800);
     }
 
