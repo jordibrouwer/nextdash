@@ -1,11 +1,10 @@
 /* Glass config page overrides — scoped to body[data-layout-version="glass"] */
 
+/* Tokens in layout-glass-tokens.css */
+
 body[data-layout-version="glass"] {
-    --layout-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-surface: color-mix(in srgb, var(--background-secondary) 38%, transparent);
-    --layout-surface-inset: color-mix(in srgb, var(--background-primary) 30%, transparent);
-    --layout-surface-border: color-mix(in srgb, var(--text-primary) 14%, transparent);
     --config-tab-gap: 0.85rem;
+    --layout-surface-inset: color-mix(in srgb, var(--background-primary) 30%, transparent);
 }
 
 /* ─── Page chrome (sticky header area) ────────────────────────────────────── */
@@ -117,6 +116,7 @@ body[data-layout-version="glass"] :is(
     .help-block,
     .backups-tab-intro,
     .backups-section,
+    .structure-workspace-card,
     .structure-column,
     .page-selector-wrapper
 ) {
@@ -124,6 +124,8 @@ body[data-layout-version="glass"] :is(
     border-color: var(--layout-surface-border);
     background: var(--layout-surface);
     box-shadow: var(--layout-shadow-sm);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .general-card-danger,
@@ -709,6 +711,18 @@ body[data-layout-version="glass"] .tags-section-divider {
     padding: 0.45rem 1rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Bookmarks tab — glass parity (split-view, bulk, add menu, detail)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body[data-layout-version="glass"] .structure-workspace-card.is-collapsible .structure-workspace-toggle {
+    border-radius: var(--layout-radius-sm) var(--layout-radius-sm) 0 0;
+}
+
+body[data-layout-version="glass"] .structure-workspace-intro {
+    padding-inline: 0.85rem;
+}
+
 /* ─── Bookmarks split-view ─────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .bookmarks-splitview {
@@ -716,8 +730,10 @@ body[data-layout-version="glass"] .bookmarks-splitview {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     overflow: visible;
-    box-shadow: var(--layout-shadow-sm);
+    box-shadow: var(--glass-panel-shadow);
     padding: 0;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list,
@@ -741,10 +757,33 @@ body[data-layout-version="glass"] .bookmarks-splitview-list {
 
 body[data-layout-version="glass"] .bookmarks-list-controls {
     background: var(--layout-surface);
+    border-bottom: 1px solid var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .bookmarks-list-search-row {
+    border-top-color: var(--layout-surface-border);
+    background: color-mix(in srgb, var(--layout-surface) 80%, transparent);
+}
+
+body[data-layout-version="glass"] .bookmarks-list-controls .page-selector,
+body[data-layout-version="glass"] .bookmarks-list-controls select,
+body[data-layout-version="glass"] .bookmarks-filter-inline select,
+body[data-layout-version="glass"] .bookmarks-list-controls .custom-select-trigger {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .bookmark-add-menu-trigger {
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--glass-chip-shadow);
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item {
     background: var(--layout-surface-inset);
+    border-bottom-color: var(--layout-surface-border);
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-detail {
@@ -754,15 +793,25 @@ body[data-layout-version="glass"] .bookmarks-splitview-detail {
 body[data-layout-version="glass"] .bookmarks-search-input,
 body[data-layout-version="glass"] .bookmark-detail-input,
 body[data-layout-version="glass"] .bookmark-detail-shortcut,
-body[data-layout-version="glass"] .bookmark-detail-note {
+body[data-layout-version="glass"] .bookmark-detail-note,
+body[data-layout-version="glass"] .bookmark-detail-select {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
     border-radius: var(--layout-radius-sm);
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .bookmark-detail-icon-preview {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+    border-radius: var(--layout-radius-sm);
 }
 
 body[data-layout-version="glass"] .bookmarks-search-input:focus,
 body[data-layout-version="glass"] .bookmark-detail-input:focus,
 body[data-layout-version="glass"] .bookmark-detail-shortcut:focus,
-body[data-layout-version="glass"] .bookmark-detail-note:focus {
+body[data-layout-version="glass"] .bookmark-detail-note:focus,
+body[data-layout-version="glass"] .bookmark-detail-select:focus {
     outline: none;
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
@@ -787,11 +836,45 @@ body[data-layout-version="glass"] .bookmark-row-favicon {
 
 body[data-layout-version="glass"] .bookmark-detail-header {
     background: var(--layout-surface);
+    border-bottom: 1px solid var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .bookmark-detail-more-summary {
+    border-radius: var(--layout-radius-sm);
+    transition: background-color var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .bookmark-detail-more-summary:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--layout-surface-inset));
+}
+
+body[data-layout-version="glass"] .bookmark-detail-empty {
+    color: var(--text-secondary);
+}
+
+body[data-layout-version="glass"] .bookmark-detail-empty-hints kbd {
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
 }
 
 body[data-layout-version="glass"] .structure-workspace {
     gap: var(--config-tab-gap);
     margin-bottom: var(--config-tab-gap);
+}
+
+body[data-layout-version="glass"] .bulk-toolbar.is-active-selection {
+    background: var(--layout-surface-elevated);
+    border-top-color: var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .bulk-toolbar-divider {
+    background: var(--layout-surface-border);
 }
 
 body[data-layout-version="glass"] .bulk-toolbar .btn-small,
@@ -800,11 +883,44 @@ body[data-layout-version="glass"] .bulk-select {
     border-radius: var(--layout-radius-sm);
 }
 
+body[data-layout-version="glass"] .bulk-select {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="glass"] .bulk-toolbar .btn-icon-only[data-tooltip]::after {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="glass"] .bookmark-add-menu-panel {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .bookmark-add-menu-item {
+    border-bottom-color: var(--layout-surface-border);
+}
+
+body[data-layout-version="glass"] .bookmark-add-menu-item:hover,
+body[data-layout-version="glass"] .bookmark-add-menu-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface));
+}
+
 body[data-layout-version="glass"] .config-link-preview-card {
     border-radius: var(--layout-radius-md);
-    border-color: var(--border-primary);
-    box-shadow: var(--layout-shadow-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-panel-shadow);
     overflow: hidden;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .config-link-preview-card-image-wrap {
@@ -817,7 +933,11 @@ body[data-layout-version="glass"] .config-bookmark-preview-tile.bookmark-link {
 
 body[data-layout-version="glass"] .config-bookmark-preview-popover {
     border-radius: var(--layout-radius-md);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 /* ─── Mobile config (modern) ───────────────────────────────────────────────── */
@@ -870,7 +990,3 @@ body[data-layout-version="glass"] #bookmark-detail-empty[hidden] {
     display: none !important;
 }
 
-body[data-layout-version="glass"] .bookmark-add-menu-panel {
-    border-radius: var(--layout-radius-md);
-    box-shadow: var(--layout-shadow-md);
-}
