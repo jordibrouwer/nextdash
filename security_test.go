@@ -58,6 +58,7 @@ func TestHeavyEndpointsRequireTokenWhenConfigured(t *testing.T) {
 		{"search index", http.MethodPost, "/api/search-index"},
 		{"open broken", http.MethodPost, "/api/health/open-broken"},
 		{"auto-heal suggest", http.MethodGet, "/api/health/auto-heal-suggest?pageId=1&index=0"},
+		{"ping", http.MethodGet, "/api/ping?url=https://example.com"},
 	}
 
 	for _, tc := range cases {
@@ -74,6 +75,8 @@ func TestHeavyEndpointsRequireTokenWhenConfigured(t *testing.T) {
 			h.OpenBroken(rec, req)
 		case "auto-heal suggest":
 			h.AutoHealSuggest(rec, req)
+		case "ping":
+			h.PingURL(rec, req)
 		}
 		if rec.Code != http.StatusUnauthorized {
 			t.Fatalf("%s: status = %d, want 401", tc.name, rec.Code)

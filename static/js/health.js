@@ -415,7 +415,7 @@
         button.disabled = true;
         button.textContent = t('health.pinging', 'pinging...');
         try {
-            const response = await fetch(`/api/ping?url=${encodeURIComponent(url)}`);
+            const response = await apiFetch(`/api/ping?url=${encodeURIComponent(url)}`);
             const result = await response.json();
             const status = result.status === 'online' ? 'online' : 'offline';
             const pingMs = result.ping || 0;

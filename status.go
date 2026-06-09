@@ -14,6 +14,10 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-NextDash-Token")
 
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
 	// Get URL from query parameter
 	urlParam := r.URL.Query().Get("url")
 	if urlParam == "" {

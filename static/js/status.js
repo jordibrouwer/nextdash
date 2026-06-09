@@ -18,6 +18,10 @@ function normalizeStatusRecheckIntervalMinutes(value) {
     return parsed;
 }
 
+function statusPingFetch(url, init) {
+    return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
+}
+
 function statusCacheKey(url) {
     const raw = String(url || '').trim();
     if (!raw) return '';
@@ -259,7 +263,7 @@ class StatusMonitor {
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
         try {
-            const response = await fetch(`/api/ping?url=${encodeURIComponent(bookmark.url)}${this.settings.skipFastPing ? '&skipFastPing=1' : ''}`, {
+            const response = await statusPingFetch(`/api/ping?url=${encodeURIComponent(bookmark.url)}${this.settings.skipFastPing ? '&skipFastPing=1' : ''}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
