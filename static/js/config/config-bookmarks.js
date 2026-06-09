@@ -17,6 +17,7 @@ class ConfigBookmarks {
         this.pendingIconUndo = null;
         this.metadataTimers = new Map();
         this.activeDetailIndex = null;
+        this._detailMetaGen = new Map();
         this._rebindAbort = null;
         this.bulkToolbarDismissed = false;
         this._prevSelectedCount = 0;
@@ -540,6 +541,8 @@ class ConfigBookmarks {
 
         // Abort previous listeners instead of cloneNode — keeps the original element in the DOM.
         if (this._rebindAbort) this._rebindAbort.abort();
+        this._invalidateDetailMetaGeneration(index);
+        window.BookmarkPreviewService?.cancelDebounced(`detail-meta-${index}`);
         this._rebindAbort = new AbortController();
         const signal = this._rebindAbort.signal;
 
@@ -586,9 +589,13 @@ class ConfigBookmarks {
                 const t = this.metadataTimers?.get(key);
                 if (t) { clearTimeout(t); this.metadataTimers.delete(key); }
                 window.BookmarkPreviewService?.cancelDebounced(`detail-meta-${index}`);
+                this._invalidateDetailMetaGeneration(index);
             } else {
                 const policy = window.configManager?.settingsData?.faviconRefreshPolicy || 'on-save';
-                if (policy === 'on-save') this._scheduleDetailMetaRefresh(index, bookmark);
+                if (policy === 'on-save') {
+                    this._invalidateDetailMetaGeneration(index);
+                    this._scheduleDetailMetaRefresh(index, bookmark);
+                }
             }
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
@@ -600,6 +607,11 @@ class ConfigBookmarks {
                 bookmark.url = normalized;
                 this._syncRow(index, bookmark);
                 if (window.configManager?.markDirty) window.configManager.markDirty();
+                const policy = window.configManager?.settingsData?.faviconRefreshPolicy || 'on-save';
+                if (policy === 'on-save') {
+                    this._invalidateDetailMetaGeneration(index);
+                    this._scheduleDetailMetaRefresh(index, bookmark);
+                }
             }
             if (urlProtocolHint) urlProtocolHint.hidden = true;
         }, { signal });
@@ -706,6 +718,31 @@ class ConfigBookmarks {
         }
     }
 
+    _normalizeDetailMetaUrl(url) {
+        const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(url) || String(url || '').trim();
+        return normalized.toLowerCase();
+    }
+
+    _invalidateDetailMetaGeneration(index) {
+        const key = String(index);
+        this._detailMetaGen.set(key, (this._detailMetaGen.get(key) || 0) + 1);
+    }
+
+    _beginDetailMetaFetch(index, requestUrl) {
+        const key = String(index);
+        const gen = (this._detailMetaGen.get(key) || 0) + 1;
+        this._detailMetaGen.set(key, gen);
+        return { gen, requestUrl: this._normalizeDetailMetaUrl(requestUrl) };
+    }
+
+    _isDetailMetaFetchStale(index, gen, requestUrl) {
+        if (this.activeDetailIndex !== index) return true;
+        if (this._detailMetaGen.get(String(index)) !== gen) return true;
+        const bookmarks = window.configManager?.bookmarksData;
+        const currentUrl = this._normalizeDetailMetaUrl(bookmarks?.[index]?.url);
+        return currentUrl !== this._normalizeDetailMetaUrl(requestUrl);
+    }
+
     _scheduleDetailMetaRefresh(index, bookmark) {
         const key = `detail-meta-${index}`;
         window.BookmarkPreviewService?.scheduleDebounced(key, () => {
@@ -716,16 +753,19 @@ class ConfigBookmarks {
     async _refreshDetailMeta(index, bookmark) {
         const url = window.BookmarkUrlUtils?.ensureHttpUrl(bookmark?.url) || String(bookmark?.url || '').trim();
         if (!url) return;
+
+        const { gen, requestUrl } = this._beginDetailMetaFetch(index, url);
         bookmark.url = url;
 
         const btn = document.getElementById('detail-meta-refresh-btn');
         if (btn) btn.disabled = true;
         try {
-            // One fetch for both favicon and link preview data
             let preview = null;
             try {
                 preview = await window.BookmarkPreviewService.fetchLinkPreview(url);
             } catch { /* network error — fall through to favicon fallback */ }
+
+            if (this._isDetailMetaFetchStale(index, gen, requestUrl)) return;
 
             const iconUrl = String(preview?.icon || '').trim();
             let icon = iconUrl
@@ -735,6 +775,8 @@ class ConfigBookmarks {
                 const fallback = window.BookmarkUrlUtils?.deriveFaviconFromBookmarkUrl(url) || '';
                 if (fallback) icon = await window.BookmarkPreviewService.uploadIconFromUrl(fallback);
             }
+
+            if (this._isDetailMetaFetchStale(index, gen, requestUrl)) return;
 
             let dirty = false;
 
@@ -764,7 +806,9 @@ class ConfigBookmarks {
                 window.configManager?.markDirty?.();
             }
         } finally {
-            if (btn) btn.disabled = false;
+            if (btn && this._detailMetaGen.get(String(index)) === gen) {
+                btn.disabled = false;
+            }
         }
     }
 
