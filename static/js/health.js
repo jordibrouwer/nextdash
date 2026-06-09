@@ -49,6 +49,16 @@
         healthy: 'healthy'
     };
 
+    function writeJsonHeaders() {
+        return typeof nextDashWriteHeaders === 'function'
+            ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+            : { 'Content-Type': 'application/json' };
+    }
+
+    function apiFetch(url, init) {
+        return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
+    }
+
     const filterOrder = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
 
     function t(key, fallback, replacements = {}) {
@@ -536,10 +546,7 @@
             btn.classList.add('is-loading');
             btn.textContent = t('health.retesting', 'retesting...');
             try {
-                const response = await fetch('/api/health/retest-all', {
-                    method: 'POST',
-                    headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
-                });
+                const response = await apiFetch('/api/health/retest-all', { method: 'POST' });
                 if (response.ok) {
                     const result = await response.json();
                     showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
@@ -595,7 +602,7 @@
             btn.classList.add('is-loading');
             btn.textContent = t('health.opening', 'opening...');
             try {
-                const response = await fetch('/api/health/open-broken', {
+                const response = await apiFetch('/api/health/open-broken', {
                     method: 'POST',
                     headers: writeJsonHeaders(),
                     body: JSON.stringify({ limit: OPEN_BROKEN_MAX })
@@ -627,10 +634,6 @@
         document.getElementById('merge-duplicates-btn')?.addEventListener('click', () => {
             showMergeDuplicatesFlow();
         });
-    }
-
-    function apiFetch(url, init) {
-        return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
     }
 
     function showBulkStatus(message) {
@@ -753,11 +756,9 @@
         const sources = ordered.bookmarks.slice(1);
 
         try {
-            const response = await fetch('/api/health/merge-duplicates', {
+            const response = await apiFetch('/api/health/merge-duplicates', {
                 method: 'POST',
-                headers: typeof nextDashWriteHeaders === 'function'
-                    ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
-                    : { 'Content-Type': 'application/json' },
+                headers: writeJsonHeaders(),
                 body: JSON.stringify({
                     targetPageId: target.pageId,
                     targetIndex: target.index,
@@ -782,12 +783,6 @@
         }
     }
 
-    function writeJsonHeaders() {
-        return typeof nextDashWriteHeaders === 'function'
-            ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
-            : { 'Content-Type': 'application/json' };
-    }
-
     function healthCacheURL(url) {
         const raw = String(url || '').trim();
         if (!raw) return '';
@@ -801,7 +796,7 @@
         try {
             const cacheURL = healthCacheURL(url);
             if (!cacheURL) return;
-            await fetch('/api/health/cache-scan', {
+            await apiFetch('/api/health/cache-scan', {
                 method: 'POST',
                 headers: writeJsonHeaders(),
                 body: JSON.stringify({
@@ -818,7 +813,7 @@
 
     async function persistIssueStatus(pageId, index, status, error) {
         try {
-            await fetch('/api/health/update-status', {
+            await apiFetch('/api/health/update-status', {
                 method: 'POST',
                 headers: writeJsonHeaders(),
                 body: JSON.stringify({ pageId, index, status, error })
@@ -829,9 +824,8 @@
     }
 
     async function fetchAutoHealSuggestion(pageId, index) {
-        const response = await fetch(
-            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}`,
-            { headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {} }
+        const response = await apiFetch(
+            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}`
         );
         if (!response.ok) {
             throw new Error('Failed to fetch auto-heal suggestions');
@@ -840,7 +834,7 @@
     }
 
     async function applyAutoHeal(pageId, index, payload = {}) {
-        const response = await fetch('/api/health/auto-heal-apply', {
+        const response = await apiFetch('/api/health/auto-heal-apply', {
             method: 'POST',
             headers: writeJsonHeaders(),
             body: JSON.stringify({
@@ -934,11 +928,9 @@
         button.disabled = true;
         button.textContent = t('health.deleting', 'deleting...');
         try {
-            const response = await fetch('/api/health/delete-bookmark', {
+            const response = await apiFetch('/api/health/delete-bookmark', {
                 method: 'POST',
-                headers: typeof nextDashWriteHeaders === 'function'
-                    ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
-                    : { 'Content-Type': 'application/json' },
+                headers: writeJsonHeaders(),
                 body: JSON.stringify({ pageId, index })
             });
             if (!response.ok) {
@@ -978,7 +970,7 @@
             bookmarks[index].icon = iconPath;
             const saveRes = await apiFetch(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: writeJsonHeaders(),
                 body: JSON.stringify(bookmarks)
             });
             if (!saveRes.ok) throw new Error('Failed to save bookmark');

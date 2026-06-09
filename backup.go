@@ -507,7 +507,10 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for pageID, categories := range importedCategoriesByPage {
-		h.store.SaveCategoriesByPage(pageID, categories)
+		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
+			http.Error(w, "Failed to save imported categories", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -23,7 +23,7 @@ func TestMergePrefetchBookmarkIconsPreservesOtherFields(t *testing.T) {
 	}
 
 	bookmarks[0].Name = "Renamed while prefetch ran"
-	store.SaveBookmarksByPage(1, bookmarks)
+	_ = store.SaveBookmarksByPage(1, bookmarks)
 
 	urlKey := canonicalBookmarkURLKey(bookmarks[0].URL)
 	applied := store.MergePrefetchBookmarkIcons(1, []PrefetchIconUpdate{{
@@ -65,7 +65,7 @@ func TestMergePrefetchBookmarkIconsSkipsWhenURLOrIconChanged(t *testing.T) {
 	urlKey := canonicalBookmarkURLKey(originalURL)
 
 	bookmarks[1].URL = "https://example.com/changed"
-	store.SaveBookmarksByPage(1, bookmarks)
+	_ = store.SaveBookmarksByPage(1, bookmarks)
 
 	if applied := store.MergePrefetchBookmarkIcons(1, []PrefetchIconUpdate{{
 		Index:  1,
@@ -77,7 +77,7 @@ func TestMergePrefetchBookmarkIconsSkipsWhenURLOrIconChanged(t *testing.T) {
 
 	bookmarks = store.GetBookmarksByPage(1)
 	bookmarks[0].Icon = "existing.ico"
-	store.SaveBookmarksByPage(1, bookmarks)
+	_ = store.SaveBookmarksByPage(1, bookmarks)
 
 	if applied := store.MergePrefetchBookmarkIcons(1, []PrefetchIconUpdate{{
 		Index:  0,

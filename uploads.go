@@ -67,7 +67,9 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 
 	settings := h.store.GetSettings()
 	settings.CustomFaviconPath = "/data/favicon" + ext
-	h.store.SaveSettings(settings)
+	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": settings.CustomFaviconPath})
@@ -120,7 +122,9 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 	// Update settings with the new font path
 	settings := h.store.GetSettings()
 	settings.CustomFontPath = "/data/font" + ext
-	h.store.SaveSettings(settings)
+	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": settings.CustomFontPath})

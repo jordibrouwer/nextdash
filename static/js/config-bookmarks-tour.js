@@ -719,6 +719,16 @@ class ConfigBookmarksTour {
         return Boolean(document.querySelector('.modal-new-bookmark'));
     }
 
+    _tourFetch(url, init) {
+        return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
+    }
+
+    _tourJsonHeaders() {
+        return typeof nextDashWriteHeaders === 'function'
+            ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+            : { 'Content-Type': 'application/json' };
+    }
+
     async createPersistedDemoBookmark(site, pageId) {
         const bookmark = {
             name: this.demoLabel(site),
@@ -735,9 +745,9 @@ class ConfigBookmarksTour {
         };
 
         try {
-            const response = await fetch('/api/bookmarks/add', {
+            const response = await this._tourFetch('/api/bookmarks/add', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this._tourJsonHeaders(),
                 body: JSON.stringify({ page: pageId, bookmark }),
             });
             return response.ok;
@@ -761,9 +771,9 @@ class ConfigBookmarksTour {
                     this.canonicalUrlKey(b.url) === urlKey
             );
             if (!bm) return true;
-            const del = await fetch('/api/bookmarks', {
+            const del = await this._tourFetch('/api/bookmarks', {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this._tourJsonHeaders(),
                 body: JSON.stringify({ page: pageId, bookmark: bm }),
             });
             return del.ok;

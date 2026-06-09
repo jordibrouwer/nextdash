@@ -33,6 +33,14 @@ func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
 }
 
+func respondStorePersistError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return true
+	}
+	http.Error(w, "Failed to save data", http.StatusInternalServerError)
+	return false
+}
+
 // canonicalBookmarkURLKey normalizes URLs so obvious duplicates (trailing slash, hash, case) match.
 func canonicalBookmarkURLKey(raw string) string {
 	s := strings.TrimSpace(raw)
@@ -561,7 +569,9 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
 	}
 
-	h.store.SaveBookmarksByPage(pageID, bookmarks)
+	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(pageID, bookmarks)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -626,7 +636,9 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
 
-	h.store.AddBookmarkToPage(request.Page, request.Bookmark)
+	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -731,7 +743,9 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		for _, name := range newCatOrder {
 			categories = append(categories, Category{ID: newCatNames[name], Name: name})
 		}
-		h.store.SaveCategoriesByPage(request.PageID, categories)
+		if !respondStorePersistError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
+			return
+		}
 	}
 
 	imported := 0
@@ -746,12 +760,14 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		if bm.Category != "" {
 			catID = slugify(bm.Category)
 		}
-		h.store.AddBookmarkToPage(request.PageID, Bookmark{
+		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
 			Category: catID,
 			PageID:   request.PageID,
-		})
+		})) {
+			return
+		}
 		existingURLs[key] = struct{}{}
 		imported++
 	}
@@ -824,7 +840,9 @@ func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.store.SaveFinders(finders)
+	if !respondStorePersistError(w, h.store.SaveFinders(finders)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -851,7 +869,9 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.store.SaveCategoriesByPage(pageID, categories)
+	if !respondStorePersistError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -883,7 +903,9 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the order
-	h.store.SavePageOrder(order)
+	if !respondStorePersistError(w, h.store.SavePageOrder(order)) {
+		return
+	}
 
 	// Save each page individually
 	// Note: This assumes bookmarks are saved separately via SaveBookmarks endpoint
@@ -891,7 +913,9 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 		page = normalizePageMeta(page, page.ID)
 		// Get existing bookmarks for this page to preserve them
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		h.store.SavePage(page, bookmarks)
+		if !respondStorePersistError(w, h.store.SavePage(page, bookmarks)) {
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -932,7 +956,9 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 			newOrder = append(newOrder, id)
 		}
 	}
-	h.store.SavePageOrder(newOrder)
+	if !respondStorePersistError(w, h.store.SavePageOrder(newOrder)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
@@ -1006,7 +1032,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	settings.Collections = sanitized
 
-	h.store.SaveSettings(settings)
+	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1031,7 +1059,9 @@ func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.store.SaveColors(colors)
+	if !respondStorePersistError(w, h.store.SaveColors(colors)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1052,7 +1082,9 @@ func (h *Handlers) ResetColors(w http.ResponseWriter, r *http.Request) {
 		Custom:  currentColors.Custom, // Preserve existing custom themes
 	}
 
-	h.store.SaveColors(defaultColors)
+	if !respondStorePersistError(w, h.store.SaveColors(defaultColors)) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(defaultColors)
 }
@@ -1205,7 +1237,9 @@ func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
 	index := SearchIndex{Entries: entries}
 	settings := h.store.GetSettings()
 	settings.SearchIndexed = true
-	h.store.SaveSettings(settings)
+	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(index)
@@ -1335,7 +1369,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 
 	localCache := &PreviewCacheFile{Cache: make(map[string]BookmarkPreview)}
 	preview := h.fetchBookmarkPreview(rawURL, localCache, false)
-	h.mergePreviewCacheUpdates(localCache.Cache)
+	_ = h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(preview)
@@ -1365,11 +1399,15 @@ func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Reque
 			changed = true
 		}
 		if changed {
-			h.store.SaveBookmarksByPage(page.ID, bookmarks)
+			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+				return
+			}
 		}
 	}
 
-	h.replacePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})
+	if !respondStorePersistError(w, h.replacePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})) {
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1408,11 +1446,15 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 			changed = true
 		}
 		if changed {
-			h.store.SaveBookmarksByPage(page.ID, bookmarks)
+			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+				return
+			}
 		}
 	}
 
-	h.mergePreviewCacheUpdates(cache.Cache)
+	if !respondStorePersistError(w, h.mergePreviewCacheUpdates(cache.Cache)) {
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1633,7 +1675,7 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
-	h.mergeHealthCacheUpdates(map[string]HealthScanCache{
+	if !respondStorePersistError(w, h.mergeHealthCacheUpdates(map[string]HealthScanCache{
 		key: {
 			URL:         key,
 			Status:      req.Status,
@@ -1641,7 +1683,9 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 			LastScanned: time.Now().UnixMilli(),
 			Error:       req.Error,
 		},
-	})
+	})) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1691,7 +1735,9 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		bookmark.LastError = errMsg
 	}
 	bookmarks[req.Index] = bookmark
-	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
+	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1760,11 +1806,14 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Save updated bookmarks
-		h.store.SaveBookmarksByPage(page.ID, bookmarks)
+		if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+			return
+		}
 	}
 
-	h.mergeHealthCacheUpdates(healthUpdates)
+	if !respondStorePersistError(w, h.mergeHealthCacheUpdates(healthUpdates)) {
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1918,7 +1967,9 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-		h.store.SaveBookmarksByPage(del.pageID, bookmarks)
+		if !respondStorePersistError(w, h.store.SaveBookmarksByPage(del.pageID, bookmarks)) {
+			return
+		}
 		mergedCount++
 	}
 
@@ -1928,7 +1979,9 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	targetBookmarks[targetIndex] = merged
-	h.store.SaveBookmarksByPage(req.TargetPageID, targetBookmarks)
+	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.TargetPageID, targetBookmarks)) {
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1967,7 +2020,9 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 	}
 
 	bookmarks = append(bookmarks[:req.Index], bookmarks[req.Index+1:]...)
-	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
+	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -2084,7 +2139,9 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookmarks[req.Index] = bookmark
-	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
+	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{

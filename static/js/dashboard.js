@@ -185,6 +185,9 @@ class Dashboard {
                 e.returnValue = '';
             }
         });
+        window.addEventListener('pagehide', () => {
+            this.flushPendingBookmarkSaveOnExit();
+        });
         this.searchComponent = null;
         this.statusMonitor = null;
         this.statusMonitorInitialized = false;
@@ -794,6 +797,7 @@ class Dashboard {
 
     async loadPageBookmarks(pageId) {
         try {
+            await this.flushPendingBookmarkSave();
             const [bookmarksRes, categoriesRes] = await Promise.all([
                 fetch(`/api/bookmarks?page=${pageId}`),
                 fetch(`/api/categories?page=${pageId}`)
@@ -2936,6 +2940,9 @@ class Dashboard {
                 if (response.ok) {
                     close();
                     await this.loadPageBookmarks(this.currentPageId);
+                    if (this.settings.globalShortcuts) {
+                        await this.loadAllBookmarks();
+                    }
                     this.showNotification(t('dashboard.quickAddAdded').replace('{name}', name), 'success');
                 } else if (response.status === 409) {
                     status.textContent = t('dashboard.quickAddUrlExists');
@@ -3821,6 +3828,41 @@ class Dashboard {
         this.pendingReorderSave = setTimeout(() => {
             this.saveBookmarkOrder({ successMessage });
         }, 1000);
+    }
+
+    async flushPendingBookmarkSave(options = {}) {
+        if (!this.pendingReorderSave) {
+            return;
+        }
+        clearTimeout(this.pendingReorderSave);
+        this.pendingReorderSave = null;
+        await this.saveBookmarkOrder(options);
+    }
+
+    flushPendingBookmarkSaveOnExit() {
+        if (!this.pendingReorderSave) {
+            return;
+        }
+        clearTimeout(this.pendingReorderSave);
+        this.pendingReorderSave = null;
+        if (!Array.isArray(this.bookmarks) || !Number.isFinite(Number(this.currentPageId))) {
+            return;
+        }
+        const payload = [...this.bookmarks];
+        const url = `/api/bookmarks?page=${this.currentPageId}`;
+        const headers = typeof nextDashWriteHeaders === 'function'
+            ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+            : { 'Content-Type': 'application/json' };
+        try {
+            fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload),
+                keepalive: true
+            });
+        } catch (_error) {
+            // Best-effort on tab close; ignore network errors.
+        }
     }
 
     async saveBookmarkOrder(options = {}) {
@@ -5555,7 +5597,7 @@ class Dashboard {
             this.inlineEditingBookmarkIndex = null;
             this.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
             this.renderDashboard();
-            this.scheduleBookmarkOrderSave();
+            await this.saveBookmarkOrder();
             return;
         }
 
@@ -5904,29 +5946,22 @@ class Dashboard {
         this.inlineEditingBookmarkIndex = null;
         this.renderDashboard();
 
-        if (this._pendingDeleteTimer) {
-            clearTimeout(this._pendingDeleteTimer);
-            this._pendingDeleteTimer = null;
-        }
-
-        this._pendingDeleteTimer = setTimeout(() => {
-            this._pendingDeleteTimer = null;
-            this.scheduleBookmarkOrderSave({ successMessage: 'Bookmark deleted.' });
-        }, 5000);
+        await this.saveBookmarkOrder({ successMessage: 'Bookmark deleted.' });
 
         this.showNotification(
             `"${String(deletedBookmark.name || deletedBookmark.url).slice(0, 40)}" verwijderd`,
             'success',
             {
                 duration: 5000,
-                undoCallback: () => {
-                    if (this._pendingDeleteTimer) {
-                        clearTimeout(this._pendingDeleteTimer);
-                        this._pendingDeleteTimer = null;
-                    }
+                undoCallback: async () => {
                     this.bookmarks.splice(deletedIndex, 0, deletedBookmark);
                     this.pendingReorderSnapshot = null;
                     this.renderDashboard();
+                    try {
+                        await this.saveBookmarkOrder();
+                    } catch (_error) {
+                        // saveBookmarkOrder already surfaces errors and reverts when possible.
+                    }
                 }
             }
         );

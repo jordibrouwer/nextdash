@@ -264,28 +264,28 @@ type Store interface {
 	GetBookmarksByPage(pageID int) []Bookmark
 	GetAllBookmarks() []Bookmark
 	BookmarkURLExists(url string) bool
-	SaveBookmarksByPage(pageID int, bookmarks []Bookmark)
+	SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) bool
-	AddBookmarkToPage(pageID int, bookmark Bookmark)
+	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
-	SaveCategoriesByPage(pageID int, categories []Category)
+	SaveCategoriesByPage(pageID int, categories []Category) error
 	// Finders
 	GetFinders() []Finder
-	SaveFinders(finders []Finder)
+	SaveFinders(finders []Finder) error
 	// Pages
 	GetPages() []Page
-	SavePage(page Page, bookmarks []Bookmark)
+	SavePage(page Page, bookmarks []Bookmark) error
 	DeletePage(pageID int) error
 	GetPageOrder() []int
-	SavePageOrder(order []int)
+	SavePageOrder(order []int) error
 	// Settings
 	GetSettings() Settings
-	SaveSettings(settings Settings)
+	SaveSettings(settings Settings) error
 	// Colors
 	GetColors() ColorTheme
-	SaveColors(colors ColorTheme)
+	SaveColors(colors ColorTheme) error
 	// Reset
 	ResetAllData() error
 	// TakeDefaultBookmarkIconPrefetch reports whether default bookmarks were just created and clears the flag.
@@ -493,12 +493,16 @@ func (fs *FileStore) migrateCustomThemesToUserManaged() {
 
 	colors := fs.GetColors()
 	colors.Custom = map[string]ThemeColors{}
-	fs.SaveColors(colors)
+	if err := fs.SaveColors(colors); err != nil {
+		return
+	}
 
 	settings := fs.GetSettings()
 	if !isValidThemeID(settings.Theme) {
 		settings.Theme = "cherry-graphite-dark"
-		fs.SaveSettings(settings)
+		if err := fs.SaveSettings(settings); err != nil {
+			return
+		}
 	}
 
 	_ = os.WriteFile(fs.customThemesMigrationMarker, []byte("migrated"), 0644)
@@ -635,20 +639,21 @@ func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) bool {
 	return true
 }
 
-func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) {
+func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
 
-	// Read the existing page data
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	for i := range bookmarks {
 		bookmarks[i].PageID = pageID
 	}
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		// If file doesn't exist, create new page with this ID and default categories
+		if !os.IsNotExist(err) {
+			return err
+		}
 		pageWithBookmarks := PageWithBookmarks{
 			Page: Page{
 				ID:   pageID,
@@ -657,33 +662,31 @@ func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) {
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  bookmarks,
 		}
-		newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-		os.WriteFile(filePath, newData, 0644)
-		return
+		return writeIndentJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		return
+		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
-	// Update only bookmarks, preserve page metadata and categories
 	pageWithBookmarks.Bookmarks = bookmarks
-	newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	os.WriteFile(filePath, newData, 0644)
+	return writeIndentJSONFile(filePath, pageWithBookmarks)
 }
 
-func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) {
+func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
 
-	// Read the existing page data
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		// If file doesn't exist, create new page with this ID and default categories
+		if !os.IsNotExist(err) {
+			return err
+		}
+		bookmark.PageID = pageID
 		pageWithBookmarks := PageWithBookmarks{
 			Page: Page{
 				ID:   pageID,
@@ -692,21 +695,17 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) {
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  []Bookmark{bookmark},
 		}
-		newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-		os.WriteFile(filePath, newData, 0644)
-		return
+		return writeIndentJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		return
+		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
-	// Add the new bookmark to existing bookmarks
 	bookmark.PageID = pageID
 	pageWithBookmarks.Bookmarks = append(pageWithBookmarks.Bookmarks, bookmark)
-	newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	os.WriteFile(filePath, newData, 0644)
+	return writeIndentJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmark) error {
@@ -860,19 +859,14 @@ func (fs *FileStore) GetFinders() []Finder {
 	return finders
 }
 
-func (fs *FileStore) SaveFinders(finders []Finder) {
+func (fs *FileStore) SaveFinders(finders []Finder) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
-	data, err := json.MarshalIndent(finders, "", "  ")
-	if err != nil {
-		return
-	}
-
-	os.WriteFile(filePath, data, 0644)
+	return writeIndentJSONFile(filePath, finders)
 }
 
 // GetCategoriesByPage returns categories stored inside bookmarks-{pageID}.json if present
@@ -901,7 +895,7 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 
 // SaveCategoriesByPage saves categories inside bookmarks-{pageID}.json, creating the file if needed
 // It also updates bookmarks to use the new category IDs when category names change
-func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) {
+func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -910,8 +904,9 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) {
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		// Create new page file with provided categories and empty bookmarks
-		// Note: This is called when explicitly saving categories for a page
+		if !os.IsNotExist(err) {
+			return err
+		}
 		pageWithBookmarks := PageWithBookmarks{
 			Page: Page{
 				ID:   pageID,
@@ -920,14 +915,12 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) {
 			Categories: categories,
 			Bookmarks:  []Bookmark{},
 		}
-		newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-		os.WriteFile(filePath, newData, 0644)
-		return
+		return writeIndentJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		return
+		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
 	// Create a mapping from old category IDs to new category IDs
@@ -959,8 +952,7 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) {
 	}
 
 	pageWithBookmarks.Categories = categories
-	newData, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	os.WriteFile(filePath, newData, 0644)
+	return writeIndentJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) GetPages() []Page {
@@ -1019,8 +1011,8 @@ func (fs *FileStore) getPages() []Page {
 		for id := range pageMap {
 			order = append(order, id)
 		}
-		// Save the default order
-		fs.savePageOrder(order)
+		// Save the default order (best effort during read path)
+		_ = fs.savePageOrder(order)
 	}
 
 	// Build pages array in the specified order
@@ -1129,25 +1121,24 @@ func (fs *FileStore) getPageOrder() []int {
 	return pageOrder.Order
 }
 
-func (fs *FileStore) SavePageOrder(order []int) {
+func (fs *FileStore) SavePageOrder(order []int) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	fs.savePageOrder(order)
+	return fs.savePageOrder(order)
 }
 
-func (fs *FileStore) savePageOrder(order []int) {
+func (fs *FileStore) savePageOrder(order []int) error {
 	fs.ensureDataDir()
 
 	pageOrder := PageOrder{
 		Order: order,
 	}
 
-	data, _ := json.MarshalIndent(pageOrder, "", "  ")
-	os.WriteFile(fs.pageOrderFile, data, 0644)
+	return writeIndentJSONFile(fs.pageOrderFile, pageOrder)
 }
 
-func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) {
+func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -1172,8 +1163,7 @@ func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) {
 		pageWithBookmarks.Categories = getDefaultNewPageCategories()
 	}
 
-	data, _ := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	os.WriteFile(fileName, data, 0644)
+	return writeIndentJSONFile(fileName, pageWithBookmarks)
 }
 
 func (fs *FileStore) removeFactoryResetUserAssets() {
@@ -1617,7 +1607,7 @@ func (fs *FileStore) GetSettings() Settings {
 	return settings
 }
 
-func (fs *FileStore) SaveSettings(settings Settings) {
+func (fs *FileStore) SaveSettings(settings Settings) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -1637,8 +1627,7 @@ func (fs *FileStore) SaveSettings(settings Settings) {
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 
-	data, _ := json.MarshalIndent(settings, "", "  ")
-	os.WriteFile(fs.settingsFile, data, 0644)
+	return writeIndentJSONFile(fs.settingsFile, settings)
 }
 
 func getDefaultLightTheme() ThemeColors {
@@ -1803,7 +1792,7 @@ func (fs *FileStore) GetColors() ColorTheme {
 	return colors
 }
 
-func (fs *FileStore) SaveColors(colors ColorTheme) {
+func (fs *FileStore) SaveColors(colors ColorTheme) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -1819,8 +1808,7 @@ func (fs *FileStore) SaveColors(colors ColorTheme) {
 		colors.Custom = map[string]ThemeColors{}
 	}
 
-	data, _ := json.MarshalIndent(colors, "", "  ")
-	os.WriteFile(fs.colorsFile, data, 0644)
+	return writeIndentJSONFile(fs.colorsFile, colors)
 }
 
 type HealthSummary struct {

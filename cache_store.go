@@ -50,9 +50,9 @@ func (h *Handlers) getPreviewCacheEntry(key string) (BookmarkPreview, bool) {
 	return entry, true
 }
 
-func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) {
+func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) error {
 	if len(updates) == 0 {
-		return
+		return nil
 	}
 
 	h.previewCacheMu.Lock()
@@ -65,16 +65,16 @@ func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) 
 	for key, entry := range updates {
 		cache.Cache[key] = entry
 	}
-	_ = writePreviewCacheFile(cache)
+	return writePreviewCacheFile(cache)
 }
 
-func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) {
+func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
 	h.previewCacheMu.Lock()
 	defer h.previewCacheMu.Unlock()
 	if cache.Cache == nil {
 		cache.Cache = map[string]BookmarkPreview{}
 	}
-	_ = writePreviewCacheFile(cache)
+	return writePreviewCacheFile(cache)
 }
 
 func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {
@@ -134,9 +134,9 @@ func writeHealthCacheFile(cache HealthScanCacheFile) error {
 	return os.WriteFile(healthCachePath, data, 0644)
 }
 
-func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) {
+func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) error {
 	if len(updates) == 0 {
-		return
+		return nil
 	}
 
 	h.healthCacheMu.Lock()
@@ -150,5 +150,5 @@ func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) {
 		cache.Cache[key] = entry
 	}
 	cache.GeneratedAt = time.Now().UnixMilli()
-	_ = writeHealthCacheFile(cache)
+	return writeHealthCacheFile(cache)
 }

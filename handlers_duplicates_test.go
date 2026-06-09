@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -88,18 +89,30 @@ func TestMergeBookmarkMetadataCombinesUsageAndFields(t *testing.T) {
 }
 
 func TestMergeDuplicatesMergesIntoKeeperAndRemovesSources(t *testing.T) {
-	t.Parallel()
+	tmp := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
 
-	store.SaveBookmarksByPage(1, []Bookmark{
+	if err := store.SaveBookmarksByPage(1, []Bookmark{
 		{Name: "Keeper", URL: "https://example.com", OpenCount: 2, Tags: []string{"work"}},
 		{Name: "Dup", URL: "https://example.com/", OpenCount: 5, Pinned: true, Note: "from dup", Tags: []string{"home"}, Shortcut: "ex"},
-	})
-	store.SaveBookmarksByPage(2, []Bookmark{
+	}); err != nil {
+		t.Fatalf("save page 1: %v", err)
+	}
+	if err := store.SaveBookmarksByPage(2, []Bookmark{
 		{Name: "Other", URL: "https://example.com", Icon: "icon.png", PreviewTitle: "Title"},
-	})
+	}); err != nil {
+		t.Fatalf("save page 2: %v", err)
+	}
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"targetPageId":  1,
