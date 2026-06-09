@@ -676,6 +676,7 @@
         "noBookmarksHint": "Utilisez + Ajouter ou ⚡ ci-dessous, ou restaurez une sauvegarde ZIP depuis Sauvegardes.",
         "noBookmarksHintMobile": "Touchez ⚡ ou + Ajouter pour créer votre premier favori sur cette page.",
         "urlConflictHint": "Cette URL existe déjà sur cette page.",
+        "urlProtocolHint": "Aucun protocole détecté — sera enregistré comme https://",
         "pinnedToggleHint": "Garder ce favori en haut de sa catégorie",
         "statusCheckToggleHint": "Surveiller si ce favori est en ligne",
         "tagsFieldHint": "Séparés par des virgules. Utilisés pour le filtrage et les collections dynamiques.",

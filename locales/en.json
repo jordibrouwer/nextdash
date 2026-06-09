@@ -679,6 +679,7 @@
         "noBookmarksHint": "Use + Add or ⚡ below to create a bookmark, or restore a ZIP backup on the Backups tab.",
         "noBookmarksHintMobile": "Tap ⚡ or + Add below to create your first bookmark on this page.",
         "urlConflictHint": "This URL already exists on this page.",
+        "urlProtocolHint": "No protocol detected — will be saved as https://",
         "pinnedToggleHint": "Keep this bookmark at the top of its category",
         "statusCheckToggleHint": "Monitor whether this bookmark is online",
         "tagsFieldHint": "Comma-separated. Used for filtering and dynamic collections.",

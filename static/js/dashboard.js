@@ -5386,7 +5386,12 @@ class Dashboard {
         nameInput.addEventListener('input', () => { nameInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
         urlInput.addEventListener('input', () => { urlInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
         nameInput.addEventListener('blur', () => { nameInput.dataset.touched = '1'; validateForm(); });
-        urlInput.addEventListener('blur', () => { urlInput.dataset.touched = '1'; validateForm(); });
+        urlInput.addEventListener('blur', () => {
+            const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput.value) || urlInput.value.trim();
+            if (normalized && normalized !== urlInput.value.trim()) urlInput.value = normalized;
+            urlInput.dataset.touched = '1';
+            validateForm();
+        });
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';

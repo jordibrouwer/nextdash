@@ -679,6 +679,7 @@
         "noBookmarksHint": "Gebruik + Toevoegen of ⚡ hieronder om een bladwijzer te maken, of herstel een ZIP-back-up via Back-ups.",
         "noBookmarksHintMobile": "Tik op ⚡ of + Toevoegen hieronder om je eerste bladwijzer op deze pagina te maken.",
         "urlConflictHint": "Deze URL bestaat al op deze pagina.",
+        "urlProtocolHint": "Geen protocol gevonden — wordt opgeslagen als https://",
         "pinnedToggleHint": "Houd deze bladwijzer bovenaan in de categorie",
         "statusCheckToggleHint": "Controleer of deze bladwijzer online is",
         "tagsFieldHint": "Kommagescheiden. Gebruikt voor filteren en dynamische collecties.",

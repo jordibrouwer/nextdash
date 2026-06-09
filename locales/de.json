@@ -676,6 +676,7 @@
         "noBookmarksHint": "Verwende + Hinzufügen oder ⚡ unten, oder stelle ein ZIP-Backup über Backups wieder her.",
         "noBookmarksHintMobile": "Tippe auf ⚡ oder + Hinzufügen, um dein erstes Lesezeichen auf dieser Seite zu erstellen.",
         "urlConflictHint": "Diese URL existiert bereits auf dieser Seite.",
+        "urlProtocolHint": "Kein Protokoll erkannt — wird als https:// gespeichert",
         "pinnedToggleHint": "Lesezeichen oben in der Kategorie anheften",
         "statusCheckToggleHint": "Online-Status dieses Lesezeichens überwachen",
         "tagsFieldHint": "Kommagetrennt. Für Filter und dynamische Sammlungen.",

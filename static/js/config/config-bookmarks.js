@@ -570,6 +570,7 @@ class ConfigBookmarks {
         }, { signal });
 
         const urlConflictMsg = panel.querySelector('#detail-url-conflict-msg');
+        const urlProtocolHint = panel.querySelector('#detail-url-protocol-hint');
         if (urlEl) urlEl.addEventListener('input', (e) => {
             bookmark.url = e.target.value;
             delete bookmark._isNew;
@@ -577,6 +578,7 @@ class ConfigBookmarks {
             const isDup = Boolean(trimmed) && bookmarks.some((b, i) => i !== index && (b.url || '').trim().toLowerCase() === trimmed.toLowerCase());
             urlEl.classList.toggle('field-conflict', isDup);
             if (urlConflictMsg) urlConflictMsg.hidden = !isDup;
+            if (urlProtocolHint) urlProtocolHint.hidden = !trimmed || /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
             if (window.configManager?.validateBookmarkConflicts) window.configManager.validateBookmarkConflicts({ showToast: false });
             this._syncRow(index, bookmark);
             if (isDup) {
@@ -599,6 +601,7 @@ class ConfigBookmarks {
                 this._syncRow(index, bookmark);
                 if (window.configManager?.markDirty) window.configManager.markDirty();
             }
+            if (urlProtocolHint) urlProtocolHint.hidden = true;
         }, { signal });
 
         if (scEl) scEl.addEventListener('input', (e) => {
