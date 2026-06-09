@@ -132,6 +132,14 @@ func (h *Handlers) fetchAndStoreBookmarkIcon(bookmarkURL string) string {
 	return ""
 }
 
+func (h *Handlers) startDefaultBookmarkIconPrefetch() {
+	go func() {
+		h.prefetchMu.Lock()
+		defer h.prefetchMu.Unlock()
+		h.prefetchDefaultBookmarkIcons()
+	}()
+}
+
 func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	const pageID = 1
 	bookmarks := h.store.GetBookmarksByPage(pageID)

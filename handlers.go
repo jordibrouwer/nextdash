@@ -23,6 +23,7 @@ type Handlers struct {
 	store          Store
 	files          embed.FS
 	previewCacheMu sync.RWMutex
+	prefetchMu     sync.Mutex
 }
 
 const previewCachePath = "data/preview-cache.json"
@@ -120,7 +121,7 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 		files: files,
 	}
 	if store.TakeDefaultBookmarkIconPrefetch() {
-		h.prefetchDefaultBookmarkIcons()
+		h.startDefaultBookmarkIconPrefetch()
 	}
 	return h
 }
@@ -968,7 +969,7 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if h.store.TakeDefaultBookmarkIconPrefetch() {
-		h.prefetchDefaultBookmarkIcons()
+		h.startDefaultBookmarkIconPrefetch()
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})

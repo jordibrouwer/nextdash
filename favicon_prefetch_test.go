@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDeriveFaviconURL(t *testing.T) {
@@ -40,6 +41,37 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 	}
 	if fs.TakeDefaultBookmarkIconPrefetch() {
 		t.Fatal("expected flag to be consumed")
+	}
+}
+
+func TestNewHandlersStartsPrefetchAsync(t *testing.T) {
+	tmp := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+
+	store := NewStore()
+	fs, ok := store.(*FileStore)
+	if !ok {
+		t.Fatal("expected *FileStore")
+	}
+	if !store.TakeDefaultBookmarkIconPrefetch() {
+		t.Fatal("expected prefetch flag on fresh default bookmarks")
+	}
+	fs.markDefaultBookmarkIconPrefetch()
+
+	start := time.Now()
+	NewHandlers(store, embeddedFiles)
+	if elapsed := time.Since(start); elapsed > 200*time.Millisecond {
+		t.Fatalf("NewHandlers blocked %v waiting for prefetch", elapsed)
+	}
+	if store.TakeDefaultBookmarkIconPrefetch() {
+		t.Fatal("expected prefetch flag to be consumed by NewHandlers")
 	}
 }
 
