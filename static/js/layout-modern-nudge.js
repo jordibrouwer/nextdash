@@ -36,7 +36,7 @@
         return true;
     }
 
-    function create(dashboard) {
+    function create(dashboard, options = {}) {
         if (typeof window.FeatureSpotlight !== 'function') return null;
         return new window.FeatureSpotlight({
             language: dashboard.language,
@@ -55,6 +55,8 @@
             iconSvg: LAYOUT_ICON_SVG,
             onTry: () => applyLayoutVersion(dashboard, 'modern'),
             onSecondaryTry: () => applyLayoutVersion(dashboard, 'glass'),
+            queueMeta: options.queueMeta ?? null,
+            onQueueDefer: options.onQueueDefer ?? null,
         });
     }
 

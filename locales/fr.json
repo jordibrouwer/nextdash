@@ -319,6 +319,8 @@
         "layoutModernNudgeTry": "Essayer moderne",
         "layoutModernNudgeTryGlass": "Essayer glass",
         "layoutModernNudgeClose": "Garder classique",
+        "discoverabilityQueueStep": "Astuce {current} sur {total}",
+        "discoverabilityQueueDefer": "Plus tard cette session",
         "undo": "Annuler",
         "tipBackup": "Conseil : créez une sauvegarde via <a class=\"button-hint-link\" href=\"/config#backups\">config → sauvegardes</a>.",
         "tipUndoDelete": "Conseil : supprimez un favori et cliquez <code>Annuler</code> dans le toast pour annuler en 5s",

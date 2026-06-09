@@ -2162,6 +2162,12 @@ class ConfigSettings {
         return parsed;
     }
 
+    applyStatusEssentialsHealthHref(brokenCount = 0) {
+        const healthLink = document.getElementById('status-essentials-health-link');
+        if (!healthLink || healthLink.hidden) return;
+        healthLink.href = brokenCount > 0 ? '/health?filter=broken' : '/health';
+    }
+
     refreshStatusEssentialsSummary(settings, allBookmarks = []) {
         const line = document.getElementById('status-essentials-summary-line');
         const healthLink = document.getElementById('status-essentials-health-link');
@@ -2177,7 +2183,15 @@ class ConfigSettings {
             return;
         }
 
-        if (healthLink) healthLink.hidden = false;
+        if (healthLink) {
+            healthLink.hidden = false;
+            const cachedBroken = window.configManager?._healthBrokenCount;
+            if (typeof cachedBroken === 'number') {
+                this.applyStatusEssentialsHealthHref(cachedBroken);
+            } else {
+                window.configManager?.updateHealthBadge?.();
+            }
+        }
 
         if (monitored === 0) {
             line.textContent = this.t('config.statusEssentialsSummaryOnNone', 'On · no bookmarks with status checks yet');

@@ -322,6 +322,8 @@
         "layoutModernNudgeTry": "Probeer modern",
         "layoutModernNudgeTryGlass": "Probeer glass",
         "layoutModernNudgeClose": "Houd klassiek",
+        "discoverabilityQueueStep": "Tip {current} van {total}",
+        "discoverabilityQueueDefer": "Later deze sessie",
         "undo": "Ongedaan maken",
         "tipBackup": "Tip: maak een backup via <a class=\"button-hint-link\" href=\"/config#backups\">config → backups</a>.",
         "tipUndoDelete": "Tip: verwijder een bladwijzer en klik <code>Ongedaan maken</code> in de melding om het binnen 5s terug te draaien",
