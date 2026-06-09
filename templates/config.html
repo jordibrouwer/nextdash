@@ -70,7 +70,7 @@
             <div class="config-controls-wrapper">
                 <div class="config-actions-top">
                     <div class="config-actions-buttons">
-                        <button id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
+                        <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
                         <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator" aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
                         <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
                         <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
@@ -80,17 +80,17 @@
 
                 <div class="tabs-scroll-wrapper">
                 <div class="tabs">
-                    <button class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
-                    <button class="tab-button" data-tab="colors" data-i18n="config.colorsTab">theme</button>
-                    <button class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
-                    <button class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
-                    <button class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
-                    <button class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
-                    <button class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
-                    <button class="tab-button" data-tab="collections" data-i18n="config.collectionsTab">collections</button>
-                    <button class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
-                    <button class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
-                    <button class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
+                    <button type="button" class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
+                    <button type="button" class="tab-button" data-tab="colors" data-i18n="config.colorsTab">theme</button>
+                    <button type="button" class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
+                    <button type="button" class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
+                    <button type="button" class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
+                    <button type="button" class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
+                    <button type="button" class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
+                    <button type="button" class="tab-button" data-tab="collections" data-i18n="config.collectionsTab">collections</button>
+                    <button type="button" class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
+                    <button type="button" class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
+                    <button type="button" class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
                 </div>
                 </div>
             </div>
@@ -1116,7 +1116,7 @@
             <div class="simple-tab">
                 <div class="simple-toolbar">
                     <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></span>
-                    <button id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
+                    <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
                 <div id="pages-list" class="pages-list js-list simple-list">
                     <!-- Pages will be loaded here -->
@@ -1133,7 +1133,7 @@
                         <select id="categories-page-selector" class="page-selector simple-page-select">
                             <!-- Pages will be loaded here -->
                         </select>
-                        <button id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
+                        <button type="button" id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
                     </div>
                 </div>
                 <div id="categories-list" class="categories-list js-list simple-list">
@@ -1218,8 +1218,8 @@
                                         <option value="last-opened-desc">Last opened</option>
                                     </select>
                                 </div>
-                                <button id="add-bookmark-btn" class="btn btn-secondary btn-small" title="Add bookmark" data-i18n="config.addBookmark">+ Add</button>
-                                <button id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark"><span class="config-quick-add-icon" aria-hidden="true">⚡</span><span class="config-quick-add-label" data-i18n="config.quickAddBookmarkLabel">Quick add</span></button>
+                                <button type="button" id="add-bookmark-btn" class="btn btn-secondary btn-small" title="Add bookmark" data-i18n="config.addBookmark">+ Add</button>
+                                <button type="button" id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark"><span class="config-quick-add-icon" aria-hidden="true">⚡</span><span class="config-quick-add-label" data-i18n="config.quickAddBookmarkLabel">Quick add</span></button>
                             </div>
                             <div class="bookmarks-list-search-row">
                                 <div class="bookmarks-search-wrap">
@@ -1422,7 +1422,7 @@
             <div class="simple-tab">
                 <div class="simple-toolbar">
                     <span class="simple-tab-intro" data-i18n="config.findersIntro">Finders are quick-search shortcuts that open a filtered view on the dashboard when triggered by a key combination.</span>
-                    <button id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+                    <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
                 </div>
                 <div id="finders-list" class="finders-list js-list simple-list">
                     <!-- Finders will be loaded here -->
@@ -1489,7 +1489,7 @@
                             <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
                             <div class="backups-action-buttons">
                                 <button type="button" id="backup-info-btn" class="info-button" data-i18n-aria="config.backupInfoTitle">ℹ</button>
-                                <button id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
+                                <button type="button" id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
@@ -1497,7 +1497,7 @@
                             <div class="backups-action-buttons">
                                 <button type="button" id="import-info-btn" class="info-button" data-i18n-aria="config.importInfoTitle">ℹ</button>
                                 <input type="file" id="import-file" accept=".zip" style="display: none;">
-                                <button id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
+                                <button type="button" id="import-btn" class="btn btn-danger btn-small" data-i18n="config.selectImportFile">Select Import File</button>
                             </div>
                         </div>
                     </div>
@@ -1511,14 +1511,14 @@
                             <p class="backups-action-hint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped.</p>
                             <div class="backups-action-buttons">
                                 <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
-                                <button id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
+                                <button type="button" id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
                             <p class="backups-action-hint">Downloads all bookmarks from all pages as a single CSV file (Name, URL, Category, Page, Shortcut). Opens in Excel, Google Sheets, or any text editor.</p>
                             <div class="backups-action-buttons">
-                                <button id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
+                                <button type="button" id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
                             </div>
                         </div>
                     </div>
@@ -1531,7 +1531,7 @@
                             <p class="backups-action-label" data-i18n="config.settingsExportDescription">Export settings</p>
                             <p class="backups-action-hint" data-i18n="config.settingsExportHint">Downloads your current settings as JSON. Does not include bookmarks, pages, or themes.</p>
                             <div class="backups-action-buttons">
-                                <button id="settings-export-btn" class="btn btn-secondary btn-small" data-i18n="config.settingsExportBtn">Export Settings</button>
+                                <button type="button" id="settings-export-btn" class="btn btn-secondary btn-small" data-i18n="config.settingsExportBtn">Export Settings</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
@@ -1539,7 +1539,7 @@
                             <p class="backups-action-hint" data-i18n="config.settingsImportHint">Overwrites current settings with a previously exported JSON file.</p>
                             <div class="backups-action-buttons">
                                 <input type="file" id="settings-import-file" accept=".json" style="display: none;">
-                                <button id="settings-import-btn" class="btn btn-danger btn-small" data-i18n="config.settingsImportBtn">Import Settings</button>
+                                <button type="button" id="settings-import-btn" class="btn btn-danger btn-small" data-i18n="config.settingsImportBtn">Import Settings</button>
                             </div>
                         </div>
                     </div>
