@@ -3075,7 +3075,6 @@ class Dashboard {
     }
 
     setupBookmarkTracking() {
-        // Track when bookmarks are opened
         document.addEventListener('click', (e) => {
             if (e.target.closest('.bookmark-inline-form')) {
                 return;
@@ -3084,19 +3083,11 @@ class Dashboard {
             if (!openLink) {
                 return;
             }
-            const bookmarkRow = openLink.closest('.bookmark-link[data-bookmark-index]');
-            if (bookmarkRow && bookmarkRow.dataset.bookmarkIndex !== undefined) {
-                const index = parseInt(bookmarkRow.dataset.bookmarkIndex, 10);
-                if (!Number.isNaN(index) && index >= 0) {
-                    this.analytics?.trackBookmarkOpen(this.currentPageId, index);
-                    this.markInlineTipUsed('bookmark_open');
-                    // Hide any active preview card when a bookmark link is clicked
-                    try {
-                        this.dismissBookmarkPreviewInteractions();
-                    } catch (err) {
-                        // ignore errors
-                    }
-                }
+            this.markInlineTipUsed('bookmark_open');
+            try {
+                this.dismissBookmarkPreviewInteractions();
+            } catch (_err) {
+                // ignore errors
             }
         });
     }
@@ -4761,13 +4752,85 @@ class Dashboard {
         row.addEventListener('lostpointercapture', onPointerEnd, { capture: false, signal });
     }
 
-    resolveBookmarkIndex(bookmark) {
-        let idx = this.bookmarks.indexOf(bookmark);
-        if (idx === -1 && bookmark && bookmark.url) {
-            const u = (bookmark.url || '').trim();
-            idx = this.bookmarks.findIndex((b) => (b.url || '').trim() === u);
+    canonicalBookmarkURLKey(raw) {
+        if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
+            return BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
         }
-        return idx;
+        return String(raw || '').trim();
+    }
+
+    resolveBookmarkPageId(bookmark) {
+        const explicit = Number(bookmark?.pageId || bookmark?.pageID || 0);
+        if (Number.isFinite(explicit) && explicit > 0) {
+            return explicit;
+        }
+        return Number(this.currentPageId);
+    }
+
+    bookmarkMatchesCanonicalUrl(candidate, bookmark) {
+        const key = this.canonicalBookmarkURLKey(bookmark?.url || '');
+        if (!key) {
+            return false;
+        }
+        return this.canonicalBookmarkURLKey(candidate?.url || '') === key;
+    }
+
+    resolveBookmarkIndex(bookmark) {
+        const pageId = this.resolveBookmarkPageId(bookmark);
+        if (pageId !== Number(this.currentPageId)) {
+            return -1;
+        }
+
+        let idx = this.bookmarks.indexOf(bookmark);
+        if (idx >= 0) {
+            return idx;
+        }
+        if (!bookmark?.url) {
+            return -1;
+        }
+        const key = this.canonicalBookmarkURLKey(bookmark.url);
+        return this.bookmarks.findIndex((b) => this.canonicalBookmarkURLKey(b.url) === key);
+    }
+
+    resolveBookmarkIndexOnPage(bookmark, pageId) {
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid <= 0) {
+            return -1;
+        }
+
+        const matches = (candidate) => {
+            if (candidate === bookmark) {
+                return true;
+            }
+            const candidatePageId = Number(candidate?.pageId || candidate?.pageID || 0);
+            if (candidatePageId > 0 && candidatePageId !== pid) {
+                return false;
+            }
+            return this.bookmarkMatchesCanonicalUrl(candidate, bookmark);
+        };
+
+        if (pid === Number(this.currentPageId) && Array.isArray(this.bookmarks)) {
+            const idx = this.bookmarks.findIndex(matches);
+            if (idx >= 0) {
+                return idx;
+            }
+        }
+
+        const pool = Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0
+            ? this.allBookmarks
+            : (pid === Number(this.currentPageId) ? this.bookmarks : []);
+        let pageIndex = 0;
+        for (const candidate of pool) {
+            const candidatePageId = Number(candidate?.pageId || candidate?.pageID || pid);
+            if (candidatePageId !== pid) {
+                continue;
+            }
+            if (matches(candidate)) {
+                return pageIndex;
+            }
+            pageIndex += 1;
+        }
+        return -1;
     }
 
     populateBookmarkRowView(row, bookmark, categoryId, allowInlineEdit) {
@@ -5894,7 +5957,9 @@ class Dashboard {
                 shortcut: editedBookmark.shortcut,
                 category: editedBookmark.category,
                 pinned: editedBookmark.pinned,
-                checkStatus: editedBookmark.checkStatus
+                checkStatus: editedBookmark.checkStatus,
+                note: editedBookmark.note || '',
+                tags: Array.isArray(editedBookmark.tags) ? editedBookmark.tags : []
             };
 
             const saveResponse = await dashFetch(`/api/bookmarks?page=${pageId}`, {
@@ -6720,50 +6785,59 @@ class Dashboard {
     recordBookmarkOpened(bookmark) {
         if (!bookmark) return;
 
+        const pageId = this.resolveBookmarkPageId(bookmark);
+        const index = this.resolveBookmarkIndexOnPage(bookmark, pageId);
+
         bookmark.openCount = Number(bookmark.openCount || 0) + 1;
         bookmark.lastOpened = Date.now();
-        this.syncAllBookmarksMetadata(bookmark);
+        this.syncBookmarkMetadataAcrossViews(bookmark, pageId);
         this.refreshSmartCollectionsAfterOpen(bookmark.url);
 
-        if (this.pendingMetadataSave) {
-            clearTimeout(this.pendingMetadataSave);
+        if (index >= 0 && pageId > 0) {
+            this.analytics?.trackBookmarkOpen(pageId, index);
+        }
+    }
+
+    syncBookmarkMetadataAcrossViews(updatedBookmark, pageId) {
+        if (!updatedBookmark) {
+            return;
         }
 
-        this.pendingMetadataSave = setTimeout(() => {
-            this.pendingMetadataSave = null;
-            dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(this.bookmarks)
-            }).catch((error) => {
-                console.error('Failed to save bookmark metadata:', error);
+        const pid = Number(pageId);
+        const key = this.canonicalBookmarkURLKey(updatedBookmark.url || '');
+        if (!key) {
+            return;
+        }
+
+        const count = updatedBookmark.openCount;
+        const opened = updatedBookmark.lastOpened;
+
+        if (pid === Number(this.currentPageId) && Array.isArray(this.bookmarks)) {
+            this.bookmarks.forEach((bm) => {
+                if (this.canonicalBookmarkURLKey(bm.url) === key) {
+                    bm.openCount = count;
+                    bm.lastOpened = opened;
+                }
             });
-        }, 1000);
+        }
+
+        if (Array.isArray(this.allBookmarks)) {
+            this.allBookmarks.forEach((bm) => {
+                const bmPageId = Number(bm.pageId || bm.pageID || 0);
+                if (bmPageId !== pid) {
+                    return;
+                }
+                if (this.canonicalBookmarkURLKey(bm.url) !== key) {
+                    return;
+                }
+                bm.openCount = count;
+                bm.lastOpened = opened;
+            });
+        }
     }
 
     syncAllBookmarksMetadata(updatedBookmark) {
-        if (!updatedBookmark || !Array.isArray(this.allBookmarks)) {
-            return;
-        }
-
-        const updatedUrl = (updatedBookmark.url || '').trim();
-        if (!updatedUrl) {
-            return;
-        }
-
-        this.allBookmarks.forEach((bookmark) => {
-            const bookmarkUrl = (bookmark.url || '').trim();
-            if (!bookmarkUrl || bookmarkUrl !== updatedUrl) {
-                return;
-            }
-
-            if (Number(bookmark.pageId) === Number(this.currentPageId)) {
-                bookmark.lastOpened = updatedBookmark.lastOpened;
-                bookmark.openCount = updatedBookmark.openCount;
-            }
-        });
+        this.syncBookmarkMetadataAcrossViews(updatedBookmark, this.resolveBookmarkPageId(updatedBookmark));
     }
 
     refreshSmartCollectionsAfterOpen(url) {

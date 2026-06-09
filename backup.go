@@ -219,6 +219,45 @@ func prepareImportFromStaged(staged []stagedImportFile, allowLocal bool) ([]prep
 	return mergePreparedImports(prepared), categories, skippedBookmarks, nil
 }
 
+// mergeImportCategoriesIntoPrepared embeds standalone categories-*.json payloads into
+// matching bookmarks-*.json files before commit so a failed post-commit category save
+// cannot leave bookmarks committed without their categories.
+func mergeImportCategoriesIntoPrepared(prepared []preparedImportFile, categoriesByPage map[int][]Category) ([]preparedImportFile, map[int][]Category) {
+	if len(categoriesByPage) == 0 {
+		return prepared, categoriesByPage
+	}
+
+	remaining := make(map[int][]Category, len(categoriesByPage))
+	for pageID, cats := range categoriesByPage {
+		remaining[pageID] = cats
+	}
+
+	for i, file := range prepared {
+		pageID, ok := parseBookmarkPageIDFromFilename(filepath.Base(file.relPath))
+		if !ok {
+			continue
+		}
+		cats, hasCats := remaining[pageID]
+		if !hasCats {
+			continue
+		}
+
+		var pageWithBookmarks PageWithBookmarks
+		if err := json.Unmarshal(file.content, &pageWithBookmarks); err != nil {
+			continue
+		}
+		pageWithBookmarks.Categories = cats
+		data, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
+		if err != nil {
+			continue
+		}
+		prepared[i].content = data
+		delete(remaining, pageID)
+	}
+
+	return prepared, remaining
+}
+
 func importIconBasenames(prepared []preparedImportFile) map[string]bool {
 	names := make(map[string]bool)
 	for _, file := range prepared {
@@ -500,6 +539,8 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
 
 	if err := commitPreparedImport("data", prepared); err != nil {
 		http.Error(w, "Failed to apply import", http.StatusInternalServerError)

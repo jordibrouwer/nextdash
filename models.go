@@ -265,6 +265,7 @@ type Store interface {
 	GetAllBookmarks() []Bookmark
 	BookmarkURLExists(url string) bool
 	SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
+	SaveBookmarkPageUpdates(updates map[int][]Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) bool
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
@@ -639,10 +640,7 @@ func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) bool {
 	return true
 }
 
-func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error {
-	fs.mutex.Lock()
-	defer fs.mutex.Unlock()
-
+func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark) error {
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
@@ -672,6 +670,28 @@ func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
 
 	pageWithBookmarks.Bookmarks = bookmarks
 	return writeIndentJSONFile(filePath, pageWithBookmarks)
+}
+
+func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	return fs.saveBookmarksByPageLocked(pageID, bookmarks)
+}
+
+func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	for pageID, bookmarks := range updates {
+		if err := fs.saveBookmarksByPageLocked(pageID, bookmarks); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {

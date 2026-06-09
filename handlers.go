@@ -1786,10 +1786,12 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	// Retest all bookmarks with checkStatus=true
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		pageModified := false
 		for idx, bm := range bookmarks {
 			if !bm.CheckStatus {
 				continue
 			}
+			pageModified = true
 
 			// Run ping
 			result := h.pingURLDetailed(bm.URL)
@@ -1829,8 +1831,10 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
-			return
+		if pageModified {
+			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+				return
+			}
 		}
 	}
 
@@ -1972,6 +1976,16 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 	merged := keeper
 	mergeBookmarkMetadata(&merged, sources)
 
+	involvedPages := map[int]struct{}{req.TargetPageID: {}}
+	for _, del := range deletes {
+		involvedPages[del.pageID] = struct{}{}
+	}
+	pageSnapshots := make(map[int][]Bookmark, len(involvedPages))
+	for pageID := range involvedPages {
+		existing := h.store.GetBookmarksByPage(pageID)
+		pageSnapshots[pageID] = append([]Bookmark(nil), existing...)
+	}
+
 	sort.Slice(deletes, func(i, j int) bool {
 		if deletes[i].pageID != deletes[j].pageID {
 			return deletes[i].pageID < deletes[j].pageID
@@ -1982,27 +1996,27 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 	targetIndex := req.TargetIndex
 	mergedCount := 0
 	for _, del := range deletes {
+		bookmarks := pageSnapshots[del.pageID]
+		if del.index < 0 || del.index >= len(bookmarks) {
+			http.Error(w, "Invalid source index", http.StatusBadRequest)
+			return
+		}
 		if del.pageID == req.TargetPageID && del.index < targetIndex {
 			targetIndex--
 		}
-		bookmarks := h.store.GetBookmarksByPage(del.pageID)
-		if del.index < 0 || del.index >= len(bookmarks) {
-			continue
-		}
-		bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-		if !respondStorePersistError(w, h.store.SaveBookmarksByPage(del.pageID, bookmarks)) {
-			return
-		}
+		pageSnapshots[del.pageID] = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
 		mergedCount++
 	}
 
-	targetBookmarks = h.store.GetBookmarksByPage(req.TargetPageID)
+	targetBookmarks = pageSnapshots[req.TargetPageID]
 	if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
 		http.Error(w, "Target bookmark missing after merge", http.StatusInternalServerError)
 		return
 	}
 	targetBookmarks[targetIndex] = merged
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.TargetPageID, targetBookmarks)) {
+	pageSnapshots[req.TargetPageID] = targetBookmarks
+
+	if !respondStorePersistError(w, h.store.SaveBookmarkPageUpdates(pageSnapshots)) {
 		return
 	}
 
