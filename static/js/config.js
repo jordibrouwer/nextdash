@@ -3309,7 +3309,7 @@ class ConfigManager {
     }
 
     async updateHealthBadge() {
-        const anchor = document.querySelector('header.header .header-links a.back-link[href^="/health"]');
+        const anchor = document.querySelector('header.header a[href="/health"]');
         if (!anchor) return;
         try {
             const response = await fetch('/api/bookmark-health');
@@ -3318,11 +3318,9 @@ class ConfigManager {
             const summary = data?.summary || {};
             const broken = Number(summary.brokenCount || 0);
             const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
-            this._healthBrokenCount = broken;
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
             anchor.href = broken > 0 ? '/health?filter=broken' : '/health';
-            this.settings?.applyStatusEssentialsHealthHref?.(broken);
             const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
             const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
             const appendBadge = (count, type) => {

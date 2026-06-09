@@ -144,7 +144,6 @@
 
             const spotlight = new window.FeatureSpotlight({
                 language: dash.language,
-                dashboard: dash,
                 onTry: () => {
                     const handler = dash.searchComponent?.commandsComponent?.newCommandHandler;
                     if (handler) handler.openModal();
@@ -183,10 +182,7 @@
                 return;
             }
 
-            const spotlight = window.LayoutVersionNudge.create(dash, {
-                queueMeta: { current: JOURNEY.indexOf('layout-modern-nudge') + 1, total: JOURNEY.length },
-                onQueueDefer: () => this.deferRemaining(),
-            });
+            const spotlight = window.LayoutVersionNudge.create(dash);
             if (!spotlight) {
                 onComplete();
                 return;
@@ -222,58 +218,6 @@
         } catch { /* ignore */ }
     };
 
-    function translateQueueLabel(dashboard, key, fallback, replacements = {}) {
-        let text = fallback;
-        if (dashboard?.language?.t) {
-            const fullKey = `dashboard.${key}`;
-            const result = dashboard.language.t(fullKey);
-            if (result && result !== fullKey) text = result;
-        }
-        Object.entries(replacements).forEach(([name, value]) => {
-            text = text.replaceAll(`{${name}}`, String(value));
-        });
-        return text;
-    }
-
-    const DiscoverabilityQueueBar = {
-        inject(spotlightEl, queueMeta, onDefer, dashboard = null) {
-            if (!spotlightEl || !queueMeta) return;
-            const current = Number(queueMeta.current);
-            const total = Number(queueMeta.total);
-            if (!Number.isFinite(current) || !Number.isFinite(total) || total < 1 || current < 1) return;
-
-            const bar = document.createElement('div');
-            bar.className = 'discoverability-queue-bar';
-            bar.setAttribute('role', 'status');
-            bar.setAttribute('aria-live', 'polite');
-
-            const step = document.createElement('span');
-            step.className = 'discoverability-queue-step';
-            step.textContent = translateQueueLabel(
-                dashboard,
-                'discoverabilityQueueStep',
-                'Tip {current} of {total}',
-                { current, total }
-            );
-
-            const deferBtn = document.createElement('button');
-            deferBtn.type = 'button';
-            deferBtn.className = 'discoverability-queue-defer';
-            deferBtn.textContent = translateQueueLabel(
-                dashboard,
-                'discoverabilityQueueDefer',
-                'Later this session'
-            );
-            deferBtn.addEventListener('click', () => {
-                if (typeof onDefer === 'function') onDefer();
-            });
-
-            bar.append(step, deferBtn);
-            spotlightEl.insertBefore(bar, spotlightEl.firstChild);
-        },
-    };
-
     window.DiscoverabilityQueue = DiscoverabilityQueue;
     window.DiscoverabilityQueue.SESSION_DEFER_KEY = SESSION_DEFER_KEY;
-    window.DiscoverabilityQueueBar = DiscoverabilityQueueBar;
 })();

@@ -1,6 +1,5 @@
 {
-  "private": true,
-  "devDependencies": {
+  "dependencies": {
     "playwright": "^1.60.0"
   }
 }
