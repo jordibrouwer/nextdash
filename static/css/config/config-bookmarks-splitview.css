@@ -5,7 +5,7 @@
 /* Grid: lijst links, detail rechts */
 .bookmarks-splitview {
     display: grid;
-    grid-template-columns: 1fr clamp(300px, 25vw, 420px);
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px);
     grid-template-rows: calc(100vh - 180px);
     min-height: 300px;
 }
