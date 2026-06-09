@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.12**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.13**.
 
 ---
 
@@ -68,11 +68,11 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard, config, and health pages inject the token automatically when you open them in a browser.
 
-Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **search-index build**, **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **settings and bookmark saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
+Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **search-index build**, **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
+
+When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard, config, and health pages inject the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
 
 Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
-
-Normal day-to-day bookmark editing stays available when no write token is set. The browser extension can store the same write token in **Settings → Write token**.
 
 ---
 
@@ -120,7 +120,7 @@ Normal day-to-day bookmark editing stays available when no write token is set. T
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — `order` / `az` / `recent` / `custom`
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
-- `:duplicate` / `:duplicates` — scan for duplicate URLs across all pages (notification with group count)
+- `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
 - `:layout <preset>` — `default` / `compact` / `cards` / `masonry` / `list` / `launcher` …
 - `:theme <name>` — switch colour theme
 - `:density <mode>` — `comfortable` / `compact` / `dense`
@@ -129,7 +129,6 @@ Normal day-to-day bookmark editing stays available when no write token is set. T
 - `:find <text>` — hide tiles whose name or URL don't match; clear with `:find`
 - `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right`
 - `:save` / `:saved` — save current query / show saved searches
-- `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
 
 **Config page**
 - `1–8` — jump between config tabs

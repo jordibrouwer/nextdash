@@ -290,7 +290,7 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 
 ### Duplicate URLs
 
-nextDash warns when a URL already exists on the same page. You can still save anyway in the extension or modal when needed. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
+nextDash warns when a URL already exists on the same page (canonical match: trailing slash, hash, and host letter-case are ignored). You can still save anyway in the extension or modal when needed. Use **`:duplicate`** in search or the Health view to find duplicates across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
 
 ---
 
@@ -375,7 +375,7 @@ Three input modes share one overlay; switch with keys or footer chips.
 ### 10.1 Search (`>`)
 
 - Type to filter bookmarks on the current page (or configured scope).  
-- Empty state: recent queries, saved searches, filter hints, finders.  
+- Empty state: recent queries and saved searches as chips; **`←`/`→`** select a chip, **`Enter`** applies it; filter hints and finders below.  
 - **Filters** (type or pick from autocomplete):
 
 | Filter | Example |
@@ -418,6 +418,7 @@ Search **all pages**; each result shows which page it belongs to.
 | `:open all` | Open all on page (safe batch cap) |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:stale [days]` | List stale bookmarks |
+| `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
 | `:find <text>` | Hide non-matching tiles on page |
 | `:goto <url>` | Navigate to URL or domain |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not Classic/Modern) |
@@ -692,6 +693,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | Keys | Action |
 |------|--------|
 | `1`–`8` | Switch tabs |
+| `←` / `→` | Move between visible tabs (when focus is not in an input) |
 | `S` | Save |
 | `Alt+↑` / `Alt+↓` | Reorder bookmark in list |
 | `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard, tour resets) |
@@ -876,30 +878,40 @@ environment:
   - NEXTDASH_WRITE_TOKEN=your-long-random-secret
 ```
 
-When set, destructive API calls require header `X-NextDash-Token: your-long-random-secret`. Opening **Config** or **Health** in the browser supplies this header automatically via a meta tag (same origin only).
+When set, protected API calls require header `X-NextDash-Token: your-long-random-secret`. Opening **Dashboard**, **Config**, or **Health** in the browser supplies this header automatically via a meta tag (same origin only). When the variable is **unset**, nothing requires the token.
 
 | Protected action | Endpoint |
 |------------------|----------|
 | Reset all data | `POST /api/reset` (+ JSON `{"confirm":true}`) |
 | Import ZIP backup | `POST /api/import` |
+| Download ZIP backup | `GET /api/backup` |
 | Delete page | `DELETE /api/pages/{id}` |
 | Health: delete bookmark | `POST /api/health/delete-bookmark` |
 | Health: retest all | `POST /api/health/retest-all` |
 | Health: merge duplicates | `POST /api/health/merge-duplicates` |
+| Health: auto-heal suggest | `GET /api/health/auto-heal-suggest` |
 | Health: auto-heal apply | `POST /api/health/auto-heal-apply` |
+| Health: open broken links | `POST /api/health/open-broken` |
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
+| Bookmark link preview | `GET /api/bookmark-preview` |
+| Build search index | `POST /api/search-index` |
 | Clear all preview metadata | `POST /api/previews/clear` |
 | Refresh all preview metadata | `POST /api/previews/refresh` |
 | Reset theme colours | `POST /api/colors/reset` |
+| Upload favicon / font / icon | `POST /api/favicon`, `/api/font`, `/api/icon`, `/api/icon/from-url` |
+| Save bookmarks / add / import | `POST /api/bookmarks`, `/api/bookmarks/add`, `/api/bookmarks/import-browser` |
+| Save pages / categories / finders / settings / colours | `POST /api/pages`, `/api/categories`, `/api/finders`, `/api/settings`, `/api/colors` |
 
-Routine bookmark edits, config save, and dashboard use are **not** token-gated. The browser extension can store the same token under **Settings → Write token**.
+Read-only endpoints (`GET` bookmarks, settings, health list, ping, etc.) stay open. The browser extension can store the same token under **Settings → Write token**.
 
 ### Localhost bookmarks
 
 **Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
 
-Server-side **pings**, **link previews**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off).
+Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection).
+
+Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/duplicates`) treats URLs as the same when they differ only by trailing slash, hash, or host letter-case (`https://Example.com` ≡ `https://example.com/`).
 
 ---
 
