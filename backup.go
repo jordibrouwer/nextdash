@@ -53,9 +53,6 @@ func sanitizeImportedBookmarkFile(content []byte, allowLocal bool) ([]byte, int,
 		bookmark.Icon = sanitizeBookmarkIcon(bookmark.Icon)
 		filtered = append(filtered, bookmark)
 	}
-	if skipped == 0 {
-		return content, 0, nil
-	}
 
 	page.Bookmarks = filtered
 	out, err := json.MarshalIndent(page, "", "  ")

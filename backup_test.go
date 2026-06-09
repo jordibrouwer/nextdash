@@ -68,3 +68,37 @@ func TestSanitizeImportedBookmarkFile(t *testing.T) {
 		t.Fatalf("allowLocal len = %d, want 3", len(page.Bookmarks))
 	}
 }
+
+func TestSanitizeImportedBookmarkFileSanitizesIconsWhenNoURLsSkipped(t *testing.T) {
+	t.Parallel()
+
+	raw, _ := json.Marshal(PageWithBookmarks{
+		Page: Page{ID: 1, Name: "main"},
+		Bookmarks: []Bookmark{
+			{Name: "OK", URL: "https://example.com", Icon: "valid.png"},
+			{Name: "Bad icon", URL: "https://example.org", Icon: "../settings.json"},
+		},
+	})
+
+	out, skipped, err := sanitizeImportedBookmarkFile(raw, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if skipped != 0 {
+		t.Fatalf("skipped = %d, want 0", skipped)
+	}
+
+	var page PageWithBookmarks
+	if err := json.Unmarshal(out, &page); err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Bookmarks) != 2 {
+		t.Fatalf("len = %d, want 2", len(page.Bookmarks))
+	}
+	if page.Bookmarks[0].Icon != "valid.png" {
+		t.Fatalf("bookmark[0].Icon = %q, want valid.png", page.Bookmarks[0].Icon)
+	}
+	if page.Bookmarks[1].Icon != "" {
+		t.Fatalf("bookmark[1].Icon = %q, want empty", page.Bookmarks[1].Icon)
+	}
+}
