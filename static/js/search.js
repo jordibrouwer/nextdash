@@ -987,6 +987,10 @@ class SearchComponent {
     }
 
     closeSearch() {
+        if (this._debounceTimer) {
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = null;
+        }
         this.searchActive = false;
         this.emptyStateExpandedGroups.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
