@@ -53,6 +53,8 @@ class Modal {
         this.focusTrapHandler = (e) => {
             if (this.modal && this.modal.classList.contains('show')) {
                 if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     this.hide();
                     return;
                 }

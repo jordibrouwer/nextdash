@@ -14,6 +14,7 @@ class SearchComponent {
         this.searchActive = false;
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
+        this.selectedChipIndex = 0;
         this.matchElements = []; // Store references to DOM elements for selection highlighting
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.justCompleted = false; // Flag to prevent accidental execution after completion
@@ -134,7 +135,9 @@ class SearchComponent {
                     this.selectCurrentMatch();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
-                    this.closeSearch();
+                    if (!this.isAppModalOpen()) {
+                        this.closeSearch();
+                    }
                 }
             });
         }
@@ -159,7 +162,7 @@ class SearchComponent {
 
         // Close search on escape
         document.addEventListener('keyup', (e) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && !this.isAppModalOpen()) {
                 this.closeSearch();
             }
         });
@@ -271,13 +274,50 @@ class SearchComponent {
         return `<span class="search-match-favicon-slot${themedClass}"${intensityStyle}><img class="bookmark-icon" src="/data/icons/${iconName}" alt="" loading="lazy"></span>`;
     }
 
+    isAppModalOpen() {
+        return document.getElementById('app-modal')?.classList.contains('show') === true;
+    }
+
+    isChipMatch(match) {
+        return match?.type === 'history-chips' || match?.type === 'command-chips';
+    }
+
+    applySelectedChipQuery(match) {
+        const queries = match?.queries || [];
+        if (!queries.length) return;
+        const q = queries[this.selectedChipIndex] || queries[0];
+        this.currentQuery = q;
+        this.selectedChipIndex = 0;
+        this.updateSearch();
+        this.selectedMatchIndex = 0;
+        this.updateSelectionHighlight();
+    }
+
     handleKeyPress(e) {
         const key = e.key.toUpperCase();
         
         // Handle special keys
         if (key === 'ESCAPE') {
-            this.closeSearch();
+            if (!this.isAppModalOpen()) {
+                this.closeSearch();
+            }
             return;
+        }
+
+        if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive) {
+            const match = this.selectableMatches[this.selectedMatchIndex];
+            if (this.isChipMatch(match)) {
+                e.preventDefault();
+                const queries = match.queries || [];
+                if (!queries.length) return;
+                if (key === 'ARROWLEFT') {
+                    this.selectedChipIndex = (this.selectedChipIndex - 1 + queries.length) % queries.length;
+                } else {
+                    this.selectedChipIndex = (this.selectedChipIndex + 1) % queries.length;
+                }
+                this.updateSelectionHighlight();
+                return;
+            }
         }
         
         if (key === 'ENTER' && this.searchActive) {
@@ -1028,8 +1068,19 @@ class SearchComponent {
     updateSelectionHighlight() {
         // Update keyboard-selected class on existing elements
         this.matchElements.forEach((element, index) => {
+            element.querySelectorAll('.search-history-chip.keyboard-selected-chip').forEach((chip) => {
+                chip.classList.remove('keyboard-selected-chip');
+            });
             if (index === this.selectedMatchIndex) {
                 element.classList.add('keyboard-selected');
+                const match = this.selectableMatches[index];
+                if (this.isChipMatch(match)) {
+                    const chips = element.querySelectorAll('.search-history-chip');
+                    const chip = chips[this.selectedChipIndex] || chips[0];
+                    if (chip) {
+                        chip.classList.add('keyboard-selected-chip');
+                    }
+                }
                 // Scroll the selected element into view (only vertical scroll)
                 element.scrollIntoView({
                     behavior: 'instant',
@@ -1051,7 +1102,11 @@ class SearchComponent {
         const announceEl = document.getElementById('search-result-announce');
         if (announceEl && this.matchElements.length > 0) {
             const match = this.selectableMatches[this.selectedMatchIndex];
-            const label = match?.bookmark?.name || match?.name || '';
+            let label = match?.bookmark?.name || match?.name || '';
+            if (this.isChipMatch(match)) {
+                const queries = match.queries || [];
+                label = queries[this.selectedChipIndex] || queries[0] || label;
+            }
             const pos = `${this.selectedMatchIndex + 1} of ${this.matchElements.length}`;
             announceEl.textContent = label ? `${label}, ${pos}` : pos;
         }
@@ -1061,6 +1116,7 @@ class SearchComponent {
         this.currentQuery = '';
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
+        this.selectedChipIndex = 0;
         this.matchElements = []; // Clear element references
         this.selectableMatches = [];
         this.justCompleted = false; // Reset flag
@@ -1233,10 +1289,11 @@ class SearchComponent {
                         : 'search-history-chip';
                     chip.textContent = q;
                     chip.addEventListener('click', () => {
-                        this.currentQuery = q;
-                        this.updateSearch();
-                        this.selectedMatchIndex = 0;
-                        this.updateSelectionHighlight();
+                        const chipIdx = match.queries.indexOf(q);
+                        if (chipIdx >= 0) {
+                            this.selectedChipIndex = chipIdx;
+                        }
+                        this.applySelectedChipQuery(match);
                     });
                     wrap.appendChild(chip);
 
@@ -1392,8 +1449,18 @@ class SearchComponent {
 
         if (this.selectedMatchIndex < 0) {
             this.selectedMatchIndex = count - 1;
-        } else if (this.selectedMatchIndex >= count) {
+        } else         if (this.selectedMatchIndex >= count) {
             this.selectedMatchIndex = 0;
+        }
+
+        const match = this.selectableMatches[this.selectedMatchIndex];
+        if (!this.isChipMatch(match)) {
+            this.selectedChipIndex = 0;
+        } else {
+            const len = match.queries?.length || 0;
+            if (len > 0 && this.selectedChipIndex >= len) {
+                this.selectedChipIndex = 0;
+            }
         }
 
         this.updateSelectionHighlight();
@@ -1420,6 +1487,10 @@ class SearchComponent {
                     this.commandsComponent.toggleGroup(selectedMatch.groupId);
                 }
                 this.updateSearch();
+                return;
+            }
+            if (this.isChipMatch(selectedMatch)) {
+                this.applySelectedChipQuery(selectedMatch);
                 return;
             }
             if (selectedMatch.type === 'config') {

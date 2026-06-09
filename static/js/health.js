@@ -661,6 +661,13 @@
         if (groups.length === 1) return Promise.resolve(groups[0]);
 
         return new Promise((resolve) => {
+            let settled = false;
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                resolve(value);
+            };
+
             const itemsHtml = groups.map((group, idx) => {
                 const count = (group.bookmarks || []).length;
                 const names = (group.bookmarks || []).map((b) => escapeHtml(b.name)).join(', ');
@@ -675,7 +682,7 @@
                 <div class="health-merge-pick-list">${itemsHtml}</div>`;
 
             if (!window.AppModal || typeof window.AppModal.show !== 'function') {
-                resolve(groups[0]);
+                finish(groups[0]);
                 return;
             }
 
@@ -684,7 +691,8 @@
                 htmlMessage,
                 showCancel: false,
                 confirmText: t('health.cancel', 'Cancel'),
-                onConfirm: () => resolve(null),
+                onConfirm: () => finish(null),
+                onHide: () => finish(null),
                 modalMaxWidth: '34rem',
                 modalClass: 'health-merge-modal'
             });
@@ -693,8 +701,8 @@
                 document.querySelectorAll('.health-merge-pick-btn').forEach((btn) => {
                     btn.addEventListener('click', () => {
                         const idx = parseInt(btn.getAttribute('data-group-index'), 10);
+                        finish(groups[idx]);
                         window.AppModal.hide();
-                        resolve(groups[idx]);
                     });
                 });
             });

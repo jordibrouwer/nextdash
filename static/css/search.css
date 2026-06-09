@@ -974,10 +974,22 @@ body.no-animations .search-mode-tab {
     color: var(--text-primary);
 }
 
-.search-history-chip:focus-visible {
+.search-history-chip:focus-visible,
+.search-history-chip.keyboard-selected-chip {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
     border-radius: 999px;
+}
+
+.search-history-chip.keyboard-selected-chip {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.search-history-chip-row.keyboard-selected {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+    border-radius: 0.35rem;
 }
 
 .search-history-chip-remove,
