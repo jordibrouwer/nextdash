@@ -101,6 +101,224 @@ func resolveImportAllowLocalBookmarks(staged []stagedImportFile, fallback bool) 
 	return fallback
 }
 
+type preparedImportFile struct {
+	relPath string // path relative to data/ (e.g. settings.json, icons/foo.png)
+	content []byte
+}
+
+var importManagedRootFilenames = []string{
+	"settings.json",
+	"colors.json",
+	"pages.json",
+	"finders.json",
+	"favicon.ico",
+	"favicon.png",
+	"favicon.jpg",
+	"favicon.gif",
+	"font.woff",
+	"font.woff2",
+	"font.ttf",
+	"font.otf",
+	".custom-themes-reset-v1",
+}
+
+func isImportRootImage(filename string) bool {
+	if strings.Contains(filename, "/") {
+		return false
+	}
+	validImageExtensions := []string{".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
+	for _, ext := range validImageExtensions {
+		if strings.HasSuffix(filename, ext) {
+			return true
+		}
+	}
+	return false
+}
+
+// importDataRelPath maps a ZIP entry name to its path under data/.
+func importDataRelPath(filename string) string {
+	filename = normalizeImportFilename(filename)
+	if strings.HasPrefix(filename, "icons/") || strings.HasPrefix(filename, "favicon.") {
+		return filename
+	}
+	if isImportRootImage(filename) {
+		return filepath.Join("icons", filename)
+	}
+	return filename
+}
+
+func prepareImportFromStaged(staged []stagedImportFile, allowLocal bool) ([]preparedImportFile, map[int][]Category, int, error) {
+	categories := make(map[int][]Category)
+	prepared := make([]preparedImportFile, 0, len(staged))
+	skippedBookmarks := 0
+
+	for _, item := range staged {
+		filename := item.filename
+		content := item.content
+
+		if pageID, ok := extractPageIDFromCategoriesFilename(filename); ok {
+			var cats []Category
+			if err := json.Unmarshal(content, &cats); err != nil {
+				return nil, nil, 0, fmt.Errorf("invalid categories JSON in file: %s", filename)
+			}
+			categories[pageID] = cats
+			continue
+		}
+
+		if _, ok := parseBookmarkPageIDFromFilename(filepath.Base(filename)); ok {
+			sanitized, skipped, err := sanitizeImportedBookmarkFile(content, allowLocal)
+			if err != nil {
+				return nil, nil, 0, fmt.Errorf("invalid bookmarks JSON in file: %s", filename)
+			}
+			content = sanitized
+			skippedBookmarks += skipped
+		}
+
+		prepared = append(prepared, preparedImportFile{
+			relPath: importDataRelPath(filename),
+			content: content,
+		})
+	}
+
+	return prepared, categories, skippedBookmarks, nil
+}
+
+func importIconBasenames(prepared []preparedImportFile) map[string]bool {
+	names := make(map[string]bool)
+	for _, file := range prepared {
+		rel := filepath.ToSlash(file.relPath)
+		if strings.HasPrefix(rel, "icons/") {
+			names[strings.TrimPrefix(rel, "icons/")] = true
+		}
+	}
+	return names
+}
+
+func importBookmarkFilenames(prepared []preparedImportFile) map[string]bool {
+	names := make(map[string]bool)
+	for _, file := range prepared {
+		base := filepath.Base(file.relPath)
+		if strings.HasPrefix(base, "bookmarks-") && strings.HasSuffix(base, ".json") {
+			names[base] = true
+		}
+	}
+	return names
+}
+
+func preparedHasRelPath(prepared []preparedImportFile, relPath string) bool {
+	relPath = filepath.ToSlash(relPath)
+	for _, file := range prepared {
+		if filepath.ToSlash(file.relPath) == relPath {
+			return true
+		}
+	}
+	return false
+}
+
+func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
+	bookmarkNames := importBookmarkFilenames(prepared)
+	iconNames := importIconBasenames(prepared)
+
+	entries, err := os.ReadDir(dataDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(name, "bookmarks-") && strings.HasSuffix(name, ".json") {
+			if !bookmarkNames[name] {
+				if err := os.Remove(filepath.Join(dataDir, name)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	for _, name := range importManagedRootFilenames {
+		if !preparedHasRelPath(prepared, name) {
+			_ = os.Remove(filepath.Join(dataDir, name))
+		}
+	}
+
+	_ = os.Remove(filepath.Join(dataDir, "preview-cache.json"))
+	_ = os.Remove(filepath.Join(dataDir, "health-cache.json"))
+
+	iconsDir := filepath.Join(dataDir, "icons")
+	iconEntries, err := os.ReadDir(iconsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, entry := range iconEntries {
+		if entry.IsDir() {
+			continue
+		}
+		if !iconNames[entry.Name()] {
+			if err := os.Remove(filepath.Join(iconsDir, entry.Name())); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func writePreparedImportStaging(stagingDataDir string, prepared []preparedImportFile) error {
+	for _, file := range prepared {
+		dest := filepath.Join(stagingDataDir, file.relPath)
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(dest, file.content, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return err
+	}
+
+	stagingRoot, err := os.MkdirTemp("", "nextdash-import-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(stagingRoot)
+
+	stagingDataDir := filepath.Join(stagingRoot, "data")
+	if err := writePreparedImportStaging(stagingDataDir, prepared); err != nil {
+		return err
+	}
+
+	if err := removeImportOrphans(dataDir, prepared); err != nil {
+		return err
+	}
+
+	for _, file := range prepared {
+		src := filepath.Join(stagingDataDir, file.relPath)
+		dest := filepath.Join(dataDir, file.relPath)
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return err
+		}
+		content, err := os.ReadFile(src)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(dest, content, 0644); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // isValidImportFilename validates that the filename is safe and allowed for import
 func (h *Handlers) isValidImportFilename(filename string) bool {
 	// Prevent path traversal, but allow icons/ subdirectory
@@ -241,69 +459,17 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
 
-	importedCategoriesByPage := make(map[int][]Category)
-	skippedBookmarks := 0
-
-	for _, item := range staged {
-		filename := item.filename
-		content := item.content
-
-		fmt.Printf("Processing file: %s\n", filename)
-
-		if pageID, ok := extractPageIDFromCategoriesFilename(filename); ok {
-			var categories []Category
-			if err := json.Unmarshal(content, &categories); err != nil {
-				http.Error(w, fmt.Sprintf("Invalid categories JSON in file: %s", filename), http.StatusBadRequest)
-				return
-			}
-			importedCategoriesByPage[pageID] = categories
-			continue
-		}
-
-		if _, ok := parseBookmarkPageIDFromFilename(filepath.Base(filename)); ok {
-			sanitized, skipped, err := sanitizeImportedBookmarkFile(content, allowLocalBookmarks)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Invalid bookmarks JSON in file: %s", filename), http.StatusBadRequest)
-				return
-			}
-			content = sanitized
-			skippedBookmarks += skipped
-		}
-
-		var destPath string
-		if strings.HasPrefix(filename, "favicon.") {
-			destPath = filepath.Join("data", filename)
-		} else if !strings.Contains(filename, "/") {
-			validImageExtensions := []string{".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
-			isImage := false
-			for _, ext := range validImageExtensions {
-				if strings.HasSuffix(filename, ext) {
-					isImage = true
-					break
-				}
-			}
-			if isImage {
-				destPath = filepath.Join("data", "icons", filename)
-			} else {
-				destPath = filepath.Join("data", filename)
-			}
-		} else {
-			destPath = filepath.Join("data", filename)
-		}
-
-		dir := filepath.Dir(destPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			http.Error(w, "Failed to create directory", http.StatusInternalServerError)
-			return
-		}
-
-		if err := os.WriteFile(destPath, content, 0644); err != nil {
-			http.Error(w, "Failed to write file", http.StatusInternalServerError)
-			return
-		}
+	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Apply imported categories after bookmark/page files have been restored.
+	if err := commitPreparedImport("data", prepared); err != nil {
+		http.Error(w, "Failed to apply import", http.StatusInternalServerError)
+		return
+	}
+
 	for pageID, categories := range importedCategoriesByPage {
 		h.store.SaveCategoriesByPage(pageID, categories)
 	}

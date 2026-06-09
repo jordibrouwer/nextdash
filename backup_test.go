@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -144,5 +146,82 @@ func TestResolveImportAllowLocalBookmarksUsesStagedSettings(t *testing.T) {
 	}
 	if resolveImportAllowLocalBookmarks(staged[:1], false) {
 		t.Fatal("expected fallback false when settings.json absent")
+	}
+}
+
+func TestImportDataRelPath(t *testing.T) {
+	t.Parallel()
+
+	if got := importDataRelPath("settings.json"); got != "settings.json" {
+		t.Fatalf("settings path = %q", got)
+	}
+	if got := importDataRelPath("icons/foo.png"); got != "icons/foo.png" {
+		t.Fatalf("icons path = %q", got)
+	}
+	if got := importDataRelPath("legacy.png"); got != filepath.Join("icons", "legacy.png") {
+		t.Fatalf("root image path = %q", got)
+	}
+}
+
+func TestCommitPreparedImportRemovesOrphans(t *testing.T) {
+	dataDir := t.TempDir()
+	iconsDir := filepath.Join(dataDir, "icons")
+	if err := os.MkdirAll(iconsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	bookmarks1, _ := json.Marshal(PageWithBookmarks{
+		Page:      Page{ID: 1, Name: "main"},
+		Bookmarks: []Bookmark{{Name: "A", URL: "https://example.com"}},
+	})
+	if err := os.WriteFile(filepath.Join(dataDir, "bookmarks-1.json"), bookmarks1, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "bookmarks-2.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "settings.json"), []byte(`{"theme":"old"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(iconsDir, "orphan.png"), []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(iconsDir, "keep.png"), []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "preview-cache.json"), []byte(`{}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	prepared := []preparedImportFile{
+		{relPath: "bookmarks-1.json", content: bookmarks1},
+		{relPath: "settings.json", content: []byte(`{"theme":"new"}`)},
+		{relPath: filepath.Join("icons", "keep.png"), content: []byte("y")},
+	}
+
+	if err := commitPreparedImport(dataDir, prepared); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dataDir, "bookmarks-2.json")); !os.IsNotExist(err) {
+		t.Fatalf("orphan bookmarks-2.json should be removed, err=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(iconsDir, "orphan.png")); !os.IsNotExist(err) {
+		t.Fatalf("orphan icon should be removed, err=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, "preview-cache.json")); !os.IsNotExist(err) {
+		t.Fatalf("preview cache should be cleared, err=%v", err)
+	}
+
+	settings, err := os.ReadFile(filepath.Join(dataDir, "settings.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(settings) != `{"theme":"new"}` {
+		t.Fatalf("settings = %s", settings)
+	}
+	keep, err := os.ReadFile(filepath.Join(iconsDir, "keep.png"))
+	if err != nil || string(keep) != "y" {
+		t.Fatalf("keep.png content = %q err=%v", keep, err)
 	}
 }
