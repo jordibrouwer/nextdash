@@ -1116,7 +1116,7 @@ class SearchComponent {
                     <span class="search-match-shortcut search-hint-shortcut">:new</span>
                     <span class="search-match-name search-hint-name">${t('dashboard.hintAddBookmark', 'Add as new bookmark')}</span>
                 `;
-                newHint.addEventListener('click', () => {
+                const hintNewAction = () => {
                     const handler = this.commandsComponent?.newCommandHandler;
                     if (handler) {
                         handler.openModal({ url: q });
@@ -1127,10 +1127,11 @@ class SearchComponent {
                     this.updateSearch();
                     const input = document.getElementById('shortcut-search-input');
                     if (input) { input.value = this.currentQuery; input.focus(); }
-                });
+                };
+                newHint.addEventListener('click', hintNewAction);
                 matchesContainer.appendChild(newHint);
                 this.matchElements.push(newHint);
-                this.selectableMatches.push({ type: 'hint-new' });
+                this.selectableMatches.push({ type: 'hint-new', action: hintNewAction });
 
                 // Hint: search with a finder if any exist
                 if (Array.isArray(this.finders) && this.finders.length > 0) {
@@ -1142,15 +1143,16 @@ class SearchComponent {
                         <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
                         <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${firstFinder.name || finderShortcut}</span>
                     `;
-                    finderHint.addEventListener('click', () => {
+                    const hintFinderAction = () => {
                         this.currentQuery = `?${finderShortcut} ${q}`;
                         this.handleSearch(this.currentQuery);
                         const input = document.getElementById('shortcut-search-input');
                         if (input) { input.value = this.currentQuery; input.focus(); }
-                    });
+                    };
+                    finderHint.addEventListener('click', hintFinderAction);
                     matchesContainer.appendChild(finderHint);
                     this.matchElements.push(finderHint);
-                    this.selectableMatches.push({ type: 'hint-finder' });
+                    this.selectableMatches.push({ type: 'hint-finder', action: hintFinderAction });
                 }
             } else {
                 const noRecentElement = document.createElement('div');
@@ -1445,6 +1447,8 @@ class SearchComponent {
             } else if (selectedMatch.type === 'whats-new') {
                 this.closeSearch();
                 window.openWhatsNewModal?.({ force: true });
+            } else if (selectedMatch.type === 'hint-new' || selectedMatch.type === 'hint-finder') {
+                selectedMatch.action?.();
             } else {
                 this.openBookmark(selectedMatch.bookmark);
             }

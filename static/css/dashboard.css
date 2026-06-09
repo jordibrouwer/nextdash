@@ -2887,7 +2887,10 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 .recent-bookmarks-empty {
-    color: var(--text-secondary);
+    padding: 1.5rem 0.5rem;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-text);
+    text-align: center;
 }
 
 .recent-bookmarks-skeleton {

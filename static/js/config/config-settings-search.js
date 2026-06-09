@@ -72,11 +72,13 @@
                 targetEl: sectionTitle || panel,
             });
 
-            panel.querySelectorAll('label[for]').forEach((label) => {
-                const labelText = textOf(label);
+            panel.querySelectorAll('label[for], label.checkbox-label').forEach((label) => {
+                const textEl = label.querySelector('.checkbox-text');
+                const labelText = textEl ? textOf(textEl) : textOf(label);
                 if (!labelText || labelText.length < 2) return;
                 const forId = label.getAttribute('for');
-                const target = forId ? document.getElementById(forId) : label;
+                const input = label.querySelector('input');
+                const target = forId ? document.getElementById(forId) : (input || label);
                 addEntry(entries, seen, {
                     tab: 'general',
                     tabLabel,

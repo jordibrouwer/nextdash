@@ -99,7 +99,7 @@
 }
 
 .app-notification.show:not(.persist)::after {
-    animation: app-notification-timeout 5s linear forwards;
+    animation: app-notification-timeout var(--notification-duration, 5s) linear forwards;
 }
 
 @keyframes app-notification-timeout {

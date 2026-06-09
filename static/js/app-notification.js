@@ -121,6 +121,7 @@ const AppNotification = {
                 : Number.isFinite(Number(options.duration))
                     ? Number(options.duration)
                     : 5000;
+            host.style.setProperty('--notification-duration', `${duration}ms`);
             this._timeout = setTimeout(() => this._advance(), duration);
         }
     },
