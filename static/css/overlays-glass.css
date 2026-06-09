@@ -1,23 +1,23 @@
 /* Glass overlay UI — search, modals, toasts, tag cloud, selects.
-   Scoped to body[data-layout-version="glass"]. Classic unchanged. */
+   Scoped to body[data-layout-version="glass"]. Tokens in layout-glass-tokens.css. */
 
-body[data-layout-version="glass"] {
-    --layout-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-overlay-bg: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 55%, transparent);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 4 — Overlays & floating UI
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── Search overlay ───────────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .shortcut-search {
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    background: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 42%, transparent);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .search-container {
     border-radius: var(--layout-radius-lg);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-overlay-bg);
-    box-shadow: var(--layout-shadow-lg);
+    box-shadow: var(--glass-panel-shadow);
     backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
@@ -61,8 +61,11 @@ body[data-layout-version="glass"] .search-mode-tabs {
     margin-top: 0.5rem;
     border-top: none;
     border-radius: var(--layout-radius-md);
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 24%, transparent);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: inset 0 1px 0 var(--glass-inset-highlight);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .search-mode-tab {
@@ -76,7 +79,10 @@ body[data-layout-version="glass"] .search-mode-tab {
 }
 
 body[data-layout-version="glass"] .search-mode-tab.active {
-    box-shadow: var(--layout-shadow-sm);
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--layout-surface-elevated));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 36%, transparent),
+        0 2px 8px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 body[data-layout-version="glass"] .search-mode-tab:hover {
@@ -86,7 +92,11 @@ body[data-layout-version="glass"] .search-mode-tab:hover {
 body[data-layout-version="glass"] .search-history-chip,
 body[data-layout-version="glass"] .search-command-chip {
     border-radius: var(--layout-radius-pill);
-    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .search-history-chip:hover,
@@ -97,24 +107,28 @@ body[data-layout-version="glass"] .search-command-chip:hover {
 /* ─── Modals ─────────────────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .modal-overlay {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 38%, transparent);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .modal {
     border-radius: var(--layout-radius-lg);
-    box-shadow: var(--layout-shadow-lg);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
     overflow: hidden;
     background: var(--layout-overlay-bg);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .modal-header {
-    background: var(--background-secondary);
-    border-bottom-color: color-mix(in srgb, var(--border-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
+    border-bottom: 1px solid var(--layout-surface-border);
 }
 
 body[data-layout-version="glass"] .modal-body {
-    background: var(--background-primary);
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
 }
 
 body[data-layout-version="glass"] .modal-new-bookmark {
@@ -154,8 +168,11 @@ body[data-layout-version="glass"] .modal .btn {
 
 body[data-layout-version="glass"] .app-notification {
     border-radius: var(--layout-radius-md);
-    background: var(--background-secondary);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .app-notification-action {
@@ -166,11 +183,11 @@ body[data-layout-version="glass"] .app-notification-action {
 
 body[data-layout-version="glass"] .tag-cloud-modal {
     border-radius: var(--layout-radius-lg);
-    background: var(--background-secondary);
-    border-color: var(--border-primary);
-    box-shadow: var(--layout-shadow-lg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: var(--layout-overlay-bg);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .tag-cloud-modal-close {
@@ -207,7 +224,11 @@ body[data-layout-version="glass"] .custom-select-trigger:focus-visible {
 
 body[data-layout-version="glass"] .custom-select-options {
     border-radius: var(--layout-radius-sm);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .custom-select-option:hover,
@@ -218,7 +239,11 @@ body[data-layout-version="glass"] .custom-select-option.selected {
 /* Tag autocomplete (config bookmarks form — portaled to body) */
 body[data-layout-version="glass"] .tag-ac-dropdown {
     border-radius: var(--layout-radius-sm);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .tag-ac-item:hover,
@@ -231,8 +256,11 @@ body[data-layout-version="glass"] .tag-ac-item-active {
 
 body[data-layout-version="glass"] .feature-tour-card {
     border-radius: var(--layout-radius-lg);
-    box-shadow: var(--layout-shadow-lg);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
     background: var(--layout-overlay-bg);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .feature-tour-input,
@@ -266,8 +294,11 @@ body[data-layout-version="glass"] .feature-tour-highlight {
 
 body[data-layout-version="glass"] [class*="-tour-card"] {
     border-radius: var(--layout-radius-lg);
-    box-shadow: var(--layout-shadow-lg);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
     background: var(--layout-overlay-bg);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] [class*="-tour-card"] .btn,

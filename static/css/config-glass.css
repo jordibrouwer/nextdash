@@ -1,12 +1,14 @@
-/* Glass config page overrides — scoped to body[data-layout-version="glass"] */
+/* Glass config page overrides — scoped to body[data-layout-version="glass"].
+   Tokens in layout-glass-tokens.css. */
 
 body[data-layout-version="glass"] {
-    --layout-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-surface: color-mix(in srgb, var(--background-secondary) 38%, transparent);
-    --layout-surface-inset: color-mix(in srgb, var(--background-primary) 30%, transparent);
-    --layout-surface-border: color-mix(in srgb, var(--text-primary) 14%, transparent);
     --config-tab-gap: 0.85rem;
+    --layout-surface-inset: color-mix(in srgb, var(--background-primary) 30%, transparent);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 4 — Config glass parity (chrome, cards, search, palettes)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── Page chrome (sticky header area) ────────────────────────────────────── */
 
@@ -14,7 +16,7 @@ body[data-layout-version="glass"] .config-actions-top {
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
-    box-shadow: var(--layout-shadow-sm);
+    box-shadow: var(--glass-panel-shadow);
     padding: 0.85rem 1rem;
     backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
@@ -32,7 +34,8 @@ body[data-layout-version="glass"] .config-save-sticky {
     background: var(--layout-surface);
     backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    border-top-color: var(--layout-surface-border);
+    border-top: 1px solid var(--layout-surface-border);
+    box-shadow: 0 -6px 24px color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
 
 body[data-layout-version="glass"] .config-main {
@@ -55,8 +58,11 @@ body[data-layout-version="glass"] .header-links .back-link {
     align-items: center;
     padding: 0.38rem 0.8rem;
     border-radius: var(--layout-radius-pill);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     transition:
         color var(--layout-transition),
         border-color var(--layout-transition),
@@ -75,10 +81,13 @@ body[data-layout-version="glass"] .header-links .back-link:hover {
 
 body[data-layout-version="glass"] .config-controls-wrapper .tabs {
     gap: 0.3rem;
-    padding: 0.3rem;
+    padding: 0.35rem;
     border-radius: var(--layout-radius-md);
-    border-color: var(--border-primary);
-    background: var(--background-secondary);
+    border: 1px solid var(--layout-surface-border);
+    background: color-mix(in srgb, var(--background-primary) 24%, transparent);
+    box-shadow: inset 0 1px 0 var(--glass-inset-highlight);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .tab-button {
@@ -96,10 +105,10 @@ body[data-layout-version="glass"] .tab-button:hover {
 }
 
 body[data-layout-version="glass"] .tab-button.active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--layout-surface-elevated));
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 32%, transparent),
-        var(--layout-shadow-sm);
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 36%, transparent),
+        0 2px 8px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 /* ─── Unified surfaces (all config tabs) ──────────────────────────────────── */
@@ -121,9 +130,11 @@ body[data-layout-version="glass"] :is(
     .page-selector-wrapper
 ) {
     border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
+    border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
     box-shadow: var(--layout-shadow-sm);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .general-card-danger,
@@ -197,8 +208,8 @@ body[data-layout-version="glass"] .general-layer-intro {
 body[data-layout-version="glass"] .general-advanced-nav {
     padding: 0.75rem 1rem;
     background: var(--layout-surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     border-bottom: 1px solid var(--layout-surface-border);
 }
 
@@ -252,6 +263,8 @@ body[data-layout-version="glass"] :is(
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
     box-shadow: var(--layout-shadow-sm);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .simple-toolbar,
@@ -596,10 +609,13 @@ body[data-layout-version="glass"] .colors-tab-panel .custom-theme-colors-section
 
 body[data-layout-version="glass"] .colors-subtabs {
     gap: 0.3rem;
-    padding: 0.3rem;
+    padding: 0.35rem;
     border-radius: var(--layout-radius-md);
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 24%, transparent);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: inset 0 1px 0 var(--glass-inset-highlight);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .colors-tab-button {
@@ -817,7 +833,11 @@ body[data-layout-version="glass"] .config-bookmark-preview-tile.bookmark-link {
 
 body[data-layout-version="glass"] .config-bookmark-preview-popover {
     border-radius: var(--layout-radius-md);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 /* ─── Mobile config (modern) ───────────────────────────────────────────────── */
@@ -872,5 +892,42 @@ body[data-layout-version="glass"] #bookmark-detail-empty[hidden] {
 
 body[data-layout-version="glass"] .bookmark-add-menu-panel {
     border-radius: var(--layout-radius-md);
-    box-shadow: var(--layout-shadow-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+/* ─── Settings search & command palette ─────────────────────────────────────── */
+
+body[data-layout-version="glass"] .config-settings-search-results {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .config-settings-search-promo-balloon {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-overlay-bg);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .config-settings-search-promo-badge {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .config-command-palette-list {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }

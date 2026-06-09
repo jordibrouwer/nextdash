@@ -26,6 +26,21 @@ body[data-layout-version="glass"] {
     --layout-surface-border: color-mix(in srgb, var(--text-primary) 14%, transparent);
     --layout-focus-ring: 2px solid color-mix(in srgb, var(--accent-primary) 78%, transparent);
     --layout-overlay-bg: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 55%, transparent);
+    --glass-inset-highlight: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    --glass-panel-shadow:
+        var(--layout-shadow-md),
+        inset 0 1px 0 var(--glass-inset-highlight);
+    --glass-chip-shadow:
+        var(--layout-shadow-sm),
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    body[data-layout-version="glass"] {
+        --glass-blur-sm: 10px;
+        --glass-blur-md: 16px;
+        --glass-blur-lg: 22px;
+    }
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

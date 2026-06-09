@@ -27,11 +27,27 @@ body[data-layout-version="glass"] .skip-to-content {
     box-shadow: var(--layout-shadow-sm);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 2 — Dashboard chrome (header, tabs, toolbar, popovers)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 /* ─── Header shell ───────────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .dashboard-section.section-controls {
-    padding-bottom: 1.15rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 32%, transparent);
+    padding-top: 1.5rem;
+    padding-bottom: 0.85rem;
+    border-bottom: none;
+    background: transparent;
+}
+
+body[data-layout-version="glass"] .dashboard-section.section-controls .container {
+    padding: 1rem 1.15rem 1.05rem;
+    border-radius: var(--layout-radius-lg);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .header-top {
@@ -61,18 +77,28 @@ body[data-layout-version="glass"] .date-time-line {
 
 body[data-layout-version="glass"] .date-time-line:hover {
     opacity: 1;
-    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .date-weather-line {
     color: color-mix(in srgb, var(--text-tertiary) 88%, var(--text-secondary));
 }
 
-body[data-layout-version="glass"] .dashboard-mini-status {
+body[data-layout-version="glass"] .dashboard-mini-status,
+body[data-layout-version="glass"] .date-badge-mobile,
+body[data-layout-version="glass"] .status-loading-indicator,
+body[data-layout-version="glass"] .page-swipe-hint {
     padding: 0.15rem 0.5rem;
     border-radius: var(--layout-radius-pill);
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 /* ─── Header links (health / config) ─────────────────────────────────────── */
@@ -85,6 +111,9 @@ body[data-layout-version="glass"] .config-link a {
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     transition:
         color var(--layout-transition),
         border-color var(--layout-transition),
@@ -112,6 +141,9 @@ body[data-layout-version="glass"] .page-overview-header-btn {
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     transition:
         color var(--layout-transition),
         border-color var(--layout-transition),
@@ -130,10 +162,13 @@ body[data-layout-version="glass"] .page-overview-header-btn:focus-visible {
 
 body[data-layout-version="glass"] .page-navigation {
     gap: 0.35rem;
-    padding: 0.2rem;
+    padding: 0.35rem;
     border-radius: var(--layout-radius-md);
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 24%, transparent);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: inset 0 1px 0 var(--glass-inset-highlight);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .page-nav-btn {
@@ -152,19 +187,21 @@ body[data-layout-version="glass"] .page-nav-btn:hover {
 }
 
 body[data-layout-version="glass"] .page-nav-btn.active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--layout-surface-elevated));
     color: var(--text-primary);
     font-weight: var(--font-weight-bold);
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 32%, transparent),
-        var(--layout-shadow-sm);
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 36%, transparent),
+        0 2px 10px color-mix(in srgb, var(--accent-primary) 14%, transparent);
 }
 
 body[data-layout-version="glass"] .page-tab-popover {
     border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
     box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .page-tab-popover-icon,
@@ -188,7 +225,11 @@ body[data-layout-version="glass"] .title {
 
 body[data-layout-version="glass"] .tag-filter-indicator-chip {
     border-radius: var(--layout-radius-pill);
-    box-shadow: var(--layout-shadow-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .tag-filter-indicator-clear {
@@ -204,9 +245,9 @@ body[data-layout-version="glass"] .button-container {
     border-radius: var(--layout-radius-lg);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
-    box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
     gap: 0.45rem;
 }
 
@@ -226,7 +267,10 @@ body[data-layout-version="glass"] .button-hint {
 
 body[data-layout-version="glass"] .search-button {
     border-radius: var(--layout-radius-md);
-    background: color-mix(in srgb, var(--background-primary) 68%, transparent);
+    border: 1px solid color-mix(in srgb, var(--layout-surface-border) 80%, transparent);
+    background: color-mix(in srgb, var(--background-primary) 42%, transparent);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
     transition:
         background-color var(--layout-transition),
         border-color var(--layout-transition),
@@ -272,9 +316,9 @@ body[data-layout-version="glass"][data-button-position="bottom-right"] .btn-grou
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
-    box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 /* ─── Corner FABs ────────────────────────────────────────────────────────── */
@@ -283,9 +327,9 @@ body[data-layout-version="glass"] .whats-new-btn {
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
     border-color: var(--layout-surface-border);
-    box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .whats-new-btn:hover {
@@ -296,22 +340,26 @@ body[data-layout-version="glass"] .whats-new-btn:hover {
 body[data-layout-version="glass"] .tag-cloud-toggle-btn.search-button {
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 /* ─── Page overview overlay ───────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .page-overview-overlay {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(var(--glass-blur-sm));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm));
 }
 
 body[data-layout-version="glass"] .page-overview-panel {
     border-radius: var(--layout-radius-lg);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
     box-shadow: var(--layout-shadow-lg);
     overflow: hidden;
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .page-overview-close {
@@ -328,8 +376,11 @@ body[data-layout-version="glass"] .page-overview-link {
 
 body[data-layout-version="glass"] .date-popover {
     border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
     box-shadow: var(--layout-shadow-lg);
-    border-color: var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .date-popover-day {
@@ -385,8 +436,8 @@ body[data-layout-version="glass"].no-animations .tag-filter-indicator-chip:hover
 }
 
 @media (max-width: 575px) {
-    body[data-layout-version="glass"] .dashboard-section.section-controls {
-        padding-bottom: 0.85rem;
+    body[data-layout-version="glass"] .dashboard-section.section-controls .container {
+        padding: 0.85rem 0.9rem 0.9rem;
     }
 
     body[data-layout-version="glass"] .health-link a,
@@ -397,7 +448,7 @@ body[data-layout-version="glass"].no-animations .tag-filter-indicator-chip:hover
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Phase 2 — Bookmark grid (all presets, density, badges, preview cards)
+   Phase 3 — Bookmark grid (all presets, density, badges, preview cards)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body[data-layout-version="glass"] .dashboard-grid {
@@ -556,15 +607,20 @@ body[data-layout-version="glass"] .dashboard-grid.layout-compact .bookmarks-list
 
 body[data-layout-version="glass"] .dashboard-grid.layout-cards .category {
     border-radius: var(--modern-category-radius);
-    background: color-mix(in srgb, var(--background-secondary) 58%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--border-primary) 55%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
     box-shadow: var(--layout-shadow-sm);
     padding: 1rem;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-cards .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     transition:
         background-color var(--layout-transition),
         border-color var(--layout-transition),
@@ -608,11 +664,20 @@ body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category {
     gap: 0.65rem;
 }
 
+body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category {
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
 body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 38%, transparent);
-    background: color-mix(in srgb, var(--background-secondary) 48%, transparent);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
     padding-inline: 0.55rem;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
@@ -648,16 +713,20 @@ body[data-layout-version="glass"] .dashboard-grid.layout-list .bookmark-text {
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .category {
     border-radius: var(--layout-radius-lg);
-    background: color-mix(in srgb, var(--background-secondary) 62%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--border-primary) 50%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
     box-shadow: var(--layout-shadow-md);
     padding: 1.1rem;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
@@ -822,14 +891,24 @@ body[data-layout-version="glass"][data-mobile-layout="true"] .mobile-experience-
 }
 
 body[data-layout-version="glass"][data-mobile-layout="true"] .dashboard-section.section-controls {
-    padding-bottom: 0.75rem;
+    padding-top: 1rem;
+    padding-bottom: 0.65rem;
+}
+
+body[data-layout-version="glass"][data-mobile-layout="true"] .dashboard-section.section-controls .container {
+    padding: 0.8rem 0.85rem 0.85rem;
+    border-radius: var(--layout-radius-md);
 }
 
 body[data-layout-version="glass"][data-mobile-layout="true"] #page-overview-header-btn,
-body[data-layout-version="glass"][data-mobile-layout="true"] .config-link a {
+body[data-layout-version="glass"][data-mobile-layout="true"] .config-link a,
+body[data-layout-version="glass"][data-mobile-layout="true"] .health-link a {
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"][data-mobile-layout="true"] #page-overview-header-btn:active,
@@ -938,74 +1017,4 @@ body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-b
     color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
     background: color-mix(in srgb, var(--accent-warning, #f59e0b) 20%, var(--background-secondary));
     box-shadow: inset 0 0 0 1px var(--status-checking-ring, color-mix(in srgb, var(--accent-warning, #f59e0b) 48%, transparent));
-}
-
-/* ─── Glass enhancements (iOS-style depth & blur) ───────────────────────── */
-
-body[data-layout-version="glass"] .dashboard-section.section-controls {
-    background: var(--layout-surface);
-    border-bottom-color: var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="glass"] .page-navigation {
-    padding: 0.35rem;
-    border-radius: var(--layout-radius-md);
-    background: color-mix(in srgb, var(--background-primary) 28%, transparent);
-    border: 1px solid var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .page-nav-btn {
-    backdrop-filter: blur(var(--glass-blur-xs));
-    -webkit-backdrop-filter: blur(var(--glass-blur-xs));
-}
-
-body[data-layout-version="glass"] .page-tab-popover {
-    background: var(--layout-surface-elevated);
-    border: 1px solid var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .button-container,
-body[data-layout-version="glass"][data-button-position="bottom-left"] .btn-group,
-body[data-layout-version="glass"][data-button-position="bottom-right"] .btn-group,
-body[data-layout-version="glass"] .whats-new-btn,
-body[data-layout-version="glass"] .tag-cloud-toggle-btn.search-button {
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .page-overview-overlay {
-    backdrop-filter: blur(var(--glass-blur-sm));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm));
-}
-
-body[data-layout-version="glass"] .page-overview-panel {
-    background: var(--layout-surface-elevated);
-    border: 1px solid var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .dashboard-grid.layout-cards .bookmark-link,
-body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link,
-body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link {
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .dashboard-grid.layout-cards .category,
-body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category,
-body[data-layout-version="glass"] .dashboard-grid.layout-widgets .category {
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
