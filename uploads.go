@@ -254,7 +254,7 @@ func (h *Handlers) UploadIconFromURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileName, err := downloadIconFromURL(sourceURL, false)
+	fileName, err := downloadIconFromURL(sourceURL, h.allowLocalBookmarks())
 	if err != nil {
 		http.Error(w, "Unable to fetch icon URL", http.StatusBadRequest)
 		return

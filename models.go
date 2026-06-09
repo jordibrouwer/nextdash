@@ -1126,6 +1126,25 @@ func (fs *FileStore) SavePage(page Page, bookmarks []Bookmark) {
 	os.WriteFile(fileName, data, 0644)
 }
 
+func (fs *FileStore) removeFactoryResetUserAssets() {
+	os.RemoveAll(fmt.Sprintf("%s/icons", fs.dataDir))
+	for _, name := range []string{
+		"preview-cache.json",
+		"health-cache.json",
+		"colors.json",
+		"favicon.ico",
+		"favicon.png",
+		"favicon.jpg",
+		"favicon.gif",
+		"font.woff",
+		"font.woff2",
+		"font.ttf",
+		"font.otf",
+	} {
+		os.Remove(fmt.Sprintf("%s/%s", fs.dataDir, name))
+	}
+}
+
 func (fs *FileStore) resetAllDataLocked() error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
@@ -1141,6 +1160,8 @@ func (fs *FileStore) resetAllDataLocked() error {
 			os.Remove(fmt.Sprintf("%s/%s", fs.dataDir, entry.Name()))
 		}
 	}
+
+	fs.removeFactoryResetUserAssets()
 
 	os.WriteFile(fmt.Sprintf("%s/finders.json", fs.dataDir), []byte("[]"), 0644)
 
