@@ -333,10 +333,6 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		return err
 	}
 
-	if err := removeImportOrphans(dataDir, prepared); err != nil {
-		return err
-	}
-
 	for _, file := range prepared {
 		src := filepath.Join(stagingDataDir, file.relPath)
 		dest := filepath.Join(dataDir, file.relPath)
@@ -350,6 +346,10 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		if err := os.WriteFile(dest, content, 0644); err != nil {
 			return err
 		}
+	}
+
+	if err := removeImportOrphans(dataDir, prepared); err != nil {
+		return err
 	}
 
 	return nil
@@ -578,11 +578,12 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-
-		// Copy file content to zip
 		_, err = io.Copy(zipFile, file)
-		return err
+		closeErr := file.Close()
+		if err != nil {
+			return err
+		}
+		return closeErr
 	})
 
 	if err != nil {

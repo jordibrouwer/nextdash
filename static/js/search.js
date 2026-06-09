@@ -721,8 +721,13 @@ class SearchComponent {
             const isPinned = bookmark.pinned === true;
             const isBroken = Boolean(bookmark.lastError && String(bookmark.lastError).trim());
             const statusCache = window.dashboardInstance?.statusMonitor?.statusCache;
+            const statusKey = typeof statusCacheKey === 'function'
+                ? statusCacheKey(bookmark.url)
+                : (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function'
+                    ? BookmarkUrlUtils.canonicalBookmarkURLKey(bookmark.url || '')
+                    : String(bookmark.url || ''));
             const cachedStatus = statusCache instanceof Map
-                ? statusCache.get(String(bookmark.url || ''))?.status
+                ? statusCache.get(statusKey)?.status
                 : '';
             const normalizedCachedStatus = String(cachedStatus || '').toLowerCase();
 

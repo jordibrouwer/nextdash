@@ -4,8 +4,11 @@
 class BookmarkAnalytics {
     async trackBookmarkOpen(pageId, index) {
         const payload = JSON.stringify({ pageId, index });
+        const hasWriteToken = Boolean(
+            document.querySelector('meta[name="nextdash-write-token"]')?.content?.trim()
+        );
 
-        if (navigator.sendBeacon) {
+        if (!hasWriteToken && navigator.sendBeacon) {
             try {
                 const blob = new Blob([payload], { type: 'application/json' });
                 const queued = navigator.sendBeacon('/api/track-open', blob);
@@ -18,7 +21,8 @@ class BookmarkAnalytics {
         }
 
         try {
-            await fetch('/api/track-open', {
+            const request = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await request('/api/track-open', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: payload,

@@ -1545,6 +1545,9 @@ func (h *Handlers) resolveRelativeURL(baseURL, raw string) string {
 
 // Track bookmark opens for analytics
 func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	var raw map[string]interface{}

@@ -50,7 +50,7 @@ class ConfigData {
      */
     async saveBookmarks(bookmarks, pageId = null) {
         const url = pageId ? `/api/bookmarks?page=${pageId}` : '/api/bookmarks';
-        const response = await fetch(url, {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bookmarks)
@@ -97,7 +97,7 @@ class ConfigData {
      */
     async saveCategoriesByPage(categories, pageId = null) {
         const url = pageId ? `/api/categories?page=${pageId}` : '/api/categories';
-        const response = await fetch(url, {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(categories)
@@ -126,7 +126,7 @@ class ConfigData {
      * @param {Array} pages
      */
     async savePages(pages) {
-        const response = await fetch('/api/pages', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/pages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(pages)
@@ -145,9 +145,8 @@ class ConfigData {
      * @param {number} pageId
      */
     async deletePage(pageId) {
-        const response = await fetch(`/api/pages/${pageId}`, {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/pages/${pageId}`, {
             method: 'DELETE',
-            headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
         });
         
         if (!response.ok) {
@@ -160,7 +159,7 @@ class ConfigData {
      * @param {Object} settings
      */
     async saveSettings(settings) {
-        const response = await fetch('/api/settings', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
@@ -199,7 +198,7 @@ class ConfigData {
      * @param {Array} finders
      */
     async saveFinders(finders) {
-        const response = await fetch('/api/finders', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/finders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(finders)

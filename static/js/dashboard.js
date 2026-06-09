@@ -1,6 +1,10 @@
 // Dashboard JavaScript
 
 // Animation timing constants — adjust here to change the overall animation tempo.
+function dashFetch(url, init) {
+    return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
+}
+
 const ANIM = Object.freeze({
     BOOKMARK_STAGGER_STEP:  16,   // ms added per bookmark index during enter animation
     CATEGORY_STAGGER_STEP:  28,   // ms added per category index during enter animation
@@ -858,7 +862,7 @@ class Dashboard {
 
     async saveSettings() {
         try {
-            const response = await fetch('/api/settings', {
+            const response = await dashFetch('/api/settings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1105,7 +1109,7 @@ class Dashboard {
             this._renderPageTabContent(btn, page, index);
             this.updatePageTitle(newName);
             try {
-                await fetch('/api/pages', {
+                await dashFetch('/api/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.pages)
@@ -2231,7 +2235,7 @@ class Dashboard {
                             byPage.get(pageId).push(bookmark);
                         });
                         for (const [pageId, pageBookmarks] of byPage) {
-                            const response = await fetch(`/api/bookmarks?page=${pageId}`, {
+                            const response = await dashFetch(`/api/bookmarks?page=${pageId}`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(pageBookmarks),
@@ -2242,7 +2246,7 @@ class Dashboard {
                         dash.bookmarks = byPage.get(String(dash.currentPageId)) || dash.bookmarks;
                     } else {
                         const updatedBookmarks = dash.bookmarks.map(applyCheckStatus);
-                        const response = await fetch(`/api/bookmarks?page=${dash.currentPageId}`, {
+                        const response = await dashFetch(`/api/bookmarks?page=${dash.currentPageId}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(updatedBookmarks),
@@ -2909,7 +2913,7 @@ class Dashboard {
             status.textContent = t('dashboard.quickAddAdding');
 
             try {
-                const response = await fetch('/api/bookmarks/add', {
+                const response = await dashFetch('/api/bookmarks/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -3088,9 +3092,8 @@ class Dashboard {
 
     async buildSearchIndex() {
         try {
-            await fetch('/api/search-index', {
+            await dashFetch('/api/search-index', {
                 method: 'POST',
-                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
             });
         } catch (error) {
             // Keep dashboard functional if indexing fails
@@ -3737,7 +3740,7 @@ class Dashboard {
         try {
             // Set originalId = id so the backend position-fallback doesn't remap bookmarks
             const payload = this.categories.map((c) => ({ ...c, originalId: c.id }));
-            const res = await fetch(`/api/categories?page=${this.currentPageId}`, {
+            const res = await dashFetch(`/api/categories?page=${this.currentPageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -3820,7 +3823,7 @@ class Dashboard {
         const payload = [...this.bookmarks];
 
         try {
-            const response = await fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+            const response = await dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -5583,12 +5586,12 @@ class Dashboard {
             targetBookmarks.push({ ...bookmarkState });
 
             // Save both pages
-            await fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+            await dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.bookmarks)
             });
-            await fetch(`/api/bookmarks?page=${targetPageId}`, {
+            await dashFetch(`/api/bookmarks?page=${targetPageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(targetBookmarks)
@@ -5660,7 +5663,7 @@ class Dashboard {
 
     async uploadBookmarkIconFromUrl(iconUrl) {
         try {
-            const response = await fetch('/api/icon/from-url', {
+            const response = await dashFetch('/api/icon/from-url', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -5681,7 +5684,7 @@ class Dashboard {
         const formData = new FormData();
         formData.append('icon', file);
         try {
-            const response = await fetch('/api/icon', {
+            const response = await dashFetch('/api/icon', {
                 method: 'POST',
                 body: formData
             });
@@ -5717,9 +5720,7 @@ class Dashboard {
             return '';
         }
         try {
-            const previewResponse = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`, {
-                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
-            });
+            const previewResponse = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
             if (previewResponse.ok) {
                 const preview = await previewResponse.json();
                 const previewIconUrl = String(preview?.icon || '').trim();
@@ -5850,7 +5851,7 @@ class Dashboard {
                 checkStatus: editedBookmark.checkStatus
             };
 
-            const saveResponse = await fetch(`/api/bookmarks?page=${pageId}`, {
+            const saveResponse = await dashFetch(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(sourceBookmarks)
@@ -6361,9 +6362,7 @@ class Dashboard {
                 };
             } else {
                 const refreshParam = forceRefresh ? '&refresh=1' : '';
-                const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`, {
-                    headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
-                });
+                const response = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`);
                 if (!response.ok) return null;
                 preview = await response.json();
                 bookmark.previewTitle = preview.title || bookmark.previewTitle || '';
@@ -6416,7 +6415,7 @@ class Dashboard {
         }
         this.pendingPreviewSave = setTimeout(() => {
             this.pendingPreviewSave = null;
-            fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+            dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.bookmarks)
@@ -6693,7 +6692,7 @@ class Dashboard {
 
         this.pendingMetadataSave = setTimeout(() => {
             this.pendingMetadataSave = null;
-            fetch(`/api/bookmarks?page=${this.currentPageId}`, {
+            dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

@@ -747,8 +747,9 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) []Bookmark {
 	result := make([]Bookmark, 0)
 	removed := false
+	deleteKey := canonicalBookmarkURLKey(toDelete.URL)
 	for _, b := range bookmarks {
-		if !removed && b.Name == toDelete.Name && b.URL == toDelete.URL {
+		if !removed && b.Name == toDelete.Name && canonicalBookmarkURLKey(b.URL) == deleteKey {
 			removed = true
 			// Skip this bookmark (remove only the first match)
 		} else {
@@ -963,8 +964,8 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) {
 }
 
 func (fs *FileStore) GetPages() []Page {
-	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
 
 	return fs.getPages()
 }

@@ -16,4 +16,11 @@
         }
         return headers;
     };
+
+    /** fetch() with X-NextDash-Token merged when configured. */
+    global.nextDashFetch = function nextDashFetch(url, init) {
+        const options = { ...(init || {}) };
+        options.headers = global.nextDashWriteHeaders(options.headers);
+        return fetch(url, options);
+    };
 })(typeof window !== 'undefined' ? window : globalThis);

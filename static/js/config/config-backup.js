@@ -619,7 +619,7 @@ class ConfigBackup {
      */
     async performBrowserImport(bookmarks, pageId) {
         try {
-            const res = await fetch('/api/bookmarks/import-browser', {
+            const res = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/import-browser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pageId, bookmarks })
@@ -772,7 +772,7 @@ class ConfigBackup {
             // Strip one-time migration markers so server-side migrations run correctly
             // on the destination instance regardless of the source's migration state.
             const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, ...cleanSettings } = settings;
-            const response = await fetch('/api/settings', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cleanSettings),

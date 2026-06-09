@@ -395,146 +395,140 @@
         return html;
     }
 
-    function bindDuplicateActions() {
-        document.querySelectorAll('.health-keep-first-btn').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                const idx = parseInt(btn.getAttribute('data-group-index'), 10);
-                const group = orderDuplicateGroupBestFirst(healthState.report?.duplicateGroups?.[idx]);
-                if (!group) return;
+    let healthListenersBound = false;
 
-                btn.disabled = true;
-                btn.textContent = t('health.removing', 'removing…');
+    async function handlePingClick(button) {
+        const url = button.getAttribute('data-ping-url');
+        const pageId = Number(button.getAttribute('data-ping-page'));
+        const index = Number(button.getAttribute('data-ping-index'));
+        if (!url) return;
+        button.disabled = true;
+        button.textContent = t('health.pinging', 'pinging...');
+        try {
+            const response = await fetch(`/api/ping?url=${encodeURIComponent(url)}`);
+            const result = await response.json();
+            const status = result.status === 'online' ? 'online' : 'offline';
+            const pingMs = result.ping || 0;
+            const errorDetail = (result.errorDetail || '').trim()
+                || (status === 'online' ? '' : t('health.errorPingFailed', 'ping failed'));
+            button.textContent = status === 'online'
+                ? t('health.onlineMs', 'online {ms}ms', { ms: pingMs })
+                : (errorDetail || t('health.offline', 'offline'));
 
-                await performMergeDuplicates(group);
-            });
-        });
+            await cacheScanResult(url, status, pingMs, errorDetail);
+            if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                await persistIssueStatus(pageId, index, status, status === 'online' ? '' : errorDetail);
+                await loadReport();
+                render();
+            }
+        } catch (error) {
+            button.textContent = t('health.failed', 'failed');
+            const failDetail = error.message || t('health.errorPingFailed', 'ping failed');
+            await cacheScanResult(url, 'error', 0, failDetail);
+            if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                await persistIssueStatus(pageId, index, 'offline', failDetail);
+                await loadReport();
+                render();
+            }
+        } finally {
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = t('health.ping', 'ping');
+            }, 1200);
+        }
     }
 
-    function bindActions() {
-        document.querySelectorAll('[data-filter]').forEach((button) => {
-            button.addEventListener('click', () => {
-                healthState.filter = button.getAttribute('data-filter') || 'all';
-                saveState();
-                render();
-            });
+    function setupHealthEventListeners() {
+        if (healthListenersBound) return;
+        healthListenersBound = true;
+
+        document.getElementById('health-filter-pills')?.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-filter]');
+            if (!button) return;
+            healthState.filter = button.getAttribute('data-filter') || 'all';
+            saveState();
+            render();
         });
 
-        const sortSelect = document.getElementById('health-sort-select');
-        if (sortSelect) {
-            sortSelect.value = healthState.sort;
-            sortSelect.addEventListener('change', () => {
-                healthState.sort = sortSelect.value;
-                saveState();
-                render();
-            });
-        }
+        document.getElementById('health-issues')?.addEventListener('click', async (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
 
-        document.querySelectorAll('[data-open-url]').forEach((button) => {
-            button.addEventListener('click', () => {
+            if (button.hasAttribute('data-open-url')) {
                 window.open(button.getAttribute('data-open-url'), '_blank', 'noopener');
-            });
-        });
-
-        document.querySelectorAll('[data-ping-url]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const url = button.getAttribute('data-ping-url');
-                const pageId = Number(button.getAttribute('data-ping-page'));
-                const index = Number(button.getAttribute('data-ping-index'));
-                if (!url) return;
-                button.disabled = true;
-                button.textContent = t('health.pinging', 'pinging...');
-                try {
-                    const response = await fetch(`/api/ping?url=${encodeURIComponent(url)}`);
-                    const result = await response.json();
-                    const status = result.status === 'online' ? 'online' : 'offline';
-                    const pingMs = result.ping || 0;
-                    const errorDetail = (result.errorDetail || '').trim()
-                        || (status === 'online' ? '' : t('health.errorPingFailed', 'ping failed'));
-                    button.textContent = status === 'online'
-                        ? t('health.onlineMs', 'online {ms}ms', { ms: pingMs })
-                        : (errorDetail || t('health.offline', 'offline'));
-                    
-                    // Cache the result
-                    await cacheScanResult(url, status, pingMs, errorDetail);
-                    if (Number.isFinite(pageId) && Number.isFinite(index)) {
-                        await persistIssueStatus(pageId, index, status, status === 'online' ? '' : errorDetail);
-                        await loadReport();
-                        render();
-                    }
-                } catch (error) {
-                    button.textContent = t('health.failed', 'failed');
-                    const failDetail = error.message || t('health.errorPingFailed', 'ping failed');
-                    await cacheScanResult(url, 'error', 0, failDetail);
-                    if (Number.isFinite(pageId) && Number.isFinite(index)) {
-                        await persistIssueStatus(pageId, index, 'offline', failDetail);
-                        await loadReport();
-                        render();
-                    }
-                } finally {
-                    setTimeout(() => {
-                        button.disabled = false;
-                        button.textContent = t('health.ping', 'ping');
-                    }, 1200);
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-heal-archive-url]').forEach((button) => {
-            button.addEventListener('click', () => {
+                return;
+            }
+            if (button.hasAttribute('data-ping-url')) {
+                await handlePingClick(button);
+                return;
+            }
+            if (button.hasAttribute('data-heal-archive-url')) {
                 const url = button.getAttribute('data-heal-archive-url');
-                if (!url) return;
-                window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener');
-            });
-        });
-
-        document.querySelectorAll('[data-heal-redirect-page]').forEach((button) => {
-            button.addEventListener('click', async () => {
+                if (url) window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener');
+                return;
+            }
+            if (button.hasAttribute('data-heal-redirect-page')) {
                 const pageId = Number(button.getAttribute('data-heal-redirect-page'));
                 const index = Number(button.getAttribute('data-heal-redirect-index'));
-                if (!Number.isFinite(pageId) || !Number.isFinite(index)) return;
-                await handleRedirectDetect(button, pageId, index);
-            });
-        });
-
-        document.querySelectorAll('[data-heal-title-page]').forEach((button) => {
-            button.addEventListener('click', async () => {
+                if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                    await handleRedirectDetect(button, pageId, index);
+                }
+                return;
+            }
+            if (button.hasAttribute('data-heal-title-page')) {
                 const pageId = Number(button.getAttribute('data-heal-title-page'));
                 const index = Number(button.getAttribute('data-heal-title-index'));
-                if (!Number.isFinite(pageId) || !Number.isFinite(index)) return;
-                await handleTitleRefresh(button, pageId, index);
-            });
-        });
-
-        document.querySelectorAll('[data-heal-fix-page]').forEach((button) => {
-            button.addEventListener('click', async () => {
+                if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                    await handleTitleRefresh(button, pageId, index);
+                }
+                return;
+            }
+            if (button.hasAttribute('data-heal-fix-page')) {
                 const pageId = Number(button.getAttribute('data-heal-fix-page'));
                 const index = Number(button.getAttribute('data-heal-fix-index'));
-                if (!Number.isFinite(pageId) || !Number.isFinite(index)) return;
-                await handleOneClickFix(button, pageId, index);
-            });
-        });
-
-        document.querySelectorAll('[data-delete-page]').forEach((button) => {
-            button.addEventListener('click', async () => {
+                if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                    await handleOneClickFix(button, pageId, index);
+                }
+                return;
+            }
+            if (button.hasAttribute('data-delete-page')) {
                 const pageId = Number(button.getAttribute('data-delete-page'));
                 const index = Number(button.getAttribute('data-delete-index'));
                 const name = button.getAttribute('data-delete-name') || '';
-                if (!Number.isFinite(pageId) || !Number.isFinite(index)) return;
-                await handleDeleteIssue(button, pageId, index, name);
-            });
-        });
-
-        document.querySelectorAll('[data-favicon-url]').forEach((button) => {
-            button.addEventListener('click', async () => {
+                if (Number.isFinite(pageId) && Number.isFinite(index)) {
+                    await handleDeleteIssue(button, pageId, index, name);
+                }
+                return;
+            }
+            if (button.hasAttribute('data-favicon-url')) {
                 const url = button.getAttribute('data-favicon-url');
                 const pageId = Number(button.getAttribute('data-favicon-page'));
                 const index = Number(button.getAttribute('data-favicon-index'));
-                if (!url || !Number.isFinite(pageId) || !Number.isFinite(index)) return;
-                await handleFaviconRefresh(button, url, pageId, index);
-            });
+                if (url && Number.isFinite(pageId) && Number.isFinite(index)) {
+                    await handleFaviconRefresh(button, url, pageId, index);
+                }
+            }
         });
 
-        // Bulk action buttons
+        document.getElementById('health-duplicates')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.health-keep-first-btn');
+            if (!btn) return;
+            const idx = parseInt(btn.getAttribute('data-group-index'), 10);
+            const group = orderDuplicateGroupBestFirst(healthState.report?.duplicateGroups?.[idx]);
+            if (!group) return;
+
+            btn.disabled = true;
+            btn.textContent = t('health.removing', 'removing…');
+            await performMergeDuplicates(group);
+        });
+
+        const sortSelect = document.getElementById('health-sort-select');
+        sortSelect?.addEventListener('change', () => {
+            healthState.sort = sortSelect.value;
+            saveState();
+            render();
+        });
+
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
             const btn = e.target;
             const originalText = btn.textContent;
@@ -633,6 +627,10 @@
         document.getElementById('merge-duplicates-btn')?.addEventListener('click', () => {
             showMergeDuplicatesFlow();
         });
+    }
+
+    function apiFetch(url, init) {
+        return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
     }
 
     function showBulkStatus(message) {
@@ -962,24 +960,23 @@
         button.disabled = true;
         button.textContent = t('health.autoHealWorking', 'working...');
         try {
-            const dash = window.dashboardInstance;
-            if (!dash || typeof dash.fetchAndAssignFaviconForUrl !== 'function') {
-                throw new Error('Dashboard not available');
+            const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+            if (typeof fetchIcon !== 'function') {
+                throw new Error('Favicon service not available');
             }
 
-            const iconPath = await dash.fetchAndAssignFaviconForUrl(url);
+            const iconPath = await fetchIcon(url);
             if (!iconPath) {
                 showBulkStatus(t('health.faviconNotFound', 'No favicon found for this URL.'));
                 return;
             }
 
-            // Fetch the page's bookmark list, update the icon at the given index, POST back
             const res = await fetch(`/api/bookmarks?page=${pageId}`);
             if (!res.ok) throw new Error('Failed to load bookmarks');
             const bookmarks = await res.json();
             if (!Array.isArray(bookmarks) || !bookmarks[index]) throw new Error('Bookmark not found');
             bookmarks[index].icon = iconPath;
-            const saveRes = await fetch(`/api/bookmarks?page=${pageId}`, {
+            const saveRes = await apiFetch(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookmarks)
@@ -987,6 +984,8 @@
             if (!saveRes.ok) throw new Error('Failed to save bookmark');
 
             showBulkStatus(t('health.faviconRefreshed', 'Favicon updated.'));
+            await loadReport();
+            render();
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
@@ -1034,8 +1033,10 @@
             mergeBtn.disabled = !(report?.duplicateGroups || []).length;
         }
 
-        bindActions();
-        bindDuplicateActions();
+        const sortSelect = document.getElementById('health-sort-select');
+        if (sortSelect && sortSelect.value !== healthState.sort) {
+            sortSelect.value = healthState.sort;
+        }
     }
 
     async function loadReport() {
@@ -1085,11 +1086,15 @@
             try {
                 await loadReport();
                 render();
+            } catch (error) {
+                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
             } finally {
                 refreshButton.disabled = false;
                 refreshButton.textContent = t('health.refresh', 'refresh');
             }
         });
+
+        setupHealthEventListeners();
 
         await loadReport();
         render();

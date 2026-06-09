@@ -310,7 +310,7 @@ class StatusMonitor {
         };
 
         try {
-            await fetch('/api/health/update-status', {
+            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/health/update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
