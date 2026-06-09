@@ -790,13 +790,24 @@
             : { 'Content-Type': 'application/json' };
     }
 
+    function healthCacheURL(url) {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
+            return BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
+        }
+        return raw;
+    }
+
     async function cacheScanResult(url, status, pingMs, error) {
         try {
+            const cacheURL = healthCacheURL(url);
+            if (!cacheURL) return;
             await fetch('/api/health/cache-scan', {
                 method: 'POST',
                 headers: writeJsonHeaders(),
                 body: JSON.stringify({
-                    url: url,
+                    url: cacheURL,
                     status: status,
                     pingMs: pingMs,
                     error: error

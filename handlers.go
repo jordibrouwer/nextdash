@@ -1617,9 +1617,13 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	key := canonicalBookmarkURLKey(req.URL)
+	if key == "" {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
 	h.mergeHealthCacheUpdates(map[string]HealthScanCache{
 		key: {
-			URL:         req.URL,
+			URL:         key,
 			Status:      req.Status,
 			PingMs:      req.PingMs,
 			LastScanned: time.Now().UnixMilli(),
@@ -1724,8 +1728,11 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			bookmarks[idx] = bm
 
 			key := canonicalBookmarkURLKey(bm.URL)
+			if key == "" {
+				continue
+			}
 			healthUpdates[key] = HealthScanCache{
-				URL:         bm.URL,
+				URL:         key,
 				Status:      result.Status,
 				PingMs:      result.PingMs,
 				LastScanned: time.Now().UnixMilli(),

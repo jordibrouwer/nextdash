@@ -789,8 +789,12 @@ func (fs *FileStore) BookmarkURLExists(urlParam string) bool {
 			continue
 		}
 
+		wantKey := canonicalBookmarkURLKey(urlParam)
+		if wantKey == "" {
+			return false
+		}
 		for i := range pageWithBookmarks.Bookmarks {
-			if pageWithBookmarks.Bookmarks[i].URL == urlParam {
+			if canonicalBookmarkURLKey(pageWithBookmarks.Bookmarks[i].URL) == wantKey {
 				return true
 			}
 		}

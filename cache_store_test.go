@@ -80,6 +80,33 @@ func TestMergeHealthCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 	}
 }
 
+func TestNormalizeHealthCacheFileMergesURLVariants(t *testing.T) {
+	t.Parallel()
+
+	normalized := normalizeHealthCacheFile(HealthScanCacheFile{
+		Cache: map[string]HealthScanCache{
+			"https://example.com": {
+				URL:         "https://example.com/",
+				Status:      "online",
+				LastScanned: 100,
+			},
+			"https://example.com/": {
+				URL:         "https://example.com",
+				Status:      "offline",
+				LastScanned: 200,
+			},
+		},
+	})
+
+	if len(normalized.Cache) != 1 {
+		t.Fatalf("len = %d, want 1 canonical entry", len(normalized.Cache))
+	}
+	entry := normalized.Cache["https://example.com"]
+	if entry.Status != "offline" {
+		t.Fatalf("status = %q, want newer offline entry to win", entry.Status)
+	}
+}
+
 func TestReplacePreviewCache(t *testing.T) {
 	tmp := t.TempDir()
 	wd, err := os.Getwd()

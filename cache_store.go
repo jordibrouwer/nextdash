@@ -77,6 +77,31 @@ func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) {
 	_ = writePreviewCacheFile(cache)
 }
 
+func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {
+	if len(cache.Cache) == 0 {
+		cache.Cache = map[string]HealthScanCache{}
+		return cache
+	}
+
+	normalized := make(map[string]HealthScanCache, len(cache.Cache))
+	for key, entry := range cache.Cache {
+		canonicalKey := canonicalBookmarkURLKey(entry.URL)
+		if canonicalKey == "" {
+			canonicalKey = canonicalBookmarkURLKey(key)
+		}
+		if canonicalKey == "" {
+			continue
+		}
+		entry.URL = canonicalKey
+		existing, ok := normalized[canonicalKey]
+		if !ok || entry.LastScanned >= existing.LastScanned {
+			normalized[canonicalKey] = entry
+		}
+	}
+	cache.Cache = normalized
+	return cache
+}
+
 func readHealthCacheFile() HealthScanCacheFile {
 	data, err := os.ReadFile(healthCachePath)
 	if err != nil {
@@ -92,7 +117,7 @@ func readHealthCacheFile() HealthScanCacheFile {
 			Cache:       map[string]HealthScanCache{},
 		}
 	}
-	return cache
+	return normalizeHealthCacheFile(cache)
 }
 
 func writeHealthCacheFile(cache HealthScanCacheFile) error {

@@ -18,6 +18,18 @@ function normalizeStatusRecheckIntervalMinutes(value) {
     return parsed;
 }
 
+function statusCacheKey(url) {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
+        return BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
+    }
+    let t = raw.toLowerCase();
+    const hash = t.indexOf('#');
+    if (hash >= 0) t = t.slice(0, hash);
+    return t.replace(/\/+$/, '');
+}
+
 class StatusMonitor {
     constructor(settings = {}) {
         this.settings = settings;
@@ -315,7 +327,9 @@ class StatusMonitor {
     }
 
     cacheStatusResult(bookmarkUrl, entry) {
-        this.statusCache.set(bookmarkUrl, {
+        const key = statusCacheKey(bookmarkUrl);
+        if (!key) return;
+        this.statusCache.set(key, {
             ...entry,
             timestamp: Date.now()
         });
@@ -521,7 +535,10 @@ class StatusMonitor {
             if (!normalizedUrl) {
                 return;
             }
-            const bookmark = window.dashboardInstance.bookmarks.find((b) => String(b?.url || '').trim() === normalizedUrl);
+            const wantKey = statusCacheKey(normalizedUrl);
+            const bookmark = window.dashboardInstance.bookmarks.find(
+                (b) => statusCacheKey(b?.url) === wantKey
+            );
             if (bookmark) {
                 this.checkBookmarkStatus(bookmark);
             }
@@ -539,7 +556,7 @@ class StatusMonitor {
         if (!normalizedUrl) {
             return null;
         }
-        return this.statusCache.get(normalizedUrl);
+        return this.statusCache.get(statusCacheKey(normalizedUrl));
     }
 
     clearCache() {
@@ -586,7 +603,7 @@ class StatusMonitor {
 
         // Then check only bookmarks that don't have cached status
         const uncachedBookmarks = bookmarks.filter(bookmark =>
-            bookmark.checkStatus && !this.statusCache.has(bookmark.url)
+            bookmark.checkStatus && !this.statusCache.has(statusCacheKey(bookmark.url))
         );
 
         const uncachedNear = this.filterBookmarksNearViewport(uncachedBookmarks);
@@ -608,7 +625,7 @@ class StatusMonitor {
                 return;
             }
 
-            const cached = this.statusCache.get(bookmark.url);
+            const cached = this.statusCache.get(statusCacheKey(bookmark.url));
             if (cached) {
                 const pingText = this.settings.showPing && cached.ping ? `${cached.ping}ms` : '';
                 this.setBookmarkStatus(bookmarkElement, cached.status, pingText);

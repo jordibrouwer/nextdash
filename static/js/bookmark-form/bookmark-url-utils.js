@@ -17,7 +17,7 @@
         try {
             const u = new URL(ensureHttpUrl(s));
             const scheme = u.protocol.replace(/:$/, '').toLowerCase();
-            const host = u.hostname.toLowerCase();
+            const host = u.host.toLowerCase();
             let path = u.pathname;
             if (path === '/') {
                 path = '';
