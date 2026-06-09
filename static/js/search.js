@@ -1144,10 +1144,9 @@ class SearchComponent {
                         <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${firstFinder.name || finderShortcut}</span>
                     `;
                     const hintFinderAction = () => {
-                        this.currentQuery = `?${finderShortcut} ${q}`;
-                        this.handleSearch(this.currentQuery);
-                        const input = document.getElementById('shortcut-search-input');
-                        if (input) { input.value = this.currentQuery; input.focus(); }
+                        this.recordSearchHistory(this.currentQuery);
+                        this.findersComponent.openFinder(firstFinder, q);
+                        this.closeSearch();
                     };
                     finderHint.addEventListener('click', hintFinderAction);
                     matchesContainer.appendChild(finderHint);
