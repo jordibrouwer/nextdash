@@ -1601,7 +1601,7 @@ class SearchComponent {
 
     recordSearchHistory(query) {
         const cleanedQuery = (query || '').trim();
-        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery === '?' || cleanedQuery === '/') {
+        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery.startsWith('?') || cleanedQuery === '/') {
             return;
         }
         const normalized = cleanedQuery.toLowerCase();
