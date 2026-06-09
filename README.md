@@ -186,7 +186,7 @@ Dynamic bookmark groups that appear automatically:
 - Custom theme editor — optional **Theme** tab guided tour walks through custom palettes, save, General → Theme selection, and demo cleanup
 - Auto dark mode
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
-- Launcher view: toggle via FAB button (⊞) or `:layout launcher`; icon size configurable (small / normal / large)
+- Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
 - ★ What's New star button in the corner opposite the button bar — always visible, opens release notes
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI

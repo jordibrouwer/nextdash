@@ -184,7 +184,7 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 │    └─ bookmark rows (icon · name · shortcut)                │
 ├─────────────────────────────────────────────────────────────┤
 │  Rotating tips (optional)                                     │
-│  [ : ] [ ? ] [ > ] [ * ] [ ! ] [ ⊞ ]   ← button bar         │
+│  [ + ] [ > ] [ : ] [ ? ] [ * ] [ ! ]   ← button bar         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -204,7 +204,6 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 | `>` | `>` | Search |
 | `*` | `*` | Recent bookmarks on this page |
 | `!` | `!` / `F1` | Keyboard cheat sheet |
-| `⊞` | — | Toggle launcher layout (if enabled) |
 | `+` | `+` | Full new-bookmark modal |
 
 Hover a button on desktop for a tooltip with shortcuts.
@@ -562,7 +561,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 |--------|-----------|
 | **Default** | Classic multi-column grid |
 | **Compact / Cards / Masonry / List** | Density and visual style |
-| **Launcher** | Large favicon tiles; toggle **⊞** or `:layout launcher` |
+| **Launcher** | Large favicon tiles; enable via **Config → General → Layout** or `:layout launcher` in search |
 
 ### Themes
 
