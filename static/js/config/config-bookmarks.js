@@ -868,6 +868,7 @@ class ConfigBookmarks {
         bookmark.icon = '';
         this._updateDetailIconPreview(bookmark);
         this._syncRow(index, bookmark);
+        window.configManager?.markDirty?.();
         if (window.configManager?.ui?.showNotification) {
             window.configManager.ui.showNotification('Icon verwijderd.', 'success', {
                 actionLabel: 'Undo',
@@ -875,6 +876,7 @@ class ConfigBookmarks {
                     bookmark.icon = prev;
                     this._updateDetailIconPreview(bookmark);
                     this._syncRow(index, bookmark);
+                    window.configManager?.markDirty?.();
                     this.notify('Icon hersteld.', 'success');
                 }
             });
