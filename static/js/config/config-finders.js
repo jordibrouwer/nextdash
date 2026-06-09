@@ -46,7 +46,7 @@ class ConfigFinders {
             .replace('{lastUsed}', lastUsedLabel);
 
         div.innerHTML = `
-            <span class="drag-handle js-drag-handle" title="Drag to reorder">⠿</span>
+            <span class="drag-handle js-drag-handle" title="${this.t('config.dragToReorder') || 'Drag to reorder'}" aria-label="${this.t('config.dragToReorder') || 'Drag to reorder'}">⠿</span>
             <input type="text" id="finder-name-${index}" name="finder-name-${index}" value="${finder.name}" placeholder="${this.t('config.finderNamePlaceholder')}" data-finder-key="${index}" data-field="name">
             <input type="url" id="finder-url-${index}" name="finder-url-${index}" value="${finder.searchUrl}" placeholder="${this.t('config.finderUrlPlaceholder')}" data-finder-key="${index}" data-field="searchUrl">
             <input type="text" id="finder-shortcut-${index}" name="finder-shortcut-${index}" value="${finder.shortcut || ''}" placeholder="${this.t('config.finderShortcutPlaceholder')}" maxlength="10" data-finder-key="${index}" data-field="shortcut">

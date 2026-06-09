@@ -53,6 +53,7 @@ class ConfigCollections {
         const handle = document.createElement('span');
         handle.className = 'drag-handle collection-drag-handle';
         handle.textContent = '⠿';
+        handle.setAttribute('aria-hidden', 'true');
         inner.appendChild(handle);
 
         const icon = document.createElement('span');

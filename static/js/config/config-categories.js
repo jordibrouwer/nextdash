@@ -54,7 +54,7 @@ class ConfigCategories {
         div._categoryRef = category;
         
         div.innerHTML = `
-            <span class="drag-handle js-drag-handle" title="Drag to reorder">⠿</span>
+            <span class="drag-handle js-drag-handle" title="${this.t('config.dragToReorder') || 'Drag to reorder'}" aria-label="${this.t('config.dragToReorder') || 'Drag to reorder'}">⠿</span>
             <input type="text" id="category-icon-${index}" name="category-icon-${index}" value="${category.icon || ''}" placeholder="emoticon" maxlength="2" data-category-id="${category.id}" data-field="icon" aria-label="Category emoticon">
             <input type="text" id="category-name-${index}" name="category-name-${index}" value="${category.name}" placeholder="${this.t('config.categoryNamePlaceholder')}" data-category-id="${category.id}" data-field="name">
             <button type="button" class="btn btn-secondary btn-small" onclick="configManager.mergeCategory(${index})">${this.t('config.merge')}</button>

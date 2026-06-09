@@ -144,7 +144,7 @@ class ConfigTags {
         const handle = document.createElement('span');
         handle.className = 'drag-handle tag-drag-handle';
         handle.textContent = '⠿';
-        handle.title = 'Tag';
+        handle.setAttribute('aria-hidden', 'true');
         row.appendChild(handle);
 
         // Tag label — clicking toggles drill-down
