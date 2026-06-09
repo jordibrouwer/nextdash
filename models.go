@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Bookmark struct {
@@ -264,6 +265,7 @@ type Store interface {
 	GetAllBookmarks() []Bookmark
 	BookmarkURLExists(url string) bool
 	SaveBookmarksByPage(pageID int, bookmarks []Bookmark)
+	TrackBookmarkOpen(pageID int, index int) bool
 	AddBookmarkToPage(pageID int, bookmark Bookmark)
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
 	// Categories - per page only
@@ -597,6 +599,40 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	}
 
 	return pageWithBookmarks.Bookmarks
+}
+
+func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) bool {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return false
+	}
+
+	var pageWithBookmarks PageWithBookmarks
+	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		return false
+	}
+	if index < 0 || index >= len(pageWithBookmarks.Bookmarks) {
+		return false
+	}
+
+	pageWithBookmarks.Bookmarks[index].OpenCount++
+	pageWithBookmarks.Bookmarks[index].LastOpened = time.Now().UnixMilli()
+	pageWithBookmarks.Bookmarks[index].PageID = pageID
+
+	newData, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
+	if err != nil {
+		return false
+	}
+	if err := os.WriteFile(filePath, newData, 0644); err != nil {
+		return false
+	}
+	return true
 }
 
 func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) {

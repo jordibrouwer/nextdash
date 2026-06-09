@@ -1565,15 +1565,10 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookmarks := h.store.GetBookmarksByPage(pageID)
-	if index < 0 || index >= len(bookmarks) {
+	if !h.store.TrackBookmarkOpen(pageID, index) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	bookmarks[index].OpenCount++
-	bookmarks[index].LastOpened = time.Now().UnixMilli()
-	h.store.SaveBookmarksByPage(pageID, bookmarks)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
