@@ -1,10 +1,33 @@
+# Git and editor
 .git
 .gitignore
-node_modules
-dist
-build
-.tmp
-.cache
-Dockerfile*
-docker-compose*
+.cursor
+.claude
+.DS_Store
+
+# Dependencies and local tooling (not used in the Go image)
+node_modules/
+package.json
+package-lock.json
+scripts/
+
+# Runtime / local data (mounted as a volume in compose)
+data/
+
+# Local binaries
+nextDash
+main
+*.exe
+*.test
+
+# Docs and assets not needed in the image
+*.md
+screenshots/
+extension/
 nextDash.code-workspace*
+
+# Build artifacts
+dist/
+build/
+.tmp/
+.cache/

@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-
-=======
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -20,9 +14,6 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
 # Go workspace file
 go.work
 go.work.sum
@@ -30,126 +21,13 @@ go.work.sum
 # env file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
->>>>>>> f7ba161f0b8e28daeffabc5aa2fa8cf7e073d0bc
-data/bookmarks-1.json
-data/bookmarks-1.json
-.gitignore
-data/health-cache.json
-data/settings.json
-.claude/
+# Node dev dependencies (Playwright debug scripts)
+node_modules/
+
+# Local / runtime data
 data/
+.claude/
 .DS_Store
 nextDash
+main
 scripts/debug-config-save.mjs
-node_modules/.bin/playwright
-node_modules/.bin/playwright-core
-scripts/merge-config-info-i18n.py
-node_modules/playwright-core/browsers.json
-node_modules/playwright-core/cli.js
-node_modules/playwright-core/index.d.ts
-node_modules/playwright-core/index.js
-node_modules/playwright-core/index.mjs
-node_modules/playwright-core/LICENSE
-node_modules/playwright-core/NOTICE
-node_modules/playwright-core/package.json
-node_modules/playwright-core/README.md
-node_modules/playwright-core/ThirdPartyNotices.txt
-node_modules/playwright-core/bin/install_media_pack.ps1
-node_modules/playwright-core/bin/install_webkit_wsl.ps1
-node_modules/playwright-core/bin/reinstall_chrome_beta_linux.sh
-node_modules/playwright-core/bin/reinstall_chrome_beta_mac.sh
-node_modules/playwright-core/bin/reinstall_chrome_beta_win.ps1
-node_modules/playwright-core/bin/reinstall_chrome_stable_linux.sh
-node_modules/playwright-core/bin/reinstall_chrome_stable_mac.sh
-node_modules/playwright-core/bin/reinstall_chrome_stable_win.ps1
-node_modules/playwright-core/bin/reinstall_msedge_beta_linux.sh
-node_modules/playwright-core/bin/reinstall_msedge_beta_mac.sh
-node_modules/playwright-core/bin/reinstall_msedge_beta_win.ps1
-node_modules/playwright-core/bin/reinstall_msedge_dev_linux.sh
-node_modules/playwright-core/bin/reinstall_msedge_dev_mac.sh
-node_modules/playwright-core/bin/reinstall_msedge_dev_win.ps1
-node_modules/playwright-core/bin/reinstall_msedge_stable_linux.sh
-node_modules/playwright-core/bin/reinstall_msedge_stable_mac.sh
-node_modules/playwright-core/bin/reinstall_msedge_stable_win.ps1
-node_modules/playwright-core/lib/bootstrap.js
-node_modules/playwright-core/lib/coreBundle.js
-node_modules/playwright-core/lib/package.js
-node_modules/playwright-core/lib/serverRegistry.js
-node_modules/playwright-core/lib/serverRegistry.js.LICENSE
-node_modules/playwright-core/lib/utilsBundle.js
-node_modules/playwright-core/lib/utilsBundle.js.LICENSE
-node_modules/playwright-core/lib/xdg-open
-node_modules/playwright-core/lib/entry/cliDaemon.js
-node_modules/playwright-core/lib/entry/dashboardApp.js
-node_modules/playwright-core/lib/entry/mcp.js
-node_modules/playwright-core/lib/entry/oopBrowserDownload.js
-node_modules/playwright-core/lib/server/deviceDescriptorsSource.json
-node_modules/playwright-core/lib/server/chromium/appIcon.png
-node_modules/playwright-core/lib/server/electron/loader.js
-node_modules/playwright-core/lib/tools/cli-client/channelSessions.js
-node_modules/playwright-core/lib/tools/cli-client/cli.js
-node_modules/playwright-core/lib/tools/cli-client/help.json
-node_modules/playwright-core/lib/tools/cli-client/minimist.js
-node_modules/playwright-core/lib/tools/cli-client/output.js
-node_modules/playwright-core/lib/tools/cli-client/program.js
-node_modules/playwright-core/lib/tools/cli-client/registry.js
-node_modules/playwright-core/lib/tools/cli-client/session.js
-node_modules/playwright-core/lib/tools/cli-client/skill/SKILL.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/element-attributes.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/playwright-tests.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/request-mocking.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/running-code.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/session-management.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/spec-driven-testing.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/storage-state.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/test-generation.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/tracing.md
-node_modules/playwright-core/lib/tools/cli-client/skill/references/video-recording.md
-node_modules/playwright-core/lib/tools/dashboard/appIcon.png
-node_modules/playwright-core/lib/tools/trace/SKILL.md
-node_modules/playwright-core/lib/tools/utils/extension.js
-node_modules/playwright-core/lib/tools/utils/socketConnection.js
-node_modules/playwright-core/lib/vite/dashboard/index.html
-node_modules/playwright-core/lib/vite/dashboard/playwright-logo.svg
-node_modules/playwright-core/lib/vite/dashboard/assets/codicon-DCmgc-ay.ttf
-node_modules/playwright-core/lib/vite/dashboard/assets/firefox-1bWoP6pv.svg
-node_modules/playwright-core/lib/vite/dashboard/assets/firefox-beta-k3eOH_eK.svg
-node_modules/playwright-core/lib/vite/dashboard/assets/firefox-nightly-Cp5nfeDT.svg
-node_modules/playwright-core/lib/vite/dashboard/assets/index-BY2S1tHT.css
-node_modules/playwright-core/lib/vite/dashboard/assets/index-DpEq2p62.js
-node_modules/playwright-core/lib/vite/dashboard/assets/safari-na3_-uQk.svg
-node_modules/playwright-core/lib/vite/htmlReport/index.html
-node_modules/playwright-core/lib/vite/htmlReport/report.css
-node_modules/playwright-core/lib/vite/htmlReport/report.js
-node_modules/playwright-core/lib/vite/recorder/index.html
-node_modules/playwright-core/lib/vite/recorder/playwright-logo.svg
-node_modules/playwright-core/lib/vite/recorder/assets/codeMirrorModule-BHYmBp6h.js
-node_modules/playwright-core/lib/vite/recorder/assets/codeMirrorModule-DYBRYzYX.css
-node_modules/playwright-core/lib/vite/recorder/assets/codicon-DCmgc-ay.ttf
-node_modules/playwright-core/lib/vite/recorder/assets/index-4ZiSSCmn.css
-node_modules/playwright-core/lib/vite/recorder/assets/index-DA10QRaq.js
-node_modules/playwright-core/lib/vite/traceViewer/codeMirrorModule.DYBRYzYX.css
-node_modules/playwright-core/lib/vite/traceViewer/codicon.DCmgc-ay.ttf
-node_modules/playwright-core/lib/vite/traceViewer/defaultSettingsView.BDKsFU3c.css
-node_modules/playwright-core/lib/vite/traceViewer/index.BCnMPevh.js
-node_modules/playwright-core/lib/vite/traceViewer/index.CzXZzn5A.css
-node_modules/playwright-core/lib/vite/traceViewer/index.html
-node_modules/playwright-core/lib/vite/traceViewer/manifest.webmanifest
-node_modules/playwright-core/lib/vite/traceViewer/playwright-logo.svg
-node_modules/playwright-core/lib/vite/traceViewer/snapshot.html
-node_modules/playwright-core/lib/vite/traceViewer/snapshot.v8KI4P3m.js
-node_modules/playwright-core/lib/vite/traceViewer/sw.bundle.js
-node_modules/playwright-core/lib/vite/traceViewer/uiMode.Btcz36p_.css
-node_modules/playwright-core/lib/vite/traceViewer/uiMode.C2Efnu2P.js
-node_modules/playwright-core/lib/vite/traceViewer/uiMode.html
-node_modules/playwright-core/lib/vite/traceViewer/xtermModule.DYP7pi_n.css
-node_modules/playwright-core/lib/vite/traceViewer/assets/codeMirrorModule-Ds_H_9Yq.js
-node_modules/playwright-core/lib/vite/traceViewer/assets/defaultSettingsView-D31xz8zv.js
-node_modules/playwright-core/lib/vite/traceViewer/assets/urlMatch-BYQrIQwR.js
-node_modules/playwright-core/lib/vite/traceViewer/assets/xtermModule-CsJ4vdCR.js
-node_modules/playwright-core/types/protocol.d.ts
-node_modules/playwright-core/types/structs.d.ts
-node_modules/playwright-core/types/types.d.ts
