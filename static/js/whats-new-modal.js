@@ -139,6 +139,18 @@
                         { badge: 'fix', text: '<strong>Unsaved icon edits</strong> — icon fetch, upload, clear, and undo mark the bookmark detail as dirty so Save is required.' },
                     ]
                 },
+                {
+                    title: 'Additional fixes',
+                    items: [
+                        { badge: 'fix', text: '<strong>Ping write-token</strong> — <code>/api/ping</code> requires <code>X-NextDash-Token</code> when <code>NEXTDASH_WRITE_TOKEN</code> is set; status monitor and health UI send it automatically.' },
+                        { badge: 'fix', text: '<strong>Health mutation races</strong> — health status updates, deletes, and auto-heal apply atomically under one store lock; <code>RetestAll</code> only writes pages that were retested; duplicate merge commits all page updates in one locked save.' },
+                        { badge: 'fix', text: '<strong>ZIP import categories</strong> — restored pages keep category structure because categories are merged into bookmark JSON before import commit.' },
+                        { badge: 'fix', text: '<strong>Page load race</strong> — fast swipe or hash changes no longer show the wrong bookmarks; stale <code>loadPageBookmarks()</code> responses are ignored.' },
+                        { badge: 'fix', text: '<strong>Delete &amp; open tracking</strong> — delete matches canonical URLs and returns 404 when missing; <code>/api/track-open</code> uses page-aware index resolution; persist failures return 500 instead of 404.' },
+                        { badge: 'fix', text: '<strong>Inline edit &amp; page moves</strong> — remote bookmarks save <code>note</code> and <code>tags</code>; the page dropdown can move cross-page bookmarks; category reorder flushes on tab close.' },
+                        { badge: 'fix', text: '<strong>SavePages &amp; icon preview</strong> — saving page order/name no longer overwrites bookmark data on disk; inline icon preview uses safe DOM rendering.' },
+                    ]
+                },
             ]),
 
             release('v2026.06.12', 'June 2026', '2026-06-08', [

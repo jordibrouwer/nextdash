@@ -107,6 +107,36 @@ _No unreleased changes at this time._
 - **fix** **`recordSearchHistory`** — `?` finder queries are not stored as search history.
 - **new** **Search/finder hints** — debounced search and improved empty-state finder hints.
 
+### Additional fixes
+
+_Since the initial v2026.06.13 release notes — bookmark data integrity, health races, and dashboard navigation._
+
+#### Security & write-token
+
+- **fix** **`/api/ping` write-token** — bookmark status pings require `X-NextDash-Token` when `NEXTDASH_WRITE_TOKEN` is set; dashboard status monitor and health UI send the token via `nextDashFetch` / `apiFetch`.
+
+#### Health, cache & analytics
+
+- **fix** **Health mutation races** — `UpdateBookmarkHealthStatus`, `DeleteHealthBookmark`, and `AutoHealApply` use atomic `MutateBookmarkAt` / `DeleteBookmarkAt` (read-modify-write under one store lock) instead of separate get/save calls.
+- **fix** **`TrackBookmarkOpen` HTTP errors** — missing bookmark returns **404** (`ErrBookmarkNotFound`); disk/persist failures return **500** instead of being reported as not found.
+- **fix** **`RetestAll` write scope** — only pages with checked bookmarks that were actually retested are saved back (avoids overwriting unrelated pages with stale snapshots).
+- **fix** **Duplicate merge atomic save** — `MergeDuplicates` stages in-memory page snapshots and commits all updates via `SaveBookmarkPageUpdates` under one lock.
+
+#### Backup & import
+
+- **fix** **ZIP import categories** — `mergeImportCategoriesIntoPrepared()` embeds category data into bookmark JSON before `commitPreparedImport()`, so imported pages keep their category structure.
+
+#### Dashboard — bookmarks & editing
+
+- **fix** **Page load race** — fast swipe or hash changes no longer show the wrong page's bookmarks; `loadPageBookmarks()` ignores stale fetch responses via a monotonic load-id guard.
+- **fix** **`DeleteBookmark` matching** — delete resolves by canonical URL; a missing bookmark returns **404** instead of **500**.
+- **fix** **Open-count routing** — `/api/track-open` uses page-aware index resolution (`resolveBookmarkPageId`, `resolveBookmarkIndexOnPage`) and cross-page canonical URL matching.
+- **fix** **Pending saves on navigation** — `flushPendingDashboardSaves()` runs before page loads; preview metadata can save immediately via `saveBookmarkPreviewMetadataNow()`.
+- **fix** **Remote inline edit** — cross-page bookmarks persist `note` and `tags`; the page dropdown moves remote bookmarks to another page (not only current-page rows).
+- **fix** **Category reorder on exit** — debounced category order (`_pendingCategorySave`) flushes on tab close via keepalive `POST /api/categories`.
+- **fix** **Icon preview XSS** — inline icon preview builds `<img>` via DOM APIs instead of unsanitized `innerHTML`.
+- **fix** **`SavePages` staleness** — saving page structure updates page metadata only; bookmarks already on disk are preserved (no stale snapshot overwrite).
+
 ---
 
 ## v2026.06.12 — June 2026
