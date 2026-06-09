@@ -85,72 +85,34 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("font")
+	file, _, err := r.FormFile("font")
 	if err != nil {
 		http.Error(w, "Error retrieving file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
-	// Validate file type (should be font)
-	contentType := header.Header.Get("Content-Type")
-	filename := header.Filename
-	ext := strings.ToLower(filepath.Ext(filename))
-
-	validTypes := map[string]bool{
-		"font/woff":              true,
-		"font/woff2":             true,
-		"font/ttf":               true,
-		"font/otf":               true,
-		"application/font-woff":  true,
-		"application/font-woff2": true,
-		"application/x-font-ttf": true,
-		"application/x-font-otf": true,
-		"application/font-sfnt":  true,
+	data, err := io.ReadAll(io.LimitReader(file, 10<<20))
+	if err != nil {
+		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+		return
 	}
 
-	isValidType := validTypes[contentType]
-	isValidExt := ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".otf"
-
-	if !isValidType && !isValidExt {
+	contentType := detectFontType(data)
+	ext := fontExtensionFromDetectedType(contentType)
+	if ext == "" {
 		http.Error(w, "Invalid file type. Only woff, woff2, ttf, otf allowed", http.StatusBadRequest)
 		return
 	}
 
-	// Create data directory if it doesn't exist
 	dataDir := "data"
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		os.MkdirAll(dataDir, 0755)
-	}
-
-	// Determine file extension
-	switch contentType {
-	case "font/woff", "application/font-woff":
-		ext = ".woff"
-	case "font/woff2", "application/font-woff2":
-		ext = ".woff2"
-	case "font/ttf", "application/x-font-ttf", "application/font-sfnt":
-		ext = ".ttf"
-	case "font/otf", "application/x-font-otf":
-		ext = ".otf"
-	default:
-		// Use extension from filename if content type not recognized
-		if ext == "" {
-			ext = filepath.Ext(header.Filename)
-		}
-	}
-
-	// Save file as font with appropriate extension
-	fontPath := filepath.Join(dataDir, "font"+ext)
-	dst, err := os.Create(fontPath)
-	if err != nil {
-		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
 		return
 	}
-	defer dst.Close()
 
-	_, err = io.Copy(dst, file)
-	if err != nil {
+	fontPath := filepath.Join(dataDir, "font"+ext)
+	if err := os.WriteFile(fontPath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return
 	}

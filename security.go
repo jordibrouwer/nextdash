@@ -33,6 +33,42 @@ func detectImageType(data []byte) string {
 	return ""
 }
 
+// detectFontType identifies font uploads by magic bytes (WOFF/WOFF2/sfnt).
+func detectFontType(data []byte) string {
+	if len(data) < 4 {
+		return ""
+	}
+	switch string(data[:4]) {
+	case "wOFF":
+		return "font/woff"
+	case "wOF2":
+		return "font/woff2"
+	case "OTTO":
+		return "font/otf"
+	case "true", "typ1":
+		return "font/ttf"
+	}
+	if data[0] == 0x00 && data[1] == 0x01 && data[2] == 0x00 && data[3] == 0x00 {
+		return "font/ttf"
+	}
+	return ""
+}
+
+func fontExtensionFromDetectedType(contentType string) string {
+	switch contentType {
+	case "font/woff":
+		return ".woff"
+	case "font/woff2":
+		return ".woff2"
+	case "font/ttf":
+		return ".ttf"
+	case "font/otf":
+		return ".otf"
+	default:
+		return ""
+	}
+}
+
 // svgScriptPattern matches <script> blocks, SVG event-handler attributes, and javascript: hrefs.
 // Separate alternatives for double/single quoted and unquoted attribute values ensure the full
 // value is consumed regardless of nested quotes inside the value.
