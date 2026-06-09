@@ -1146,18 +1146,16 @@ func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
-// Duplicate detection endpoint
-func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	pages := h.store.GetPages()
+func findURLDuplicateGroups(pages []Page, getBookmarks func(pageID int) []Bookmark) []DuplicateGroup {
 	duplicates := make(map[string][]BookmarkRef)
-
 	for _, page := range pages {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		bookmarks := getBookmarks(page.ID)
 		for idx, bm := range bookmarks {
-			normalizedURL := strings.ToLower(strings.TrimSpace(bm.URL))
-			duplicates[normalizedURL] = append(duplicates[normalizedURL], BookmarkRef{
+			key := canonicalBookmarkURLKey(bm.URL)
+			if key == "" {
+				continue
+			}
+			duplicates[key] = append(duplicates[key], BookmarkRef{
 				Name:     bm.Name,
 				Index:    idx,
 				PageID:   page.ID,
@@ -1175,9 +1173,15 @@ func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
+	return duplicateGroups
+}
+
+// Duplicate detection endpoint
+func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	warning := DuplicateWarning{
-		DuplicateURLs: duplicateGroups,
+		DuplicateURLs: findURLDuplicateGroups(h.store.GetPages(), h.store.GetBookmarksByPage),
 	}
 
 	w.WriteHeader(http.StatusOK)
