@@ -705,21 +705,29 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **config → backups → Create backup**
 
-Includes pages, bookmarks (with tags), categories, settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`.
+Includes pages, bookmarks (with tags), categories, settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
+
+The panel shows **Last backup: …** after you create a ZIP (stored locally in the browser).
 
 **Import ZIP** replaces **all** current data. **Always backup first.**
 
 Do not rename files inside the ZIP.
 
-Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (not the server’s current setting).
+Import is **atomic**: files are staged, orphan icons and stale JSON are removed, then everything is committed in one step.
 
-Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when localhost bookmarks are disabled) are **skipped** during import; the UI shows how many were skipped alongside new and conflict counts.
+Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (read **before** bookmarks — not the server’s current setting).
+
+Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when localhost bookmarks are disabled) are **skipped** during import; the UI shows how many were skipped alongside new and conflict counts. Icon filenames in imported JSON are sanitized.
+
+### Settings export / import
+
+**config → backups** — export or import **`settings.json` only** (without touching bookmarks or pages). Useful for migrating appearance, search, and status settings between instances. Import validates file size and strips migration markers so server-side migrations run correctly on next save.
 
 ### Factory reset
 
 **config → backups → Reset all data**
 
-Permanently deletes pages, categories, bookmarks, finders, settings, custom themes, uploaded favicon/font, bookmark icons, and health/preview caches. Recreates the **default sample bookmarks** (favicons prefetched on the server), built-in settings, and default colour palette. Not a partial wipe — use ZIP backup first if you need to keep anything.
+Permanently deletes pages, categories, bookmarks, finders, settings, custom themes, uploaded favicon/font, all files under `data/icons/`, and health/preview caches. Recreates the **default sample bookmarks** (favicons prefetched in the **background** after startup), built-in settings, and default colour palette. Not a partial wipe — use ZIP backup first if you need to keep anything.
 
 ### Browser HTML import
 

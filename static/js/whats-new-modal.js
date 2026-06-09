@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v48';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v49';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,48 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.13', 'June 2026', '2026-06-09', [
+                {
+                    title: 'Security &amp; uploads',
+                    items: [
+                        { badge: 'fix', text: '<strong>DNS-rebinding protection</strong> — outbound fetches (preview, ping, icons, auto-heal) validate resolved IPs at dial time; private/loopback targets are blocked unless localhost bookmarks are allowed.' },
+                        { badge: 'fix', text: '<strong>Write-token coverage</strong> — when <code>NEXTDASH_WRITE_TOKEN</code> is set, backup download, bookmark preview, search-index build, open-broken, and auto-heal suggest also require <code>X-NextDash-Token</code>. Dashboard, config, and health inject the token automatically.' },
+                        { badge: 'fix', text: '<strong>Font magic bytes</strong> — custom font uploads are validated by file signature (WOFF/WOFF2/TTF/OTF), not client <code>Content-Type</code> or filename.' },
+                        { badge: 'fix', text: '<strong>SVG &amp; icon hardening</strong> — downloaded SVG icons are sanitized server-side; uploaded icons/favicons use magic-byte detection; category modals escape HTML safely.' },
+                    ]
+                },
+                {
+                    title: 'Backup, import &amp; reset',
+                    items: [
+                        { badge: 'new', text: '<strong>Atomic ZIP import</strong> — restore stages to a temp directory, removes orphan icons and stale JSON, then commits; invalid bookmark URLs are skipped with a count in the UI.' },
+                        { badge: 'fix', text: '<strong>Backup round-trip icons</strong> — legacy root-level images in <code>data/</code> export as <code>icons/&lt;name&gt;</code> so bookmark icon references survive backup → import.' },
+                        { badge: 'fix', text: '<strong>Factory reset scope</strong> — reset clears <code>data/icons/</code>, custom favicon/font, and preview/health caches; sample favicons prefetch in the background after startup.' },
+                        { badge: 'new', text: '<strong>Settings export/import</strong> — export or import <code>settings.json</code> alone from Config → Backups, with file-size validation and migration-safe cleanup.' },
+                        { badge: 'new', text: '<strong>Last backup date</strong> — the backups panel shows when you last created a ZIP backup.' },
+                    ]
+                },
+                {
+                    title: 'Health, cache &amp; analytics',
+                    items: [
+                        { badge: 'fix', text: '<strong>Cache merge safety</strong> — preview and health caches use atomic read-merge-write so parallel requests no longer overwrite each other\'s entries.' },
+                        { badge: 'fix', text: '<strong>Canonical URL keys</strong> — duplicate detection, health cache, status monitor, and ping validation treat <code>https://x</code> and <code>https://x/</code> as the same URL.' },
+                        { badge: 'fix', text: '<strong>Open-count tracking</strong> — <code>/api/track-open</code> increments atomically under lock (no lost opens on rapid clicks).' },
+                        { badge: 'fix', text: '<strong>Icon upload overwrite</strong> — re-uploading a bookmark icon with the same filename replaces the file on disk.' },
+                    ]
+                },
+                {
+                    title: 'Config, bookmarks &amp; search',
+                    items: [
+                        { badge: 'new', text: '<strong>Link-preview icons</strong> — bookmark detail can fetch favicons via link preview with generation guards so stale async responses are ignored.' },
+                        { badge: 'new', text: '<strong>URL protocol hint</strong> — missing <code>https://</code> on blur is normalized; inline hint when the protocol is absent.' },
+                        { badge: 'new', text: '<strong>Config tab keys</strong> — arrow keys move between visible config tabs on desktop.' },
+                        { badge: 'new', text: '<strong>Search chip keys</strong> — <kbd>←</kbd>/<kbd>→</kbd> select a recent query chip; <kbd>Enter</kbd> applies it.' },
+                        { badge: 'fix', text: '<strong>Duplicate-merge modal</strong> — <kbd>ESC</kbd> cancels the health merge picker without leaving a pending promise.' },
+                        { badge: 'fix', text: '<strong>Unsaved icon edits</strong> — icon fetch, upload, clear, and undo mark the bookmark detail as dirty so Save is required.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.12', 'June 2026', '2026-06-08', [
                 {

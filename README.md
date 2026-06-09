@@ -66,11 +66,13 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 ### Optional write token (LAN / VPS)
 
-Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Destructive endpoints then require header `X-NextDash-Token` with that value. The config and health pages inject the token automatically when you open them in a browser.
+Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard, config, and health pages inject the token automatically when you open them in a browser.
 
-Protected actions include: **reset all data** (also requires `{"confirm":true}`), **import backup**, **delete page**, **health delete / retest / merge / auto-heal / cache-scan / update-status**, **clear or refresh all bookmark previews**, and **reset theme colours**.
+Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **search-index build**, **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **settings and bookmark saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
 
-Normal bookmark editing and settings save stay open so day-to-day use is not blocked. The browser extension can store the same write token in **Settings → Write token**.
+Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
+
+Normal day-to-day bookmark editing stays available when no write token is set. The browser extension can store the same write token in **Settings → Write token**.
 
 ---
 
@@ -100,7 +102,7 @@ Normal bookmark editing and settings save stay open so day-to-day use is not blo
 - `Delete` — delete the focused bookmark
 
 **Search & commands**
-- `>` — open search; empty state shows recent queries and saved searches as separate groups
+- `>` — open search; empty state shows recent queries and saved searches as chips; `←`/`→` select a chip, `Enter` applies it
 - `/` — fuzzy search; ranked by prefix → word-boundary → substring; also matches URL domain, tags, and note text
 - `:` — command palette
 - `?` — finders (e.g. `?g query` to search Google)
@@ -118,6 +120,7 @@ Normal bookmark editing and settings save stay open so day-to-day use is not blo
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — `order` / `az` / `recent` / `custom`
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
+- `:duplicate` / `:duplicates` — scan for duplicate URLs across all pages (notification with group count)
 - `:layout <preset>` — `default` / `compact` / `cards` / `masonry` / `list` / `launcher` …
 - `:theme <name>` — switch colour theme
 - `:density <mode>` — `comfortable` / `compact` / `dense`
@@ -126,9 +129,11 @@ Normal bookmark editing and settings save stay open so day-to-day use is not blo
 - `:find <text>` — hide tiles whose name or URL don't match; clear with `:find`
 - `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right`
 - `:save` / `:saved` — save current query / show saved searches
+- `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
 
 **Config page**
 - `1–8` — jump between config tabs
+- `←`/`→` — move between visible config tabs (when focus is not in an input)
 - `S` — save changes
 - `Alt + ↑/↓` — reorder the selected bookmark
 - `Ctrl/Cmd + K` — open the config command palette
@@ -210,7 +215,9 @@ Dynamic bookmark groups that appear automatically:
 - Pin bookmarks to keep them at the top
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped
 - Export all bookmarks to CSV (Name, URL, Category, Page, Shortcut)
-- Full ZIP backup and restore (pages, bookmarks, categories, settings, themes)
+- Full ZIP backup and restore (pages, bookmarks, categories, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup; **last backup date** shown in Config → Backups
+- Settings-only **export/import** of `settings.json` (migration-safe) from Config → Backups
+- Bookmark icons: upload, URL fetch, link-preview fetch; re-upload **overwrites** same filename
 
 ### Notifications
 

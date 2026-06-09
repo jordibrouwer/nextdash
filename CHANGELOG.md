@@ -8,7 +8,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased) — CSS injection, TLS verification, write-token coverage, security headers, body limits
+- [Unreleased](#unreleased)
+- [v2026.06.13 — June 2026](#v20260613--june-2026)
 - [v2026.06.12 — June 2026](#v20260612--june-2026)
 - [v2026.06.11 — June 2026](#v20260611--june-2026)
 - [v2026.06.10 — June 2026](#v20260610--june-2026)
@@ -38,15 +39,65 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-### Security
+_No unreleased changes at this time._
 
-- **fix** **CSS injection** — color values stored via `/api/colors` are now validated against an allowlist (hex, rgb/rgba, hsl/hsla, named keywords) before being written into the generated `theme.css`; theme IDs are sanitized to alphanumeric/dash characters only.
-- **fix** **TLS verification** — `InsecureSkipVerify` removed from the HTTP client used for bookmark ping checks; certificate validation is now enforced.
-- **fix** **Write-token coverage** — `requireWriteAccess` is now enforced on all mutating endpoints that were missing it: `SaveBookmarks`, `AddBookmark`, `ImportBrowserBookmarks`, `DeleteBookmark`, `SaveFinders`, `SaveCategories`, `SavePages`, `SaveSettings`, `SaveColors`, and all four upload handlers (`UploadFavicon`, `UploadFont`, `UploadIcon`, `UploadIconFromURL`).
-- **fix** **Security headers** — all responses now include `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIGIN` via a global middleware.
-- **fix** **Request body limit** — non-multipart (JSON) request bodies are capped at 4 MB; upload and backup endpoints retain their own higher limits via `ParseMultipartForm`.
-- **fix** **SVG stored XSS** — uploaded SVG icon files are sanitized server-side before storage: `<script>` blocks, `on*` event-handler attributes (double/single/unquoted), and `javascript:` hrefs are stripped. Discovered via container black-box testing.
-- **fix** **Content-type spoofing on icon/favicon upload** — the server now validates uploaded image files by reading their magic bytes (`detectImageType`) instead of trusting the client-supplied `Content-Type` header; files with unrecognised signatures are rejected with 400.
+---
+
+## v2026.06.13 — June 2026
+
+**Security hardening, backup/import reliability, health cache fixes, config & search polish** — DNS-rebinding dial checks, expanded write-token coverage, atomic ZIP import, canonical URL keys, async favicon prefetch, settings export/import.
+
+### Security & uploads
+
+- **fix** **CSS injection** — color values stored via `/api/colors` are validated against an allowlist before being written into `theme.css`; theme IDs are sanitized to alphanumeric/dash characters only.
+- **fix** **TLS verification** — `InsecureSkipVerify` removed from the HTTP client used for bookmark ping checks; certificate validation is enforced.
+- **fix** **Security headers** — all responses include `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIGIN` via global middleware.
+- **fix** **Request body limit** — non-multipart (JSON) bodies are capped at 4 MB; upload and backup endpoints keep their own limits via `ParseMultipartForm`.
+- **fix** **Write-token coverage (mutations)** — `requireWriteAccess` on `SaveBookmarks`, `AddBookmark`, `ImportBrowserBookmarks`, `DeleteBookmark`, `SaveFinders`, `SaveCategories`, `SavePages`, `SaveSettings`, `SaveColors`, and all upload handlers (`UploadFavicon`, `UploadFont`, `UploadIcon`, `UploadIconFromURL`).
+- **fix** **Write-token coverage (heavy reads)** — when `NEXTDASH_WRITE_TOKEN` is set: `GET /api/backup`, `GET /api/bookmark-preview`, `POST /api/search-index`, `POST /api/health/open-broken`, `GET /api/health/auto-heal-suggest`. Dashboard, config, and health pages inject the token via meta tag; extension uses stored write token.
+- **fix** **DNS-rebinding protection** — shared outbound HTTP clients validate resolved IPs at dial time; private/loopback/link-local targets are rejected unless `allowLocalBookmarks` is enabled.
+- **fix** **SVG stored XSS** — uploaded and downloaded SVG icons are sanitized server-side (`<script>`, `on*` handlers, `javascript:` hrefs stripped).
+- **fix** **Magic-byte uploads** — icon and favicon uploads use `detectImageType`; font uploads use `detectFontType` (WOFF/WOFF2/TTF/OTF) instead of trusting client `Content-Type` or filename.
+- **fix** **Category modal XSS** — category delete/merge modal options are HTML-escaped; unsafe icon filenames are rejected on save.
+- **fix** **`UploadIconFromURL`** — respects `allowLocalBookmarks` for localhost/private icon sources (same SSRF rules as other fetchers).
+
+### Backup, import & reset
+
+- **new** **Atomic ZIP import** — staged temp directory, orphan icon cleanup, removal of extra `bookmarks-*.json` and managed root files not in the archive; clears preview/health caches after commit.
+- **fix** **Import URL order** — `settings.json` from the ZIP is read first so `allowLocalBookmarks` applies before bookmark URL validation.
+- **fix** **Backup icon paths** — root-level images in `data/` export as `icons/<basename>` for stable backup → import round-trips; duplicate root/icons entries are deduplicated on import.
+- **fix** **Factory reset scope** — removes `data/icons/`, custom favicon/font, preview and health caches, and recreates defaults; UI copy updated (EN/NL/DE/FR).
+- **new** **Settings export/import** — export or import `settings.json` from Config → Backups; import strips migration markers and validates file size.
+- **new** **Last backup date** — backups panel shows the date of the last ZIP backup (localStorage).
+- **fix** **ZIP import icons** — sanitized bookmark JSON always written when URLs are skipped; icon filenames sanitized on import.
+
+### Health, cache & analytics
+
+- **fix** **Preview/health cache races** — atomic read-merge-write under mutex for preview and health cache files.
+- **fix** **Canonical URL keys** — `CheckDuplicates`, health cache, status monitor in-memory cache, and `BookmarkURLExists` (ping gate) use `canonicalBookmarkURLKey` (`https://x` ≡ `https://x/`).
+- **fix** **`TrackBookmarkOpen`** — open count and `lastOpened` updated atomically in the store (no lost increments on rapid opens).
+- **fix** **`UploadIcon` overwrite** — re-uploading the same icon filename replaces the existing file.
+- **new** **Async favicon prefetch** — default bookmark favicons after install/reset prefetch in a background goroutine (startup no longer blocks on network).
+- **fix** **Prefetch merge-safe save** — concurrent favicon prefetch merges into bookmarks only when index and canonical URL still match and icon is empty.
+
+### Config, bookmarks & search
+
+- **new** **Link-preview icon fetch** — bookmark detail can pull favicons from link preview with UI feedback; async generation token prevents stale overwrites.
+- **new** **URL protocol hint** — detail panel hints and normalizes missing `https://` on blur.
+- **new** **Config tab keyboard nav** — arrow keys move between visible config tabs.
+- **new** **Drag reorder hints** — localized grip-handle hints in dashboard, categories, and tours.
+- **fix** **Icon dirty state** — icon fetch, upload, clear, and undo mark config as unsaved.
+- **fix** **Tag autocomplete** — improved empty-input behaviour and candidate list.
+- **fix** **Bookmarks split view** — responsive grid layout tweak for narrow detail panel.
+- **fix** **Drag-and-drop placeholder** — insertion marker positioning improved during reorder.
+
+### Search & modals
+
+- **new** **Search chip keyboard** — `←`/`→` move between recent-query chips; `Enter` applies the selected chip.
+- **fix** **Duplicate-merge modal** — `ESC` dismisses the health merge picker and resolves the pending promise; modal `ESC` no longer closes the search overlay underneath.
+- **fix** **Search debounce** — debounce timer cleared when search closes (no delayed actions after exit).
+- **fix** **`recordSearchHistory`** — `?` finder queries are not stored as search history.
+- **new** **Search/finder hints** — debounced search and improved empty-state finder hints.
 
 ---
 
