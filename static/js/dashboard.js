@@ -3875,6 +3875,7 @@ class Dashboard {
     flushPendingDashboardSavesOnExit() {
         const hadReorder = Boolean(this.pendingReorderSave);
         const hadPreview = Boolean(this.pendingPreviewSave);
+        const hadCategory = Boolean(this._pendingCategorySave);
         if (this.pendingReorderSave) {
             clearTimeout(this.pendingReorderSave);
             this.pendingReorderSave = null;
@@ -3883,26 +3884,44 @@ class Dashboard {
             clearTimeout(this.pendingPreviewSave);
             this.pendingPreviewSave = null;
         }
-        if (!hadReorder && !hadPreview) {
+        if (this._pendingCategorySave) {
+            clearTimeout(this._pendingCategorySave);
+            this._pendingCategorySave = null;
+        }
+        if (!hadReorder && !hadPreview && !hadCategory) {
             return;
         }
-        if (!Array.isArray(this.bookmarks) || !Number.isFinite(Number(this.currentPageId))) {
-            return;
-        }
-        const payload = [...this.bookmarks];
-        const url = `/api/bookmarks?page=${this.currentPageId}`;
+
         const headers = typeof nextDashWriteHeaders === 'function'
             ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
             : { 'Content-Type': 'application/json' };
-        try {
-            fetch(url, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(payload),
-                keepalive: true
-            });
-        } catch (_error) {
-            // Best-effort on tab close; ignore network errors.
+        const pageId = Number(this.currentPageId);
+
+        if ((hadReorder || hadPreview) && Array.isArray(this.bookmarks) && Number.isFinite(pageId)) {
+            try {
+                fetch(`/api/bookmarks?page=${pageId}`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify([...this.bookmarks]),
+                    keepalive: true
+                });
+            } catch (_error) {
+                // Best-effort on tab close; ignore network errors.
+            }
+        }
+
+        if (hadCategory && Array.isArray(this.categories) && Number.isFinite(pageId)) {
+            try {
+                const categoryPayload = this.categories.map((c) => ({ ...c, originalId: c.id }));
+                fetch(`/api/categories?page=${pageId}`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(categoryPayload),
+                    keepalive: true
+                });
+            } catch (_error) {
+                // Best-effort on tab close; ignore network errors.
+            }
         }
     }
 
@@ -5263,10 +5282,16 @@ class Dashboard {
                 ? (this.language.t('config.iconSet') || 'Icon set')
                 : (this.language.t('config.iconNone') || 'No icon');
             clearIconBtn.disabled = !pendingIcon;
+            iconPreview.replaceChildren();
             if (pendingIcon) {
-                iconPreview.innerHTML = `<img src="/data/icons/${pendingIcon}" alt="">`;
+                const img = document.createElement('img');
+                img.src = `/data/icons/${encodeURIComponent(pendingIcon)}`;
+                img.alt = '';
+                iconPreview.appendChild(img);
             } else {
-                iconPreview.innerHTML = `<span>${cfg('iconNone', 'No icon')}</span>`;
+                const empty = document.createElement('span');
+                empty.textContent = cfg('iconNone', 'No icon');
+                iconPreview.appendChild(empty);
             }
         };
 
@@ -5454,11 +5479,12 @@ class Dashboard {
         const pageSelect = document.createElement('select');
         pageSelect.className = 'bookmark-inline-select';
         const currentPageId = Number(this.currentPageId);
+        const sourcePageId = Number(bookmarkRef.pageId || this.currentPageId);
         (Array.isArray(this.pages) ? this.pages : []).forEach((page) => {
             const o = document.createElement('option');
             o.value = page.id;
             o.textContent = page.name || String(page.id);
-            if (Number(page.id) === currentPageId) o.selected = true;
+            if (Number(page.id) === sourcePageId) o.selected = true;
             pageSelect.appendChild(o);
         });
         form.appendChild(mkField(cfg('page', 'Page'), pageSelect));
@@ -5489,6 +5515,9 @@ class Dashboard {
         };
 
         pageSelect.addEventListener('change', () => reloadCatSelectForPage(pageSelect.value));
+        if (bookmarkRef.scope === 'remote' && sourcePageId !== currentPageId) {
+            void reloadCatSelectForPage(sourcePageId);
+        }
 
         const pinInput = document.createElement('input');
         pinInput.type = 'checkbox';
@@ -5673,11 +5702,11 @@ class Dashboard {
         const url = fields.urlInput.value.trim();
         const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
         const category = fields.catSelect.value;
+        const sourcePageId = Number(bookmarkRef.pageId || this.currentPageId);
         const targetPageId = fields.pageSelect ? Number(fields.pageSelect.value) : null;
-        const isPageMove = bookmarkRef.scope === 'current'
-            && targetPageId !== null
+        const isPageMove = targetPageId !== null
             && Number.isFinite(targetPageId)
-            && targetPageId !== Number(this.currentPageId);
+            && targetPageId !== sourcePageId;
 
         if (!name || !url) {
             this.showErrorNotification('Name and URL are required.');
@@ -5744,7 +5773,8 @@ class Dashboard {
     }
 
     async _moveBookmarkToPage(bookmarkRef, bookmarkState, targetPageId, row) {
-        const index = bookmarkRef.index;
+        const sourcePageId = Number(bookmarkRef.pageId || this.currentPageId);
+        const isCurrentScope = bookmarkRef.scope === 'current';
         try {
             // Animate row out before removing
             if (row) {
@@ -5752,35 +5782,53 @@ class Dashboard {
                 await new Promise(resolve => setTimeout(resolve, 320));
             }
 
-            // Remove from current page
-            this.ensureBookmarkMutationSnapshot();
-            this.bookmarks.splice(index, 1);
+            let sourceBookmarks;
+            if (isCurrentScope) {
+                this.ensureBookmarkMutationSnapshot();
+                sourceBookmarks = [...this.bookmarks];
+                sourceBookmarks.splice(bookmarkRef.index, 1);
+                this.bookmarks = sourceBookmarks;
+            } else {
+                const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
+                if (!sourceRes.ok) throw new Error('Failed to load source page.');
+                sourceBookmarks = await sourceRes.json();
+                const sourceIndex = this.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
+                if (sourceIndex < 0) {
+                    throw new Error('Could not locate original bookmark on source page.');
+                }
+                sourceBookmarks.splice(sourceIndex, 1);
+            }
 
-            // Load target page, append bookmark (keep chosen category, or clear if none chosen)
             const targetRes = await fetch(`/api/bookmarks?page=${targetPageId}`);
             if (!targetRes.ok) throw new Error('Failed to load target page.');
             const targetBookmarks = await targetRes.json();
             targetBookmarks.push({ ...bookmarkState });
 
-            // Save both pages
-            await dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
+            const headers = { 'Content-Type': 'application/json' };
+            await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.bookmarks)
+                headers,
+                body: JSON.stringify(sourceBookmarks)
             });
             await dashFetch(`/api/bookmarks?page=${targetPageId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(targetBookmarks)
             });
 
             const targetPage = (Array.isArray(this.pages) ? this.pages : []).find(p => Number(p.id) === targetPageId);
             const targetName = targetPage?.name || String(targetPageId);
 
+            this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
-            // Reload current page so categories are fresh (config may have added new ones)
-            await this.loadPageBookmarks(this.currentPageId);
-            this.renderDashboard();
+
+            if (isCurrentScope) {
+                await this.loadPageBookmarks(this.currentPageId);
+                this.renderDashboard();
+            } else {
+                await this.loadAllBookmarks();
+                this.renderDashboard();
+            }
             this.showNotification(`Moved to "${targetName}".`, 'success');
         } catch (err) {
             this.showErrorNotification(err.message || 'Failed to move bookmark.');

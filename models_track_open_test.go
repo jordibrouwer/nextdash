@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
@@ -43,8 +44,8 @@ func TestTrackBookmarkOpenIncrementsAtomically(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if !fs.TrackBookmarkOpen(1, 0) {
-				t.Error("TrackBookmarkOpen failed")
+			if err := fs.TrackBookmarkOpen(1, 0); err != nil {
+				t.Errorf("TrackBookmarkOpen failed: %v", err)
 			}
 		}()
 	}
@@ -74,7 +75,11 @@ func TestTrackBookmarkOpenRejectsInvalidIndex(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(wd) })
 
 	fs := &FileStore{dataDir: "data"}
-	if fs.TrackBookmarkOpen(1, 0) {
-		t.Fatal("expected false for missing page file")
+	err = fs.TrackBookmarkOpen(1, 0)
+	if err == nil {
+		t.Fatal("expected error for missing page file")
+	}
+	if !errors.Is(err, ErrBookmarkNotFound) {
+		t.Fatalf("expected ErrBookmarkNotFound, got %v", err)
 	}
 }

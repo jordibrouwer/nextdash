@@ -42,6 +42,17 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
+func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, ErrBookmarkNotFound) {
+		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
+		return false
+	}
+	return respondStorePersistError(w, err)
+}
+
 func isDefaultURLPort(scheme, port string) bool {
 	switch scheme {
 	case "https":
@@ -937,13 +948,10 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save each page individually
-	// Note: This assumes bookmarks are saved separately via SaveBookmarks endpoint
+	// Save each page individually; bookmarks are preserved from disk (see SavePage).
 	for _, page := range pages {
 		page = normalizePageMeta(page, page.ID)
-		// Get existing bookmarks for this page to preserve them
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		if !respondStorePersistError(w, h.store.SavePage(page, bookmarks)) {
+		if !respondStorePersistError(w, h.store.SavePage(page)) {
 			return
 		}
 	}
@@ -1654,9 +1662,10 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.store.TrackBookmarkOpen(pageID, index) {
-		w.WriteHeader(http.StatusNotFound)
-		return
+	if err := h.store.TrackBookmarkOpen(pageID, index); err != nil {
+		if !respondBookmarkMutationError(w, err) {
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -1747,25 +1756,20 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	bookmarks := h.store.GetBookmarksByPage(req.PageID)
-	if req.Index >= len(bookmarks) {
-		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
-		return
-	}
-
-	bookmark := bookmarks[req.Index]
-	bookmark.LastChecked = time.Now().UnixMilli()
-	if strings.TrimSpace(req.Status) == "online" {
-		bookmark.LastError = ""
-	} else {
-		errMsg := strings.TrimSpace(req.Error)
-		if errMsg == "" {
-			errMsg = "Unreachable"
+	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+		bookmark.LastChecked = time.Now().UnixMilli()
+		if strings.TrimSpace(req.Status) == "online" {
+			bookmark.LastError = ""
+		} else {
+			errMsg := strings.TrimSpace(req.Error)
+			if errMsg == "" {
+				errMsg = "Unreachable"
+			}
+			bookmark.LastError = errMsg
 		}
-		bookmark.LastError = errMsg
-	}
-	bookmarks[req.Index] = bookmark
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+		return nil
+	})
+	if !respondBookmarkMutationError(w, err) {
 		return
 	}
 
@@ -2057,14 +2061,7 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	bookmarks := h.store.GetBookmarksByPage(req.PageID)
-	if req.Index >= len(bookmarks) {
-		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
-		return
-	}
-
-	bookmarks = append(bookmarks[:req.Index], bookmarks[req.Index+1:]...)
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+	if !respondBookmarkMutationError(w, h.store.DeleteBookmarkAt(req.PageID, req.Index)) {
 		return
 	}
 
@@ -2145,45 +2142,45 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookmarks := h.store.GetBookmarksByPage(req.PageID)
-	if req.Index >= len(bookmarks) {
-		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
-		return
-	}
-
-	bookmark := bookmarks[req.Index]
-	appliedURL := false
 	updatedURL := strings.TrimSpace(req.NewURL)
-	if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+	if updatedURL != "" {
 		if err := h.validateBookmarkURL(updatedURL); err != nil {
 			http.Error(w, fmt.Sprintf("Invalid fix URL: %v", err), http.StatusBadRequest)
 			return
 		}
-		bookmark.URL = updatedURL
-		appliedURL = true
 	}
 
+	appliedURL := false
 	appliedTitle := false
-	if req.RefreshTitle {
-		targetURL := strings.TrimSpace(bookmark.URL)
-		title := h.fetchPageTitleSafe(targetURL)
-		if title != "" {
-			bookmark.PreviewTitle = title
-			// Keep user-defined names unless empty; fallback to fetched title.
-			if strings.TrimSpace(bookmark.Name) == "" || appliedURL {
-				bookmark.Name = title
-			}
-			appliedTitle = true
+	var result Bookmark
+	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			bookmark.URL = updatedURL
+			appliedURL = true
 		}
-	}
 
-	if appliedURL {
-		bookmark.LastError = ""
-		bookmark.LastChecked = time.Now().UnixMilli()
-	}
+		if req.RefreshTitle {
+			targetURL := strings.TrimSpace(bookmark.URL)
+			title := h.fetchPageTitleSafe(targetURL)
+			if title != "" {
+				bookmark.PreviewTitle = title
+				// Keep user-defined names unless empty; fallback to fetched title.
+				if strings.TrimSpace(bookmark.Name) == "" || appliedURL {
+					bookmark.Name = title
+				}
+				appliedTitle = true
+			}
+		}
 
-	bookmarks[req.Index] = bookmark
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(req.PageID, bookmarks)) {
+		if appliedURL {
+			bookmark.LastError = ""
+			bookmark.LastChecked = time.Now().UnixMilli()
+		}
+
+		result = *bookmark
+		return nil
+	})
+	if !respondBookmarkMutationError(w, err) {
 		return
 	}
 
@@ -2192,8 +2189,8 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		"status":       "ok",
 		"appliedUrl":   appliedURL,
 		"appliedTitle": appliedTitle,
-		"url":          bookmark.URL,
-		"title":        bookmark.PreviewTitle,
+		"url":          result.URL,
+		"title":        result.PreviewTitle,
 	})
 }
 
