@@ -188,6 +188,7 @@ class Dashboard {
         this.swipeNavigation = null;
         this.categoryReorderInstances = [];
         this.dashboardCategoryReorderInstances = [];
+        this._categoryListsCache = null;
         this._categoryDragRelayHandler = null;
         this._categoryDropHandler = null;
         this._pendingCategoryOrderFromDrop = null;
@@ -3200,6 +3201,7 @@ class Dashboard {
         this.leaveBookmarkInlineEditFocusMode();
 
         if (this._tagFilter) {
+            this._categoryListsCache = null;
             this.renderTagFilterDashboard(container, options);
             return;
         }
@@ -3211,6 +3213,7 @@ class Dashboard {
         
         // Clear container
         container.innerHTML = '';
+        this._categoryListsCache = null;
         container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view');
 
         if (!Array.isArray(this.bookmarks) || this.bookmarks.length === 0) {
@@ -3444,7 +3447,7 @@ class Dashboard {
             return;
         }
 
-        const categoryLists = document.querySelectorAll('.bookmarks-list[data-category-id]');
+        const categoryLists = this._getCategoryLists();
         categoryLists.forEach((listElement) => {
             if (listElement.getAttribute('data-smart-collection') === 'true') {
                 return;
@@ -3505,21 +3508,9 @@ class Dashboard {
             if (targetItem && targetItem !== dragged) {
                 targetItem.parentNode.insertBefore(placeholder, targetItem);
                 const sameParent = dragged.parentNode === targetItem.parentNode;
-                let isBefore = false;
                 if (sameParent) {
-                    for (let cur = dragged.previousSibling; cur; cur = cur.previousSibling) {
-                        if (cur === targetItem) {
-                            isBefore = true;
-                            break;
-                        }
-                    }
-                }
-                if (sameParent) {
-                    if (isBefore) {
-                        targetItem.parentNode.insertBefore(dragged, targetItem);
-                    } else {
-                        targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
-                    }
+                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
                 } else {
                     targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
                 }
@@ -3607,10 +3598,7 @@ class Dashboard {
             if (targetItem && targetItem !== dragged) {
                 targetItem.parentNode.insertBefore(placeholder, targetItem);
                 if (dragged.parentNode === targetItem.parentNode) {
-                    let isBefore = false;
-                    for (let cur = dragged.previousSibling; cur; cur = cur.previousSibling) {
-                        if (cur === targetItem) { isBefore = true; break; }
-                    }
+                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
                     targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
                 } else {
                     targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
@@ -3656,13 +3644,20 @@ class Dashboard {
         this.dashboardCategoryReorderInstances = [];
     }
 
+    _getCategoryLists() {
+        if (!this._categoryListsCache) {
+            this._categoryListsCache = Array.from(document.querySelectorAll('.bookmarks-list[data-category-id]'));
+        }
+        return this._categoryListsCache;
+    }
+
     syncBookmarksFromDom() {
         const previousBookmarks = this.bookmarks.map((bookmark) => ({ ...bookmark }));
         const nextBookmarks = [];
         const movedElements = [];
         let bookmarkCursor = 0;
 
-        const categoryLists = document.querySelectorAll('.bookmarks-list[data-category-id]');
+        const categoryLists = this._getCategoryLists();
         categoryLists.forEach((listElement) => {
             if (listElement.getAttribute('data-smart-collection') === 'true') {
                 return;

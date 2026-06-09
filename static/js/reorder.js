@@ -341,13 +341,8 @@ class DragReorder {
     }
 
     isBefore(el1, el2) {
-        let cur;
-        if (el2.parentNode === el1.parentNode) {
-            for (cur = el1.previousSibling; cur; cur = cur.previousSibling) {
-                if (cur === el2) return true;
-            }
-        }
-        return false;
+        return el1.parentNode === el2.parentNode
+            && !!(el1.compareDocumentPosition(el2) & Node.DOCUMENT_POSITION_FOLLOWING);
     }
 
     disablePageScroll() {
