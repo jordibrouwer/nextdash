@@ -39,6 +39,176 @@
     position: relative;
 }
 
+.config-settings-search-promo-badge {
+    position: absolute;
+    top: -0.45rem;
+    right: -0.35rem;
+    z-index: 3;
+    padding: 0.1rem 0.38rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--background-primary, #fff);
+    background: var(--accent-primary);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    pointer-events: none;
+    animation: config-settings-search-badge-pulse 2.2s ease-in-out infinite;
+}
+
+.config-settings-search-promo {
+    position: absolute;
+    z-index: 55;
+    top: calc(100% + 0.55rem);
+    right: 0;
+    left: 0;
+    pointer-events: auto;
+}
+
+.config-settings-search-promo-balloon {
+    position: relative;
+    padding: 0.65rem 0.75rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-radius: 10px;
+    background: var(--background-primary);
+    box-shadow:
+        0 10px 28px color-mix(in srgb, var(--background-modal, #000) 28%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    animation:
+        config-settings-search-balloon-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both,
+        config-settings-search-balloon-float 4.5s ease-in-out 0.55s infinite;
+}
+
+.config-settings-search-promo-tail {
+    position: absolute;
+    top: -7px;
+    right: 1.15rem;
+    width: 14px;
+    height: 14px;
+    background: var(--background-primary);
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-left: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    transform: rotate(45deg);
+    box-shadow: -2px -2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+}
+
+.config-settings-search-promo-title {
+    margin: 0 0 0.3rem;
+    font-size: var(--font-size-controls);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.config-settings-search-promo-text {
+    margin: 0;
+    font-size: var(--font-size-small, 0.75rem);
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.config-settings-search-promo-text kbd {
+    display: inline-block;
+    padding: 0.05rem 0.28rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    color: var(--text-primary);
+}
+
+.config-settings-search-promo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+}
+
+.config-settings-search-promo-try,
+.config-settings-search-promo-close {
+    padding: 0.28rem 0.55rem;
+    border-radius: 6px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-small, 0.75rem);
+    cursor: pointer;
+}
+
+.config-settings-search-promo-try {
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.config-settings-search-promo-try:hover,
+.config-settings-search-promo-try:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+.config-settings-search-promo-close {
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.config-settings-search-promo-close:hover,
+.config-settings-search-promo-close:focus-visible {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+}
+
+.config-settings-search--promo .config-settings-search-input {
+    animation: config-settings-search-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes config-settings-search-glow {
+    0%,
+    100% {
+        border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+        box-shadow:
+            0 0 0 2px color-mix(in srgb, var(--accent-primary) 18%, transparent),
+            0 0 14px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    }
+    50% {
+        border-color: var(--accent-primary);
+        box-shadow:
+            0 0 0 3px color-mix(in srgb, var(--accent-primary) 32%, transparent),
+            0 0 22px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    }
+}
+
+@keyframes config-settings-search-badge-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+@keyframes config-settings-search-balloon-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes config-settings-search-balloon-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(4px);
+    }
+}
+
 .config-settings-search-input {
     width: 100%;
     box-sizing: border-box;
@@ -211,5 +381,18 @@ body[data-mobile-layout="true"] .config-settings-search {
 @media (max-width: 768px) {
     .config-settings-search {
         display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-settings-search--promo .config-settings-search-input,
+    .config-settings-search-promo-badge,
+    .config-settings-search-promo-balloon {
+        animation: none !important;
+    }
+
+    .config-settings-search--promo .config-settings-search-input {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
     }
 }

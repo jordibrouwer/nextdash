@@ -6,11 +6,15 @@
 
     const HIGHLIGHT_CLASS = 'config-settings-search-highlight';
     const MAX_RESULTS = 12;
+    const PROMO_STORAGE_KEY = 'nextdash:config-settings-search-promo-v1';
 
     let language = null;
     let index = [];
     let indexReady = false;
     let activeIndex = -1;
+    let promoEl = null;
+    let promoShowTimer = null;
+    let promoDismissed = false;
 
     function t(key, fallback) {
         if (!language?.t) return fallback;
@@ -388,6 +392,107 @@
         return true;
     }
 
+    function hasSeenPromo() {
+        try {
+            return localStorage.getItem(PROMO_STORAGE_KEY) === '1';
+        } catch {
+            return true;
+        }
+    }
+
+    function markPromoSeen() {
+        try {
+            localStorage.setItem(PROMO_STORAGE_KEY, '1');
+        } catch {
+            // Ignore storage errors.
+        }
+    }
+
+    function isGuidedFlowActive() {
+        if (document.body.classList.contains('guided-flow-locked')) return true;
+        if (document.querySelector('.onboarding-card, .feature-tour-card, .feature-spotlight.show, .modal.whats-new-modal.show')) {
+            return true;
+        }
+        const attrs = document.body.getAttributeNames();
+        for (let i = 0; i < attrs.length; i += 1) {
+            if (/^data-config-.+-tour-active$/.test(attrs[i])) return true;
+        }
+        return false;
+    }
+
+    function dismissPromo(persist = true) {
+        clearTimeout(promoShowTimer);
+        promoShowTimer = null;
+        promoDismissed = true;
+        if (persist) markPromoSeen();
+        promoEl?.remove();
+        promoEl = null;
+        document.querySelector('.config-settings-search')?.classList.remove('config-settings-search--promo');
+    }
+
+    function buildPromoHtml() {
+        const badge = t('settingsSearchPromoBadge', 'New');
+        const title = t('settingsSearchPromoTitle', 'Settings search');
+        const body = t(
+            'settingsSearchPromoBody',
+            'Find any setting, tab, or help section from the breadcrumb bar. Type a keyword and pick a result — or press Ctrl+Shift+K (Cmd+Shift+K on Mac). Ctrl+K opens quick actions only.'
+        );
+        const tryLabel = t('settingsSearchPromoTry', 'Try it');
+        const closeLabel = t('settingsSearchPromoDismiss', 'Got it');
+        const wrap = document.createElement('div');
+        wrap.className = 'config-settings-search-promo';
+        wrap.setAttribute('role', 'status');
+        wrap.setAttribute('aria-live', 'polite');
+        wrap.innerHTML = `
+            <div class="config-settings-search-promo-balloon">
+                <span class="config-settings-search-promo-tail" aria-hidden="true"></span>
+                <p class="config-settings-search-promo-title"></p>
+                <p class="config-settings-search-promo-text"></p>
+                <div class="config-settings-search-promo-actions">
+                    <button type="button" class="config-settings-search-promo-try"></button>
+                    <button type="button" class="config-settings-search-promo-close"></button>
+                </div>
+            </div>`;
+        wrap.querySelector('.config-settings-search-promo-title').textContent = title;
+        wrap.querySelector('.config-settings-search-promo-text').innerHTML = body;
+        wrap.querySelector('.config-settings-search-promo-try').textContent = tryLabel;
+        wrap.querySelector('.config-settings-search-promo-close').textContent = closeLabel;
+        return wrap;
+    }
+
+    function maybeShowPromo(rootEl, inputEl) {
+        if (!rootEl || !inputEl || promoDismissed || hasSeenPromo()) return;
+        if (window.MobileExperience?.isMobileLayout?.()) return;
+        if (isGuidedFlowActive()) {
+            promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);
+            return;
+        }
+
+        rootEl.classList.add('config-settings-search--promo');
+
+        const badge = document.createElement('span');
+        badge.className = 'config-settings-search-promo-badge';
+        badge.textContent = t('settingsSearchPromoBadge', 'New');
+        rootEl.querySelector('.config-settings-search-field')?.appendChild(badge);
+
+        promoEl = buildPromoHtml();
+        rootEl.appendChild(promoEl);
+
+        promoEl.querySelector('.config-settings-search-promo-try')?.addEventListener('click', () => {
+            dismissPromo(true);
+            focusSearch();
+        });
+        promoEl.querySelector('.config-settings-search-promo-close')?.addEventListener('click', () => {
+            dismissPromo(true);
+        });
+    }
+
+    function schedulePromo(rootEl, inputEl) {
+        if (hasSeenPromo() || promoDismissed) return;
+        clearTimeout(promoShowTimer);
+        promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 900);
+    }
+
     function init(lang) {
         language = lang;
         const inputEl = document.getElementById('config-settings-search-input');
@@ -414,8 +519,12 @@
             if (!indexReady) buildIndex();
         };
 
-        inputEl.addEventListener('focus', ensureIndex);
+        inputEl.addEventListener('focus', () => {
+            dismissPromo(true);
+            ensureIndex();
+        });
         inputEl.addEventListener('input', () => {
+            dismissPromo(true);
             ensureIndex();
             renderResults(resultsEl, emptyEl, inputEl, search(inputEl.value));
         });
@@ -454,6 +563,8 @@
                 if (!inputEl.value.trim()) resultsEl.hidden = true;
             }
         });
+
+        schedulePromo(rootEl, inputEl);
     }
 
     function refreshIndex() {
