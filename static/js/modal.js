@@ -121,8 +121,11 @@ class Modal {
             modalClass = '',
             modalMaxWidth = '',
             modalWidth = '',
-            initialFocusSelector = null
+            initialFocusSelector = null,
+            onHide = null
         } = options;
+
+        this._onHideCallback = typeof onHide === 'function' ? onHide : null;
 
         // Set content
         document.getElementById('modal-title').textContent = title;
@@ -230,6 +233,12 @@ class Modal {
     }
 
     hide() {
+        if (typeof this._onHideCallback === 'function') {
+            const callback = this._onHideCallback;
+            this._onHideCallback = null;
+            callback();
+        }
+
         if (this.modal) {
             this.modal.classList.remove('show');
             this.modal.setAttribute('aria-hidden', 'true');

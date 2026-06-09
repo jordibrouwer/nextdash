@@ -80,6 +80,12 @@
     function open(configManager) {
         if (!configManager || !window.AppModal) return;
 
+        if (window.AppModal.modal?.classList.contains('show')
+            && window.AppModal.modalPanel?.classList.contains('config-command-palette-modal')) {
+            document.getElementById('config-command-palette-input')?.focus();
+            return;
+        }
+
         const lang = configManager.language;
         const allActions = getActions(lang);
         let activeIndex = 0;
@@ -103,10 +109,16 @@
             </div>
         `;
 
-        let detachPaletteKeys = () => {};
+        let paletteKeyHandler = null;
+        let keysAttached = false;
+
+        const detachPaletteKeys = () => {
+            if (!keysAttached || !paletteKeyHandler) return;
+            document.removeEventListener('keydown', paletteKeyHandler, true);
+            keysAttached = false;
+        };
 
         const runAction = async (actionId) => {
-            detachPaletteKeys();
             window.AppModal.hide();
             // Let the modal finish closing before opening tabs / detail panels.
             await new Promise((resolve) => setTimeout(resolve, 0));
@@ -120,6 +132,7 @@
             showCancel: false,
             modalClass: 'config-command-palette-modal',
             initialFocusSelector: '#config-command-palette-input',
+            onHide: detachPaletteKeys,
         });
 
         lang?.applyTranslations?.();
@@ -156,7 +169,7 @@
             activeIndex = active?.index ?? 0;
         };
 
-        const paletteKeyHandler = (e) => {
+        paletteKeyHandler = (e) => {
             if (!window.AppModal?.modal?.classList.contains('show')
                 || !window.AppModal?.modalPanel?.classList.contains('config-command-palette-modal')) {
                 detachPaletteKeys();
@@ -183,7 +196,6 @@
 
             if (e.key === 'Enter') {
                 if (e.target?.closest?.('.modal-button')) {
-                    detachPaletteKeys();
                     return;
                 }
                 const active = items[activeIndex] || items[0];
@@ -196,26 +208,13 @@
             }
 
             if (e.key === 'Escape') {
-                detachPaletteKeys();
+                return;
             }
         };
 
-        detachPaletteKeys = () => {
-            document.removeEventListener('keydown', paletteKeyHandler, true);
-        };
-        document.addEventListener('keydown', paletteKeyHandler, true);
-
-        const closeBtn = document.querySelector('#modal-actions .modal-button');
-        if (closeBtn) {
-            const previousCloseHandler = closeBtn.onclick;
-            closeBtn.onclick = () => {
-                detachPaletteKeys();
-                if (typeof previousCloseHandler === 'function') {
-                    previousCloseHandler();
-                } else {
-                    window.AppModal.hide();
-                }
-            };
+        if (!keysAttached) {
+            document.addEventListener('keydown', paletteKeyHandler, true);
+            keysAttached = true;
         }
 
         inputEl.addEventListener('input', () => {

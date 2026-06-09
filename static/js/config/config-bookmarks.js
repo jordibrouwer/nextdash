@@ -839,34 +839,19 @@ class ConfigBookmarks {
         }
     }
 
-    scheduleBookmarkMetadataRefresh(index, bookmark, bookmarkElement) {
+    scheduleBookmarkMetadataRefresh(index, bookmark) {
         const existingTimer = this.metadataTimers.get(index);
         if (existingTimer) {
             clearTimeout(existingTimer);
         }
         const timer = setTimeout(() => {
-            this.refreshBookmarkMetadata(bookmark, bookmarkElement);
+            void this.refreshBookmarkMetadata(index, bookmark);
         }, 450);
         this.metadataTimers.set(index, timer);
     }
 
-    async refreshBookmarkMetadata(bookmark, bookmarkElement) {
-        const url = (bookmark?.url || '').trim();
-        if (!url) {
-            bookmark.iconFetchState = 'missing_url';
-            return;
-        }
-
-        try {
-            const faviconUrl = this.deriveFaviconFromBookmarkUrl(url);
-            let iconAssigned = false;
-            if (faviconUrl) {
-                iconAssigned = await this.tryAssignIconFromRemoteUrl(faviconUrl, bookmark, bookmarkElement);
-            }
-            bookmark.iconFetchState = iconAssigned ? 'ok' : 'no_icon';
-        } catch (error) {
-            bookmark.iconFetchState = 'failed';
-        }
+    async refreshBookmarkMetadata(index, bookmark) {
+        await this._refreshDetailMeta(index, bookmark);
     }
 
     async bulkRefreshFavicons(bookmarks) {
@@ -878,8 +863,7 @@ class ConfigBookmarks {
         for (const index of indexes) {
             const bookmark = bookmarks[index];
             if (!bookmark) continue;
-            const bookmarkElement = document.querySelector(`[data-bookmark-index="${index}"]`);
-            await this.refreshBookmarkMetadata(bookmark, bookmarkElement, { force: true });
+            await this._refreshDetailMeta(index, bookmark);
             refreshed += 1;
         }
         return refreshed;
