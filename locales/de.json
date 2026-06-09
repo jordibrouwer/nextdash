@@ -1036,6 +1036,7 @@
         "settingsImportDescription": "Einstellungen importieren",
         "settingsImportHint": "Überschreibt die aktuellen Einstellungen mit einer zuvor exportierten JSON-Datei.",
         "settingsImportBtn": "Einstellungen importieren",
+        "settingsImportFileTooLarge": "Datei zu groß (max. 2 MB).",
         "settingsImportInvalidFile": "Bitte eine gültige Einstellungen-JSON-Datei auswählen.",
         "settingsImportInvalidJson": "Ungültige JSON-Datei.",
         "settingsImportConfirmTitle": "Einstellungen importieren",

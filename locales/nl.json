@@ -1039,6 +1039,7 @@
         "settingsImportDescription": "Instellingen importeren",
         "settingsImportHint": "Overschrijft de huidige instellingen met een eerder geëxporteerd JSON-bestand.",
         "settingsImportBtn": "Importeer instellingen",
+        "settingsImportFileTooLarge": "Bestand te groot (max 2 MB).",
         "settingsImportInvalidFile": "Selecteer een geldig instellingen JSON-bestand.",
         "settingsImportInvalidJson": "Ongeldig JSON-bestand.",
         "settingsImportConfirmTitle": "Instellingen importeren",

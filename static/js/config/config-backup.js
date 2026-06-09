@@ -709,6 +709,12 @@ class ConfigBackup {
     }
 
     async handleSettingsImportFile(file) {
+        if (file.size > 2 * 1024 * 1024) {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.settingsImportFileTooLarge') || 'File too large (max 2 MB).', 'error');
+            }
+            return;
+        }
         let parsed;
         try {
             parsed = JSON.parse(await file.text());

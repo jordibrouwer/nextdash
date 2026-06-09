@@ -1036,6 +1036,7 @@
         "settingsImportDescription": "Importer les paramètres",
         "settingsImportHint": "Remplace les paramètres actuels par un fichier JSON précédemment exporté.",
         "settingsImportBtn": "Importer les paramètres",
+        "settingsImportFileTooLarge": "Fichier trop volumineux (max 2 Mo).",
         "settingsImportInvalidFile": "Veuillez sélectionner un fichier JSON de paramètres valide.",
         "settingsImportInvalidJson": "Fichier JSON invalide.",
         "settingsImportConfirmTitle": "Importer les paramètres",
