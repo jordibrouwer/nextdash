@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-
-=======
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -20,9 +14,6 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
 # Go workspace file
 go.work
 go.work.sum
@@ -30,17 +21,12 @@ go.work.sum
 # env file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
->>>>>>> f7ba161f0b8e28daeffabc5aa2fa8cf7e073d0bc
-data/bookmarks-1.json
-data/bookmarks-1.json
-.gitignore
-data/health-cache.json
-data/settings.json
-.claude/
+# Node dev dependencies (Playwright debug scripts)
+node_modules/
+
+# Local / runtime data
 data/
+.claude/
 .DS_Store
 nextDash
 scripts/debug-config-save.mjs
