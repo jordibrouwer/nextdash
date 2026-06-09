@@ -5582,7 +5582,7 @@ class ConfigManager {
         ];
         const confirmed = await window.AppModal.danger({
             title: tx('config.resetAllDataTitle', 'Reset all data'),
-            message: tx('config.resetAllDataMessage', 'This will permanently delete all pages, categories, bookmarks, finders, and settings. This action cannot be undone.'),
+            message: tx('config.resetAllDataMessage', 'This permanently deletes all pages, categories, bookmarks, finders, settings, custom themes, uploaded favicon/font, bookmark icons, and caches. You start over with default sample bookmarks and built-in settings. This cannot be undone.'),
             confirmText: tx('config.resetAllDataButton', 'Reset all data and start over'),
             cancelText: tx('config.cancel', 'Cancel')
         });

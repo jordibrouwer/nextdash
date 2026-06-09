@@ -705,13 +705,21 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **config → backups → Create backup**
 
-Includes pages, bookmarks (with tags), categories, settings, themes.
+Includes pages, bookmarks (with tags), categories, settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`.
 
 **Import ZIP** replaces **all** current data. **Always backup first.**
 
 Do not rename files inside the ZIP.
 
+Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (not the server’s current setting).
+
 Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when localhost bookmarks are disabled) are **skipped** during import; the UI shows how many were skipped alongside new and conflict counts.
+
+### Factory reset
+
+**config → backups → Reset all data**
+
+Permanently deletes pages, categories, bookmarks, finders, settings, custom themes, uploaded favicon/font, bookmark icons, and health/preview caches. Recreates the **default sample bookmarks** (favicons prefetched on the server), built-in settings, and default colour palette. Not a partial wipe — use ZIP backup first if you need to keep anything.
 
 ### Browser HTML import
 
