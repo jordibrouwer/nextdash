@@ -271,6 +271,7 @@ type Store interface {
 	SaveBookmarkPageUpdates(updates map[int][]Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) error
 	MutateBookmarkAt(pageID int, index int, mutate func(*Bookmark) error) error
+	MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error
 	DeleteBookmarkAt(pageID int, index int) error
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
@@ -676,6 +677,28 @@ func (fs *FileStore) MutateBookmarkAt(pageID int, index int, mutate func(*Bookma
 		return err
 	}
 
+	return fs.writePageWithBookmarksLocked(pageID, pageWithBookmarks)
+}
+
+func (fs *FileStore) MutateBookmarksOnPage(pageID int, mutate func([]Bookmark) ([]Bookmark, error)) error {
+	if mutate == nil {
+		return fmt.Errorf("bookmarks mutate callback is required")
+	}
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	pageWithBookmarks, err := fs.readPageWithBookmarksLocked(pageID)
+	if err != nil {
+		return err
+	}
+
+	updated, err := mutate(pageWithBookmarks.Bookmarks)
+	if err != nil {
+		return err
+	}
+
+	pageWithBookmarks.Bookmarks = updated
 	return fs.writePageWithBookmarksLocked(pageID, pageWithBookmarks)
 }
 

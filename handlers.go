@@ -1426,21 +1426,26 @@ func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Reque
 
 	cleared := 0
 	for _, page := range h.store.GetPages() {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		changed := false
-		for i := range bookmarks {
-			if !bookmarkHasPreviewMetadata(bookmarks[i]) {
+		pageCleared := 0
+		err := h.store.MutateBookmarksOnPage(page.ID, func(bookmarks []Bookmark) ([]Bookmark, error) {
+			for i := range bookmarks {
+				if !bookmarkHasPreviewMetadata(bookmarks[i]) {
+					continue
+				}
+				clearBookmarkPreviewFields(&bookmarks[i])
+				pageCleared++
+			}
+			return bookmarks, nil
+		})
+		if err != nil {
+			if errors.Is(err, ErrBookmarkNotFound) {
 				continue
 			}
-			clearBookmarkPreviewFields(&bookmarks[i])
-			cleared++
-			changed = true
-		}
-		if changed {
-			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+			if !respondBookmarkMutationError(w, err) {
 				return
 			}
 		}
+		cleared += pageCleared
 	}
 
 	if !respondStorePersistError(w, h.replacePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})) {
@@ -1471,20 +1476,42 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 
 	for _, page := range h.store.GetPages() {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		changed := false
-		for i := range bookmarks {
-			rawURL := strings.TrimSpace(bookmarks[i].URL)
+		previewByKey := make(map[string]BookmarkPreview)
+		for _, bm := range bookmarks {
+			rawURL := strings.TrimSpace(bm.URL)
 			if rawURL == "" {
 				skipped++
 				continue
 			}
 			preview := h.fetchBookmarkPreview(rawURL, &cache, false)
-			applyPreviewToBookmark(&bookmarks[i], preview)
+			key := canonicalBookmarkURLKey(rawURL)
+			if key != "" {
+				previewByKey[key] = preview
+			}
 			refreshed++
-			changed = true
 		}
-		if changed {
-			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+
+		if len(previewByKey) == 0 {
+			continue
+		}
+
+		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
+			for i := range current {
+				key := canonicalBookmarkURLKey(current[i].URL)
+				if key == "" {
+					continue
+				}
+				if preview, ok := previewByKey[key]; ok {
+					applyPreviewToBookmark(&current[i], preview)
+				}
+			}
+			return current, nil
+		})
+		if err != nil {
+			if errors.Is(err, ErrBookmarkNotFound) {
+				continue
+			}
+			if !respondBookmarkMutationError(w, err) {
 				return
 			}
 		}

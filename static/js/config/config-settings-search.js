@@ -7,6 +7,7 @@
     const HIGHLIGHT_CLASS = 'config-settings-search-highlight';
     const MAX_RESULTS = 12;
     const PROMO_STORAGE_KEY = 'nextdash:config-settings-search-promo-v1';
+    const PROMO_MAX_RETRIES = 30;
 
     let language = null;
     let index = [];
@@ -15,6 +16,7 @@
     let promoEl = null;
     let promoShowTimer = null;
     let promoDismissed = false;
+    let promoRetryCount = 0;
 
     function t(key, fallback) {
         if (!language?.t) return fallback;
@@ -464,6 +466,10 @@
         if (!rootEl || !inputEl || promoDismissed || hasSeenPromo()) return;
         if (window.MobileExperience?.isMobileLayout?.()) return;
         if (isGuidedFlowActive()) {
+            if (promoRetryCount >= PROMO_MAX_RETRIES) {
+                return;
+            }
+            promoRetryCount += 1;
             promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);
             return;
         }

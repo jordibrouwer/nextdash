@@ -188,6 +188,11 @@ class Dashboard {
         window.addEventListener('pagehide', () => {
             this.flushPendingDashboardSavesOnExit();
         });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                void this.flushPendingDashboardSaves();
+            }
+        });
         this.searchComponent = null;
         this.statusMonitor = null;
         this.statusMonitorInitialized = false;
@@ -3838,15 +3843,14 @@ class Dashboard {
     scheduleBookmarkOrderSave(options = {}) {
         if (this.pendingReorderSave) {
             clearTimeout(this.pendingReorderSave);
+            this.pendingReorderSave = null;
         }
 
         const successMessage = typeof options.successMessage === 'string' && options.successMessage.trim()
             ? options.successMessage.trim()
             : 'Bookmark order saved.';
 
-        this.pendingReorderSave = setTimeout(() => {
-            this.saveBookmarkOrder({ successMessage });
-        }, 1000);
+        void this.saveBookmarkOrder({ successMessage });
     }
 
     async flushPendingBookmarkSave(options = {}) {
@@ -5613,12 +5617,9 @@ class Dashboard {
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
         deleteBtn.textContent = cfg('delete', 'Delete');
-        if (bookmarkRef.scope !== 'current') {
-            deleteBtn.style.display = 'none';
-        }
         deleteBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            await this.deleteBookmarkAtIndexInline(bookmarkIndex);
+            await this.deleteBookmarkInline(bookmarkRef);
         });
 
         actions.appendChild(saveBtn);
@@ -6096,25 +6097,40 @@ class Dashboard {
         }
     }
 
+    async confirmDeleteBookmarkInline(bookmark) {
+        if (!bookmark) {
+            return false;
+        }
+        if (window.AppModal && typeof window.AppModal.danger === 'function') {
+            const safeName = String(bookmark.name || this.bookmarkFallbackName()).replace(/</g, '');
+            return window.AppModal.danger({
+                title: this.configLabel('removeBookmarkTitle', 'Remove bookmark'),
+                message: this.formatDashboardLabel('deleteBookmarkConfirm', { name: safeName }, `Remove "${safeName}"?`),
+                confirmText: this.configLabel('delete', 'Delete'),
+                cancelText: this.formatDashboardLabel('cancel', {}, 'Cancel')
+            });
+        }
+        return window.confirm(this.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));
+    }
+
+    async deleteBookmarkInline(bookmarkRef) {
+        if (!bookmarkRef?.bookmark) {
+            return;
+        }
+        if (bookmarkRef.scope === 'current') {
+            await this.deleteBookmarkAtIndexInline(bookmarkRef.index);
+            return;
+        }
+        await this.deleteRemoteBookmarkInline(bookmarkRef);
+    }
+
     async deleteBookmarkAtIndexInline(bookmarkIndex) {
         const bookmark = this.bookmarks[bookmarkIndex];
         if (!bookmark) {
             return;
         }
 
-        let confirmed = false;
-        if (window.AppModal && typeof window.AppModal.danger === 'function') {
-            const safeName = String(bookmark.name || this.bookmarkFallbackName()).replace(/</g, '');
-            confirmed = await window.AppModal.danger({
-                title: this.configLabel('removeBookmarkTitle', 'Remove bookmark'),
-                message: this.formatDashboardLabel('deleteBookmarkConfirm', { name: safeName }, `Remove "${safeName}"?`),
-                confirmText: this.configLabel('delete', 'Delete'),
-                cancelText: this.formatDashboardLabel('cancel', {}, 'Cancel')
-            });
-        } else {
-            confirmed = window.confirm(this.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));
-        }
-
+        const confirmed = await this.confirmDeleteBookmarkInline(bookmark);
         if (!confirmed) {
             return;
         }
@@ -6129,8 +6145,9 @@ class Dashboard {
 
         await this.saveBookmarkOrder({ successMessage: 'Bookmark deleted.' });
 
+        const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
         this.showNotification(
-            `"${String(deletedBookmark.name || deletedBookmark.url).slice(0, 40)}" verwijderd`,
+            this.formatDashboardLabel('bookmarkDeleted', { name: deletedLabel }, `"${deletedLabel}" deleted`),
             'success',
             {
                 duration: 5000,
@@ -6146,6 +6163,57 @@ class Dashboard {
                 }
             }
         );
+    }
+
+    async deleteRemoteBookmarkInline(bookmarkRef) {
+        const bookmark = bookmarkRef.bookmark;
+        const confirmed = await this.confirmDeleteBookmarkInline(bookmark);
+        if (!confirmed) {
+            return;
+        }
+
+        const sourcePageId = Number(bookmarkRef.pageId || 0);
+        if (!Number.isFinite(sourcePageId) || sourcePageId <= 0) {
+            this.showErrorNotification('Unable to resolve bookmark source page.');
+            return;
+        }
+
+        try {
+            const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
+            if (!sourceRes.ok) {
+                throw new Error('Failed to load source page.');
+            }
+            const sourceBookmarks = await sourceRes.json();
+            const sourceIndex = this.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
+            if (sourceIndex < 0) {
+                throw new Error('Could not locate bookmark on source page.');
+            }
+
+            const deletedBookmark = { ...sourceBookmarks[sourceIndex] };
+            sourceBookmarks.splice(sourceIndex, 1);
+
+            const saveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sourceBookmarks)
+            });
+            if (!saveRes.ok) {
+                throw new Error('Failed to save bookmark deletion.');
+            }
+
+            this._inlineEditGlobalCleanup?.();
+            this.inlineEditingBookmarkIndex = null;
+            await this.loadAllBookmarks();
+            this.renderDashboard();
+
+            const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
+            this.showNotification(
+                this.formatDashboardLabel('bookmarkDeleted', { name: deletedLabel }, `"${deletedLabel}" deleted`),
+                'success'
+            );
+        } catch (error) {
+            this.showErrorNotification(error.message || 'Failed to delete bookmark.');
+        }
     }
 
     createBookmarkElement(bookmark, categoryId, allowInlineEdit = true) {
@@ -6632,11 +6700,9 @@ class Dashboard {
 
         if (this.pendingPreviewSave) {
             clearTimeout(this.pendingPreviewSave);
-        }
-        this.pendingPreviewSave = setTimeout(() => {
             this.pendingPreviewSave = null;
-            this.saveBookmarkPreviewMetadataNow();
-        }, 800);
+        }
+        void this.saveBookmarkPreviewMetadataNow();
     }
 
     async refreshVisibleBookmarkPreview() {
