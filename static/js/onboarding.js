@@ -150,7 +150,7 @@ class Onboarding {
                 title: this.t('onboarding.layoutStepTitle', 'Layout version'),
                 body: this.t(
                     'onboarding.layoutStepBody',
-                    'Choose classic or modern dashboard styling. Same structure — only visuals change.'
+                    'Choose classic, modern, or glass dashboard styling. Same structure — only visuals change.'
                 ),
                 selector: '#dashboard-layout',
                 placement: 'bottom',
@@ -165,7 +165,7 @@ class Onboarding {
                         label: this.t('onboarding.layoutVersionLabel', 'Layout version'),
                         hint: this.t(
                             'onboarding.layoutStepHint',
-                            'Modern refreshes spacing and surfaces; classic keeps the original look.'
+                            'Modern refreshes spacing and surfaces; glass adds translucent blur; classic keeps the original look.'
                         ),
                         options: [
                             {

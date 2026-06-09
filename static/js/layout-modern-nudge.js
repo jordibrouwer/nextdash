@@ -1,5 +1,5 @@
 /**
- * One-time spotlight prompting classic-layout users to try the modern layout.
+ * One-time spotlight prompting classic-layout users to try a refreshed layout (modern on Try; glass in config).
  */
 (function () {
     'use strict';
@@ -38,8 +38,8 @@
             bodyKey: 'layoutModernNudgeBody',
             tryKey: 'layoutModernNudgeTry',
             closeKey: 'layoutModernNudgeClose',
-            titleFallback: 'Try the modern layout',
-            bodyFallback: 'A refreshed look with the same structure — switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
+            titleFallback: 'Try a refreshed layout',
+            bodyFallback: 'Classic, modern, or glass — same structure, different polish. Switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
             tryFallback: 'Try modern',
             closeFallback: 'Keep classic',
             iconSvg: LAYOUT_ICON_SVG,

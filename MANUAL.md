@@ -114,7 +114,7 @@ Install → Open URL in browser → Onboarding wizard (optional)
     → Optional: What's new + layout tip (chained), config guided tours, feature tour, browser extension
 ```
 
-1. **Onboarding** — Language, links, weather/date, classic or modern layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
+1. **Onboarding** — Language, links, weather/date, classic, modern, or glass layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
 3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
 4. **Guided config tours** — The first time you open **General**, **Bookmarks**, **Theme**, **Finders**, or other config tabs on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
@@ -420,7 +420,7 @@ Search **all pages**; each result shows which page it belongs to.
 | `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
 | `:find <text>` | Hide non-matching tiles on page |
 | `:goto <url>` | Navigate to URL or domain |
-| `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not Classic/Modern) |
+| `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
 | `:layoutversion` | List classic / modern |
 | `:layoutversion modern` / `classic` / `toggle` | Switch layout version |
 | `:theme <name>` | Switch theme |
@@ -553,7 +553,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` flips between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Discoverability** — If you keep classic during onboarding, a one-time **Try the modern layout** spotlight may appear after **What's new**. You can try modern, keep classic, or change later in config. Reset the spotlight from **config → general → Advanced → System & tools**.
+**Discoverability** — If you keep classic during onboarding, a one-time **Try a refreshed layout** spotlight may appear after **What's new**. Try applies modern; classic, modern, and glass are all available in config. Reset the spotlight from **config → general → Advanced → System & tools**.
 
 ### Layout presets
 
@@ -970,7 +970,7 @@ arrows nav  Enter open    ; edit       Shift+M move
 ```
 Ctrl/Cmd+K          quick actions (save, open dashboard, tours)
 Ctrl/Cmd+Shift+K    find any setting, tab, or help section
-:layoutversion      switch Classic / Modern layout (dashboard)
+:layoutversion      switch Classic / Modern / Glass layout (dashboard)
 ```
 
 ### Important URLs

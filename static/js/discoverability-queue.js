@@ -1,6 +1,6 @@
 /**
  * Post-onboarding discoverability queue — prompts chain after each closes.
- * Journey: what's new → layout-modern-nudge (classic users who skipped layout in onboarding).
+ * Journey: what's new → layout-modern-nudge (classic users who skipped layout in onboarding; mentions modern/glass).
  */
 (function () {
     'use strict';

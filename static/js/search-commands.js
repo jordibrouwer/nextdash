@@ -841,7 +841,7 @@ class SearchCommandsComponent {
 
         const versions = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.getLayoutVersions()
-            : ['classic', 'modern'];
+            : ['classic', 'modern', 'glass'];
 
         if (!versionQuery) {
             return versions.map((version) => ({
