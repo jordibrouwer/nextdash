@@ -109,7 +109,7 @@ _No unreleased changes at this time._
 
 ### Additional fixes
 
-_Since the initial v2026.06.13 release notes — bookmark data integrity, health races, and dashboard navigation._
+_Since the initial v2026.06.13 release notes — bookmark data integrity, health races, dashboard navigation, and glass layout._
 
 #### Security & write-token
 
@@ -147,6 +147,12 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 - **fix** **Settings search promo UX** — search results render above the promo balloon; typing dismisses the promo; tour/onboarding wait capped at 30 retries.
 - **fix** **Category row XSS** — config category list rows are built via DOM APIs instead of `innerHTML` with category names.
 - **fix** **GitHub help links** — config Help footer GitHub URL aligned to `github.com/jordibrouwer/nextdash`.
+
+#### Layout & glass
+
+- **new** **Glass layout version** — third layout option alongside Classic and Modern: translucent iOS-style surfaces with backdrop blur on header, tabs, toolbar, bookmark cards, search, config, and health. Set in **Config → General → Layout**, onboarding, or `:layoutversion glass` / `:layoutversion toggle` (cycles classic → modern → glass). Modern remains unchanged.
+- **fix** **Layout settings save** — layout version, preset, and density are read from the config UI on Save and autosave immediately when changed (glass/modern selection survives reload).
+- **fix** **Docker UI refresh** — when `static/`, `locales/`, or `templates/` exist on disk, the server prefers those over embedded files; Docker Compose mounts them so UI and locale changes apply without rebuilding the image.
 
 ---
 

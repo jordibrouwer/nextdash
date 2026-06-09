@@ -153,6 +153,9 @@
                         { badge: 'fix', text: '<strong>Swipe navigation</strong> — page swipes no longer call <code>updatePageTitle</code> separately; <code>loadPageBookmarks()</code> owns title and hash updates.' },
                         { badge: 'new', text: '<strong>Settings search promo</strong> — on desktop config, a pulsing search field, <em>New</em> badge, and speech balloon highlight global settings search (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd>); <kbd>Ctrl+K</kbd> stays quick actions only. Shown once; skips mobile and active tours.' },
                         { badge: 'fix', text: '<strong>Settings search polish</strong> — results stack above the promo balloon; typing dismisses it; tour wait capped at 30 retries; config category rows use safe DOM rendering; Help footer GitHub link uses <code>nextdash</code> repo casing.' },
+                        { badge: 'new', text: '<strong>Glass layout</strong> — third layout version with translucent iOS-style blur on dashboard, config, and health. Choose in <strong>Config → General → Layout</strong>, onboarding, or <code>:layoutversion glass</code>; <code>:layoutversion toggle</code> cycles classic → modern → glass. Modern unchanged.' },
+                        { badge: 'fix', text: '<strong>Layout settings save</strong> — layout version, preset, and density persist from config (included on Save; layout changes autosave to the server).' },
+                        { badge: 'fix', text: '<strong>Docker UI refresh</strong> — container serves mounted <code>static/</code>, <code>locales/</code>, and <code>templates/</code> from disk when present so UI updates apply without rebuilding the image.' },
                     ]
                 },
             ]),
