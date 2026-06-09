@@ -109,7 +109,7 @@ _No unreleased changes at this time._
 
 ### Additional fixes
 
-_Since the initial v2026.06.13 release notes — bookmark data integrity, health races, dashboard navigation, and glass layout._
+_Since the initial v2026.06.13 release notes — bookmark data integrity, health races, dashboard navigation, glass layout, config bookmarks workspace, health discoverability, and layout-version polish._
 
 #### Security & write-token
 
@@ -148,11 +148,42 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 - **fix** **Category row XSS** — config category list rows are built via DOM APIs instead of `innerHTML` with category names.
 - **fix** **GitHub help links** — config Help footer GitHub URL aligned to `github.com/jordibrouwer/nextdash`.
 
+#### Config save & settings
+
+- **fix** **Config save order** — Config **Save** posts **settings before bookmarks**, so `allowLocalBookmarks` applies during server-side URL validation (private-network bookmarks no longer fail against a stale stored flag).
+- **fix** **Settings merge on POST** — `POST /api/settings` merges partial or empty `{}` bodies with stored settings instead of overwriting missing fields; server-side `mergeSettingsFromBody()` with unit tests.
+- **fix** **Private URL save hint** — when a bookmark uses a local/private host and `allowLocalBookmarks` is off, Save shows a clear message (EN/NL/DE/FR) pointing to **General → Advanced** or a URL change; the client can auto-enable the flag when private URLs are detected (`healAllowLocalBookmarksSetting`).
+- **fix** **Config error parsing** — failed save responses read the response body once (no double-consumed stream on error paths).
+
+#### Layout discoverability
+
+- **new** **Layout-versions spotlight** — `LayoutVersionNudge` (alias `LayoutModernNudge`) offers classic-layout users **Try modern** and **Try glass**; secondary try button in the feature spotlight; copy updated across onboarding, feature tour, and discoverability queue (EN/NL/DE/FR).
+- **fix** **Unified discoverability path** — one spotlight flow for classic → modern or glass; reset from **Advanced → System & tools** replays modern and glass offers.
+
+#### Health discoverability
+
+- **new** **`:health` command** — open `/health` from command mode with filters (`broken`, `duplicate`, `stale`, `shortcut-conflict`, …) or `refresh` to re-scan; cheat sheet and EN/NL/DE/FR help updated (`caHealth`).
+- **new** **Health URL deep links** — `/health?filter=`, `?page=`, `?sort=`, `?q=`, `?refresh=1` apply filter/sort/search/page on load; `refresh=1` triggers retest-all automatically.
+- **new** **Health badge routing** — dashboard and config health links go to `/health?filter=broken` when broken issues exist (otherwise `/health`).
+- **fix** **`:stale` overflow** — when the stale palette exceeds its cap, the overflow row opens `/health?filter=stale`.
+
+#### Config bookmarks workspace
+
+- **new** **Collapsible structure panel** — **Config → Bookmarks** structure workspace (pages, categories, archived pages, favicon policy) starts collapsed behind a toggle; expand when you need structural edits.
+- **new** **Add bookmark menu** — **+ Bookmark** dropdown chooses **Add & edit** (detail panel, Save when ready) or **Quick add** (saves immediately).
+- **new** **Detail panel tiers** — category field stays visible; shortcut, icon, tags, previews, and status move under a **More options** collapsible.
+- **fix** **Bulk move toolbar** — single **Move to** row (page + category + **Apply**) replaces separate category-move and page-move groups.
+- **fix** **Bookmarks split view** — responsive layout, list spacer, and glass/modern styling for workspace card, bulk toolbar, and detail panel; guided tour copy aligned with collapsed structure.
+
 #### Layout & glass
 
 - **new** **Glass layout version** — third layout option alongside Classic and Modern: translucent iOS-style surfaces with backdrop blur on header, tabs, toolbar, bookmark cards, search, config, and health. Set in **Config → General → Layout**, onboarding, or `:layoutversion glass` / `:layoutversion toggle` (cycles classic → modern → glass). Modern remains unchanged.
 - **fix** **Layout settings save** — layout version, preset, and density are read from the config UI on Save and autosave immediately when changed (glass/modern selection survives reload).
 - **fix** **Docker UI refresh** — when `static/`, `locales/`, or `templates/` exist on disk, the server prefers those over embedded files; Docker Compose mounts them so UI and locale changes apply without rebuilding the image.
+- **new** **Glass design tokens** — `--layout-surface-inset` and consistent `--glass-blur-*` usage across dashboard, config, health, and overlays (modal overlay uses `--glass-blur-xs` instead of hardcoded px).
+- **fix** **Preset fine-tuning** — **terminal** (transparent default, glass inset on hover/focus), **masonry** (subtle border, glass on hover), **launcher** (lighter surface, chip shadow, gentler hover lift).
+- **fix** **Glass UI details** — inline-edit form panel, tag-autocomplete dropdown, and loading skeleton shimmer/cards on glass layout; config bookmarks workspace glass parity.
+- **fix** **Glass cache bust** — template query strings bumped to `glass-phase6-1` / `bookmarks-phase2-1` so Docker-mounted static files refresh reliably.
 
 ---
 

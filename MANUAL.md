@@ -191,7 +191,7 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 ### Header
 
 - **Date/time** — Click for week overview; optional weather line below.  
-- **health** — Link to `/health` with badge (e.g. `3 broken`) when issues exist.  
+- **health** — Link to `/health` with badge (e.g. `3 broken`) when issues exist; when broken links are counted, the link opens `/health?filter=broken`.  
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
 
@@ -273,7 +273,7 @@ Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on t
 
 **config → bookmarks**: list on the left, detail on the right. Best for many edits, tags, notes, favicon upload, and bulk actions.
 
-At the top, the **structure workspace** manages pages and categories; below that you pick the active page, filter by category, and sort the list. **Quick add (⚡)** inserts a URL with minimal fields; **+ Add** creates a blank row and opens the full detail panel. Select multiple rows for the **bulk toolbar** (move, pin, status, favicon refresh, delete). Bookmark changes apply to the dashboard only after **Save** in the config header.
+At the top, the **Structure** workspace (pages, categories, archived pages, favicon policy) starts **collapsed** — expand it when you need structural edits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** inserts a URL and saves immediately. In the detail panel, **category** stays visible; shortcut, icon, tags, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs and after guided tours.
 
@@ -417,12 +417,13 @@ Search **all pages**; each result shows which page it belongs to.
 | `:open all` | Open all on page (safe batch cap) |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:stale [days]` | List stale bookmarks |
+| `:health [filter]` | Open health page — `broken`, `duplicate`, `stale`, `refresh`, … |
 | `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
 | `:find <text>` | Hide non-matching tiles on page |
 | `:goto <url>` | Navigate to URL or domain |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
-| `:layoutversion` | List classic / modern |
-| `:layoutversion modern` / `classic` / `toggle` | Switch layout version |
+| `:layoutversion` | List classic / modern / glass |
+| `:layoutversion modern` / `classic` / `glass` / `toggle` | Switch layout version (`toggle` cycles classic → modern → glass) |
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
@@ -535,25 +536,28 @@ When enabled, one auto-group per tag that meets minimum count.
 
 ## 14. Layouts, themes, and appearance
 
-### Layout version (Classic / Modern)
+### Layout version (Classic / Modern / Glass)
 
-nextDash has two **layout versions** — same bookmark grid and categories, different visual polish:
+nextDash has three **layout versions** — same bookmark grid and categories, different visual polish:
 
 | Version | What it does |
 |---------|----------------|
 | **Classic** | Original dashboard styling and spacing (default). |
 | **Modern** | Refreshed visuals — updated row highlights, tooltips, and chrome — same structure underneath. |
+| **Glass** | Translucent iOS-style surfaces with backdrop blur on dashboard, config, and health chrome. |
 
-**Themes control all colors** in both versions; switching layout version does not change your theme.
+**Themes control all colors** in every version; switching layout version does not change your theme.
 
 **Where to switch**
 
 - **Config → General → Layout → Layout version** — dropdown with a live description under the control.  
-- **First-run onboarding** — dedicated layout step with a live preview.  
-- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` flips between them.  
+- **First-run onboarding** — dedicated layout step with classic, modern, and glass previews.  
+- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Discoverability** — If you keep classic during onboarding, a one-time **Try a refreshed layout** spotlight may appear after **What's new**. Try applies modern; classic, modern, and glass are all available in config. Reset the spotlight from **config → general → Advanced → System & tools**.
+**Discoverability** — If you keep classic during onboarding, a one-time **layout-versions** spotlight may appear after **What's new** with **Try modern** and **Try glass**. All three versions stay available in config. Reset the spotlight from **config → general → Advanced → System & tools**.
+
+**Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
 ### Layout presets
 
@@ -618,7 +622,19 @@ Summary cards → Filter pills + page filter → Issue list → Action toolbar
 
 Filter, sort, search, and page-filter state persist in the session across refreshes.
 
-The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts).
+**URL deep links** — Open health with query parameters:
+
+| Parameter | Example | Effect |
+|-----------|---------|--------|
+| `filter` | `/health?filter=broken` | Pre-select a filter pill |
+| `page` | `/health?page=2` | Limit to one dashboard page |
+| `sort` | `/health?sort=name` | Set sort order |
+| `q` | `/health?q=github` | Pre-fill search |
+| `refresh` | `/health?refresh=1` | Run retest-all on load |
+
+From the dashboard, **`:health`** (command mode) opens health with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/health?filter=stale`.
+
+The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts). When broken issues exist, the link opens `/health?filter=broken` (config health badge behaves the same).
 
 ### Stats (`config#stats`)
 
@@ -670,7 +686,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
 | **General** (9 steps) | First visit to **config → general** | Settings layout overview, Essentials vs Advanced, appearance, bookmarks section, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
-| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, structure, filters, optional demo bookmarks (editor, **+** modal, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
+| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed structure panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
 | **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
@@ -937,6 +953,10 @@ Bookmark index may have changed after reorder/delete. Link still opens the right
 ### Settings not applying
 
 Click **Save** in config (sticky bar). Some fields autosave — watch for “unsaved” indicator.
+
+### Config Save fails on local/private URLs
+
+A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **Allow localhost & private-network bookmarks** is off. Enable it under **Config → General → Advanced**, change the URL, or let nextDash suggest enabling the flag when private URLs are detected. Save posts settings before bookmarks so the flag applies during validation.
 
 ### Config guided tour does not start
 

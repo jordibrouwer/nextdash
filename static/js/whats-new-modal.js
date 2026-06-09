@@ -137,6 +137,42 @@
                         { badge: 'new', text: '<strong>Search chip keys</strong> — <kbd>←</kbd>/<kbd>→</kbd> select a recent query chip; <kbd>Enter</kbd> applies it.' },
                         { badge: 'fix', text: '<strong>Duplicate-merge modal</strong> — <kbd>ESC</kbd> cancels the health merge picker without leaving a pending promise.' },
                         { badge: 'fix', text: '<strong>Unsaved icon edits</strong> — icon fetch, upload, clear, and undo mark the bookmark detail as dirty so Save is required.' },
+                        { badge: 'fix', text: '<strong>Config save order</strong> — Save posts settings before bookmarks so <code>allowLocalBookmarks</code> applies during URL validation; partial settings POSTs merge with stored values instead of wiping fields.' },
+                        { badge: 'fix', text: '<strong>Private URL save hint</strong> — blocked local/private bookmark URLs show a clear error (EN/NL/DE/FR) pointing to <strong>General → Advanced</strong> or a URL change; the client can auto-enable the localhost flag when needed.' },
+                    ]
+                },
+                {
+                    title: 'Config bookmarks workspace',
+                    items: [
+                        { badge: 'new', text: '<strong>Collapsible structure panel</strong> — <strong>Config → Bookmarks</strong> keeps pages, categories, archived pages, and favicon policy in a collapsed <em>Structure</em> block until you expand it.' },
+                        { badge: 'new', text: '<strong>Add bookmark menu</strong> — <strong>+ Bookmark</strong> dropdown: <em>Add &amp; edit</em> opens the detail panel (Save when ready) or <em>Quick add</em> saves immediately.' },
+                        { badge: 'new', text: '<strong>Detail panel tiers</strong> — category stays visible; shortcut, icon, tags, previews, and status live under a <em>More options</em> collapsible.' },
+                        { badge: 'fix', text: '<strong>Bulk move toolbar</strong> — one <em>Move to</em> row (page + category + Apply) replaces separate category-move and page-move groups.' },
+                        { badge: 'fix', text: '<strong>Split view polish</strong> — responsive list/detail layout, glass and modern styling for workspace card and bulk toolbar; bookmarks guided tour copy updated.' },
+                    ]
+                },
+                {
+                    title: 'Health discoverability',
+                    items: [
+                        { badge: 'new', text: '<strong><code>:health</code> command</strong> — open <code>/health</code> from command mode with filters (<code>broken</code>, <code>duplicate</code>, <code>stale</code>, …) or <code>refresh</code> to re-scan; cheat sheet and help updated.' },
+                        { badge: 'new', text: '<strong>Health URL deep links</strong> — <code>?filter=</code>, <code>?page=</code>, <code>?sort=</code>, <code>?q=</code>, <code>?refresh=1</code> apply on load; <code>refresh=1</code> triggers retest-all.' },
+                        { badge: 'new', text: '<strong>Health badge routing</strong> — dashboard and config health links go to <code>/health?filter=broken</code> when broken issues exist.' },
+                        { badge: 'fix', text: '<strong><code>:stale</code> overflow</strong> — when the stale palette exceeds its cap, the overflow row opens <code>/health?filter=stale</code>.' },
+                    ]
+                },
+                {
+                    title: 'Layout discoverability',
+                    items: [
+                        { badge: 'new', text: '<strong>Try modern &amp; Try glass</strong> — classic-layout users see a layout-versions spotlight with <em>Try modern</em> and <em>Try glass</em>; onboarding and feature-tour copy cover all three versions.' },
+                        { badge: 'fix', text: '<strong>Unified spotlight flow</strong> — one discoverability path for classic → modern or glass; reset from <strong>Advanced → System &amp; tools</strong> replays the spotlight.' },
+                    ]
+                },
+                {
+                    title: 'Glass layout polish',
+                    items: [
+                        { badge: 'fix', text: '<strong>Preset fine-tuning</strong> — <em>terminal</em> (transparent default, glass on hover), <em>masonry</em> (subtle border, glass on hover), <em>launcher</em> (lighter surface, gentler hover lift).' },
+                        { badge: 'fix', text: '<strong>Design tokens</strong> — <code>--layout-surface-inset</code> and <code>--glass-blur-*</code> replace hardcoded blur values across dashboard, config, health, and modal overlays.' },
+                        { badge: 'fix', text: '<strong>Glass UI details</strong> — inline-edit panel, tag-autocomplete dropdown, loading skeleton shimmer, and config bookmarks workspace glass parity.' },
                     ]
                 },
                 {
