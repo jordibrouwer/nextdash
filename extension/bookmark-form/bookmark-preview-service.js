@@ -31,9 +31,12 @@
 
     async function uploadIconFromUrl(iconUrl, apiBase = '') {
         try {
+            const headers = typeof apiWriteHeaders === 'function'
+                ? await apiWriteHeaders({ 'Content-Type': 'application/json' })
+                : { 'Content-Type': 'application/json' };
             const response = await fetch(apiUrl(apiBase, '/api/icon/from-url'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ url: iconUrl }),
             });
             if (!response.ok) return '';
@@ -47,7 +50,8 @@
     async function fetchLinkPreview(url, apiBase = '') {
         const safeUrl = global.BookmarkUrlUtils?.ensureHttpUrl(url) || String(url || '').trim();
         if (!safeUrl) throw new Error('no url');
-        const response = await fetch(`${apiUrl(apiBase, '/api/bookmark-preview')}?url=${encodeURIComponent(safeUrl)}`);
+        const headers = typeof apiWriteHeaders === 'function' ? await apiWriteHeaders() : {};
+        const response = await fetch(`${apiUrl(apiBase, '/api/bookmark-preview')}?url=${encodeURIComponent(safeUrl)}`, { headers });
         if (!response.ok) throw new Error('fetch failed');
         const data = await response.json();
         return {

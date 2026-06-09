@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"net/netip"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestValidatePublicHTTPURL(t *testing.T) {
@@ -52,6 +55,48 @@ func TestSanitizeBookmarkIcon(t *testing.T) {
 		if got := sanitizeBookmarkIcon(input); got != want {
 			t.Fatalf("sanitizeBookmarkIcon(%q) = %q, want %q", input, got, want)
 		}
+	}
+}
+
+func TestSSRFSafeDialContextBlocksLoopback(t *testing.T) {
+	t.Parallel()
+
+	dial := ssrfSafeDialContext(false, time.Second)
+	_, err := dial(context.Background(), "tcp", "127.0.0.1:9")
+	if err == nil {
+		t.Fatal("expected loopback dial to be blocked")
+	}
+}
+
+func TestSSRFSafeDialContextAllowsLoopbackWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	dial := ssrfSafeDialContext(true, 200*time.Millisecond)
+	conn, err := dial(context.Background(), "tcp", "127.0.0.1:9")
+	if err == nil {
+		conn.Close()
+		t.Fatal("expected connection error to closed port, not SSRF block")
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "disallowed ip") {
+		t.Fatalf("loopback should be allowed when allowLocal is true: %v", err)
+	}
+}
+
+func TestIsAllowedDialIP(t *testing.T) {
+	t.Parallel()
+
+	public := netip.MustParseAddr("8.8.8.8")
+	private := netip.MustParseAddr("10.0.0.1")
+	loopback := netip.MustParseAddr("127.0.0.1")
+
+	if !isAllowedDialIP(public, false) {
+		t.Fatal("public IP should be allowed")
+	}
+	if isAllowedDialIP(private, false) || isAllowedDialIP(loopback, false) {
+		t.Fatal("private/loopback should be blocked by default")
+	}
+	if !isAllowedDialIP(private, true) || !isAllowedDialIP(loopback, true) {
+		t.Fatal("private/loopback should be allowed when allowLocal is true")
 	}
 }
 

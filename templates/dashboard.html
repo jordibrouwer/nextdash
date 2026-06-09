@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
+    <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/theme-loader.js"></script>

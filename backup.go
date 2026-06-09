@@ -520,6 +520,9 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 // Backup creates a zip file with all data from the data directory
 func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	// Ensure base data directory exists so backup works on first run.
 	dataDir := "data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {

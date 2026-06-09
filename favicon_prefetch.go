@@ -49,10 +49,7 @@ func downloadIconFromURL(sourceURL string, allowLocalHosts bool) (string, error)
 		return "", nil
 	}
 
-	client := &http.Client{
-		Timeout:       8 * time.Second,
-		CheckRedirect: safeRedirectCheck(allowLocalHosts, 3),
-	}
+	client := newOutboundHTTPClient(allowLocalHosts, 8*time.Second, 3)
 
 	req, err := http.NewRequest(http.MethodGet, sourceURL, nil)
 	if err != nil {

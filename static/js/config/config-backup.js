@@ -162,7 +162,10 @@ class ConfigBackup {
 
         this.setButtonLoading(backupBtn, true, this.t('config.backupInProgress') || 'Creating…');
         try {
-            const response = await fetch('/api/backup', { method: 'GET' });
+            const response = await fetch('/api/backup', {
+                method: 'GET',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
 
             if (!response.ok) {
                 throw new Error(`Backup failed: ${response.statusText}`);

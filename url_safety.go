@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // isPublicHost returns true when host resolves only to routable (non-private) addresses.
@@ -66,6 +68,77 @@ func validateHTTPURL(rawURL string, allowLocal bool) error {
 
 func validatePublicHTTPURL(rawURL string) error {
 	return validateHTTPURL(rawURL, false)
+}
+
+func isAllowedDialIP(addr netip.Addr, allowLocal bool) bool {
+	if allowLocal {
+		return true
+	}
+	return !(addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() ||
+		addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified())
+}
+
+// ssrfSafeDialContext validates resolved IPs at dial time to mitigate DNS rebinding.
+func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(context.Context, string, string) (net.Conn, error) {
+	if dialTimeout <= 0 {
+		dialTimeout = 30 * time.Second
+	}
+	dialer := &net.Dialer{Timeout: dialTimeout}
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+
+		if ip, parseErr := netip.ParseAddr(host); parseErr == nil {
+			if !isAllowedDialIP(ip, allowLocal) {
+				return nil, fmt.Errorf("dial to disallowed IP")
+			}
+			return dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
+		}
+
+		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			return nil, err
+		}
+		if len(ips) == 0 {
+			return nil, fmt.Errorf("no addresses for host")
+		}
+
+		for _, ipAddr := range ips {
+			addr, ok := netip.AddrFromSlice(ipAddr.IP)
+			if !ok || !isAllowedDialIP(addr, allowLocal) {
+				return nil, fmt.Errorf("dial to disallowed IP")
+			}
+		}
+
+		var lastErr error
+		for _, ipAddr := range ips {
+			addr, _ := netip.AddrFromSlice(ipAddr.IP)
+			conn, dialErr := dialer.DialContext(ctx, network, net.JoinHostPort(addr.String(), port))
+			if dialErr == nil {
+				return conn, nil
+			}
+			lastErr = dialErr
+		}
+		return nil, lastErr
+	}
+}
+
+func newSSRFSafeTransport(allowLocal bool, dialTimeout time.Duration) *http.Transport {
+	return &http.Transport{
+		DialContext:           ssrfSafeDialContext(allowLocal, dialTimeout),
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+	}
+}
+
+func newOutboundHTTPClient(allowLocal bool, timeout time.Duration, maxRedirects int) *http.Client {
+	return &http.Client{
+		Timeout:       timeout,
+		Transport:     newSSRFSafeTransport(allowLocal, 0),
+		CheckRedirect: safeRedirectCheck(allowLocal, maxRedirects),
+	}
 }
 
 // safeRedirectCheck validates each redirect target against the same host rules as the initial URL.

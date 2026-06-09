@@ -603,7 +603,7 @@
             try {
                 const response = await fetch('/api/health/open-broken', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: writeJsonHeaders(),
                     body: JSON.stringify({ limit: OPEN_BROKEN_MAX })
                 });
                 if (response.ok) {
@@ -812,7 +812,10 @@
     }
 
     async function fetchAutoHealSuggestion(pageId, index) {
-        const response = await fetch(`/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}`);
+        const response = await fetch(
+            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}`,
+            { headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {} }
+        );
         if (!response.ok) {
             throw new Error('Failed to fetch auto-heal suggestions');
         }

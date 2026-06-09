@@ -409,7 +409,7 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, settings); err != nil {
+	if err := tmpl.Execute(&buf, h.htmlPageData(settings)); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 		return
 	}
@@ -1191,6 +1191,9 @@ func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
 
 // Build search index
 func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	pages := h.store.GetPages()
@@ -1222,10 +1225,7 @@ func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) outboundHTTPClient(timeout time.Duration, maxRedirects int) *http.Client {
-	return &http.Client{
-		Timeout:       timeout,
-		CheckRedirect: safeRedirectCheck(h.allowLocalBookmarks(), maxRedirects),
-	}
+	return newOutboundHTTPClient(h.allowLocalBookmarks(), timeout, maxRedirects)
 }
 
 func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
@@ -1315,6 +1315,9 @@ func clearBookmarkPreviewFields(bm *Bookmark) {
 
 // Get bookmark preview metadata
 func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
@@ -1802,6 +1805,9 @@ func (h *Handlers) OpenBroken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -1948,6 +1954,9 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 
 // AutoHealSuggest returns healing suggestions for a broken bookmark.
 func (h *Handlers) AutoHealSuggest(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	pageID, err := strconv.Atoi(strings.TrimSpace(r.URL.Query().Get("pageId")))
 	if err != nil || pageID <= 0 {
 		http.Error(w, "Invalid pageId", http.StatusBadRequest)
@@ -2069,8 +2078,10 @@ func (h *Handlers) detectRedirectURL(urlStr string) string {
 	if err := validateHTTPURL(strings.TrimSpace(urlStr), h.allowLocalBookmarks()); err != nil {
 		return ""
 	}
+	allowLocal := h.allowLocalBookmarks()
 	client := &http.Client{
-		Timeout: 6 * time.Second,
+		Timeout:   6 * time.Second,
+		Transport: newSSRFSafeTransport(allowLocal, 2*time.Second),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},

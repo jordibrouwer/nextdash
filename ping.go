@@ -39,14 +39,11 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 	}
 
 	start := time.Now()
+	allowLocal := h.allowLocalBookmarks()
 	client := &http.Client{
-		Timeout: 3 * time.Second,
-		Transport: &http.Transport{
-			DialContext:           (&net.Dialer{Timeout: 2 * time.Second}).DialContext,
-			TLSHandshakeTimeout:   2 * time.Second,
-			ResponseHeaderTimeout: 2 * time.Second,
-		},
-		CheckRedirect: safeRedirectCheck(h.allowLocalBookmarks(), 5),
+		Timeout:       3 * time.Second,
+		Transport:     newSSRFSafeTransport(allowLocal, 2*time.Second),
+		CheckRedirect: safeRedirectCheck(allowLocal, 5),
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, urlStr, nil)

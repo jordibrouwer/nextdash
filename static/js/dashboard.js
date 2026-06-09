@@ -3088,7 +3088,10 @@ class Dashboard {
 
     async buildSearchIndex() {
         try {
-            await fetch('/api/search-index', { method: 'POST' });
+            await fetch('/api/search-index', {
+                method: 'POST',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
         } catch (error) {
             // Keep dashboard functional if indexing fails
             console.warn('Search index build failed:', error);
@@ -5714,7 +5717,9 @@ class Dashboard {
             return '';
         }
         try {
-            const previewResponse = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`);
+            const previewResponse = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(safeUrl)}`, {
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
             if (previewResponse.ok) {
                 const preview = await previewResponse.json();
                 const previewIconUrl = String(preview?.icon || '').trim();
@@ -6356,7 +6361,9 @@ class Dashboard {
                 };
             } else {
                 const refreshParam = forceRefresh ? '&refresh=1' : '';
-                const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`);
+                const response = await fetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`, {
+                    headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+                });
                 if (!response.ok) return null;
                 preview = await response.json();
                 bookmark.previewTitle = preview.title || bookmark.previewTitle || '';
