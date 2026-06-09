@@ -156,7 +156,7 @@ class DragReorder {
         const targetItem = e.target.closest(`.${this.itemClass}`);
         if (!targetItem || targetItem === activeSelected) return;
 
-        this.ensurePlaceholder(targetItem.parentNode);
+        this.ensurePlaceholder();
         targetItem.parentNode.insertBefore(this.placeholder, targetItem);
 
         if (this.isBefore(activeSelected, targetItem)) {
@@ -179,7 +179,7 @@ class DragReorder {
         if (activeSelected.parentNode !== this.container) {
             this.container.appendChild(activeSelected);
         }
-        this.ensurePlaceholder(this.container);
+        this.ensurePlaceholder();
         this.container.appendChild(this.placeholder);
     }
 
@@ -289,7 +289,7 @@ class DragReorder {
         const targetContainer = pointElement ? pointElement.closest(this.touchContainerSelector) : null;
 
         if (targetItem && targetItem !== activeSelected && !targetItem.contains(activeSelected)) {
-            this.ensurePlaceholder(targetItem.parentNode);
+            this.ensurePlaceholder();
             targetItem.parentNode.insertBefore(this.placeholder, targetItem);
             if (this.isBefore(activeSelected, targetItem)) {
                 targetItem.parentNode.insertBefore(activeSelected, targetItem);
@@ -300,7 +300,7 @@ class DragReorder {
             if (targetContainer !== activeSelected.parentNode) {
                 targetContainer.appendChild(activeSelected);
             }
-            this.ensurePlaceholder(targetContainer);
+            this.ensurePlaceholder();
             targetContainer.appendChild(this.placeholder);
         }
     }
@@ -396,7 +396,7 @@ class DragReorder {
         }));
     }
 
-    ensurePlaceholder(targetParent) {
+    ensurePlaceholder() {
         if (!window.__dragReorderState.placeholder) {
             const placeholder = document.createElement('div');
             placeholder.className = 'bookmark-drop-placeholder';
@@ -404,12 +404,10 @@ class DragReorder {
             window.__dragReorderState.placeholder = placeholder;
         }
         this.placeholder = window.__dragReorderState.placeholder;
-        // Re-trigger the entry animation only when the placeholder crosses into a new container.
-        if (!targetParent || this.placeholder.parentNode !== targetParent) {
-            this.placeholder.style.animation = 'none';
-            void this.placeholder.offsetWidth; // force reflow
-            this.placeholder.style.animation = '';
-        }
+        // Re-trigger the entry animation each time the placeholder moves.
+        this.placeholder.style.animation = 'none';
+        void this.placeholder.offsetWidth; // force reflow
+        this.placeholder.style.animation = '';
     }
 
     removePlaceholder() {

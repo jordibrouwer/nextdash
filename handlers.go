@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -574,10 +573,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
 	}
 
-	if err := h.store.SaveBookmarksByPage(pageID, bookmarks); err != nil {
-		http.Error(w, "Failed to save bookmarks", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveBookmarksByPage(pageID, bookmarks)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -747,9 +743,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		for _, name := range newCatOrder {
 			categories = append(categories, Category{ID: newCatNames[name], Name: name})
 		}
-		if err := h.store.SaveCategoriesByPage(request.PageID, categories); err != nil {
-			log.Printf("ImportBookmarks: SaveCategoriesByPage: %v", err)
-		}
+		h.store.SaveCategoriesByPage(request.PageID, categories)
 	}
 
 	imported := 0
@@ -842,10 +836,7 @@ func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.SaveFinders(finders); err != nil {
-		http.Error(w, "Failed to save finders", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveFinders(finders)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -872,10 +863,7 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
-		http.Error(w, "Failed to save categories", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveCategoriesByPage(pageID, categories)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -907,10 +895,7 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the order
-	if err := h.store.SavePageOrder(order); err != nil {
-		http.Error(w, "Failed to save page order", http.StatusInternalServerError)
-		return
-	}
+	h.store.SavePageOrder(order)
 
 	// Save each page individually
 	// Note: This assumes bookmarks are saved separately via SaveBookmarks endpoint
@@ -918,10 +903,7 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 		page = normalizePageMeta(page, page.ID)
 		// Get existing bookmarks for this page to preserve them
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		if err := h.store.SavePage(page, bookmarks); err != nil {
-			http.Error(w, "Failed to save page", http.StatusInternalServerError)
-			return
-		}
+		h.store.SavePage(page, bookmarks)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -962,10 +944,7 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 			newOrder = append(newOrder, id)
 		}
 	}
-	if err := h.store.SavePageOrder(newOrder); err != nil {
-		http.Error(w, "Failed to update page order", http.StatusInternalServerError)
-		return
-	}
+	h.store.SavePageOrder(newOrder)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
@@ -1037,10 +1016,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	settings.Collections = sanitized
 
-	if err := h.store.SaveSettings(settings); err != nil {
-		http.Error(w, "Failed to save settings", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveSettings(settings)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1065,10 +1041,7 @@ func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.SaveColors(colors); err != nil {
-		http.Error(w, "Failed to save colors", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveColors(colors)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1089,10 +1062,7 @@ func (h *Handlers) ResetColors(w http.ResponseWriter, r *http.Request) {
 		Custom:  currentColors.Custom, // Preserve existing custom themes
 	}
 
-	if err := h.store.SaveColors(defaultColors); err != nil {
-		http.Error(w, "Failed to reset colors", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveColors(defaultColors)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(defaultColors)
 }
@@ -1238,9 +1208,7 @@ func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
 	index := SearchIndex{Entries: entries}
 	settings := h.store.GetSettings()
 	settings.SearchIndexed = true
-	if err := h.store.SaveSettings(settings); err != nil {
-		log.Printf("BuildSearchIndex: SaveSettings: %v", err)
-	}
+	h.store.SaveSettings(settings)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(index)
@@ -1388,9 +1356,7 @@ func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Reque
 			changed = true
 		}
 		if changed {
-			if err := h.store.SaveBookmarksByPage(page.ID, bookmarks); err != nil {
-				log.Printf("ClearAllPreviews: SaveBookmarksByPage page %d: %v", page.ID, err)
-			}
+			h.store.SaveBookmarksByPage(page.ID, bookmarks)
 		}
 	}
 
@@ -1433,9 +1399,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 			changed = true
 		}
 		if changed {
-			if err := h.store.SaveBookmarksByPage(page.ID, bookmarks); err != nil {
-				log.Printf("RefreshAllBookmarkPreviews: SaveBookmarksByPage page %d: %v", page.ID, err)
-			}
+			h.store.SaveBookmarksByPage(page.ID, bookmarks)
 		}
 	}
 
@@ -1614,10 +1578,7 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 
 	bookmarks[index].OpenCount++
 	bookmarks[index].LastOpened = time.Now().UnixMilli()
-	if err := h.store.SaveBookmarksByPage(pageID, bookmarks); err != nil {
-		http.Error(w, "Failed to save", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveBookmarksByPage(pageID, bookmarks)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
@@ -1734,10 +1695,7 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 		bookmark.LastError = errMsg
 	}
 	bookmarks[req.Index] = bookmark
-	if err := h.store.SaveBookmarksByPage(req.PageID, bookmarks); err != nil {
-		http.Error(w, "Failed to save", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1814,9 +1772,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Save updated bookmarks
-		if err := h.store.SaveBookmarksByPage(page.ID, bookmarks); err != nil {
-			log.Printf("RetestAll: SaveBookmarksByPage page %d: %v", page.ID, err)
-		}
+		h.store.SaveBookmarksByPage(page.ID, bookmarks)
 	}
 
 	// Save updated cache
@@ -1934,10 +1890,7 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		bookmarks := h.store.GetBookmarksByPage(del.pageID)
 		if del.index >= 0 && del.index < len(bookmarks) {
 			bookmarks = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-			if err := h.store.SaveBookmarksByPage(del.pageID, bookmarks); err != nil {
-				http.Error(w, "Failed to save bookmarks", http.StatusInternalServerError)
-				return
-			}
+			h.store.SaveBookmarksByPage(del.pageID, bookmarks)
 			mergedCount++
 		}
 	}
@@ -1979,10 +1932,7 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 	}
 
 	bookmarks = append(bookmarks[:req.Index], bookmarks[req.Index+1:]...)
-	if err := h.store.SaveBookmarksByPage(req.PageID, bookmarks); err != nil {
-		http.Error(w, "Failed to save", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -2096,10 +2046,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookmarks[req.Index] = bookmark
-	if err := h.store.SaveBookmarksByPage(req.PageID, bookmarks); err != nil {
-		http.Error(w, "Failed to save", http.StatusInternalServerError)
-		return
-	}
+	h.store.SaveBookmarksByPage(req.PageID, bookmarks)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
