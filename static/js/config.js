@@ -3320,6 +3320,7 @@ class ConfigManager {
             const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
+            anchor.href = broken > 0 ? '/health?filter=broken' : '/health';
             const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
             const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
             const appendBadge = (count, type) => {

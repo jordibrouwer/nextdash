@@ -38,6 +38,28 @@
         } catch (e) { /* malformed JSON */ }
     }
 
+    function applyUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const filter = (params.get('filter') || '').toLowerCase();
+        if (filterOrder.includes(filter)) {
+            healthState.filter = filter;
+        }
+        const validSorts = ['score', 'status', 'last-checked', 'last-checked-desc', 'name'];
+        const sort = params.get('sort');
+        if (sort && validSorts.includes(sort)) {
+            healthState.sort = sort;
+        }
+        const page = params.get('page');
+        if (page != null && page !== '') {
+            healthState.pageId = page === 'all' ? 'all' : String(page);
+        }
+        const query = params.get('q');
+        if (typeof query === 'string') {
+            healthState.query = query;
+        }
+        return params.get('refresh') === '1';
+    }
+
     const statusFallbacks = {
         broken: 'broken',
         duplicate: 'duplicate',
@@ -1053,6 +1075,7 @@
         }
 
         restoreState();
+        const shouldRetest = applyUrlParams();
 
         const searchInput = document.getElementById('health-search');
         const refreshButton = document.getElementById('refresh-health-btn');
@@ -1090,6 +1113,14 @@
 
         await loadReport();
         render();
+
+        if (shouldRetest) {
+            const retestBtn = document.getElementById('retest-all-btn');
+            if (retestBtn) {
+                retestBtn.click();
+            }
+        }
+
         if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
             window.SkeletonLoading.finish();
         } else {

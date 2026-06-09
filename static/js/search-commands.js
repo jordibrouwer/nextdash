@@ -37,7 +37,7 @@ class SearchCommandsComponent {
             {
                 id: 'dashboard',
                 label: 'Dashboard',
-                commands: ['buttons', 'tips']
+                commands: ['buttons', 'tips', 'health']
             }
         ];
         // Track which groups are expanded (none by default)
@@ -75,7 +75,8 @@ class SearchCommandsComponent {
             'unpin': this.handlePinCommand.bind(this),
             'tag': this.handleTagCommand.bind(this),
             'open': this.handleOpenCommand.bind(this),
-            'find': this.handleFindCommand.bind(this)
+            'find': this.handleFindCommand.bind(this),
+            'health': this.handleHealthCommand.bind(this)
         };
 
         // Current page bookmarks and all bookmarks
@@ -1474,7 +1475,10 @@ class SearchCommandsComponent {
                 name: `Showing ${cap} of ${stale.length} — visit health page for full list`,
                 shortcut: '→',
                 type: 'command',
-                action: () => { window.location.href = '/health'; return true; }
+                action: () => {
+                    window.location.href = this.buildHealthPageUrl({ filter: 'stale' });
+                    return true;
+                }
             });
         }
         return rows;
@@ -1534,6 +1538,125 @@ class SearchCommandsComponent {
                 type: 'command-completion'
             }
         ];
+    }
+
+    buildHealthPageUrl(options = {}) {
+        const filters = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
+        const params = new URLSearchParams();
+        const filter = (options.filter || 'all').toLowerCase();
+        if (filter && filter !== 'all' && filters.includes(filter)) {
+            params.set('filter', filter);
+        }
+        if (options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all') {
+            params.set('page', String(options.page));
+        }
+        if (options.sort) {
+            params.set('sort', options.sort);
+        }
+        if (options.query) {
+            params.set('q', options.query);
+        }
+        if (options.refresh) {
+            params.set('refresh', '1');
+        }
+        const qs = params.toString();
+        return qs ? `/health?${qs}` : '/health';
+    }
+
+    handleHealthCommand(args, fullQuery) {
+        const filters = [
+            { id: 'broken', label: 'broken bookmarks' },
+            { id: 'duplicate', label: 'duplicate URLs' },
+            { id: 'shortcut-conflict', label: 'shortcut conflicts' },
+            { id: 'unchecked', label: 'unchecked status' },
+            { id: 'stale', label: 'stale bookmarks' },
+            { id: 'unused', label: 'unused bookmarks' },
+            { id: 'missing-preview', label: 'missing previews' },
+            { id: 'healthy', label: 'healthy bookmarks' },
+            { id: 'all', label: 'all bookmarks' },
+        ];
+        const sub = (args[0] || '').toLowerCase().trim();
+
+        if (sub === 'refresh' || sub === 'retest') {
+            return [{
+                name: 'Open health and re-scan all bookmarks',
+                shortcut: ':HEALTH',
+                type: 'command',
+                action: () => {
+                    window.location.href = this.buildHealthPageUrl({ refresh: true });
+                    return true;
+                }
+            }];
+        }
+
+        if (!sub) {
+            const rows = [{
+                name: 'Open health page',
+                shortcut: ':HEALTH',
+                type: 'command',
+                action: () => {
+                    window.location.href = this.buildHealthPageUrl();
+                    return true;
+                }
+            }];
+            filters.forEach(({ id, label }) => {
+                if (id === 'all') return;
+                rows.push({
+                    name: `Open health — ${label}`,
+                    shortcut: ':HEALTH',
+                    type: 'command',
+                    action: () => {
+                        window.location.href = this.buildHealthPageUrl({ filter: id });
+                        return true;
+                    }
+                });
+            });
+            rows.push({
+                name: '',
+                shortcut: ':HEALTH',
+                completion: ':health broken ',
+                type: 'command-completion'
+            });
+            return rows;
+        }
+
+        const exact = filters.find((entry) => entry.id === sub);
+        if (exact) {
+            return [{
+                name: `Open health — ${exact.label}`,
+                shortcut: ':HEALTH',
+                type: 'command',
+                action: () => {
+                    window.location.href = this.buildHealthPageUrl({ filter: exact.id });
+                    return true;
+                }
+            }];
+        }
+
+        const partial = filters.filter((entry) => entry.id.startsWith(sub));
+        if (partial.length > 0) {
+            return partial.map((entry) => ({
+                name: `Open health — ${entry.label}`,
+                shortcut: ':HEALTH',
+                completion: `:health ${entry.id} `,
+                type: 'command',
+                action: () => {
+                    window.location.href = this.buildHealthPageUrl({ filter: entry.id });
+                    return true;
+                }
+            }));
+        }
+
+        if ('refresh'.startsWith(sub) || 'retest'.startsWith(sub)) {
+            return [{
+                name: '',
+                shortcut: ':HEALTH',
+                completion: ':health refresh ',
+                type: 'command-completion'
+            }];
+        }
+
+        return [];
     }
 
     handleDuplicateCommand(args, fullQuery) {

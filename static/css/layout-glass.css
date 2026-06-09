@@ -641,7 +641,10 @@ body[data-layout-version="glass"] .dashboard-grid.layout-terminal .category-titl
 
 body[data-layout-version="glass"] .dashboard-grid.layout-terminal .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-secondary) 35%, transparent);
+    background: transparent;
+    border: 1px solid transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-terminal .bookmark-link::before {
@@ -650,7 +653,11 @@ body[data-layout-version="glass"] .dashboard-grid.layout-terminal .bookmark-link
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-terminal .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+    border-color: color-mix(in srgb, var(--accent-primary) 22%, var(--layout-surface-border));
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-chip-shadow);
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-terminal .bookmark-shortcut {
@@ -667,6 +674,23 @@ body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category {
 body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link {
     border-radius: var(--layout-radius-sm);
     padding-inline: 0.55rem;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--layout-surface-border) 55%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        backdrop-filter var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: var(--layout-surface-inset);
+    border-color: color-mix(in srgb, var(--accent-primary) 28%, var(--layout-surface-border));
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-chip-shadow);
 }
 
 /* ─── List preset ──────────────────────────────────────────────────────────── */
@@ -739,9 +763,11 @@ body[data-layout-version="glass"] .layout-launcher .category-title {
 
 body[data-layout-version="glass"] .layout-launcher .bookmark-link {
     border-radius: var(--layout-radius-md);
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 42%, transparent);
-    box-shadow: var(--layout-shadow-sm);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
     transition:
         background-color var(--layout-transition),
         border-color var(--layout-transition),
@@ -750,17 +776,17 @@ body[data-layout-version="glass"] .layout-launcher .bookmark-link {
 }
 
 body[data-layout-version="glass"] .layout-launcher .bookmark-link:hover {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
-    border-color: color-mix(in srgb, var(--accent-primary) 38%, var(--border-primary));
-    box-shadow: var(--layout-shadow-md);
-    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-elevated));
+    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--layout-surface-border));
+    box-shadow: var(--glass-panel-shadow);
+    transform: translateY(-1px);
 }
 
 body[data-layout-version="glass"] .layout-launcher .bookmark-link.keyboard-selected,
 body[data-layout-version="glass"] .layout-launcher .bookmark-link:focus-within {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    box-shadow: var(--layout-shadow-md);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--layout-surface-elevated));
+    border-color: color-mix(in srgb, var(--accent-primary) 38%, var(--layout-surface-border));
+    box-shadow: var(--glass-panel-shadow);
 }
 
 body[data-layout-version="glass"] .layout-launcher .bookmark-icon-slot {
@@ -810,8 +836,8 @@ body[data-layout-version="glass"] .bookmark-preview-card {
     border-color: var(--layout-surface-border);
     background: color-mix(in srgb, var(--background-secondary) 92%, transparent);
     box-shadow: var(--layout-shadow-lg);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .bookmark-preview-card-refresh {
@@ -824,20 +850,75 @@ body[data-layout-version="glass"] .bookmark-preview-card-image-wrap {
 
 /* ─── Inline edit & tag filter view ────────────────────────────────────────── */
 
+body[data-layout-version="glass"] .bookmark-inline-form {
+    padding: 0.55rem 0.65rem;
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface-elevated);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
 body[data-layout-version="glass"] .bookmark-inline-input,
 body[data-layout-version="glass"] .bookmark-inline-select,
+body[data-layout-version="glass"] .bookmark-inline-textarea,
 body[data-layout-version="glass"] .bookmark-inline-action-btn,
 body[data-layout-version="glass"] .bookmark-inline-icon-preview {
     border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-inset);
+}
+
+body[data-layout-version="glass"] .bookmark-inline-input:focus,
+body[data-layout-version="glass"] .bookmark-inline-select:focus,
+body[data-layout-version="glass"] .bookmark-inline-textarea:focus {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--layout-surface-border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 25%, transparent);
 }
 
 body[data-layout-version="glass"] #dashboard-layout.tag-filter-view .tag-filter-indicator-chip {
-    box-shadow: var(--layout-shadow-sm);
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .tag-ac-dropdown {
-    border-radius: var(--layout-radius-sm);
-    box-shadow: var(--layout-shadow-md);
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .tag-ac-item:hover,
+body[data-layout-version="glass"] .tag-ac-item-active {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+}
+
+/* ─── Skeleton loading (glass) ─────────────────────────────────────────────── */
+
+body[data-layout-version="glass"].loading .skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--layout-surface-inset) 80%, transparent) 0%,
+        color-mix(in srgb, var(--layout-surface-elevated) 90%, transparent) 50%,
+        color-mix(in srgb, var(--layout-surface-inset) 80%, transparent) 100%
+    );
+    background-size: 200% 100%;
+}
+
+body[data-layout-version="glass"].loading .skeleton-dashboard .skeleton-card,
+body[data-layout-version="glass"].loading .skeleton-health-summary .skeleton-card {
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
 }
 
 /* ─── Grid motion preferences ──────────────────────────────────────────────── */

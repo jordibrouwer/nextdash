@@ -1986,6 +1986,12 @@ class Dashboard {
         return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + for the full add-bookmark form (& for quick-add line)';
     }
 
+    buildHealthPageHref(brokenCount, warnCount) {
+        if (brokenCount > 0) return '/health?filter=broken';
+        if (warnCount > 0) return '/health';
+        return '/health';
+    }
+
     createHealthCountBadge(count, type) {
         const badge = document.createElement('span');
         const n = count > 99 ? '99+' : String(count);
@@ -3084,6 +3090,7 @@ class Dashboard {
                 item(':duplicate / :duplicates', 'cbDuplicates', 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)'),
                 item(':history / :history clear', 'cbHistory', 'Browse recent searches from the command bar / wipe all search history'),
                 item(':stale <days>', 'cbStale', 'Show bookmarks not opened in <days> days (default 30)'),
+                item(':health [filter]', 'caHealth', 'Open health page — broken / duplicate / stale / refresh'),
                 item(':save / :saved', 'cbSave', 'Save the current search query / show saved searches'),
             ]),
             section('sectionCommandsAppearance', 'Commands — appearance', [
@@ -7142,6 +7149,8 @@ class Dashboard {
 
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
+
+            anchor.href = this.buildHealthPageHref(broken, warn);
 
             if (broken > 0) {
                 anchor.appendChild(this.createHealthCountBadge(broken, 'broken'));

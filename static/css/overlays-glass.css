@@ -97,8 +97,8 @@ body[data-layout-version="glass"] .search-command-chip:hover {
 /* ─── Modals ─────────────────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .modal-overlay {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .modal {

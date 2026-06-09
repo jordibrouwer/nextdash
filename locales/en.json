@@ -144,6 +144,7 @@
             "caPreview": "Toggle hover preview cards",
             "caPacked": "Toggle packed (variable-width) columns",
             "caButtonbar": "Move the button bar — bottom (default) / bottom-left / bottom-right",
+            "caHealth": "Open health page — broken / duplicate / stale / refresh",
             "caSort": "Change sort order — order / az / recent / custom",
             "otCheatSheet": "This cheat sheet",
             "otWhatsNew": "Open what's new release notes",
