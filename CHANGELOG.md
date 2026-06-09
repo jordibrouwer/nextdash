@@ -45,7 +45,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.13 — June 2026
 
-**Security hardening, backup/import reliability, health cache fixes, config & search polish** — DNS-rebinding dial checks, expanded write-token coverage, atomic ZIP import, canonical URL keys, async favicon prefetch, settings export/import.
+**Security hardening, backup/import reliability, health cache fixes, config & search polish** — DNS-rebinding dial checks, expanded write-token coverage, atomic ZIP import, canonical URL keys (incl. default ports), async favicon prefetch, settings export/import, dashboard inline-edit persistence, health duplicate-merge metadata.
 
 ### Security & uploads
 
@@ -74,14 +74,22 @@ _No unreleased changes at this time._
 ### Health, cache & analytics
 
 - **fix** **Preview/health cache races** — atomic read-merge-write under mutex for preview and health cache files.
-- **fix** **Canonical URL keys** — `CheckDuplicates`, health cache, status monitor in-memory cache, and `BookmarkURLExists` (ping gate) use `canonicalBookmarkURLKey` (`https://x` ≡ `https://x/`).
+- **fix** **Canonical URL keys** — `CheckDuplicates`, health cache, status monitor in-memory cache, and `BookmarkURLExists` (ping gate) use `canonicalBookmarkURLKey` (`https://x` ≡ `https://x/` ≡ `https://x:443`; `http://x:80` ≡ `http://x`).
+- **fix** **Health duplicate merge** — merging duplicate URL groups combines metadata (tags, shortcut, opens, notes, icons, preview fields) into the kept bookmark instead of discarding it.
 - **fix** **`TrackBookmarkOpen`** — open count and `lastOpened` updated atomically in the store (no lost increments on rapid opens).
 - **fix** **`UploadIcon` overwrite** — re-uploading the same icon filename replaces the existing file.
 - **new** **Async favicon prefetch** — default bookmark favicons after install/reset prefetch in a background goroutine (startup no longer blocks on network).
 - **fix** **Prefetch merge-safe save** — concurrent favicon prefetch merges into bookmarks only when index and canonical URL still match and icon is empty.
 
+### Dashboard — bookmarks & editing
+
+- **fix** **Inline edit persistence** — dashboard rename and delete save immediately (no debounced delay); pending bookmark lists flush on page hide/refresh so changes survive reload.
+- **fix** **Store write failures** — bookmark/page/settings saves return HTTP 500 when disk writes fail instead of reporting success to the client.
+
 ### Config, bookmarks & search
 
+- **fix** **Write-token gaps** — health dashboard mutations and config bookmarks-tour add/delete calls use the shared write-token fetch helpers when `NEXTDASH_WRITE_TOKEN` is set.
+- **fix** **Keyboard shortcuts docs** — cheatsheet, help locales, and config tour copy aligned with dashboard bindings (`1`–`9` page tabs, category jump keys, etc.).
 - **new** **Link-preview icon fetch** — bookmark detail can pull favicons from link preview with UI feedback; async generation token prevents stale overwrites.
 - **new** **URL protocol hint** — detail panel hints and normalizes missing `https://` on blur.
 - **new** **Config tab keyboard nav** — arrow keys move between visible config tabs.

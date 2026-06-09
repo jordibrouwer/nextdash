@@ -164,7 +164,7 @@ Type these directly in the search bar:
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left)
-- Long-press a bookmark row (~500 ms) to open inline edit
+- Long-press a bookmark row (~500 ms) to open inline edit — **Save** / **Ctrl+Enter** persists immediately on the dashboard
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it
 - Collapsible categories with optional always-collapsed default
@@ -203,7 +203,7 @@ Dynamic bookmark groups that appear automatically:
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage)
 - Favicon auto-refresh from the health view
 - Usage stats in the config: top patterns, open counts, last-used dates
-- Conflicts & duplicates block in stats: shows duplicate URL count and shortcut conflicts with a direct link to health
+- Conflicts & duplicates block in stats: shows duplicate URL count and shortcut conflicts with a direct link to health; merge combines metadata into the kept bookmark
 
 ### Bookmarks
 
@@ -235,7 +235,7 @@ Full UI translations available for English, Dutch, German, and French.
 | Gesture | Action |
 |---|---|
 | Drag the left strip of a bookmark | Reorder within category or move to another category |
-| Long press a bookmark row (~500 ms) | Open inline edit |
+| Long press a bookmark row (~500 ms) | Open inline edit (save with **Save** or **Ctrl+Enter**) |
 | Hover over a bookmark | Show preview card when enabled (Config → General → Advanced → Bookmarks) |
 | Double-click a page tab | Rename the page |
 | Double-click a category header | Rename the category |

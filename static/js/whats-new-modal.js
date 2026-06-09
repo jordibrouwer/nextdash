@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v49';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v50';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -113,14 +113,24 @@
                     title: 'Health, cache &amp; analytics',
                     items: [
                         { badge: 'fix', text: '<strong>Cache merge safety</strong> — preview and health caches use atomic read-merge-write so parallel requests no longer overwrite each other\'s entries.' },
-                        { badge: 'fix', text: '<strong>Canonical URL keys</strong> — duplicate detection, health cache, status monitor, and ping validation treat <code>https://x</code> and <code>https://x/</code> as the same URL.' },
+                        { badge: 'fix', text: '<strong>Canonical URL keys</strong> — duplicate detection, health cache, status monitor, and ping validation treat <code>https://x</code>, <code>https://x/</code>, and <code>https://x:443</code> as the same URL (same for <code>http://x:80</code>).' },
+                        { badge: 'fix', text: '<strong>Duplicate merge metadata</strong> — health merge keeps the best bookmark and combines tags, shortcut, opens, notes, and icons from the removed duplicates.' },
                         { badge: 'fix', text: '<strong>Open-count tracking</strong> — <code>/api/track-open</code> increments atomically under lock (no lost opens on rapid clicks).' },
                         { badge: 'fix', text: '<strong>Icon upload overwrite</strong> — re-uploading a bookmark icon with the same filename replaces the file on disk.' },
                     ]
                 },
                 {
+                    title: 'Dashboard — bookmarks &amp; editing',
+                    items: [
+                        { badge: 'fix', text: '<strong>Inline edit saves immediately</strong> — rename and delete on the dashboard persist right away (no debounce); pending edits flush when you refresh or close the tab.' },
+                        { badge: 'fix', text: '<strong>Disk write errors</strong> — bookmark and settings saves return an error when the server cannot write data, instead of silently failing.' },
+                    ]
+                },
+                {
                     title: 'Config, bookmarks &amp; search',
                     items: [
+                        { badge: 'fix', text: '<strong>Write-token gaps</strong> — health mutations and the bookmarks guided tour use the shared write-token fetch helpers when <code>NEXTDASH_WRITE_TOKEN</code> is set.' },
+                        { badge: 'fix', text: '<strong>Shortcut docs sync</strong> — cheatsheet, help text, and config tour match dashboard keys (<kbd>1</kbd>–<kbd>9</kbd> page tabs, category jump, etc.).' },
                         { badge: 'new', text: '<strong>Link-preview icons</strong> — bookmark detail can fetch favicons via link preview with generation guards so stale async responses are ignored.' },
                         { badge: 'new', text: '<strong>URL protocol hint</strong> — missing <code>https://</code> on blur is normalized; inline hint when the protocol is absent.' },
                         { badge: 'new', text: '<strong>Config tab keys</strong> — arrow keys move between visible config tabs on desktop.' },

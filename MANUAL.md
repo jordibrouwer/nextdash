@@ -268,7 +268,7 @@ With the dashboard focused and no text field active, paste a URL. The new-bookma
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The form shows field-level validation errors while you type. Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The form shows field-level validation errors while you type. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -290,7 +290,7 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 
 ### Duplicate URLs
 
-nextDash warns when a URL already exists on the same page (canonical match: trailing slash, hash, and host letter-case are ignored). You can still save anyway in the extension or modal when needed. Use **`:duplicate`** in search or the Health view to find duplicates across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
+nextDash warns when a URL already exists on the same page (canonical match: trailing slash, hash, host letter-case, and default ports are ignored — e.g. `https://x` ≡ `https://x:443`). You can still save anyway in the extension or modal when needed. Use **`:duplicate`** in search or the Health view to find duplicates across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
 
 ---
 
@@ -615,7 +615,7 @@ Summary cards → Filter pills + page filter → Issue list → Action toolbar
 | **dashboard link** | Jump to bookmark on correct page/category |
 | **ping** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
 | **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicate groups |
-| **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; removes the rest |
+| **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; merges tags, shortcut, opens, notes, and icons from removed rows into the keeper |
 
 Filter, sort, search, and page-filter state persist in the session across refreshes.
 
