@@ -82,9 +82,15 @@ var svgScriptPattern = regexp.MustCompile(
 		`|(javascript\s*:)`, // javascript: in href/src
 )
 
+var svgForeignObjectPattern = regexp.MustCompile(`(?i)<foreignObject[\s\S]*?</foreignObject>`)
+var svgDataHrefPattern = regexp.MustCompile(`(?i)\b(?:xlink:)?href\s*=\s*(?:"data:[^"]*"|'data:[^']*'|data:[^\s>]*)`)
+
 // sanitizeSVGContent removes <script> elements and event-handler attributes from SVG.
 func sanitizeSVGContent(data []byte) []byte {
-	return svgScriptPattern.ReplaceAll(data, nil)
+	out := svgScriptPattern.ReplaceAll(data, nil)
+	out = svgForeignObjectPattern.ReplaceAll(out, nil)
+	out = svgDataHrefPattern.ReplaceAll(out, nil)
+	return out
 }
 
 // validCSSColor matches safe CSS color values: hex, rgb/rgba, hsl/hsla, named colors,

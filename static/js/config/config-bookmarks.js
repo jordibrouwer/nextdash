@@ -813,7 +813,7 @@ class ConfigBookmarks {
     }
 
     async _assignIconFromUrlDetail(remoteUrl, bookmark, index) {
-        const response = await fetch('/api/icon/from-url', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/icon/from-url', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: remoteUrl })
@@ -832,7 +832,7 @@ class ConfigBookmarks {
         const formData = new FormData();
         formData.append('icon', file);
         try {
-            const response = await fetch('/api/icon', { method: 'POST', body: formData });
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/icon', { method: 'POST', body: formData });
             if (!response.ok) throw new Error(await response.text() || 'Upload failed');
             const result = await response.json();
             bookmark.icon = result.icon || '';
@@ -925,7 +925,7 @@ class ConfigBookmarks {
         const formData = new FormData();
         formData.append('icon', file);
         try {
-            const response = await fetch('/api/icon', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/icon', {
                 method: 'POST',
                 body: formData
             });
@@ -975,7 +975,7 @@ class ConfigBookmarks {
     }
 
     async tryAssignIconFromRemoteUrl(remoteUrl, bookmark, bookmarkElement) {
-        const response = await fetch('/api/icon/from-url', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/icon/from-url', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

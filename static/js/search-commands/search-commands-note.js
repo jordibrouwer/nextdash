@@ -152,7 +152,7 @@ class SearchCommandNote {
             if (idx >= 0) {
                 bookmarks[idx].note = bookmark.note;
             }
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookmarks)

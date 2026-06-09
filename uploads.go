@@ -162,12 +162,14 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 		ext = ".jpg"
 	case "image/gif":
 		ext = ".gif"
+	case "image/webp":
+		ext = ".webp"
 	case "image/svg+xml":
 		ext = ".svg"
 		// Strip <script> blocks and event-handler attributes from SVG
 		data = sanitizeSVGContent(data)
 	default:
-		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, svg allowed", http.StatusBadRequest)
+		http.Error(w, "Invalid file type. Only ico, png, jpg, gif, webp, svg allowed", http.StatusBadRequest)
 		return
 	}
 
@@ -183,6 +185,9 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 	baseName = strings.ReplaceAll(baseName, "\\", "")
 
 	fileName := baseName + ext
+	if strings.TrimSpace(baseName) == "" {
+		fileName = "icon-" + randomHex(8) + ext
+	}
 	filePath := filepath.Join("data/icons", fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)

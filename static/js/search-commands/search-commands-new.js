@@ -815,7 +815,7 @@ class SearchCommandNew {
         }
 
         try {
-            const response = await fetch('/api/bookmarks/add', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ page: pageId, bookmark })
@@ -897,7 +897,7 @@ class SearchCommandNew {
         const formData = new FormData();
         formData.append('icon', file);
         try {
-            const response = await fetch('/api/icon', { method: 'POST', body: formData });
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/icon', { method: 'POST', body: formData });
             if (!response.ok) return '';
             const result = await response.json();
             return result.icon || '';

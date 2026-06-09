@@ -160,13 +160,6 @@ class SearchComponent {
             this.handleKeyPress(e);
         });
 
-        // Close search on escape
-        document.addEventListener('keyup', (e) => {
-            if (e.key === 'Escape' && !this.isAppModalOpen()) {
-                this.closeSearch();
-            }
-        });
-        
         // Close search when clicking outside
         document.addEventListener('click', (e) => {
             const searchElement = document.getElementById('shortcut-search');
@@ -1260,7 +1253,7 @@ class SearchComponent {
                 headerEl.className = `search-command-group-header${selectedClass}`;
                 headerEl.innerHTML = `
                     <span class="search-command-group-arrow">${match.expanded ? '▾' : '▸'}</span>
-                    <span class="search-command-group-label">${match.label}</span>
+                    <span class="search-command-group-label">${this._escHtml(match.label)}</span>
                     <span class="search-command-group-count">${match.count}</span>
                 `;
                 headerEl.addEventListener('click', () => {

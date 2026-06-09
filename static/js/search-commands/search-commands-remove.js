@@ -138,7 +138,7 @@ class SearchCommandRemove {
         } catch (_) { /* proceed without snapshot */ }
 
         try {
-            const response = await fetch('/api/bookmarks', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ page: currentPageId, bookmark })
@@ -158,7 +158,7 @@ class SearchCommandRemove {
 
             const undoCallback = snapshotBeforeDelete ? async () => {
                 try {
-                    const restoreRes = await fetch(`/api/bookmarks?page=${currentPageId}`, {
+                    const restoreRes = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${currentPageId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(snapshotBeforeDelete)

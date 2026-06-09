@@ -43,7 +43,7 @@ class ConfigFont {
         const formData = new FormData();
         formData.append('font', file);
 
-        const response = await fetch('/api/font', {
+        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/font', {
             method: 'POST',
             body: formData
         });

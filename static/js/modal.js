@@ -63,9 +63,7 @@ class Modal {
                     if (this.modalPanel?.classList.contains('config-command-palette-modal')) {
                         return;
                     }
-                    e.preventDefault();
-                    const confirmBtn = this.modal.querySelector('.modal-button.danger, .modal-button:first-child');
-                    if (confirmBtn && confirmBtn !== e.target) confirmBtn.click();
+                    // Do not auto-confirm from arbitrary modal inputs (accidental submit risk).
                     return;
                 }
                 if (e.key === 'Tab') {
@@ -144,9 +142,10 @@ class Modal {
         // Confirm button (styled like search matches)
         const confirmButton = document.createElement('button');
         confirmButton.className = `modal-button ${confirmClass}`;
-        confirmButton.innerHTML = `
-            <span class="modal-button-name">${confirmText}</span>
-        `;
+        const confirmName = document.createElement('span');
+        confirmName.className = 'modal-button-name';
+        confirmName.textContent = confirmText;
+        confirmButton.appendChild(confirmName);
         confirmButton.onclick = () => {
             this.hide();
             onConfirm();
@@ -157,9 +156,10 @@ class Modal {
         if (showCancel) {
             const cancelButton = document.createElement('button');
             cancelButton.className = 'modal-button';
-            cancelButton.innerHTML = `
-                <span class="modal-button-name">${cancelText}</span>
-            `;
+            const cancelName = document.createElement('span');
+            cancelName.className = 'modal-button-name';
+            cancelName.textContent = cancelText;
+            cancelButton.appendChild(cancelName);
             cancelButton.onclick = () => {
                 this.hide();
                 onCancel();

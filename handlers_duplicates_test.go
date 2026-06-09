@@ -1,6 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -44,5 +48,22 @@ func TestFindURLDuplicateGroupsUsesCanonicalKey(t *testing.T) {
 	}
 	if len(groups[0].Bookmarks) != 2 {
 		t.Fatalf("bookmark refs = %d, want 2", len(groups[0].Bookmarks))
+	}
+}
+
+func TestSaveBookmarksRejectsDuplicateURLsInPayload(t *testing.T) {
+	t.Parallel()
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	bookmarks := []Bookmark{
+		{Name: "A", URL: "https://example.com"},
+		{Name: "B", URL: "https://example.com/"},
+	}
+	body, _ := json.Marshal(bookmarks)
+	req := httptest.NewRequest(http.MethodPost, "/api/bookmarks?page=1", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.SaveBookmarks(rec, req)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", rec.Code)
 	}
 }

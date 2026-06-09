@@ -687,7 +687,7 @@ class SearchCommandsComponent {
             const bookmarks = await res.json();
             const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
             if (idx >= 0) Object.assign(bookmarks[idx], updates);
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookmarks)

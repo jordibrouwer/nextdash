@@ -110,7 +110,7 @@ class SearchCommandColumns {
                     currentSettings.columnsPerRow = parseInt(columns);
 
                     // Save updated settings to server
-                    await fetch('/api/settings', {
+                    await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(currentSettings)

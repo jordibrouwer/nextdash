@@ -67,17 +67,21 @@ func downloadIconFromURL(sourceURL string, allowLocalHosts bool) (string, error)
 		return "", nil
 	}
 
-	contentType := strings.ToLower(strings.TrimSpace(strings.Split(resp.Header.Get("Content-Type"), ";")[0]))
-	ext, ok := iconExtensionFromContentType(contentType)
-	if !ok {
-		return "", nil
-	}
-
 	const maxIconSize = 2 << 20
 	limitedBody := io.LimitReader(resp.Body, maxIconSize+1)
 	data, err := io.ReadAll(limitedBody)
 	if err != nil || len(data) == 0 || len(data) > maxIconSize {
 		return "", err
+	}
+
+	detectedType := detectImageType(data)
+	ext, ok := iconExtensionFromContentType(detectedType)
+	if !ok {
+		contentType := strings.ToLower(strings.TrimSpace(strings.Split(resp.Header.Get("Content-Type"), ";")[0]))
+		ext, ok = iconExtensionFromContentType(contentType)
+		if !ok {
+			return "", nil
+		}
 	}
 
 	return saveIconBytes(data, ext)

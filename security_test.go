@@ -95,6 +95,16 @@ func TestHeavyEndpointsWorkWithoutTokenWhenUnset(t *testing.T) {
 	}
 }
 
+func TestSanitizeSVGStripsForeignObjectAndDataHref(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(`<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject><image xlink:href="data:text/html,<script>alert(1)</script>"/></svg>`)
+	out := string(sanitizeSVGContent(raw))
+	if contains := func(s, sub string) bool { return bytes.Contains([]byte(s), []byte(sub)) }; contains(out, "foreignObject") || contains(out, "data:text/html") {
+		t.Fatalf("unsafe SVG content remained: %s", out)
+	}
+}
+
 func TestDeletePageRequiresTokenWhenConfigured(t *testing.T) {
 	t.Setenv("NEXTDASH_WRITE_TOKEN", "secret-token")
 

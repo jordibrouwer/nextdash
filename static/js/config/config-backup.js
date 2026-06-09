@@ -9,6 +9,14 @@ class ConfigBackup {
         this.init();
     }
 
+    _escHtml(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     /**
      * Normalize paths from ZIP tools (Windows slashes, ./ prefix, junk folders).
      */
@@ -142,7 +150,7 @@ class ConfigBackup {
                 if (window.AppModal) {
                     const importInfo = this.t('config.importInfo');
                     const parts = importInfo.split('\n\n');
-                    const htmlMessage = parts[0] + '<br><br><span class="danger">' + parts[1] + '</span>';
+                    const htmlMessage = this._escHtml(parts[0]) + '<br><br><span class="danger">' + this._escHtml(parts[1] || '') + '</span>';
                     window.AppModal.alert({
                         title: this.t('config.importInfoTitle'),
                         htmlMessage: htmlMessage,
@@ -511,7 +519,7 @@ class ConfigBackup {
 
         const folders = [...new Set(bookmarks.map((b) => b.category).filter((c) => c))];
         const pageOptions = pages
-            .map((p) => `<option value="${p.id}">${p.name}</option>`)
+            .map((p) => `<option value="${Number(p.id)}">${this._escHtml(p.name)}</option>`)
             .join('');
         const defaultPageId = pages[0]?.id || 1;
         const pageUrlKeysCache = new Map();

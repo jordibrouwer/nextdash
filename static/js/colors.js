@@ -241,7 +241,7 @@ class ColorsEditor {
 
     async saveColors() {
         try {
-            const response = await fetch('/api/colors', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/colors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.colorsData)
@@ -269,7 +269,7 @@ class ColorsEditor {
 
     async autosaveThemeStructure() {
         try {
-            const response = await fetch('/api/colors', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/colors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.colorsData)
@@ -301,9 +301,8 @@ class ColorsEditor {
         if (!confirmed) return;
 
         try {
-            const response = await fetch('/api/colors/reset', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/colors/reset', {
                 method: 'POST',
-                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
             });
             if (!response.ok) throw new Error('Failed to reset');
             this.colorsData = await response.json();

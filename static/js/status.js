@@ -34,6 +34,7 @@ class StatusMonitor {
     constructor(settings = {}) {
         this.settings = settings;
         this.statusCache = new Map(); // Cache for status results
+        this._inFlightPings = new Set();
         this.checkInterval = null;
         this.isChecking = false;
         this.emptyStatusHintShown = false;
@@ -228,7 +229,8 @@ class StatusMonitor {
                 if (!url) {
                     return;
                 }
-                const bookmark = list.find((b) => String(b?.url || '').trim() === url);
+                const wantKey = statusCacheKey(url);
+                const bookmark = list.find((b) => statusCacheKey(b?.url) === wantKey);
                 if (bookmark && bookmark.checkStatus) {
                     this.checkBookmarkStatus(bookmark);
                 }
@@ -244,7 +246,8 @@ class StatusMonitor {
         );
         rows.forEach((row) => {
             const url = String(row.getAttribute('data-bookmark-url') || '').trim();
-            const bookmark = bmList.find((b) => String(b?.url || '').trim() === url);
+            const wantKey = statusCacheKey(url);
+            const bookmark = bmList.find((b) => statusCacheKey(b?.url) === wantKey);
             if (bookmark && bookmark.checkStatus) {
                 this.pingObserver.observe(row);
             }
@@ -340,8 +343,15 @@ class StatusMonitor {
             return null;
         }
 
+        const cacheKey = statusCacheKey(bookmark.url);
+        if (!cacheKey || this._inFlightPings.has(cacheKey)) {
+            return null;
+        }
+        this._inFlightPings.add(cacheKey);
+
         const bookmarkElement = this.getStatusTargetElement(bookmark);
         if (!bookmarkElement) {
+            this._inFlightPings.delete(cacheKey);
             return null;
         }
 
@@ -349,6 +359,7 @@ class StatusMonitor {
 
         let lastResult = { status: 'offline', ping: null, errorDetail: 'Unreachable' };
 
+        try {
         for (let attempt = 1; attempt <= this.offlineRetryCount; attempt += 1) {
             lastResult = await this.pingBookmarkOnce(bookmark);
             if (lastResult.status === 'online') {
@@ -380,6 +391,9 @@ class StatusMonitor {
         this.setBookmarkStatus(bookmarkElement, 'offline', '', bookmark.url);
         await this.persistBookmarkStatus(bookmark, 'offline', lastResult.errorDetail);
         return { status: 'offline', ping: null };
+        } finally {
+            this._inFlightPings.delete(cacheKey);
+        }
     }
 
     setBookmarkStatus(bookmarkElement, status, text = '', bookmarkUrl = '') {

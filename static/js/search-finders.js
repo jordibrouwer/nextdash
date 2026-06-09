@@ -174,7 +174,7 @@ class SearchFindersComponent {
         document.body.removeChild(link);
         finder.useCount = Number(finder.useCount || 0) + 1;
         finder.lastUsed = Date.now();
-        fetch('/api/finders', {
+        (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/finders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(this.finders)

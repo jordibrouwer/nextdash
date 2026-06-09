@@ -1162,7 +1162,7 @@ class ConfigSettings {
                     formData.append('favicon', file);
 
                     try {
-                        const response = await fetch('/api/favicon', {
+                        const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/favicon', {
                             method: 'POST',
                             body: formData
                         });
@@ -1761,11 +1761,8 @@ class ConfigSettings {
 
             setBusy(true);
             try {
-                const response = await fetch(url, {
+                const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(url, {
                     method: 'POST',
-                    headers: typeof nextDashWriteHeaders === 'function'
-                        ? nextDashWriteHeaders()
-                        : {},
                 });
                 const data = response.ok ? await response.json().catch(() => ({})) : null;
                 if (!response.ok || !data) {
@@ -2578,7 +2575,7 @@ class ConfigSettings {
      */
     async saveSettingsToServer(settings) {
         try {
-            const response = await fetch('/api/settings', {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)

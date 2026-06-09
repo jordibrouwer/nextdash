@@ -499,6 +499,20 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Reject duplicate URLs within the submitted page payload.
+	seenURLKeys := make(map[string]struct{}, len(bookmarks))
+	for _, bookmark := range bookmarks {
+		urlKey := canonicalBookmarkURLKey(bookmark.URL)
+		if urlKey == "" {
+			continue
+		}
+		if _, exists := seenURLKeys[urlKey]; exists {
+			http.Error(w, "Duplicate bookmark URL in submitted bookmarks", http.StatusConflict)
+			return
+		}
+		seenURLKeys[urlKey] = struct{}{}
+	}
+
 	// Validate shortcut uniqueness in payload first.
 	if duplicateShortcut := findDuplicateShortcutInList(bookmarks); duplicateShortcut != "" {
 		w.Header().Set("Content-Type", "application/json")

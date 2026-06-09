@@ -106,7 +106,7 @@ class SearchCommandFontSize {
                     currentSettings.fontSize = fontSize;
 
                     // Save updated settings to server
-                    await fetch('/api/settings', {
+                    await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(currentSettings)
