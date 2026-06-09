@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-phase2-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css">
     <link rel="stylesheet" href="/static/css/config/config-tags.css">
@@ -42,10 +42,10 @@
     <link rel="stylesheet" href="/static/css/colors.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
-    <link rel="stylesheet" href="/static/css/config-modern.css">
+    <link rel="stylesheet" href="/static/css/config-modern.css?v=bookmarks-phase2-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css">
-    <link rel="stylesheet" href="/static/css/config-glass.css">
+    <link rel="stylesheet" href="/static/css/config-glass.css?v=bookmarks-phase2-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
@@ -1160,7 +1160,12 @@
 
             <div class="tab-content" data-tab-content="bookmarks">
             <div>
-                <div class="structure-workspace">
+                <div class="structure-workspace-card is-collapsible is-collapsed" id="structure-workspace-card">
+                    <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
+                        <span data-i18n="config.structureWorkspaceTitle">Structure</span>
+                    </h3>
+                    <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Manage pages, categories, archived pages and favicon policy.</p>
+                    <div class="structure-workspace" id="structure-workspace-panel">
                     <section class="structure-column">
                         <div class="structure-column-header">
                             <h3 data-i18n="config.structurePages">Pages</h3>
@@ -1193,6 +1198,7 @@
                         </div>
                         <div id="structure-archived-pages-list" class="structure-list"></div>
                     </section>
+                    </div>
                 </div>
 
                 <!-- Bookmarks split-view: lijst + detail paneel -->
@@ -1221,8 +1227,22 @@
                                         <option value="last-opened-desc">Last opened</option>
                                     </select>
                                 </div>
-                                <button type="button" id="add-bookmark-btn" class="btn btn-secondary btn-small" title="Add bookmark" data-i18n="config.addBookmark">+ Add</button>
-                                <button type="button" id="config-quick-add-btn" class="btn btn-primary btn-small" data-i18n-tooltip="config.quickAddBookmarkTitle" data-i18n-aria="config.quickAddBookmarkAria" title="Quick add bookmark" aria-label="Quick add bookmark"><span class="config-quick-add-icon" aria-hidden="true">⚡</span><span class="config-quick-add-label" data-i18n="config.quickAddBookmarkLabel">Quick add</span></button>
+                                <details class="bookmark-add-menu" id="bookmark-add-menu">
+                                    <summary class="bookmark-add-menu-trigger btn btn-primary btn-small" data-i18n-aria="config.addBookmarkMenuAria" aria-label="Add bookmark">
+                                        <span data-i18n="config.addBookmarkMenuLabel">+ Bookmark</span>
+                                        <span class="bookmark-add-menu-chevron" aria-hidden="true">▾</span>
+                                    </summary>
+                                    <div class="bookmark-add-menu-panel" role="menu">
+                                        <button type="button" class="bookmark-add-menu-item" id="add-bookmark-btn" role="menuitem">
+                                            <span class="bookmark-add-menu-item-title" data-i18n="config.addBookmarkEditOption">Add &amp; edit</span>
+                                            <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkEditHint">Opens in the panel — save with Save above</span>
+                                        </button>
+                                        <button type="button" class="bookmark-add-menu-item" id="config-quick-add-btn" role="menuitem">
+                                            <span class="bookmark-add-menu-item-title"><span class="config-quick-add-icon" aria-hidden="true">⚡</span> <span data-i18n="config.quickAddBookmarkLabel">Quick add</span></span>
+                                            <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkQuickHint">Saves immediately</span>
+                                        </button>
+                                    </div>
+                                </details>
                             </div>
                             <div class="bookmarks-list-search-row">
                                 <div class="bookmarks-search-wrap">
@@ -1244,15 +1264,11 @@
                                 ✕
                             </button>
                             <div class="bulk-toolbar-divider"></div>
-                            <div class="bulk-toolbar-group">
-                                <select id="bulk-category-select" class="bulk-select"></select>
-                                <button type="button" id="bulk-apply-category-btn" class="btn btn-secondary btn-small">Move</button>
-                            </div>
-                            <div class="bulk-toolbar-divider"></div>
-                            <div class="bulk-toolbar-group">
-                                <select id="bulk-page-select" class="bulk-select" data-no-custom></select>
-                                <select id="bulk-move-category-select" class="bulk-select" disabled data-no-custom></select>
-                                <button type="button" id="bulk-move-page-btn" class="btn btn-secondary btn-small">Move</button>
+                            <div class="bulk-toolbar-group bulk-toolbar-move">
+                                <span class="bulk-toolbar-group-label" data-i18n="config.bulkMoveToLabel">Move to</span>
+                                <select id="bulk-page-select" class="bulk-select" data-no-custom title="Target page" aria-label="Target page"></select>
+                                <select id="bulk-move-category-select" class="bulk-select" data-no-custom title="Target category" aria-label="Target category"></select>
+                                <button type="button" id="bulk-move-apply-btn" class="btn btn-secondary btn-small" data-i18n="config.bulkMoveApply">Apply</button>
                             </div>
                             <div class="bulk-toolbar-divider"></div>
                             <div class="bulk-toolbar-group">
@@ -1278,6 +1294,7 @@
                                 <!-- Bookmarks will be loaded here -->
                             </div>
                         </div>
+                        <div class="bookmarks-list-spacer" aria-hidden="true"></div>
                     </div>
 
                     <!-- Rechter kolom: detail paneel -->
@@ -1323,6 +1340,23 @@
                                 <p id="detail-url-conflict-msg" class="bookmark-detail-conflict-msg" hidden data-i18n="config.urlConflictHint">This URL already exists on this page.</p>
                                 <p id="detail-url-protocol-hint" class="bookmark-detail-field-hint bookmark-detail-protocol-hint" hidden data-i18n="config.urlProtocolHint">No protocol detected — will be saved as https://</p>
                             </div>
+
+                            <div class="bookmark-detail-section">
+                                <label class="bookmark-detail-label" for="detail-category" data-i18n="config.category">Category</label>
+                                <select id="detail-category" class="bookmark-detail-select" data-no-custom>
+                                    <option value="" data-i18n="config.noCategory">No category</option>
+                                </select>
+                            </div>
+
+                            <details class="bookmark-detail-more" id="bookmark-detail-more">
+                                <summary class="bookmark-detail-more-summary">
+                                    <span class="bookmark-detail-more-summary-content">
+                                        <span class="bookmark-detail-label" data-i18n="config.bookmarkDetailMoreOptions">More options</span>
+                                        <span class="bookmark-detail-more-hint" data-i18n="config.bookmarkDetailMoreOptionsHint">Shortcut, icon, tags, previews and status</span>
+                                    </span>
+                                    <span class="bookmark-detail-more-chevron" aria-hidden="true"></span>
+                                </summary>
+                                <div class="bookmark-detail-more-body">
 
                             <div class="bookmark-detail-section bookmark-detail-preview-section">
                                 <div class="bookmark-detail-preview-header">
@@ -1375,13 +1409,6 @@
                             </div>
 
                             <div class="bookmark-detail-section">
-                                <label class="bookmark-detail-label" for="detail-category" data-i18n="config.category">Category</label>
-                                <select id="detail-category" class="bookmark-detail-select" data-no-custom>
-                                    <option value="" data-i18n="config.noCategory">No category</option>
-                                </select>
-                            </div>
-
-                            <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-note" data-i18n="bookmark.noteLabel">Note</label>
                                 <textarea id="detail-note" class="bookmark-detail-input bookmark-detail-note" data-i18n-placeholder="config.detailNotePlaceholder" placeholder="Optional note…" rows="3" autocomplete="off"></textarea>
                             </div>
@@ -1412,6 +1439,9 @@
                                     <span class="bookmark-detail-toggle-label" data-i18n="config.statusCheck">Status check</span>
                                 </label>
                             </div>
+
+                                </div>
+                            </details>
 
                             <!-- Hidden inputs voor icon-file legacy support -->
                             <input type="file" id="bookmark-icon-file-detail" accept="image/*,.ico,.svg,.webp" hidden>
@@ -2179,7 +2209,7 @@
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
-    <script src="/static/js/config/config-bookmarks.js"></script>
+    <script src="/static/js/config/config-bookmarks.js?v=bookmarks-phase2-1"></script>
     <script src="/static/js/config/config-collections.js"></script>
     <script src="/static/js/config/config-finders.js"></script>
     <script src="/static/js/config/config-backup.js"></script>
@@ -2189,7 +2219,7 @@
     <script src="/static/js/config/config-general-layers.js"></script>
     <script src="/static/js/guided-flow-guard.js"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
-    <script src="/static/js/config-bookmarks-tour.js"></script>
+    <script src="/static/js/config-bookmarks-tour.js?v=bookmarks-phase5-1"></script>
     <script src="/static/js/config-finders-tour.js"></script>
     <script src="/static/js/config-stats-tour.js"></script>
     <script src="/static/js/config-categories-tour.js"></script>
@@ -2211,7 +2241,7 @@
     <!-- Main config orchestrator -->
     <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/mobile-experience.js"></script>
-    <script src="/static/js/config.js"></script>
+    <script src="/static/js/config.js?v=bookmarks-phase2-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

@@ -344,6 +344,28 @@ class ConfigBookmarks {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    setDetailPanelMode(mode = 'empty') {
+        const panel = document.getElementById('bookmark-detail-panel');
+        const emptyEl = document.getElementById('bookmark-detail-empty');
+        const formEl = document.getElementById('bookmark-detail-form');
+        const editing = mode === 'editing';
+
+        panel?.classList.toggle('is-editing', editing);
+
+        if (editing) {
+            emptyEl?.setAttribute('hidden', '');
+            emptyEl?.style.removeProperty('display');
+            formEl?.removeAttribute('hidden');
+            formEl?.style.removeProperty('display');
+            return;
+        }
+
+        formEl?.setAttribute('hidden', '');
+        formEl?.style.removeProperty('display');
+        emptyEl?.removeAttribute('hidden');
+        emptyEl?.style.removeProperty('display');
+    }
+
     openDetailPanel(index, bookmarks, categories) {
         this.activeDetailIndex = index;
         const bookmark = bookmarks[index];
@@ -364,10 +386,7 @@ class ConfigBookmarks {
             activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        const emptyEl = document.getElementById('bookmark-detail-empty');
-        const formEl = document.getElementById('bookmark-detail-form');
-        if (emptyEl) emptyEl.style.display = 'none';
-        if (formEl) { formEl.removeAttribute('hidden'); formEl.style.display = ''; }
+        this.setDetailPanelMode('editing');
 
         // Rebind first (replaces panel with a clean clone), then populate into the clone.
         this._rebindDetailPanel(index, bookmark, bookmarks, categories);
@@ -1259,8 +1278,8 @@ class ConfigBookmarks {
         const countLabel = document.getElementById('bulk-selection-count');
         if (countLabel) countLabel.textContent = String(count);
 
-        ['bulk-delete-bookmarks-btn', 'bulk-apply-category-btn', 'bulk-toggle-pin-btn',
-         'bulk-toggle-status-btn', 'bulk-move-page-btn', 'bulk-refresh-favicons-btn'].forEach((id) => {
+        ['bulk-delete-bookmarks-btn', 'bulk-toggle-pin-btn',
+         'bulk-toggle-status-btn', 'bulk-move-apply-btn', 'bulk-refresh-favicons-btn'].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.disabled = count === 0;
         });
@@ -1268,8 +1287,8 @@ class ConfigBookmarks {
         const statusSelect = document.getElementById('bulk-status-action-select');
         if (statusSelect) statusSelect.disabled = count === 0;
 
-        const bulkCatSelect = document.getElementById('bulk-category-select');
-        if (bulkCatSelect) bulkCatSelect.disabled = count === 0;
+        const bulkMoveCategorySelect = document.getElementById('bulk-move-category-select');
+        if (bulkMoveCategorySelect) bulkMoveCategorySelect.disabled = count === 0;
 
         const bulkPageSelect = document.getElementById('bulk-page-select');
         if (bulkPageSelect) bulkPageSelect.disabled = count === 0;

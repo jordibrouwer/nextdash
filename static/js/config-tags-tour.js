@@ -518,10 +518,7 @@ class ConfigTagsTour {
 
             if (mgr.bookmarks) {
                 mgr.bookmarks.activeDetailIndex = null;
-                const formEl = document.getElementById('bookmark-detail-form');
-                const emptyEl = document.getElementById('bookmark-detail-empty');
-                if (formEl) formEl.setAttribute('hidden', '');
-                if (emptyEl) emptyEl.style.display = '';
+                mgr.bookmarks.setDetailPanelMode?.('empty');
             }
             mgr.refreshBookmarksList?.({ skipFlush: true });
             if (!demoWasPersisted && typeof mgr.clearDirty === 'function') {

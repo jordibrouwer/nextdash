@@ -94,11 +94,61 @@
     background: color-mix(in srgb, var(--background-primary) 25%, transparent);
 }
 
+.structure-workspace-card {
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    margin-bottom: 1rem;
+}
+
+.structure-workspace-card.is-collapsible .structure-workspace-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.75rem 0.85rem 0.55rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold);
+    transition: color 0.15s ease;
+}
+
+.structure-workspace-card.is-collapsible .structure-workspace-toggle:hover {
+    color: var(--text-primary);
+}
+
+.structure-workspace-card.is-collapsible .structure-workspace-toggle::before {
+    content: '−';
+    font-size: 1em;
+    font-weight: var(--font-weight-bold);
+    width: 1em;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--accent-primary);
+}
+
+.structure-workspace-card.is-collapsible.is-collapsed .structure-workspace-toggle::before {
+    content: '+';
+}
+
+.structure-workspace-card.is-collapsible.is-collapsed > *:not(.structure-workspace-toggle) {
+    display: none;
+}
+
+.structure-workspace-intro {
+    margin: -0.2rem 0.85rem 0.65rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.35;
+}
+
 .structure-workspace {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.85rem;
-    margin-bottom: 1rem;
+    margin: 0 0.75rem 0.75rem;
 }
 
 .structure-inline-label {

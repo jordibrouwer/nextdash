@@ -715,7 +715,7 @@ body[data-layout-version="glass"] .bookmarks-splitview {
     gap: 0;
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
-    overflow: hidden;
+    overflow: visible;
     box-shadow: var(--layout-shadow-sm);
     padding: 0;
 }
@@ -723,9 +723,16 @@ body[data-layout-version="glass"] .bookmarks-splitview {
 body[data-layout-version="glass"] .bookmarks-splitview-list,
 body[data-layout-version="glass"] .bookmarks-splitview-detail {
     border-radius: 0;
-    overflow: hidden;
     box-shadow: none;
     border: none;
+}
+
+body[data-layout-version="glass"] .bookmarks-splitview-list {
+    overflow: hidden;
+}
+
+body[data-layout-version="glass"] .bookmarks-splitview-detail {
+    overflow: visible;
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list {
@@ -823,4 +830,47 @@ body[data-layout-version="glass"] .config-bookmark-preview-popover {
     body[data-layout-version="glass"][data-mobile-layout="true"] .general-card {
         padding: 0.85rem;
     }
+}
+
+/* ─── Bookmarks split-view height (loads after base splitview CSS) ─────────── */
+
+body[data-layout-version="glass"] .bookmarks-splitview {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px) !important;
+    grid-template-rows: minmax(calc(100vh - 180px), max-content) !important;
+    align-items: stretch !important;
+}
+
+body[data-layout-version="glass"] .bookmarks-splitview-list {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+body[data-layout-version="glass"] .bookmarks-list-scroll-area {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+
+body[data-layout-version="glass"] .bookmarks-splitview-detail {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+body[data-layout-version="glass"] .bookmarks-splitview-detail.is-editing .bookmark-detail-empty,
+body[data-layout-version="glass"] .bookmarks-splitview-detail:has(#bookmark-detail-form:not([hidden])) .bookmark-detail-empty,
+body[data-layout-version="glass"] #bookmark-detail-empty[hidden] {
+    display: none !important;
+}
+
+body[data-layout-version="glass"] .bookmark-add-menu-panel {
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-md);
 }

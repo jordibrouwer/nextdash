@@ -23,10 +23,11 @@ html:has(#config-save-sticky) body.config-is-dirty {
     scroll-padding-bottom: var(--config-save-sticky-reserve);
 }
 
-/* Bookmarks split-view fills the viewport — shorten when the sticky bar can appear */
+/* Bookmarks split-view — shorten when the sticky save bar can appear */
 body.config-is-dirty .bookmarks-splitview {
-    grid-template-rows: calc(
-        100vh - 180px - var(--config-save-sticky-height) - env(safe-area-inset-bottom, 0px)
+    grid-template-rows: minmax(
+        calc(100vh - 180px - var(--config-save-sticky-height) - env(safe-area-inset-bottom, 0px)),
+        max-content
     );
 }
 
@@ -87,7 +88,6 @@ body.config-is-dirty .config-save-sticky.is-scroll-active {
 
 @media (max-width: 1024px) {
     body.config-is-dirty .bookmarks-splitview {
-        grid-template-rows: auto auto;
         margin-bottom: var(--config-save-sticky-reserve);
     }
 }

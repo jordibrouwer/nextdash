@@ -182,6 +182,7 @@ class ConfigManager {
             window.installSettingInfoButtons(this.settings);
         }
         this.setupGeneralCardCollapsible();
+        this.setupBookmarksTabCollapsibles();
         
         // Set language for global modal
         if (window.AppModal) {
@@ -2159,10 +2160,7 @@ class ConfigManager {
 
             if (this.bookmarks) {
                 this.bookmarks.activeDetailIndex = null;
-                const formEl = document.getElementById('bookmark-detail-form');
-                const emptyEl = document.getElementById('bookmark-detail-empty');
-                if (formEl) formEl.setAttribute('hidden', '');
-                if (emptyEl) emptyEl.style.display = '';
+                this.bookmarks.setDetailPanelMode?.('empty');
             }
 
             this.refreshBookmarksFilterOptions();
@@ -2896,13 +2894,28 @@ class ConfigManager {
         const addCategoryBtn = document.getElementById('add-category-btn');
         if (addCategoryBtn) addCategoryBtn.addEventListener('click', () => this.addCategory());
 
+        const addBookmarkMenu = document.getElementById('bookmark-add-menu');
+        const closeAddBookmarkMenu = () => {
+            if (addBookmarkMenu) addBookmarkMenu.open = false;
+        };
+
         const addBookmarkBtn = document.getElementById('add-bookmark-btn');
-        if (addBookmarkBtn) addBookmarkBtn.addEventListener('click', () => this.addBookmark());
+        if (addBookmarkBtn) {
+            addBookmarkBtn.addEventListener('click', () => {
+                closeAddBookmarkMenu();
+                this.addBookmark();
+            });
+        }
 
         if (window.ConfigQuickAdd) {
             this.quickAdd = new window.ConfigQuickAdd(this);
             const quickAddBtn = document.getElementById('config-quick-add-btn');
-            if (quickAddBtn) quickAddBtn.addEventListener('click', () => this.quickAdd.open());
+            if (quickAddBtn) {
+                quickAddBtn.addEventListener('click', () => {
+                    closeAddBookmarkMenu();
+                    this.quickAdd.open();
+                });
+            }
         }
 
         const structureAddPageBtn = document.getElementById('structure-add-page-btn');
@@ -2939,10 +2952,7 @@ class ConfigManager {
                     // New unsaved bookmark — remove without confirmation
                     this.bookmarksData.splice(activeIdx, 1);
                     this.bookmarks.activeDetailIndex = null;
-                    const formEl = document.getElementById('bookmark-detail-form');
-                    const emptyEl = document.getElementById('bookmark-detail-empty');
-                    if (formEl) formEl.setAttribute('hidden', '');
-                    if (emptyEl) emptyEl.style.display = '';
+                    this.bookmarks.setDetailPanelMode?.('empty');
                     this.refreshBookmarksList({ skipFlush: true });
                     this.markDirty();
                 } else {
@@ -2958,10 +2968,7 @@ class ConfigManager {
                 if (this.bookmarks.activeDetailIndex === null) return;
                 this.bookmarks.activeDetailIndex = null;
                 document.querySelectorAll('.bookmark-item.is-selected-detail').forEach(el => el.classList.remove('is-selected-detail'));
-                const formEl = document.getElementById('bookmark-detail-form');
-                const emptyEl = document.getElementById('bookmark-detail-empty');
-                if (formEl) formEl.setAttribute('hidden', '');
-                if (emptyEl) emptyEl.style.display = '';
+                this.bookmarks.setDetailPanelMode?.('empty');
             });
         }
 
@@ -2975,25 +2982,6 @@ class ConfigManager {
                     this.showUndoNotification('Bookmarks removed.', undoSnapshot);
                     this.markDirty();
                 }
-            });
-        }
-
-        const bulkApplyCategoryBtn = document.getElementById('bulk-apply-category-btn');
-        const bulkCategorySelect = document.getElementById('bulk-category-select');
-        if (bulkApplyCategoryBtn && bulkCategorySelect) {
-            bulkApplyCategoryBtn.addEventListener('click', () => {
-                const selectedCategory = bulkCategorySelect.value;
-                if (!selectedCategory) {
-                    this.ui.showNotification(this.language.t('config.selectCategoryFirst') || 'Select a category first.', 'info');
-                    return;
-                }
-                const updated = this.bookmarks.bulkUpdateCategory(this.bookmarksData, selectedCategory);
-                if (updated > 0) {
-                    const template = this.language.t('config.bulkCategoryUpdated') || 'Category updated for {count} bookmark(s).';
-                    this.ui.showNotification(template.replace('{count}', String(updated)), 'success');
-                }
-                this.refreshBookmarksList({ skipFlush: true });
-                this.markDirty();
             });
         }
 
@@ -3027,42 +3015,33 @@ class ConfigManager {
             });
         }
 
-        const bulkMovePageBtn = document.getElementById('bulk-move-page-btn');
+        const bulkMoveApplyBtn = document.getElementById('bulk-move-apply-btn');
         const bulkPageSelect = document.getElementById('bulk-page-select');
         const bulkMoveCategorySelect = document.getElementById('bulk-move-category-select');
         if (bulkPageSelect && bulkMoveCategorySelect) {
             bulkPageSelect.addEventListener('change', async () => {
-                const targetPageId = Number(bulkPageSelect.value || 0);
-                bulkMoveCategorySelect.innerHTML = '';
-                if (!targetPageId) {
-                    bulkMoveCategorySelect.disabled = true;
-                    return;
-                }
-                const currentPageId = Number(this.currentPageId) || 1;
-                const cats = targetPageId === currentPageId
-                    ? (this.bookmarksPageCategories || [])
-                    : await fetch(`/api/categories?page=${targetPageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
-                const emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No category';
-                bulkMoveCategorySelect.appendChild(emptyOpt);
-                cats.forEach(cat => {
-                    const opt = document.createElement('option');
-                    opt.value = cat.id;
-                    opt.textContent = cat.name;
-                    bulkMoveCategorySelect.appendChild(opt);
-                });
-                bulkMoveCategorySelect.disabled = false;
+                await this.populateBulkMoveCategorySelect(Number(bulkPageSelect.value || 0));
             });
         }
-        if (bulkMovePageBtn && bulkPageSelect) {
-            bulkMovePageBtn.addEventListener('click', async () => {
+        if (bulkMoveApplyBtn && bulkPageSelect) {
+            bulkMoveApplyBtn.addEventListener('click', async () => {
                 const targetPageId = Number(bulkPageSelect.value || 0);
                 if (!targetPageId) {
-                    this.ui.showNotification('Select a target page first.', 'info');
+                    this.ui.showNotification(this.language.t('config.selectPageFirst') || 'Select a target page first.', 'info');
                     return;
                 }
                 const targetCategory = bulkMoveCategorySelect ? bulkMoveCategorySelect.value : '';
+                const currentPageId = Number(this.currentPageId) || 1;
+                if (targetPageId === currentPageId) {
+                    const updated = this.bookmarks.bulkUpdateCategory(this.bookmarksData, targetCategory);
+                    if (updated > 0) {
+                        const template = this.language.t('config.bulkCategoryUpdated') || 'Category updated for {count} bookmark(s).';
+                        this.ui.showNotification(template.replace('{count}', String(updated)), 'success');
+                    }
+                    this.refreshBookmarksList({ skipFlush: true });
+                    this.markDirty();
+                    return;
+                }
                 await this.bulkMoveBookmarksToPage(targetPageId, targetCategory);
             });
         }
@@ -4005,6 +3984,60 @@ class ConfigManager {
         });
     }
 
+    setupBookmarksTabCollapsibles() {
+        const STRUCTURE_KEY = 'nextdash-config-structure-workspace-v1';
+        const MORE_KEY = 'nextdash-config-bookmark-detail-more-v1';
+
+        const structureCard = document.getElementById('structure-workspace-card');
+        const structureToggle = document.getElementById('structure-workspace-toggle');
+        if (structureCard && structureToggle) {
+            let structureExpanded = false;
+            try {
+                const raw = localStorage.getItem(STRUCTURE_KEY);
+                if (raw === '1' || raw === 'true') structureExpanded = true;
+            } catch { /* ignore */ }
+
+            const setStructureExpanded = (expanded, persist = true) => {
+                structureCard.classList.toggle('is-collapsed', !expanded);
+                structureToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                if (persist) {
+                    try {
+                        localStorage.setItem(STRUCTURE_KEY, expanded ? '1' : '0');
+                    } catch { /* ignore */ }
+                }
+            };
+
+            setStructureExpanded(structureExpanded, false);
+
+            const toggleStructure = () => setStructureExpanded(structureCard.classList.contains('is-collapsed'));
+            structureToggle.addEventListener('click', toggleStructure);
+            structureToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleStructure();
+                }
+            });
+
+            this.expandStructureWorkspace = () => setStructureExpanded(true);
+        }
+
+        const moreDetails = document.getElementById('bookmark-detail-more');
+        if (moreDetails) {
+            let moreOpen = false;
+            try {
+                const raw = localStorage.getItem(MORE_KEY);
+                if (raw === '1' || raw === 'true') moreOpen = true;
+            } catch { /* ignore */ }
+
+            moreDetails.open = moreOpen;
+            moreDetails.addEventListener('toggle', () => {
+                try {
+                    localStorage.setItem(MORE_KEY, moreDetails.open ? '1' : '0');
+                } catch { /* ignore */ }
+            });
+        }
+    }
+
     async refreshSmartCollectionCounters() {
         try {
             const res = await fetch('/api/bookmarks?all=true');
@@ -4629,10 +4662,7 @@ class ConfigManager {
         if (removed) {
             if (this.bookmarks.activeDetailIndex === index) {
                 this.bookmarks.activeDetailIndex = null;
-                const formEl = document.getElementById('bookmark-detail-form');
-                const emptyEl = document.getElementById('bookmark-detail-empty');
-                if (formEl) formEl.setAttribute('hidden', '');
-                if (emptyEl) emptyEl.style.display = '';
+                this.bookmarks.setDetailPanelMode?.('empty');
             }
             this.refreshBookmarksList();
             try {
@@ -4851,41 +4881,58 @@ class ConfigManager {
         this.currentBookmarksCategoryFilter = isStillValid ? previousValue : '__all__';
         filterSelect.value = this.currentBookmarksCategoryFilter;
 
-        const bulkCategorySelect = document.getElementById('bulk-category-select');
-        if (bulkCategorySelect) {
-            bulkCategorySelect.innerHTML = '';
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = this.language.t('config.moveCategoryShort') || 'move category';
-            bulkCategorySelect.appendChild(emptyOption);
-            options.slice(4).forEach((optionData) => {
-                const option = document.createElement('option');
-                option.value = optionData.value;
-                option.textContent = optionData.label;
-                bulkCategorySelect.appendChild(option);
-            });
-        }
-
         const bulkPageSelect = document.getElementById('bulk-page-select');
         if (bulkPageSelect) {
             const currentPageId = Number(this.currentPageId) || 1;
+            const previousPage = bulkPageSelect.value;
             bulkPageSelect.innerHTML = '';
-
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = this.language.t('config.movePageShort') || 'move page';
-            bulkPageSelect.appendChild(emptyOption);
+            const currentSuffix = this.language.t('config.currentPageShort') || 'current';
 
             this.getVisiblePages().forEach((page) => {
                 const option = document.createElement('option');
                 option.value = String(page.id);
-                option.textContent = Number(page.id) === currentPageId ? `${page.name} (current)` : page.name;
-                if (Number(page.id) === currentPageId) {
-                    option.disabled = true;
-                }
+                option.textContent = Number(page.id) === currentPageId
+                    ? `${page.name} (${currentSuffix})`
+                    : page.name;
                 bulkPageSelect.appendChild(option);
             });
+
+            const restoredPageId = this.getVisiblePages().some((page) => String(page.id) === previousPage)
+                ? Number(previousPage)
+                : currentPageId;
+            bulkPageSelect.value = String(restoredPageId);
+            void this.populateBulkMoveCategorySelect(restoredPageId);
         }
+    }
+
+    async populateBulkMoveCategorySelect(pageId) {
+        const bulkMoveCategorySelect = document.getElementById('bulk-move-category-select');
+        if (!bulkMoveCategorySelect) return;
+
+        const targetPageId = Number(pageId) || 0;
+        bulkMoveCategorySelect.innerHTML = '';
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = this.language.t('config.noCategory') || 'No category';
+        bulkMoveCategorySelect.appendChild(emptyOpt);
+
+        if (!targetPageId) {
+            bulkMoveCategorySelect.disabled = true;
+            return;
+        }
+
+        const currentPageId = Number(this.currentPageId) || 1;
+        const cats = targetPageId === currentPageId
+            ? (this.bookmarksPageCategories || [])
+            : await fetch(`/api/categories?page=${targetPageId}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+
+        (Array.isArray(cats) ? cats : []).forEach((cat) => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            bulkMoveCategorySelect.appendChild(opt);
+        });
+        bulkMoveCategorySelect.disabled = false;
     }
 
     refreshBookmarksList(options = {}) {
@@ -4921,6 +4968,12 @@ class ConfigManager {
                 }, 700);
             }
         }
+
+        const activeIdx = this.bookmarks?.activeDetailIndex;
+        if (typeof activeIdx === 'number' && this.bookmarksData[activeIdx]) {
+            this.bookmarks.setDetailPanelMode?.('editing');
+        }
+
         this.renderStructureWorkspace();
     }
 

@@ -45,6 +45,7 @@ class ConfigBookmarksTour {
         this._demoEditorHandled = false;
         this._demoModalOpenHandled = false;
         this._demoModalSaveHandled = false;
+        this._demoQuickAddHandled = false;
         this._demoDashboardNavHandled = false;
         this._demoCleanupHandled = false;
         this._demoCleanupInProgress = false;
@@ -644,7 +645,7 @@ class ConfigBookmarksTour {
         const title = this.t('configBookmarksTourDemoConsentTitle', 'Try adding demo bookmarks?');
         const message = this.t(
             'configBookmarksTourDemoConsentMessage',
-            'We add temporary bookmarks with random public websites in the editor, via Quick add (+), and on the dashboard — then remove them before the tour ends.'
+            'We add a couple of temporary bookmarks with random public websites, then remove them before you finish the tour.'
         );
 
         return this.withTourDialog(async () => {
@@ -795,10 +796,7 @@ class ConfigBookmarksTour {
         mgr.bookmarksData.splice(idx, 1);
         if (mgr.bookmarks.activeDetailIndex === idx) {
             mgr.bookmarks.activeDetailIndex = null;
-            const formEl = document.getElementById('bookmark-detail-form');
-            const emptyEl = document.getElementById('bookmark-detail-empty');
-            if (formEl) formEl.setAttribute('hidden', '');
-            if (emptyEl) emptyEl.style.display = '';
+            mgr.bookmarks.setDetailPanelMode?.('empty');
         }
         this._demoEditorIndex = null;
         mgr.refreshBookmarksList?.();
@@ -862,12 +860,13 @@ class ConfigBookmarksTour {
         } else {
             step.body = this.t(
                 'configBookmarksTourDemoConsentNoBody',
-                'Skipped the live demos. You can still use + Add and Quick add (⚡) yourself anytime.'
+                'Skipped the live demos. Open + Bookmark anytime for Add & edit or Quick add (⚡).'
             );
             this._demosSkipped = true;
             this._demoEditorHandled = true;
             this._demoModalOpenHandled = true;
             this._demoModalSaveHandled = true;
+            this._demoQuickAddHandled = true;
             this._demoDashboardNavHandled = true;
         }
     }
@@ -882,9 +881,14 @@ class ConfigBookmarksTour {
 
         const added = await this.addEditorDemoBookmark();
         if (added) {
+            const idx = this.findEditorDemoIndex();
+            const mgr = window.configManager;
+            if (idx >= 0 && mgr?.bookmarks?.openDetailPanel) {
+                mgr.bookmarks.openDetailPanel(idx, mgr.bookmarksData, mgr.bookmarksPageCategories);
+            }
             step.body = this.t(
                 'configBookmarksTourEditorDemoDoneBody',
-                'This row is a temporary tour bookmark in your editor — it is not on the dashboard until you save the page.'
+                'Edit name, URL, category, and more on the right. This demo row stays in the editor until you click Save — it is not on the dashboard yet.'
             );
             step.getTarget = () => this.findDetailEditorHighlightElement();
             step.selector = null;
@@ -893,88 +897,18 @@ class ConfigBookmarksTour {
         } else {
             step.body = this.t(
                 'configBookmarksTourEditorDemoFailBody',
-                'Click + Add to create a bookmark, then fill name and URL on the right.'
+                'Open + Bookmark → Add & edit to create a bookmark, then fill name and URL on the right.'
             );
-            step.selector = '#add-bookmark-btn';
+            step.selector = '#bookmark-add-menu';
             step.getTarget = null;
         }
     }
 
-    async handleEditorPanelStep(step) {
-        const bookmark = this.findEditorDemoBookmark();
-        if (bookmark) {
-            const idx = this.findEditorDemoIndex();
-            const mgr = window.configManager;
-            if (idx >= 0 && mgr?.bookmarks?.openDetailPanel) {
-                mgr.bookmarks.openDetailPanel(idx, mgr.bookmarksData, mgr.bookmarksPageCategories);
-            }
-            step.getTarget = () => this.findDetailEditorHighlightElement();
-            step.selector = null;
-            step.scrollBlock = 'start';
-        }
-    }
-
-    async handleModalOpenStep(step) {
-        if (this._demoModalOpenHandled) return;
-        this._demoModalOpenHandled = true;
+    async handleQuickAddDemoStep(step) {
+        if (this._demoQuickAddHandled) return;
+        this._demoQuickAddHandled = true;
         if (this._demosSkipped || !this._demoSites) return;
 
-        this.prepareInteractiveModalStep();
-        const opened = await this.openConfigQuickAddModal(this._demoSites.modal);
-        if (opened) {
-            step.body = this.t(
-                'configBookmarksTourModalOpenDoneBody',
-                'Quick add uses the same + modal as the dashboard. Name and URL are prefilled — Create saves immediately to this page.'
-            );
-            step.companionModalStep = true;
-            step.noHighlight = true;
-            step.getTarget = null;
-            step.selector = null;
-            step.cardPlacement = 'viewport-bottom';
-            step.unlockScroll = true;
-            await this.waitMs(40);
-            window.ConfigTourRuntime?.syncCompanionLayering?.(this.card);
-        } else {
-            step.body = this.t(
-                'configBookmarksTourModalOpenFailBody',
-                'Click Quick add (⚡) to open the + bookmark modal.'
-            );
-            step.selector = '#config-quick-add-btn';
-            step.getTarget = null;
-        }
-    }
-
-    async handleModalWizardStep(step) {
-        const delegate = window.configManager?.quickAdd?._delegate;
-        if (delegate?.usesMobileWizard?.()) {
-            delegate.setWizardStep?.(2);
-            await this.waitMs(80);
-            step.body = this.t(
-                'configBookmarksTourModalWizardBody',
-                'On small screens the + modal is a short wizard: URL first, then name and options.'
-            );
-            step.companionModalStep = true;
-            step.noHighlight = true;
-            step.cardPlacement = 'viewport-bottom';
-            step.unlockScroll = true;
-        } else {
-            step.body = this.t(
-                'configBookmarksTourModalDesktopBody',
-                'On desktop you see the full form at once. Use Next on the tour card below when you are ready.'
-            );
-            step.companionModalStep = true;
-            step.noHighlight = true;
-            step.cardPlacement = 'viewport-bottom';
-            step.unlockScroll = true;
-        }
-    }
-
-    async handleModalSaveStep(step) {
-        if (this._demoModalSaveHandled) return;
-        this._demoModalSaveHandled = true;
-        if (this._demosSkipped || !this._demoSites) return;
-
-        this.endInteractiveModalStep();
         const pageId = this.getResolvedPageId();
         const created = await this.createPersistedDemoBookmark(this._demoSites.modal, pageId);
         this.closeQuickAddModal();
@@ -992,15 +926,59 @@ class ConfigBookmarksTour {
 
         if (created) {
             step.body = this.t(
-                'configBookmarksTourModalSaveDoneBody',
-                'That bookmark was saved straight to disk (unlike editor-only changes). It appears in the list and on the dashboard.'
+                'configBookmarksTourQuickAddDoneBody',
+                'Quick add writes straight to disk — no Save click. The bookmark appears in the list and on the dashboard.'
             );
+            step.selector = '.bookmarks-list-scroll-area';
+            step.getTarget = null;
         } else {
             step.body = this.t(
-                'configBookmarksTourModalSaveFailBody',
-                'The demo could not be saved automatically — you can create one with Quick add (⚡) yourself.'
+                'configBookmarksTourQuickAddFailBody',
+                'Open + Bookmark → Quick add (⚡) to add a bookmark that saves immediately.'
             );
+            step.selector = '#config-quick-add-btn';
+            step.getTarget = null;
         }
+    }
+
+    handleBulkDemoStep(step) {
+        const mgr = window.configManager;
+        const bookmarks = mgr?.bookmarks;
+        if (!bookmarks) return;
+
+        bookmarks.clearSelection();
+        const indexes = [];
+        const demoIdx = this.findEditorDemoIndex();
+        if (demoIdx >= 0) indexes.push(demoIdx);
+
+        document.querySelectorAll('.bookmark-item').forEach((item) => {
+            if (indexes.length >= 3) return;
+            const index = parseInt(item.getAttribute('data-bookmark-index'), 10);
+            if (!Number.isNaN(index) && !indexes.includes(index)) {
+                indexes.push(index);
+            }
+        });
+
+        if (indexes.length === 0) {
+            step.body = this.t(
+                'configBookmarksTourBulkEmptyBody',
+                'Select bookmarks with the checkboxes in the list to show bulk actions.'
+            );
+            return;
+        }
+
+        indexes.forEach((index) => {
+            bookmarks.selectedBookmarkIndexes.add(index);
+            const checkbox = document.querySelector(`[data-bookmark-select="${index}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+        bookmarks.bulkToolbarDismissed = false;
+        bookmarks.updateBulkSelectionToolbar();
+
+        step.body = this.t(
+            'configBookmarksTourBulkDemoBody',
+            'We selected a few bookmarks so you can try Move to, pin, status, favicon refresh, or delete.'
+        );
     }
 
     async handleDashboardHandoffStep(step) {
@@ -1155,33 +1133,51 @@ class ConfigBookmarksTour {
         return Boolean(document.querySelector('.modal-new-bookmark'));
     }
 
+    isStepSkipped(step) {
+        if (!step) return true;
+        if (step.skipWhenDemosSkipped && this._demosSkipped) return true;
+        return false;
+    }
+
+    getVisibleStepCount() {
+        return this.steps.filter((step) => !this.isStepSkipped(step)).length;
+    }
+
+    getVisibleStepNumber(index) {
+        let number = 0;
+        for (let i = 0; i <= index && i < this.steps.length; i += 1) {
+            if (!this.isStepSkipped(this.steps[i])) number += 1;
+        }
+        return number;
+    }
+
+    resolveStepIndex(index, direction = 1) {
+        let next = index + direction;
+        while (next >= 0 && next < this.steps.length) {
+            if (!this.isStepSkipped(this.steps[next])) return next;
+            next += direction;
+        }
+        return index;
+    }
+
     buildConfigSteps() {
         return [
             {
                 title: this.t('configBookmarksTourWelcomeTitle', 'Welcome to the Bookmarks editor'),
                 body: this.t(
                     'configBookmarksTourWelcomeBody',
-                    'This tab is your bookmark control center: structure at the top, list on the left, editor on the right. We walk through add flows with temporary demo bookmarks.'
+                    'List on the left, detail editor on the right. Structure workspace above stays collapsed until you need pages or categories.'
                 ),
                 selector: '.bookmarks-splitview',
                 scrollBlock: 'start',
                 cardPlacement: 'viewport-bottom',
             },
             {
-                title: this.t('configBookmarksTourStructureTitle', 'Pages, categories & structure'),
+                id: 'list-controls',
+                title: this.t('configBookmarksTourListControlsTitle', 'Filter, sort & add'),
                 body: this.t(
-                    'configBookmarksTourStructureBody',
-                    'Use the structure columns to add or reorder pages and categories, or jump straight to a bookmark.'
-                ),
-                selector: '.structure-workspace',
-                scrollBlock: 'start',
-                cardPlacement: 'viewport-bottom',
-            },
-            {
-                title: this.t('configBookmarksTourPageFilterTitle', 'Page, category & sort'),
-                body: this.t(
-                    'configBookmarksTourPageFilterBody',
-                    'Choose which dashboard page you edit. Filter by category or change sort order in large collections.'
+                    'configBookmarksTourListControlsBody',
+                    'Pick page and category, change sort, search below, and use + Bookmark for Add & edit (needs Save) or Quick add (⚡, saves immediately).'
                 ),
                 selector: '.bookmarks-list-controls-row',
                 scrollBlock: 'center',
@@ -1192,121 +1188,56 @@ class ConfigBookmarksTour {
                 title: this.t('configBookmarksTourDemoConsentStepTitle', 'Hands-on demo'),
                 body: this.t(
                     'configBookmarksTourDemoConsentStepBody',
-                    'Optional: we add a few temporary bookmarks with random public websites, then remove them.'
+                    'Optional: we add temporary demo bookmarks, then remove them before you finish.'
                 ),
-                selector: '#add-bookmark-btn',
+                selector: '#bookmark-add-menu',
                 scrollBlock: 'center',
                 cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleDemoConsentStep(step),
             },
             {
                 id: 'editor-demo',
-                title: this.t('configBookmarksTourEditorDemoTitle', '+ Add in the editor'),
+                skipWhenDemosSkipped: true,
+                title: this.t('configBookmarksTourEditorDemoTitle', 'Add & edit'),
                 body: this.t(
                     'configBookmarksTourEditorDemoIntroBody',
-                    'The + Add button creates a bookmark in the list and opens the full editor — changes need Save.'
+                    'Open + Bookmark → Add & edit. It adds a row and opens the editor — click Save when you are done.'
                 ),
-                selector: '#add-bookmark-btn',
+                selector: '#bookmark-add-menu',
                 scrollBlock: 'center',
                 cardPlacement: 'viewport-bottom',
                 onBeforeShow: (step) => this.handleEditorDemoStep(step),
             },
             {
-                id: 'editor-panel',
-                title: this.t('configBookmarksTourEditorTitle', 'Detail editor'),
+                id: 'quick-add-demo',
+                skipWhenDemosSkipped: true,
+                title: this.t('configBookmarksTourQuickAddTitle', 'Quick add'),
                 body: this.t(
-                    'configBookmarksTourEditorBody',
-                    'Edit name, URL, shortcut, category, tags, pin, and status. Fetch favicon and link previews here.'
-                ),
-                getTarget: () => this.findDetailEditorHighlightElement(),
-                scrollBlock: 'start',
-                cardPlacement: 'viewport-bottom',
-                onBeforeShow: (step) => this.handleEditorPanelStep(step),
-            },
-            {
-                id: 'modal-open',
-                title: this.t('configBookmarksTourModalOpenTitle', 'Quick add (+ modal)'),
-                body: this.t(
-                    'configBookmarksTourModalOpenIntroBody',
-                    'Quick add (⚡) opens the same bookmark modal as the dashboard + button.'
+                    'configBookmarksTourQuickAddBody',
+                    'Quick add (⚡) saves immediately — unlike Add & edit, no Save click needed.'
                 ),
                 selector: '#config-quick-add-btn',
                 scrollBlock: 'center',
                 cardPlacement: 'viewport-bottom',
-                onBeforeShow: (step) => this.handleModalOpenStep(step),
+                onBeforeShow: (step) => this.handleQuickAddDemoStep(step),
             },
             {
-                id: 'modal-wizard',
-                title: this.t('configBookmarksTourModalWizardTitle', 'Bookmark modal'),
-                body: this.t(
-                    'configBookmarksTourModalWizardIntroBody',
-                    'The tour card stays at the bottom; the + modal stays in the center so you can use both.'
-                ),
-                companionModalStep: true,
-                noHighlight: true,
-                cardPlacement: 'viewport-bottom',
-                unlockScroll: true,
-                onBeforeShow: (step) => this.handleModalWizardStep(step),
-            },
-            {
-                id: 'modal-save',
-                title: this.t('configBookmarksTourModalSaveTitle', 'Save via modal'),
-                body: this.t(
-                    'configBookmarksTourModalSaveIntroBody',
-                    'Creating here writes the bookmark to disk immediately — no Config Save click needed.'
-                ),
-                selector: '#config-quick-add-btn',
-                scrollBlock: 'center',
-                cardPlacement: 'viewport-bottom',
-                onBeforeShow: (step) => this.handleModalSaveStep(step),
-            },
-            {
-                id: 'dashboard-handoff',
-                title: this.t('configBookmarksTourDashboardTitle', 'Same + on the dashboard'),
-                body: this.t(
-                    'configBookmarksTourDashboardIntroBody',
-                    'The dashboard toolbar + button opens this modal too. We visit the dashboard next.'
-                ),
-                selector: '.bookmarks-list-scroll-area',
-                scrollBlock: 'center',
-                cardPlacement: 'viewport-bottom',
-                onBeforeShow: (step) => this.handleDashboardHandoffStep(step),
-            },
-            {
-                title: this.t('configBookmarksTourSearchTitle', 'Search the list'),
-                body: this.t(
-                    'configBookmarksTourSearchBody',
-                    'Filter the bookmark list by name or URL. Clear the field to show everything again.'
-                ),
-                selector: '.bookmarks-list-search-row',
-                scrollBlock: 'center',
-                cardPlacement: 'viewport-bottom',
-            },
-            {
-                title: this.t('configBookmarksTourBulkTitle', 'Maintain many at once'),
+                id: 'bulk-demo',
+                title: this.t('configBookmarksTourBulkTitle', 'Bulk actions'),
                 body: this.t(
                     'configBookmarksTourBulkBody',
-                    'Select multiple bookmarks for bulk move, pin, status, favicon refresh, or delete.'
+                    'Select multiple bookmarks, then use Move to for page or category changes, plus pin, status, favicon refresh, or delete.'
                 ),
                 selector: '#bookmarks-bulk-toolbar',
                 scrollBlock: 'center',
                 cardPlacement: 'viewport-bottom',
-            },
-            {
-                title: this.t('configBookmarksTourFaviconTitle', 'Favicon policy'),
-                body: this.t(
-                    'configBookmarksTourFaviconBody',
-                    'Choose when bookmark icons refresh: on save or only manually.'
-                ),
-                selector: '#favicon-refresh-policy-select',
-                scrollBlock: 'center',
-                cardPlacement: 'viewport-bottom',
+                onBeforeShow: (step) => this.handleBulkDemoStep(step),
             },
             {
                 title: this.t('configBookmarksTourSaveTitle', 'Save your changes'),
                 body: this.t(
                     'configBookmarksTourSaveBody',
-                    'Editor changes are not written until you click Save. Unsaved edits are highlighted.'
+                    'Add & edit changes are not written until you click Save. Unsaved edits are highlighted.'
                 ),
                 selector: '#save-btn',
                 scrollBlock: 'center',
@@ -1314,10 +1245,11 @@ class ConfigBookmarksTour {
             },
             {
                 id: 'demo-cleanup',
+                skipWhenDemosSkipped: true,
                 title: this.t('configBookmarksTourCleanupTitle', 'Clean up demos'),
                 body: this.t(
                     'configBookmarksTourCleanupIntroBody',
-                    'Remove all temporary tour bookmarks from the editor and saved data.'
+                    'Remove temporary tour bookmarks from the editor and saved data.'
                 ),
                 selector: '.bookmarks-list-scroll-area',
                 scrollBlock: 'center',
@@ -1425,12 +1357,25 @@ class ConfigBookmarksTour {
         ];
     }
 
+    openAddBookmarkMenu() {
+        const menu = document.getElementById('bookmark-add-menu');
+        if (menu) menu.open = true;
+    }
+
     revealTarget(step) {
         let element = null;
         if (typeof step?.getTarget === 'function') {
             element = step.getTarget();
         } else if (step?.selector) {
             element = document.querySelector(step.selector);
+        }
+        const needsOpenMenu = element && (
+            element.id === 'add-bookmark-btn'
+            || element.id === 'config-quick-add-btn'
+            || element.closest?.('#bookmark-add-menu')
+        );
+        if (needsOpenMenu) {
+            this.openAddBookmarkMenu();
         }
         if (element?.hidden) {
             element.hidden = false;
@@ -1500,6 +1445,7 @@ class ConfigBookmarksTour {
             this._demoEditorHandled = false;
             this._demoModalOpenHandled = false;
             this._demoModalSaveHandled = false;
+            this._demoQuickAddHandled = false;
             this._demoDashboardNavHandled = false;
             this._demoCleanupHandled = false;
         }
@@ -1668,8 +1614,8 @@ class ConfigBookmarksTour {
             this._tourShown = true;
         }
         progress.textContent = this.t('configBookmarksTourProgress', 'Step {step} of {total}')
-            .replace('{step}', String(index + 1))
-            .replace('{total}', String(this.steps.length));
+            .replace('{step}', String(this.getVisibleStepNumber(index)))
+            .replace('{total}', String(this.getVisibleStepCount()));
 
         back.disabled = index === 0;
         next.textContent =
@@ -1755,28 +1701,6 @@ class ConfigBookmarksTour {
     }
 
     nextStep() {
-        const step = this.steps[this.currentStep];
-        if (step?.id === 'dashboard-handoff' && this.phase === 'config') {
-            if (this._demosSkipped) {
-                void this.showStep(this.currentStep + 1);
-                return;
-            }
-            try {
-                sessionStorage.setItem(
-                    ConfigBookmarksTour.HANDOFF_KEY,
-                    JSON.stringify({
-                        demoSites: this._demoSites,
-                        pageId: this.getResolvedPageId(),
-                    })
-                );
-            } catch {
-                // ignore
-            }
-            this.close();
-            window.location.href = '/';
-            return;
-        }
-
         if (this.phase === 'dashboard' && this.currentStep >= this.steps.length - 1) {
             ConfigBookmarksTour.setResume('cleanup');
             this.close();
@@ -1788,11 +1712,19 @@ class ConfigBookmarksTour {
             this.finish();
             return;
         }
-        void this.showStep(this.currentStep + 1);
+
+        const nextIndex = this.resolveStepIndex(this.currentStep, 1);
+        if (nextIndex === this.currentStep) {
+            this.finish();
+            return;
+        }
+        void this.showStep(nextIndex);
     }
 
     prevStep() {
-        void this.showStep(this.currentStep - 1);
+        const prevIndex = this.resolveStepIndex(this.currentStep, -1);
+        if (prevIndex === this.currentStep) return;
+        void this.showStep(prevIndex);
     }
 
     async markCompleted() {
