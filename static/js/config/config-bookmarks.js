@@ -717,8 +717,25 @@ class ConfigBookmarks {
         const url = window.BookmarkUrlUtils?.ensureHttpUrl(bookmark?.url) || String(bookmark?.url || '').trim();
         if (!url) return;
         bookmark.url = url;
+
+        const btn = document.getElementById('detail-meta-refresh-btn');
+        if (btn) btn.disabled = true;
         try {
-            const icon = await window.BookmarkPreviewService.fetchAndUploadFavicon(url);
+            // One fetch for both favicon and link preview data
+            let preview = null;
+            try {
+                preview = await window.BookmarkPreviewService.fetchLinkPreview(url);
+            } catch { /* network error — fall through to favicon fallback */ }
+
+            const iconUrl = String(preview?.icon || '').trim();
+            let icon = iconUrl
+                ? await window.BookmarkPreviewService.uploadIconFromUrl(iconUrl)
+                : '';
+            if (!icon) {
+                const fallback = window.BookmarkUrlUtils?.deriveFaviconFromBookmarkUrl(url) || '';
+                if (fallback) icon = await window.BookmarkPreviewService.uploadIconFromUrl(fallback);
+            }
+
             if (icon) {
                 bookmark.icon = icon;
                 bookmark.iconFetchState = 'ok';
@@ -727,8 +744,20 @@ class ConfigBookmarks {
             } else {
                 bookmark.iconFetchState = 'no_icon';
             }
-        } catch {
-            bookmark.iconFetchState = 'failed';
+
+            if (preview) {
+                bookmark.previewTitle = preview.title || '';
+                bookmark.previewDesc = preview.description || '';
+                bookmark.previewImage = preview.image || '';
+                const fp = this.ensureFormPreview();
+                if (fp) {
+                    fp.updateLinkPreviewCard(bookmark);
+                    fp.onPreviewChange(bookmark);
+                }
+                window.configManager?.markDirty?.();
+            }
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 
