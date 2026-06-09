@@ -739,10 +739,13 @@ class ConfigBackup {
         const btn = document.getElementById('settings-import-btn');
         this.setButtonLoading(btn, true, this.t('config.settingsImportInProgress') || 'Importing…');
         try {
+            // Strip one-time migration markers so server-side migrations run correctly
+            // on the destination instance regardless of the source's migration state.
+            const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, ...cleanSettings } = settings;
             const response = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings),
+                body: JSON.stringify(cleanSettings),
             });
             if (!response.ok) throw new Error(response.statusText);
             if (typeof configManager !== 'undefined' && configManager.ui) {
