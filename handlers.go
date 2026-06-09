@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,38 +22,12 @@ type Handlers struct {
 	store          Store
 	files          embed.FS
 	previewCacheMu sync.RWMutex
+	healthCacheMu  sync.RWMutex
 	prefetchMu     sync.Mutex
 }
 
 const previewCachePath = "data/preview-cache.json"
 const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
-
-func (h *Handlers) loadPreviewCache() PreviewCacheFile {
-	h.previewCacheMu.RLock()
-	defer h.previewCacheMu.RUnlock()
-	data, err := os.ReadFile(previewCachePath)
-	if err != nil {
-		return PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
-	}
-	var cache PreviewCacheFile
-	if err := json.Unmarshal(data, &cache); err != nil || cache.Cache == nil {
-		return PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
-	}
-	return cache
-}
-
-func (h *Handlers) savePreviewCache(cache PreviewCacheFile) {
-	h.previewCacheMu.Lock()
-	defer h.previewCacheMu.Unlock()
-	if err := os.MkdirAll("data", 0755); err != nil {
-		return
-	}
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return
-	}
-	os.WriteFile(previewCachePath, data, 0644)
-}
 
 func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
@@ -1290,6 +1263,9 @@ func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, 
 	}
 
 	if cache != nil {
+		if cache.Cache == nil {
+			cache.Cache = make(map[string]BookmarkPreview)
+		}
 		cache.Cache[cacheKey] = preview
 	}
 	return preview
@@ -1332,11 +1308,20 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cache := h.loadPreviewCache()
+	cacheKey := canonicalBookmarkURLKey(rawURL)
 	forceRefresh := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
-	preview := h.fetchBookmarkPreview(rawURL, &cache, !forceRefresh)
-	h.savePreviewCache(cache)
+	if !forceRefresh {
+		if cached, ok := h.getPreviewCacheEntry(cacheKey); ok {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cached)
+			return
+		}
+	}
+
+	localCache := &PreviewCacheFile{Cache: make(map[string]BookmarkPreview)}
+	preview := h.fetchBookmarkPreview(rawURL, localCache, false)
+	h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(preview)
@@ -1370,7 +1355,7 @@ func (h *Handlers) ClearAllBookmarkPreviews(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	h.savePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})
+	h.replacePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1413,7 +1398,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	h.savePreviewCache(cache)
+	h.mergePreviewCacheUpdates(cache.Cache)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -1631,31 +1616,16 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cache := HealthScanCacheFile{
-		GeneratedAt: time.Now().UnixMilli(),
-		Cache:       make(map[string]HealthScanCache),
-	}
-
-	// Load existing cache if it exists
-	cacheFile := "data/health-cache.json"
-	if data, err := os.ReadFile(cacheFile); err == nil {
-		json.Unmarshal(data, &cache)
-	}
-
-	// Update the cache with new result
 	key := canonicalBookmarkURLKey(req.URL)
-	cache.Cache[key] = HealthScanCache{
-		URL:         req.URL,
-		Status:      req.Status,
-		PingMs:      req.PingMs,
-		LastScanned: time.Now().UnixMilli(),
-		Error:       req.Error,
-	}
-
-	// Save updated cache
-	if data, err := json.MarshalIndent(cache, "", "  "); err == nil {
-		os.WriteFile(cacheFile, data, 0644)
-	}
+	h.mergeHealthCacheUpdates(map[string]HealthScanCache{
+		key: {
+			URL:         req.URL,
+			Status:      req.Status,
+			PingMs:      req.PingMs,
+			LastScanned: time.Now().UnixMilli(),
+			Error:       req.Error,
+		},
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1726,16 +1696,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 
 	pages := h.store.GetPages()
 	var results []map[string]interface{}
-	cache := HealthScanCacheFile{
-		GeneratedAt: time.Now().UnixMilli(),
-		Cache:       make(map[string]HealthScanCache),
-	}
-
-	// Load existing cache
-	cacheFile := "data/health-cache.json"
-	if data, err := os.ReadFile(cacheFile); err == nil {
-		json.Unmarshal(data, &cache)
-	}
+	healthUpdates := make(map[string]HealthScanCache)
 
 	// Retest all bookmarks with checkStatus=true
 	for _, page := range pages {
@@ -1762,9 +1723,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			// Update bookmark in store
 			bookmarks[idx] = bm
 
-			// Cache the result
 			key := canonicalBookmarkURLKey(bm.URL)
-			cache.Cache[key] = HealthScanCache{
+			healthUpdates[key] = HealthScanCache{
 				URL:         bm.URL,
 				Status:      result.Status,
 				PingMs:      result.PingMs,
@@ -1785,10 +1745,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		h.store.SaveBookmarksByPage(page.ID, bookmarks)
 	}
 
-	// Save updated cache
-	if data, err := json.MarshalIndent(cache, "", "  "); err == nil {
-		os.WriteFile(cacheFile, data, 0644)
-	}
+	h.mergeHealthCacheUpdates(healthUpdates)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
