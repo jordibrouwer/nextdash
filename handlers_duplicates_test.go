@@ -18,11 +18,24 @@ func TestCanonicalBookmarkURLKeyTrailingSlash(t *testing.T) {
 		{"https://example.com", "https://example.com/"},
 		{"https://Example.com/path", "https://example.com/path/"},
 		{"https://example.com/page#section", "https://example.com/page"},
+		{"https://example.com", "https://example.com:443"},
+		{"https://example.com:443/", "https://example.com"},
+		{"http://example.com", "http://example.com:80"},
+		{"http://example.com:80/path", "http://example.com/path"},
+		{"https://example.com:8443", "https://example.com:8443"},
 	}
 	for _, tc := range cases {
 		if gotA, gotB := canonicalBookmarkURLKey(tc.a), canonicalBookmarkURLKey(tc.b); gotA != gotB {
 			t.Fatalf("%q and %q => %q vs %q", tc.a, tc.b, gotA, gotB)
 		}
+	}
+}
+
+func TestCanonicalBookmarkURLKeyNonDefaultPortsStayDistinct(t *testing.T) {
+	t.Parallel()
+
+	if got := canonicalBookmarkURLKey("https://example.com"); got == canonicalBookmarkURLKey("https://example.com:8443") {
+		t.Fatalf("default and :8443 should differ, both canonicalized to %q", got)
 	}
 }
 

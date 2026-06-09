@@ -11,13 +11,25 @@
         return `https://${trimmed}`;
     }
 
+    function canonicalURLHost(u) {
+        let host = u.hostname.toLowerCase();
+        const port = u.port;
+        if (!port) {
+            return host;
+        }
+        if (host.includes(':')) {
+            return `[${host}]:${port}`;
+        }
+        return `${host}:${port}`;
+    }
+
     /** Same rules as server canonicalBookmarkURLKey (handlers.go). */
     function canonicalBookmarkURLKey(raw) {
         const s = String(raw || '').trim();
         try {
             const u = new URL(ensureHttpUrl(s));
             const scheme = u.protocol.replace(/:$/, '').toLowerCase();
-            const host = u.host.toLowerCase();
+            const host = canonicalURLHost(u);
             let path = u.pathname;
             if (path === '/') {
                 path = '';

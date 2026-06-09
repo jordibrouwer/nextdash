@@ -41,7 +41,30 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
-// canonicalBookmarkURLKey normalizes URLs so obvious duplicates (trailing slash, hash, case) match.
+func isDefaultURLPort(scheme, port string) bool {
+	switch scheme {
+	case "https":
+		return port == "443"
+	case "http":
+		return port == "80"
+	default:
+		return false
+	}
+}
+
+func canonicalURLHost(u *url.URL, scheme string) string {
+	hostname := strings.ToLower(u.Hostname())
+	port := u.Port()
+	if port == "" || isDefaultURLPort(scheme, port) {
+		return hostname
+	}
+	if strings.Contains(hostname, ":") {
+		return "[" + hostname + "]:" + port
+	}
+	return hostname + ":" + port
+}
+
+// canonicalBookmarkURLKey normalizes URLs so obvious duplicates (trailing slash, hash, case, default ports) match.
 func canonicalBookmarkURLKey(raw string) string {
 	s := strings.TrimSpace(raw)
 	u, err := url.Parse(s)
@@ -55,7 +78,7 @@ func canonicalBookmarkURLKey(raw string) string {
 	u.Fragment = ""
 	u.RawFragment = ""
 	scheme := strings.ToLower(u.Scheme)
-	host := strings.ToLower(u.Host)
+	host := canonicalURLHost(u, scheme)
 	path := u.EscapedPath()
 	if path == "/" {
 		path = ""
