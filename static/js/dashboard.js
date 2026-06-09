@@ -221,6 +221,7 @@ class Dashboard {
         this.lastAppliedSettingsSyncAt = 0;
         this._configRefreshReady = false;
         this._configReturnRefreshInFlight = false;
+        this._pageBookmarksLoadId = 0;
         this.language = new ConfigLanguage();
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
         this.weatherRefreshTimer = null;
@@ -795,32 +796,56 @@ class Dashboard {
         }
     }
 
+    isCurrentPageBookmarksLoad(loadId) {
+        return loadId === this._pageBookmarksLoadId;
+    }
+
     async loadPageBookmarks(pageId) {
+        const targetPageId = Number(pageId);
+        const loadId = ++this._pageBookmarksLoadId;
+
         try {
             await this.flushPendingDashboardSaves();
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return;
+            }
+
             const [bookmarksRes, categoriesRes] = await Promise.all([
-                fetch(`/api/bookmarks?page=${pageId}`),
-                fetch(`/api/categories?page=${pageId}`)
+                fetch(`/api/bookmarks?page=${targetPageId}`),
+                fetch(`/api/categories?page=${targetPageId}`)
             ]);
-            
-            this.bookmarks = await bookmarksRes.json();
-            this.categories = (await categoriesRes.json()).map(cat => ({ ...cat, name: this.language.t(cat.name) || cat.name }));
-            this.currentPageId = pageId;
+
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return;
+            }
+            if (!bookmarksRes.ok || !categoriesRes.ok) {
+                throw new Error('Failed to load page bookmarks or categories');
+            }
+
+            const bookmarks = await bookmarksRes.json();
+            const categories = await categoriesRes.json();
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return;
+            }
+
+            this.bookmarks = bookmarks;
+            this.categories = categories.map(cat => ({ ...cat, name: this.language.t(cat.name) || cat.name }));
+            this.currentPageId = targetPageId;
             this.initializeButtonTipsRotation();
-            
+
             // Update URL hash
-            const pageIndex = this.pages.findIndex(p => p.id === pageId);
+            const pageIndex = this.pages.findIndex(p => p.id === targetPageId);
             if (pageIndex !== -1) {
                 window.location.hash = `#${pageIndex + 1}`;
             }
-            
+
             // Update page title
-            const page = this.pages.find(p => p.id === pageId);
+            const page = this.pages.find(p => p.id === targetPageId);
             if (page) {
                 this.updatePageTitle(page.name);
             }
             this.updateMiniStatusLine();
-            
+
             // Update document title with page name if enabled
             this.updateDocumentTitle();
 
@@ -842,6 +867,9 @@ class Dashboard {
                 this._fillRecentBookmarksModal();
             }
         } catch (error) {
+            if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                return;
+            }
             this.showErrorNotification('Failed to load bookmarks for this page.', {
                 retry: () => this.loadPageBookmarks(this.currentPageId),
             });
