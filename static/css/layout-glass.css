@@ -664,25 +664,9 @@ body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category {
     gap: 0.65rem;
 }
 
-body[data-layout-version="glass"] .dashboard-grid.layout-masonry .category {
-    background: var(--layout-surface);
-    border: 1px solid var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-}
-
 body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    border: 1px solid var(--layout-surface-border);
-    background: var(--layout-surface);
     padding-inline: 0.55rem;
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .dashboard-grid.layout-masonry .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    border-color: color-mix(in srgb, var(--accent-primary) 36%, var(--border-primary));
-    box-shadow: var(--layout-shadow-sm);
 }
 
 /* ─── List preset ──────────────────────────────────────────────────────────── */
@@ -732,6 +716,18 @@ body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
     box-shadow: var(--layout-shadow-sm);
+}
+
+/* ─── Default / compact / masonry / list / terminal: no category panels ───── */
+
+body[data-layout-version="glass"] .dashboard-grid:not(.layout-launcher):not(.layout-cards):not(.layout-widgets) .category {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 0.5rem !important;
+    border-radius: 0 !important;
 }
 
 /* ─── Launcher preset ────────────────────────────────────────────────────── */
