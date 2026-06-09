@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 	"sync"
 	"time"
 )
+
+var ErrBookmarkNotFound = errors.New("bookmark not found")
 
 type Bookmark struct {
 	Name         string   `json:"name"`
@@ -738,6 +741,9 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return ErrBookmarkNotFound
+		}
 		return err
 	}
 
@@ -746,14 +752,11 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 		return err
 	}
 
-	// Find and remove the bookmark
-	originalLength := len(pageWithBookmarks.Bookmarks)
-	pageWithBookmarks.Bookmarks = fs.removeBookmarkFromSlice(pageWithBookmarks.Bookmarks, bookmarkToDelete)
-
-	// If no bookmark was removed, return error
-	if len(pageWithBookmarks.Bookmarks) == originalLength {
-		return fmt.Errorf("bookmark not found")
+	updated, removed := fs.removeBookmarkFromSlice(pageWithBookmarks.Bookmarks, bookmarkToDelete)
+	if !removed {
+		return ErrBookmarkNotFound
 	}
+	pageWithBookmarks.Bookmarks = updated
 
 	// Save the updated data
 	newData, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
@@ -763,19 +766,29 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	return os.WriteFile(filePath, newData, 0644)
 }
 
-func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) []Bookmark {
-	result := make([]Bookmark, 0)
-	removed := false
+func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) ([]Bookmark, bool) {
 	deleteKey := canonicalBookmarkURLKey(toDelete.URL)
+	deleteName := strings.TrimSpace(toDelete.Name)
+	result := make([]Bookmark, 0, len(bookmarks))
+	removed := false
 	for _, b := range bookmarks {
-		if !removed && b.Name == toDelete.Name && canonicalBookmarkURLKey(b.URL) == deleteKey {
-			removed = true
-			// Skip this bookmark (remove only the first match)
-		} else {
+		if removed {
 			result = append(result, b)
+			continue
 		}
+		matched := false
+		if deleteKey != "" {
+			matched = canonicalBookmarkURLKey(b.URL) == deleteKey
+		} else if deleteName != "" {
+			matched = strings.TrimSpace(b.Name) == deleteName
+		}
+		if matched {
+			removed = true
+			continue
+		}
+		result = append(result, b)
 	}
-	return result
+	return result, removed
 }
 
 func (fs *FileStore) GetAllBookmarks() []Bookmark {

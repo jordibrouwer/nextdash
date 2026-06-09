@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -818,7 +819,13 @@ func (h *Handlers) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.DeleteBookmarkFromPage(request.Page, request.Bookmark); err != nil {
-		http.Error(w, "Error deleting bookmark", http.StatusInternalServerError)
+		if errors.Is(err, ErrBookmarkNotFound) {
+			http.Error(w, "Bookmark not found", http.StatusNotFound)
+			return
+		}
+		if !respondStorePersistError(w, err) {
+			return
+		}
 		return
 	}
 
