@@ -157,6 +157,8 @@
                         { badge: 'new', text: '<strong><code>:health</code> command</strong> — open <code>/health</code> from command mode with filters (<code>broken</code>, <code>duplicate</code>, <code>stale</code>, …) or <code>refresh</code> to re-scan; cheat sheet and help updated.' },
                         { badge: 'new', text: '<strong>Health URL deep links</strong> — <code>?filter=</code>, <code>?page=</code>, <code>?sort=</code>, <code>?q=</code>, <code>?refresh=1</code> apply on load; <code>refresh=1</code> triggers retest-all.' },
                         { badge: 'new', text: '<strong>Health badge routing</strong> — dashboard and config health links go to <code>/health?filter=broken</code> when broken issues exist.' },
+                        { badge: 'fix', text: '<strong>Essentials Health → link</strong> — <strong>Config → General → Essentials</strong> status <em>Health →</em> uses the same broken-filter routing as the header badge.' },
+                        { badge: 'fix', text: '<strong>Config health link selector</strong> — header health anchor matches <code>href^="/health"</code> so badge href updates survive after the first refresh.' },
                         { badge: 'fix', text: '<strong><code>:stale</code> overflow</strong> — when the stale palette exceeds its cap, the overflow row opens <code>/health?filter=stale</code>.' },
                     ]
                 },
@@ -165,6 +167,7 @@
                     items: [
                         { badge: 'new', text: '<strong>Try modern &amp; Try glass</strong> — classic-layout users see a layout-versions spotlight with <em>Try modern</em> and <em>Try glass</em>; onboarding and feature-tour copy cover all three versions.' },
                         { badge: 'fix', text: '<strong>Unified spotlight flow</strong> — one discoverability path for classic → modern or glass; reset from <strong>Advanced → System &amp; tools</strong> replays the spotlight.' },
+                        { badge: 'new', text: '<strong>Discoverability queue bar</strong> — layout-versions and paste spotlights show <em>Tip X of Y</em> and <em>Later this session</em>; defer skips remaining post-onboarding prompts this session (EN/NL/DE/FR).' },
                     ]
                 },
                 {
@@ -192,6 +195,8 @@
                         { badge: 'new', text: '<strong>Glass layout</strong> — third layout version with translucent iOS-style blur on dashboard, config, and health. Choose in <strong>Config → General → Layout</strong>, onboarding, or <code>:layoutversion glass</code>; <code>:layoutversion toggle</code> cycles classic → modern → glass. Modern unchanged.' },
                         { badge: 'fix', text: '<strong>Layout settings save</strong> — layout version, preset, and density persist from config (included on Save; layout changes autosave to the server).' },
                         { badge: 'fix', text: '<strong>Docker UI refresh</strong> — container serves mounted <code>static/</code>, <code>locales/</code>, and <code>templates/</code> from disk when present so UI updates apply without rebuilding the image.' },
+                        { badge: 'fix', text: '<strong>Docker build context</strong> — expanded <code>.dockerignore</code> excludes <code>node_modules/</code>, local <code>data/</code>, dev scripts, and docs so image builds stay lean.' },
+                        { badge: 'fix', text: '<strong>Repo hygiene</strong> — <code>.gitignore</code> merge conflict resolved; <code>node_modules/</code> removed from git; Playwright stays a <code>devDependency</code> for local debug scripts only; obsolete <code>merge-config-info-i18n.py</code> migration script removed.' },
                     ]
                 },
             ]),

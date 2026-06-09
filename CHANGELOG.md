@@ -159,12 +159,15 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 
 - **new** **Layout-versions spotlight** — `LayoutVersionNudge` (alias `LayoutModernNudge`) offers classic-layout users **Try modern** and **Try glass**; secondary try button in the feature spotlight; copy updated across onboarding, feature tour, and discoverability queue (EN/NL/DE/FR).
 - **fix** **Unified discoverability path** — one spotlight flow for classic → modern or glass; reset from **Advanced → System & tools** replays modern and glass offers.
+- **new** **Discoverability queue bar** — layout-versions and paste spotlights show **Tip X of Y** and **Later this session** (`DiscoverabilityQueueBar`); defer skips remaining post-onboarding prompts for the browser session (EN/NL/DE/FR).
 
 #### Health discoverability
 
 - **new** **`:health` command** — open `/health` from command mode with filters (`broken`, `duplicate`, `stale`, `shortcut-conflict`, …) or `refresh` to re-scan; cheat sheet and EN/NL/DE/FR help updated (`caHealth`).
 - **new** **Health URL deep links** — `/health?filter=`, `?page=`, `?sort=`, `?q=`, `?refresh=1` apply filter/sort/search/page on load; `refresh=1` triggers retest-all automatically.
 - **new** **Health badge routing** — dashboard and config health links go to `/health?filter=broken` when broken issues exist (otherwise `/health`).
+- **fix** **Essentials Health → link** — **Config → General → Essentials** status overview **Health →** uses the same broken-filter routing as the header badge.
+- **fix** **Config health link selector** — header health anchor matches `href^="/health"` so badge href updates survive after the first refresh.
 - **fix** **`:stale` overflow** — when the stale palette exceeds its cap, the overflow row opens `/health?filter=stale`.
 
 #### Config bookmarks workspace
@@ -184,6 +187,13 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 - **fix** **Preset fine-tuning** — **terminal** (transparent default, glass inset on hover/focus), **masonry** (subtle border, glass on hover), **launcher** (lighter surface, chip shadow, gentler hover lift).
 - **fix** **Glass UI details** — inline-edit form panel, tag-autocomplete dropdown, and loading skeleton shimmer/cards on glass layout; config bookmarks workspace glass parity.
 - **fix** **Glass cache bust** — template query strings bumped to `glass-phase6-1` / `bookmarks-phase2-1` so Docker-mounted static files refresh reliably.
+- **fix** **Docker build context** — `.dockerignore` expanded to exclude `node_modules/`, local `data/`, dev scripts, docs, and binaries so image builds stay lean and reliable.
+
+#### Repo hygiene
+
+- **fix** **`.gitignore` merge conflict** — resolved conflict markers; consolidated Go and project ignore rules; `node_modules/` ignored.
+- **fix** **`node_modules` untracked** — Playwright removed from git; `package.json` keeps Playwright as `devDependencies` only (`npm install` for local debug scripts).
+- **chore** **Obsolete i18n script removed** — deleted `scripts/merge-config-info-i18n.py` (one-off migration; source file no longer exists).
 
 ---
 
