@@ -319,6 +319,8 @@
         "layoutModernNudgeTry": "Modern testen",
         "layoutModernNudgeTryGlass": "Glass testen",
         "layoutModernNudgeClose": "Klassisch behalten",
+        "discoverabilityQueueStep": "Tipp {current} von {total}",
+        "discoverabilityQueueDefer": "Später in dieser Sitzung",
         "undo": "Rückgängig",
         "tipBackup": "Tipp: Backup erstellen über <a class=\"button-hint-link\" href=\"/config#backups\">Konfiguration → Backups</a>.",
         "tipUndoDelete": "Tipp: Lösche ein Lesezeichen und klicke <code>Rückgängig</code> im Toast, um es innerhalb von 5s rückgängig zu machen",
