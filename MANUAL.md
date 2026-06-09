@@ -692,7 +692,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 | Keys | Action |
 |------|--------|
-| `1`–`8` | Switch tabs |
+| `1`–`9` | Jump to the Nth visible tab |
 | `←` / `→` | Move between visible tabs (when focus is not in an input) |
 | `S` | Save |
 | `Alt+↑` / `Alt+↓` | Reorder bookmark in list |

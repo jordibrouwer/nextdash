@@ -131,11 +131,12 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config page**
-- `1–8` — jump between config tabs
+- `1–9` — jump to the Nth visible config tab
 - `←`/`→` — move between visible config tabs (when focus is not in an input)
 - `S` — save changes
 - `Alt + ↑/↓` — reorder the selected bookmark
 - `Ctrl/Cmd + K` — open the config command palette
+- `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
 **Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. Several tours include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools** (open the matching tab first). Tours, rotating tips, and promo banners do not run on the mobile layout.
 

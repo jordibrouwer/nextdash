@@ -241,22 +241,50 @@ class ConfigUI {
 
         this.switchToTab = switchToTab;
 
+        const configTabKeyAllowed = () => {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return false;
+            if (document.activeElement?.isContentEditable) return false;
+            if (document.querySelector('#app-modal .modal.show')) return false;
+            return true;
+        };
+
+        const getVisibleTabButtons = () => Array.from(document.querySelectorAll('.tab-button:not([hidden])'))
+            .filter((btn) => {
+                const tab = btn.getAttribute('data-tab');
+                return tab && getAllowedTabs().includes(tab);
+            });
+
         // 1–9: jump to the Nth visible tab (no modifiers, no form focus, no modal open)
         document.addEventListener('keydown', (e) => {
             if (e.key < '1' || e.key > '9') return;
             if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-            const tag = document.activeElement?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-            if (document.activeElement?.isContentEditable) return;
-            if (document.querySelector('#app-modal .modal.show')) return;
-            const visible = Array.from(document.querySelectorAll('.tab-button:not([hidden])'));
+            if (!configTabKeyAllowed()) return;
+            const visible = getVisibleTabButtons();
             const btn = visible[parseInt(e.key, 10) - 1];
             if (!btn) return;
-            const target = btn.getAttribute('data-tab');
-            if (target && getAllowedTabs().includes(target)) {
-                e.preventDefault();
-                btn.click();
+            e.preventDefault();
+            btn.click();
+        });
+
+        // ←/→: previous / next visible tab (same guards as 1–9)
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+            if (!configTabKeyAllowed()) return;
+            const visible = getVisibleTabButtons();
+            if (visible.length < 2) return;
+            const currentIdx = visible.findIndex((btn) => btn.getAttribute('data-tab') === this._currentTab);
+            let nextIdx;
+            if (currentIdx < 0) {
+                nextIdx = e.key === 'ArrowRight' ? 0 : visible.length - 1;
+            } else if (e.key === 'ArrowRight') {
+                nextIdx = (currentIdx + 1) % visible.length;
+            } else {
+                nextIdx = (currentIdx - 1 + visible.length) % visible.length;
             }
+            e.preventDefault();
+            visible[nextIdx].click();
         });
 
         // Fade mask: toggle is-scrolled-end on wrapper when tabs are fully scrolled
