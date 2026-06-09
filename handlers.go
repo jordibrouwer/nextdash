@@ -1045,12 +1045,44 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(settings)
 }
 
+func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {
+	storedJSON, err := json.Marshal(stored)
+	if err != nil {
+		return Settings{}, err
+	}
+	var base map[string]json.RawMessage
+	if err := json.Unmarshal(storedJSON, &base); err != nil {
+		return Settings{}, err
+	}
+	var incoming map[string]json.RawMessage
+	if err := json.Unmarshal(body, &incoming); err != nil {
+		return Settings{}, err
+	}
+	for key, value := range incoming {
+		base[key] = value
+	}
+	mergedJSON, err := json.Marshal(base)
+	if err != nil {
+		return Settings{}, err
+	}
+	var settings Settings
+	if err := json.Unmarshal(mergedJSON, &settings); err != nil {
+		return Settings{}, err
+	}
+	return settings, nil
+}
+
 func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	var settings Settings
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	settings, err := mergeSettingsFromBody(h.store.GetSettings(), body)
+	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}

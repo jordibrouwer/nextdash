@@ -79,8 +79,9 @@
     line-height: 1.55;
 }
 
-/* Keyboard shortcut pill inside text */
-.feature-spotlight-text .fs-key {
+/* Keyboard shortcut / command pill inside text */
+.feature-spotlight-text .fs-key,
+.feature-spotlight-text code {
     display: inline-block;
     padding: 0.05em 0.35em;
     background: var(--background-primary);
@@ -96,8 +97,21 @@
 .feature-spotlight-actions {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     padding: 0 1rem 0.875rem;
+}
+
+.feature-spotlight-primary-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.feature-spotlight.has-secondary-try {
+    width: 340px;
 }
 
 .feature-spotlight-try {
@@ -117,6 +131,26 @@
 
 .feature-spotlight-try:hover {
     opacity: 0.85;
+}
+
+.feature-spotlight-try-secondary {
+    flex-shrink: 0;
+    padding: 0.28rem 0.75rem;
+    font-size: var(--font-size-small, 0.72rem);
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.feature-spotlight-try-secondary:hover {
+    background: var(--background-secondary);
+    border-color: var(--text-tertiary);
 }
 
 .feature-spotlight-close {

@@ -23,9 +23,12 @@
             titleFallback = 'Paste a URL, save a bookmark instantly',
             bodyFallback = 'Copy any link and press Ctrl+V anywhere on the dashboard — the bookmark form opens with the URL pre-filled and the favicon fetched automatically.',
             tryFallback = 'Try it',
+            secondaryTryKey = null,
+            secondaryTryFallback = '',
             closeFallback = 'Close',
             iconSvg = PASTE_ICON_SVG,
             onTry = null,
+            onSecondaryTry = null,
             onDismiss = null,
             queueMeta = null,
             onQueueDefer = null,
@@ -40,9 +43,12 @@
             this.titleFallback = titleFallback;
             this.bodyFallback = bodyFallback;
             this.tryFallback = tryFallback;
+            this.secondaryTryKey = secondaryTryKey;
+            this.secondaryTryFallback = secondaryTryFallback;
             this.closeFallback = closeFallback;
             this.iconSvg = iconSvg;
             this.onTry = onTry;
+            this.onSecondaryTry = onSecondaryTry;
             this.onDismiss = onDismiss;
             this.queueMeta = queueMeta;
             this.onQueueDefer = onQueueDefer;
@@ -64,9 +70,14 @@
             const body = this._t(this.bodyKey, this.bodyFallback);
             const tryLbl = this._t(this.tryKey, this.tryFallback);
             const closeLbl = this._t(this.closeKey, this.closeFallback);
+            const hasSecondaryTry = typeof this.onSecondaryTry === 'function';
+            const secondaryTryLbl = hasSecondaryTry
+                ? this._t(this.secondaryTryKey, this.secondaryTryFallback)
+                : '';
 
             const el = document.createElement('div');
             el.className = 'feature-spotlight';
+            if (hasSecondaryTry) el.classList.add('has-secondary-try');
             el.setAttribute('role', 'complementary');
             el.setAttribute('aria-label', title);
             el.innerHTML = `
@@ -79,7 +90,9 @@
                     </div>
                 </div>
                 <div class="feature-spotlight-actions">
-                    <button class="feature-spotlight-try" type="button"></button>
+                    <div class="feature-spotlight-primary-actions">
+                        <button class="feature-spotlight-try" type="button"></button>${hasSecondaryTry ? '<button class="feature-spotlight-try-secondary" type="button"></button>' : ''}
+                    </div>
                     <button class="feature-spotlight-close" type="button"></button>
                 </div>`;
 
@@ -87,6 +100,9 @@
             el.querySelector('.feature-spotlight-title').textContent = title;
             el.querySelector('.feature-spotlight-text').innerHTML = body;
             el.querySelector('.feature-spotlight-try').textContent = tryLbl;
+            if (hasSecondaryTry) {
+                el.querySelector('.feature-spotlight-try-secondary').textContent = secondaryTryLbl;
+            }
             el.querySelector('.feature-spotlight-close').textContent = closeLbl;
 
             if (this.queueMeta && typeof window.DiscoverabilityQueueBar?.inject === 'function') {
@@ -105,6 +121,13 @@
                 if (typeof this.onTry === 'function') this.onTry();
                 setTimeout(() => this._dismiss(true), 120);
             });
+
+            if (hasSecondaryTry) {
+                el.querySelector('.feature-spotlight-try-secondary').addEventListener('click', () => {
+                    this.onSecondaryTry();
+                    setTimeout(() => this._dismiss(true), 120);
+                });
+            }
 
             el.querySelector('.feature-spotlight-close').addEventListener('click', () => {
                 this._dismiss(true);

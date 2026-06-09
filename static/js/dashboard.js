@@ -744,6 +744,10 @@ class Dashboard {
             // Always load all bookmarks so smart collections can work across pages.
             await this.loadAllBookmarks();
 
+            if (window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(this.settings, this.allBookmarks)) {
+                this.saveSettings().catch(() => {});
+            }
+
             await this.consumeDashboardDeepLink();
         } catch (error) {
             const msg = this.language?.t?.('dashboard.loadFailed')

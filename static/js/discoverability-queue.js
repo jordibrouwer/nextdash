@@ -1,6 +1,6 @@
 /**
  * Post-onboarding discoverability queue — prompts chain after each closes.
- * Journey: what's new → layout-modern-nudge (classic users who skipped layout in onboarding; mentions modern/glass).
+ * Journey: what's new → layout-version-nudge (classic users who skipped layout in onboarding; try modern or glass).
  */
 (function () {
     'use strict';
@@ -74,7 +74,7 @@
             }
 
             if (id === 'layout-modern-nudge') {
-                return window.LayoutModernNudge?.shouldOffer?.(dash) === true;
+                return window.LayoutVersionNudge?.shouldOffer?.(dash) === true;
             }
 
             if (id === 'paste-spotlight') {
@@ -173,7 +173,7 @@
 
         runLayoutModernNudge(onComplete) {
             const dash = this.dashboard;
-            if (!window.LayoutModernNudge?.shouldOffer?.(dash)) {
+            if (!window.LayoutVersionNudge?.shouldOffer?.(dash)) {
                 onComplete();
                 return;
             }
@@ -182,13 +182,14 @@
                 return;
             }
 
-            const spotlight = window.LayoutModernNudge.create(dash);
+            const spotlight = window.LayoutVersionNudge.create(dash);
             if (!spotlight) {
                 onComplete();
                 return;
             }
 
             spotlight.onDismiss = () => {
+                dash.layoutVersionNudge = null;
                 dash.layoutModernNudge = null;
                 onComplete();
             };
@@ -196,7 +197,7 @@
 
             const started = spotlight.show(800, {
                 canShow: () => {
-                    if (!window.LayoutModernNudge?.shouldOffer?.(dash)) return false;
+                    if (!window.LayoutVersionNudge?.shouldOffer?.(dash)) return false;
                     if (dash.onboardingStartedInSession) return false;
                     if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
                     return true;
@@ -206,6 +207,7 @@
                 onComplete();
                 return;
             }
+            dash.layoutVersionNudge = spotlight;
             dash.layoutModernNudge = spotlight;
         }
     }

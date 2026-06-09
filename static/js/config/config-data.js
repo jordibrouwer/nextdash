@@ -57,24 +57,25 @@ class ConfigData {
         });
         
         if (!response.ok) {
-            let errorText = '';
+            const errorText = await response.text();
+            let message = errorText;
             try {
-                const errorBody = await response.json();
+                const errorBody = JSON.parse(errorText);
                 if (errorBody?.error === 'duplicate_shortcut') {
                     const shortcut = errorBody.shortcut || '';
                     const conflict = errorBody.conflict;
                     if (conflict?.name) {
-                        errorText = `Duplicate shortcut "${shortcut}" (already used by "${conflict.name}" on page ${conflict.pageId}).`;
+                        message = `Duplicate shortcut "${shortcut}" (already used by "${conflict.name}" on page ${conflict.pageId}).`;
                     } else {
-                        errorText = `Duplicate shortcut "${shortcut}".`;
+                        message = `Duplicate shortcut "${shortcut}".`;
                     }
                 } else {
-                    errorText = errorBody?.message || JSON.stringify(errorBody);
+                    message = errorBody?.message || errorText;
                 }
-            } catch (error) {
-                errorText = await response.text();
+            } catch {
+                // Plain-text error body from the server.
             }
-            throw new Error(`Failed to save bookmarks: ${errorText}`);
+            throw new Error(`Failed to save bookmarks: ${message}`);
         }
         
         return await response.json();

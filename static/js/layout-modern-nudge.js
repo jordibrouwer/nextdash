@@ -1,5 +1,5 @@
 /**
- * One-time spotlight prompting classic-layout users to try a refreshed layout (modern on Try; glass in config).
+ * One-time spotlight for classic-layout users to try modern or glass (same discoverability path as onboarding and :layoutversion).
  */
 (function () {
     'use strict';
@@ -12,6 +12,14 @@
         <rect x="13" y="10" width="8" height="11" rx="1.5"/>
         <rect x="3" y="13" width="8" height="8" rx="1.5"/>
     </svg>`;
+
+    function applyLayoutVersion(dashboard, version) {
+        if (!window.LayoutVersionUtils || !dashboard?.settings) return;
+        window.LayoutVersionUtils.applyLayoutVersion(dashboard.settings, version, {
+            syncDashboard: true,
+            saveDashboard: true,
+        });
+    }
 
     function shouldOffer(dashboard) {
         if (!dashboard) return false;
@@ -37,23 +45,20 @@
             titleKey: 'layoutModernNudgeTitle',
             bodyKey: 'layoutModernNudgeBody',
             tryKey: 'layoutModernNudgeTry',
+            secondaryTryKey: 'layoutModernNudgeTryGlass',
             closeKey: 'layoutModernNudgeClose',
-            titleFallback: 'Try a refreshed layout',
-            bodyFallback: 'Classic, modern, or glass — same structure, different polish. Switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
+            titleFallback: 'Try modern or glass',
+            bodyFallback: 'Classic, modern, or glass — same structure, different polish. Try a version below, use <code>:layoutversion toggle</code> on the dashboard, or switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
             tryFallback: 'Try modern',
+            secondaryTryFallback: 'Try glass',
             closeFallback: 'Keep classic',
             iconSvg: LAYOUT_ICON_SVG,
-            onTry: () => {
-                if (!window.LayoutVersionUtils) return;
-                window.LayoutVersionUtils.applyLayoutVersion(dashboard.settings, 'modern', {
-                    syncDashboard: true,
-                    saveDashboard: true,
-                });
-            },
+            onTry: () => applyLayoutVersion(dashboard, 'modern'),
+            onSecondaryTry: () => applyLayoutVersion(dashboard, 'glass'),
         });
     }
 
-    window.LayoutModernNudge = {
+    const api = {
         STORAGE_KEY,
         shouldOffer,
         create,
@@ -63,4 +68,7 @@
             } catch { /* ignore */ }
         },
     };
+
+    window.LayoutVersionNudge = api;
+    window.LayoutModernNudge = api;
 })();

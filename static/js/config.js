@@ -2136,6 +2136,10 @@ class ConfigManager {
             }
             
             await this.loadPageBookmarks(this.currentPageId);
+            window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(
+                this.settingsData,
+                this.bookmarkStore.getAll()
+            );
         } catch (error) {
             this.ui.showErrorWithReload(this.language.t('config.errorLoadingConfig'));
         }
@@ -2838,9 +2842,12 @@ class ConfigManager {
         const resetLayoutModernNudgeBtn = document.getElementById('reset-layout-modern-nudge-btn');
         if (resetLayoutModernNudgeBtn) {
             resetLayoutModernNudgeBtn.addEventListener('click', () => {
-                window.LayoutModernNudge?.reset?.();
+                (window.LayoutVersionNudge || window.LayoutModernNudge)?.reset?.();
                 if (window.dashboardInstance) {
-                    window.dashboardInstance.layoutModernNudge?.dismiss?.(false);
+                    const nudge = window.dashboardInstance.layoutVersionNudge
+                        || window.dashboardInstance.layoutModernNudge;
+                    nudge?.dismiss?.(false);
+                    window.dashboardInstance.layoutVersionNudge = null;
                     window.dashboardInstance.layoutModernNudge = null;
                     window.dashboardInstance.discoverabilityQueue?.scheduleRun?.();
                 }
@@ -5406,30 +5413,31 @@ class ConfigManager {
 
             const duplicateUrls = this.findDuplicateBookmarkUrls(this.bookmarksData);
 
-            await this.saveAllBookmarkPages();
-            await this.data.saveFinders(this.findersData);
-            
-            if (this.currentCategoriesPageId) {
-                const categoriesForSelectedPage = await this.resolveCategoriesForSave(this.currentCategoriesPageId);
-                if (categoriesForSelectedPage !== null) {
-                    await this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId);
-                }
-            }
-            
-            await this.data.savePages(this.pagesData);
-            
-            // Merge keyboard custom bindings into settings
+            // Merge keyboard custom bindings into settings before persisting settings.
             if (this.keyboard && typeof this.keyboard.getSaveData === 'function') {
                 const keyboardData = this.keyboard.getSaveData();
                 this.settingsData.customKeyBindings = keyboardData.customKeyBindings;
             }
-            
+
+            // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
             if (this.deviceSpecific) {
                 this.storage.saveDeviceSettings(this.settingsData);
             } else {
                 await this.data.saveSettings(this.settingsData);
                 this.storage.clearDeviceSettings();
             }
+
+            await this.saveAllBookmarkPages();
+            await this.data.saveFinders(this.findersData);
+
+            if (this.currentCategoriesPageId) {
+                const categoriesForSelectedPage = await this.resolveCategoriesForSave(this.currentCategoriesPageId);
+                if (categoriesForSelectedPage !== null) {
+                    await this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId);
+                }
+            }
+
+            await this.data.savePages(this.pagesData);
 
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.refreshPageDropdowns();
@@ -5464,6 +5472,14 @@ class ConfigManager {
             }
             const message = String(error?.message || '');
             if (message.toLowerCase().includes('duplicate shortcut')) {
+                this.ui.showNotification(message, 'error');
+            } else if (message.toLowerCase().includes('url host is not allowed')) {
+                this.ui.showNotification(
+                    this.language.t('config.bookmarkUrlHostNotAllowed')
+                        || 'A bookmark uses a local or private URL. Enable Allow local bookmarks in General → Advanced, or change the URL.',
+                    'error'
+                );
+            } else if (message.startsWith('Failed to save ')) {
                 this.ui.showNotification(message, 'error');
             } else {
                 this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
