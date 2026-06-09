@@ -24,7 +24,8 @@ class SearchComponent {
         this.recentCommands = this.loadRecentCommands();
         this.savedSearches = this.loadSavedSearches();
         this.lastNonCommandQuery = '';
-        
+        this._debounceTimer = null;
+
         this.commandsComponent = new window.SearchCommandsComponent(this.language, this.currentBookmarks, this.allBookmarks, (newQuery) => {
             this.currentQuery = newQuery;
             this.updateSearch();
@@ -469,7 +470,15 @@ class SearchComponent {
         }
         
         // Show search interface and find matches
-        this.updateSearch();
+        this._scheduleUpdateSearch();
+    }
+
+    _scheduleUpdateSearch() {
+        if (this._debounceTimer) clearTimeout(this._debounceTimer);
+        this._debounceTimer = setTimeout(() => {
+            this._debounceTimer = null;
+            this.updateSearch();
+        }, 50);
     }
 
     parseSearchFilters(query) {
@@ -718,7 +727,7 @@ class SearchComponent {
             if (this.currentQuery.length === 0 && !this.settings.keepSearchOpenWhenEmpty) {
                 this.closeSearch();
             } else {
-                this.updateSearch();
+                this._scheduleUpdateSearch();
             }
         }
     }
@@ -1133,25 +1142,33 @@ class SearchComponent {
                 this.matchElements.push(newHint);
                 this.selectableMatches.push({ type: 'hint-new', action: hintNewAction });
 
-                // Hint: search with a finder if any exist
+                // Hint: search with top finders if any exist (up to 3, sorted by use count)
                 if (Array.isArray(this.finders) && this.finders.length > 0) {
-                    const firstFinder = this.finders[0];
-                    const finderShortcut = firstFinder.shortcut ? firstFinder.shortcut.toUpperCase() : '?';
-                    const finderHint = document.createElement('div');
-                    finderHint.className = 'search-match search-hint-entry';
-                    finderHint.innerHTML = `
-                        <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
-                        <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${firstFinder.name || finderShortcut}</span>
-                    `;
-                    const hintFinderAction = () => {
-                        this.recordSearchHistory(this.currentQuery);
-                        this.findersComponent.openFinder(firstFinder, q);
-                        this.closeSearch();
-                    };
-                    finderHint.addEventListener('click', hintFinderAction);
-                    matchesContainer.appendChild(finderHint);
-                    this.matchElements.push(finderHint);
-                    this.selectableMatches.push({ type: 'hint-finder', action: hintFinderAction });
+                    const topFinders = [...this.finders]
+                        .filter((f) => f.shortcut && f.shortcut.trim())
+                        .sort((a, b) => {
+                            const byCount = Number(b.useCount || 0) - Number(a.useCount || 0);
+                            return byCount !== 0 ? byCount : Number(b.lastUsed || 0) - Number(a.lastUsed || 0);
+                        })
+                        .slice(0, 3);
+                    topFinders.forEach((finder) => {
+                        const finderShortcut = finder.shortcut.toUpperCase();
+                        const finderHint = document.createElement('div');
+                        finderHint.className = 'search-match search-hint-entry';
+                        finderHint.innerHTML = `
+                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
+                            <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${this._escHtml(finder.name || finderShortcut)}</span>
+                        `;
+                        const hintFinderAction = () => {
+                            this.recordSearchHistory(this.currentQuery);
+                            this.findersComponent.openFinder(finder, q);
+                            this.closeSearch();
+                        };
+                        finderHint.addEventListener('click', hintFinderAction);
+                        matchesContainer.appendChild(finderHint);
+                        this.matchElements.push(finderHint);
+                        this.selectableMatches.push({ type: 'hint-finder', action: hintFinderAction });
+                    });
                 }
             } else {
                 const noRecentElement = document.createElement('div');
@@ -1583,8 +1600,8 @@ class SearchComponent {
         if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery === '?' || cleanedQuery === '/') {
             return;
         }
-
-        this.searchHistory = [cleanedQuery, ...this.searchHistory.filter((entry) => entry !== cleanedQuery)].slice(0, 15);
+        const normalized = cleanedQuery.toLowerCase();
+        this.searchHistory = [cleanedQuery, ...this.searchHistory.filter((entry) => entry.toLowerCase() !== normalized)].slice(0, 15);
         this.saveSearchHistory();
     }
 
