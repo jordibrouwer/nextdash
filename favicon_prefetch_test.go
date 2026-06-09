@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -37,5 +40,30 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 	}
 	if fs.TakeDefaultBookmarkIconPrefetch() {
 		t.Fatal("expected flag to be consumed")
+	}
+}
+
+func TestSaveIconBytesSanitizesSVG(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	svg := []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle r="1" onclick="evil()"/></svg>`)
+	fileName, err := saveIconBytes(svg, ".svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fileName == "" {
+		t.Fatal("expected saved svg file name")
+	}
+
+	stored, err := os.ReadFile(filepath.Join("data", "icons", fileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lower := strings.ToLower(string(stored))
+	if strings.Contains(lower, "<script") || strings.Contains(lower, "onclick") {
+		t.Fatalf("stored svg still contains unsafe content: %s", stored)
 	}
 }

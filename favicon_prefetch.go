@@ -87,6 +87,13 @@ func downloadIconFromURL(sourceURL string, allowLocalHosts bool) (string, error)
 }
 
 func saveIconBytes(data []byte, ext string) (string, error) {
+	if ext == ".svg" {
+		data = sanitizeSVGContent(data)
+		if len(data) == 0 {
+			return "", nil
+		}
+	}
+
 	iconsDir := "data/icons"
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
 		return "", err
