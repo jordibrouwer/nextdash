@@ -1489,6 +1489,17 @@ func (fs *FileStore) SaveSettings(settings Settings) {
 
 	fs.ensureDataDir()
 
+	// Preserve migration markers from the stored file so that importing
+	// settings from another instance cannot suppress pending migrations.
+	if raw, err := os.ReadFile(fs.settingsFile); err == nil {
+		var stored Settings
+		if json.Unmarshal(raw, &stored) == nil {
+			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
+			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
+			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
+		}
+	}
+
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 
