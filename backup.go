@@ -62,6 +62,45 @@ func sanitizeImportedBookmarkFile(content []byte, allowLocal bool) ([]byte, int,
 	return out, skipped, nil
 }
 
+type stagedImportFile struct {
+	filename string
+	content  []byte
+}
+
+func normalizeImportFilename(filename string) string {
+	return strings.ReplaceAll(filename, "\\", "/")
+}
+
+// allowLocalBookmarksFromSettingsJSON mirrors GetSettings defaulting when the key is absent.
+func allowLocalBookmarksFromSettingsJSON(content []byte) (bool, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(content, &raw); err != nil {
+		return false, err
+	}
+	if _, ok := raw["allowLocalBookmarks"]; !ok {
+		return true, nil
+	}
+	var settings Settings
+	if err := json.Unmarshal(content, &settings); err != nil {
+		return false, err
+	}
+	return settings.AllowLocalBookmarks, nil
+}
+
+func resolveImportAllowLocalBookmarks(staged []stagedImportFile, fallback bool) bool {
+	for _, item := range staged {
+		if item.filename != "settings.json" {
+			continue
+		}
+		allowLocal, err := allowLocalBookmarksFromSettingsJSON(item.content)
+		if err != nil {
+			return fallback
+		}
+		return allowLocal
+	}
+	return fallback
+}
+
 // isValidImportFilename validates that the filename is safe and allowed for import
 func (h *Handlers) isValidImportFilename(filename string) bool {
 	// Prevent path traversal, but allow icons/ subdirectory
@@ -164,19 +203,11 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	importedCategoriesByPage := make(map[int][]Category)
-	skippedBookmarks := 0
-
-	// Process each file
+	staged := make([]stagedImportFile, 0, len(files))
 	for _, fileHeader := range files {
-		filename := fileHeader.Filename
+		filename := normalizeImportFilename(fileHeader.Filename)
+		fmt.Printf("Staging file: %s\n", filename)
 
-		// Normalize path separators to /
-		filename = strings.ReplaceAll(filename, "\\", "/")
-
-		fmt.Printf("Processing file: %s\n", filename)
-
-		// Validate filename to prevent path traversal and ensure only allowed files
 		if !h.isValidImportFilename(filename) {
 			fmt.Printf("Invalid filename: %s\n", filename)
 			http.Error(w, fmt.Sprintf("Invalid filename: %s", filename), http.StatusBadRequest)
@@ -199,16 +230,26 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Validate JSON content for JSON files
-		if strings.HasSuffix(filename, ".json") {
-			if !json.Valid(content) {
-				fmt.Printf("Invalid JSON in file: %s\n", filename)
-				http.Error(w, fmt.Sprintf("Invalid JSON content in file: %s", filename), http.StatusBadRequest)
-				return
-			}
+		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
+			fmt.Printf("Invalid JSON in file: %s\n", filename)
+			http.Error(w, fmt.Sprintf("Invalid JSON content in file: %s", filename), http.StatusBadRequest)
+			return
 		}
 
-		// Categories are now per-page; apply these after all files are written.
+		staged = append(staged, stagedImportFile{filename: filename, content: content})
+	}
+
+	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
+
+	importedCategoriesByPage := make(map[int][]Category)
+	skippedBookmarks := 0
+
+	for _, item := range staged {
+		filename := item.filename
+		content := item.content
+
+		fmt.Printf("Processing file: %s\n", filename)
+
 		if pageID, ok := extractPageIDFromCategoriesFilename(filename); ok {
 			var categories []Category
 			if err := json.Unmarshal(content, &categories); err != nil {
@@ -220,7 +261,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, ok := parseBookmarkPageIDFromFilename(filepath.Base(filename)); ok {
-			sanitized, skipped, err := sanitizeImportedBookmarkFile(content, h.store.GetSettings().AllowLocalBookmarks)
+			sanitized, skipped, err := sanitizeImportedBookmarkFile(content, allowLocalBookmarks)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Invalid bookmarks JSON in file: %s", filename), http.StatusBadRequest)
 				return
@@ -229,12 +270,10 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 			skippedBookmarks += skipped
 		}
 
-		// Determine destination path
 		var destPath string
 		if strings.HasPrefix(filename, "favicon.") {
 			destPath = filepath.Join("data", filename)
 		} else if !strings.Contains(filename, "/") {
-			// Check if it's an image file that should go to icons/
 			validImageExtensions := []string{".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
 			isImage := false
 			for _, ext := range validImageExtensions {
@@ -252,17 +291,13 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 			destPath = filepath.Join("data", filename)
 		}
 
-		// Ensure the directory exists
 		dir := filepath.Dir(destPath)
-		err = os.MkdirAll(dir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			http.Error(w, "Failed to create directory", http.StatusInternalServerError)
 			return
 		}
 
-		// Write file
-		err = os.WriteFile(destPath, content, 0644)
-		if err != nil {
+		if err := os.WriteFile(destPath, content, 0644); err != nil {
 			http.Error(w, "Failed to write file", http.StatusInternalServerError)
 			return
 		}
