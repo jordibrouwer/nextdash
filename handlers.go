@@ -1824,14 +1824,17 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	// Retest all bookmarks with checkStatus=true
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		pageModified := false
-		for idx, bm := range bookmarks {
+		type retestUpdate struct {
+			lastError   string
+			lastChecked int64
+		}
+		updatesByKey := make(map[string]retestUpdate)
+
+		for _, bm := range bookmarks {
 			if !bm.CheckStatus {
 				continue
 			}
-			pageModified = true
 
-			// Run ping
 			result := h.pingURLDetailed(bm.URL)
 			errMsg := ""
 			if result.Status != "online" {
@@ -1839,25 +1842,22 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 				if errMsg == "" {
 					errMsg = "Unreachable"
 				}
-				bm.LastError = errMsg
-			} else {
-				bm.LastError = ""
 			}
-			bm.LastChecked = time.Now().UnixMilli()
-
-			// Update bookmark in store
-			bookmarks[idx] = bm
+			lastChecked := time.Now().UnixMilli()
 
 			key := canonicalBookmarkURLKey(bm.URL)
-			if key == "" {
-				continue
-			}
-			healthUpdates[key] = HealthScanCache{
-				URL:         key,
-				Status:      result.Status,
-				PingMs:      result.PingMs,
-				LastScanned: time.Now().UnixMilli(),
-				Error:       errMsg,
+			if key != "" {
+				updatesByKey[key] = retestUpdate{
+					lastError:   errMsg,
+					lastChecked: lastChecked,
+				}
+				healthUpdates[key] = HealthScanCache{
+					URL:         key,
+					Status:      result.Status,
+					PingMs:      result.PingMs,
+					LastScanned: lastChecked,
+					Error:       errMsg,
+				}
 			}
 
 			results = append(results, map[string]interface{}{
@@ -1869,8 +1869,33 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		if pageModified {
-			if !respondStorePersistError(w, h.store.SaveBookmarksByPage(page.ID, bookmarks)) {
+		if len(updatesByKey) == 0 {
+			continue
+		}
+
+		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
+			for i := range current {
+				if !current[i].CheckStatus {
+					continue
+				}
+				key := canonicalBookmarkURLKey(current[i].URL)
+				if key == "" {
+					continue
+				}
+				update, ok := updatesByKey[key]
+				if !ok {
+					continue
+				}
+				current[i].LastChecked = update.lastChecked
+				current[i].LastError = update.lastError
+			}
+			return current, nil
+		})
+		if err != nil {
+			if errors.Is(err, ErrBookmarkNotFound) {
+				continue
+			}
+			if !respondBookmarkMutationError(w, err) {
 				return
 			}
 		}

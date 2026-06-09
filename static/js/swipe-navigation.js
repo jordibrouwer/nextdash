@@ -199,9 +199,8 @@ class SwipeNavigation {
             }
         }
 
-        // Load the page
+        // Load the page (updates title, hash, and bookmarks)
         this.dashboard.loadPageBookmarks(page.id);
-        this.dashboard.updatePageTitle(page.name);
     }
 }
 

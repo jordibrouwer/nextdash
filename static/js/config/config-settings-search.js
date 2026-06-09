@@ -340,10 +340,15 @@
         resultsEl.innerHTML = '';
         activeIndex = -1;
 
+        const query = (inputEl?.value || '').trim();
+        if (query) {
+            dismissPromo(true);
+        }
+
         if (!matches.length) {
             resultsEl.hidden = true;
-            if (emptyEl) emptyEl.hidden = !(inputEl?.value || '').trim();
-            inputEl?.setAttribute('aria-expanded', 'false');
+            if (emptyEl) emptyEl.hidden = !query;
+            inputEl?.setAttribute('aria-expanded', query ? 'true' : 'false');
             return;
         }
 

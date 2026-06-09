@@ -50,30 +50,64 @@ class ConfigCategories {
             category.originalId = category.id;
         }
         
-        // Store reference to the actual category object
         div._categoryRef = category;
-        
-        div.innerHTML = `
-            <span class="drag-handle js-drag-handle" title="${this.t('config.dragToReorder') || 'Drag to reorder'}" aria-label="${this.t('config.dragToReorder') || 'Drag to reorder'}">⠿</span>
-            <input type="text" id="category-icon-${index}" name="category-icon-${index}" value="${category.icon || ''}" placeholder="emoticon" maxlength="2" data-category-id="${category.id}" data-field="icon" aria-label="Category emoticon">
-            <input type="text" id="category-name-${index}" name="category-name-${index}" value="${category.name}" placeholder="${this.t('config.categoryNamePlaceholder')}" data-category-id="${category.id}" data-field="name">
-            <button type="button" class="btn btn-secondary btn-small" onclick="configManager.mergeCategory(${index})">${this.t('config.merge')}</button>
-            <button type="button" class="btn btn-danger" onclick="configManager.removeCategory(${index})">${this.t('config.remove')}</button>
-        `;
 
-        // Add event listener for name changes
-        const nameInput = div.querySelector('input[data-field="name"]');
+        const dragLabel = this.t('config.dragToReorder') || 'Drag to reorder';
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'drag-handle js-drag-handle';
+        dragHandle.title = dragLabel;
+        dragHandle.setAttribute('aria-label', dragLabel);
+        dragHandle.textContent = '⠿';
+
+        const iconInput = document.createElement('input');
+        iconInput.type = 'text';
+        iconInput.id = `category-icon-${index}`;
+        iconInput.name = `category-icon-${index}`;
+        iconInput.value = category.icon || '';
+        iconInput.placeholder = 'emoticon';
+        iconInput.maxLength = 2;
+        iconInput.dataset.categoryId = category.id;
+        iconInput.dataset.field = 'icon';
+        iconInput.setAttribute('aria-label', 'Category emoticon');
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.id = `category-name-${index}`;
+        nameInput.name = `category-name-${index}`;
+        nameInput.value = category.name || '';
+        nameInput.placeholder = this.t('config.categoryNamePlaceholder') || '';
+        nameInput.dataset.categoryId = category.id;
+        nameInput.dataset.field = 'name';
+
+        const mergeBtn = document.createElement('button');
+        mergeBtn.type = 'button';
+        mergeBtn.className = 'btn btn-secondary btn-small';
+        mergeBtn.textContent = this.t('config.merge') || 'Merge';
+        mergeBtn.addEventListener('click', () => {
+            window.configManager?.mergeCategory?.(index);
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger';
+        removeBtn.textContent = this.t('config.remove') || 'Remove';
+        removeBtn.addEventListener('click', () => {
+            window.configManager?.removeCategory?.(index);
+        });
+
+        div.appendChild(dragHandle);
+        div.appendChild(iconInput);
+        div.appendChild(nameInput);
+        div.appendChild(mergeBtn);
+        div.appendChild(removeBtn);
+
         nameInput.addEventListener('input', (e) => {
-            // Keep category ID stable; only name changes on rename.
             category.name = e.target.value;
         });
 
-        const iconInput = div.querySelector('input[data-field="icon"]');
-        if (iconInput) {
-            iconInput.addEventListener('input', (e) => {
-                category.icon = (e.target.value || '').trim();
-            });
-        }
+        iconInput.addEventListener('input', (e) => {
+            category.icon = (e.target.value || '').trim();
+        });
 
         return div;
     }

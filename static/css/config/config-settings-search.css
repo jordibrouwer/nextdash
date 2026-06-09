@@ -59,7 +59,7 @@
 
 .config-settings-search-promo {
     position: absolute;
-    z-index: 55;
+    z-index: 40;
     top: calc(100% + 0.55rem);
     right: 0;
     left: 0;
@@ -233,7 +233,7 @@
 
 .config-settings-search-results {
     position: absolute;
-    z-index: 50;
+    z-index: 70;
     top: calc(100% + 0.25rem);
     right: 0;
     left: 0;
@@ -276,6 +276,7 @@
 
 .config-settings-search-empty {
     position: absolute;
+    z-index: 70;
     top: calc(100% + 0.25rem);
     right: 0;
     left: 0;
