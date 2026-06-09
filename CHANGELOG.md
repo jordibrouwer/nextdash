@@ -119,7 +119,8 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 
 - **fix** **Health mutation races** — `UpdateBookmarkHealthStatus`, `DeleteHealthBookmark`, and `AutoHealApply` use atomic `MutateBookmarkAt` / `DeleteBookmarkAt` (read-modify-write under one store lock) instead of separate get/save calls.
 - **fix** **`TrackBookmarkOpen` HTTP errors** — missing bookmark returns **404** (`ErrBookmarkNotFound`); disk/persist failures return **500** instead of being reported as not found.
-- **fix** **`RetestAll` write scope** — only pages with checked bookmarks that were actually retested are saved back (avoids overwriting unrelated pages with stale snapshots).
+- **fix** **`RetestAll` atomic save** — ping results are applied via `MutateBookmarksOnPage` under one store lock (no separate get/save race per page); only bookmarks with `checkStatus` on retested pages are updated.
+- **fix** **Preview bulk operations** — `ClearAllBookmarkPreviews` and `RefreshAllBookmarkPreviews` use `MutateBookmarksOnPage` atomically per page.
 - **fix** **Duplicate merge atomic save** — `MergeDuplicates` stages in-memory page snapshots and commits all updates via `SaveBookmarkPageUpdates` under one lock.
 
 #### Backup & import
@@ -136,10 +137,16 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 - **fix** **Category reorder on exit** — debounced category order (`_pendingCategorySave`) flushes on tab close via keepalive `POST /api/categories`.
 - **fix** **Icon preview XSS** — inline icon preview builds `<img>` via DOM APIs instead of unsanitized `innerHTML`.
 - **fix** **`SavePages` staleness** — saving page structure updates page metadata only; bookmarks already on disk are preserved (no stale snapshot overwrite).
+- **fix** **Immediate reorder/preview saves** — bookmark reorder and preview metadata persist immediately (no 1s/800ms debounce); `visibilitychange` flushes pending dashboard saves when the tab is hidden.
+- **fix** **Remote inline delete** — delete in the inline editor works for cross-page bookmarks (tag-filter view); removes from the source page via API.
+- **fix** **Swipe page title** — swipe navigation no longer calls `updatePageTitle` separately; `loadPageBookmarks()` owns title, hash, and bookmark updates.
 
 #### Config & search
 
 - **new** **Settings search promo** — first desktop visit to config shows a pulsing search field, **New** badge, and animated speech balloon explaining how global settings search works (`Ctrl+Shift+K` / `Cmd+Shift+K` vs `Ctrl+K` quick actions); dismisses on focus, typing, **Try it**, or **Got it** (once per browser; hidden on mobile and during onboarding/tours).
+- **fix** **Settings search promo UX** — search results render above the promo balloon; typing dismisses the promo; tour/onboarding wait capped at 30 retries.
+- **fix** **Category row XSS** — config category list rows are built via DOM APIs instead of `innerHTML` with category names.
+- **fix** **GitHub help links** — config Help footer GitHub URL aligned to `github.com/jordibrouwer/nextdash`.
 
 ---
 

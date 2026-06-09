@@ -143,13 +143,16 @@
                     title: 'Additional fixes',
                     items: [
                         { badge: 'fix', text: '<strong>Ping write-token</strong> — <code>/api/ping</code> requires <code>X-NextDash-Token</code> when <code>NEXTDASH_WRITE_TOKEN</code> is set; status monitor and health UI send it automatically.' },
-                        { badge: 'fix', text: '<strong>Health mutation races</strong> — health status updates, deletes, and auto-heal apply atomically under one store lock; <code>RetestAll</code> only writes pages that were retested; duplicate merge commits all page updates in one locked save.' },
+                        { badge: 'fix', text: '<strong>Health mutation races</strong> — health status updates, deletes, auto-heal, <code>RetestAll</code>, and preview bulk clear/refresh apply atomically via <code>MutateBookmarksOnPage</code>; duplicate merge commits all page updates in one locked save.' },
                         { badge: 'fix', text: '<strong>ZIP import categories</strong> — restored pages keep category structure because categories are merged into bookmark JSON before import commit.' },
                         { badge: 'fix', text: '<strong>Page load race</strong> — fast swipe or hash changes no longer show the wrong bookmarks; stale <code>loadPageBookmarks()</code> responses are ignored.' },
                         { badge: 'fix', text: '<strong>Delete &amp; open tracking</strong> — delete matches canonical URLs and returns 404 when missing; <code>/api/track-open</code> uses page-aware index resolution; persist failures return 500 instead of 404.' },
                         { badge: 'fix', text: '<strong>Inline edit &amp; page moves</strong> — remote bookmarks save <code>note</code> and <code>tags</code>; the page dropdown can move cross-page bookmarks; category reorder flushes on tab close.' },
                         { badge: 'fix', text: '<strong>SavePages &amp; icon preview</strong> — saving page order/name no longer overwrites bookmark data on disk; inline icon preview uses safe DOM rendering.' },
+                        { badge: 'fix', text: '<strong>Immediate dashboard saves</strong> — bookmark reorder and preview metadata save right away; tab hide flushes pending saves; remote bookmarks can be deleted from inline edit in tag-filter view.' },
+                        { badge: 'fix', text: '<strong>Swipe navigation</strong> — page swipes no longer call <code>updatePageTitle</code> separately; <code>loadPageBookmarks()</code> owns title and hash updates.' },
                         { badge: 'new', text: '<strong>Settings search promo</strong> — on desktop config, a pulsing search field, <em>New</em> badge, and speech balloon highlight global settings search (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd>); <kbd>Ctrl+K</kbd> stays quick actions only. Shown once; skips mobile and active tours.' },
+                        { badge: 'fix', text: '<strong>Settings search polish</strong> — results stack above the promo balloon; typing dismisses it; tour wait capped at 30 retries; config category rows use safe DOM rendering; Help footer GitHub link uses <code>nextdash</code> repo casing.' },
                     ]
                 },
             ]),
