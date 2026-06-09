@@ -4497,11 +4497,9 @@ class ConfigManager {
             return confirmed ? { action: 'uncategorize' } : { action: 'cancel' };
         }
 
-        const optionsHtml = alternativeCategories
-            .map((item) => `<option value="${item.id}">${item.name}</option>`)
-            .join('');
+        const optionsHtml = this._categorySelectOptionsHtml(alternativeCategories);
         const html = `
-            <p>${(this.language.t('config.categoryDeleteInUse') || '{count} bookmarks in').replace('{count}', String(impactedCount))} <strong>${category.name}</strong>.</p>
+            <p>${(this.language.t('config.categoryDeleteInUse') || '{count} bookmarks in').replace('{count}', String(impactedCount))} <strong>${this._escHtml(category.name)}</strong>.</p>
             <p>${this.language.t('config.categoryDeleteChoose') || 'Choose action before delete:'}</p>
             <select id="category-delete-target-select" class="page-selector" style="max-width:100%;">
                 ${optionsHtml}
@@ -4543,11 +4541,9 @@ class ConfigManager {
             return;
         }
 
-        const optionsHtml = targetCategories
-            .map((item) => `<option value="${item.id}">${item.name}</option>`)
-            .join('');
+        const optionsHtml = this._categorySelectOptionsHtml(targetCategories);
         const html = `
-            <p>${this.language.t('config.mergeIntoLabel') || 'Merge into'} <strong>${sourceCategory.name}</strong>:</p>
+            <p>${this.language.t('config.mergeIntoLabel') || 'Merge into'} <strong>${this._escHtml(sourceCategory.name)}</strong>:</p>
             <select id="merge-category-target-select" class="page-selector" style="max-width:100%;">
                 ${optionsHtml}
             </select>
@@ -5668,6 +5664,16 @@ class ConfigManager {
 
         this.isNavigatingAway = true;
         setTimeout(() => { window.location.href = '/'; }, 1000);
+    }
+
+    _escHtml(str) {
+        return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    _categorySelectOptionsHtml(categories) {
+        return categories
+            .map((item) => `<option value="${this._escHtml(item.id)}">${this._escHtml(item.name)}</option>`)
+            .join('');
     }
 
     generateId(text) {

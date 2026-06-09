@@ -736,11 +736,14 @@ class ConfigBookmarks {
                 if (fallback) icon = await window.BookmarkPreviewService.uploadIconFromUrl(fallback);
             }
 
+            let dirty = false;
+
             if (icon) {
                 bookmark.icon = icon;
                 bookmark.iconFetchState = 'ok';
                 this._updateDetailIconPreview(bookmark);
                 this._syncRow(index, bookmark);
+                dirty = true;
             } else {
                 bookmark.iconFetchState = 'no_icon';
             }
@@ -754,6 +757,10 @@ class ConfigBookmarks {
                     fp.updateLinkPreviewCard(bookmark);
                     fp.onPreviewChange(bookmark);
                 }
+                dirty = true;
+            }
+
+            if (dirty) {
                 window.configManager?.markDirty?.();
             }
         } finally {
@@ -773,6 +780,7 @@ class ConfigBookmarks {
         if (!bookmark.icon) return false;
         this._updateDetailIconPreview(bookmark);
         this._syncRow(index, bookmark);
+        window.configManager?.markDirty?.();
         return true;
     }
 
@@ -786,6 +794,7 @@ class ConfigBookmarks {
             bookmark.icon = result.icon || '';
             this._updateDetailIconPreview(bookmark);
             this._syncRow(index, bookmark);
+            window.configManager?.markDirty?.();
             this.notify('Icon geupload.', 'success');
         } catch (err) {
             this.notify('Upload icon mislukt.', 'error');
