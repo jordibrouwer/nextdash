@@ -137,6 +137,10 @@ _Since the initial v2026.06.13 release notes — bookmark data integrity, health
 - **fix** **Icon preview XSS** — inline icon preview builds `<img>` via DOM APIs instead of unsanitized `innerHTML`.
 - **fix** **`SavePages` staleness** — saving page structure updates page metadata only; bookmarks already on disk are preserved (no stale snapshot overwrite).
 
+#### Config & search
+
+- **new** **Settings search promo** — first desktop visit to config shows a pulsing search field, **New** badge, and animated speech balloon explaining how global settings search works (`Ctrl+Shift+K` / `Cmd+Shift+K` vs `Ctrl+K` quick actions); dismisses on focus, typing, **Try it**, or **Got it** (once per browser; hidden on mobile and during onboarding/tours).
+
 ---
 
 ## v2026.06.12 — June 2026

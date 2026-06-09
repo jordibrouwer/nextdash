@@ -149,6 +149,7 @@
                         { badge: 'fix', text: '<strong>Delete &amp; open tracking</strong> — delete matches canonical URLs and returns 404 when missing; <code>/api/track-open</code> uses page-aware index resolution; persist failures return 500 instead of 404.' },
                         { badge: 'fix', text: '<strong>Inline edit &amp; page moves</strong> — remote bookmarks save <code>note</code> and <code>tags</code>; the page dropdown can move cross-page bookmarks; category reorder flushes on tab close.' },
                         { badge: 'fix', text: '<strong>SavePages &amp; icon preview</strong> — saving page order/name no longer overwrites bookmark data on disk; inline icon preview uses safe DOM rendering.' },
+                        { badge: 'new', text: '<strong>Settings search promo</strong> — on desktop config, a pulsing search field, <em>New</em> badge, and speech balloon highlight global settings search (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd>); <kbd>Ctrl+K</kbd> stays quick actions only. Shown once; skips mobile and active tours.' },
                     ]
                 },
             ]),
