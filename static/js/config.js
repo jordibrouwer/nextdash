@@ -195,6 +195,9 @@ class ConfigManager {
         if (typeof initCustomSelects === 'function') {
             setTimeout(() => {
                 initCustomSelects();
+                document.querySelectorAll('select[data-custom-select-init="true"]').forEach((select) => {
+                    select.__customSelectInstance?.refresh?.();
+                });
                 if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
                     window.installSettingInfoButtons(this.settings);
                 }
@@ -2272,7 +2275,8 @@ class ConfigManager {
                 this.settingsData.layoutVersion || 'classic'
             );
         } else {
-            const layoutVersion = (this.settingsData.layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic';
+            const normalized = (this.settingsData.layoutVersion || 'classic').toLowerCase().trim();
+            const layoutVersion = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
             this.settingsData.layoutVersion = layoutVersion;
             document.documentElement.setAttribute('data-layout-version', layoutVersion);
             document.body.setAttribute('data-layout-version', layoutVersion);
@@ -2309,30 +2313,35 @@ class ConfigManager {
             onAnimationsChange: (enabled) => {
                 this.settings.applyAnimations(enabled);
             },
-            onLayoutVersionChange: (layoutVersion) => {
+            onLayoutVersionChange: async (layoutVersion) => {
                 if (window.LayoutVersionUtils) {
                     this.settingsData.layoutVersion = window.LayoutVersionUtils.applyLayoutVersion(
                         this.settingsData,
                         layoutVersion || 'classic'
                     );
                 } else {
-                    const version = (layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic';
+                    const normalized = (layoutVersion || 'classic').toLowerCase().trim();
+                    const version = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
                     this.settingsData.layoutVersion = version;
                     document.documentElement.setAttribute('data-layout-version', version);
                     document.body.setAttribute('data-layout-version', version);
                 }
+                await this.autosaveLayoutSettings();
             },
-            onLayoutPresetChange: (preset) => {
+            onLayoutPresetChange: async (preset) => {
                 if (window.LayoutUtils) {
                     this.settingsData.layoutPreset = window.LayoutUtils.applyLayoutPreset(this.settingsData, preset || 'default');
                 } else {
+                    this.settingsData.layoutPreset = preset || 'default';
                     document.body.setAttribute('data-layout-preset', preset || 'default');
                 }
+                await this.autosaveLayoutSettings();
             },
-            onDensityModeChange: (densityMode) => {
+            onDensityModeChange: async (densityMode) => {
                 const normalizedDensity = ['comfortable', 'compact', 'dense', 'auto'].includes(densityMode) ? densityMode : 'compact';
                 this.settingsData.densityMode = normalizedDensity;
                 document.body.setAttribute('data-density-mode', normalizedDensity);
+                await this.autosaveLayoutSettings();
             },
             onBackgroundOpacityChange: (value) => {
                 this.settings.applyBackgroundOpacity(value);
@@ -3628,6 +3637,37 @@ class ConfigManager {
         const hintFallback = saving ? 'Saving theme…' : 'Preview — click Save to keep';
         const hint = this.language?.t(hintKey);
         badge.textContent = hint && hint !== hintKey ? hint : hintFallback;
+    }
+
+    async autosaveLayoutSettings() {
+        if (!this.settings?.updateFromUI || this._layoutAutosaveInFlight) return false;
+        this._layoutAutosaveInFlight = true;
+        this.suppressDirtyTracking = true;
+        let ok = false;
+        try {
+            this.settings.updateFromUI(this.settingsData);
+            if (this.deviceSpecific) {
+                this.storage.saveDeviceSettings(this.settingsData);
+                ok = true;
+            } else if (this.settings?.saveSettingsToServer) {
+                ok = await this.settings.saveSettingsToServer(this.settingsData);
+            }
+            if (ok) {
+                this.flashSavedIndicator();
+                this.signalDashboardSettingsUpdated('settings-autosave');
+            } else if (this.ui?.showNotification) {
+                this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
+            }
+        } catch (error) {
+            console.error('Layout settings autosave failed:', error);
+            if (this.ui?.showNotification) {
+                this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
+            }
+        } finally {
+            this.suppressDirtyTracking = false;
+            this._layoutAutosaveInFlight = false;
+        }
+        return ok;
     }
 
     async autosaveThemeSelection(theme) {

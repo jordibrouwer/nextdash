@@ -84,15 +84,25 @@ func main() {
 	// Data files (for uploaded favicons, etc.)
 	r.PathPrefix("/data/").Handler(http.StripPrefix("/data/", http.FileServer(http.Dir("data/"))))
 
-	// Locales files (embedded)
-	localesFS, _ := fs.Sub(embeddedFiles, "locales")
-	r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.FS(localesFS))))
+	// Locales: prefer on-disk files in dev/Docker mounts, fall back to embed.
+	if info, err := os.Stat("locales"); err == nil && info.IsDir() {
+		log.Printf("Serving /locales/ from disk (./locales)")
+		r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.Dir("locales"))))
+	} else {
+		localesFS, _ := fs.Sub(embeddedFiles, "locales")
+		r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.FS(localesFS))))
+	}
 
-	// Static files with proper MIME type handling
-	staticFS, _ := fs.Sub(embeddedFiles, "static")
-	staticHandler := http.FileServer(http.FS(staticFS))
+	// Static: prefer on-disk files so container/dev picks up JS/CSS without rebuild.
+	var staticHandler http.Handler
+	if info, err := os.Stat("static"); err == nil && info.IsDir() {
+		log.Printf("Serving /static/ from disk (./static)")
+		staticHandler = http.FileServer(http.Dir("static"))
+	} else {
+		staticFS, _ := fs.Sub(embeddedFiles, "static")
+		staticHandler = http.FileServer(http.FS(staticFS))
+	}
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set correct MIME type based on file extension
 		ext := filepath.Ext(r.URL.Path)
 		if mimeType := mime.TypeByExtension(ext); mimeType != "" {
 			w.Header().Set("Content-Type", mimeType)

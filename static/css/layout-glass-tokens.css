@@ -1,0 +1,37 @@
+/* Glass layout design tokens — iOS-inspired translucent surfaces.
+   Loaded before layout-glass.css; scoped to body[data-layout-version="glass"]. */
+
+body[data-layout-version="glass"] {
+    --glass-blur-xs: 8px;
+    --glass-blur-sm: 14px;
+    --glass-blur-md: 22px;
+    --glass-blur-lg: 32px;
+    --glass-saturate: 1.45;
+    --glass-highlight: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--text-primary) 10%, transparent) 0%,
+        transparent 48%
+    );
+    --layout-radius-sm: 10px;
+    --layout-radius-md: 14px;
+    --layout-radius-lg: 18px;
+    --layout-radius-pill: 999px;
+    --layout-shadow-sm: 0 1px 4px color-mix(in srgb, var(--text-primary) 10%, transparent);
+    --layout-shadow-md: 0 6px 22px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --layout-shadow-lg: 0 12px 36px color-mix(in srgb, var(--text-primary) 18%, transparent);
+    --layout-gap-header: 1.25rem;
+    --layout-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    --layout-surface: color-mix(in srgb, var(--background-secondary) 38%, transparent);
+    --layout-surface-elevated: color-mix(in srgb, var(--background-secondary) 52%, transparent);
+    --layout-surface-border: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --layout-focus-ring: 2px solid color-mix(in srgb, var(--accent-primary) 78%, transparent);
+    --layout-overlay-bg: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 55%, transparent);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    body[data-layout-version="glass"] {
+        --layout-surface: color-mix(in srgb, var(--background-secondary) 92%, var(--background-primary));
+        --layout-surface-elevated: var(--background-secondary);
+        --layout-overlay-bg: var(--background-modal, var(--background-secondary));
+    }
+}

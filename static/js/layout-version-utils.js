@@ -1,6 +1,6 @@
 // Shared layout version helpers for dashboard and config
 (function initLayoutVersionUtils() {
-    const VERSIONS = ['classic', 'modern'];
+    const VERSIONS = ['classic', 'modern', 'glass'];
 
     function getLayoutVersions() {
         return [...VERSIONS];
@@ -41,7 +41,9 @@
 
     function toggleLayoutVersion(settings, options = {}) {
         const current = normalizeLayoutVersion(settings?.layoutVersion);
-        const next = current === 'modern' ? 'classic' : 'modern';
+        const order = ['classic', 'modern', 'glass'];
+        const index = order.indexOf(current);
+        const next = order[(index + 1) % order.length];
         return applyLayoutVersion(settings, next, options);
     }
 

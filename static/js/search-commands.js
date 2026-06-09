@@ -856,7 +856,9 @@ class SearchCommandsComponent {
             const current = window.LayoutVersionUtils
                 ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
                 : 'classic';
-            const next = current === 'modern' ? 'classic' : 'modern';
+            const order = ['classic', 'modern', 'glass'];
+            const index = order.indexOf(current);
+            const next = order[(index + 1) % order.length];
             return [{
                 name: `Toggle to ${next}`,
                 shortcut: ':LAYOUTVERSION',
@@ -1192,7 +1194,8 @@ class SearchCommandsComponent {
                 saveDashboard: true
             });
         } else {
-            const nextVersion = (version || 'classic') === 'modern' ? 'modern' : 'classic';
+            const normalized = (version || 'classic').toLowerCase().trim();
+            const nextVersion = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
             dashboard.settings.layoutVersion = nextVersion;
             document.documentElement.setAttribute('data-layout-version', nextVersion);
             document.body.setAttribute('data-layout-version', nextVersion);

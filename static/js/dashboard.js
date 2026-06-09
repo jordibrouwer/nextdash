@@ -1389,7 +1389,9 @@ class Dashboard {
         document.body.setAttribute('data-layout-preset', this.settings.layoutPreset || 'default');
         const layoutVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(this.settings.layoutVersion)
-            : ((this.settings.layoutVersion || 'classic') === 'modern' ? 'modern' : 'classic');
+            : (['classic', 'modern', 'glass'].includes((this.settings.layoutVersion || '').toLowerCase())
+                ? (this.settings.layoutVersion || 'classic').toLowerCase()
+                : 'classic');
         this.settings.layoutVersion = layoutVersion;
         if (window.LayoutVersionUtils) {
             window.LayoutVersionUtils.applyLayoutVersionToDOM(layoutVersion);

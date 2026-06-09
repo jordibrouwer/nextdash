@@ -43,3 +43,4 @@ data/settings.json
 data/
 .DS_Store
 nextDash
+scripts/debug-config-save.mjs

@@ -1,0 +1,276 @@
+/* Glass overlay UI — search, modals, toasts, tag cloud, selects.
+   Scoped to body[data-layout-version="glass"]. Classic unchanged. */
+
+body[data-layout-version="glass"] {
+    --layout-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    --layout-overlay-bg: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 55%, transparent);
+}
+
+/* ─── Search overlay ───────────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"] .shortcut-search {
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .search-container {
+    border-radius: var(--layout-radius-lg);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-overlay-bg);
+    box-shadow: var(--layout-shadow-lg);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .search-prefix {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .search-match {
+    border-radius: var(--layout-radius-sm);
+    border-left: none;
+}
+
+body[data-layout-version="glass"] .search-match:hover,
+body[data-layout-version="glass"] .search-match.keyboard-selected {
+    background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+body[data-layout-version="glass"] .search-command-group-header {
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.55rem 0.25rem;
+    border-top: none;
+    border-radius: var(--layout-radius-sm);
+    opacity: 0.72;
+}
+
+body[data-layout-version="glass"] .search-command-group-header:hover,
+body[data-layout-version="glass"] .search-command-group-header.keyboard-selected {
+    opacity: 1;
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+}
+
+body[data-layout-version="glass"] .search-command-group-header.keyboard-selected {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+body[data-layout-version="glass"] .search-mode-tabs {
+    gap: 0.35rem;
+    padding: 0.35rem;
+    margin-top: 0.5rem;
+    border-top: none;
+    border-radius: var(--layout-radius-md);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+body[data-layout-version="glass"] .search-mode-tab {
+    border-radius: var(--layout-radius-pill);
+    border: 1px solid transparent;
+    transition:
+        color var(--layout-transition),
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .search-mode-tab.active {
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="glass"] .search-mode-tab:hover {
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+}
+
+body[data-layout-version="glass"] .search-history-chip,
+body[data-layout-version="glass"] .search-command-chip {
+    border-radius: var(--layout-radius-pill);
+    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+}
+
+body[data-layout-version="glass"] .search-history-chip:hover,
+body[data-layout-version="glass"] .search-command-chip:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+}
+
+/* ─── Modals ─────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"] .modal-overlay {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+body[data-layout-version="glass"] .modal {
+    border-radius: var(--layout-radius-lg);
+    box-shadow: var(--layout-shadow-lg);
+    overflow: hidden;
+    background: var(--layout-overlay-bg);
+}
+
+body[data-layout-version="glass"] .modal-header {
+    background: var(--background-secondary);
+    border-bottom-color: color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+
+body[data-layout-version="glass"] .modal-body {
+    background: var(--background-primary);
+}
+
+body[data-layout-version="glass"] .modal-new-bookmark {
+    border-radius: var(--layout-radius-lg);
+}
+
+body[data-layout-version="glass"] .nbm-header {
+    background: var(--background-secondary);
+}
+
+body[data-layout-version="glass"] .nbm-input,
+body[data-layout-version="glass"] .nbm-select {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .nbm-input:focus,
+body[data-layout-version="glass"] .nbm-select:focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+body[data-layout-version="glass"] .wn-intro {
+    border-radius: var(--layout-radius-sm);
+    background: var(--background-secondary);
+}
+
+body[data-layout-version="glass"] .wn-kofi-btn,
+body[data-layout-version="glass"] .wn-release-tag {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .modal-button,
+body[data-layout-version="glass"] .modal .btn {
+    border-radius: var(--layout-radius-sm);
+}
+
+/* ─── Toasts ─────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"] .app-notification {
+    border-radius: var(--layout-radius-md);
+    background: var(--background-secondary);
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="glass"] .app-notification-action {
+    border-radius: var(--layout-radius-sm);
+}
+
+/* ─── Tag cloud ──────────────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"] .tag-cloud-modal {
+    border-radius: var(--layout-radius-lg);
+    background: var(--background-secondary);
+    border-color: var(--border-primary);
+    box-shadow: var(--layout-shadow-lg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-layout-version="glass"] .tag-cloud-modal-close {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .tag-cloud-modal-close:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+}
+
+body[data-layout-version="glass"] .tag-cloud-word:hover,
+body[data-layout-version="glass"] .tag-cloud-word.is-selected {
+    border-radius: var(--layout-radius-sm);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+body[data-layout-version="glass"] .tag-cloud-clear-filter {
+    border-radius: var(--layout-radius-pill);
+}
+
+/* ─── Custom selects (dashboard + config) ────────────────────────────────── */
+
+body[data-layout-version="glass"] .custom-select-trigger {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .custom-select.open .custom-select-trigger,
+body[data-layout-version="glass"] .custom-select-trigger:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="glass"] .custom-select-options {
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="glass"] .custom-select-option:hover,
+body[data-layout-version="glass"] .custom-select-option.selected {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+}
+
+/* Tag autocomplete (config bookmarks form — portaled to body) */
+body[data-layout-version="glass"] .tag-ac-dropdown {
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="glass"] .tag-ac-item:hover,
+body[data-layout-version="glass"] .tag-ac-item-active {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+    border-radius: var(--layout-radius-sm);
+}
+
+/* ─── Feature tour (dashboard onboarding) ────────────────────────────────── */
+
+body[data-layout-version="glass"] .feature-tour-card {
+    border-radius: var(--layout-radius-lg);
+    box-shadow: var(--layout-shadow-lg);
+    background: var(--layout-overlay-bg);
+}
+
+body[data-layout-version="glass"] .feature-tour-input,
+body[data-layout-version="glass"] .feature-tour-fieldset {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .feature-tour-input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+body[data-layout-version="glass"] .feature-tour-btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .feature-tour-btn:hover:not(:disabled) {
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="glass"] .feature-tour-highlight {
+    border-radius: var(--layout-radius-sm);
+}
+
+/* ─── Config guided tours ─────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"] [class*="-tour-card"] {
+    border-radius: var(--layout-radius-lg);
+    box-shadow: var(--layout-shadow-lg);
+    background: var(--layout-overlay-bg);
+}
+
+body[data-layout-version="glass"] [class*="-tour-card"] .btn,
+body[data-layout-version="glass"] [class*="-tour-card"] button {
+    border-radius: var(--layout-radius-sm);
+}

@@ -127,12 +127,15 @@
     
     function normalizeLayoutVersion(value) {
         const normalized = (value || '').toLowerCase().trim();
-        return normalized === 'modern' ? 'modern' : 'classic';
+        if (normalized === 'modern' || normalized === 'glass') {
+            return normalized;
+        }
+        return 'classic';
     }
 
     /**
      * Gets the layoutVersion setting
-     * @returns {string} The layout version ('classic' or 'modern')
+     * @returns {string} The layout version ('classic', 'modern', or 'glass')
      */
     function getLayoutVersion() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';

@@ -357,7 +357,7 @@ class ConfigSettings {
         };
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
-        const layoutVersions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
+        const layoutVersions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern', 'glass'];
         const densityModes = ['comfortable', 'compact', 'dense', 'auto'];
         const layoutKey = layoutPresets.includes(layoutPreset) ? layoutPreset : 'default';
         const versionKey = layoutVersions.includes(layoutVersion) ? layoutVersion : 'classic';
@@ -661,10 +661,11 @@ class ConfigSettings {
 
         const layoutVersionSelect = document.getElementById('layout-version-select');
         if (layoutVersionSelect) {
-            const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
+            const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern', 'glass'];
             const VERSION_LABELS = {
                 classic: 'Classic',
-                modern: 'Modern'
+                modern: 'Modern',
+                glass: 'Glass'
             };
             layoutVersionSelect.innerHTML = versions.map((version) => {
                 const label = VERSION_LABELS[version] || (version.charAt(0).toUpperCase() + version.slice(1));
@@ -674,20 +675,21 @@ class ConfigSettings {
                 settings.layoutVersion = window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion || 'classic');
             }
             layoutVersionSelect.value = settings.layoutVersion || 'classic';
-            if (callbacks.onLayoutVersionChange) {
-                callbacks.onLayoutVersionChange(layoutVersionSelect.value);
+            if (window.LayoutVersionUtils) {
+                window.LayoutVersionUtils.applyLayoutVersionToDOM(settings.layoutVersion || 'classic');
             }
+            layoutVersionSelect.__customSelectInstance?.refresh?.();
             this.updateLayoutDensityPreview(
                 settings.layoutPreset || 'default',
                 settings.densityMode || 'compact',
                 settings.layoutVersion || 'classic'
             );
-            layoutVersionSelect.addEventListener('change', (e) => {
+            layoutVersionSelect.addEventListener('change', async (e) => {
                 settings.layoutVersion = window.LayoutVersionUtils
                     ? window.LayoutVersionUtils.normalizeLayoutVersion(e.target.value)
                     : e.target.value;
                 if (callbacks.onLayoutVersionChange) {
-                    callbacks.onLayoutVersionChange(settings.layoutVersion);
+                    await callbacks.onLayoutVersionChange(settings.layoutVersion);
                 }
                 this.updateLayoutDensityPreview(
                     settings.layoutPreset || 'default',
@@ -718,19 +720,24 @@ class ConfigSettings {
                 settings.layoutPreset = window.LayoutUtils.normalizeLayoutPreset(settings.layoutPreset || 'default');
             }
             layoutPresetSelect.value = settings.layoutPreset || 'default';
-            if (callbacks.onLayoutPresetChange) {
-                callbacks.onLayoutPresetChange(layoutPresetSelect.value);
-            }
+            document.body.setAttribute(
+                'data-layout-preset',
+                window.LayoutUtils
+                    ? window.LayoutUtils.normalizeLayoutPreset(settings.layoutPreset || 'default')
+                    : (settings.layoutPreset || 'default')
+            );
             this.updateLayoutDensityPreview(
                 settings.layoutPreset || 'default',
                 settings.densityMode || 'compact',
                 settings.layoutVersion || 'classic'
             );
-            layoutPresetSelect.addEventListener('change', (e) => {
+            layoutPresetSelect.addEventListener('change', async (e) => {
                 settings.layoutPreset = window.LayoutUtils
                     ? window.LayoutUtils.normalizeLayoutPreset(e.target.value)
                     : e.target.value;
-                if (callbacks.onLayoutPresetChange) callbacks.onLayoutPresetChange(settings.layoutPreset);
+                if (callbacks.onLayoutPresetChange) {
+                    await callbacks.onLayoutPresetChange(settings.layoutPreset);
+                }
                 this.updateLayoutDensityPreview(
                     settings.layoutPreset,
                     settings.densityMode || 'compact',
@@ -759,10 +766,12 @@ class ConfigSettings {
                 settings.layoutVersion || 'classic'
             );
 
-            densityModeSelect.addEventListener('change', (e) => {
+            densityModeSelect.addEventListener('change', async (e) => {
                 const value = DENSITIES.includes(e.target.value) ? e.target.value : 'compact';
                 settings.densityMode = value;
-                if (callbacks.onDensityModeChange) callbacks.onDensityModeChange(value);
+                if (callbacks.onDensityModeChange) {
+                    await callbacks.onDensityModeChange(value);
+                }
                 this.updateLayoutDensityPreview(
                     settings.layoutPreset || 'default',
                     value,
@@ -1882,6 +1891,8 @@ class ConfigSettings {
         const weatherUnitSelect = document.getElementById('weather-unit-select');
         const weatherRefreshSelect = document.getElementById('weather-refresh-select');
         const densityModeSelect = document.getElementById('density-mode-select');
+        const layoutVersionSelect = document.getElementById('layout-version-select');
+        const layoutPresetSelect = document.getElementById('layout-preset-select');
         const fontPresetSelect = document.getElementById('font-preset-select');
 
         if (themeSelect) settings.theme = themeSelect.value;
@@ -1987,6 +1998,16 @@ class ConfigSettings {
             settings.densityMode = ['comfortable', 'compact', 'dense', 'auto'].includes(densityModeSelect.value)
                 ? densityModeSelect.value
                 : 'compact';
+        }
+        if (layoutVersionSelect) {
+            settings.layoutVersion = window.LayoutVersionUtils
+                ? window.LayoutVersionUtils.normalizeLayoutVersion(layoutVersionSelect.value)
+                : layoutVersionSelect.value;
+        }
+        if (layoutPresetSelect) {
+            settings.layoutPreset = window.LayoutUtils
+                ? window.LayoutUtils.normalizeLayoutPreset(layoutPresetSelect.value)
+                : layoutPresetSelect.value;
         }
         if (fontPresetSelect && window.DashboardFont) {
             const path = settings.customFontPath && String(settings.customFontPath).trim();

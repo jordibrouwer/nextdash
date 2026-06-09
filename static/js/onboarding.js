@@ -176,6 +176,10 @@ class Onboarding {
                                 value: 'modern',
                                 label: this.t('onboarding.layoutModernLabel', 'Modern — refreshed visuals'),
                             },
+                            {
+                                value: 'glass',
+                                label: this.t('onboarding.layoutGlassLabel', 'Glass — translucent iOS-style surfaces'),
+                            },
                         ],
                     },
                 ],
@@ -444,7 +448,9 @@ class Onboarding {
             statusMonitorSelection: this.buildStatusMonitorSelection(this.statusMonitorBookmarks),
             layoutVersion: window.LayoutVersionUtils
                 ? window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion)
-                : (settings.layoutVersion === 'modern' ? 'modern' : 'classic'),
+                : (['classic', 'modern', 'glass'].includes((settings.layoutVersion || '').toLowerCase())
+                    ? (settings.layoutVersion || 'classic').toLowerCase()
+                    : 'classic'),
         };
     }
 

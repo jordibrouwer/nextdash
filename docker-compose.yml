@@ -5,6 +5,10 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      # Dev: serve latest JS/CSS/locales from disk (main.go prefers on-disk static/locales)
+      - ./static:/app/static
+      - ./locales:/app/locales
+      - ./templates:/app/templates
     environment:
       - PORT=8080
       # Optional: require X-NextDash-Token on destructive/write API calls (reset, import, colors reset, delete page, health write endpoints, clear/refresh previews)
