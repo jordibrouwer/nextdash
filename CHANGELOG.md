@@ -47,7 +47,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.15 — June 2026
 
-**General config tour restore, settings search promo reliability, simplified discoverability** — queue bar removed; What's new and spotlights reset individually; layout and paste replay from config; confirmed-dismiss storage for search promo auto-start; post-onboarding chain hardening; guided-flow and overlay visibility fixes; mobile config search sync both ways.
+**General config tour restore, settings search promo reliability, simplified discoverability, config save/unsaved alignment** — queue bar removed; What's new and spotlights reset individually; layout and paste replay from config; confirmed-dismiss storage for search promo auto-start; post-onboarding chain hardening; guided-flow and overlay visibility fixes; mobile config search sync both ways; snapshot dirty tracking and quieter save toasts.
 
 ### Discoverability simplify
 
@@ -76,6 +76,12 @@ _No unreleased changes at this time._
 - **fix** **Settings search desktop→mobile resize** — hides the search field and dismisses the promo when narrowing the config window.
 - **fix** **Settings search promo during tours** — waits until config tours finish instead of forcing after 45s; detects open What's new via AppModal overlay.
 - **new** **Reset settings search promo** — **Advanced → Tours & onboarding → Reset settings search promo** replays the pulsing field and speech balloon on desktop.
+
+### Config save state
+
+- **fix** **Config unsaved state** — snapshot-based dirty tracking waits for categories to load before the baseline; autosaved settings (language, layout, low-risk toggles) clear the unsaved badge when nothing else changed.
+- **fix** **Conflicting save feedback** — **All saved ✓** no longer appears alongside the unsaved badge; autosave and manual Save share the same dirty baseline.
+- **fix** **Quieter save toasts** — settings-only Save shows header confirmation only; the bottom-right “return to dashboard” toast stays for bookmarks, pages, categories, finders, and duplicate-URL warnings.
 
 ### Dashboard
 

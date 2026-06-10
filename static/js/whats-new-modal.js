@@ -127,6 +127,14 @@
                     ]
                 },
                 {
+                    title: 'Config save state',
+                    items: [
+                        { badge: 'fix', text: '<strong>Config unsaved state</strong> — snapshot-based dirty tracking waits for categories to load before the baseline; autosaved settings (language, layout, low-risk toggles) clear the unsaved badge when nothing else changed.' },
+                        { badge: 'fix', text: '<strong>Conflicting save feedback</strong> — <strong>All saved ✓</strong> no longer appears alongside the unsaved badge; autosave and manual Save share the same dirty baseline.' },
+                        { badge: 'fix', text: '<strong>Quieter save toasts</strong> — settings-only Save shows header confirmation only; the bottom-right “return to dashboard” toast stays for bookmarks, pages, categories, finders, and duplicate-URL warnings.' },
+                    ]
+                },
+                {
                     title: 'Dashboard',
                     items: [
                         { badge: 'fix', text: '<strong>Search flow hint</strong> — only shows after onboarding is completed; hidden during first-run wizard; clears <code>search-flow-hint-v2</code> when onboarding starts.' },
