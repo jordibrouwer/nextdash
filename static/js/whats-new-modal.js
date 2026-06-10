@@ -95,6 +95,7 @@
                     items: [
                         { badge: 'fix', text: '<strong>Discoverability queue removed</strong> — no more post-onboarding queue chain or <em>Tip X of Y</em> bar; <strong>What\'s new</strong> still auto-opens when unread; layout and paste spotlights reset individually from <strong>Advanced → System → Tours &amp; onboarding</strong>.' },
                         { badge: 'fix', text: '<strong>Dashboard post-onboarding</strong> — What\'s new, layout-nudge, and paste spotlight run directly again without a queue coordinator.' },
+                        { badge: 'fix', text: '<strong>Post-onboarding chain hardening</strong> — What\'s new retries when blocked instead of skipping for the session; polling capped after ~30s; layout nudge reset from config runs the full chain again (not layout-only).' },
                     ]
                 },
                 {
@@ -102,12 +103,13 @@
                     items: [
                         { badge: 'new', text: '<strong>General config tour restored</strong> — first desktop visit to <strong>Config → General</strong> shows the overview tour again (Essentials / Advanced layers); reset from <strong>Advanced → Tours &amp; onboarding → General</strong>.' },
                         { badge: 'fix', text: '<strong>Recoverable guided flow</strong> — stale tour DOM teardown, scroll-lock recovery, and watchdog when the card stays hidden; cache-bust on tour assets; settings search promo reschedules when the tour ends.' },
+                        { badge: 'fix', text: '<strong>Guided flow stale tour cards</strong> — GuidedFlowGuard ignores invisible tour DOM so <code>guided-flow-locked</code> does not stick after a tour ends.' },
                     ]
                 },
                 {
                     title: 'Layout discoverability',
                     items: [
-                        { badge: 'fix', text: '<strong>Layout nudge replay</strong> — reset from config queues a replay when no dashboard tab is open; dashboard init consumes pending replay; legacy <code>discoverability-deferred</code> session keys cleared.' },
+                        { badge: 'fix', text: '<strong>Layout nudge replay</strong> — reset from config queues a replay when no dashboard tab is open; dashboard init consumes the pending flag and runs the full post-onboarding chain; legacy <code>discoverability-deferred</code> session keys cleared.' },
                         { badge: 'fix', text: '<strong>Layout nudge reset feedback</strong> — clearer messages when the layout prompt shows immediately vs when you need to open or reload the dashboard (EN/NL/DE/FR).' },
                     ]
                 },
@@ -115,7 +117,15 @@
                     title: 'Config &amp; search',
                     items: [
                         { badge: 'fix', text: '<strong>Settings search promo auto-start</strong> — confirmed-dismiss storage avoids false “seen” flags from focus-before-show; retry fallbacks; schedules after config load and when switching to General.' },
+                        { badge: 'fix', text: '<strong>Settings search mobile resize</strong> — re-binds search listeners when you widen the config window after loading on mobile.' },
+                        { badge: 'fix', text: '<strong>Settings search promo during tours</strong> — waits until config tours finish instead of forcing after 45s; detects open What\'s new via AppModal overlay.' },
                         { badge: 'new', text: '<strong>Reset settings search promo</strong> — <strong>Advanced → Tours &amp; onboarding</strong> button replays the pulsing search field and speech balloon on desktop (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd> vs <kbd>Ctrl+K</kbd> quick actions).' },
+                    ]
+                },
+                {
+                    title: 'Dashboard',
+                    items: [
+                        { badge: 'fix', text: '<strong>Search flow hint</strong> — clears <code>search-flow-hint-v2</code> when onboarding starts so the shortcut hint can appear afterward.' },
                     ]
                 },
             ]),
