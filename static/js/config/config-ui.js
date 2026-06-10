@@ -141,6 +141,7 @@ class ConfigUI {
                     !mgr._configThemeTourStarting
                 ) {
                     mgr.scheduleConfigGeneralTour?.();
+                    window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
                 }
                 if (
                     targetTab === 'colors' &&
@@ -225,6 +226,7 @@ class ConfigUI {
             }
             if (tab === 'general' && window.configManager?.generalLayers) {
                 window.configManager.generalLayers.applyHash(window.location.hash);
+                window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
             }
             if (tab === 'colors' && window.configManager?.colorsEditor) {
                 const subMatch = hash.match(/^colors(?:\/(dark|light|custom))?$/);

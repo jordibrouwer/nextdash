@@ -73,6 +73,7 @@ class ConfigGeneralTour {
             window.configManager._configGeneralTourStarting = false;
         }
         window.GuidedFlowGuard?.sync?.();
+        window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
     }
 
     /** Clear a stuck tour (locked page, no visible card) after reload or failed start. */
@@ -667,6 +668,8 @@ class ConfigGeneralTour {
             document.removeEventListener('keydown', this.keyHandler);
             this.keyHandler = null;
         }
+        window.GuidedFlowGuard?.sync?.();
+        window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
     }
 
     static resetSeen() {

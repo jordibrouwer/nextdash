@@ -7,7 +7,10 @@
     const HIGHLIGHT_CLASS = 'config-settings-search-highlight';
     const MAX_RESULTS = 12;
     const PROMO_STORAGE_KEY = 'nextdash:config-settings-search-promo-v1';
-    const PROMO_MAX_RETRIES = 30;
+    /** Set only when the user actually dismissed a visible promo (avoids legacy false positives). */
+    const PROMO_CONFIRMED_KEY = 'nextdash:config-settings-search-promo-confirmed-v1';
+    const PROMO_GUIDED_FLOW_MAX_WAIT_MS = 45000;
+    const PROMO_AUTO_RETRY_MS = [1500, 3500, 7000];
 
     let language = null;
     let index = [];
@@ -15,8 +18,12 @@
     let activeIndex = -1;
     let promoEl = null;
     let promoShowTimer = null;
+    let promoAutoRetryTimers = [];
     let promoDismissed = false;
-    let promoRetryCount = 0;
+    let promoEverShown = false;
+    let promoBlockedSince = 0;
+    let listenersBound = false;
+    let promoPageShowBound = false;
 
     function t(key, fallback) {
         if (!language?.t) return fallback;
@@ -342,7 +349,7 @@
 
         const query = (inputEl?.value || '').trim();
         if (query) {
-            dismissPromo(true);
+            dismissPromo(true, { blockSession: true });
         }
 
         if (!matches.length) {
@@ -401,7 +408,7 @@
 
     function hasSeenPromo() {
         try {
-            return localStorage.getItem(PROMO_STORAGE_KEY) === '1';
+            return localStorage.getItem(PROMO_CONFIRMED_KEY) === '1';
         } catch {
             return true;
         }
@@ -410,31 +417,86 @@
     function markPromoSeen() {
         try {
             localStorage.setItem(PROMO_STORAGE_KEY, '1');
+            localStorage.setItem(PROMO_CONFIRMED_KEY, '1');
         } catch {
             // Ignore storage errors.
         }
     }
 
-    function isGuidedFlowActive() {
-        if (document.body.classList.contains('guided-flow-locked')) return true;
-        if (document.querySelector('.onboarding-card, .feature-tour-card, .feature-spotlight.show, .modal.whats-new-modal.show')) {
-            return true;
+    function clearPromoSeen() {
+        try {
+            localStorage.removeItem(PROMO_STORAGE_KEY);
+            localStorage.removeItem(PROMO_CONFIRMED_KEY);
+        } catch {
+            // Ignore storage errors.
         }
+    }
+
+    function clearPromoAutoRetries() {
+        promoAutoRetryTimers.forEach((id) => clearTimeout(id));
+        promoAutoRetryTimers = [];
+    }
+
+    function armPromoAutoRetries() {
+        if (hasSeenPromo() || promoEverShown) return;
+        clearPromoAutoRetries();
+        PROMO_AUTO_RETRY_MS.forEach((delayMs) => {
+            const id = setTimeout(() => {
+                if (!hasSeenPromo() && !promoEverShown) {
+                    schedulePromoWhenIdle();
+                }
+            }, delayMs);
+            promoAutoRetryTimers.push(id);
+        });
+    }
+
+    function isGuidedFlowActive() {
         const attrs = document.body.getAttributeNames();
         for (let i = 0; i < attrs.length; i += 1) {
             if (/^data-config-.+-tour-active$/.test(attrs[i])) return true;
         }
-        return false;
+        if (document.querySelector('.feature-spotlight.show')) return true;
+        if (document.querySelector('.modal.whats-new-modal.show')) return true;
+        if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
+        if (!document.body.classList.contains('guided-flow-locked')) return false;
+        if (window.GuidedFlowGuard?.isActive?.() !== true) return false;
+        const visibleTourCard = [...document.querySelectorAll('[class$="-tour-card"], .onboarding-card, .feature-tour-card')]
+            .some((el) => {
+                if (!(el instanceof HTMLElement)) return false;
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                const rect = el.getBoundingClientRect();
+                return rect.width > 8 && rect.height > 8;
+            });
+        return visibleTourCard
+            || Boolean(document.querySelector('.feature-spotlight.show, .modal.whats-new-modal.show'));
     }
 
-    function dismissPromo(persist = true) {
+    function isPromoVisible() {
+        return Boolean(
+            promoEl?.isConnected ||
+            document.querySelector('.config-settings-search-promo') ||
+            document.querySelector('.config-settings-search')?.classList.contains('config-settings-search--promo')
+        );
+    }
+
+    function dismissPromo(persist = true, { blockSession = null } = {}) {
+        const wasVisible = isPromoVisible();
         clearTimeout(promoShowTimer);
         promoShowTimer = null;
-        promoDismissed = true;
-        if (persist) markPromoSeen();
+        promoBlockedSince = 0;
+        const shouldBlockSession = blockSession ?? wasVisible;
+        if (shouldBlockSession) {
+            promoDismissed = true;
+        }
+        if (persist && (wasVisible || blockSession === true)) {
+            markPromoSeen();
+        }
         promoEl?.remove();
         promoEl = null;
-        document.querySelector('.config-settings-search')?.classList.remove('config-settings-search--promo');
+        const root = document.querySelector('.config-settings-search');
+        root?.querySelector('.config-settings-search-promo-badge')?.remove();
+        root?.classList.remove('config-settings-search--promo');
     }
 
     function buildPromoHtml() {
@@ -471,20 +533,27 @@
         if (!rootEl || !inputEl || promoDismissed || hasSeenPromo()) return;
         if (window.MobileExperience?.isMobileLayout?.()) return;
         if (isGuidedFlowActive()) {
-            if (promoRetryCount >= PROMO_MAX_RETRIES) {
+            if (!promoBlockedSince) promoBlockedSince = Date.now();
+            if (Date.now() - promoBlockedSince < PROMO_GUIDED_FLOW_MAX_WAIT_MS) {
+                promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);
                 return;
             }
-            promoRetryCount += 1;
-            promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);
-            return;
         }
 
+        promoBlockedSince = 0;
+
+        if (isPromoVisible()) return;
+
+        promoEverShown = true;
         rootEl.classList.add('config-settings-search--promo');
 
-        const badge = document.createElement('span');
-        badge.className = 'config-settings-search-promo-badge';
-        badge.textContent = t('settingsSearchPromoBadge', 'New');
-        rootEl.querySelector('.config-settings-search-field')?.appendChild(badge);
+        const field = rootEl.querySelector('.config-settings-search-field');
+        if (field && !field.querySelector('.config-settings-search-promo-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'config-settings-search-promo-badge';
+            badge.textContent = t('settingsSearchPromoBadge', 'New');
+            field.appendChild(badge);
+        }
 
         promoEl = buildPromoHtml();
         rootEl.appendChild(promoEl);
@@ -498,10 +567,61 @@
         });
     }
 
-    function schedulePromo(rootEl, inputEl) {
-        if (hasSeenPromo() || promoDismissed) return;
+    function schedulePromo(rootEl, inputEl, delayMs = 900) {
+        if (hasSeenPromo()) return;
+        if (promoDismissed && promoEverShown) return;
         clearTimeout(promoShowTimer);
-        promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 900);
+        promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), delayMs);
+    }
+
+    function ensureDesktopSearchVisible(rootEl) {
+        if (!rootEl || window.MobileExperience?.isMobileLayout?.()) return false;
+        rootEl.hidden = false;
+        return true;
+    }
+
+    /** Re-queue promo after config finishes loading or a guided tour ends. */
+    function schedulePromoWhenIdle() {
+        if (hasSeenPromo()) return;
+        if (window.MobileExperience?.isMobileLayout?.()) return;
+        const rootEl = document.querySelector('.config-settings-search');
+        const inputEl = document.getElementById('config-settings-search-input');
+        if (!rootEl || !inputEl || !ensureDesktopSearchVisible(rootEl)) return;
+        if (!promoEverShown) {
+            promoDismissed = false;
+        }
+        promoBlockedSince = 0;
+        schedulePromo(rootEl, inputEl);
+        armPromoAutoRetries();
+    }
+
+    function bootPromoAutoStart() {
+        if (hasSeenPromo() || window.MobileExperience?.isMobileLayout?.()) return;
+        schedulePromoWhenIdle();
+        if (!promoPageShowBound && typeof window !== 'undefined') {
+            promoPageShowBound = true;
+            window.addEventListener('pageshow', onPromoPageShow);
+        }
+    }
+
+    function onPromoPageShow(event) {
+        if (event.persisted && !hasSeenPromo() && !promoEverShown) {
+            schedulePromoWhenIdle();
+        }
+    }
+
+    function resetPromoSeen({ replay = true } = {}) {
+        clearTimeout(promoShowTimer);
+        promoShowTimer = null;
+        clearPromoAutoRetries();
+        promoDismissed = false;
+        promoEverShown = false;
+        promoBlockedSince = 0;
+        clearPromoSeen();
+        dismissPromo(false, { blockSession: false });
+        if (replay) {
+            schedulePromoWhenIdle();
+        }
     }
 
     function init(lang) {
@@ -516,6 +636,10 @@
             if (rootEl) rootEl.hidden = true;
             return;
         }
+        ensureDesktopSearchVisible(rootEl);
+
+        if (listenersBound) return;
+        listenersBound = true;
 
         const placeholder = t('settingsSearchPlaceholder', 'Find settings, tabs, help…');
         const shortcutHint = t('settingsSearchShortcut', 'Navigate — Ctrl+Shift+K · Actions Ctrl+K');
@@ -531,11 +655,17 @@
         };
 
         inputEl.addEventListener('focus', () => {
-            dismissPromo(true);
+            if (isPromoVisible()) {
+                dismissPromo(true);
+            }
             ensureIndex();
         });
         inputEl.addEventListener('input', () => {
-            dismissPromo(true);
+            if (inputEl.value.trim()) {
+                dismissPromo(true, { blockSession: true });
+            } else if (isPromoVisible()) {
+                dismissPromo(true);
+            }
             ensureIndex();
             renderResults(resultsEl, emptyEl, inputEl, search(inputEl.value));
         });
@@ -574,8 +704,6 @@
                 if (!inputEl.value.trim()) resultsEl.hidden = true;
             }
         });
-
-        schedulePromo(rootEl, inputEl);
     }
 
     function refreshIndex() {
@@ -588,5 +716,10 @@
         focusSearch,
         refreshIndex,
         rebuildIndex: buildIndex,
+        schedulePromoWhenIdle,
+        bootPromoAutoStart,
+        resetPromoSeen,
+        PROMO_STORAGE_KEY,
+        PROMO_CONFIRMED_KEY,
     };
 })();

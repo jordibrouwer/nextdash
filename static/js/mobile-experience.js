@@ -255,6 +255,10 @@
 
         if (nowMobile) {
             applyConfigTabGuard();
+        } else if (wasMobile && window.configManager) {
+            const searchRoot = document.querySelector('.config-settings-search');
+            if (searchRoot) searchRoot.hidden = false;
+            window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
         }
 
         const dash = window.dashboardInstance;

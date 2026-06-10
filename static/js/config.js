@@ -262,6 +262,7 @@ class ConfigManager {
         }
 
         window.ConfigSettingsSearch?.refreshIndex?.();
+        window.ConfigSettingsSearch?.bootPromoAutoStart?.();
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('configTour') === '1') {
@@ -3125,6 +3126,26 @@ class ConfigManager {
                 this.ui.showNotification(
                     this.language.t('config.resetPasteSpotlightSuccess')
                         || 'Paste spotlight reset — reload the dashboard if it does not appear.',
+                    'success'
+                );
+            });
+        }
+
+        const resetSettingsSearchPromoBtn = document.getElementById('reset-settings-search-promo-btn');
+        if (resetSettingsSearchPromoBtn) {
+            resetSettingsSearchPromoBtn.addEventListener('click', () => {
+                if (window.MobileExperience?.isMobileLayout?.()) {
+                    this.ui.showNotification(
+                        this.language.t('config.resetSettingsSearchPromoMobile')
+                            || 'Settings search promo is hidden on mobile — use a wider window.',
+                        'warning'
+                    );
+                    return;
+                }
+                window.ConfigSettingsSearch?.resetPromoSeen?.({ replay: true });
+                this.ui.showNotification(
+                    this.language.t('config.resetSettingsSearchPromoSuccess')
+                        || 'Settings search promo reset — it should appear in a moment.',
                     'success'
                 );
             });
