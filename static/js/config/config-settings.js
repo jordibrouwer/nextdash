@@ -594,7 +594,10 @@ class ConfigSettings {
                 settings.language = newLang;
                 await this.language.loadTranslations(newLang);
                 this.updateSystemAppearanceBadge(settings.theme);
-                await this.saveSettingsToServer(settings);
+                const ok = await this.saveSettingsToServer(settings);
+                if (ok) {
+                    window.configManager?.onSettingsAutosaved?.();
+                }
             });
         }
         
@@ -905,6 +908,7 @@ class ConfigSettings {
                     }
                     const ok = await this.saveSettingsToServer(settings);
                     if (ok) {
+                        window.configManager?.onSettingsAutosaved?.();
                         if (window.ConfigManager?.signalDashboardSettingsUpdated) {
                             window.ConfigManager.signalDashboardSettingsUpdated('settings-updated');
                         }

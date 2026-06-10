@@ -126,6 +126,7 @@ class ConfigManager {
         this._persistedTheme = '';
         this._themeAutosaveToken = 0;
         this._pagesRepairedOnLoad = false;
+        this._dirtyRecomputeTimer = null;
 
         this.init();
     }
@@ -218,9 +219,10 @@ class ConfigManager {
 
         const categoriesSelector = document.getElementById('categories-page-selector');
         if (categoriesSelector) {
-            this.loadPageCategories(this.currentCategoriesPageId);
+            await this.loadPageCategories(this.currentCategoriesPageId);
         }
         this.savedSnapshot = this.captureUndoSnapshot();
+        this.setDirtyState(false);
         this.refreshSmartCollectionCounters();
         this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
         this.validateBookmarkConflicts({ showToast: false });
@@ -2569,16 +2571,19 @@ class ConfigManager {
                 } else {
                     await this.settings.saveSettingsToServer(this.settingsData);
                 }
+                this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-updated');
             },
             onCalendarUrlChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
                 await this.settings.saveSettingsToServer(this.settingsData);
+                this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-updated');
             },
             onButtonBarPositionChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
                 await this.settings.saveSettingsToServer(this.settingsData);
+                this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-updated');
             },
             onPackedColumnsChange: async () => {
@@ -2593,6 +2598,7 @@ class ConfigManager {
                     this.ui.showNotification(this.language.t('config.packedColumnsSaveError'), 'error');
                     return;
                 }
+                this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-updated');
                 const on = this.settingsData.packedColumns === true;
                 this.ui.showNotification(
@@ -3525,6 +3531,7 @@ class ConfigManager {
             this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
             this.settingsData.themeIconStyling[theme].enabled = enabled;
             await this.settings.saveSettingsToServer(this.settingsData);
+            this.onSettingsAutosaved();
             this.signalDashboardSettingsUpdated('settings-updated');
             this.updateThemeIconStylingPreview(theme);
         });
@@ -3535,6 +3542,7 @@ class ConfigManager {
             this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
             this.settingsData.themeIconStyling[theme].style = style;
             await this.settings.saveSettingsToServer(this.settingsData);
+            this.onSettingsAutosaved();
             this.signalDashboardSettingsUpdated('settings-updated');
             this.updateThemeIconStylingPreview(theme);
         });
@@ -3553,6 +3561,7 @@ class ConfigManager {
             this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
             this.settingsData.themeIconStyling[theme].intensity = intensity;
             await this.settings.saveSettingsToServer(this.settingsData);
+            this.onSettingsAutosaved();
             this.signalDashboardSettingsUpdated('settings-updated');
         });
     }
@@ -3900,7 +3909,7 @@ class ConfigManager {
                 ok = await this.settings.saveSettingsToServer(this.settingsData);
             }
             if (ok) {
-                this.flashSavedIndicator();
+                this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-autosave');
             } else if (this.ui?.showNotification) {
                 this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
@@ -3945,7 +3954,7 @@ class ConfigManager {
         if (ok) {
             this._persistedTheme = String(this.settingsData.theme || '');
             this.updateThemePreviewBadge();
-            this.flashSavedIndicator();
+            this.onSettingsAutosaved();
             const msg = this.language?.t('config.themeSaved');
             const text = msg && msg !== 'config.themeSaved' ? msg : 'Theme saved';
             if (window.AppNotification?.show) {
@@ -3969,13 +3978,66 @@ class ConfigManager {
         }
     }
 
+    snapshotsEqual(a, b) {
+        if (!a || !b) return false;
+        return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    syncSavedSettingsSnapshot() {
+        if (!this.savedSnapshot) {
+            this.savedSnapshot = this.captureUndoSnapshot();
+            return;
+        }
+        this.savedSnapshot.settingsData = JSON.parse(JSON.stringify(this.settingsData || {}));
+    }
+
+    recomputeDirtyState() {
+        if (!this.savedSnapshot) {
+            this.setDirtyState(false);
+            return;
+        }
+        const current = this.captureUndoSnapshot();
+        this.setDirtyState(!this.snapshotsEqual(current, this.savedSnapshot));
+    }
+
+    scheduleDirtyRecompute() {
+        clearTimeout(this._dirtyRecomputeTimer);
+        this._dirtyRecomputeTimer = setTimeout(() => this.recomputeDirtyState(), 150);
+    }
+
+    onSettingsAutosaved() {
+        this.syncSavedSettingsSnapshot();
+        this.recomputeDirtyState();
+        if (!this.isDirty) {
+            this.flashSavedIndicator();
+        }
+    }
+
+    getPendingChangeScope() {
+        if (!this.savedSnapshot) {
+            return { settingsOnly: false, hasStructuralChanges: true, hasSettingsChanges: true };
+        }
+        const current = this.captureUndoSnapshot();
+        const saved = this.savedSnapshot;
+        const hasSettingsChanges = JSON.stringify(current.settingsData) !== JSON.stringify(saved.settingsData);
+        const structuralKeys = ['bookmarksData', 'categoriesData', 'findersData', 'pagesData'];
+        const hasStructuralChanges = structuralKeys.some(
+            (key) => JSON.stringify(current[key]) !== JSON.stringify(saved[key])
+        );
+        return {
+            hasSettingsChanges,
+            hasStructuralChanges,
+            settingsOnly: hasSettingsChanges && !hasStructuralChanges,
+        };
+    }
+
     setupDirtyTracking() {
         const root = document.querySelector('.config-main');
         if (!root) {
             return;
         }
         const mark = () => {
-            this.markDirty();
+            this.scheduleDirtyRecompute();
             this.validateBookmarkConflicts({ showToast: false });
         };
         const shouldIgnoreTarget = (target) => {
@@ -4004,6 +4066,7 @@ class ConfigManager {
     }
 
     flashSavedIndicator() {
+        if (this.isDirty) return;
         const saveStatus = document.getElementById('save-status-indicator');
         if (!saveStatus) return;
         saveStatus.textContent = this.language?.t('config.allSaved') || 'All saved ✓';
@@ -4049,7 +4112,7 @@ class ConfigManager {
                     }
                     this.suppressDirtyTracking = false;
                     if (ok) {
-                        this.flashSavedIndicator();
+                        this.onSettingsAutosaved();
                         this.signalDashboardSettingsUpdated('settings-autosave');
                     }
                 }, 450);
@@ -4120,6 +4183,7 @@ class ConfigManager {
 
     markDirty() {
         this.setDirtyState(true);
+        this.scheduleDirtyRecompute();
     }
 
     clearDirty() {
@@ -5629,8 +5693,11 @@ class ConfigManager {
         window.location.href = '/';
     }
 
-    buildConfigSaveFeedback(duplicateUrls = []) {
+    buildConfigSaveFeedback(duplicateUrls = [], scope = {}) {
         const hasDuplicates = Array.isArray(duplicateUrls) && duplicateUrls.length > 0;
+        if (scope.settingsOnly && !hasDuplicates) {
+            return null;
+        }
         return {
             message: hasDuplicates
                 ? this._configT(
@@ -5655,12 +5722,16 @@ class ConfigManager {
         if (conflicts.hasConflicts) {
             return;
         }
+        const changeScope = this.getPendingChangeScope();
+        const showSaveToasts = changeScope.hasStructuralChanges || !changeScope.settingsOnly;
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
             saveStatus.textContent = this.language?.t('config.savingChanges') || 'Saving changes...';
             saveStatus.classList.remove('is-unsaved');
         }
-        this.ui.showNotification(this.language.t('config.savingChanges'), 'info');
+        if (showSaveToasts) {
+            this.ui.showNotification(this.language.t('config.savingChanges'), 'info');
+        }
 
         try {
             this.settings.updateFromUI(this.settingsData);
@@ -5703,8 +5774,10 @@ class ConfigManager {
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
             this.refreshPageDropdowns();
             this.signalDashboardSettingsUpdated('settings-saved');
-            const saveFeedback = this.buildConfigSaveFeedback(duplicateUrls);
-            this.ui.showNotification(saveFeedback.message, saveFeedback.type, saveFeedback.options);
+            const saveFeedback = this.buildConfigSaveFeedback(duplicateUrls, changeScope);
+            if (saveFeedback) {
+                this.ui.showNotification(saveFeedback.message, saveFeedback.type, saveFeedback.options);
+            }
             this.clearDirty();
             this.flashSavedIndicator();
             this.undoSnapshot = null;
