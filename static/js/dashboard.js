@@ -342,7 +342,11 @@ class Dashboard {
         this.initializeOnboarding();
         this.initializeFeatureTour();
         this.initializeConfigBookmarksTour();
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
+        if (window.LayoutVersionNudge?.consumeReplayPending?.()) {
+            setTimeout(() => {
+                this.maybeShowLayoutModernNudge();
+            }, 800);
+        } else if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
             this.schedulePostOnboardingPrompts({ delay: 900 });
         }
     }

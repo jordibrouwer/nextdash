@@ -1132,6 +1132,8 @@
         "resetLayoutModernNudgeHint": "Toon de layout-versies-spotlight opnieuw op het dashboard (alleen bij klassieke layout). Probeer modern of Probeer glass past die versie direct toe.",
         "resetLayoutModernNudgeButton": "Layout-versies-prompt resetten",
         "resetLayoutModernNudgeSuccess": "Layout-prompt gereset — herlaad het dashboard om hem opnieuw te zien.",
+        "resetLayoutModernNudgeSuccessShown": "Layout-prompt getoond op het dashboard.",
+        "resetLayoutModernNudgeSuccessOpenDashboard": "Layout-prompt gereset — open het dashboard om hem te zien.",
         "resetPasteSpotlightHint": "Toon de plak-URL-spotlight opnieuw op het dashboard.",
         "resetPasteSpotlightButton": "Plak-spotlight resetten",
         "resetPasteSpotlightSuccess": "Plak-spotlight gereset — herlaad het dashboard als hij niet verschijnt.",

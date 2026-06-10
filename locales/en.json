@@ -1134,6 +1134,8 @@
         "resetLayoutModernNudgeHint": "Show the layout-versions spotlight again on the dashboard (classic layout only). Try modern or Try glass applies that version directly.",
         "resetLayoutModernNudgeButton": "Reset layout versions prompt",
         "resetLayoutModernNudgeSuccess": "Layout prompt reset — reload the dashboard to see it again.",
+        "resetLayoutModernNudgeSuccessShown": "Layout prompt shown on the dashboard.",
+        "resetLayoutModernNudgeSuccessOpenDashboard": "Layout prompt reset — open the dashboard to see it.",
         "resetPasteSpotlightHint": "Show the paste-URL spotlight again on the dashboard.",
         "resetPasteSpotlightButton": "Reset paste spotlight",
         "resetPasteSpotlightSuccess": "Paste spotlight reset — reload the dashboard if it does not appear.",

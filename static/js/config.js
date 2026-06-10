@@ -149,6 +149,7 @@ class ConfigManager {
     }
 
     async init() {
+        window.LayoutVersionNudge?.clearLegacySessionKeys?.();
         window.ConfigGeneralTour?.recoverStaleDom?.();
         window.MobileExperience?.initConfig?.();
         await this.loadData();
@@ -3088,20 +3089,27 @@ class ConfigManager {
         const resetLayoutModernNudgeBtn = document.getElementById('reset-layout-modern-nudge-btn');
         if (resetLayoutModernNudgeBtn) {
             resetLayoutModernNudgeBtn.addEventListener('click', () => {
-                (window.LayoutVersionNudge || window.LayoutModernNudge)?.reset?.();
+                const nudgeApi = window.LayoutVersionNudge || window.LayoutModernNudge;
+                nudgeApi?.reset?.();
+                let message;
                 if (window.dashboardInstance) {
                     const nudge = window.dashboardInstance.layoutVersionNudge
                         || window.dashboardInstance.layoutModernNudge;
                     nudge?.dismiss?.(false);
                     window.dashboardInstance.layoutVersionNudge = null;
                     window.dashboardInstance.layoutModernNudge = null;
-                    window.dashboardInstance.maybeShowLayoutModernNudge?.();
+                    const started = window.dashboardInstance.maybeShowLayoutModernNudge?.() === true;
+                    message = started
+                        ? (this.language.t('config.resetLayoutModernNudgeSuccessShown')
+                            || 'Layout prompt shown on the dashboard.')
+                        : (this.language.t('config.resetLayoutModernNudgeSuccess')
+                            || 'Layout prompt reset — reload the dashboard to see it again.');
+                } else {
+                    nudgeApi?.queueReplay?.();
+                    message = this.language.t('config.resetLayoutModernNudgeSuccessOpenDashboard')
+                        || 'Layout prompt reset — open the dashboard to see it.';
                 }
-                this.ui.showNotification(
-                    this.language.t('config.resetLayoutModernNudgeSuccess')
-                        || 'Layout prompt reset — reload the dashboard to see it again.',
-                    'success'
-                );
+                this.ui.showNotification(message, 'success');
             });
         }
 

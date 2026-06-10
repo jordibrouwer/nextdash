@@ -5,6 +5,8 @@
     'use strict';
 
     const STORAGE_KEY = 'nextdash:layout-modern-nudge-v1';
+    const SESSION_REPLAY_KEY = 'nextdash:layout-nudge-replay-pending';
+    const LEGACY_DEFER_KEY = 'nextdash:discoverability-deferred';
 
     const LAYOUT_ICON_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <rect x="3" y="3" width="8" height="8" rx="1.5"/>
@@ -58,16 +60,41 @@
         });
     }
 
+    function clearLegacySessionKeys() {
+        try {
+            sessionStorage.removeItem(LEGACY_DEFER_KEY);
+        } catch { /* ignore */ }
+    }
+
     const api = {
         STORAGE_KEY,
+        SESSION_REPLAY_KEY,
         shouldOffer,
         create,
+        clearLegacySessionKeys,
         reset() {
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch { /* ignore */ }
         },
+        queueReplay() {
+            api.reset();
+            try {
+                sessionStorage.setItem(SESSION_REPLAY_KEY, '1');
+            } catch { /* ignore */ }
+        },
+        consumeReplayPending() {
+            try {
+                const pending = sessionStorage.getItem(SESSION_REPLAY_KEY) === '1';
+                sessionStorage.removeItem(SESSION_REPLAY_KEY);
+                return pending;
+            } catch {
+                return false;
+            }
+        },
     };
+
+    clearLegacySessionKeys();
 
     window.LayoutVersionNudge = api;
     window.LayoutModernNudge = api;

@@ -1129,6 +1129,8 @@
         "resetLayoutModernNudgeHint": "Réafficher la spotlight versions de mise en page sur le tableau de bord (layout classique uniquement). Essayer moderne ou Essayer glass applique cette version directement.",
         "resetLayoutModernNudgeButton": "Réinitialiser l'invite versions de mise en page",
         "resetLayoutModernNudgeSuccess": "Invite layout réinitialisée — rechargez le tableau de bord pour la revoir.",
+        "resetLayoutModernNudgeSuccessShown": "Invite layout affichée sur le tableau de bord.",
+        "resetLayoutModernNudgeSuccessOpenDashboard": "Invite layout réinitialisée — ouvrez le tableau de bord pour la voir.",
         "resetPasteSpotlightHint": "Réafficher la spotlight coller-URL sur le tableau de bord.",
         "resetPasteSpotlightButton": "Réinitialiser spotlight coller",
         "resetPasteSpotlightSuccess": "Spotlight coller réinitialisée — rechargez le tableau de bord si elle n'apparaît pas.",

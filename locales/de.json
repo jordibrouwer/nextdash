@@ -1129,6 +1129,8 @@
         "resetLayoutModernNudgeHint": "Layout-Versionen-Spotlight auf dem Dashboard erneut anzeigen (nur bei klassischem Layout). Modern testen oder Glass testen wendet die Version direkt an.",
         "resetLayoutModernNudgeButton": "Layout-Versionen-Hinweis zurücksetzen",
         "resetLayoutModernNudgeSuccess": "Layout-Hinweis zurückgesetzt — Dashboard neu laden, um ihn erneut zu sehen.",
+        "resetLayoutModernNudgeSuccessShown": "Layout-Hinweis auf dem Dashboard angezeigt.",
+        "resetLayoutModernNudgeSuccessOpenDashboard": "Layout-Hinweis zurückgesetzt — Dashboard öffnen, um ihn zu sehen.",
         "resetPasteSpotlightHint": "URL-einfügen-Spotlight auf dem Dashboard erneut anzeigen.",
         "resetPasteSpotlightButton": "Einfügen-Spotlight zurücksetzen",
         "resetPasteSpotlightSuccess": "Einfügen-Spotlight zurückgesetzt — Dashboard neu laden, falls er nicht erscheint.",
