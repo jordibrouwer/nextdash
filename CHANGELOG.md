@@ -46,16 +46,19 @@ _No unreleased changes at this time._
 
 ## v2026.06.14 — June 2026
 
-**Health badge parity, discoverability queue polish, Docker cache-bust** — shared `HealthBadgeUtils`, config badge refresh on tab focus, queue numbering from step 1, GHCR docs aligned, MANUAL updates.
+**Health badge parity, discoverability on config, Docker cache-bust** — shared `HealthBadgeUtils`, live badge refresh after config sync, queue on config and dashboard, GHCR docs aligned, MANUAL updates.
 
 ### Health discoverability
 
 - **fix** **Shared health badge helper** — `HealthBadgeUtils` drives dashboard and config header badges (broken/warning counts, `/health?filter=broken` routing, badge DOM) from one module.
 - **fix** **Config badge parity** — config header warnings include shortcut conflicts (same as dashboard); badge refreshes when the browser tab becomes visible again after visiting health or the dashboard.
+- **fix** **Live config sync badge** — dashboard header health badge refreshes after live config structure sync (cross-tab bookmark edits), without switching tabs.
 
 ### Layout discoverability
 
 - **fix** **Queue numbering** — post-onboarding discoverability shows **Tip 1 of 3** on the What's new modal (when unread), then layout-nudge and paste spotlights; **Later this session** on all three steps.
+- **fix** **Config discoverability queue** — post-onboarding tips (What's new, layout-nudge) also run when users open config first; paste spotlight stays dashboard-only; layout choices from the nudge save via config when no dashboard tab is open.
+- **fix** **Queue reset on config** — Advanced reset buttons for the discoverability queue and layout nudge also replay the queue on the current config page.
 
 ### Docker & deploy
 

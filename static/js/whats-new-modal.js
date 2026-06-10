@@ -95,12 +95,15 @@
                     items: [
                         { badge: 'fix', text: '<strong>Shared health badge helper</strong> — <code>HealthBadgeUtils</code> drives dashboard and config header badges (broken/warning counts, <code>/health?filter=broken</code> routing, badge DOM) from one module.' },
                         { badge: 'fix', text: '<strong>Config badge parity</strong> — config header warnings include shortcut conflicts (same as dashboard); badge refreshes when you return to the config tab after visiting health or the dashboard.' },
+                        { badge: 'fix', text: '<strong>Live config sync badge</strong> — dashboard header health badge refreshes after live config structure sync (cross-tab bookmark edits), without switching tabs.' },
                     ]
                 },
                 {
                     title: 'Layout discoverability',
                     items: [
                         { badge: 'fix', text: '<strong>Queue numbering</strong> — post-onboarding discoverability starts at <em>Tip 1 of 3</em> on the What\'s new modal (when unread), then layout-nudge and paste spotlights; <em>Later this session</em> on all three steps.' },
+                        { badge: 'fix', text: '<strong>Config discoverability queue</strong> — What\'s new and layout-nudge also run when you open config first; paste spotlight stays dashboard-only; layout choices from the nudge save via config when no dashboard tab is open.' },
+                        { badge: 'fix', text: '<strong>Queue reset on config</strong> — Advanced reset buttons for the discoverability queue and layout nudge replay the queue on the current config page.' },
                     ]
                 },
                 {
