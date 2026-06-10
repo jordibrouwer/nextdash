@@ -12,11 +12,25 @@
     const BOOKMARKS_COMPANION_CLASS = 'config-bookmarks-tour-interactive-modal';
 
     const TOUR_CARD_SELECTOR = '[data-config-tour-card], [class$="-tour-card"]';
+    const TOUR_CARD_QUERY = '[data-config-tour-card], .config-bookmarks-tour-card, .config-tags-tour-card, .config-collections-tour-card, .config-general-tour-card, .config-pages-tour-card, .config-theme-tour-card, .config-categories-tour-card, .config-finders-tour-card, .config-stats-tour-card, [class$="-tour-card"]';
+
+    function isVisibleTourCard(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 8 && rect.height > 8;
+    }
+
+    function hasVisibleTourCard() {
+        return [...document.querySelectorAll(TOUR_CARD_QUERY)].some(isVisibleTourCard);
+    }
 
     function findActiveTourCard() {
-        return document.querySelector(
-            '[data-config-tour-card], .config-bookmarks-tour-card, .config-tags-tour-card, .config-collections-tour-card, .config-general-tour-card, .config-pages-tour-card, .config-theme-tour-card, .config-categories-tour-card, .config-finders-tour-card, .config-stats-tour-card, [class$="-tour-card"]'
-        );
+        for (const card of document.querySelectorAll(TOUR_CARD_QUERY)) {
+            if (isVisibleTourCard(card)) return card;
+        }
+        return null;
     }
 
     function isConfigTabTourActive() {
@@ -200,7 +214,7 @@
                 return true;
             }
         }
-        if (document.querySelector('[class$="-tour-card"]')) {
+        if (hasVisibleTourCard()) {
             return true;
         }
         return false;
@@ -288,7 +302,7 @@
             return;
         }
         const focusRoot =
-            document.querySelector('[data-config-tour-card], [class$="-tour-card"]') ||
+            findActiveTourCard() ||
             document.querySelector('.onboarding-card, .feature-tour-card, .feature-spotlight.show');
         const primary =
             focusRoot?.querySelector(

@@ -343,11 +343,8 @@ class Dashboard {
         this.initializeOnboarding();
         this.initializeFeatureTour();
         this.initializeConfigBookmarksTour();
-        if (window.LayoutVersionNudge?.consumeReplayPending?.()) {
-            setTimeout(() => {
-                this.maybeShowLayoutModernNudge();
-            }, 800);
-        } else if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
+        window.LayoutVersionNudge?.consumeReplayPending?.();
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
             this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
         }
     }
@@ -2457,6 +2454,7 @@ class Dashboard {
         if (this.onboardingStartedInSession) {
             try {
                 localStorage.removeItem('nextdash:search-flow-hint-v1');
+                localStorage.removeItem('nextdash:search-flow-hint-v2');
             } catch {}
         }
         onboarding.maybeStart();
