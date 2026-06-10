@@ -9,6 +9,12 @@
     const SESSION_DEFER_KEY = 'nextdash:discoverability-deferred';
     const WHATS_NEW_STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
 
+    function queueMetaFor(itemId) {
+        const idx = JOURNEY.indexOf(itemId);
+        if (idx < 0) return null;
+        return { current: idx + 1, total: JOURNEY.length };
+    }
+
     class DiscoverabilityQueue {
         constructor(dashboard) {
             this.dashboard = dashboard;
@@ -128,6 +134,9 @@
             this._activeClose = () => window.AppModal?.hide?.();
             window.openWhatsNewModal({
                 force: false,
+                dashboard: dash,
+                queueMeta: queueMetaFor('whats-new'),
+                onQueueDefer: () => this.deferRemaining(),
                 onClose: () => {
                     onComplete();
                     this._activeClose = null;
@@ -153,7 +162,7 @@
                     if (dash.pasteSpotlight === spotlight) dash.pasteSpotlight = null;
                     onComplete();
                 },
-                queueMeta: { current: JOURNEY.indexOf('paste-spotlight') + 1, total: JOURNEY.length },
+                queueMeta: queueMetaFor('paste-spotlight'),
                 onQueueDefer: () => this.deferRemaining(),
             });
 
@@ -184,7 +193,7 @@
             }
 
             const spotlight = window.LayoutVersionNudge.create(dash, {
-                queueMeta: { current: JOURNEY.indexOf('layout-modern-nudge') + 1, total: JOURNEY.length },
+                queueMeta: queueMetaFor('layout-modern-nudge'),
                 onQueueDefer: () => this.deferRemaining(),
             });
             if (!spotlight) {

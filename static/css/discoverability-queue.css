@@ -48,3 +48,7 @@
     border-right: none;
     border-top: none;
 }
+
+.whats-new-modal .discoverability-queue-bar {
+    margin: 0 0 0.75rem;
+}

@@ -81,7 +81,7 @@ See [Security and self-hosting](#21-security-and-self-hosting) before exposing n
 ```yaml
 services:
   nextDash:
-    image: ghcr.io/jordibrouwer/nextDash:latest
+    image: ghcr.io/jordibrouwer/nextdash:latest
     container_name: nextDash
     ports:
       - "8080:8080"

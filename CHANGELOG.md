@@ -1009,7 +1009,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard); nextDa
 - **new** **Finders (`?`)** — external search templates with `%s`.
 - **new** **Config UI** — manage pages, categories, bookmarks, finders, settings.
 - **new** **Custom themes** — built-in palettes + `/colors` editor.
-- **new** **Docker image** — `ghcr.io/jordibrouwer/nextDash` with volume-mounted data.
+- **new** **Docker image** — `ghcr.io/jordibrouwer/nextdash` with volume-mounted data.
 
 ### Bookmarks & organisation
 
