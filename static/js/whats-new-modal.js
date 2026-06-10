@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v51';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v52';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,36 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.14', 'June 2026', '2026-06-10', [
+                {
+                    title: 'Health discoverability',
+                    items: [
+                        { badge: 'fix', text: '<strong>Shared health badge helper</strong> — <code>HealthBadgeUtils</code> drives dashboard and config header badges (broken/warning counts, <code>/health?filter=broken</code> routing, badge DOM) from one module.' },
+                        { badge: 'fix', text: '<strong>Config badge parity</strong> — config header warnings include shortcut conflicts (same as dashboard); badge refreshes when you return to the config tab after visiting health or the dashboard.' },
+                    ]
+                },
+                {
+                    title: 'Layout discoverability',
+                    items: [
+                        { badge: 'fix', text: '<strong>Queue numbering</strong> — post-onboarding discoverability starts at <em>Tip 1 of 3</em> on the What\'s new modal (when unread), then layout-nudge and paste spotlights; <em>Later this session</em> on all three steps.' },
+                    ]
+                },
+                {
+                    title: 'Docker &amp; deploy',
+                    items: [
+                        { badge: 'fix', text: '<strong>Cache-bust</strong> — template query strings for <code>whats-new-modal.js</code>, <code>discoverability-queue</code>, and <code>health-badge-utils.js</code> so Docker-mounted static files refresh without a hard reload.' },
+                        { badge: 'fix', text: '<strong>GHCR image name</strong> — README and MANUAL use <code>ghcr.io/jordibrouwer/nextdash</code> (lowercase), matching GHCR and the Unraid template.' },
+                    ]
+                },
+                {
+                    title: 'Documentation &amp; developer',
+                    items: [
+                        { badge: 'fix', text: '<strong>MANUAL</strong> — discoverability queue flow and Essentials <em>Health →</em> broken-filter routing documented.' },
+                        { badge: 'fix', text: '<strong>Go test stability</strong> — tests use <code>t.Chdir</code> for temp directories so repeated <code>go test -count</code> runs no longer flake on cleanup.' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.13', 'June 2026', '2026-06-09', [
                 {

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.14 — June 2026](#v20260614--june-2026)
 - [v2026.06.13 — June 2026](#v20260613--june-2026)
 - [v2026.06.12 — June 2026](#v20260612--june-2026)
 - [v2026.06.11 — June 2026](#v20260611--june-2026)
@@ -40,6 +41,35 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.14 — June 2026
+
+**Health badge parity, discoverability queue polish, Docker cache-bust** — shared `HealthBadgeUtils`, config badge refresh on tab focus, queue numbering from step 1, GHCR docs aligned, MANUAL updates.
+
+### Health discoverability
+
+- **fix** **Shared health badge helper** — `HealthBadgeUtils` drives dashboard and config header badges (broken/warning counts, `/health?filter=broken` routing, badge DOM) from one module.
+- **fix** **Config badge parity** — config header warnings include shortcut conflicts (same as dashboard); badge refreshes when the browser tab becomes visible again after visiting health or the dashboard.
+
+### Layout discoverability
+
+- **fix** **Queue numbering** — post-onboarding discoverability shows **Tip 1 of 3** on the What's new modal (when unread), then layout-nudge and paste spotlights; **Later this session** on all three steps.
+
+### Docker & deploy
+
+- **fix** **Cache-bust** — template query strings for `whats-new-modal.js`, `discoverability-queue` JS/CSS, and `health-badge-utils.js` so Docker-mounted static files refresh without a hard reload.
+- **fix** **GHCR image name** — README and MANUAL use `ghcr.io/jordibrouwer/nextdash` (lowercase), matching GHCR and the Unraid template.
+
+### Documentation
+
+- **fix** **MANUAL** — discoverability queue flow (Tip X of Y, Later this session) and Essentials **Health →** broken-filter routing documented.
+
+### Developer
+
+- **fix** **Go test stability** — tests use `t.Chdir` for temp directories so repeated `go test -count` runs no longer flake on `TempDir` cleanup.
+- **chore** **`scripts/` directory** — `.gitkeep` tracks the folder; local debug scripts (e.g. Playwright) remain gitignored.
 
 ---
 
