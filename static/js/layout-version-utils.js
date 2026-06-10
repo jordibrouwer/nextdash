@@ -34,6 +34,13 @@
 
         if (options.saveDashboard && window.dashboardInstance && typeof window.dashboardInstance.saveSettings === 'function') {
             window.dashboardInstance.saveSettings();
+        } else if (
+            options.saveSettings !== false
+            && window.configManager?.settings?.saveSettingsToServer
+            && settings === window.configManager.settingsData
+        ) {
+            void window.configManager.settings.saveSettingsToServer(settings);
+            window.configManager.signalDashboardSettingsUpdated?.('settings-updated');
         }
 
         return nextVersion;

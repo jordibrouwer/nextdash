@@ -84,6 +84,7 @@
             }
 
             if (id === 'paste-spotlight') {
+                if (dash.isConfigDiscoverabilityHost) return false;
                 if (typeof window.FeatureSpotlight !== 'function') return false;
                 if (dash.settings?.pasteUrlQuickAdd === false) return false;
                 if (window.matchMedia?.('(pointer: coarse)').matches) return false;
@@ -229,6 +230,34 @@
         try {
             sessionStorage.removeItem(SESSION_DEFER_KEY);
         } catch { /* ignore */ }
+    };
+
+    DiscoverabilityQueue.createConfigHost = function createConfigHost(configManager) {
+        if (!configManager) return null;
+        const host = {
+            settings: configManager.settingsData,
+            language: configManager.language,
+            onboardingStartedInSession: false,
+            isConfigDiscoverabilityHost: true,
+            isModalOpen() {
+                if (typeof configManager.isDiscoverabilityBlocked === 'function') {
+                    return configManager.isDiscoverabilityBlocked();
+                }
+                return false;
+            },
+        };
+        ['layoutVersionNudge', 'layoutModernNudge', 'pasteSpotlight'].forEach((key) => {
+            Object.defineProperty(host, key, {
+                enumerable: true,
+                get() {
+                    return configManager[key];
+                },
+                set(value) {
+                    configManager[key] = value;
+                },
+            });
+        });
+        return host;
     };
 
     function translateQueueLabel(dashboard, key, fallback, replacements = {}) {

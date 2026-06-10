@@ -259,6 +259,24 @@ class ConfigManager {
         }
 
         window.ConfigSettingsSearch?.refreshIndex?.();
+        this.initializeDiscoverabilityQueue();
+    }
+
+    isDiscoverabilityBlocked() {
+        if (window.GuidedFlowGuard?.isModalOpen?.()) return true;
+        if (document.querySelector('.feature-spotlight.show, .modal.whats-new-modal.show, .onboarding-card, .feature-tour-card')) {
+            return true;
+        }
+        return this._isConfigTabTourBusy();
+    }
+
+    initializeDiscoverabilityQueue() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
+        if (typeof window.DiscoverabilityQueue !== 'function') return;
+        const host = window.DiscoverabilityQueue.createConfigHost?.(this);
+        if (!host) return;
+        this.discoverabilityQueue = new window.DiscoverabilityQueue(host);
+        this.discoverabilityQueue.scheduleRun({ delay: 1200 });
     }
 
     _isConfigTabTourBusy(exclude) {
@@ -2843,6 +2861,10 @@ class ConfigManager {
         if (resetLayoutModernNudgeBtn) {
             resetLayoutModernNudgeBtn.addEventListener('click', () => {
                 (window.LayoutVersionNudge || window.LayoutModernNudge)?.reset?.();
+                const configNudge = this.layoutVersionNudge || this.layoutModernNudge;
+                configNudge?.dismiss?.(false);
+                this.layoutVersionNudge = null;
+                this.layoutModernNudge = null;
                 if (window.dashboardInstance) {
                     const nudge = window.dashboardInstance.layoutVersionNudge
                         || window.dashboardInstance.layoutModernNudge;
@@ -2851,6 +2873,7 @@ class ConfigManager {
                     window.dashboardInstance.layoutModernNudge = null;
                     window.dashboardInstance.discoverabilityQueue?.scheduleRun?.();
                 }
+                this.discoverabilityQueue?.scheduleRun({ delay: 300 });
                 this.ui.showNotification(
                     this.language.t('config.resetLayoutModernNudgeSuccess')
                         || 'Layout prompt reset — reload the dashboard to see it again.',
@@ -2883,6 +2906,7 @@ class ConfigManager {
                 if (window.dashboardInstance?.discoverabilityQueue) {
                     window.dashboardInstance.discoverabilityQueue.scheduleRun({ delay: 300 });
                 }
+                this.discoverabilityQueue?.scheduleRun({ delay: 300 });
                 this.ui.showNotification(
                     this.language.t('config.resetDiscoverabilitySessionSuccess')
                         || 'Discoverability queue reset for this browser session.',

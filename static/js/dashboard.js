@@ -506,6 +506,7 @@ class Dashboard {
             if (this.searchComponent) {
                 this.updateSearchComponent();
             }
+            this.updateHealthBadge();
         } catch (error) {
             window.location.reload();
         }
