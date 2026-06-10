@@ -14,7 +14,7 @@
     const TOUR_CARD_SELECTOR = '[data-config-tour-card], [class$="-tour-card"]';
     const TOUR_CARD_QUERY = '[data-config-tour-card], .config-bookmarks-tour-card, .config-tags-tour-card, .config-collections-tour-card, .config-general-tour-card, .config-pages-tour-card, .config-theme-tour-card, .config-categories-tour-card, .config-finders-tour-card, .config-stats-tour-card, [class$="-tour-card"]';
 
-    function isVisibleTourCard(el) {
+    function isVisibleGuidedEl(el) {
         if (!(el instanceof HTMLElement)) return false;
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden') return false;
@@ -22,13 +22,17 @@
         return rect.width > 8 && rect.height > 8;
     }
 
+    function hasVisibleIn(selector) {
+        return [...document.querySelectorAll(selector)].some(isVisibleGuidedEl);
+    }
+
     function hasVisibleTourCard() {
-        return [...document.querySelectorAll(TOUR_CARD_QUERY)].some(isVisibleTourCard);
+        return hasVisibleIn(TOUR_CARD_QUERY);
     }
 
     function findActiveTourCard() {
         for (const card of document.querySelectorAll(TOUR_CARD_QUERY)) {
-            if (isVisibleTourCard(card)) return card;
+            if (isVisibleGuidedEl(card)) return card;
         }
         return null;
     }
@@ -199,10 +203,10 @@
         if (document.body.hasAttribute('data-tour-active')) {
             return true;
         }
-        if (document.querySelector('.onboarding-overlay, .onboarding-card')) {
+        if (hasVisibleIn('.onboarding-overlay, .onboarding-card')) {
             return true;
         }
-        if (document.querySelector('.feature-tour-overlay, .feature-tour-card')) {
+        if (hasVisibleIn('.feature-tour-overlay, .feature-tour-card')) {
             return true;
         }
         if (document.querySelector('.feature-spotlight.show')) {

@@ -255,6 +255,7 @@
 
         if (nowMobile) {
             applyConfigTabGuard();
+            window.ConfigSettingsSearch?.syncMobileLayout?.();
         } else if (wasMobile && window.configManager) {
             window.ConfigSettingsSearch?.init?.(window.configManager.language);
             window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();

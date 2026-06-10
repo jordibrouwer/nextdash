@@ -3117,17 +3117,23 @@ class ConfigManager {
         const resetPasteSpotlightBtn = document.getElementById('reset-paste-spotlight-btn');
         if (resetPasteSpotlightBtn) {
             resetPasteSpotlightBtn.addEventListener('click', () => {
-                window.FeatureSpotlight?.resetPasteSpotlight?.();
+                let message;
                 if (window.dashboardInstance) {
+                    window.FeatureSpotlight?.resetPasteSpotlight?.();
                     window.dashboardInstance.pasteSpotlight?.dismiss?.(false);
                     window.dashboardInstance.pasteSpotlight = null;
-                    window.dashboardInstance.maybeShowPasteSpotlight?.();
+                    const started = window.dashboardInstance.maybeShowPasteSpotlight?.() === true;
+                    message = started
+                        ? (this.language.t('config.resetPasteSpotlightSuccessShown')
+                            || 'Paste spotlight shown on the dashboard.')
+                        : (this.language.t('config.resetPasteSpotlightSuccess')
+                            || 'Paste spotlight reset — reload the dashboard if it does not appear.');
+                } else {
+                    window.FeatureSpotlight?.queuePasteReplay?.();
+                    message = this.language.t('config.resetPasteSpotlightSuccessOpenDashboard')
+                        || 'Paste spotlight reset — open the dashboard to see it.';
                 }
-                this.ui.showNotification(
-                    this.language.t('config.resetPasteSpotlightSuccess')
-                        || 'Paste spotlight reset — reload the dashboard if it does not appear.',
-                    'success'
-                );
+                this.ui.showNotification(message, 'success');
             });
         }
 

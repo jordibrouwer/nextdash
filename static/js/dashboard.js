@@ -236,6 +236,7 @@ class Dashboard {
         this.onboardingStartedInSession = false;
         this._postOnboardingPromptsTimer = null;
         this._postOnboardingPromptsAttempts = 0;
+        this._postOnboardingWhatsNewAbortAttempts = 0;
         this.init();
     }
     
@@ -344,6 +345,7 @@ class Dashboard {
         this.initializeFeatureTour();
         this.initializeConfigBookmarksTour();
         window.LayoutVersionNudge?.consumeReplayPending?.();
+        window.FeatureSpotlight?.consumePasteReplayPending?.();
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
             this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
         }
@@ -2220,6 +2222,7 @@ class Dashboard {
         else if (Number.isFinite(options.delay)) delay = options.delay;
         if (options.resetAttempts === true) {
             this._postOnboardingPromptsAttempts = 0;
+            this._postOnboardingWhatsNewAbortAttempts = 0;
         }
         const payload = {
             delay: undefined,
@@ -2252,15 +2255,31 @@ class Dashboard {
             window.openWhatsNewModal({
                 force: false,
                 ifBlockingModalOpen: () => !this.canShowPostOnboardingPrompts(),
-                onClose: () => this.schedulePostOnboardingPrompts({
-                    delay: 1200,
-                    skipWhatsNew: true,
-                }),
-                onAbort: () => this.schedulePostOnboardingPrompts({
-                    delay: 600,
-                    skipWhatsNew: false,
-                    skipLayoutNudge,
-                }),
+                onClose: () => {
+                    this._postOnboardingWhatsNewAbortAttempts = 0;
+                    this.schedulePostOnboardingPrompts({
+                        delay: 1200,
+                        skipWhatsNew: true,
+                    });
+                },
+                onAbort: () => {
+                    const abortAttempts = (this._postOnboardingWhatsNewAbortAttempts || 0) + 1;
+                    this._postOnboardingWhatsNewAbortAttempts = abortAttempts;
+                    if (abortAttempts >= 20) {
+                        this._postOnboardingWhatsNewAbortAttempts = 0;
+                        this.schedulePostOnboardingPrompts({
+                            delay: 1200,
+                            skipWhatsNew: true,
+                            skipLayoutNudge,
+                        });
+                        return;
+                    }
+                    this.schedulePostOnboardingPrompts({
+                        delay: 600,
+                        skipWhatsNew: false,
+                        skipLayoutNudge,
+                    });
+                },
             });
             return;
         }
@@ -2452,6 +2471,11 @@ class Dashboard {
         });
         this.onboardingStartedInSession = onboarding.shouldStart();
         if (this.onboardingStartedInSession) {
+            const hintEl = document.getElementById('search-flow-hint');
+            if (hintEl) {
+                hintEl.hidden = true;
+                hintEl.classList.remove('dismissing');
+            }
             try {
                 localStorage.removeItem('nextdash:search-flow-hint-v1');
                 localStorage.removeItem('nextdash:search-flow-hint-v2');
@@ -2666,6 +2690,8 @@ class Dashboard {
 
     initializeSearchFlowHint() {
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
+        if (this.onboardingStartedInSession) return;
+        if (this.settings?.onboardingCompleted !== true) return;
         const hintEl = document.getElementById('search-flow-hint');
         if (!hintEl) return;
 
@@ -2752,12 +2778,30 @@ class Dashboard {
         return tips;
     }
 
+    isVisibleBlockingOverlay(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 8 && rect.height > 8;
+    }
+
     isModalOpen() {
-        if (document.querySelector('.modal-overlay.show')) return true;
-        if (document.querySelector('.onboarding-overlay, .onboarding-card')) return true;
-        if (document.querySelector('.feature-tour-overlay, .feature-tour-card')) return true;
+        const appModal = document.getElementById('app-modal');
+        if (appModal?.classList.contains('show')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
-        if (document.body.classList.contains('guided-flow-locked')) return true;
+        const blockingSelectors = [
+            '.onboarding-overlay',
+            '.onboarding-card',
+            '.feature-tour-overlay',
+            '.feature-tour-card',
+            '[class$="-tour-card"]',
+        ];
+        for (const selector of blockingSelectors) {
+            for (const el of document.querySelectorAll(selector)) {
+                if (this.isVisibleBlockingOverlay(el)) return true;
+            }
+        }
         return false;
     }
 

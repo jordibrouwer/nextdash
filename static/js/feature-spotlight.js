@@ -2,6 +2,7 @@
     'use strict';
 
     const DEFAULT_STORAGE_KEY = 'nextdash:feature-spotlight-paste-v1';
+    const PASTE_REPLAY_KEY = 'nextdash:paste-spotlight-replay-pending';
 
     const PASTE_ICON_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <rect x="9" y="2" width="6" height="4" rx="1" ry="1"/>
@@ -194,6 +195,23 @@
             FeatureSpotlight.resetStorage(DEFAULT_STORAGE_KEY);
         }
 
+        static queuePasteReplay() {
+            FeatureSpotlight.resetPasteSpotlight();
+            try {
+                sessionStorage.setItem(PASTE_REPLAY_KEY, '1');
+            } catch { /* ignore */ }
+        }
+
+        static consumePasteReplayPending() {
+            try {
+                const pending = sessionStorage.getItem(PASTE_REPLAY_KEY) === '1';
+                sessionStorage.removeItem(PASTE_REPLAY_KEY);
+                return pending;
+            } catch {
+                return false;
+            }
+        }
+
         static dismissVisible() {
             document.querySelectorAll('.feature-spotlight.show').forEach((el) => {
                 el.classList.remove('show');
@@ -206,5 +224,6 @@
 
     window.FeatureSpotlight = FeatureSpotlight;
     window.FeatureSpotlight.DEFAULT_STORAGE_KEY = DEFAULT_STORAGE_KEY;
+    window.FeatureSpotlight.PASTE_REPLAY_KEY = PASTE_REPLAY_KEY;
     window.FeatureSpotlight.PASTE_ICON_SVG = PASTE_ICON_SVG;
 })();

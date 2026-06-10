@@ -601,6 +601,20 @@
         return true;
     }
 
+    /** Hide search and promo when the config viewport becomes mobile-sized. */
+    function syncMobileLayout() {
+        const rootEl = document.querySelector('.config-settings-search');
+        if (!window.MobileExperience?.isMobileLayout?.()) {
+            ensureDesktopSearchVisible(rootEl);
+            return;
+        }
+        if (rootEl) rootEl.hidden = true;
+        clearTimeout(promoShowTimer);
+        promoShowTimer = null;
+        clearPromoAutoRetries();
+        dismissPromo(false, { blockSession: false });
+    }
+
     /** Re-queue promo after config finishes loading or a guided tour ends. */
     function schedulePromoWhenIdle() {
         if (hasSeenPromo()) return;
@@ -740,6 +754,7 @@
         schedulePromoWhenIdle,
         bootPromoAutoStart,
         resetPromoSeen,
+        syncMobileLayout,
         PROMO_STORAGE_KEY,
         PROMO_CONFIRMED_KEY,
     };

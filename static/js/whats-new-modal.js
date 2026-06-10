@@ -150,7 +150,7 @@
                 {
                     title: 'Docker &amp; deploy',
                     items: [
-                        { badge: 'fix', text: '<strong>Cache-bust</strong> — template query strings for <code>whats-new-modal.js</code>, <code>discoverability-queue</code>, and <code>health-badge-utils.js</code> so Docker-mounted static files refresh without a hard reload.' },
+                        { badge: 'fix', text: '<strong>Cache-bust</strong> — template query strings for <code>whats-new-modal.js</code> and <code>health-badge-utils.js</code> so Docker-mounted static files refresh without a hard reload.' },
                         { badge: 'fix', text: '<strong>GHCR image name</strong> — README and MANUAL use <code>ghcr.io/jordibrouwer/nextdash</code> (lowercase), matching GHCR and the Unraid template.' },
                     ]
                 },
