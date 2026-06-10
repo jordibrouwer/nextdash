@@ -450,26 +450,43 @@
         });
     }
 
-    function isGuidedFlowActive() {
+    function isVisibleTourCard(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 8 && rect.height > 8;
+    }
+
+    function hasVisibleTourCard() {
+        return [...document.querySelectorAll('[class$="-tour-card"], .onboarding-card, .feature-tour-card')]
+            .some(isVisibleTourCard);
+    }
+
+    function isConfigTourActive() {
         const attrs = document.body.getAttributeNames();
         for (let i = 0; i < attrs.length; i += 1) {
             if (/^data-config-.+-tour-active$/.test(attrs[i])) return true;
         }
+        return hasVisibleTourCard();
+    }
+
+    function isWhatsNewModalOpen() {
+        const overlay = document.getElementById('app-modal');
+        if (!overlay?.classList.contains('show')) return false;
+        return Boolean(overlay.querySelector('.modal.whats-new-modal'));
+    }
+
+    function isGuidedFlowActive() {
+        if (isConfigTourActive()) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
-        if (document.querySelector('.modal.whats-new-modal.show')) return true;
+        if (isWhatsNewModalOpen()) return true;
         if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
         if (!document.body.classList.contains('guided-flow-locked')) return false;
         if (window.GuidedFlowGuard?.isActive?.() !== true) return false;
-        const visibleTourCard = [...document.querySelectorAll('[class$="-tour-card"], .onboarding-card, .feature-tour-card')]
-            .some((el) => {
-                if (!(el instanceof HTMLElement)) return false;
-                const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden') return false;
-                const rect = el.getBoundingClientRect();
-                return rect.width > 8 && rect.height > 8;
-            });
-        return visibleTourCard
-            || Boolean(document.querySelector('.feature-spotlight.show, .modal.whats-new-modal.show'));
+        return hasVisibleTourCard()
+            || Boolean(document.querySelector('.feature-spotlight.show'))
+            || isWhatsNewModalOpen();
     }
 
     function isPromoVisible() {
@@ -533,6 +550,10 @@
         if (!rootEl || !inputEl || promoDismissed || hasSeenPromo()) return;
         if (window.MobileExperience?.isMobileLayout?.()) return;
         if (isGuidedFlowActive()) {
+            if (isConfigTourActive()) {
+                promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);
+                return;
+            }
             if (!promoBlockedSince) promoBlockedSince = Date.now();
             if (Date.now() - promoBlockedSince < PROMO_GUIDED_FLOW_MAX_WAIT_MS) {
                 promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), 1200);

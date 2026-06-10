@@ -235,6 +235,7 @@ class Dashboard {
         this.inlineEditingBookmarkIndex = null;
         this.onboardingStartedInSession = false;
         this._postOnboardingPromptsTimer = null;
+        this._postOnboardingPromptsAttempts = 0;
         this.init();
     }
     
@@ -347,7 +348,7 @@ class Dashboard {
                 this.maybeShowLayoutModernNudge();
             }, 800);
         } else if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
-            this.schedulePostOnboardingPrompts({ delay: 900 });
+            this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
         }
     }
 
@@ -2220,6 +2221,9 @@ class Dashboard {
         let delay = 900;
         if (options.afterOnboarding) delay = 600;
         else if (Number.isFinite(options.delay)) delay = options.delay;
+        if (options.resetAttempts === true) {
+            this._postOnboardingPromptsAttempts = 0;
+        }
         const payload = {
             delay: undefined,
             afterOnboarding: false,
@@ -2234,11 +2238,18 @@ class Dashboard {
     runPostOnboardingPrompts(options = {}) {
         const skipWhatsNew = options.skipWhatsNew === true;
         const skipLayoutNudge = options.skipLayoutNudge === true;
+        const maxWaitAttempts = 50;
 
         if (!this.canShowPostOnboardingPrompts()) {
-            this.schedulePostOnboardingPrompts({ delay: 600, skipWhatsNew, skipLayoutNudge });
+            this._postOnboardingPromptsAttempts = (this._postOnboardingPromptsAttempts || 0) + 1;
+            if (this._postOnboardingPromptsAttempts < maxWaitAttempts) {
+                this.schedulePostOnboardingPrompts({ delay: 600, skipWhatsNew, skipLayoutNudge });
+                return;
+            }
+            this._postOnboardingPromptsAttempts = 0;
             return;
         }
+        this._postOnboardingPromptsAttempts = 0;
 
         if (!skipWhatsNew && this.shouldShowWhatsNewPrompt()) {
             window.openWhatsNewModal({
@@ -2247,6 +2258,11 @@ class Dashboard {
                 onClose: () => this.schedulePostOnboardingPrompts({
                     delay: 1200,
                     skipWhatsNew: true,
+                }),
+                onAbort: () => this.schedulePostOnboardingPrompts({
+                    delay: 600,
+                    skipWhatsNew: false,
+                    skipLayoutNudge,
                 }),
             });
             return;
@@ -2429,7 +2445,11 @@ class Dashboard {
                     localStorage.setItem('nextdash:layout-modern-nudge-v1', '1');
                 } catch { /* layout chosen in onboarding */ }
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
-                    dash.schedulePostOnboardingPrompts({ delay: 600, afterOnboarding: true });
+                    dash.schedulePostOnboardingPrompts({
+                        delay: 600,
+                        afterOnboarding: true,
+                        resetAttempts: true,
+                    });
                 }
             }
         });

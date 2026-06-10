@@ -476,16 +476,18 @@
      * @param {boolean} [options.force] - If true, always show (skip version gate and modal-open guard).
      * @param {boolean} [options.markSeenOnConfirm] - When true (default), closing marks the release as seen.
      * @param {function(): boolean} [options.ifBlockingModalOpen] - When not forcing: return true to abort.
-     * @param {function(): void} [options.onClose] - Called when the modal closes.
+     * @param {function(): void} [options.onClose] - Called when the modal closes after being shown.
+     * @param {function(): void} [options.onAbort] - Called when open was skipped (retry later; do not mark seen).
      */
     window.openWhatsNewModal = function openWhatsNewModal(options) {
         options = options || {};
         const force = options.force === true;
         const markSeenOnConfirm = options.markSeenOnConfirm !== false;
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+        const onAbort = typeof options.onAbort === 'function' ? options.onAbort : null;
 
         if (!window.AppModal) {
-            onClose?.();
+            onAbort?.();
             return;
         }
         if (!force) {
@@ -499,7 +501,7 @@
                 // Ignore localStorage failures.
             }
             if (typeof options.ifBlockingModalOpen === 'function' && options.ifBlockingModalOpen()) {
-                onClose?.();
+                onAbort?.();
                 return;
             }
         }
