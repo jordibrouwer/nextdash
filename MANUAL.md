@@ -111,7 +111,7 @@ Data is stored under `./data` by default.
 ```
 Install → Open URL in browser → Onboarding wizard (optional)
     → Dashboard (may be empty) → Config to add pages/bookmarks
-    → Optional: What's new + layout tip (chained), config guided tours, feature tour, browser extension
+    → Optional: What's new, layout tip, paste spotlight (desktop); config guided tours; feature tour; browser extension
 ```
 
 1. **Onboarding** — Language, links, weather/date, classic, modern, or glass layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
@@ -555,7 +555,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Layout-versions** and **paste URL** spotlights are separate one-time hints; reset them from **config → general → Advanced → System & tools**.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Layout-versions** (classic layout) and **paste URL** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset them from **config → general → Advanced → System & tools → Tours & onboarding** (**Reset layout versions prompt**, **Reset paste spotlight**). Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -672,12 +672,13 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 ### Find settings & quick actions (desktop config)
 
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer and scroll there.  
+- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon explain settings search vs quick actions. Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
 
 #### Layout and structure
 
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (icons, new-tab, sort, quick-add, page tabs).  
-- **Tours & onboarding** — all 9 tab tour-reset buttons are grouped in a collapsible **Tours & onboarding** block inside Advanced → System & tools. Expand it to reset individual tab tours.
+- **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset settings search promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
 
 ### Guided config tours
 
@@ -685,7 +686,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
-| **General** (9 steps) | First visit to **config → general** | Settings layout overview, Essentials vs Advanced, appearance, bookmarks section, dashboard toolbar buttons, smart collections summary, Advanced section nav, other config tabs, **Save** |
+| **General** (10 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Save** |
 | **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed structure panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
@@ -697,11 +698,11 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.
 
-**Replay** — Open **config → general → Advanced** → **System & tools** and expand the **Tours & onboarding** block. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start.
+**Replay** — Open **config → general → Advanced** → **System & tools** and expand the **Tours & onboarding** block. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start. If a tour leaves the page scroll-locked without a visible card, refresh once — stale tour state is cleared automatically on load.
 
-**Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips and promo banners are also hidden on mobile.
+**Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips, the settings search promo, and promo banners are also hidden on mobile.
 
-**Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`). After onboarding, **What’s new** and (classic layout) a **layout tip** may chain in one session — separate from config tab tours.
+**Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`). After onboarding, **What's new** may open first; classic-layout users may then see a **layout-versions** tip and a **paste URL** spotlight in the same session — separate from config tab tours.
 
 ### Config keyboard
 
@@ -964,6 +965,13 @@ A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **A
 - Open the correct tab (**general**, **bookmarks**, **theme** / `#colors`, **finders**, **stats**, …) before replaying from **System & tools**.  
 - If you already completed the tour, expand the **Tours & onboarding** block in **config → general → Advanced → System & tools** and use the matching **Show … tour again** button (e.g. **Show Theme tour again**).  
 - Refresh the page if the editor is still loading, then try again.
+
+### Settings search promo does not appear
+
+- Use a **desktop-width** window (>768px; not portrait tablet or mobile emulation).  
+- The promo shows once until dismissed — use **Tours & onboarding → Reset settings search promo** to replay it.  
+- Hard-refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) after an update if you still run cached JavaScript.  
+- Wait a few seconds after the config page finishes loading; the promo waits until guided tours finish.
 
 ### Weather not showing
 

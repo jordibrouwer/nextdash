@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v52';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v53';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -88,6 +88,37 @@
     function buildHtml() {
         const cutoff = Date.now() - RELEASE_HISTORY_MS;
         const releases = [
+
+            release('v2026.06.15', 'June 2026', '2026-06-10', [
+                {
+                    title: 'Discoverability simplify',
+                    items: [
+                        { badge: 'fix', text: '<strong>Discoverability queue removed</strong> — no more post-onboarding queue chain or <em>Tip X of Y</em> bar; <strong>What\'s new</strong> still auto-opens when unread; layout and paste spotlights reset individually from <strong>Advanced → System → Tours &amp; onboarding</strong>.' },
+                        { badge: 'fix', text: '<strong>Dashboard post-onboarding</strong> — What\'s new, layout-nudge, and paste spotlight run directly again without a queue coordinator.' },
+                    ]
+                },
+                {
+                    title: 'Config guided tours',
+                    items: [
+                        { badge: 'new', text: '<strong>General config tour restored</strong> — first desktop visit to <strong>Config → General</strong> shows the overview tour again (Essentials / Advanced layers); reset from <strong>Advanced → Tours &amp; onboarding → General</strong>.' },
+                        { badge: 'fix', text: '<strong>Recoverable guided flow</strong> — stale tour DOM teardown, scroll-lock recovery, and watchdog when the card stays hidden; cache-bust on tour assets; settings search promo reschedules when the tour ends.' },
+                    ]
+                },
+                {
+                    title: 'Layout discoverability',
+                    items: [
+                        { badge: 'fix', text: '<strong>Layout nudge replay</strong> — reset from config queues a replay when no dashboard tab is open; dashboard init consumes pending replay; legacy <code>discoverability-deferred</code> session keys cleared.' },
+                        { badge: 'fix', text: '<strong>Layout nudge reset feedback</strong> — clearer messages when the layout prompt shows immediately vs when you need to open or reload the dashboard (EN/NL/DE/FR).' },
+                    ]
+                },
+                {
+                    title: 'Config &amp; search',
+                    items: [
+                        { badge: 'fix', text: '<strong>Settings search promo auto-start</strong> — confirmed-dismiss storage avoids false “seen” flags from focus-before-show; retry fallbacks; schedules after config load and when switching to General.' },
+                        { badge: 'new', text: '<strong>Reset settings search promo</strong> — <strong>Advanced → Tours &amp; onboarding</strong> button replays the pulsing search field and speech balloon on desktop (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd> vs <kbd>Ctrl+K</kbd> quick actions).' },
+                    ]
+                },
+            ]),
 
             release('v2026.06.14', 'June 2026', '2026-06-10', [
                 {

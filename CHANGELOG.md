@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.15 — June 2026](#v20260615--june-2026)
 - [v2026.06.14 — June 2026](#v20260614--june-2026)
 - [v2026.06.13 — June 2026](#v20260613--june-2026)
 - [v2026.06.12 — June 2026](#v20260612--june-2026)
@@ -41,6 +42,40 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.15 — June 2026
+
+**General config tour restore, settings search promo reliability, simplified discoverability** — queue bar removed; What's new and spotlights reset individually; layout nudge replay from config; confirmed-dismiss storage for search promo auto-start.
+
+### Discoverability simplify
+
+- **refactor** **Discoverability queue removed** — drop the post-onboarding queue chain, **Tip X of Y** bar, **Later this session** coordinator, and `discoverability-queue` JS/CSS; What's new still auto-opens when unread; layout and paste spotlights reset from **Advanced → System → Tours & onboarding**.
+- **fix** **Dashboard post-onboarding** — What's new → layout-nudge → paste spotlight run directly again (no queue module); hardened scheduling after queue removal.
+
+### Config guided tours
+
+- **new** **General config tour restored** — first desktop visit to **Config → General** shows the overview guided tour again (Essentials / Advanced layers, no user input); reset from **Advanced → Tours & onboarding → General**.
+- **fix** **Recoverable guided flow** — stale tour DOM teardown, scroll-lock recovery, and watchdog when the tour card stays hidden; cache-bust on tour JS/CSS; settings search promo reschedules when the tour ends or is torn down.
+
+### Layout discoverability
+
+- **fix** **Layout nudge replay** — reset from config queues a replay when no dashboard tab is open; dashboard init consumes pending replay; clears legacy `nextdash:discoverability-deferred` session keys.
+- **fix** **Layout nudge reset feedback** — clearer success messages when the layout prompt shows immediately vs when you need to open or reload the dashboard (EN/NL/DE/FR).
+
+### Config & search
+
+- **fix** **Settings search promo auto-start** — confirmed-dismiss storage (`promo-confirmed-v1`) avoids false “seen” flags from focus-before-show; retry fallbacks at 1.5s / 3.5s / 7s; schedules after full config load and when switching to the General tab.
+- **new** **Reset settings search promo** — **Advanced → Tours & onboarding → Reset settings search promo** replays the pulsing field and speech balloon on desktop.
+
+### Documentation
+
+- **fix** **MANUAL** — post-onboarding discoverability flow updated after queue removal.
+
+### Developer
+
+- **fix** **Cache-bust** — `whats-new-modal.js`, `config-settings-search.js`, `layout-modern-nudge.js`, and General tour assets carry version query strings for Docker-mounted static files.
 
 ---
 

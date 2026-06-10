@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.14**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.15**.
 
 ---
 
@@ -138,11 +138,17 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
-**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. Several tours include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools** (open the matching tab first). Tours, rotating tips, and promo banners do not run on the mobile layout.
+**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
+
+**Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
+
+Tours, rotating tips, settings search promo, and promo banners do not run on the mobile layout.
 
 #### Config → General (for self-hosters)
 
 **Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks) live under **Essentials**. Power features (smart collections, status monitor, branding, search behaviour, backups) are under **Advanced**. Use the section links at the top of Advanced to jump, or click **Show all sections on one page** to view everything at once.
+
+**Search settings…** — `Ctrl+Shift+K` / `Cmd+Shift+K` in the breadcrumb row finds tabs, General panels, labels, stats sections, theme groups, keyboard bindings, and Help blocks. `Ctrl+K` / `Cmd+K` opens quick actions only (save, open dashboard, tour resets).
 
 **ℹ info buttons** — Click the small ℹ next to any setting label for a short explanation in your current language (EN / NL / DE / FR). No need to leave the page or search the README for what a toggle does.
 
