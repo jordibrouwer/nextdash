@@ -11,14 +11,7 @@ import (
 
 func TestTrackBookmarkOpenIncrementsAtomically(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	page := PageWithBookmarks{
 		Page: Page{ID: 1, Name: "main"},
@@ -65,17 +58,10 @@ func TestTrackBookmarkOpenIncrementsAtomically(t *testing.T) {
 
 func TestTrackBookmarkOpenRejectsInvalidIndex(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	fs := &FileStore{dataDir: "data"}
-	err = fs.TrackBookmarkOpen(1, 0)
+	err := fs.TrackBookmarkOpen(1, 0)
 	if err == nil {
 		t.Fatal("expected error for missing page file")
 	}

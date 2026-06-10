@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -9,14 +8,7 @@ import (
 
 func TestMergePreviewCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	h := &Handlers{}
 	var wg sync.WaitGroup
@@ -41,14 +33,7 @@ func TestMergePreviewCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 
 func TestMergeHealthCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	seed := readHealthCacheFile()
 	seed.Cache["https://existing.test"] = HealthScanCache{URL: "https://existing.test", Status: "online"}
@@ -109,14 +94,7 @@ func TestNormalizeHealthCacheFileMergesURLVariants(t *testing.T) {
 
 func TestReplacePreviewCache(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	h := &Handlers{}
 	h.mergePreviewCacheUpdates(map[string]BookmarkPreview{

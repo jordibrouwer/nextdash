@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
@@ -103,14 +102,7 @@ func TestMergeBookmarkMetadataCombinesUsageAndFields(t *testing.T) {
 
 func TestMergeDuplicatesMergesIntoKeeperAndRemovesSources(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

@@ -1,20 +1,12 @@
 package main
 
 import (
-	"os"
 	"testing"
 )
 
 func TestMergePrefetchBookmarkIconsPreservesOtherFields(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 	bookmarks := store.GetBookmarksByPage(1)
@@ -46,14 +38,7 @@ func TestMergePrefetchBookmarkIconsPreservesOtherFields(t *testing.T) {
 
 func TestMergePrefetchBookmarkIconsSkipsWhenURLOrIconChanged(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 	bookmarks := store.GetBookmarksByPage(1)
@@ -95,14 +80,7 @@ func TestMergePrefetchBookmarkIconsSkipsWhenURLOrIconChanged(t *testing.T) {
 
 func TestResetAllDataConsumesPrefetchFlagOnce(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 	if err := store.ResetAllData(); err != nil {

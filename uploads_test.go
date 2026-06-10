@@ -13,14 +13,7 @@ import (
 
 func TestUploadIconOverwritesExistingFile(t *testing.T) {
 	tmp := t.TempDir()
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(origWD) })
+	t.Chdir(tmp)
 
 	iconsDir := filepath.Join("data", "icons")
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
@@ -97,14 +90,7 @@ func TestDetectFontType(t *testing.T) {
 
 func TestUploadFontUsesMagicBytesNotClientType(t *testing.T) {
 	tmp := t.TempDir()
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(origWD) })
+	t.Chdir(tmp)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

@@ -46,14 +46,7 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 
 func TestNewHandlersStartsPrefetchAsync(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 	fs, ok := store.(*FileStore)
@@ -76,10 +69,7 @@ func TestNewHandlersStartsPrefetchAsync(t *testing.T) {
 }
 
 func TestSaveIconBytesSanitizesSVG(t *testing.T) {
-	dir := t.TempDir()
-	if err := os.Chdir(dir); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(t.TempDir())
 
 	svg := []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle r="1" onclick="evil()"/></svg>`)
 	fileName, err := saveIconBytes(svg, ".svg")

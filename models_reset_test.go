@@ -8,17 +8,8 @@ import (
 )
 
 func TestResetAllDataDoesNotDeadlock(t *testing.T) {
-	t.Parallel()
-
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	store := NewStore()
 
@@ -37,14 +28,7 @@ func TestResetAllDataDoesNotDeadlock(t *testing.T) {
 
 func TestResetAllDataClearsUserAssets(t *testing.T) {
 	tmp := t.TempDir()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
+	t.Chdir(tmp)
 
 	if err := os.MkdirAll("data/icons", 0755); err != nil {
 		t.Fatal(err)
