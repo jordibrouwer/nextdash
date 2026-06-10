@@ -3223,6 +3223,7 @@ class ConfigManager {
         this.setupAutosaveLowRiskFields();
         this.setupStickySaveBar();
         this.setupNavigationGuards();
+        this.setupHealthBadgeRefresh();
         window.ConfigHelpSearch?.init(this.language);
         window.ConfigSettingsSearch?.init(this.language);
         this.updateHealthBadge();
@@ -3308,6 +3309,16 @@ class ConfigManager {
         }
     }
 
+    setupHealthBadgeRefresh() {
+        if (this._healthBadgeRefreshBound) return;
+        this._healthBadgeRefreshBound = true;
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.updateHealthBadge();
+            }
+        });
+    }
+
     async updateHealthBadge() {
         const anchor = document.querySelector('header.header .header-links a.back-link[href^="/health"]');
         if (!anchor) return;
@@ -3317,7 +3328,10 @@ class ConfigManager {
             const data = await response.json();
             const summary = data?.summary || {};
             const broken = Number(summary.brokenCount || 0);
-            const warn = Number(summary.duplicateCount || 0) + Number(summary.uncheckedCount || 0) + Number(summary.staleCount || 0);
+            const warn = Number(summary.duplicateCount || 0)
+                + Number(summary.shortcutConflictCount || 0)
+                + Number(summary.uncheckedCount || 0)
+                + Number(summary.staleCount || 0);
             this._healthBrokenCount = broken;
             const existing = anchor.querySelector('.health-badge');
             if (existing) existing.remove();
