@@ -149,6 +149,7 @@ class ConfigManager {
     }
 
     async init() {
+        window.ConfigGeneralTour?.recoverStaleDom?.();
         window.MobileExperience?.initConfig?.();
         await this.loadData();
         // Align categories page with bookmarks page before first render
@@ -229,6 +230,7 @@ class ConfigManager {
             document.body.classList.remove('loading');
         }
 
+        this.scheduleConfigGeneralTour();
         this.scheduleConfigBookmarksTour();
         this.scheduleConfigFindersTour();
         this.scheduleConfigStatsTour();
@@ -259,10 +261,16 @@ class ConfigManager {
         }
 
         window.ConfigSettingsSearch?.refreshIndex?.();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('configTour') === '1') {
+            void this.maybeStartConfigGeneralTour({ force: true });
+        }
     }
 
     _isConfigTabTourBusy(exclude) {
         const entries = [
+            ['general', this._configGeneralTourActive, this._configGeneralTourStarting],
             ['bookmarks', this._configBookmarksTourActive, this._configBookmarksTourStarting],
             ['finders', this._configFindersTourActive, this._configFindersTourStarting],
             ['stats', this._configStatsTourActive, this._configStatsTourStarting],
@@ -282,6 +290,7 @@ class ConfigManager {
     /** Close other config tab tours (without marking complete) so the active tab tour can run. */
     dismissOtherConfigTabTours(except) {
         const tours = [
+            ['general', window.ConfigGeneralTour, '_configGeneralTourActive', '_configGeneralTourStarting', 'cancelConfigGeneralTourSchedule'],
             ['bookmarks', window.ConfigBookmarksTour, '_configBookmarksTourActive', '_configBookmarksTourStarting', 'cancelConfigBookmarksTourSchedule'],
             ['finders', window.ConfigFindersTour, '_configFindersTourActive', '_configFindersTourStarting', 'cancelConfigFindersTourSchedule'],
             ['stats', window.ConfigStatsTour, '_configStatsTourActive', '_configStatsTourStarting', 'cancelConfigStatsTourSchedule'],
@@ -366,6 +375,190 @@ class ConfigManager {
         }
         schedule();
         return Promise.resolve();
+    }
+
+    hasSeenConfigGeneralTour() {
+        if (this.settingsData?.configGeneralTourCompleted === true) return true;
+        try {
+            return localStorage.getItem(window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1') === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    syncConfigGeneralTourSeenFromServer() {
+        const key = window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1';
+        try {
+            if (this.settingsData?.configGeneralTourCompleted === true) {
+                localStorage.setItem(key, '1');
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    async markConfigGeneralTourCompleted() {
+        this.settingsData.configGeneralTourCompleted = true;
+        try {
+            localStorage.setItem(
+                window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1',
+                '1'
+            );
+        } catch {
+            // ignore
+        }
+        if (this.settings?.saveSettingsToServer) {
+            await this.settings.saveSettingsToServer(this.settingsData);
+        }
+    }
+
+    cancelConfigGeneralTourSchedule() {
+        this._configGeneralTourScheduleId = (this._configGeneralTourScheduleId || 0) + 1;
+        if (this._configGeneralTourScheduleTimer) {
+            clearTimeout(this._configGeneralTourScheduleTimer);
+            this._configGeneralTourScheduleTimer = null;
+        }
+    }
+
+    scheduleConfigGeneralTour() {
+        if (typeof window.ConfigGeneralTour !== 'function') return;
+        if (this.hasSeenConfigGeneralTour()) return;
+        if (this._configGeneralTourActive || this._configGeneralTourStarting) return;
+        if (this._isConfigTabTourBusy('general')) return;
+        if (document.body?.classList.contains('loading')) return;
+
+        this.cancelConfigGeneralTourSchedule();
+        const runId = this._configGeneralTourScheduleId;
+        this._configGeneralTourScheduleTimer = setTimeout(() => {
+            this._configGeneralTourScheduleTimer = null;
+            if (runId !== this._configGeneralTourScheduleId) return;
+            if (
+                this.hasSeenConfigGeneralTour() ||
+                this._configGeneralTourActive ||
+                this._configGeneralTourStarting ||
+                this._isConfigTabTourBusy('general')
+            ) {
+                return;
+            }
+            if (!this.isConfigGeneralTabActive()) return;
+            void this.maybeStartConfigGeneralTour().then((result) => {
+                if (result?.ok !== true) return;
+                window.setTimeout(() => {
+                    const card = document.querySelector('.config-general-tour-card');
+                    const rect = card?.getBoundingClientRect();
+                    const vis = card ? window.getComputedStyle(card).visibility : 'hidden';
+                    const usable = rect && rect.height > 8 && rect.width > 8 && vis !== 'hidden';
+                    if (document.body.hasAttribute('data-config-general-tour-active') && !usable) {
+                        console.warn('Config General tour stuck without visible card — recovering');
+                        window.ConfigGeneralTour?.teardownStaleDom?.();
+                    }
+                }, 2500);
+            });
+        }, 550);
+    }
+
+    isConfigGeneralTabActive() {
+        if (this.ui?._currentTab === 'general') return true;
+        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+        if (activeTab === 'general') return true;
+        const hash = (window.location.hash || '').replace(/^#/, '');
+        return hash.startsWith('general');
+    }
+
+    configGeneralTourFailureMessage(reason) {
+        const keyByReason = {
+            'missing-script': 'config.resetConfigGeneralTourFailedReload',
+            'no-general-tab': 'config.resetConfigGeneralTourFailedTab',
+            'dom-not-ready': 'config.resetConfigGeneralTourFailedDom',
+            'render-failed': 'config.resetConfigGeneralTourFailedDom',
+            'layer-error': 'config.resetConfigGeneralTourFailedDom',
+            'step-error': 'config.resetConfigGeneralTourFailedDom',
+            blocked: 'config.resetConfigGeneralTourFailedDom',
+            mobile: 'config.resetConfigGeneralTourFailedMobile',
+            error: 'config.resetConfigGeneralTourFailedDom',
+        };
+        const fallbacks = {
+            'missing-script': 'Could not start the General tour. Refresh the page and try again.',
+            'no-general-tab': 'Could not start the General tour. Open the General tab first.',
+            'dom-not-ready': 'Could not start the General tour. General settings are still loading — refresh and try again.',
+            mobile: 'Could not start the General tour. Use a wider window or disable mobile device emulation in your browser.',
+            error: 'Could not start the General tour. Refresh the page and try again.',
+        };
+        const key = keyByReason[reason] || 'config.resetConfigGeneralTourFailed';
+        try {
+            if (this.language && typeof this.language.t === 'function') {
+                const msg = this.language.t(key);
+                if (msg && msg !== key) return msg;
+            }
+        } catch {
+            // ignore broken i18n during tour recovery
+        }
+        return fallbacks[reason] || 'Could not start the General tour. Open the General tab on a desktop-sized window.';
+    }
+
+    async maybeStartConfigGeneralTour({ force = false } = {}) {
+        if (this._configGeneralTourStarting) {
+            return { ok: false, reason: 'starting' };
+        }
+        const blockReason = window.ConfigGeneralTour?.getBlockReason?.({
+            force,
+            hasSeen: () => this.hasSeenConfigGeneralTour(),
+        });
+        if (blockReason) {
+            if (force) console.warn('Config General tour blocked:', blockReason);
+            return { ok: false, reason: blockReason };
+        }
+        if (this._configGeneralTourActive && !force) return { ok: false, reason: 'active' };
+        if (this._configBookmarksTourActive || this._configBookmarksTourStarting) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (this._isConfigTabTourBusy('general')) {
+            return { ok: false, reason: 'active-other' };
+        }
+        if (!force && this.hasSeenConfigGeneralTour()) return { ok: false, reason: 'completed' };
+
+        if (force) {
+            this.cancelConfigGeneralTourSchedule();
+            window.ConfigGeneralTour.teardownStaleDom?.();
+            this._configGeneralTourActive = false;
+            if (document.body?.classList.contains('loading')) {
+                window.SkeletonLoading?.finish?.();
+            }
+            this.ensureGeneralTabActive();
+        } else if (!this.isConfigGeneralTabActive()) {
+            return { ok: false, reason: 'wrong-tab' };
+        }
+
+        const tour = new window.ConfigGeneralTour({
+            language: this.language,
+            hasSeen: () => this.hasSeenConfigGeneralTour(),
+            onMarkSeen: () => this.markConfigGeneralTourCompleted(),
+        });
+        if (!tour.canStart({ force })) {
+            return { ok: false, reason: force ? 'no-general-tab' : 'mobile' };
+        }
+
+        this._configGeneralTourStarting = true;
+        this._configGeneralTourActive = true;
+        try {
+            const started = await tour.prepareAndStart({ force });
+            if (!started) {
+                this._configGeneralTourActive = false;
+                window.ConfigGeneralTour.teardownStaleDom?.();
+                return { ok: false, reason: tour.lastFailureReason || 'prepare-failed' };
+            }
+            this.cancelConfigGeneralTourSchedule();
+            return { ok: true };
+        } catch (error) {
+            console.error('Config General tour failed to start', error);
+            this._configGeneralTourActive = false;
+            window.ConfigGeneralTour.teardownStaleDom?.();
+            return { ok: false, reason: 'error' };
+        } finally {
+            this._configGeneralTourStarting = false;
+        }
     }
 
     hasSeenConfigBookmarksTour() {
@@ -2013,6 +2206,9 @@ class ConfigManager {
             if (typeof this.settingsData.onboardingCompleted === 'undefined') {
                 this.settingsData.onboardingCompleted = true;
             }
+            if (typeof this.settingsData.configGeneralTourCompleted === 'undefined') {
+                this.settingsData.configGeneralTourCompleted = false;
+            }
             if (typeof this.settingsData.configBookmarksTourCompleted === 'undefined') {
                 this.settingsData.configBookmarksTourCompleted = false;
             }
@@ -2037,6 +2233,7 @@ class ConfigManager {
             if (typeof this.settingsData.configThemeTourCompleted === 'undefined') {
                 this.settingsData.configThemeTourCompleted = false;
             }
+            this.syncConfigGeneralTourSeenFromServer();
             this.syncConfigBookmarksTourSeenFromServer();
             this.syncConfigFindersTourSeenFromServer();
             this.syncConfigStatsTourSeenFromServer();
@@ -2433,6 +2630,55 @@ class ConfigManager {
                     this.storage.clearDeviceSettings();
                 }
                 this.ui.showNotification(message, 'success');
+            });
+        }
+
+        const resetConfigGeneralTourBtn = document.getElementById('reset-config-general-tour-btn');
+        if (resetConfigGeneralTourBtn) {
+            resetConfigGeneralTourBtn.addEventListener('click', async () => {
+                try {
+                    window.ConfigGeneralTour?.teardownStaleDom?.();
+                    this._configGeneralTourActive = false;
+
+                    if (typeof window.ConfigGeneralTour?.resetSeen === 'function') {
+                        window.ConfigGeneralTour.resetSeen();
+                    }
+                    this.settingsData.configGeneralTourCompleted = false;
+                    try {
+                        localStorage.removeItem(
+                            window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1'
+                        );
+                    } catch {
+                        // ignore
+                    }
+
+                    this.ensureGeneralTabActive();
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+
+                    const result = await this.maybeStartConfigGeneralTour({ force: true });
+                    const started = result?.ok === true;
+                    const msg = started
+                        ? (this.language?.t('config.resetConfigGeneralTourSuccess')
+                            || 'General tour started.')
+                        : this.configGeneralTourFailureMessage(result?.reason);
+                    this.ui.showNotification(msg, started ? 'success' : 'warning');
+
+                    if (started && this.settings?.saveSettingsToServer) {
+                        try {
+                            await this.settings.saveSettingsToServer(this.settingsData);
+                        } catch {
+                            // Tour already running; completion flag syncs on finish.
+                        }
+                    }
+                } catch (error) {
+                    console.error('Reset General tour failed', error);
+                    this._configGeneralTourActive = false;
+                    window.ConfigGeneralTour?.teardownStaleDom?.();
+                    this.ui.showNotification(
+                        this.configGeneralTourFailureMessage('error'),
+                        'error'
+                    );
+                }
             });
         }
 

@@ -234,6 +234,7 @@ class Dashboard {
         this.weatherData = null;
         this.inlineEditingBookmarkIndex = null;
         this.onboardingStartedInSession = false;
+        this._postOnboardingPromptsTimer = null;
         this.init();
     }
     
@@ -341,8 +342,8 @@ class Dashboard {
         this.initializeOnboarding();
         this.initializeFeatureTour();
         this.initializeConfigBookmarksTour();
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
-            setTimeout(() => this.maybeShowWhatsNew(), 900);
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
+            this.schedulePostOnboardingPrompts({ delay: 900 });
         }
     }
 
@@ -2173,10 +2174,99 @@ class Dashboard {
         });
     }
 
+    canShowPostOnboardingPrompts() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (this.onboardingStartedInSession) return false;
+        if (!this.settings?.onboardingCompleted) return false;
+        if (typeof this.isModalOpen === 'function' && this.isModalOpen()) return false;
+        return true;
+    }
+
+    shouldShowWhatsNewPrompt() {
+        if (typeof window.openWhatsNewModal !== 'function') return false;
+        try {
+            const release = window.NEXTDASH_WHATS_NEW_RELEASE;
+            const lastSeen = localStorage.getItem('nextdash:last-whats-new-dashboard-release');
+            if (release && lastSeen === release) return false;
+            if (!release && lastSeen) return false;
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    shouldShowLayoutNudgePrompt() {
+        return window.LayoutVersionNudge?.shouldOffer?.(this) === true;
+    }
+
+    shouldShowPasteSpotlightPrompt() {
+        if (typeof window.FeatureSpotlight !== 'function') return false;
+        if (this.settings?.pasteUrlQuickAdd === false) return false;
+        if (window.matchMedia?.('(pointer: coarse)').matches) return false;
+        try {
+            if (localStorage.getItem(window.FeatureSpotlight.DEFAULT_STORAGE_KEY)) return false;
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    schedulePostOnboardingPrompts(options = {}) {
+        clearTimeout(this._postOnboardingPromptsTimer);
+        let delay = 900;
+        if (options.afterOnboarding) delay = 600;
+        else if (Number.isFinite(options.delay)) delay = options.delay;
+        const payload = {
+            delay: undefined,
+            afterOnboarding: false,
+            skipWhatsNew: options.skipWhatsNew === true,
+            skipLayoutNudge: options.skipLayoutNudge === true,
+        };
+        this._postOnboardingPromptsTimer = setTimeout(() => {
+            this.runPostOnboardingPrompts(payload);
+        }, delay);
+    }
+
+    runPostOnboardingPrompts(options = {}) {
+        const skipWhatsNew = options.skipWhatsNew === true;
+        const skipLayoutNudge = options.skipLayoutNudge === true;
+
+        if (!this.canShowPostOnboardingPrompts()) {
+            this.schedulePostOnboardingPrompts({ delay: 600, skipWhatsNew, skipLayoutNudge });
+            return;
+        }
+
+        if (!skipWhatsNew && this.shouldShowWhatsNewPrompt()) {
+            window.openWhatsNewModal({
+                force: false,
+                ifBlockingModalOpen: () => !this.canShowPostOnboardingPrompts(),
+                onClose: () => this.schedulePostOnboardingPrompts({
+                    delay: 1200,
+                    skipWhatsNew: true,
+                }),
+            });
+            return;
+        }
+
+        if (!skipLayoutNudge && this.shouldShowLayoutNudgePrompt()) {
+            const started = this.maybeShowLayoutModernNudge({
+                onDismiss: () => this.schedulePostOnboardingPrompts({
+                    delay: 1200,
+                    skipWhatsNew: true,
+                    skipLayoutNudge: true,
+                }),
+            });
+            if (started) return;
+        }
+
+        if (this.shouldShowPasteSpotlightPrompt()) {
+            this.maybeShowPasteSpotlight();
+        }
+    }
+
     maybeShowPasteSpotlight() {
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
-        if (typeof window.FeatureSpotlight !== 'function') return;
-        if (this.onboardingStartedInSession) return;
+        if (!this.shouldShowPasteSpotlightPrompt()) return false;
+        if (!this.canShowPostOnboardingPrompts()) return false;
 
         const dash = this;
         const spotlight = new window.FeatureSpotlight({
@@ -2191,41 +2281,42 @@ class Dashboard {
                 }
             },
         });
-        spotlight.show(1400);
+        const started = spotlight.show(1400, {
+            canShow: () => this.canShowPostOnboardingPrompts(),
+        });
+        if (!started) return false;
         this.pasteSpotlight = spotlight;
+        return true;
     }
 
-    maybeShowLayoutModernNudge() {
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
-        if (!window.LayoutVersionNudge?.shouldOffer?.(this)) return;
-        if (this.onboardingStartedInSession) return;
-        if (typeof this.isModalOpen === 'function' && this.isModalOpen()) return;
+    maybeShowLayoutModernNudge(options = {}) {
+        if (!this.shouldShowLayoutNudgePrompt()) return false;
+        if (!this.canShowPostOnboardingPrompts()) return false;
 
         const spotlight = window.LayoutVersionNudge.create(this);
-        if (!spotlight) return;
+        if (!spotlight) return false;
 
+        const onDismiss = typeof options.onDismiss === 'function' ? options.onDismiss : null;
         spotlight.onDismiss = () => {
             this.layoutVersionNudge = null;
             this.layoutModernNudge = null;
+            onDismiss?.();
         };
 
         const started = spotlight.show(800, {
             canShow: () => {
-                if (!window.LayoutVersionNudge?.shouldOffer?.(this)) return false;
-                if (this.onboardingStartedInSession) return false;
-                if (typeof this.isModalOpen === 'function' && this.isModalOpen()) return false;
-                return true;
+                if (!this.shouldShowLayoutNudgePrompt()) return false;
+                return this.canShowPostOnboardingPrompts();
             },
         });
-        if (!started) return;
+        if (!started) return false;
         this.layoutVersionNudge = spotlight;
         this.layoutModernNudge = spotlight;
+        return true;
     }
 
     maybeShowWhatsNew() {
-        if (this.onboardingStartedInSession || (typeof this.isModalOpen === 'function' && this.isModalOpen())) {
-            return;
-        }
+        if (!this.canShowPostOnboardingPrompts() || !this.shouldShowWhatsNewPrompt()) return;
         this.showWhatsNewModal({ force: false });
     }
 
@@ -2264,7 +2355,6 @@ class Dashboard {
                 dash.renderPageNavigation();
                 dash.renderDashboard();
                 dash.updateSearchComponent();
-                dash.onboardingStartedInSession = false;
             },
             onApplyBookmarks: async (selection, meta = {}) => {
                 if (!selection || typeof selection !== 'object') return;
@@ -2335,7 +2425,7 @@ class Dashboard {
                     localStorage.setItem('nextdash:layout-modern-nudge-v1', '1');
                 } catch { /* layout chosen in onboarding */ }
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
-                    setTimeout(() => dash.maybeShowWhatsNew(), 600);
+                    dash.schedulePostOnboardingPrompts({ delay: 600, afterOnboarding: true });
                 }
             }
         });
@@ -2641,7 +2731,12 @@ class Dashboard {
     }
 
     isModalOpen() {
-        return Boolean(document.querySelector('.modal-overlay.show'));
+        if (document.querySelector('.modal-overlay.show')) return true;
+        if (document.querySelector('.onboarding-overlay, .onboarding-card')) return true;
+        if (document.querySelector('.feature-tour-overlay, .feature-tour-card')) return true;
+        if (document.querySelector('.feature-spotlight.show')) return true;
+        if (document.body.classList.contains('guided-flow-locked')) return true;
+        return false;
     }
 
     showKeyboardCheatSheet() {
