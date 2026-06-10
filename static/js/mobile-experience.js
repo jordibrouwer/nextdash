@@ -306,7 +306,7 @@
             return isMobileLayout();
         },
         shouldShowDiscoverabilityUi() {
-            // Rotating tips, spotlights, discoverability queue, and promo banners.
+            // Rotating tips, spotlights, and promo banners.
             return !isMobileLayout();
         },
         applyConfigGeneralPanels,

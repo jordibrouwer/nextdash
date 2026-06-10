@@ -1,5 +1,5 @@
 /**
- * One-time spotlight for classic-layout users to try modern or glass (same discoverability path as onboarding and :layoutversion).
+ * One-time spotlight for classic-layout users to try modern or glass (onboarding and :layoutversion).
  */
 (function () {
     'use strict';
@@ -55,8 +55,6 @@
             iconSvg: LAYOUT_ICON_SVG,
             onTry: () => applyLayoutVersion(dashboard, 'modern'),
             onSecondaryTry: () => applyLayoutVersion(dashboard, 'glass'),
-            queueMeta: options.queueMeta ?? null,
-            onQueueDefer: options.onQueueDefer ?? null,
         });
     }
 

@@ -30,8 +30,6 @@
             onTry = null,
             onSecondaryTry = null,
             onDismiss = null,
-            queueMeta = null,
-            onQueueDefer = null,
         } = {}) {
             this.language = language;
             this.dashboard = dashboard;
@@ -50,8 +48,6 @@
             this.onTry = onTry;
             this.onSecondaryTry = onSecondaryTry;
             this.onDismiss = onDismiss;
-            this.queueMeta = queueMeta;
-            this.onQueueDefer = onQueueDefer;
             this.el = null;
             this._showTimer = null;
         }
@@ -104,18 +100,6 @@
                 el.querySelector('.feature-spotlight-try-secondary').textContent = secondaryTryLbl;
             }
             el.querySelector('.feature-spotlight-close').textContent = closeLbl;
-
-            if (this.queueMeta && typeof window.DiscoverabilityQueueBar?.inject === 'function') {
-                window.DiscoverabilityQueueBar.inject(
-                    el,
-                    this.queueMeta,
-                    () => {
-                        if (typeof this.onQueueDefer === 'function') this.onQueueDefer();
-                        this._dismiss(false);
-                    },
-                    this.dashboard
-                );
-            }
 
             el.querySelector('.feature-spotlight-try').addEventListener('click', () => {
                 if (typeof this.onTry === 'function') this.onTry();

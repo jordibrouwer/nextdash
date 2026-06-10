@@ -555,7 +555,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Discoverability** — After onboarding, a short **discoverability queue** may run on desktop: **What's new** (if unread) → **layout-versions** spotlight (classic users) → **paste URL** spotlight. Spotlights show **Tip X of Y** and **Later this session**; defer skips the rest for that browser session. If you keep classic during onboarding, the layout step offers **Try modern** and **Try glass**. Reset spotlights from **config → general → Advanced → System & tools**.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Layout-versions** and **paste URL** spotlights are separate one-time hints; reset them from **config → general → Advanced → System & tools**.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -665,7 +665,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 ### Essentials vs Advanced (general)
 
 - **Essentials** — Language, appearance (including favicon styling), layout, everyday bookmark options, smart collections, and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`).  
-- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, discoverability reset), feature tour, what’s new.  
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new.  
 - **Show all sections** button — toggles a flat view with every panel visible regardless of layer.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
 

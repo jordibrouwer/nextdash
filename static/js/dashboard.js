@@ -338,14 +338,11 @@ class Dashboard {
             document.body.classList.remove('loading');
         }
         this.updateMiniStatusLine();
-        this.discoverabilityQueue = typeof window.DiscoverabilityQueue === 'function'
-            ? new window.DiscoverabilityQueue(this)
-            : null;
         this.initializeOnboarding();
         this.initializeFeatureTour();
         this.initializeConfigBookmarksTour();
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
-            this.discoverabilityQueue?.scheduleRun();
+            setTimeout(() => this.maybeShowWhatsNew(), 900);
         }
     }
 
@@ -2198,6 +2195,33 @@ class Dashboard {
         this.pasteSpotlight = spotlight;
     }
 
+    maybeShowLayoutModernNudge() {
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
+        if (!window.LayoutVersionNudge?.shouldOffer?.(this)) return;
+        if (this.onboardingStartedInSession) return;
+        if (typeof this.isModalOpen === 'function' && this.isModalOpen()) return;
+
+        const spotlight = window.LayoutVersionNudge.create(this);
+        if (!spotlight) return;
+
+        spotlight.onDismiss = () => {
+            this.layoutVersionNudge = null;
+            this.layoutModernNudge = null;
+        };
+
+        const started = spotlight.show(800, {
+            canShow: () => {
+                if (!window.LayoutVersionNudge?.shouldOffer?.(this)) return false;
+                if (this.onboardingStartedInSession) return false;
+                if (typeof this.isModalOpen === 'function' && this.isModalOpen()) return false;
+                return true;
+            },
+        });
+        if (!started) return;
+        this.layoutVersionNudge = spotlight;
+        this.layoutModernNudge = spotlight;
+    }
+
     maybeShowWhatsNew() {
         if (this.onboardingStartedInSession || (typeof this.isModalOpen === 'function' && this.isModalOpen())) {
             return;
@@ -2311,7 +2335,7 @@ class Dashboard {
                     localStorage.setItem('nextdash:layout-modern-nudge-v1', '1');
                 } catch { /* layout chosen in onboarding */ }
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
-                    dash.discoverabilityQueue?.scheduleRun({ afterOnboarding: true });
+                    setTimeout(() => dash.maybeShowWhatsNew(), 600);
                 }
             }
         });
@@ -2362,10 +2386,6 @@ class Dashboard {
             }
         });
         this.featureTour.start();
-    }
-
-    maybeShowTourSpotlight() {
-        this.discoverabilityQueue?.scheduleRun();
     }
 
     initializeButtonTipsRotation() {

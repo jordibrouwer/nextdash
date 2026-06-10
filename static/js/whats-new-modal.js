@@ -446,18 +446,12 @@
      * @param {boolean} [options.markSeenOnConfirm] - When true (default), closing marks the release as seen.
      * @param {function(): boolean} [options.ifBlockingModalOpen] - When not forcing: return true to abort.
      * @param {function(): void} [options.onClose] - Called when the modal closes.
-     * @param {{ current: number, total: number }} [options.queueMeta] - Discoverability queue step (Tip X of Y).
-     * @param {function(): void} [options.onQueueDefer] - Later this session (discoverability queue).
-     * @param {Object} [options.dashboard] - Dashboard instance for queue bar i18n.
      */
     window.openWhatsNewModal = function openWhatsNewModal(options) {
         options = options || {};
         const force = options.force === true;
         const markSeenOnConfirm = options.markSeenOnConfirm !== false;
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
-        const queueMeta = options.queueMeta || null;
-        const onQueueDefer = options.onQueueDefer;
-        const dashboard = options.dashboard || null;
 
         if (!window.AppModal) {
             onClose?.();
@@ -501,13 +495,5 @@
             onConfirm: finish,
             onCancel: finish,
         });
-
-        if (queueMeta && typeof window.DiscoverabilityQueueBar?.inject === 'function') {
-            const modalBody = document.querySelector('#app-modal .modal-body');
-            modalBody?.querySelector('.discoverability-queue-bar')?.remove();
-            if (modalBody) {
-                window.DiscoverabilityQueueBar.inject(modalBody, queueMeta, onQueueDefer, dashboard);
-            }
-        }
     };
 })();

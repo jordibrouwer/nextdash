@@ -273,8 +273,7 @@ body[data-mobile-layout="true"] .general-keyboard-link-row {
 /* Tips, search-flow hint, spotlights — desktop discoverability only */
 body[data-mobile-layout="true"] .button-hint,
 body[data-mobile-layout="true"] .search-flow-hint,
-body[data-mobile-layout="true"] .feature-spotlight,
-body[data-mobile-layout="true"] .discoverability-queue-bar {
+body[data-mobile-layout="true"] .feature-spotlight {
     display: none !important;
 }
 
