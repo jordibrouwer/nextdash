@@ -47,35 +47,39 @@ _No unreleased changes at this time._
 
 ## v2026.06.15 — June 2026
 
-**General config tour restore, settings search promo reliability, simplified discoverability** — queue bar removed; What's new and spotlights reset individually; layout nudge replay from config; confirmed-dismiss storage for search promo auto-start; post-onboarding chain hardening and guided-flow stale-tour fix.
+**General config tour restore, settings search promo reliability, simplified discoverability** — queue bar removed; What's new and spotlights reset individually; layout and paste replay from config; confirmed-dismiss storage for search promo auto-start; post-onboarding chain hardening; guided-flow and overlay visibility fixes; mobile config search sync both ways.
 
 ### Discoverability simplify
 
 - **refactor** **Discoverability queue removed** — drop the post-onboarding queue chain, **Tip X of Y** bar, **Later this session** coordinator, and `discoverability-queue` JS/CSS; What's new still auto-opens when unread; layout and paste spotlights reset from **Advanced → System → Tours & onboarding**.
 - **fix** **Dashboard post-onboarding** — What's new → layout-nudge → paste spotlight run directly again (no queue module); hardened scheduling after queue removal.
-- **fix** **Post-onboarding chain hardening** — What's new retries when blocked instead of skipping for the session; polling capped after ~30s; layout nudge reset from config runs the full chain again (not layout-only).
+- **fix** **Post-onboarding chain hardening** — What's new retries when blocked instead of skipping for the session; polling capped after ~30s; open-abort retries capped at 20; layout nudge reset from config runs the full chain again (not layout-only).
+- **fix** **isModalOpen visibility** — post-onboarding prompts only wait for actually visible overlays (`#app-modal`, spotlights, tour/onboarding cards), not stale DOM or `guided-flow-locked` alone.
 
 ### Config guided tours
 
 - **new** **General config tour restored** — first desktop visit to **Config → General** shows the overview guided tour again (Essentials / Advanced layers, no user input); reset from **Advanced → Tours & onboarding → General**.
 - **fix** **Recoverable guided flow** — stale tour DOM teardown, scroll-lock recovery, and watchdog when the tour card stays hidden; cache-bust on tour JS/CSS; settings search promo reschedules when the tour ends or is torn down.
 - **fix** **Guided flow stale tour cards** — GuidedFlowGuard ignores invisible tour DOM so `guided-flow-locked` does not stick after a tour ends.
+- **fix** **Guided flow invisible overlays** — onboarding and feature-tour overlays use the same visibility check (not only config tour cards).
 
 ### Layout discoverability
 
 - **fix** **Layout nudge replay** — reset from config queues a replay when no dashboard tab is open; dashboard init consumes the pending flag and runs the full post-onboarding chain; clears legacy `nextdash:discoverability-deferred` session keys.
 - **fix** **Layout nudge reset feedback** — clearer success messages when the layout prompt shows immediately vs when you need to open or reload the dashboard (EN/NL/DE/FR).
+- **fix** **Paste spotlight replay** — reset from config queues a replay when no dashboard tab is open; dashboard init consumes the pending flag and runs the post-onboarding chain.
 
 ### Config & search
 
 - **fix** **Settings search promo auto-start** — confirmed-dismiss storage (`promo-confirmed-v1`) avoids false “seen” flags from focus-before-show; retry fallbacks at 1.5s / 3.5s / 7s; schedules after full config load and when switching to the General tab.
 - **fix** **Settings search mobile resize** — re-inits listeners when widening the config window after loading on mobile.
+- **fix** **Settings search desktop→mobile resize** — hides the search field and dismisses the promo when narrowing the config window.
 - **fix** **Settings search promo during tours** — waits until config tours finish instead of forcing after 45s; detects open What's new via AppModal overlay.
 - **new** **Reset settings search promo** — **Advanced → Tours & onboarding → Reset settings search promo** replays the pulsing field and speech balloon on desktop.
 
 ### Dashboard
 
-- **fix** **Search flow hint** — clears `search-flow-hint-v2` when onboarding starts so the shortcut hint can appear afterward.
+- **fix** **Search flow hint** — only shows after onboarding is completed; hidden during first-run wizard; clears `search-flow-hint-v2` when onboarding starts so the hint can appear afterward.
 
 ### Documentation
 
@@ -84,7 +88,7 @@ _No unreleased changes at this time._
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-modal.js`, `config-settings-search.js`, `config-settings-search.css`, `guided-flow-guard.js`, `layout-modern-nudge.js`, and General tour assets carry version query strings for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-modal.js`, `config-settings-search.js` (`settings-search-promo-v6`), `config-settings-search.css`, `guided-flow-guard.js` (`guided-flow-v3`), `feature-spotlight.js` (`paste-replay-v1`), `layout-modern-nudge.js`, and General tour assets carry version query strings for Docker-mounted static files.
 
 ---
 
