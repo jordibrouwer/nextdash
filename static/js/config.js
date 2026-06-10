@@ -3321,39 +3321,17 @@ class ConfigManager {
 
     async updateHealthBadge() {
         const anchor = document.querySelector('header.header .header-links a.back-link[href^="/health"]');
-        if (!anchor) return;
+        const utils = window.HealthBadgeUtils;
+        if (!anchor || !utils) return;
         try {
-            const response = await fetch('/api/bookmark-health');
-            if (!response.ok) return;
-            const data = await response.json();
-            const summary = data?.summary || {};
-            const broken = Number(summary.brokenCount || 0);
-            const warn = Number(summary.duplicateCount || 0)
-                + Number(summary.shortcutConflictCount || 0)
-                + Number(summary.uncheckedCount || 0)
-                + Number(summary.staleCount || 0);
-            this._healthBrokenCount = broken;
-            const existing = anchor.querySelector('.health-badge');
-            if (existing) existing.remove();
-            anchor.href = broken > 0 ? '/health?filter=broken' : '/health';
-            this.settings?.applyStatusEssentialsHealthHref?.(broken);
-            const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
-            const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
-            const appendBadge = (count, type) => {
-                const badge = document.createElement('span');
-                const n = count > 99 ? '99+' : String(count);
-                const isBroken = type === 'broken';
-                badge.className = isBroken
-                    ? 'health-badge health-badge--labeled'
-                    : 'health-badge health-badge-warn health-badge--labeled';
-                badge.textContent = `${n} ${isBroken ? brokenLabel : warnLabel}`;
-                anchor.appendChild(badge);
-            };
-            if (broken > 0) {
-                appendBadge(broken, 'broken');
-            } else if (warn > 0) {
-                appendBadge(warn, 'warn');
-            }
+            const summary = await utils.fetchBookmarkHealthSummary();
+            if (!summary) return;
+            utils.applyHealthBadgeToAnchor(anchor, summary, this.language, {
+                onApplied: ({ broken }) => {
+                    this._healthBrokenCount = broken;
+                    this.settings?.applyStatusEssentialsHealthHref?.(broken);
+                },
+            });
         } catch (e) {
             // Non-critical — silently skip
         }

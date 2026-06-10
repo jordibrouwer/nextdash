@@ -1986,29 +1986,6 @@ class Dashboard {
         return this.language?.t('dashboard.emptyStateAddDesktop') || 'Press + for the full add-bookmark form (& for quick-add line)';
     }
 
-    buildHealthPageHref(brokenCount, warnCount) {
-        if (brokenCount > 0) return '/health?filter=broken';
-        if (warnCount > 0) return '/health';
-        return '/health';
-    }
-
-    createHealthCountBadge(count, type) {
-        const badge = document.createElement('span');
-        const n = count > 99 ? '99+' : String(count);
-        const brokenLabel = this.language?.t('dashboard.healthBrokenShort') || 'broken';
-        const warnLabel = this.language?.t('dashboard.healthWarnShort') || 'warnings';
-        const isBroken = type === 'broken';
-        badge.className = isBroken
-            ? 'health-badge health-badge--labeled'
-            : 'health-badge health-badge-warn health-badge--labeled';
-        badge.textContent = `${n} ${isBroken ? brokenLabel : warnLabel}`;
-        const ariaKey = isBroken ? 'dashboard.healthBrokenAria' : 'dashboard.healthWarnAria';
-        const ariaFallback = isBroken ? '{count} broken bookmarks' : '{count} bookmarks with warnings';
-        const ariaTemplate = this.language?.t(ariaKey) || ariaFallback;
-        badge.setAttribute('aria-label', ariaTemplate.replace('{count}', n));
-        return badge;
-    }
-
     setupToolbarKbdTooltips() {
         if (this.isCoarsePointer()) return;
 
@@ -7134,29 +7111,13 @@ class Dashboard {
 
     async updateHealthBadge() {
         const anchor = document.querySelector('.health-link a');
-        if (!anchor) return;
+        const utils = window.HealthBadgeUtils;
+        if (!anchor || !utils) return;
 
         try {
-            const response = await fetch('/api/bookmark-health');
-            if (!response.ok) return;
-            const data = await response.json();
-            const summary = data?.summary || {};
-            const broken = Number(summary.brokenCount || 0);
-            const warn = Number(summary.duplicateCount || 0)
-                + Number(summary.shortcutConflictCount || 0)
-                + Number(summary.uncheckedCount || 0)
-                + Number(summary.staleCount || 0);
-
-            const existing = anchor.querySelector('.health-badge');
-            if (existing) existing.remove();
-
-            anchor.href = this.buildHealthPageHref(broken, warn);
-
-            if (broken > 0) {
-                anchor.appendChild(this.createHealthCountBadge(broken, 'broken'));
-            } else if (warn > 0) {
-                anchor.appendChild(this.createHealthCountBadge(warn, 'warn'));
-            }
+            const summary = await utils.fetchBookmarkHealthSummary();
+            if (!summary) return;
+            utils.applyHealthBadgeToAnchor(anchor, summary, this.language);
             this.updateMiniStatusLine();
         } catch (e) {
             // Silently skip — badge is non-critical
