@@ -14,6 +14,7 @@ class KeyboardNavigation {
         this._pointerOverLayout = null;
         this._pointerOverHandler = null;
         this._kbdSelectionDimmed = false;
+        this._kbdLiveRegion = null;
 
         this.init();
     }
@@ -158,6 +159,64 @@ class KeyboardNavigation {
         return this.currentIndex >= 0;
     }
 
+    _scrollBehavior() {
+        return document.body?.classList.contains('no-animations') ? 'instant' : 'smooth';
+    }
+
+    _isNavigableRow(row) {
+        if (!row || row.classList.contains('bookmark-inline-editing')) {
+            return false;
+        }
+        if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim')) {
+            return false;
+        }
+        const category = row.closest('.category');
+        if (category && category.getAttribute('data-collapsed') === 'true') {
+            return false;
+        }
+        return true;
+    }
+
+    _ensureKbdLiveRegion() {
+        if (this._kbdLiveRegion && document.body.contains(this._kbdLiveRegion)) {
+            return this._kbdLiveRegion;
+        }
+        let live = document.getElementById('dashboard-kbd-selection-live');
+        if (!live) {
+            live = document.createElement('div');
+            live.id = 'dashboard-kbd-selection-live';
+            live.className = 'sr-only';
+            live.setAttribute('aria-live', 'polite');
+            live.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(live);
+        }
+        this._kbdLiveRegion = live;
+        return live;
+    }
+
+    _announceKeyboardSelection(row) {
+        if (!row) {
+            return;
+        }
+        const name = row.querySelector('.bookmark-text')?.textContent?.trim()
+            || row.querySelector('a.bookmark-open')?.textContent?.trim()
+            || row.getAttribute('data-bookmark-url')
+            || '';
+        if (!name) {
+            return;
+        }
+        const live = this._ensureKbdLiveRegion();
+        const t = this.dashboard?.language?.t?.bind(this.dashboard.language);
+        const template = t ? t('dashboard.keyboardSelectionAnnounce') : null;
+        const msg = template && template !== 'dashboard.keyboardSelectionAnnounce'
+            ? template.replace('{name}', name)
+            : `${name} selected`;
+        live.textContent = '';
+        requestAnimationFrame(() => {
+            live.textContent = msg;
+        });
+    }
+
     _handleGridArrowKey() {
         this.updateNavigableElements();
         if (this.navigableElements.length === 0) {
@@ -213,6 +272,7 @@ class KeyboardNavigation {
         this._focusInHandler = null;
         this._pointerOverLayout = null;
         this._pointerOverHandler = null;
+        this._kbdLiveRegion = null;
         this.restoreKbdSelection();
         if (this.observer) {
             this.observer.disconnect();
@@ -368,11 +428,16 @@ class KeyboardNavigation {
     }
 
     updateNavigableElements() {
-        // Dashboard rows only (exclude recent strip links — no data-bookmark-index / wrong semantics)
+        const previousRow = this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length
+            ? this.navigableElements[this.currentIndex]
+            : null;
         const bookmarkElements = document.querySelectorAll('.bookmark-link:not(.recent-bookmark-link)');
-        this.navigableElements = Array.from(bookmarkElements);
-        
-        // Reset current index if it's out of bounds
+        this.navigableElements = Array.from(bookmarkElements).filter((row) => this._isNavigableRow(row));
+
+        if (previousRow) {
+            const nextIndex = this.navigableElements.indexOf(previousRow);
+            this.currentIndex = nextIndex;
+        }
         if (this.currentIndex >= this.navigableElements.length) {
             this.currentIndex = -1;
         }
@@ -812,10 +877,13 @@ class KeyboardNavigation {
 
             // Scroll into view if needed
             currentElement.scrollIntoView({
-                behavior: 'smooth',
+                behavior: this._scrollBehavior(),
                 block: 'nearest',
                 inline: 'nearest'
             });
+            if (options.keyboardNav) {
+                this._announceKeyboardSelection(currentElement);
+            }
             this.syncRovingTabStops({ focus: doFocus });
         } else {
             this.syncRovingTabStops({ focus: false });
@@ -994,10 +1062,26 @@ class KeyboardNavigation {
         return this.currentIndex !== -1;
     }
 
-    // Reset selection to first element (useful when changing pages)
+    // Select first visible bookmark after page change (no focus steal).
     resetToFirst() {
-        this.clearSelection();
+        this.restoreKbdSelection();
         this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            this.clearSelection();
+            return;
+        }
+        this.navigableElements.forEach((element) => {
+            element.classList.remove('keyboard-selected');
+            element.removeAttribute('aria-current');
+            element.setAttribute('aria-selected', 'false');
+        });
+        this.currentIndex = 0;
+        const currentElement = this.navigableElements[0];
+        currentElement.classList.add('keyboard-selected');
+        currentElement.setAttribute('aria-current', 'true');
+        currentElement.setAttribute('aria-selected', 'true');
+        this.syncRovingTabStops({ focus: false });
+        this.syncGridActiveDescendant();
     }
 }
 

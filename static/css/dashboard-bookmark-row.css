@@ -1,5 +1,17 @@
 /* Bookmark row hover / selection — loaded after dashboard.css so layout presets cannot override */
 
+.bookmark-link:not(.bookmark-inline-editing) {
+    transition:
+        background 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease;
+}
+
+body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
+    transition: none;
+}
+
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: linear-gradient(

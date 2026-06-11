@@ -793,6 +793,36 @@ class Dashboard {
         this.showNotification(message, 'error', notifOpts);
     }
 
+    tDashboard(key, fallback = '') {
+        const fullKey = `dashboard.${key}`;
+        const value = this.language?.t(fullKey);
+        return value && value !== fullKey ? value : fallback;
+    }
+
+    tConfig(key, fallback = '') {
+        const fullKey = `config.${key}`;
+        const value = this.language?.t(fullKey);
+        return value && value !== fullKey ? value : fallback;
+    }
+
+    notifyDashboard(key, fallback, type = 'success', options = {}) {
+        const message = this.tDashboard(key, fallback);
+        if (type === 'error') {
+            this.showErrorNotification(message, options);
+            return;
+        }
+        this.showNotification(message, type, options);
+    }
+
+    notifyConfig(key, fallback, type = 'success', options = {}) {
+        const message = this.tConfig(key, fallback);
+        if (type === 'error') {
+            this.showErrorNotification(message, options);
+            return;
+        }
+        this.showNotification(message, type, options);
+    }
+
     loadCollapsedStates() {
         try {
             const stored = localStorage.getItem('collapsedCategories');
@@ -5636,19 +5666,19 @@ class Dashboard {
         setIconBtn.addEventListener('click', async () => {
             const inputValue = (iconUrlInput.value || '').trim();
             if (!inputValue) {
-                this.showErrorNotification('Icon URL is required.');
+                this.notifyDashboard('iconUrlRequired', 'Icon URL is required.', 'error');
                 return;
             }
             if (inputValue.startsWith('/data/icons/')) {
                 const existingIcon = inputValue.replace('/data/icons/', '').trim();
                 if (!existingIcon) {
-                    this.showErrorNotification('Icon URL is required.');
+                    this.notifyDashboard('iconUrlRequired', 'Icon URL is required.', 'error');
                     return;
                 }
                 pendingIcon = existingIcon;
                 syncIconState();
-                iconFetchState.textContent = this.language.t('config.iconSet') || 'Icon set';
-                this.showNotification(this.language.t('dashboard.iconUrlSet') || 'Icon URL set.', 'success');
+                iconFetchState.textContent = this.tConfig('iconSet', 'Icon set');
+                this.notifyDashboard('iconUrlSet', 'Icon URL set.', 'success');
                 return;
             }
             setIconBtn.disabled = true;
@@ -5656,21 +5686,21 @@ class Dashboard {
             const nextIcon = await this.uploadBookmarkIconFromUrl(inputValue);
             setIconBtn.disabled = false;
             if (!nextIcon) {
-                iconFetchState.textContent = this.language.t('config.iconFetchFailed') || 'Fetch failed';
-                this.showErrorNotification('Invalid or blocked icon URL.');
+                iconFetchState.textContent = this.tConfig('iconFetchFailed', 'Fetch failed');
+                this.notifyConfig('iconUrlInvalid', 'Invalid or blocked icon URL.', 'error');
                 return;
             }
             pendingIcon = nextIcon;
             iconUrlInput.value = `/data/icons/${nextIcon}`;
             syncIconState();
-            iconFetchState.textContent = this.language.t('config.iconFound') || 'Found';
-            this.showNotification('Icon URL set.', 'success');
+            iconFetchState.textContent = this.tConfig('iconFound', 'Found');
+            this.notifyDashboard('iconUrlSet', 'Icon URL set.', 'success');
         });
 
         fetchIconBtn.addEventListener('click', async () => {
             const urlValue = (urlInput.value || '').trim();
             if (!urlValue) {
-                this.showErrorNotification('URL is required.');
+                this.notifyConfig('urlRequiredShort', 'URL is required.', 'error');
                 return;
             }
             fetchIconBtn.disabled = true;
@@ -5678,15 +5708,15 @@ class Dashboard {
             const fetchedIcon = await this.fetchAndAssignFaviconForUrl(urlValue);
             fetchIconBtn.disabled = false;
             if (!fetchedIcon) {
-                iconFetchState.textContent = this.language.t('config.iconNotFound') || 'Not found';
-                this.showErrorNotification('Favicon fetch failed.');
+                iconFetchState.textContent = this.tConfig('iconNotFound', 'Not found');
+                this.notifyConfig('faviconFetchFailed', 'Favicon fetch failed.', 'error');
                 return;
             }
             pendingIcon = fetchedIcon;
             iconUrlInput.value = `/data/icons/${fetchedIcon}`;
             syncIconState();
-            iconFetchState.textContent = this.language.t('config.iconFound') || 'Found';
-            this.showNotification('Favicon fetched.', 'success');
+            iconFetchState.textContent = this.tConfig('iconFound', 'Found');
+            this.notifyConfig('faviconFetched', 'Favicon fetched.', 'success');
         });
         urlInput.addEventListener('blur', () => {
             if (inlineAutoFetchTimer) {
@@ -5726,13 +5756,13 @@ class Dashboard {
             uploadIconBtn.disabled = false;
             e.target.value = '';
             if (!uploadedIcon) {
-                this.showErrorNotification('Icon upload failed.');
+                this.notifyConfig('iconUploadFailed', 'Icon upload failed.', 'error');
                 return;
             }
             pendingIcon = uploadedIcon;
             iconUrlInput.value = `/data/icons/${uploadedIcon}`;
             syncIconState();
-            this.showNotification('Icon uploaded.', 'success');
+            this.notifyDashboard('iconUploaded', 'Icon uploaded.', 'success');
         });
 
         clearIconBtn.addEventListener('click', () => {
@@ -6044,12 +6074,12 @@ class Dashboard {
             && targetPageId !== sourcePageId;
 
         if (!name || !url) {
-            this.showErrorNotification('Name and URL are required.');
+            this.notifyDashboard('nameAndUrlRequired', 'Name and URL are required.', 'error');
             return;
         }
 
         if (shortcut && this.hasShortcutConflict(shortcut, bookmarkRef)) {
-            this.showErrorNotification('Shortcut must be unique across all bookmarks.');
+            this.notifyDashboard('shortcutMustBeUnique', 'Shortcut must be unique across all bookmarks.', 'error');
             fields.shortcutInput.focus();
             fields.shortcutInput.select();
             return;
@@ -6060,7 +6090,7 @@ class Dashboard {
                 return String(finder?.shortcut || '').trim().toUpperCase() === shortcut;
             });
             if (finderShortcutConflict) {
-                this.showNotification('Warning: this shortcut is also used by a finder.', 'error');
+                this.notifyConfig('shortcutFinderHint', 'Shortcut matches a finder shortcut.', 'error');
             }
         }
 

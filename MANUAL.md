@@ -303,7 +303,10 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 ### Keyboard
 
-- Start grid navigation with **Tab**, a click on a bookmark, or **`G` then `1–9`** / **`GG`**, then use arrows to move the selection. When no row is selected, **arrow keys scroll the page** normally.  
+- Start grid navigation with **Tab**, a click on a bookmark, **`G` then `1–9`** / **`GG`**, or the **first arrow key**; then use arrows to move the selection.  
+- After switching pages with **1–9**, the **first visible bookmark** on the new page is selected automatically.  
+- **Collapsed categories** and **launcher tiles dimmed by search** are skipped by keyboard navigation.  
+- When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
 - If the bookmark has a **shortcut** letter and you are not in an input, press that key to open.
 
@@ -335,7 +338,8 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 | Keys | Action |
 |------|--------|
-| `↑` `↓` `←` `→` | Move selection when a row is selected; otherwise scroll the page |
+| `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
+| `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark (when a row is already selected) |
 | `G` then `1`–`9` | Jump to nth category, select first bookmark |
 | `GG` | Jump to very first bookmark |
