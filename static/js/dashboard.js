@@ -205,9 +205,12 @@ class Dashboard {
         this._categoryDropHandler = null;
         this._pendingCategoryOrderFromDrop = null;
         this._pendingCategorySave = null;
+        this._categoryOrderSaveInFlight = null;
         this.pendingReorderSave = null;
         this.pendingReorderSnapshot = null;
+        this._bookmarkOrderSaveInFlight = null;
         this.pendingPreviewSave = null;
+        this._movePopoverCleanup = null;
         this.notificationTimeout = null;
         this.tipRotationTimer = null;
         this.backupTipTimer = null;
@@ -3937,23 +3940,46 @@ class Dashboard {
 
     scheduleCategoryOrderSave() {
         if (this._pendingCategorySave) clearTimeout(this._pendingCategorySave);
-        this._pendingCategorySave = setTimeout(() => this.saveCategoryOrder(), 1000);
+        this._pendingCategorySave = setTimeout(() => {
+            this._pendingCategorySave = null;
+            const pageId = Number(this.currentPageId);
+            const payload = (this.categories || []).map((category) => ({ ...category }));
+            void this.saveCategoryOrder({ pageId, payload });
+        }, 1000);
     }
 
-    async saveCategoryOrder() {
+    async saveCategoryOrder(options = {}) {
+        const pageId = Number(options.pageId ?? this.currentPageId);
+        if (!Number.isFinite(pageId)) {
+            return;
+        }
+
+        const sourceCategories = Array.isArray(options.payload) ? options.payload : this.categories;
+        const payload = (sourceCategories || []).map((category) => ({ ...category, originalId: category.id }));
+
+        const saveTask = (async () => {
+            try {
+                const res = await dashFetch(`/api/categories?page=${pageId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Save failed');
+            } catch (err) {
+                this.showErrorNotification(`${err.message || 'Failed to save category order.'} Please try again.`);
+                throw err;
+            }
+        })();
+
+        this._categoryOrderSaveInFlight = saveTask;
         try {
-            // Set originalId = id so the backend position-fallback doesn't remap bookmarks
-            const payload = this.categories.map((c) => ({ ...c, originalId: c.id }));
-            const res = await dashFetch(`/api/categories?page=${this.currentPageId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error('Save failed');
-            this._pendingCategorySave = null;
-        } catch (err) {
-            this._pendingCategorySave = null;
-            this.showErrorNotification(`${err.message || 'Failed to save category order.'} Please try again.`);
+            await saveTask;
+        } catch (_err) {
+            // Notification shown in saveTask.
+        } finally {
+            if (this._categoryOrderSaveInFlight === saveTask) {
+                this._categoryOrderSaveInFlight = null;
+            }
         }
     }
 
@@ -4023,21 +4049,27 @@ class Dashboard {
     }
 
     async flushPendingBookmarkSave(options = {}) {
-        if (!this.pendingReorderSave) {
-            return;
+        if (this.pendingReorderSave) {
+            clearTimeout(this.pendingReorderSave);
+            this.pendingReorderSave = null;
         }
-        clearTimeout(this.pendingReorderSave);
-        this.pendingReorderSave = null;
-        await this.saveBookmarkOrder(options);
+        if (this._bookmarkOrderSaveInFlight) {
+            await this._bookmarkOrderSaveInFlight;
+        }
     }
 
     async flushPendingCategorySave() {
-        if (!this._pendingCategorySave) {
+        if (this._pendingCategorySave) {
+            clearTimeout(this._pendingCategorySave);
+            this._pendingCategorySave = null;
+            const pageId = Number(this.currentPageId);
+            const payload = (this.categories || []).map((category) => ({ ...category }));
+            await this.saveCategoryOrder({ pageId, payload });
             return;
         }
-        clearTimeout(this._pendingCategorySave);
-        this._pendingCategorySave = null;
-        await this.saveCategoryOrder();
+        if (this._categoryOrderSaveInFlight) {
+            await this._categoryOrderSaveInFlight;
+        }
     }
 
     async flushPendingDashboardSaves() {
@@ -4127,47 +4159,71 @@ class Dashboard {
     }
 
     async saveBookmarkOrder(options = {}) {
-        const payload = [...this.bookmarks];
+        const pageId = Number(options.pageId ?? this.currentPageId);
+        if (!Number.isFinite(pageId)) {
+            return;
+        }
 
-        try {
-            const response = await dashFetch(`/api/bookmarks?page=${this.currentPageId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
+        const payload = Array.isArray(options.payload)
+            ? options.payload.map((bookmark) => ({ ...bookmark }))
+            : [...this.bookmarks];
 
-            if (!response.ok) {
-                let message = 'Failed to save bookmark order';
-                try {
-                    const errorBody = await response.json();
-                    if (response.status === 409 && errorBody?.error === 'duplicate_shortcut') {
-                        message = `Shortcut "${errorBody.shortcut}" already exists on another bookmark.`;
-                    } else if (errorBody?.message) {
-                        message = String(errorBody.message);
+        const saveTask = (async () => {
+            try {
+                const response = await dashFetch(`/api/bookmarks?page=${pageId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let message = 'Failed to save bookmark order';
+                    try {
+                        const errorBody = await response.json();
+                        if (response.status === 409 && errorBody?.error === 'duplicate_shortcut') {
+                            message = `Shortcut "${errorBody.shortcut}" already exists on another bookmark.`;
+                        } else if (errorBody?.message) {
+                            message = String(errorBody.message);
+                        }
+                    } catch (error) {
+                        // Ignore parse issues and keep fallback message.
                     }
-                } catch (error) {
-                    // Ignore parse issues and keep fallback message.
+                    throw new Error(message);
                 }
-                throw new Error(message);
-            }
 
-            // Keep global shortcut index updated when enabled
-            if (this.settings.globalShortcuts) {
-                await this.loadAllBookmarks();
-            }
+                if (this.settings.globalShortcuts) {
+                    await this.loadAllBookmarks();
+                }
 
-            this.pendingReorderSave = null;
-            this.pendingReorderSnapshot = null;
-        } catch (error) {
-            if (this.pendingReorderSnapshot) {
-                this.bookmarks = [...this.pendingReorderSnapshot];
-                this.renderDashboard();
+                if (pageId === Number(this.currentPageId)) {
+                    this.pendingReorderSave = null;
+                    this.pendingReorderSnapshot = null;
+                }
+            } catch (error) {
+                if (pageId === Number(this.currentPageId) && this.pendingReorderSnapshot) {
+                    this.bookmarks = [...this.pendingReorderSnapshot];
+                    this.renderDashboard();
+                }
+                if (pageId === Number(this.currentPageId)) {
+                    this.pendingReorderSave = null;
+                    this.pendingReorderSnapshot = null;
+                }
+                this.showErrorNotification(`${error.message || 'Failed to save bookmark order.'} Changes were reverted.`);
+                throw error;
             }
-            this.pendingReorderSave = null;
-            this.pendingReorderSnapshot = null;
-            this.showErrorNotification(`${error.message || 'Failed to save bookmark order.'} Changes were reverted.`);
+        })();
+
+        this._bookmarkOrderSaveInFlight = saveTask;
+        try {
+            await saveTask;
+        } catch (_error) {
+            // Notification shown in saveTask.
+        } finally {
+            if (this._bookmarkOrderSaveInFlight === saveTask) {
+                this._bookmarkOrderSaveInFlight = null;
+            }
         }
     }
 
@@ -7546,8 +7602,11 @@ class Dashboard {
     }
 
     showMovePopover(anchorEl, bookmark, bookmarkIndex) {
-        const existing = document.getElementById('move-popover');
-        if (existing) { existing.remove(); return; }
+        if (this._movePopoverCleanup) {
+            this._movePopoverCleanup();
+            this._movePopoverCleanup = null;
+            return;
+        }
 
         const t = (key, fallback) => {
             const val = this.language?.t ? this.language.t(key) : null;
@@ -7658,11 +7717,21 @@ class Dashboard {
         };
         setFocus(focusedIdx);
 
+        let onOutside = null;
         const close = () => {
-            pop.remove();
+            if (pop.parentNode) {
+                pop.remove();
+            }
             document.removeEventListener('keydown', onKey, true);
-            document.removeEventListener('click', onOutside);
+            if (onOutside) {
+                document.removeEventListener('click', onOutside);
+                onOutside = null;
+            }
+            if (this._movePopoverCleanup === close) {
+                this._movePopoverCleanup = null;
+            }
         };
+        this._movePopoverCleanup = close;
 
         const confirm = (item) => {
             const type = item.getAttribute('data-type');
@@ -7690,7 +7759,7 @@ class Dashboard {
 
         document.addEventListener('keydown', onKey, true);
         setTimeout(() => {
-            const onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
         }, 0);
     }
