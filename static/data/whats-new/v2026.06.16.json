@@ -30,6 +30,51 @@
         {
           "badge": "fix",
           "text": "<strong>Open tracking</strong> — middle-click on a bookmark row increments <code>openCount</code> and smart-collection recency (primary click and keyboard <strong>Enter</strong> already did)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page-scoped saves</strong> — bookmark and category POSTs capture the page id and payload at save start; in-flight writes finish before page switch so reorder data cannot land on the wrong page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Move popover</strong> — <code>Shift+M</code> outside-click and <code>Escape</code> listeners clean up correctly; toggling the popover closed no longer leaks global key handlers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collections after open</strong> — opening a bookmark refreshes smart-collection sections only (when enabled) instead of rebuilding the whole dashboard; skipped during inline edit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Find &amp; launcher search</strong> — interleave/find matches bookmark names via <code>.bookmark-text</code>; launcher dimming compares canonical <code>http</code>/<code>https</code> URL keys."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Drag reorder safety</strong> — if the DOM bookmark count drifts during a drag, the grid re-renders from saved state instead of silently ignoring the drop."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>HyprMode middle-click</strong> — middle-click respects Hypr routing the same way as a primary click when Hypr mode is on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview metadata saves</strong> — link preview title/description/image writes are debounced (1s) and flush on page switch or tab hide."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Open analytics index</strong> — open count and <code>/api/track-open</code> prefer the clicked row’s <code>data-bookmark-index</code> so duplicate URLs attribute to the correct bookmark."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard & mobile",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Arrow keys &amp; scroll</strong> — <code>↑</code>/<code>↓</code>/<code>←</code>/<code>→</code> scroll the page when no bookmark is selected; grid navigation starts after Tab, click, or <code>G</code>+<code>1–9</code> / <code>GG</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Swipe page change</strong> — touch swipes no longer fire twice on the same gesture; pointer events are used on modern browsers with a short navigation lock."
         }
       ]
     },
@@ -39,6 +84,19 @@
         {
           "badge": "fix",
           "text": "<strong>Safe image URLs</strong> — custom dashboard background images and hover/link preview images only render normalized <code>http</code>/<code>https</code> URLs (<code>BookmarkUrlUtils.safeHttpResourceUrl</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Recent modal links</strong> — <code>*</code> recent-bookmark rows and bulk-open actions only use validated <code>http</code>/<code>https</code> URLs."
+        }
+      ]
+    },
+    {
+      "title": "Monitoring",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Status dots on duplicate URLs</strong> — status monitoring targets the correct row via <code>data-bookmark-index</code>, not only the first matching URL."
         }
       ]
     },
@@ -47,7 +105,11 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v57</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; template query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v58</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; template query strings updated for Docker-mounted static files."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard nav cleanup</strong> — <code>KeyboardNavigation.cleanup()</code> removes capture-phase listeners on <code>pagehide</code> and before re-init."
         }
       ]
     }

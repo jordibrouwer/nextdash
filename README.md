@@ -84,8 +84,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `1–9` — jump directly to a page tab
 - `Shift + ←/→` — cycle between page tabs
 - `,` — page overview: all pages with bookmark counts
-- `↑/↓/←/→` — move focus through the bookmark grid
-- `Tab` / `Shift+Tab` — step linearly through all bookmarks
+- `↑/↓/←/→` — move bookmark selection when a row is focused; scroll the page when none is selected (start with Tab, click, or `G`+`1–9` / `GG`)
+- `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection or close overlay

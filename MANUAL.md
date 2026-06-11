@@ -303,7 +303,8 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 ### Keyboard
 
-- Select a row with arrows or Tab, then **Enter** or **Space**.  
+- Start grid navigation with **Tab**, a click on a bookmark, or **`G` then `1–9`** / **`GG`**, then use arrows to move the selection. When no row is selected, **arrow keys scroll the page** normally.  
+- **Enter** or **Space** opens the selected row.  
 - If the bookmark has a **shortcut** letter and you are not in an input, press that key to open.
 
 ### Hyprland / special setups
@@ -334,8 +335,8 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 | Keys | Action |
 |------|--------|
-| `↑` `↓` `←` `→` | Move selection |
-| `Tab` / `Shift+Tab` | Linear next/previous bookmark |
+| `↑` `↓` `←` `→` | Move selection when a row is selected; otherwise scroll the page |
+| `Tab` / `Shift+Tab` | Linear next/previous bookmark (when a row is already selected) |
 | `G` then `1`–`9` | Jump to nth category, select first bookmark |
 | `GG` | Jump to very first bookmark |
 | `Enter` / `Space` | Open selected |

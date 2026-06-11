@@ -48,7 +48,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.16 — June 2026
 
-**What's new lazy loading, dashboard shortcut/open fixes, safe preview URLs** — per-release JSON for the ★ modal with scroll fetch and skeleton; lighter stub bootstrap; shortcut conflict respects per-page mode; category reorder flush on page switch; middle-click open tracking; http(s)-only background and preview images.
+**What's new lazy loading, dashboard hardening, safe URLs** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; keyboard scroll behaviour when no row is selected.
 
 ### What's new modal
 
@@ -60,19 +60,41 @@ _No unreleased changes at this time._
 - **fix** **Inline shortcut conflict** — cross-page shortcut warnings only apply when **Global shortcuts** is enabled; per-page shortcuts no longer false-positive on other pages.
 - **fix** **Category order on page switch** — debounced category reorder flushes before loading another page so order is not lost within the 1s save window.
 - **fix** **Open tracking** — middle-click on a bookmark row increments `openCount` / smart-collection recency (primary click and keyboard **Enter** already did via `click`).
+- **fix** **Page-scoped saves** — bookmark and category POSTs capture page id and payload at save start; in-flight saves are awaited before page switch so reorder data cannot write to the wrong page.
+- **fix** **Move popover** — `Shift+M` outside-click and **Escape** listeners clean up correctly; toggle-close no longer leaks global key handlers.
+- **fix** **Smart collections after open** — opening a bookmark refreshes smart-collection sections only (when enabled) instead of full `renderDashboard()`; skipped during inline edit.
+- **fix** **Inline edit on re-render** — page switch and full re-render abort active inline edit state instead of leaving stale handlers.
+- **fix** **Find filter** — interleave/find matches bookmark names via `.bookmark-text` (not a missing `.bookmark-name` selector).
+- **fix** **Launcher search dimming** — compares canonical URL keys on both search matches and dashboard rows.
+- **fix** **Drag reorder mismatch** — if DOM bookmark count drifts during drag, the grid re-renders from saved state instead of silently ignoring the drop.
+- **fix** **HyprMode middle-click** — middle-click respects Hypr routing the same way as primary click when Hypr mode is on.
+- **fix** **Preview metadata saves** — link preview title/description/image writes are debounced (1s) and flush on page switch or tab hide.
+- **fix** **Open analytics index** — open count and `/api/track-open` prefer `data-bookmark-index` so duplicate URLs attribute to the correct bookmark.
+
+### Keyboard & mobile
+
+- **fix** **Arrow keys & scroll** — arrow/Home/End/Page keys scroll the page when no bookmark is selected; grid navigation starts after Tab, click, or `G`+`1–9` / `GG`.
+- **fix** **Swipe page change** — touch swipes no longer double-fire on the same gesture; pointer events on modern browsers with a short navigation lock.
 
 ### Security
 
 - **fix** **Safe image URLs** — custom dashboard background images and hover/link preview images only render normalized `http`/`https` URLs via `BookmarkUrlUtils.safeHttpResourceUrl` / `safeCssImageUrl` (blocks `javascript:`, `data:`, and CSS quote-breakout).
+- **fix** **Recent modal links** — `*` recent-bookmark rows and bulk-open actions only use validated `http`/`https` URLs.
+
+### Monitoring
+
+- **fix** **Status dots on duplicate URLs** — status monitoring targets the correct row via `data-bookmark-index`, not only the first matching URL.
 
 ### Documentation
 
-- **fix** **README & MANUAL** — changelog pointer and What's new modal behaviour updated for v2026.06.16.
+- **fix** **README & MANUAL** — changelog pointer, What's new modal behaviour, and keyboard scroll/grid notes updated for v2026.06.16.
 - **fix** **In-app Help (EN)** — What's new recap lists v2026.06.16 highlights.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v57` data version and `2026.06-dashboard-release-v56` dashboard release token; template query strings for `whats-new-stub.js`.
+- **fix** **Cache-bust** — `whats-new-v58` data version and `2026.06-dashboard-release-v56` dashboard release token; template query strings for `whats-new-stub.js`.
+- **fix** **Keyboard nav cleanup** — `KeyboardNavigation.cleanup()` removes capture-phase listeners on `pagehide` and before re-init.
+- **fix** **What's new JSON tracked** — `.gitignore` exception for `static/data/whats-new/` so per-release JSON ships with the repo.
 
 ---
 
