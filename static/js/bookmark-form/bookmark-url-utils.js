@@ -74,6 +74,28 @@
         }
     }
 
+    /** Normalized http(s) URL for img/src and CSS url(); rejects javascript:, data:, etc. */
+    function safeHttpResourceUrl(raw) {
+        const trimmed = String(raw || '').trim();
+        if (!trimmed || !isHttpUrl(trimmed)) {
+            return '';
+        }
+        try {
+            return new URL(ensureHttpUrl(trimmed)).href;
+        } catch {
+            return '';
+        }
+    }
+
+    /** Safe value for CSS custom properties that wrap url("..."). */
+    function safeCssImageUrl(raw) {
+        const href = safeHttpResourceUrl(raw);
+        if (!href) {
+            return '';
+        }
+        return `url("${href.replace(/"/g, '%22')}")`;
+    }
+
     function isPrivateOrLocalHost(hostname) {
         const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
         if (!host || host === 'localhost') return true;
@@ -116,6 +138,8 @@
         deriveFaviconFromBookmarkUrl,
         extractDomainFromUrl,
         isHttpUrl,
+        safeHttpResourceUrl,
+        safeCssImageUrl,
         requiresAllowLocalBookmarks,
         healAllowLocalBookmarksSetting,
     };

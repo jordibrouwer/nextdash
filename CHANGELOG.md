@@ -41,7 +41,13 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_No unreleased changes at this time._
+### Dashboard
+
+- **fix** **Inline shortcut conflict** — cross-page shortcut warnings only apply when **Global shortcuts** is enabled; per-page shortcuts no longer false-positive on other pages.
+- **fix** **Category order on page switch** — debounced category reorder flushes before loading another page so order is not lost within the 1s save window.
+- **fix** **Open tracking** — middle-click on a bookmark row increments `openCount` / smart-collection recency (primary and keyboard **Enter** already did via `click`).
+- **fix** **Custom background image URL** — dashboard/config background images only accept normalized `http`/`https` URLs in CSS `url()` (blocks `javascript:`, `data:`, and quote-breakout in custom properties).
+- **fix** **Preview card images** — hover preview and config link-preview cards only load `http`/`https` image URLs via `BookmarkUrlUtils.safeHttpResourceUrl`.
 
 ---
 

@@ -2722,12 +2722,9 @@ class ConfigSettings {
         }
 
         if (type === 'image') {
-            const url = ((settings && settings.backgroundImageUrl) || '').trim();
-            if (url) {
-                document.documentElement.style.setProperty(
-                    '--custom-background-image',
-                    `url('${url.replace(/'/g, '%27')}')`
-                );
+            const cssUrl = window.BookmarkUrlUtils?.safeCssImageUrl?.(settings?.backgroundImageUrl);
+            if (cssUrl) {
+                document.documentElement.style.setProperty('--custom-background-image', cssUrl);
                 body.classList.add('bg-image');
             }
         }

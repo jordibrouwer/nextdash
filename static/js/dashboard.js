@@ -3356,12 +3356,9 @@ class Dashboard {
         }
 
         if (type === 'image') {
-            const url = (this.settings.backgroundImageUrl || '').trim();
-            if (url) {
-                document.documentElement.style.setProperty(
-                    '--custom-background-image',
-                    `url('${url.replace(/'/g, '%27')}')`
-                );
+            const cssUrl = window.BookmarkUrlUtils?.safeCssImageUrl?.(this.settings.backgroundImageUrl);
+            if (cssUrl) {
+                document.documentElement.style.setProperty('--custom-background-image', cssUrl);
                 body.classList.add('bg-image');
             }
         }
@@ -4034,9 +4031,19 @@ class Dashboard {
         await this.saveBookmarkOrder(options);
     }
 
+    async flushPendingCategorySave() {
+        if (!this._pendingCategorySave) {
+            return;
+        }
+        clearTimeout(this._pendingCategorySave);
+        this._pendingCategorySave = null;
+        await this.saveCategoryOrder();
+    }
+
     async flushPendingDashboardSaves() {
         await this.flushPendingBookmarkSave();
         await this.flushPendingPreviewSave();
+        await this.flushPendingCategorySave();
     }
 
     async flushPendingPreviewSave() {
@@ -5192,8 +5199,9 @@ class Dashboard {
         if (bookmark.name) textSpan.title = bookmark.name;
         openLink.appendChild(textSpan);
 
+        const recordOpen = () => this.recordBookmarkOpened(bookmark);
         openLink.addEventListener('click', (e) => {
-            this.recordBookmarkOpened(bookmark);
+            recordOpen();
             if (document.getElementById('dashboard-layout')?.classList.contains('layout-launcher')) {
                 row.classList.remove('bookmark-pulse');
                 void row.offsetWidth; // force reflow so re-clicking restarts the animation
@@ -5203,6 +5211,11 @@ class Dashboard {
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(bookmark.url);
+            }
+        });
+        openLink.addEventListener('auxclick', (e) => {
+            if (e.button === 1) {
+                recordOpen();
             }
         });
 
@@ -6025,6 +6038,10 @@ class Dashboard {
             return true;
         }
 
+        if (this.settings.globalShortcuts !== true) {
+            return false;
+        }
+
         const currentPageIdNumber = Number(this.currentPageId);
         return (Array.isArray(this.allBookmarks) ? this.allBookmarks : []).some((bookmark) => {
             const shortcutValue = String(bookmark?.shortcut || '').trim().toUpperCase();
@@ -6414,8 +6431,12 @@ class Dashboard {
             link.rel = 'noopener noreferrer';
         }
 
-        link.addEventListener('click', () => {
-            this.recordBookmarkOpened(bookmark);
+        const recordOpen = () => this.recordBookmarkOpened(bookmark);
+        link.addEventListener('click', recordOpen);
+        link.addEventListener('auxclick', (e) => {
+            if (e.button === 1) {
+                recordOpen();
+            }
         });
 
         return link;
@@ -6992,7 +7013,8 @@ class Dashboard {
         const description = String(preview?.description || '').trim();
         const noteText = String(preview?.note || '').trim();
         const domain = String(preview?.domain || this.extractDomainFromUrl(preview?.url || '')).trim();
-        const image = String(preview?.image || '').trim();
+        const image = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(preview?.image)
+            || '';
 
         titleEl.textContent = title;
         descEl.textContent = description;
