@@ -127,8 +127,29 @@ class SwipeNavigation {
         this.handleSwipe();
     }
 
+    shouldBlockSwipeNavigation() {
+        const dashboard = this.dashboard;
+        if (!dashboard) {
+            return true;
+        }
+        if (document.querySelector('.modal-overlay.show')) {
+            return true;
+        }
+        if (window.DashboardTagCloud?.modalOpen) {
+            return true;
+        }
+        if (dashboard.searchComponent?.isActive?.()) {
+            return true;
+        }
+        return false;
+    }
+
     handleSwipe() {
         if (Date.now() < this.navigationLockUntil) {
+            return;
+        }
+
+        if (this.shouldBlockSwipeNavigation()) {
             return;
         }
 
@@ -150,51 +171,50 @@ class SwipeNavigation {
 
         // Determine swipe direction and navigate
         if (horizontalDistance > 0) {
-            // Swipe right - go to previous page
-            this.navigateToPreviousPage();
+            void this.navigateToPreviousPage();
         } else {
-            // Swipe left - go to next page
-            this.navigateToNextPage();
+            void this.navigateToNextPage();
         }
     }
 
-    navigateToNextPage() {
+    async navigateToNextPage() {
         const pages = this.dashboard.pages;
         const currentIndex = pages.findIndex(p => p.id === this.dashboard.currentPageId);
 
         if (currentIndex === -1 || currentIndex === pages.length - 1) {
             // Already at last page, wrap to first
             if (pages.length > 0) {
-                this.switchToPage(pages[0]);
+                await this.switchToPage(pages[0]);
             }
         } else {
-            // Go to next page
-            this.switchToPage(pages[currentIndex + 1]);
+            await this.switchToPage(pages[currentIndex + 1]);
         }
     }
 
-    navigateToPreviousPage() {
+    async navigateToPreviousPage() {
         const pages = this.dashboard.pages;
         const currentIndex = pages.findIndex(p => p.id === this.dashboard.currentPageId);
 
         if (currentIndex === -1 || currentIndex === 0) {
             // Already at first page, wrap to last
             if (pages.length > 0) {
-                this.switchToPage(pages[pages.length - 1]);
+                await this.switchToPage(pages[pages.length - 1]);
             }
         } else {
-            // Go to previous page
-            this.switchToPage(pages[currentIndex - 1]);
+            await this.switchToPage(pages[currentIndex - 1]);
         }
     }
 
-    switchToPage(page) {
+    async switchToPage(page) {
         if (!page) return;
 
-        // Reset scroll to top of the page
+        const switched = await this.dashboard.requestPageNavigation(page.id);
+        if (!switched) {
+            return;
+        }
+
         window.scrollTo(0, 0);
 
-        // Update navigation buttons
         const container = document.getElementById('page-navigation');
         if (container) {
             const buttons = container.querySelectorAll('.page-nav-btn');
@@ -205,9 +225,6 @@ class SwipeNavigation {
                 buttons[pageIndex].classList.add('active');
             }
         }
-
-        // Load the page (updates title, hash, and bookmarks)
-        this.dashboard.loadPageBookmarks(page.id);
     }
 }
 

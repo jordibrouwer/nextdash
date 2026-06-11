@@ -322,7 +322,7 @@ class Dashboard {
             if (hash && /^\d+$/.test(hash)) {
                 const pageIndex = parseInt(hash) - 1;
                 if (pageIndex >= 0 && pageIndex < this.pages.length && this.pages[pageIndex].id !== this.currentPageId) {
-                    this.loadPageBookmarks(this.pages[pageIndex].id);
+                    void this.requestPageNavigation(this.pages[pageIndex].id);
                 }
             }
         });
@@ -363,6 +363,11 @@ class Dashboard {
             const message = detail.message || fallback;
             this.showNotification(message, 'success', { duration: 6000 });
 
+            if (this.inlineEditingBookmarkIndex !== null) {
+                this.updateHealthBadge();
+                return;
+            }
+
             const pageId = detail.pageId != null ? String(detail.pageId) : null;
             if (pageId && pageId !== String(this.currentPageId)) {
                 const targetPage = this.pages.find((p) => String(p.id) === pageId);
@@ -375,7 +380,6 @@ class Dashboard {
                 await this.loadAllBookmarks();
             }
             this.buildSearchIndex();
-            this.renderDashboard({ animate: false });
             this.updateHealthBadge();
         });
     }
@@ -823,6 +827,90 @@ class Dashboard {
         this.showNotification(message, type, options);
     }
 
+    hasInlineEditUnsavedChanges() {
+        const ctx = this._inlineEditContext;
+        if (!ctx?.bookmarkRef?.original || !ctx.fields) {
+            return false;
+        }
+        const original = ctx.bookmarkRef.original;
+        const fields = ctx.fields;
+        const name = fields.nameInput.value.trim();
+        const url = fields.urlInput.value.trim();
+        const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+        const category = fields.catSelect.value;
+        const pinned = fields.pinInput.checked;
+        const checkStatus = fields.statusInput.checked;
+        const note = fields.noteInput ? String(fields.noteInput.value || '').trim() : '';
+        const icon = typeof fields.getPendingIcon === 'function'
+            ? String(fields.getPendingIcon() || '').trim()
+            : String(original.icon || '').trim();
+        const tags = fields.tagsInput
+            ? fields.tagsInput.value.split(',').map((tag) => tag.trim().toLowerCase()).filter((tag, index, arr) => tag && arr.indexOf(tag) === index)
+            : (original.tags || []);
+        const originalTags = (original.tags || []).map((tag) => String(tag).trim().toLowerCase());
+        const tagsEqual = tags.length === originalTags.length
+            && tags.every((tag, index) => tag === originalTags[index]);
+        const targetPageId = fields.pageSelect
+            ? Number(fields.pageSelect.value)
+            : Number(ctx.bookmarkRef.pageId || this.currentPageId);
+        const originalPageId = Number(ctx.bookmarkRef.pageId || this.currentPageId);
+
+        return name !== String(original.name || '').trim()
+            || url !== String(original.url || '').trim()
+            || shortcut !== String(original.shortcut || '').trim().toUpperCase()
+            || category !== String(original.category || '')
+            || pinned !== Boolean(original.pinned)
+            || checkStatus !== Boolean(original.checkStatus)
+            || note !== String(original.note || '').trim()
+            || icon !== String(original.icon || '').trim()
+            || !tagsEqual
+            || targetPageId !== originalPageId;
+    }
+
+    dismissInlineEditForNavigation() {
+        const ctx = this._inlineEditContext;
+        if (ctx?.row && ctx.bookmarkRef) {
+            this.cancelBookmarkInlineEdit(ctx.row, ctx.bookmarkRef);
+            return;
+        }
+        this._abortInlineEditForRender();
+    }
+
+    async confirmInlineEditBeforeNavigation() {
+        if (this.inlineEditingBookmarkIndex === null && !document.querySelector('.bookmark-inline-editing')) {
+            return true;
+        }
+        if (!this.hasInlineEditUnsavedChanges()) {
+            this.dismissInlineEditForNavigation();
+            return true;
+        }
+        const message = this.formatDashboardLabel(
+            'inlineEditDiscardConfirm',
+            {},
+            'You have unsaved inline edits. Discard and leave?'
+        );
+        if (!window.confirm(message)) {
+            return false;
+        }
+        this.dismissInlineEditForNavigation();
+        return true;
+    }
+
+    async requestPageNavigation(pageId) {
+        const targetPageId = Number(pageId);
+        if (!Number.isFinite(targetPageId)) {
+            return false;
+        }
+        if (targetPageId === Number(this.currentPageId)) {
+            return true;
+        }
+        if (!(await this.confirmInlineEditBeforeNavigation())) {
+            return false;
+        }
+        await this.loadPageBookmarks(targetPageId);
+        return true;
+    }
+
     loadCollapsedStates() {
         try {
             const stored = localStorage.getItem('collapsedCategories');
@@ -1014,11 +1102,13 @@ class Dashboard {
                 activeBtn = pageBtn;
             }
             this._renderPageTabContent(pageBtn, page, index);
-            pageBtn.addEventListener('click', () => {
+            pageBtn.addEventListener('click', async () => {
+                const switched = await this.requestPageNavigation(page.id);
+                if (!switched) {
+                    return;
+                }
                 container.querySelectorAll('.page-nav-btn').forEach(btn => btn.classList.remove('active'));
                 pageBtn.classList.add('active');
-                this.loadPageBookmarks(page.id);
-                this.updatePageTitle(page.name);
                 this.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
@@ -1754,56 +1844,51 @@ class Dashboard {
                 
                 // Check if this page exists
                 if (pageIndex < this.pages.length) {
-                    e.preventDefault(); // Prevent default browser behavior
-                    e.stopPropagation(); // Stop the event from reaching other listeners
-                    
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     const page = this.pages[pageIndex];
-                    
-                    // Update navigation buttons
-                    const navButtons = document.querySelectorAll('.page-nav-btn');
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    if (navButtons[pageIndex]) {
-                        navButtons[pageIndex].classList.add('active');
-                    }
-                    
-                    // Load the page
-                    this.loadPageBookmarks(page.id);
-                    this.updatePageTitle(page.name);
-                    this.markInlineTipUsed('page_switch');
+                    void this.requestPageNavigation(page.id).then((switched) => {
+                        if (!switched) {
+                            return;
+                        }
+                        const navButtons = document.querySelectorAll('.page-nav-btn');
+                        navButtons.forEach(btn => btn.classList.remove('active'));
+                        if (navButtons[pageIndex]) {
+                            navButtons[pageIndex].classList.add('active');
+                        }
+                        this.markInlineTipUsed('page_switch');
+                    });
                 }
             }
-            
+
             // Handle Shift + Arrow keys for page navigation
             if (e.shiftKey && (key === 'ArrowLeft' || key === 'ArrowRight')) {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                // Find current page index
+
                 const currentIndex = this.pages.findIndex(page => page.id === this.currentPageId);
                 if (currentIndex === -1) return;
-                
+
                 let newIndex;
                 if (key === 'ArrowLeft') {
-                    // Previous page
                     newIndex = currentIndex > 0 ? currentIndex - 1 : this.pages.length - 1;
                 } else {
-                    // Next page
                     newIndex = currentIndex < this.pages.length - 1 ? currentIndex + 1 : 0;
                 }
-                
+
                 const page = this.pages[newIndex];
-                
-                // Update navigation buttons
-                const navButtons = document.querySelectorAll('.page-nav-btn');
-                navButtons.forEach(btn => btn.classList.remove('active'));
-                if (navButtons[newIndex]) {
-                    navButtons[newIndex].classList.add('active');
-                }
-                
-                // Load the page
-                this.loadPageBookmarks(page.id);
-                this.updatePageTitle(page.name);
-                this.markInlineTipUsed('page_switch');
+                void this.requestPageNavigation(page.id).then((switched) => {
+                    if (!switched) {
+                        return;
+                    }
+                    const navButtons = document.querySelectorAll('.page-nav-btn');
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    if (navButtons[newIndex]) {
+                        navButtons[newIndex].classList.add('active');
+                    }
+                    this.markInlineTipUsed('page_switch');
+                });
             }
         });
     }
@@ -2997,9 +3082,12 @@ class Dashboard {
             link.appendChild(nameSpan);
             link.appendChild(countSpan);
 
-            link.addEventListener('click', () => {
+            link.addEventListener('click', async () => {
+                const switched = await this.requestPageNavigation(page.id);
+                if (!switched) {
+                    return;
+                }
                 close();
-                this.loadPageBookmarks(page.id);
             });
 
             li.appendChild(link);
@@ -3047,13 +3135,22 @@ class Dashboard {
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 const page = pages[focusedIndex];
-                if (page) { close(); this.loadPageBookmarks(page.id); }
+                if (page) {
+                    void this.requestPageNavigation(page.id).then((switched) => {
+                        if (switched) {
+                            close();
+                        }
+                    });
+                }
             } else if (e.key >= '1' && e.key <= '9') {
                 const idx = parseInt(e.key) - 1;
                 if (idx < pages.length) {
                     e.preventDefault();
-                    close();
-                    this.loadPageBookmarks(pages[idx].id);
+                    void this.requestPageNavigation(pages[idx].id).then((switched) => {
+                        if (switched) {
+                            close();
+                        }
+                    });
                 }
             }
         };
@@ -4116,7 +4213,7 @@ class Dashboard {
     }
 
     flushPendingDashboardSavesOnExit() {
-        const hadReorder = Boolean(this.pendingReorderSave);
+        const hadReorder = Boolean(this.pendingReorderSnapshot) || Boolean(this._bookmarkOrderSaveInFlight);
         const hadPreview = Boolean(this.pendingPreviewSave);
         const hadCategory = Boolean(this._pendingCategorySave);
         if (this.pendingReorderSave) {
@@ -4196,7 +4293,15 @@ class Dashboard {
             ? options.payload.map((bookmark) => ({ ...bookmark }))
             : [...this.bookmarks];
 
+        const priorSave = this._bookmarkOrderSaveInFlight;
         const saveTask = (async () => {
+            if (priorSave) {
+                try {
+                    await priorSave;
+                } catch (_error) {
+                    // Prior save already notified; continue with latest payload.
+                }
+            }
             try {
                 const response = await dashFetch(`/api/bookmarks?page=${pageId}`, {
                     method: 'POST',
@@ -4545,6 +4650,7 @@ class Dashboard {
             this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
         }
+        this._inlineEditContext = null;
         this.leaveBookmarkInlineEditFocusMode();
     }
 
@@ -4590,9 +4696,14 @@ class Dashboard {
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
                 : null;
+            const recentLabel = this.language?.t?.('dashboard.smartRecentCollection');
+            const recentTitle = recentLabel && recentLabel !== 'dashboard.smartRecentCollection'
+                ? recentLabel
+                : 'Recently opened';
+            const recentCount = effectiveLimit ? Math.min(recentBookmarks.length, effectiveLimit) : recentBookmarks.length;
             collections.push({
                 id: '__smart_recent__',
-                name: `Recently opened (${effectiveLimit ? Math.min(recentBookmarks.length, effectiveLimit) : recentBookmarks.length})`,
+                name: `${recentTitle} (${recentCount})`,
                 icon: '⚡',
                 bookmarks: effectiveLimit ? recentBookmarks.slice(0, effectiveLimit) : recentBookmarks
             });
@@ -4603,9 +4714,14 @@ class Dashboard {
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
                 : null;
+            const staleLabel = this.language?.t?.('dashboard.smartStaleCollection');
+            const staleTitle = staleLabel && staleLabel !== 'dashboard.smartStaleCollection'
+                ? staleLabel
+                : 'Stale bookmarks';
+            const staleCount = effectiveLimit ? Math.min(staleBookmarks.length, effectiveLimit) : staleBookmarks.length;
             collections.push({
                 id: '__smart_stale__',
-                name: `Stale bookmarks (${effectiveLimit ? Math.min(staleBookmarks.length, effectiveLimit) : staleBookmarks.length})`,
+                name: `${staleTitle} (${staleCount})`,
                 icon: '⌛',
                 bookmarks: effectiveLimit ? staleBookmarks.slice(0, effectiveLimit) : staleBookmarks
             });
@@ -4616,9 +4732,13 @@ class Dashboard {
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
                 : null;
+            const mostUsedLabel = this.language?.t?.('dashboard.smartMostUsedCollection');
+            const mostUsedTitle = mostUsedLabel && mostUsedLabel !== 'dashboard.smartMostUsedCollection'
+                ? mostUsedLabel
+                : 'Most used';
             collections.push({
                 id: '__smart_most_used__',
-                name: 'Most used',
+                name: mostUsedTitle,
                 icon: '📈',
                 bookmarks: effectiveLimit ? mostUsedBookmarks.slice(0, effectiveLimit) : mostUsedBookmarks
             });
@@ -4946,7 +5066,7 @@ class Dashboard {
 
         if (link.pageId != null && this.pages.some((p) => p.id === link.pageId)) {
             if (this.currentPageId !== link.pageId) {
-                await this.loadPageBookmarks(link.pageId);
+                await this.requestPageNavigation(link.pageId);
             }
         }
 
@@ -6022,6 +6142,22 @@ class Dashboard {
         row.appendChild(form);
         this.destroyCategoryReorderInstances();
         this.initializeCategoryReorder();
+        this._inlineEditContext = {
+            bookmarkRef,
+            row,
+            fields: {
+                nameInput,
+                urlInput,
+                shortcutInput,
+                catSelect,
+                pageSelect,
+                pinInput,
+                statusInput,
+                noteInput,
+                tagsInput,
+                getPendingIcon: () => pendingIcon
+            }
+        };
         this.enterBookmarkInlineEditFocusMode();
         nameInput.focus();
         nameInput.select();
@@ -6120,6 +6256,7 @@ class Dashboard {
             Object.assign(bookmark, nextBookmarkState);
             this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
+            this._inlineEditContext = null;
             this.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
             this.renderDashboard();
             await this.saveBookmarkOrder();
@@ -6133,6 +6270,7 @@ class Dashboard {
 
         this._inlineEditGlobalCleanup?.();
         this.inlineEditingBookmarkIndex = null;
+        this._inlineEditContext = null;
         await this.loadAllBookmarks();
         this.renderDashboard();
     }
@@ -6338,6 +6476,7 @@ class Dashboard {
     cancelBookmarkInlineEdit(row, bookmarkRef) {
         this._inlineEditGlobalCleanup?.();
         this.leaveBookmarkInlineEditFocusMode();
+        this._inlineEditContext = null;
         const bookmark = bookmarkRef?.bookmark;
         if (!bookmark) {
             this.inlineEditingBookmarkIndex = null;

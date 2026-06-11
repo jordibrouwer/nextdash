@@ -436,6 +436,12 @@ class KeyboardNavigation {
 
         if (previousRow) {
             const nextIndex = this.navigableElements.indexOf(previousRow);
+            if (nextIndex === -1) {
+                previousRow.classList.remove('keyboard-selected');
+                previousRow.removeAttribute('aria-current');
+                previousRow.setAttribute('aria-selected', 'false');
+                this.restoreKbdSelection();
+            }
             this.currentIndex = nextIndex;
         }
         if (this.currentIndex >= this.navigableElements.length) {
@@ -468,8 +474,16 @@ class KeyboardNavigation {
             return;
         }
 
+        // Shift+Arrow — page navigation (dashboard.js); skip grid moves
+        if (e.shiftKey && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+            return;
+        }
+
         // Tab / Shift+Tab: linear bookmark navigation (only when a bookmark is selected)
         if (key === 'Tab' && this.currentIndex >= 0) {
+            if (this.navigableElements.length === 0) {
+                return;
+            }
             e.preventDefault();
             if (e.shiftKey) {
                 this.currentIndex = (this.currentIndex - 1 + this.navigableElements.length) % this.navigableElements.length;
