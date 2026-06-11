@@ -48,7 +48,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.16 — June 2026
 
-**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish, navigation guards, inline-edit hardening & quick wins** — per-release JSON for the ★ modal with scroll fetch and skeleton; shorter Ko-fi intro; page-scoped async saves; serialized bookmark POSTs; debounced reorder save with toast; tab-close reorder keepalive; inline-edit confirm on page/config/tag-filter change; page-move rollback; keyboard paused during inline edit; Shift+Arrow vs grid-nav fix; find-hidden rows skipped; smart-collection refresh without full re-render; page-tab tablist a11y; preview usage i18n; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized toasts and error messages.
+**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish, navigation guards, overlay fixes & i18n** — per-release JSON for the ★ modal with scroll fetch and skeleton; shorter Ko-fi intro; page-scoped async saves; serialized bookmark POSTs; debounced reorder save with toast; tab-close reorder keepalive; inline-edit confirm on page/config/tag-filter change; page-overview keyboard fixes; swipe/paste blocked during inline edit; page-move rollback; keyboard paused during inline edit; Shift+Arrow vs grid-nav fix; find-hidden rows skipped; smart-collection refresh without full re-render; page-tab and page-overview a11y; preview/recent/error i18n; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized toasts and error messages.
 
 ### What's new modal
 
@@ -83,6 +83,9 @@ _No unreleased changes at this time._
 - **fix** **Inline page-move rollback** — page move no longer mutates `this.bookmarks` before API success; failed moves restore local state and remove `bookmark-move-out`.
 - **fix** **Debounced reorder save** — drag reorder POSTs debounce 1s (like categories) and show a localized success toast.
 - **fix** **More dashboard i18n** — move-to-page, load/save errors, stale-section info, shortcut conflicts, and preview usage lines localized.
+- **fix** **Remote edit/delete errors** — settings save, move, delete, and cross-page edit failures use localized dashboard strings.
+- **fix** **Preview & recent labels** — untitled preview links and missing category labels localized.
+- **fix** **Fewer redundant renders** — initial load and inline page-move skip duplicate `renderDashboard()` calls.
 
 ### Keyboard & mobile
 
@@ -99,10 +102,14 @@ _No unreleased changes at this time._
 - **fix** **Inline edit keyboard pause** — grid navigation disabled while inline editor is open; page keys `1–9` blocked during inline edit.
 - **fix** **Find-hidden rows** — bookmarks hidden by find filter excluded from keyboard navigation.
 - **fix** **Esc undo reorder** — cheat sheet and rotating tips document **Esc** undo for unsaved drag reorders.
+- **fix** **Page overview keyboard** — arrow keys no longer move the bookmark grid behind the `,` overlay; **Shift+Tab** moves up correctly.
+- **fix** **Inline edit input guards** — swipe and **Ctrl+V** paste blocked while inline editor is open.
+- **fix** **Overlay stacking** — **F1** / `!` cheat sheet no longer opens on top of page overview.
 
 ### Accessibility
 
 - **fix** **Page tab semantics** — `tablist` / `tab` roles, `aria-selected`, and `:focus-visible` ring on page tabs.
+- **fix** **Page overview labels** — each page row announces name and bookmark count to screen readers.
 - **fix** **Preview card image alt** — preview thumbnails use link title as `alt` text.
 - **fix** **Skip link focus** — skip-to-content uses `:focus-visible` (keyboard only).
 
@@ -117,12 +124,12 @@ _No unreleased changes at this time._
 
 ### Documentation
 
-- **fix** **README & MANUAL** — debounced reorder save, Esc undo reorder, inline-edit guards (config/tag filter), and page-tab a11y for v2026.06.16.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 inline-edit hardening and dashboard quick wins.
+- **fix** **README & MANUAL** — page-overview keyboard, paste/swipe during inline edit, and error-toast i18n for v2026.06.16.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 overlay fixes and dashboard polish.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v61` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `swipe-navigation.js`, and dashboard CSS query strings for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v62` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, and `swipe-navigation.js` query strings for Docker-mounted static files.
 - **fix** **Keyboard & swipe cleanup** — `KeyboardNavigation.cleanup()` and `SwipeNavigation.cleanup()` on `pagehide`.
 - **fix** **Inline icon-fetch timer** — auto-favicon timers cleared on inline-edit close/abort.
 - **fix** **What's new JSON tracked** — `.gitignore` exception for `static/data/whats-new/` so per-release JSON ships with the repo.

@@ -114,6 +114,18 @@
         {
           "badge": "fix",
           "text": "<strong>More dashboard i18n</strong> — move-to-page, load/save errors, stale-section info, shortcut conflicts, and preview usage lines use locale strings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Remote edit/delete errors</strong> — settings save, move, delete, and cross-page edit failures use localized dashboard strings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview &amp; recent labels</strong> — untitled preview links and missing category labels use locale strings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fewer redundant renders</strong> — initial load and inline page-move skip duplicate <code>renderDashboard()</code> calls."
         }
       ]
     },
@@ -171,6 +183,18 @@
         {
           "badge": "fix",
           "text": "<strong>Esc undo reorder</strong> — cheat sheet and tips document <code>Esc</code> undo for unsaved drag reorders."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page overview keyboard</strong> — arrow keys no longer move the bookmark grid behind the <code>,</code> overlay; <code>Shift+Tab</code> moves up correctly."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit input guards</strong> — swipe and <code>Ctrl+V</code> paste are blocked while the inline editor is open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overlay stacking</strong> — <code>F1</code> / <code>!</code> cheat sheet no longer opens on top of the page overview."
         }
       ]
     },
@@ -188,6 +212,10 @@
         {
           "badge": "fix",
           "text": "<strong>Skip link focus</strong> — skip-to-content appears on keyboard focus only (<code>:focus-visible</code>), not mouse click."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page overview labels</strong> — each page row announces page name and bookmark count to screen readers."
         }
       ]
     },
@@ -218,7 +246,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v61</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>swipe-navigation.js</code>, and dashboard CSS query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v62</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, and <code>swipe-navigation.js</code> query strings updated for Docker-mounted static files."
         },
         {
           "badge": "fix",

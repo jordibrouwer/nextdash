@@ -53,6 +53,10 @@ class KeyboardNavigation {
                 return;
             }
 
+            if (document.getElementById('page-overview-overlay')) {
+                return;
+            }
+
             // Don't handle if search is active
             if (this.dashboard.searchComponent && this.dashboard.searchComponent.isActive()) {
                 return;

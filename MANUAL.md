@@ -263,11 +263,11 @@ The modal includes page, category, preview, tags, note, pin, and status options.
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. Paste is ignored while **inline edit** is open. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss; both ask to confirm if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation is paused while the editor is open. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss; both ask to confirm if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -332,7 +332,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 |------|--------|
 | `1`–`9` | Jump to page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
-| `,` | Page overview modal (popover stays inside the viewport on narrow screens) |
+| `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; each row announces name + count; arrow keys do not move bookmarks behind the overlay |
 
 ### 9.2 Bookmark grid
 
@@ -358,7 +358,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 ### 9.4 Cheat sheet
 
-Press **`!`** or **`F1`**. Type in the filter box to narrow the list.
+Press **`!`** or **`F1`**. Type in the filter box to narrow the list. The cheat sheet does not open while the **page overview** (`,`) is already open.
 
 Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link).
 

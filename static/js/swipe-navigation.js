@@ -174,6 +174,12 @@ class SwipeNavigation {
         if (!dashboard) {
             return true;
         }
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return true;
+        }
+        if (typeof dashboard.isInlineEditActive === 'function' && dashboard.isInlineEditActive()) {
+            return true;
+        }
         if (document.querySelector('.modal-overlay.show')) {
             return true;
         }

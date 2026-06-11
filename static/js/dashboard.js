@@ -994,16 +994,15 @@ class Dashboard {
             // Update document title with page name if enabled
             this.updateDocumentTitle();
 
-            // Update search component and render
+            // Update search component and render (skip during init before search is wired)
             if (this.searchComponent) {
                 this.updateSearchComponent();
-            }
-            window.scrollTo({ top: 0, behavior: 'instant' });
-            this.renderDashboard({ animate: true });
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                this.renderDashboard({ animate: true });
 
-            // Reset keyboard navigation to first element when changing pages
-            if (this.keyboardNavigation) {
-                this.keyboardNavigation.resetToFirst();
+                if (this.keyboardNavigation) {
+                    this.keyboardNavigation.resetToFirst();
+                }
             }
 
             this._bookmarksReady = true;
@@ -1066,7 +1065,9 @@ class Dashboard {
                 localStorage.setItem('dashboardSettings', JSON.stringify(this.settings));
             }
         } catch (error) {
-            this.showErrorNotification('Failed to save settings.');
+            this.showErrorNotification(
+                this.formatDashboardLabel('saveSettingsFailed', {}, 'Failed to save settings.')
+            );
         }
     }
 
@@ -2052,6 +2053,7 @@ class Dashboard {
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
             if (this.isModalOpen()) return;
             if (this.searchComponent && this.searchComponent.isActive()) return;
+            if (this.isInlineEditActive()) return;
 
             const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
             const trimmed = text.trim().split(/\s/)[0];
@@ -2953,6 +2955,7 @@ class Dashboard {
     isModalOpen() {
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
+        if (document.getElementById('page-overview-overlay')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
         const blockingSelectors = [
             '.onboarding-overlay',
@@ -3108,6 +3111,11 @@ class Dashboard {
             link.type = 'button';
             link.className = 'page-overview-link';
             link.setAttribute('aria-current', page.id === this.currentPageId ? 'page' : 'false');
+            const pageName = page.name || this.formatDashboardLabel('pageOverviewFallbackName', { index: idx + 1 }, `Page ${idx + 1}`);
+            link.setAttribute(
+                'aria-label',
+                this.formatDashboardLabel('pageOverviewItemAria', { name: pageName, count }, `${pageName}, ${count} bookmarks`)
+            );
 
             const numSpan = document.createElement('span');
             numSpan.className = 'page-overview-num';
@@ -3169,7 +3177,7 @@ class Dashboard {
                 e.preventDefault();
                 e.stopPropagation();
                 close();
-            } else if (e.key === 'ArrowDown' || e.key === 'Tab') {
+            } else if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
                 e.preventDefault();
                 setFocus(focusedIndex + 1);
             } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
@@ -6449,7 +6457,6 @@ class Dashboard {
 
             if (isCurrentScope) {
                 await this.loadPageBookmarks(this.currentPageId);
-                this.renderDashboard();
             } else {
                 await this.loadAllBookmarks();
                 this.renderDashboard();
@@ -6465,7 +6472,9 @@ class Dashboard {
             if (isCurrentScope && bookmarksSnapshot) {
                 this.bookmarks = bookmarksSnapshot;
             }
-            this.showErrorNotification(err.message || 'Failed to move bookmark.');
+            this.showErrorNotification(
+                err.message || this.formatDashboardLabel('moveBookmarkFailed', {}, 'Failed to move bookmark.')
+            );
         }
     }
 
@@ -6691,19 +6700,21 @@ class Dashboard {
     async saveRemoteBookmarkEdit(bookmarkRef, editedBookmark) {
         const pageId = Number(bookmarkRef.pageId || 0);
         if (!Number.isFinite(pageId) || pageId <= 0) {
-            this.showErrorNotification('Unable to resolve bookmark source page.');
+            this.showErrorNotification(
+                this.formatDashboardLabel('bookmarkSourcePageUnresolved', {}, 'Unable to resolve bookmark source page.')
+            );
             return false;
         }
 
         try {
             const pageResponse = await fetch(`/api/bookmarks?page=${pageId}`);
             if (!pageResponse.ok) {
-                throw new Error('Failed to load source page bookmarks.');
+                throw new Error(this.formatDashboardLabel('loadSourcePageBookmarksFailed', {}, 'Failed to load source page bookmarks.'));
             }
             const sourceBookmarks = await pageResponse.json();
             const sourceIndex = this.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
             if (sourceIndex < 0) {
-                throw new Error('Could not locate original bookmark on source page.');
+                throw new Error(this.formatDashboardLabel('bookmarkNotFoundOnSourcePage', {}, 'Could not locate original bookmark on source page.'));
             }
 
             sourceBookmarks[sourceIndex] = {
@@ -6725,14 +6736,16 @@ class Dashboard {
                 body: JSON.stringify(sourceBookmarks)
             });
             if (!saveResponse.ok) {
-                throw new Error('Failed to save bookmark on source page.');
+                throw new Error(this.formatDashboardLabel('saveBookmarkOnSourcePageFailed', {}, 'Failed to save bookmark on source page.'));
             }
 
             Object.assign(bookmarkRef.bookmark, editedBookmark);
             this.syncEditedBookmarkAcrossCollections(bookmarkRef, bookmarkRef.original?.url || '');
             return true;
         } catch (error) {
-            this.showErrorNotification(error.message || 'Failed to save bookmark changes.');
+            this.showErrorNotification(
+                error.message || this.formatDashboardLabel('saveBookmarkChangesFailed', {}, 'Failed to save bookmark changes.')
+            );
             return false;
         }
     }
@@ -6814,19 +6827,21 @@ class Dashboard {
 
         const sourcePageId = Number(bookmarkRef.pageId || 0);
         if (!Number.isFinite(sourcePageId) || sourcePageId <= 0) {
-            this.showErrorNotification('Unable to resolve bookmark source page.');
+            this.showErrorNotification(
+                this.formatDashboardLabel('bookmarkSourcePageUnresolved', {}, 'Unable to resolve bookmark source page.')
+            );
             return;
         }
 
         try {
             const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
             if (!sourceRes.ok) {
-                throw new Error('Failed to load source page.');
+                throw new Error(this.formatDashboardLabel('loadSourcePageFailed', {}, 'Failed to load source page.'));
             }
             const sourceBookmarks = await sourceRes.json();
             const sourceIndex = this.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
             if (sourceIndex < 0) {
-                throw new Error('Could not locate bookmark on source page.');
+                throw new Error(this.formatDashboardLabel('bookmarkNotFoundOnSourcePage', {}, 'Could not locate bookmark on source page.'));
             }
 
             const deletedBookmark = { ...sourceBookmarks[sourceIndex] };
@@ -6838,7 +6853,7 @@ class Dashboard {
                 body: JSON.stringify(sourceBookmarks)
             });
             if (!saveRes.ok) {
-                throw new Error('Failed to save bookmark deletion.');
+                throw new Error(this.formatDashboardLabel('saveBookmarkDeletionFailed', {}, 'Failed to save bookmark deletion.'));
             }
 
             this._inlineEditGlobalCleanup?.();
@@ -6852,7 +6867,9 @@ class Dashboard {
                 'success'
             );
         } catch (error) {
-            this.showErrorNotification(error.message || 'Failed to delete bookmark.');
+            this.showErrorNotification(
+                error.message || this.formatDashboardLabel('deleteBookmarkFailed', {}, 'Failed to delete bookmark.')
+            );
         }
     }
 
@@ -6874,7 +6891,7 @@ class Dashboard {
 
         const meta = document.createElement('span');
         meta.className = 'bookmark-shortcut recent-bookmark-meta';
-        meta.textContent = bookmark.category || 'No category';
+        meta.textContent = bookmark.category || this.configLabel('noCategory', 'No category');
         link.appendChild(meta);
 
         if (this.settings.openInNewTab) {
@@ -7520,7 +7537,9 @@ class Dashboard {
         const imageEl = card.querySelector('.bookmark-preview-card-image');
         const imageWrap = card.querySelector('.bookmark-preview-card-image-wrap');
 
-        const title = String(preview?.title || '').trim() || String(preview?.url || '').trim() || 'Untitled link';
+        const title = String(preview?.title || '').trim()
+            || String(preview?.url || '').trim()
+            || this.formatDashboardLabel('previewUntitledLink', {}, 'Untitled link');
         const description = String(preview?.description || '').trim();
         const noteText = String(preview?.note || '').trim();
         const domain = String(preview?.domain || this.extractDomainFromUrl(preview?.url || '')).trim();
