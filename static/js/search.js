@@ -977,10 +977,16 @@ class SearchComponent {
     }
 
     _dispatchLauncherFilter() {
+        const canonicalUrl = (raw) => {
+            if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
+                return BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
+            }
+            return String(raw || '').trim();
+        };
         const urls = new Set(
             this.searchMatches
                 .filter(m => m.type === 'bookmark' && m.bookmark && m.bookmark.url)
-                .map(m => m.bookmark.url)
+                .map(m => canonicalUrl(m.bookmark.url))
         );
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', {
             detail: { active: this.currentQuery.length > 0, urls }

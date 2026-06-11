@@ -820,6 +820,7 @@ class Dashboard {
         const loadId = ++this._pageBookmarksLoadId;
 
         try {
+            this._abortInlineEditForRender();
             await this.flushPendingDashboardSaves();
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
                 return;
@@ -1482,7 +1483,7 @@ class Dashboard {
 
         const q = this._findFilter.toLowerCase();
         layout?.querySelectorAll('.bookmark-link').forEach(tile => {
-            const name = (tile.querySelector('.bookmark-name')?.textContent || '').toLowerCase();
+            const name = (tile.querySelector('.bookmark-text')?.textContent || '').toLowerCase();
             const url  = (tile.getAttribute('data-bookmark-url') || '').toLowerCase();
             tile.classList.toggle('find-hidden', !name.includes(q) && !url.includes(q));
         });
@@ -2140,11 +2141,12 @@ class Dashboard {
             if (!grid || !grid.classList.contains('layout-launcher')) return;
             const { active, urls } = e.detail;
             grid.querySelectorAll('.bookmark-link').forEach(tile => {
-                const href = tile.querySelector('a.bookmark-open')?.href || '';
+                const rowUrl = tile.getAttribute('data-bookmark-url') || '';
+                const urlKey = this.canonicalBookmarkURLKey(rowUrl);
                 if (!active || urls.size === 0) {
                     tile.classList.remove('launcher-dim');
                 } else {
-                    tile.classList.toggle('launcher-dim', !urls.has(href));
+                    tile.classList.toggle('launcher-dim', !urls.has(urlKey));
                 }
             });
         });
@@ -3411,7 +3413,7 @@ class Dashboard {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
 
-        this.leaveBookmarkInlineEditFocusMode();
+        this._abortInlineEditForRender();
 
         if (this._tagFilter) {
             this._categoryListsCache = null;
@@ -3518,13 +3520,7 @@ class Dashboard {
             if (!Array.isArray(collection.bookmarks) || collection.bookmarks.length === 0) {
                 return;
             }
-            const collectionBookmarks = collection.id === '__smart_recent__'
-                ? [...collection.bookmarks].sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
-                : collection.id === '__smart_most_used__'
-                    ? [...collection.bookmarks].sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
-                    : collection.id === '__smart_today__'
-                        ? [...collection.bookmarks]
-                        : this.sortBookmarks(collection.bookmarks);
+            const collectionBookmarks = this._sortSmartCollectionBookmarks(collection);
             const collectionElement = this.createCategoryElement({
                 id: collection.id,
                 name: collection.name,
@@ -3897,6 +3893,7 @@ class Dashboard {
         });
 
         if (nextBookmarks.length === 0 || nextBookmarks.length !== previousBookmarks.length) {
+            this.renderDashboard();
             return;
         }
 
@@ -4422,31 +4419,111 @@ class Dashboard {
         return typeof iconValue === 'string' && /\.[a-z0-9]+$/i.test(iconValue);
     }
 
+    _isSmartCollectionPageAllowed(pageIds) {
+        const currentPageId = Number(this.currentPageId);
+        const currentPageIndex = this.pages.findIndex((page) => page.id === this.currentPageId);
+        const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
+        if (!Array.isArray(pageIds) || pageIds.length === 0) {
+            return true;
+        }
+        const normalizedIds = pageIds
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value > 0);
+        if (normalizedIds.includes(currentPageId)) {
+            return true;
+        }
+        if (currentPageNumber !== null && normalizedIds.includes(currentPageNumber)) {
+            return true;
+        }
+        return false;
+    }
+
+    smartCollectionsNeedRefreshAfterOpen() {
+        if (this.settings.showSmartTodayCollection !== false && this._isSmartCollectionPageAllowed(this.settings.smartTodayPageIds)) {
+            return true;
+        }
+        if (this.settings.showSmartRecentCollection !== false && this._isSmartCollectionPageAllowed(this.settings.smartRecentPageIds)) {
+            return true;
+        }
+        if (this.settings.showSmartStaleCollection !== false && this._isSmartCollectionPageAllowed(this.settings.smartStalePageIds)) {
+            return true;
+        }
+        if (this.settings.showSmartMostUsedCollection === true && this._isSmartCollectionPageAllowed(this.settings.smartMostUsedPageIds)) {
+            return true;
+        }
+        return false;
+    }
+
+    _sortSmartCollectionBookmarks(collection) {
+        if (collection.id === '__smart_recent__') {
+            return [...collection.bookmarks].sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+        }
+        if (collection.id === '__smart_most_used__') {
+            return [...collection.bookmarks].sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0));
+        }
+        if (collection.id === '__smart_today__') {
+            return [...collection.bookmarks];
+        }
+        return this.sortBookmarks(collection.bookmarks);
+    }
+
+    refreshSmartCollectionSections() {
+        const container = document.getElementById('dashboard-layout');
+        if (!container || this._tagFilter) {
+            this.renderDashboard();
+            return;
+        }
+
+        const collections = this.getSmartCollections(this.getSmartCollectionSourceBookmarks())
+            .filter((collection) => Array.isArray(collection.bookmarks) && collection.bookmarks.length > 0);
+
+        const existingSmart = Array.from(container.querySelectorAll('.category[data-smart-collection="true"]'));
+        if (collections.length !== existingSmart.length) {
+            this.renderDashboard();
+            return;
+        }
+
+        const nextIds = collections.map((collection) => String(collection.id));
+        const orderMatches = existingSmart.every((element, index) => (
+            String(element.getAttribute('data-category-id')) === nextIds[index]
+        ));
+        if (!orderMatches) {
+            this.renderDashboard();
+            return;
+        }
+
+        collections.forEach((collection, index) => {
+            const collectionBookmarks = this._sortSmartCollectionBookmarks(collection);
+            const replacement = this.createCategoryElement({
+                id: collection.id,
+                name: collection.name,
+                icon: collection.icon,
+                isSmartCollection: true,
+                customCollection: collection.customCollection || null,
+            }, collectionBookmarks);
+            existingSmart[index].replaceWith(replacement);
+        });
+
+        this._categoryListsCache = null;
+        this.syncBookmarkGridA11y();
+        this.keyboardNavigation?.scheduleUpdate?.();
+    }
+
+    _abortInlineEditForRender() {
+        if (this.inlineEditingBookmarkIndex !== null) {
+            this._inlineEditGlobalCleanup?.();
+            this.inlineEditingBookmarkIndex = null;
+        }
+        this.leaveBookmarkInlineEditFocusMode();
+    }
+
     getSmartCollections(bookmarks) {
         const now = Date.now();
         const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
         const staleWindowMs = 30 * 24 * 60 * 60 * 1000;
         const normalized = Array.isArray(bookmarks) ? bookmarks : [];
-        const currentPageId = Number(this.currentPageId);
 
-        const currentPageIndex = this.pages.findIndex((page) => page.id === this.currentPageId);
-        const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
-
-        const pageAllowed = (pageIds) => {
-            if (!Array.isArray(pageIds) || pageIds.length === 0) {
-                return true;
-            }
-            const normalizedIds = pageIds
-                .map((value) => Number(value))
-                .filter((value) => Number.isFinite(value) && value > 0);
-            if (normalizedIds.includes(currentPageId)) {
-                return true;
-            }
-            if (currentPageNumber !== null && normalizedIds.includes(currentPageNumber)) {
-                return true;
-            }
-            return false;
-        };
+        const pageAllowed = (pageIds) => this._isSmartCollectionPageAllowed(pageIds);
 
         const recentBookmarks = normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
@@ -5272,6 +5349,10 @@ class Dashboard {
         openLink.addEventListener('auxclick', (e) => {
             if (e.button === 1) {
                 recordOpen();
+                if (window.hyprMode && window.hyprMode.isEnabled()) {
+                    e.preventDefault();
+                    window.hyprMode.handleBookmarkClick(bookmark.url);
+                }
             }
         });
 
@@ -7270,9 +7351,13 @@ class Dashboard {
         if (!url) {
             return;
         }
-
-        // Multiple smart collections can change when openCount/lastOpened updates.
-        this.renderDashboard();
+        if (!this.smartCollectionsNeedRefreshAfterOpen()) {
+            return;
+        }
+        if (this.inlineEditingBookmarkIndex !== null) {
+            return;
+        }
+        this.refreshSmartCollectionSections();
     }
 
     updateTitleVisibility() {

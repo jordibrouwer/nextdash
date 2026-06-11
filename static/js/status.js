@@ -169,13 +169,21 @@ class StatusMonitor {
         return normalized.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     }
 
-    getStatusTargetElement(bookmark) {
+    getStatusTargetElement(bookmark, bookmarkIndex) {
         const url = String(bookmark?.url || '').trim();
         if (!url) {
             return null;
         }
         const escapedUrl = this.getBookmarkSelectorValue(url);
-        return document.querySelector(`.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${escapedUrl}"]`);
+        const baseSelector = `.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${escapedUrl}"]`;
+        const index = Number.isInteger(bookmarkIndex) ? bookmarkIndex : Number.parseInt(bookmark?.dashboardIndex, 10);
+        if (Number.isFinite(index) && index >= 0) {
+            const byIndex = document.querySelector(`${baseSelector}[data-bookmark-index="${index}"]`);
+            if (byIndex) {
+                return byIndex;
+            }
+        }
+        return document.querySelector(baseSelector);
     }
 
     isElementNearViewport(el, marginPx) {
@@ -191,11 +199,11 @@ class StatusMonitor {
 
     filterBookmarksNearViewport(bookmarks) {
         const list = Array.isArray(bookmarks) ? bookmarks : [];
-        return list.filter((b) => {
+        return list.filter((b, index) => {
             if (!b || !b.checkStatus) {
                 return false;
             }
-            const el = this.getStatusTargetElement(b);
+            const el = this.getStatusTargetElement(b, index);
             return el && this.isElementNearViewport(el);
         });
     }
@@ -229,14 +237,21 @@ class StatusMonitor {
                 if (!entry.isIntersecting) {
                     return;
                 }
-                const url = String(entry.target.getAttribute('data-bookmark-url') || '').trim();
+                const row = entry.target;
+                const url = String(row.getAttribute('data-bookmark-url') || '').trim();
                 if (!url) {
                     return;
                 }
-                const wantKey = statusCacheKey(url);
-                const bookmark = list.find((b) => statusCacheKey(b?.url) === wantKey);
+                const rowIndex = Number.parseInt(row.getAttribute('data-bookmark-index'), 10);
+                let bookmark = null;
+                if (Number.isFinite(rowIndex) && rowIndex >= 0 && list[rowIndex]) {
+                    bookmark = list[rowIndex];
+                } else {
+                    const wantKey = statusCacheKey(url);
+                    bookmark = list.find((b) => statusCacheKey(b?.url) === wantKey);
+                }
                 if (bookmark && bookmark.checkStatus) {
-                    this.checkBookmarkStatus(bookmark);
+                    this.checkBookmarkStatus(bookmark, rowIndex);
                 }
             });
         }, {
@@ -250,8 +265,14 @@ class StatusMonitor {
         );
         rows.forEach((row) => {
             const url = String(row.getAttribute('data-bookmark-url') || '').trim();
-            const wantKey = statusCacheKey(url);
-            const bookmark = bmList.find((b) => statusCacheKey(b?.url) === wantKey);
+            const rowIndex = Number.parseInt(row.getAttribute('data-bookmark-index'), 10);
+            let bookmark = null;
+            if (Number.isFinite(rowIndex) && rowIndex >= 0 && bmList[rowIndex]) {
+                bookmark = bmList[rowIndex];
+            } else {
+                const wantKey = statusCacheKey(url);
+                bookmark = bmList.find((b) => statusCacheKey(b?.url) === wantKey);
+            }
             if (bookmark && bookmark.checkStatus) {
                 this.pingObserver.observe(row);
             }
@@ -342,7 +363,7 @@ class StatusMonitor {
         });
     }
 
-    async checkBookmarkStatus(bookmark) {
+    async checkBookmarkStatus(bookmark, bookmarkIndex) {
         if (!this.settings.showStatus || !bookmark.checkStatus) {
             return null;
         }
@@ -353,7 +374,12 @@ class StatusMonitor {
         }
         this._inFlightPings.add(cacheKey);
 
-        const bookmarkElement = this.getStatusTargetElement(bookmark);
+        let resolvedIndex = bookmarkIndex;
+        if (!Number.isFinite(resolvedIndex) && window.dashboardInstance?.bookmarks) {
+            resolvedIndex = window.dashboardInstance.bookmarks.indexOf(bookmark);
+        }
+
+        const bookmarkElement = this.getStatusTargetElement(bookmark, resolvedIndex);
         if (!bookmarkElement) {
             this._inFlightPings.delete(cacheKey);
             return null;
@@ -634,11 +660,11 @@ class StatusMonitor {
 
     // Apply cached statuses to bookmarks that already have them
     applyCachedStatuses(bookmarks) {
-        bookmarks.forEach(bookmark => {
+        bookmarks.forEach((bookmark, index) => {
             if (!bookmark.checkStatus) {
                 return;
             }
-            const bookmarkElement = this.getStatusTargetElement(bookmark);
+            const bookmarkElement = this.getStatusTargetElement(bookmark, index);
             if (!bookmarkElement) {
                 return;
             }
