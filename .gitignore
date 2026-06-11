@@ -33,3 +33,4 @@ data/
 nextDash
 main
 scripts/debug-config-save.mjs
+nextDash.code-workspace
