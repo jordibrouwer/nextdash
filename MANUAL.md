@@ -1023,7 +1023,7 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 - [README.md](README.md) — Install, security, and feature overview  
 - [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
 - **Config → Help** — Same topics, translated, with quick anchor links  
-- **In-app What's new (★)** — Latest release highlights  
+- **In-app What's new (★)** — Latest release highlights; older releases load as you scroll (skeleton while fetching)  
 
 ---
 

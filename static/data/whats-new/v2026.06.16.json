@@ -1,0 +1,55 @@
+{
+  "tag": "v2026.06.16",
+  "date": "June 2026",
+  "releasedAt": "2026-06-10",
+  "sections": [
+    {
+      "title": "What's new modal",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Lazy-loaded release history</strong> — the ★ modal shows the latest release immediately and loads older releases as you scroll; a skeleton appears while data is fetched."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Lighter first paint</strong> — modal logic loads on first open via <code>whats-new-stub.js</code>; per-release content is served from <code>/static/data/whats-new/</code> JSON files."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inline shortcut conflict</strong> — cross-page shortcut warnings only apply when <strong>Global shortcuts</strong> is enabled; per-page shortcuts no longer false-positive on other pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Category order on page switch</strong> — debounced category reorder flushes before loading another page so order is not lost within the 1s save window."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Open tracking</strong> — middle-click on a bookmark row increments <code>openCount</code> and smart-collection recency (primary click and keyboard <strong>Enter</strong> already did)."
+        }
+      ]
+    },
+    {
+      "title": "Security",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Safe image URLs</strong> — custom dashboard background images and hover/link preview images only render normalized <code>http</code>/<code>https</code> URLs (<code>BookmarkUrlUtils.safeHttpResourceUrl</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v57</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; template query strings updated for Docker-mounted static files."
+        }
+      ]
+    }
+  ]
+}

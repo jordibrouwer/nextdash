@@ -1,0 +1,45 @@
+{
+  "tag": "v2026.06.5",
+  "date": "May 2026",
+  "releasedAt": "2026-06-03",
+  "sections": [
+    {
+      "title": "Dashboard — tag word cloud",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tag cloud (/)</strong> — optional FAB on desktop opens a word cloud of all tags (size = usage, <code>#</code> on every tag). Toggle under Config → General → Header &amp; Buttons; on by default."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>/ shortcut</strong> — on the dashboard (search closed), <kbd>/</kbd> opens the tag cloud when enabled; otherwise <kbd>/</kbd> keeps fuzzy/interleave search."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Keyboard in the modal</strong> — arrows move between tags and <em>Clear tag filter</em>; Enter applies; Escape closes; clearing restores focus to the selected bookmark."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tag filter view</strong> — pick a tag to see only matching bookmarks in an animated temporary layout; Escape clears when the modal is closed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Corner FAB stack</strong> — tag cloud sits directly above What's new; launcher moves up when the tag cloud is on."
+        }
+      ]
+    },
+    {
+      "title": "Search &amp; commands",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>:tag browse</strong> — <code>:tag</code> lists tags; <code>:tag work</code> or <code>:tag:work</code> shows matching bookmarks in the palette only (dashboard unchanged)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>:tag +name / :tag -name</strong> — add or remove a tag on the keyboard-selected bookmark."
+        }
+      ]
+    }
+  ]
+}

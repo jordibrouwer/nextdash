@@ -16,7 +16,7 @@
     let modalSessionId = 0;
 
     function getDataVersion() {
-        return window.NEXTDASH_WHATS_NEW_DATA_VERSION || 'whats-new-v56';
+        return window.NEXTDASH_WHATS_NEW_DATA_VERSION || 'whats-new-v57';
     }
 
     function getReleaseToken() {
@@ -146,7 +146,13 @@
                 releasedAtMs: Date.parse(`${entry.releasedAt}T12:00:00Z`),
             }))
             .filter((entry) => entry.releasedAtMs >= cutoff)
-            .sort((a, b) => b.releasedAtMs - a.releasedAtMs)
+            .sort((a, b) => {
+                const dateDiff = b.releasedAtMs - a.releasedAtMs;
+                if (dateDiff !== 0) {
+                    return dateDiff;
+                }
+                return b.tag.localeCompare(a.tag, undefined, { numeric: true });
+            })
             .slice(0, MAX_VISIBLE_RELEASES);
     }
 

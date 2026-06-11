@@ -1,0 +1,24 @@
+{
+  "tag": "v2026.06.9",
+  "date": "June 2026",
+  "releasedAt": "2026-06-08",
+  "sections": [
+    {
+      "title": "Config &amp; tips",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Link preview cards off by default</strong> — hover preview cards are disabled for new installs; existing installs are migrated to off on server start (opt-in again anytime)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Where to enable</strong> — Config → General → Advanced → Bookmarks → <em>Show link preview cards on hover</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rotating tip</strong> — footer tips mention the config path when preview cards are off."
+        }
+      ]
+    }
+  ]
+}

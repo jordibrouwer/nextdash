@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.16 — June 2026](#v20260616--june-2026)
 - [v2026.06.15 — June 2026](#v20260615--june-2026)
 - [v2026.06.14 — June 2026](#v20260614--june-2026)
 - [v2026.06.13 — June 2026](#v20260613--june-2026)
@@ -41,13 +42,37 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+_No unreleased changes at this time._
+
+---
+
+## v2026.06.16 — June 2026
+
+**What's new lazy loading, dashboard shortcut/open fixes, safe preview URLs** — per-release JSON for the ★ modal with scroll fetch and skeleton; lighter stub bootstrap; shortcut conflict respects per-page mode; category reorder flush on page switch; middle-click open tracking; http(s)-only background and preview images.
+
+### What's new modal
+
+- **new** **Lazy-loaded release history** — latest release renders first; older releases fetch on scroll with inline skeleton placeholders.
+- **new** **Stub bootstrap** — `whats-new-stub.js` sets the release token and loads `whats-new-modal.js` on first open; content lives in `/static/data/whats-new/*.json`.
+
 ### Dashboard
 
 - **fix** **Inline shortcut conflict** — cross-page shortcut warnings only apply when **Global shortcuts** is enabled; per-page shortcuts no longer false-positive on other pages.
 - **fix** **Category order on page switch** — debounced category reorder flushes before loading another page so order is not lost within the 1s save window.
-- **fix** **Open tracking** — middle-click on a bookmark row increments `openCount` / smart-collection recency (primary and keyboard **Enter** already did via `click`).
-- **fix** **Custom background image URL** — dashboard/config background images only accept normalized `http`/`https` URLs in CSS `url()` (blocks `javascript:`, `data:`, and quote-breakout in custom properties).
-- **fix** **Preview card images** — hover preview and config link-preview cards only load `http`/`https` image URLs via `BookmarkUrlUtils.safeHttpResourceUrl`.
+- **fix** **Open tracking** — middle-click on a bookmark row increments `openCount` / smart-collection recency (primary click and keyboard **Enter** already did via `click`).
+
+### Security
+
+- **fix** **Safe image URLs** — custom dashboard background images and hover/link preview images only render normalized `http`/`https` URLs via `BookmarkUrlUtils.safeHttpResourceUrl` / `safeCssImageUrl` (blocks `javascript:`, `data:`, and CSS quote-breakout).
+
+### Documentation
+
+- **fix** **README & MANUAL** — changelog pointer and What's new modal behaviour updated for v2026.06.16.
+- **fix** **In-app Help (EN)** — What's new recap lists v2026.06.16 highlights.
+
+### Developer
+
+- **fix** **Cache-bust** — `whats-new-v57` data version and `2026.06-dashboard-release-v56` dashboard release token; template query strings for `whats-new-stub.js`.
 
 ---
 

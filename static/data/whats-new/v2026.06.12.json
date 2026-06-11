@@ -1,0 +1,112 @@
+{
+  "tag": "v2026.06.12",
+  "date": "June 2026",
+  "releasedAt": "2026-06-08",
+  "sections": [
+    {
+      "title": "Dashboard — mobile &amp; navigation",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Compact date badge</strong> — a date pill (<code>8 jun · 14:03</code>) appears in the header on phone when the full date line is hidden; tap to open the date/weather popover."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Page swipe hint</strong> — a pulsing <code>← →</code> indicator below the tab strip hints at horizontal swipe when you have multiple pages on touch."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Scroll-snap tabs</strong> — page tabs scroll horizontally with snap on narrow screens; the active tab scrolls into view automatically."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Category name tooltip</strong> — long category titles truncate with an ellipsis; hover reveals the full name."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty category text</strong> — the raw locale key was shown instead of the translated \"no bookmarks yet\" text when the key was missing."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — bookmarks &amp; editing",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Letter avatar</strong> — bookmarks without a favicon show a styled initial-letter tile instead of a blank icon."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Inline edit improvements</strong> — long-press inline edit shows field-level validation errors, dismisses on <kbd>ESC</kbd> or click-outside, and warns before discarding unsaved changes."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Note line-clamp</strong> — bookmark preview-card notes are capped at three lines; longer notes are hidden with an ellipsis."
+        }
+      ]
+    },
+    {
+      "title": "Modals, feedback &amp; polish",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>ESC hint in modals</strong> — a subtle <kbd>ESC</kbd> to close hint appears below modal buttons on pointer devices."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Skeleton loader</strong> — the recent bookmarks modal (<code>*</code>) shows a shimmer skeleton while data loads."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Spring animations</strong> — search entrance and drag-and-drop placeholder use spring <code>cubic-bezier</code> curves for a smoother feel."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Theme preview badge</strong> — the \"Preview\" badge in the theme editor now uses an accent-color background with a pulsing dot."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Font upload icons</strong> — custom font status shows ✓ or ✕ after upload."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Focus-visible outlines</strong> — search pill buttons and history chips now show a visible focus ring on keyboard navigation."
+        }
+      ]
+    },
+    {
+      "title": "Categories &amp; search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Hide empty categories</strong> — Config → General → Bookmarks; on by default. Categories with no bookmarks are hidden from the dashboard. Existing installs are migrated automatically."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Bookmark name tooltip</strong> — truncated bookmark titles show the full name on hover via the native tooltip."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Search result ellipsis</strong> — long names in the search overlay now truncate cleanly with an ellipsis and tooltip."
+        }
+      ]
+    },
+    {
+      "title": "Reliability &amp; accessibility",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Notification queue</strong> — rapid notifications are queued and shown one at a time with a fade gap; no more simultaneous toasts."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><code>prefers-reduced-motion</code></strong> — spring curves, pulse animations, and entrance effects respect the OS reduced-motion setting across the whole UI."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Collapsed category state</strong> — localStorage errors (private browsing, quota) no longer break collapse persistence; state is kept in-memory for the session."
+        }
+      ]
+    }
+  ]
+}

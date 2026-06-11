@@ -26,6 +26,8 @@ node_modules/
 
 # Local / runtime data
 data/
+!static/data/
+!static/data/**
 .claude/
 .DS_Store
 nextDash

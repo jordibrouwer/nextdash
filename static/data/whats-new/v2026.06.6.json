@@ -1,0 +1,63 @@
+{
+  "tag": "v2026.06.6",
+  "date": "May 2026",
+  "releasedAt": "2026-06-05",
+  "sections": [
+    {
+      "title": "Accessibility — bookmark grid",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Grid semantics</strong> — category row headers, one focusable cell per row, <code>aria-activedescendant</code>, and row/column counts for screen readers."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Navigation keys</strong> — <kbd>Home</kbd>/<kbd>End</kbd> (category), <kbd>Ctrl+Home</kbd>/<kbd>Ctrl+End</kbd> (page), <kbd>Page Up</kbd>/<kbd>Page Down</kbd>; listed in the cheat sheet (<kbd>!</kbd>)."
+        }
+      ]
+    },
+    {
+      "title": "Config &amp; fonts",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Custom font upload</strong> — upload <code>.woff</code>/<code>.woff2</code>/<code>.ttf</code>/<code>.otf</code> in General → Appearance; pick <em>Custom font (uploaded)</em> from the UI font dropdown."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Save → Open dashboard</strong> — after Save, the toast offers <em>Open dashboard</em>; returning applies pending settings via session sync."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Device-specific settings</strong> — cleaner merge of server vs. local visual preferences."
+        }
+      ]
+    },
+    {
+      "title": "Localization &amp; mobile help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Dashboard i18n</strong> — footer/search ARIA, command labels (<code>:pin</code>, <code>:note</code>, …), bookmark row and inline-edit strings (EN / NL / DE / FR)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Phone vs desktop</strong> — new Help section and MANUAL table: search overlay tabs on phone; tag cloud, cheat sheet, and full config on desktop."
+        }
+      ]
+    },
+    {
+      "title": "Polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Guided tours</strong> — tour backdrop no longer blocks clicks; sticky save bar padding; default bookmarks ship with example tags."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Analytics cleanup</strong> — removed unused <code>/api/analytics</code>; use Config → Stats and <code>/health</code> for insights."
+        }
+      ]
+    }
+  ]
+}

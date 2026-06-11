@@ -1,0 +1,293 @@
+{
+  "tag": "v2026.06.13",
+  "date": "June 2026",
+  "releasedAt": "2026-06-09",
+  "sections": [
+    {
+      "title": "Security &amp; uploads",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>DNS-rebinding protection</strong> — outbound fetches (preview, ping, icons, auto-heal) validate resolved IPs at dial time; private/loopback targets are blocked unless localhost bookmarks are allowed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Write-token coverage</strong> — when <code>NEXTDASH_WRITE_TOKEN</code> is set, backup download, bookmark preview, search-index build, open-broken, and auto-heal suggest also require <code>X-NextDash-Token</code>. Dashboard, config, and health inject the token automatically."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Font magic bytes</strong> — custom font uploads are validated by file signature (WOFF/WOFF2/TTF/OTF), not client <code>Content-Type</code> or filename."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>SVG &amp; icon hardening</strong> — downloaded SVG icons are sanitized server-side; uploaded icons/favicons use magic-byte detection; category modals escape HTML safely."
+        }
+      ]
+    },
+    {
+      "title": "Backup, import &amp; reset",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Atomic ZIP import</strong> — restore stages to a temp directory, removes orphan icons and stale JSON, then commits; invalid bookmark URLs are skipped with a count in the UI."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Backup round-trip icons</strong> — legacy root-level images in <code>data/</code> export as <code>icons/&lt;name&gt;</code> so bookmark icon references survive backup → import."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Factory reset scope</strong> — reset clears <code>data/icons/</code>, custom favicon/font, and preview/health caches; sample favicons prefetch in the background after startup."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings export/import</strong> — export or import <code>settings.json</code> alone from Config → Backups, with file-size validation and migration-safe cleanup."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Last backup date</strong> — the backups panel shows when you last created a ZIP backup."
+        }
+      ]
+    },
+    {
+      "title": "Health, cache &amp; analytics",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Cache merge safety</strong> — preview and health caches use atomic read-merge-write so parallel requests no longer overwrite each other's entries."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Canonical URL keys</strong> — duplicate detection, health cache, status monitor, and ping validation treat <code>https://x</code>, <code>https://x/</code>, and <code>https://x:443</code> as the same URL (same for <code>http://x:80</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Duplicate merge metadata</strong> — health merge keeps the best bookmark and combines tags, shortcut, opens, notes, and icons from the removed duplicates."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Open-count tracking</strong> — <code>/api/track-open</code> increments atomically under lock (no lost opens on rapid clicks)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Icon upload overwrite</strong> — re-uploading a bookmark icon with the same filename replaces the file on disk."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — bookmarks &amp; editing",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit saves immediately</strong> — rename and delete on the dashboard persist right away (no debounce); pending edits flush when you refresh or close the tab."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Disk write errors</strong> — bookmark and settings saves return an error when the server cannot write data, instead of silently failing."
+        }
+      ]
+    },
+    {
+      "title": "Config, bookmarks &amp; search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Write-token gaps</strong> — health mutations and the bookmarks guided tour use the shared write-token fetch helpers when <code>NEXTDASH_WRITE_TOKEN</code> is set."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shortcut docs sync</strong> — cheatsheet, help text, and config tour match dashboard keys (<kbd>1</kbd>–<kbd>9</kbd> page tabs, category jump, etc.)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Link-preview icons</strong> — bookmark detail can fetch favicons via link preview with generation guards so stale async responses are ignored."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>URL protocol hint</strong> — missing <code>https://</code> on blur is normalized; inline hint when the protocol is absent."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config tab keys</strong> — arrow keys move between visible config tabs on desktop."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Search chip keys</strong> — <kbd>←</kbd>/<kbd>→</kbd> select a recent query chip; <kbd>Enter</kbd> applies it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Duplicate-merge modal</strong> — <kbd>ESC</kbd> cancels the health merge picker without leaving a pending promise."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unsaved icon edits</strong> — icon fetch, upload, clear, and undo mark the bookmark detail as dirty so Save is required."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config save order</strong> — Save posts settings before bookmarks so <code>allowLocalBookmarks</code> applies during URL validation; partial settings POSTs merge with stored values instead of wiping fields."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Private URL save hint</strong> — blocked local/private bookmark URLs show a clear error (EN/NL/DE/FR) pointing to <strong>General → Advanced</strong> or a URL change; the client can auto-enable the localhost flag when needed."
+        }
+      ]
+    },
+    {
+      "title": "Config bookmarks workspace",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Collapsible structure panel</strong> — <strong>Config → Bookmarks</strong> keeps pages, categories, archived pages, and favicon policy in a collapsed <em>Structure</em> block until you expand it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Add bookmark menu</strong> — <strong>+ Bookmark</strong> dropdown: <em>Add &amp; edit</em> opens the detail panel (Save when ready) or <em>Quick add</em> saves immediately."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Detail panel tiers</strong> — category stays visible; shortcut, icon, tags, previews, and status live under a <em>More options</em> collapsible."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bulk move toolbar</strong> — one <em>Move to</em> row (page + category + Apply) replaces separate category-move and page-move groups."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Split view polish</strong> — responsive list/detail layout, glass and modern styling for workspace card and bulk toolbar; bookmarks guided tour copy updated."
+        }
+      ]
+    },
+    {
+      "title": "Health discoverability",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong><code>:health</code> command</strong> — open <code>/health</code> from command mode with filters (<code>broken</code>, <code>duplicate</code>, <code>stale</code>, …) or <code>refresh</code> to re-scan; cheat sheet and help updated."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health URL deep links</strong> — <code>?filter=</code>, <code>?page=</code>, <code>?sort=</code>, <code>?q=</code>, <code>?refresh=1</code> apply on load; <code>refresh=1</code> triggers retest-all."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health badge routing</strong> — dashboard and config health links go to <code>/health?filter=broken</code> when broken issues exist."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Essentials Health → link</strong> — <strong>Config → General → Essentials</strong> status <em>Health →</em> uses the same broken-filter routing as the header badge."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config health link selector</strong> — header health anchor matches <code>href^=\"/health\"</code> so badge href updates survive after the first refresh."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>:stale</code> overflow</strong> — when the stale palette exceeds its cap, the overflow row opens <code>/health?filter=stale</code>."
+        }
+      ]
+    },
+    {
+      "title": "Layout discoverability",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Try modern &amp; Try glass</strong> — classic-layout users see a layout-versions spotlight with <em>Try modern</em> and <em>Try glass</em>; onboarding and feature-tour copy cover all three versions."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unified spotlight flow</strong> — one discoverability path for classic → modern or glass; reset from <strong>Advanced → System &amp; tools</strong> replays the spotlight."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Discoverability queue bar</strong> — layout-versions and paste spotlights show <em>Tip X of Y</em> and <em>Later this session</em>; defer skips remaining post-onboarding prompts this session (EN/NL/DE/FR)."
+        }
+      ]
+    },
+    {
+      "title": "Glass layout polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Preset fine-tuning</strong> — <em>terminal</em> (transparent default, glass on hover), <em>masonry</em> (subtle border, glass on hover), <em>launcher</em> (lighter surface, gentler hover lift)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Design tokens</strong> — <code>--layout-surface-inset</code> and <code>--glass-blur-*</code> replace hardcoded blur values across dashboard, config, health, and modal overlays."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Glass UI details</strong> — inline-edit panel, tag-autocomplete dropdown, loading skeleton shimmer, and config bookmarks workspace glass parity."
+        }
+      ]
+    },
+    {
+      "title": "Additional fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Ping write-token</strong> — <code>/api/ping</code> requires <code>X-NextDash-Token</code> when <code>NEXTDASH_WRITE_TOKEN</code> is set; status monitor and health UI send it automatically."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health mutation races</strong> — health status updates, deletes, auto-heal, <code>RetestAll</code>, and preview bulk clear/refresh apply atomically via <code>MutateBookmarksOnPage</code>; duplicate merge commits all page updates in one locked save."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>ZIP import categories</strong> — restored pages keep category structure because categories are merged into bookmark JSON before import commit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page load race</strong> — fast swipe or hash changes no longer show the wrong bookmarks; stale <code>loadPageBookmarks()</code> responses are ignored."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Delete &amp; open tracking</strong> — delete matches canonical URLs and returns 404 when missing; <code>/api/track-open</code> uses page-aware index resolution; persist failures return 500 instead of 404."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit &amp; page moves</strong> — remote bookmarks save <code>note</code> and <code>tags</code>; the page dropdown can move cross-page bookmarks; category reorder flushes on tab close."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>SavePages &amp; icon preview</strong> — saving page order/name no longer overwrites bookmark data on disk; inline icon preview uses safe DOM rendering."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Immediate dashboard saves</strong> — bookmark reorder and preview metadata save right away; tab hide flushes pending saves; remote bookmarks can be deleted from inline edit in tag-filter view."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Swipe navigation</strong> — page swipes no longer call <code>updatePageTitle</code> separately; <code>loadPageBookmarks()</code> owns title and hash updates."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings search promo</strong> — on desktop config, a pulsing search field, <em>New</em> badge, and speech balloon highlight global settings search (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd>); <kbd>Ctrl+K</kbd> stays quick actions only. Shown once; skips mobile and active tours."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search polish</strong> — results stack above the promo balloon; typing dismisses it; tour wait capped at 30 retries; config category rows use safe DOM rendering; Help footer GitHub link uses <code>nextdash</code> repo casing."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Glass layout</strong> — third layout version with translucent iOS-style blur on dashboard, config, and health. Choose in <strong>Config → General → Layout</strong>, onboarding, or <code>:layoutversion glass</code>; <code>:layoutversion toggle</code> cycles classic → modern → glass. Modern unchanged."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layout settings save</strong> — layout version, preset, and density persist from config (included on Save; layout changes autosave to the server)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docker UI refresh</strong> — container serves mounted <code>static/</code>, <code>locales/</code>, and <code>templates/</code> from disk when present so UI updates apply without rebuilding the image."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docker build context</strong> — expanded <code>.dockerignore</code> excludes <code>node_modules/</code>, local <code>data/</code>, dev scripts, and docs so image builds stay lean."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Repo hygiene</strong> — <code>.gitignore</code> merge conflict resolved; <code>node_modules/</code> removed from git; Playwright stays a <code>devDependency</code> for local debug scripts only; obsolete <code>merge-config-info-i18n.py</code> migration script removed."
+        }
+      ]
+    }
+  ]
+}

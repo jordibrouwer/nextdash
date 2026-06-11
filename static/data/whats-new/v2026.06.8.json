@@ -1,0 +1,24 @@
+{
+  "tag": "v2026.06.8",
+  "date": "June 2026",
+  "releasedAt": "2026-06-07",
+  "sections": [
+    {
+      "title": "Dashboard — bookmark rows",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>No hover shift</strong> — bookmarks no longer jump ~1 px right on hover; the row highlight stays aligned edge to edge."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Full-row selection</strong> — hover and keyboard focus light up the whole row: icon, title, pin/note/ping badges, and shortcut."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Theme gradient</strong> — left-to-right accent tint using your active theme colors; fades smoothly toward the right."
+        }
+      ]
+    }
+  ]
+}

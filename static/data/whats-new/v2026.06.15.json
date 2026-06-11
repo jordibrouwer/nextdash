@@ -1,0 +1,117 @@
+{
+  "tag": "v2026.06.15",
+  "date": "June 2026",
+  "releasedAt": "2026-06-10",
+  "sections": [
+    {
+      "title": "Discoverability simplify",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Discoverability queue removed</strong> — no more post-onboarding queue chain or <em>Tip X of Y</em> bar; <strong>What's new</strong> still auto-opens when unread; layout and paste spotlights reset individually from <strong>Advanced → System → Tours &amp; onboarding</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Dashboard post-onboarding</strong> — What's new, layout-nudge, and paste spotlight run directly again without a queue coordinator."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Post-onboarding chain hardening</strong> — What's new retries when blocked instead of skipping for the session; polling capped after ~30s; open-abort retries capped at 20; layout nudge reset from config runs the full chain again (not layout-only)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>isModalOpen visibility</strong> — post-onboarding prompts only wait for actually visible overlays, not stale DOM or <code>guided-flow-locked</code> alone."
+        }
+      ]
+    },
+    {
+      "title": "Config guided tours",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>General config tour restored</strong> — first desktop visit to <strong>Config → General</strong> shows the overview tour again (Essentials / Advanced layers); reset from <strong>Advanced → Tours &amp; onboarding → General</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Recoverable guided flow</strong> — stale tour DOM teardown, scroll-lock recovery, and watchdog when the card stays hidden; cache-bust on tour assets; settings search promo reschedules when the tour ends."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Guided flow stale tour cards</strong> — GuidedFlowGuard ignores invisible tour DOM so <code>guided-flow-locked</code> does not stick after a tour ends."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Guided flow invisible overlays</strong> — onboarding and feature-tour overlays use the same visibility check (not only config tour cards)."
+        }
+      ]
+    },
+    {
+      "title": "Layout discoverability",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Layout nudge replay</strong> — reset from config queues a replay when no dashboard tab is open; dashboard init consumes the pending flag and runs the full post-onboarding chain; legacy <code>discoverability-deferred</code> session keys cleared."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layout nudge reset feedback</strong> — clearer messages when the layout prompt shows immediately vs when you need to open or reload the dashboard (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Paste spotlight replay</strong> — reset from config queues a replay when no dashboard tab is open; dashboard init consumes the pending flag and runs the post-onboarding chain."
+        }
+      ]
+    },
+    {
+      "title": "Config &amp; search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search promo auto-start</strong> — confirmed-dismiss storage avoids false “seen” flags from focus-before-show; retry fallbacks; schedules after config load and when switching to General."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search mobile resize</strong> — re-binds search listeners when you widen the config window after loading on mobile."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search desktop→mobile resize</strong> — hides the search field and dismisses the promo when narrowing the config window."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search promo during tours</strong> — waits until config tours finish instead of forcing after 45s; detects open What's new via AppModal overlay."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Reset settings search promo</strong> — <strong>Advanced → Tours &amp; onboarding</strong> button replays the pulsing search field and speech balloon on desktop (<kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd> vs <kbd>Ctrl+K</kbd> quick actions)."
+        }
+      ]
+    },
+    {
+      "title": "Config save state",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config unsaved state</strong> — snapshot-based dirty tracking waits for categories to load before the baseline; autosaved settings (language, layout, low-risk toggles) clear the unsaved badge when nothing else changed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Conflicting save feedback</strong> — <strong>All saved ✓</strong> no longer appears alongside the unsaved badge; autosave and manual Save share the same dirty baseline."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter save toasts</strong> — settings-only Save shows header confirmation only; the bottom-right “return to dashboard” toast stays for bookmarks, pages, categories, finders, and duplicate-URL warnings."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Search flow hint</strong> — only shows after onboarding is completed; hidden during first-run wizard; clears <code>search-flow-hint-v2</code> when onboarding starts."
+        }
+      ]
+    }
+  ]
+}

@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.15**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.16**.
 
 ---
 
@@ -87,7 +87,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `↑/↓/←/→` — move focus through the bookmark grid
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks
 - `G + 1–9` — jump to the nth category and select its first bookmark
-- `Enter` / `Space` — open the focused bookmark
+- `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection or close overlay
 
 **Bookmarks**
@@ -194,7 +194,7 @@ Dynamic bookmark groups that appear automatically:
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible, opens release notes
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first, older notes on scroll
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay

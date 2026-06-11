@@ -1,0 +1,75 @@
+{
+  "tag": "v2026.06.10",
+  "date": "June 2026",
+  "releasedAt": "2026-06-09",
+  "sections": [
+    {
+      "title": "Config — find settings &amp; quick actions",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search settings</strong> — <kbd>Ctrl+Shift+K</kbd> / <kbd>Cmd+Shift+K</kbd> in the breadcrumb bar finds tabs, General panels (including Advanced while on Essentials), stats sections, colors groups, keyboard bindings, and Help blocks."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Quick actions palette</strong> — <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd> runs save, open dashboard, and tour resets only — settings navigation lives in search."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search index stays fresh</strong> — rebuilds after tab opens, layer switches, language changes, and bookmark list renders."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — Classic / Modern layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Layout version</strong> — choose <em>Classic</em> (original look) or <em>Modern</em> (refreshed visuals, same structure). Themes still control all colors."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Switch anytime</strong> — Config → General → Layout → <em>Layout version</em>, or command mode <code>:layoutversion modern</code> / <code>:layoutversion classic</code> / <code>:layoutversion toggle</code> on the dashboard."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Onboarding preview</strong> — first-run wizard includes a layout step with a live preview while you choose."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Layout tip</strong> — classic users who skip modern in onboarding may see a one-time spotlight after <em>What's new</em>; try it or keep classic — switch later in config anytime."
+        }
+      ]
+    },
+    {
+      "title": "Onboarding &amp; discoverability",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shorter onboarding</strong> — keyboard and mouse bookmark tips merged into one step; the finish step covers pages and first bookmarks (no separate post-setup wizard)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Chained prompts</strong> — after onboarding, <em>What's new</em> and (classic layout) a layout tip may appear one after another in the same session. <em>Skip for later</em> defers the rest until next session."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cleanup</strong> — removed dead post-setup wizard, tour spotlight, and recent-bookmarks spotlight code."
+        }
+      ]
+    },
+    {
+      "title": "Config → General — status",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Status essentials</strong> — compact monitoring overview under Essentials (monitored count + toggle); full tuning stays in Advanced."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health link</strong> — opens from the Essentials status summary when the Health dashboard is enabled."
+        }
+      ]
+    }
+  ]
+}

@@ -5,15 +5,15 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v55';
+    const DASHBOARD_RELEASE = '2026.06-dashboard-release-v56';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
     const SEARCH_PROMO_MS = 7 * 24 * 60 * 60 * 1000;
-    const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=whats-new-v56';
+    const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=whats-new-v57';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v56';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v57';
 
     let loadPromise = null;
 
