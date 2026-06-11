@@ -187,6 +187,7 @@ class Dashboard {
         });
         window.addEventListener('pagehide', () => {
             this.flushPendingDashboardSavesOnExit();
+            this.keyboardNavigation?.cleanup?.();
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -1615,7 +1616,7 @@ class Dashboard {
     }
 
     initializeKeyboardNavigation() {
-        // Initialize keyboard navigation component
+        this.keyboardNavigation?.cleanup?.();
         if (window.KeyboardNavigation) {
             this.keyboardNavigation = new window.KeyboardNavigation(this);
         } else {
@@ -5213,6 +5214,10 @@ class Dashboard {
         };
 
         if (pid === Number(this.currentPageId) && Array.isArray(this.bookmarks)) {
+            const refIdx = this.bookmarks.indexOf(bookmark);
+            if (refIdx >= 0) {
+                return refIdx;
+            }
             const idx = this.bookmarks.findIndex(matches);
             if (idx >= 0) {
                 return idx;
@@ -5223,17 +5228,21 @@ class Dashboard {
             ? this.allBookmarks
             : (pid === Number(this.currentPageId) ? this.bookmarks : []);
         let pageIndex = 0;
+        let urlFallback = -1;
         for (const candidate of pool) {
             const candidatePageId = Number(candidate?.pageId || candidate?.pageID || pid);
             if (candidatePageId !== pid) {
                 continue;
             }
-            if (matches(candidate)) {
+            if (candidate === bookmark) {
                 return pageIndex;
+            }
+            if (urlFallback < 0 && this.bookmarkMatchesCanonicalUrl(candidate, bookmark)) {
+                urlFallback = pageIndex;
             }
             pageIndex += 1;
         }
-        return -1;
+        return urlFallback;
     }
 
     populateBookmarkRowView(row, bookmark, categoryId, allowInlineEdit) {
@@ -5332,7 +5341,10 @@ class Dashboard {
         if (bookmark.name) textSpan.title = bookmark.name;
         openLink.appendChild(textSpan);
 
-        const recordOpen = () => this.recordBookmarkOpened(bookmark);
+        const recordOpen = () => this.recordBookmarkOpened(
+            bookmark,
+            bookmarkIndex >= 0 ? bookmarkIndex : undefined
+        );
         openLink.addEventListener('click', (e) => {
             recordOpen();
             if (document.getElementById('dashboard-layout')?.classList.contains('layout-launcher')) {
@@ -6568,7 +6580,10 @@ class Dashboard {
             link.rel = 'noopener noreferrer';
         }
 
-        const recordOpen = () => this.recordBookmarkOpened(bookmark);
+        const recordOpen = () => this.recordBookmarkOpened(
+            bookmark,
+            this.resolveBookmarkIndex(bookmark)
+        );
         link.addEventListener('click', recordOpen);
         link.addEventListener('auxclick', (e) => {
             if (e.button === 1) {
@@ -6702,9 +6717,14 @@ class Dashboard {
 
     openBookmarksInNewTabs(bookmarks) {
         (bookmarks || []).forEach((bookmark) => {
-            const url = String(bookmark?.url || '').trim();
+            const url = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(bookmark?.url) || '';
             if (url) window.open(url, '_blank', 'noopener,noreferrer');
         });
+    }
+
+    safeHttpBookmarkHref(raw) {
+        const href = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(raw) || '';
+        return href ? this.escapeHtml(href) : '#';
     }
 
     isRecentBookmarksModalOpen() {
@@ -6789,7 +6809,7 @@ class Dashboard {
                <div class="recent-bookmarks-modal-list">
                    ${recentBookmarks.map((bookmark, index) => {
                        const safeName = this.escapeHtml(bookmark.name || this.bookmarkFallbackName());
-                       const safeUrl = this.escapeHtml(bookmark.url || '#');
+                       const safeUrl = this.safeHttpBookmarkHref(bookmark.url);
                        const safeCategory = this.escapeHtml(bookmark.category || (this.language.t('dashboard.uncategorized') || 'Other'));
                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
                        return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
@@ -6806,8 +6826,9 @@ class Dashboard {
             body.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {
                 item.addEventListener('click', (e) => {
                     const index = parseInt(e.currentTarget.getAttribute('data-recent-index'), 10);
-                    if (!Number.isNaN(index) && recentBookmarks[index]) {
-                        this.recordBookmarkOpened(recentBookmarks[index]);
+                    const bookmark = !Number.isNaN(index) ? recentBookmarks[index] : null;
+                    if (bookmark) {
+                        this.recordBookmarkOpened(bookmark, this.resolveBookmarkIndex(bookmark));
                     }
                 });
             });
@@ -7030,9 +7051,11 @@ class Dashboard {
 
         if (this.pendingPreviewSave) {
             clearTimeout(this.pendingPreviewSave);
-            this.pendingPreviewSave = null;
         }
-        void this.saveBookmarkPreviewMetadataNow();
+        this.pendingPreviewSave = setTimeout(() => {
+            this.pendingPreviewSave = null;
+            void this.saveBookmarkPreviewMetadataNow();
+        }, 1000);
     }
 
     async refreshVisibleBookmarkPreview() {
@@ -7289,11 +7312,13 @@ class Dashboard {
         this.hideBookmarkPreviewCard();
     }
 
-    recordBookmarkOpened(bookmark) {
+    recordBookmarkOpened(bookmark, bookmarkIndex) {
         if (!bookmark) return;
 
         const pageId = this.resolveBookmarkPageId(bookmark);
-        const index = this.resolveBookmarkIndexOnPage(bookmark, pageId);
+        const index = Number.isInteger(bookmarkIndex) && bookmarkIndex >= 0
+            ? bookmarkIndex
+            : this.resolveBookmarkIndexOnPage(bookmark, pageId);
 
         bookmark.openCount = Number(bookmark.openCount || 0) + 1;
         bookmark.lastOpened = Date.now();

@@ -8,6 +8,9 @@ class KeyboardNavigation {
         this.observer = null; // Store observer for cleanup
         this._gPressed = false;
         this._gTimeout = null;
+        this._keydownHandler = null;
+        this._focusInHandler = null;
+        this._focusInLayout = null;
 
         this.init();
     }
@@ -20,7 +23,7 @@ class KeyboardNavigation {
 
     setupEventListeners() {
         // Capture phase so we can intercept '[' before the search handler sees it.
-        document.addEventListener('keydown', (e) => {
+        this._keydownHandler = (e) => {
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;
@@ -80,7 +83,8 @@ class KeyboardNavigation {
             }
 
             this.handleKeyPress(e);
-        }, true); // capture phase
+        };
+        document.addEventListener('keydown', this._keydownHandler, true);
 
         // Update navigable elements when dashboard changes
         this.observer = new MutationObserver(() => {
@@ -94,7 +98,8 @@ class KeyboardNavigation {
                 subtree: true
             });
 
-            dashboardLayout.addEventListener('focusin', (e) => {
+            this._focusInLayout = dashboardLayout;
+            this._focusInHandler = (e) => {
                 const link = e.target.closest?.('a.bookmark-open');
                 if (!link) {
                     return;
@@ -109,8 +114,13 @@ class KeyboardNavigation {
                     this.currentIndex = idx;
                     this.highlightCurrentElement({ focus: false });
                 }
-            });
+            };
+            dashboardLayout.addEventListener('focusin', this._focusInHandler);
         }
+    }
+
+    _gridNavActive() {
+        return this.currentIndex >= 0;
     }
 
     getGridElement() {
@@ -141,6 +151,15 @@ class KeyboardNavigation {
 
     // Cleanup method to prevent memory leaks
     cleanup() {
+        if (this._keydownHandler) {
+            document.removeEventListener('keydown', this._keydownHandler, true);
+            this._keydownHandler = null;
+        }
+        if (this._focusInLayout && this._focusInHandler) {
+            this._focusInLayout.removeEventListener('focusin', this._focusInHandler);
+        }
+        this._focusInLayout = null;
+        this._focusInHandler = null;
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
@@ -344,47 +363,74 @@ class KeyboardNavigation {
 
         switch(key) {
             case 'ArrowDown':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateDown();
                 break;
 
             case 'ArrowUp':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateUp();
                 break;
 
             case 'ArrowRight':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateRight();
                 break;
 
             case 'ArrowLeft':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateLeft();
                 break;
 
             case 'Home':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateCategoryHome();
                 break;
 
             case 'End':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigateCategoryEnd();
                 break;
 
             case 'PageUp':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigatePageUp();
                 break;
 
             case 'PageDown':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.navigatePageDown();
                 break;
 
             case 'Enter':
             case ' ': // Space key
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 e.preventDefault();
                 this.selectCurrentElement();
                 break;
