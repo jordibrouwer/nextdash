@@ -62,6 +62,14 @@
         {
           "badge": "fix",
           "text": "<strong>Open analytics index</strong> — open count and <code>/api/track-open</code> prefer the clicked row’s <code>data-bookmark-index</code> so duplicate URLs attribute to the correct bookmark."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit panel</strong> — opaque themed background and clear border in classic, modern, and glass layouts; launcher tiles no longer blur the editor through <code>backdrop-filter</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit toasts</strong> — icon, upload, and shortcut notifications use locale strings in EN / NL / DE / FR."
         }
       ]
     },
@@ -69,8 +77,28 @@
       "title": "Keyboard & mobile",
       "items": [
         {
+          "badge": "new",
+          "text": "<strong>Mouse + keyboard hybrid</strong> — hovering bookmarks softens the stale keyboard highlight until your next keyboard move (arrow keys, Tab, Home/End, <code>G</code>+<code>1–9</code>, etc.)."
+        },
+        {
           "badge": "fix",
-          "text": "<strong>Arrow keys &amp; scroll</strong> — <code>↑</code>/<code>↓</code>/<code>←</code>/<code>→</code> scroll the page when no bookmark is selected; grid navigation starts after Tab, click, or <code>G</code>+<code>1–9</code> / <code>GG</code>."
+          "text": "<strong>Grid navigation</strong> — first arrow key starts navigation; switching pages with <code>1–9</code> selects the first visible bookmark automatically."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Skipped rows</strong> — collapsed categories and launcher tiles dimmed by search are excluded from keyboard navigation."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Screen reader announcements</strong> — an <code>aria-live</code> region speaks the selected bookmark name on keyboard move."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reduced motion</strong> — keyboard <code>scrollIntoView</code> uses instant scroll when animations are disabled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Row highlight transitions</strong> — bookmark hover/selection fades smoothly (respects <code>no-animations</code>)."
         },
         {
           "badge": "fix",
@@ -105,7 +133,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v58</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; template query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v59</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.css</code>, <code>layout-modern.css</code>, and <code>keyboard-navigation.js</code> query strings updated for Docker-mounted static files."
         },
         {
           "badge": "fix",

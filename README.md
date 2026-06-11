@@ -84,7 +84,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `1–9` — jump directly to a page tab
 - `Shift + ←/→` — cycle between page tabs
 - `,` — page overview: all pages with bookmark counts
-- `↑/↓/←/→` — move bookmark selection when a row is focused; scroll the page when none is selected (start with Tab, click, or `G`+`1–9` / `GG`)
+- `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
@@ -170,7 +170,7 @@ Type these directly in the search bar:
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left)
-- Long-press a bookmark row (~500 ms) to open inline edit — **Save** / **Ctrl+Enter** persists immediately on the dashboard
+- Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it
 - Collapsible categories with optional always-collapsed default

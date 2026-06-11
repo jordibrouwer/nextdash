@@ -267,7 +267,7 @@ With the dashboard focused and no text field active, paste a URL. The new-bookma
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The form shows field-level validation errors while you type. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 

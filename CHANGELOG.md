@@ -48,7 +48,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.16 — June 2026
 
-**What's new lazy loading, dashboard hardening, safe URLs** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; keyboard scroll behaviour when no row is selected.
+**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized inline-edit toasts.
 
 ### What's new modal
 
@@ -70,10 +70,17 @@ _No unreleased changes at this time._
 - **fix** **HyprMode middle-click** — middle-click respects Hypr routing the same way as primary click when Hypr mode is on.
 - **fix** **Preview metadata saves** — link preview title/description/image writes are debounced (1s) and flush on page switch or tab hide.
 - **fix** **Open analytics index** — open count and `/api/track-open` prefer `data-bookmark-index` so duplicate URLs attribute to the correct bookmark.
+- **fix** **Inline edit panel** — opaque themed background and clear border in classic, modern, and glass layouts; launcher tiles no longer blur the editor through `backdrop-filter`.
+- **fix** **Inline edit toasts** — icon, upload, and shortcut notifications use locale strings in EN / NL / DE / FR.
 
 ### Keyboard & mobile
 
-- **fix** **Arrow keys & scroll** — arrow/Home/End/Page keys scroll the page when no bookmark is selected; grid navigation starts after Tab, click, or `G`+`1–9` / `GG`.
+- **new** **Mouse + keyboard hybrid** — hovering bookmarks softens the stale keyboard highlight until the next keyboard move.
+- **fix** **Grid navigation** — first arrow key starts navigation; switching pages with `1–9` selects the first visible bookmark automatically.
+- **fix** **Skipped rows** — collapsed categories and launcher tiles dimmed by search are excluded from keyboard navigation.
+- **fix** **Screen reader announcements** — `aria-live` region speaks the selected bookmark name on keyboard move.
+- **fix** **Reduced motion** — keyboard `scrollIntoView` uses instant scroll when animations are disabled.
+- **fix** **Row highlight transitions** — bookmark hover/selection fades smoothly (respects `no-animations`).
 - **fix** **Swipe page change** — touch swipes no longer double-fire on the same gesture; pointer events on modern browsers with a short navigation lock.
 
 ### Security
@@ -88,11 +95,11 @@ _No unreleased changes at this time._
 ### Documentation
 
 - **fix** **README & MANUAL** — changelog pointer, What's new modal behaviour, and keyboard scroll/grid notes updated for v2026.06.16.
-- **fix** **In-app Help (EN)** — What's new recap lists v2026.06.16 highlights.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 modal, hardening, and dashboard UX polish highlights.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v58` data version and `2026.06-dashboard-release-v56` dashboard release token; template query strings for `whats-new-stub.js`.
+- **fix** **Cache-bust** — `whats-new-v59` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.css`, `layout-modern.css`, and `keyboard-navigation.js` query strings for Docker-mounted static files.
 - **fix** **Keyboard nav cleanup** — `KeyboardNavigation.cleanup()` removes capture-phase listeners on `pagehide` and before re-init.
 - **fix** **What's new JSON tracked** — `.gitignore` exception for `static/data/whats-new/` so per-release JSON ships with the repo.
 
