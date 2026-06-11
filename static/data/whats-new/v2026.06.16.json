@@ -70,6 +70,30 @@
         {
           "badge": "fix",
           "text": "<strong>Inline edit toasts</strong> — icon, upload, and shortcut notifications use locale strings in EN / NL / DE / FR."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Serialized bookmark saves</strong> — reorder and inline-edit POSTs queue instead of racing; the latest payload always wins on the server."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tab-close reorder flush</strong> — closing the tab sends a keepalive bookmark save when a reorder is in flight or <code>pendingReorderSnapshot</code> is set."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit page switch</strong> — tabs, <code>1–9</code>, <code>Shift+←/→</code>, page overview, swipe, and hash navigation confirm before discarding unsaved inline edits."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Extension reload guard</strong> — <code>nextdash:bookmark-saved</code> skips a full page reload while inline edit is open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collection titles</strong> — Recently opened, Stale bookmarks, and Most used use locale strings in EN / NL / DE / FR."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Delete toast i18n</strong> — bookmark delete notifications use <code>dashboard.bookmarkDeleted</code> in all UI languages."
         }
       ]
     },
@@ -103,6 +127,18 @@
         {
           "badge": "fix",
           "text": "<strong>Swipe page change</strong> — touch swipes no longer fire twice on the same gesture; pointer events are used on modern browsers with a short navigation lock."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+Arrow page keys</strong> — <code>Shift+←/→</code> no longer also moves the bookmark grid; plain arrows still navigate rows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Collapsed category highlight</strong> — <code>keyboard-selected</code> is cleared when the selected row leaves navigation (e.g. category collapsed)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Swipe guards</strong> — horizontal swipes are ignored while a modal, tag cloud, or active search is open; page swipes respect inline-edit discard confirm."
         }
       ]
     },
@@ -133,7 +169,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v59</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.css</code>, <code>layout-modern.css</code>, and <code>keyboard-navigation.js</code> query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v60</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, and <code>swipe-navigation.js</code> query strings updated for Docker-mounted static files."
         },
         {
           "badge": "fix",

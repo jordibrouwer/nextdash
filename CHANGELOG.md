@@ -48,7 +48,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.16 — June 2026
 
-**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized inline-edit toasts.
+**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish, navigation guards** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; serialized bookmark POSTs; tab-close reorder keepalive; inline-edit confirm on page switch; Shift+Arrow vs grid-nav fix; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized inline-edit toasts, smart collection titles, and delete notifications.
 
 ### What's new modal
 
@@ -72,6 +72,12 @@ _No unreleased changes at this time._
 - **fix** **Open analytics index** — open count and `/api/track-open` prefer `data-bookmark-index` so duplicate URLs attribute to the correct bookmark.
 - **fix** **Inline edit panel** — opaque themed background and clear border in classic, modern, and glass layouts; launcher tiles no longer blur the editor through `backdrop-filter`.
 - **fix** **Inline edit toasts** — icon, upload, and shortcut notifications use locale strings in EN / NL / DE / FR.
+- **fix** **Serialized bookmark saves** — `saveBookmarkOrder` chains on the prior in-flight POST so rapid reorders and inline edits cannot overwrite each other.
+- **fix** **Tab-close reorder flush** — `flushPendingDashboardSavesOnExit` treats `pendingReorderSnapshot` / `_bookmarkOrderSaveInFlight` as pending reorder state for keepalive POSTs.
+- **fix** **Inline edit page switch** — `requestPageNavigation` confirms before discarding unsaved inline edits (tabs, `1–9`, `Shift+←/→`, page overview, swipe, hash).
+- **fix** **Extension reload guard** — `nextdash:bookmark-saved` skips full reload while inline edit is active.
+- **fix** **Smart collection titles** — Recently opened, Stale bookmarks, and Most used use locale strings.
+- **fix** **Delete toast i18n** — `dashboard.bookmarkDeleted` in EN / NL / DE / FR.
 
 ### Keyboard & mobile
 
@@ -82,6 +88,9 @@ _No unreleased changes at this time._
 - **fix** **Reduced motion** — keyboard `scrollIntoView` uses instant scroll when animations are disabled.
 - **fix** **Row highlight transitions** — bookmark hover/selection fades smoothly (respects `no-animations`).
 - **fix** **Swipe page change** — touch swipes no longer double-fire on the same gesture; pointer events on modern browsers with a short navigation lock.
+- **fix** **Shift+Arrow page keys** — `Shift+←/→` no longer also moves the bookmark grid in capture-phase keyboard nav.
+- **fix** **Collapsed category highlight** — `keyboard-selected` clears when the selected row leaves the navigable set.
+- **fix** **Swipe guards** — horizontal swipes ignored while modal, tag cloud, or search is open; page swipes use inline-edit discard confirm.
 
 ### Security
 
@@ -94,12 +103,12 @@ _No unreleased changes at this time._
 
 ### Documentation
 
-- **fix** **README & MANUAL** — changelog pointer, What's new modal behaviour, and keyboard scroll/grid notes updated for v2026.06.16.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 modal, hardening, and dashboard UX polish highlights.
+- **fix** **README & MANUAL** — inline-edit page-switch confirm, Shift+Arrow vs plain arrows, and navigation hardening notes for v2026.06.16.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 modal, hardening, UX polish, and navigation hardening highlights.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v59` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.css`, `layout-modern.css`, and `keyboard-navigation.js` query strings for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v60` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, and `swipe-navigation.js` query strings for Docker-mounted static files.
 - **fix** **Keyboard nav cleanup** — `KeyboardNavigation.cleanup()` removes capture-phase listeners on `pagehide` and before re-init.
 - **fix** **What's new JSON tracked** — `.gitignore` exception for `static/data/whats-new/` so per-release JSON ships with the repo.
 

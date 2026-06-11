@@ -267,7 +267,7 @@ With the dashboard focused and no text field active, paste a URL. The new-bookma
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. **Page switches** (tabs, `1–9`, `Shift+←/→`, page overview, swipe, or hash) ask to confirm before discarding unsaved inline edits. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -303,7 +303,7 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 ### Keyboard
 
-- Start grid navigation with **Tab**, a click on a bookmark, **`G` then `1–9`** / **`GG`**, or the **first arrow key**; then use arrows to move the selection.  
+- Start grid navigation with **Tab**, a click on a bookmark, **`G` then `1–9`** / **`GG`**, or the **first arrow key**; then use **plain arrow keys** to move the selection (`Shift+←/→` changes pages only).  
 - After switching pages with **1–9**, the **first visible bookmark** on the new page is selected automatically.  
 - **Collapsed categories** and **launcher tiles dimmed by search** are skipped by keyboard navigation.  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
@@ -331,7 +331,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 | Keys | Action |
 |------|--------|
 | `1`–`9` | Jump to page tab by position |
-| `Shift + ←` / `Shift + →` | Previous / next page |
+| `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal (popover stays inside the viewport on narrow screens) |
 
 ### 9.2 Bookmark grid
@@ -350,7 +350,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 | Keys | Action |
 |------|--------|
-| `;` | Inline-edit selected row |
+| `;` | Inline-edit selected row (page switches confirm before discarding unsaved edits) |
 | `Shift + M` | Move to… (category or another page) |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
