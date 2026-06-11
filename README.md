@@ -88,7 +88,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category and select its first bookmark
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
-- `Esc` — clear selection or close overlay
+- `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
 
 **Bookmarks**
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
@@ -169,7 +169,7 @@ Type these directly in the search bar:
 ### Organisation
 
 - Unlimited pages and categories
-- Drag-and-drop reorder within and between categories (drag strip on the left)
+- Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast
 - Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; page switches confirm before discarding unsaved edits
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it

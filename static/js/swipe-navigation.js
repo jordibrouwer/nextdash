@@ -13,6 +13,13 @@ class SwipeNavigation {
         this.isSwiping = false;
         this.swipeStartTime = 0;
         this.navigationLockUntil = 0;
+        this._pointerDownHandler = null;
+        this._pointerMoveHandler = null;
+        this._pointerUpHandler = null;
+        this._touchStartHandler = null;
+        this._touchMoveHandler = null;
+        this._touchEndHandler = null;
+        this._usesPointerEvents = false;
 
         this.init();
     }
@@ -21,27 +28,62 @@ class SwipeNavigation {
         // Pointer events cover touch on modern browsers; registering both touch and pointer
         // would fire handleSwipe twice for the same gesture.
         if (window.PointerEvent) {
-            document.body.addEventListener('pointerdown', (e) => {
+            this._usesPointerEvents = true;
+            this._pointerDownHandler = (e) => {
                 if (e.pointerType !== 'touch') return;
                 this.handleTouchStart({ changedTouches: [{ clientX: e.clientX, clientY: e.clientY }] });
-            }, { passive: true });
-
-            document.body.addEventListener('pointermove', (e) => {
+            };
+            this._pointerMoveHandler = (e) => {
                 if (e.pointerType !== 'touch') return;
                 this.handleTouchMove({ changedTouches: [{ clientX: e.clientX, clientY: e.clientY }] });
-            }, { passive: true });
-
-            document.body.addEventListener('pointerup', (e) => {
+            };
+            this._pointerUpHandler = (e) => {
                 if (e.pointerType !== 'touch') return;
                 this.handleTouchEnd({ changedTouches: [{ clientX: e.clientX, clientY: e.clientY }] });
-            }, { passive: true });
+            };
+            document.body.addEventListener('pointerdown', this._pointerDownHandler, { passive: true });
+            document.body.addEventListener('pointermove', this._pointerMoveHandler, { passive: true });
+            document.body.addEventListener('pointerup', this._pointerUpHandler, { passive: true });
         } else {
-            document.body.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
-            document.body.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
-            document.body.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+            this._touchStartHandler = (e) => this.handleTouchStart(e);
+            this._touchMoveHandler = (e) => this.handleTouchMove(e);
+            this._touchEndHandler = (e) => this.handleTouchEnd(e);
+            document.body.addEventListener('touchstart', this._touchStartHandler, { passive: true });
+            document.body.addEventListener('touchmove', this._touchMoveHandler, { passive: true });
+            document.body.addEventListener('touchend', this._touchEndHandler, { passive: true });
         }
 
         // Intentionally do NOT add mouse event listeners so swipe navigation won't work with the cursor.
+    }
+
+    cleanup() {
+        if (this._usesPointerEvents) {
+            if (this._pointerDownHandler) {
+                document.body.removeEventListener('pointerdown', this._pointerDownHandler);
+            }
+            if (this._pointerMoveHandler) {
+                document.body.removeEventListener('pointermove', this._pointerMoveHandler);
+            }
+            if (this._pointerUpHandler) {
+                document.body.removeEventListener('pointerup', this._pointerUpHandler);
+            }
+        } else {
+            if (this._touchStartHandler) {
+                document.body.removeEventListener('touchstart', this._touchStartHandler);
+            }
+            if (this._touchMoveHandler) {
+                document.body.removeEventListener('touchmove', this._touchMoveHandler);
+            }
+            if (this._touchEndHandler) {
+                document.body.removeEventListener('touchend', this._touchEndHandler);
+            }
+        }
+        this._pointerDownHandler = null;
+        this._pointerMoveHandler = null;
+        this._pointerUpHandler = null;
+        this._touchStartHandler = null;
+        this._touchMoveHandler = null;
+        this._touchEndHandler = null;
     }
 
     handleTouchStart(e) {
@@ -215,15 +257,8 @@ class SwipeNavigation {
 
         window.scrollTo(0, 0);
 
-        const container = document.getElementById('page-navigation');
-        if (container) {
-            const buttons = container.querySelectorAll('.page-nav-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-
-            const pageIndex = this.dashboard.pages.findIndex(p => p.id === page.id);
-            if (pageIndex !== -1 && buttons[pageIndex]) {
-                buttons[pageIndex].classList.add('active');
-            }
+        if (typeof this.dashboard.setActivePageNavButton === 'function') {
+            this.dashboard.setActivePageNavButton(page.id);
         }
     }
 }

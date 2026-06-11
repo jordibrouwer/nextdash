@@ -32,6 +32,10 @@ class KeyboardNavigation {
                 return;
             }
 
+            if (document.body.classList.contains('bookmark-inline-edit-active')) {
+                return;
+            }
+
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;
@@ -167,7 +171,7 @@ class KeyboardNavigation {
         if (!row || row.classList.contains('bookmark-inline-editing')) {
             return false;
         }
-        if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim')) {
+        if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim') || row.classList.contains('find-hidden')) {
             return false;
         }
         const category = row.closest('.category');

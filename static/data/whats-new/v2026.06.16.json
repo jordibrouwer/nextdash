@@ -13,6 +13,10 @@
         {
           "badge": "new",
           "text": "<strong>Lighter first paint</strong> — modal logic loads on first open via <code>whats-new-stub.js</code>; per-release content is served from <code>/static/data/whats-new/</code> JSON files."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shorter support intro</strong> — the Ko-fi block at the top of the ★ modal uses a more concise personal-project message."
         }
       ]
     },
@@ -94,6 +98,22 @@
         {
           "badge": "fix",
           "text": "<strong>Delete toast i18n</strong> — bookmark delete notifications use <code>dashboard.bookmarkDeleted</code> in all UI languages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit guards</strong> — config sync and tag-filter changes confirm before discarding unsaved edits; <code>Esc</code> and click-outside use the same discard prompt."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline page-move rollback</strong> — moving a bookmark to another page no longer mutates local state before the API succeeds; failed moves restore the row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Debounced reorder save</strong> — drag reorder POSTs wait 1s (like categories) and show a localized success toast when saved."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>More dashboard i18n</strong> — move-to-page, load/save errors, stale-section info, shortcut conflicts, and preview usage lines use locale strings."
         }
       ]
     },
@@ -139,6 +159,35 @@
         {
           "badge": "fix",
           "text": "<strong>Swipe guards</strong> — horizontal swipes are ignored while a modal, tag cloud, or active search is open; page swipes respect inline-edit discard confirm."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit keyboard pause</strong> — grid navigation is disabled while the inline editor is open; page keys <code>1–9</code> are blocked too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Find-hidden rows</strong> — bookmarks hidden by the find filter are excluded from keyboard navigation."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Esc undo reorder</strong> — cheat sheet and tips document <code>Esc</code> undo for unsaved drag reorders."
+        }
+      ]
+    },
+    {
+      "title": "Accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Page tab semantics</strong> — page tabs use <code>tablist</code> / <code>tab</code> roles with <code>aria-selected</code> and a keyboard <code>:focus-visible</code> ring."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview card image alt</strong> — preview thumbnails use the link title as <code>alt</code> text."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Skip link focus</strong> — skip-to-content appears on keyboard focus only (<code>:focus-visible</code>), not mouse click."
         }
       ]
     },
@@ -169,11 +218,15 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v60</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, and <code>swipe-navigation.js</code> query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v61</code> data version and <code>2026.06-dashboard-release-v56</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>swipe-navigation.js</code>, and dashboard CSS query strings updated for Docker-mounted static files."
         },
         {
           "badge": "fix",
-          "text": "<strong>Keyboard nav cleanup</strong> — <code>KeyboardNavigation.cleanup()</code> removes capture-phase listeners on <code>pagehide</code> and before re-init."
+          "text": "<strong>Keyboard &amp; swipe cleanup</strong> — <code>KeyboardNavigation.cleanup()</code> and <code>SwipeNavigation.cleanup()</code> remove listeners on <code>pagehide</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline icon-fetch timer</strong> — auto-favicon timers from inline edit are cleared on close/abort so detached forms cannot keep fetching."
         }
       ]
     }

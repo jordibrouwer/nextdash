@@ -267,7 +267,7 @@ With the dashboard focused and no text field active, paste a URL. The new-bookma
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss without saving; the form warns if you have unsaved changes. **Page switches** (tabs, `1–9`, `Shift+←/→`, page overview, swipe, or hash) ask to confirm before discarding unsaved inline edits. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss; both ask to confirm if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation is paused while the editor is open. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -330,7 +330,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 | Keys | Action |
 |------|--------|
-| `1`–`9` | Jump to page tab by position |
+| `1`–`9` | Jump to page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal (popover stays inside the viewport on narrow screens) |
 
@@ -452,8 +452,9 @@ Temporarily hides bookmark tiles that do not match. Run `:find` alone to clear.
 
 ### Reorder bookmarks
 
-- Drag the **left strip** of a row to reorder within a category or drop on another category.  
-- **Esc** may undo the last reorder.
+- Drag the **left strip** of a row to reorder within a category or drop on another category.
+- Reorder saves **debounce 1 second** (like category order) and show a localized success toast.
+- **Esc** undoes the last reorder if the debounced save has not completed yet.
 
 ### Reorder categories
 

@@ -188,6 +188,7 @@ class Dashboard {
         window.addEventListener('pagehide', () => {
             this.flushPendingDashboardSavesOnExit();
             this.keyboardNavigation?.cleanup?.();
+            this.swipeNavigation?.cleanup?.();
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -505,7 +506,16 @@ class Dashboard {
         this.showNotification(message, 'success');
     }
 
+    isInlineEditActive() {
+        return this.inlineEditingBookmarkIndex !== null || Boolean(document.querySelector('.bookmark-inline-editing'));
+    }
+
     async refreshAfterConfigStructureUpdate(payload = {}) {
+        if (this.isInlineEditActive()) {
+            if (!(await this.confirmInlineEditBeforeNavigation())) {
+                return;
+            }
+        }
         try {
             await this.loadData();
             await this.withRetry(() => this.loadPageBookmarks(this.currentPageId), 2, 220);
@@ -523,6 +533,11 @@ class Dashboard {
     }
 
     async refreshAfterConfigSettingsUpdate(payload = {}) {
+        if (this.isInlineEditActive()) {
+            if (!(await this.confirmInlineEditBeforeNavigation())) {
+                return;
+            }
+        }
         try {
             await this.loadData();
             if (this.settings.language && this.settings.language !== this.language.currentLanguage) {
@@ -877,19 +892,14 @@ class Dashboard {
     }
 
     async confirmInlineEditBeforeNavigation() {
-        if (this.inlineEditingBookmarkIndex === null && !document.querySelector('.bookmark-inline-editing')) {
+        if (!this.isInlineEditActive()) {
             return true;
         }
         if (!this.hasInlineEditUnsavedChanges()) {
             this.dismissInlineEditForNavigation();
             return true;
         }
-        const message = this.formatDashboardLabel(
-            'inlineEditDiscardConfirm',
-            {},
-            'You have unsaved inline edits. Discard and leave?'
-        );
-        if (!window.confirm(message)) {
+        if (!(await this.confirmDiscardInlineEdit())) {
             return false;
         }
         this.dismissInlineEditForNavigation();
@@ -1005,9 +1015,12 @@ class Dashboard {
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
                 return;
             }
-            this.showErrorNotification('Failed to load bookmarks for this page.', {
-                retry: () => this.loadPageBookmarks(this.currentPageId),
-            });
+            this.showErrorNotification(
+                this.formatDashboardLabel('loadPageBookmarksFailed', {}, 'Failed to load bookmarks for this page.'),
+                {
+                    retry: () => this.loadPageBookmarks(this.currentPageId),
+                }
+            );
         }
     }
 
@@ -1021,9 +1034,12 @@ class Dashboard {
                 this.updateSearchComponent();
             }
         } catch (error) {
-            this.showErrorNotification('Failed to refresh global shortcuts.', {
-                retry: () => this.loadAllBookmarks(),
-            });
+            this.showErrorNotification(
+                this.formatDashboardLabel('refreshGlobalShortcutsFailed', {}, 'Failed to refresh global shortcuts.'),
+                {
+                    retry: () => this.loadAllBookmarks(),
+                }
+            );
         }
     }
 
@@ -1087,17 +1103,39 @@ class Dashboard {
         return window.MobileExperience?.isMobileLayout?.() !== true;
     }
 
+    setActivePageNavButton(pageId) {
+        const container = document.getElementById('page-navigation');
+        if (!container) {
+            return;
+        }
+        const pageIndex = this.pages.findIndex((page) => page.id === pageId);
+        container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
+            const selected = index === pageIndex;
+            btn.classList.toggle('active', selected);
+            btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+            btn.tabIndex = selected ? 0 : -1;
+        });
+    }
+
     renderPageNavigation() {
         const container = document.getElementById('page-navigation');
         if (!container) return;
 
         container.innerHTML = '';
+        container.setAttribute('role', 'tablist');
+        const tabsLabel = this.formatDashboardLabel('pageTabsAria', {}, 'Dashboard pages');
+        container.setAttribute('aria-label', tabsLabel);
 
         let activeBtn = null;
         this.pages.forEach((page, index) => {
             const pageBtn = document.createElement('button');
+            pageBtn.type = 'button';
             pageBtn.className = 'page-nav-btn';
-            if (page.id === this.currentPageId) {
+            pageBtn.setAttribute('role', 'tab');
+            const isActive = page.id === this.currentPageId;
+            pageBtn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            pageBtn.tabIndex = isActive ? 0 : -1;
+            if (isActive) {
                 pageBtn.classList.add('active');
                 activeBtn = pageBtn;
             }
@@ -1107,8 +1145,7 @@ class Dashboard {
                 if (!switched) {
                     return;
                 }
-                container.querySelectorAll('.page-nav-btn').forEach(btn => btn.classList.remove('active'));
-                pageBtn.classList.add('active');
+                this.setActivePageNavButton(page.id);
                 this.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
@@ -1211,7 +1248,7 @@ class Dashboard {
         nameInput.type = 'text';
         nameInput.className = 'page-tab-popover-name';
         nameInput.value = page.name;
-        nameInput.placeholder = 'Page name';
+        nameInput.placeholder = this.configLabel('pageNamePlaceholder', 'Page name');
 
         const iconInput = document.createElement('input');
         iconInput.type = 'text';
@@ -1599,6 +1636,7 @@ class Dashboard {
 
         if (!this._findFilter) {
             layout?.querySelectorAll('.bookmark-link').forEach(t => t.classList.remove('find-hidden'));
+            this.keyboardNavigation?.scheduleUpdate?.();
             return;
         }
 
@@ -1608,11 +1646,23 @@ class Dashboard {
             const url  = (tile.getAttribute('data-bookmark-url') || '').toLowerCase();
             tile.classList.toggle('find-hidden', !name.includes(q) && !url.includes(q));
         });
+        this.keyboardNavigation?.scheduleUpdate?.();
     }
 
-    applyTagFilter(tag, { animate = true } = {}) {
+    async applyTagFilter(tag, { animate = true } = {}) {
         const normalized = String(tag || '').trim().toLowerCase();
         const changed = this._tagFilter !== normalized;
+        if (!changed) {
+            return;
+        }
+
+        if (this.isInlineEditActive()) {
+            if (!(await this.confirmInlineEditBeforeNavigation())) {
+                window.DashboardTagCloud?.setActiveTag?.(this._tagFilter || '');
+                return;
+            }
+        }
+
         this._tagFilter = normalized;
 
         document.body.setAttribute('data-tag-filter-active', normalized ? 'true' : 'false');
@@ -1624,13 +1674,11 @@ class Dashboard {
         window.DashboardTagCloud?.setActiveTag?.(normalized);
         this.updateTagFilterIndicator();
 
-        if (changed) {
-            this.renderDashboard({ animate: Boolean(animate) });
-        }
+        this.renderDashboard({ animate: Boolean(animate) });
     }
 
     clearTagFilter() {
-        this.applyTagFilter('', { animate: true });
+        void this.applyTagFilter('', { animate: true });
     }
 
     getBookmarksForTagFilter(tag) {
@@ -1787,10 +1835,13 @@ class Dashboard {
         document.addEventListener('keydown', (e) => {
             // Only handle number keys 1-9
             // Ignore if user is typing in an input field or if search is active
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;
             }
-            
+            if (document.body.classList.contains('bookmark-inline-edit-active')) {
+                return;
+            }
+
             // Check if shortcut search is active
             const searchElement = document.getElementById('shortcut-search');
             if (searchElement && searchElement.classList.contains('show')) {
@@ -1852,11 +1903,7 @@ class Dashboard {
                         if (!switched) {
                             return;
                         }
-                        const navButtons = document.querySelectorAll('.page-nav-btn');
-                        navButtons.forEach(btn => btn.classList.remove('active'));
-                        if (navButtons[pageIndex]) {
-                            navButtons[pageIndex].classList.add('active');
-                        }
+                        this.setActivePageNavButton(page.id);
                         this.markInlineTipUsed('page_switch');
                     });
                 }
@@ -1882,11 +1929,7 @@ class Dashboard {
                     if (!switched) {
                         return;
                     }
-                    const navButtons = document.querySelectorAll('.page-nav-btn');
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    if (navButtons[newIndex]) {
-                        navButtons[newIndex].classList.add('active');
-                    }
+                    this.setActivePageNavButton(page.id);
                     this.markInlineTipUsed('page_switch');
                 });
             }
@@ -3340,7 +3383,7 @@ class Dashboard {
                 item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
                 item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category'),
                 item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
-                item('Esc', 'navEscClear', 'Clear selection / close overlay'),
+                item('Esc', 'navEscClear', 'Clear selection / close overlay; undo unsaved drag reorder'),
             ]),
             section('sectionBookmarks', 'Bookmarks', [
                 item('&', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
@@ -4168,9 +4211,15 @@ class Dashboard {
 
         const successMessage = typeof options.successMessage === 'string' && options.successMessage.trim()
             ? options.successMessage.trim()
-            : 'Bookmark order saved.';
+            : this.formatDashboardLabel('bookmarkOrderSaved', {}, 'Bookmark order saved.');
 
-        void this.saveBookmarkOrder({ successMessage });
+        this.pendingReorderSave = setTimeout(() => {
+            this.pendingReorderSave = null;
+            void this.saveBookmarkOrder({
+                successMessage,
+                showReorderSavedToast: true
+            });
+        }, 1000);
     }
 
     async flushPendingBookmarkSave(options = {}) {
@@ -4312,11 +4361,19 @@ class Dashboard {
                 });
 
                 if (!response.ok) {
-                    let message = 'Failed to save bookmark order';
+                    let message = this.formatDashboardLabel(
+                        'bookmarkOrderSaveFailed',
+                        {},
+                        'Failed to save bookmark order.'
+                    );
                     try {
                         const errorBody = await response.json();
                         if (response.status === 409 && errorBody?.error === 'duplicate_shortcut') {
-                            message = `Shortcut "${errorBody.shortcut}" already exists on another bookmark.`;
+                            message = this.formatDashboardLabel(
+                                'shortcutConflictOnBookmark',
+                                { shortcut: String(errorBody.shortcut || '') },
+                                `Shortcut "${errorBody.shortcut}" already exists on another bookmark.`
+                            );
                         } else if (errorBody?.message) {
                             message = String(errorBody.message);
                         }
@@ -4334,6 +4391,10 @@ class Dashboard {
                     this.pendingReorderSave = null;
                     this.pendingReorderSnapshot = null;
                 }
+
+                if (options.showReorderSavedToast && options.successMessage) {
+                    this.showNotification(options.successMessage, 'success', { duration: 2000 });
+                }
             } catch (error) {
                 if (pageId === Number(this.currentPageId) && this.pendingReorderSnapshot) {
                     this.bookmarks = [...this.pendingReorderSnapshot];
@@ -4343,7 +4404,17 @@ class Dashboard {
                     this.pendingReorderSave = null;
                     this.pendingReorderSnapshot = null;
                 }
-                this.showErrorNotification(`${error.message || 'Failed to save bookmark order.'} Changes were reverted.`);
+                const revertSuffix = this.formatDashboardLabel(
+                    'bookmarkOrderChangesReverted',
+                    {},
+                    'Changes were reverted.'
+                );
+                const baseMessage = error.message || this.formatDashboardLabel(
+                    'bookmarkOrderSaveFailed',
+                    {},
+                    'Failed to save bookmark order.'
+                );
+                this.showErrorNotification(`${baseMessage} ${revertSuffix}`);
                 throw error;
             }
         })();
@@ -4650,8 +4721,22 @@ class Dashboard {
             this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
         }
+        this._inlineEditAutoFetchClear?.();
+        this._inlineEditAutoFetchClear = null;
         this._inlineEditContext = null;
         this.leaveBookmarkInlineEditFocusMode();
+    }
+
+    async confirmDiscardInlineEdit() {
+        if (!this.hasInlineEditUnsavedChanges()) {
+            return true;
+        }
+        const message = this.formatDashboardLabel(
+            'inlineEditDiscardConfirm',
+            {},
+            'You have unsaved inline edits. Discard and leave?'
+        );
+        return window.confirm(message);
     }
 
     getSmartCollections(bookmarks) {
@@ -5045,7 +5130,11 @@ class Dashboard {
         const el = document.querySelector('.category[data-category-id="__smart_stale__"]');
         if (!el) {
             this.showNotification(
-                'Stale section not visible (disabled in settings, wrong page filter, or no stale rows).',
+                this.formatDashboardLabel(
+                    'staleSectionNotVisible',
+                    {},
+                    'Stale section not visible (disabled in settings, wrong page filter, or no stale rows).'
+                ),
                 'info'
             );
             return;
@@ -5655,10 +5744,12 @@ class Dashboard {
 
     enterBookmarkInlineEditFocusMode() {
         document.body.classList.add('bookmark-inline-edit-active');
+        this.keyboardNavigation?.disable?.();
     }
 
     leaveBookmarkInlineEditFocusMode() {
         document.body.classList.remove('bookmark-inline-edit-active');
+        this.keyboardNavigation?.enable?.();
     }
 
     openBookmarkInlineEditor(row, bookmarkRef) {
@@ -6121,9 +6212,12 @@ class Dashboard {
 
         form.appendChild(actions);
 
-        form.addEventListener('keydown', (e) => {
+        form.addEventListener('keydown', async (e) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
+                if (!(await this.confirmDiscardInlineEdit())) {
+                    return;
+                }
                 this.cancelBookmarkInlineEdit(row, bookmarkRef);
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -6163,29 +6257,49 @@ class Dashboard {
         nameInput.select();
 
         // Global ESC: close the form even when focus has drifted outside it
-        const onGlobalEsc = (e) => {
+        const onGlobalEsc = async (e) => {
             if (e.key !== 'Escape') return;
             if (!document.contains(form)) { globalCleanup(); return; }
             if (this.isModalOpen()) return;
             e.preventDefault();
             e.stopPropagation();
+            if (!(await this.confirmDiscardInlineEdit())) {
+                return;
+            }
             globalCleanup();
             this.cancelBookmarkInlineEdit(row, bookmarkRef);
         };
 
         // Click-outside: close on mousedown anywhere outside the form
-        const onGlobalClickOutside = (e) => {
+        const onGlobalClickOutside = async (e) => {
             if (!document.contains(form)) { globalCleanup(); return; }
             if (form.contains(e.target)) return;
+            if (!(await this.confirmDiscardInlineEdit())) {
+                return;
+            }
             globalCleanup();
             this.cancelBookmarkInlineEdit(row, bookmarkRef);
+        };
+
+        const clearInlineAutoFetchTimer = () => {
+            if (inlineAutoFetchTimer) {
+                clearTimeout(inlineAutoFetchTimer);
+                inlineAutoFetchTimer = null;
+            }
+            inlineAutoFetchInFlight = false;
         };
 
         const globalCleanup = () => {
             document.removeEventListener('keydown', onGlobalEsc, true);
             document.removeEventListener('mousedown', onGlobalClickOutside, true);
+            clearInlineAutoFetchTimer();
             if (this._inlineEditGlobalCleanup === globalCleanup) this._inlineEditGlobalCleanup = null;
+            if (this._inlineEditAutoFetchClear === clearInlineAutoFetchTimer) {
+                this._inlineEditAutoFetchClear = null;
+            }
         };
+
+        this._inlineEditAutoFetchClear = clearInlineAutoFetchTimer;
 
         this._inlineEditGlobalCleanup = globalCleanup;
         document.addEventListener('keydown', onGlobalEsc, true);
@@ -6278,8 +6392,9 @@ class Dashboard {
     async _moveBookmarkToPage(bookmarkRef, bookmarkState, targetPageId, row) {
         const sourcePageId = Number(bookmarkRef.pageId || this.currentPageId);
         const isCurrentScope = bookmarkRef.scope === 'current';
+        const bookmarksSnapshot = isCurrentScope ? [...this.bookmarks] : null;
+
         try {
-            // Animate row out before removing
             if (row) {
                 row.classList.add('bookmark-move-out');
                 await new Promise(resolve => setTimeout(resolve, 320));
@@ -6290,7 +6405,6 @@ class Dashboard {
                 this.ensureBookmarkMutationSnapshot();
                 sourceBookmarks = [...this.bookmarks];
                 sourceBookmarks.splice(bookmarkRef.index, 1);
-                this.bookmarks = sourceBookmarks;
             } else {
                 const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
                 if (!sourceRes.ok) throw new Error('Failed to load source page.');
@@ -6319,11 +6433,19 @@ class Dashboard {
                 body: JSON.stringify(targetBookmarks)
             });
 
+            if (isCurrentScope) {
+                this.bookmarks = sourceBookmarks;
+            }
+
             const targetPage = (Array.isArray(this.pages) ? this.pages : []).find(p => Number(p.id) === targetPageId);
             const targetName = targetPage?.name || String(targetPageId);
 
             this._inlineEditGlobalCleanup?.();
+            this._inlineEditAutoFetchClear?.();
+            this._inlineEditAutoFetchClear = null;
             this.inlineEditingBookmarkIndex = null;
+            this._inlineEditContext = null;
+            this.leaveBookmarkInlineEditFocusMode();
 
             if (isCurrentScope) {
                 await this.loadPageBookmarks(this.currentPageId);
@@ -6332,8 +6454,17 @@ class Dashboard {
                 await this.loadAllBookmarks();
                 this.renderDashboard();
             }
-            this.showNotification(`Moved to "${targetName}".`, 'success');
+            this.showNotification(
+                this.formatDashboardLabel('movedToCategory', { name: targetName }, `Moved to "${targetName}".`),
+                'success'
+            );
         } catch (err) {
+            if (row) {
+                row.classList.remove('bookmark-move-out');
+            }
+            if (isCurrentScope && bookmarksSnapshot) {
+                this.bookmarks = bookmarksSnapshot;
+            }
             this.showErrorNotification(err.message || 'Failed to move bookmark.');
         }
     }
@@ -6475,6 +6606,8 @@ class Dashboard {
 
     cancelBookmarkInlineEdit(row, bookmarkRef) {
         this._inlineEditGlobalCleanup?.();
+        this._inlineEditAutoFetchClear?.();
+        this._inlineEditAutoFetchClear = null;
         this.leaveBookmarkInlineEditFocusMode();
         this._inlineEditContext = null;
         const bookmark = bookmarkRef?.bookmark;
@@ -6650,7 +6783,7 @@ class Dashboard {
         this.inlineEditingBookmarkIndex = null;
         this.renderDashboard();
 
-        await this.saveBookmarkOrder({ successMessage: 'Bookmark deleted.' });
+        await this.saveBookmarkOrder();
 
         const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
         this.showNotification(
@@ -7264,6 +7397,51 @@ class Dashboard {
         }
     }
 
+    formatPreviewLastOpened(diffDays) {
+        if (diffDays === 0) {
+            return this.formatDashboardLabel('previewLastOpenedToday', {}, 'today');
+        }
+        if (diffDays === 1) {
+            return this.formatDashboardLabel('previewLastOpenedYesterday', {}, 'yesterday');
+        }
+        if (diffDays < 7) {
+            return this.formatDashboardLabel('previewLastOpenedDaysAgo', { count: diffDays }, `${diffDays} days ago`);
+        }
+        const weeks = Math.floor(diffDays / 7);
+        if (diffDays < 30) {
+            return weeks === 1
+                ? this.formatDashboardLabel('previewLastOpenedWeekAgo', {}, '1 week ago')
+                : this.formatDashboardLabel('previewLastOpenedWeeksAgo', { count: weeks }, `${weeks} weeks ago`);
+        }
+        const months = Math.floor(diffDays / 30);
+        if (diffDays < 365) {
+            return months === 1
+                ? this.formatDashboardLabel('previewLastOpenedMonthAgo', {}, '1 month ago')
+                : this.formatDashboardLabel('previewLastOpenedMonthsAgo', { count: months }, `${months} months ago`);
+        }
+        const years = Math.floor(diffDays / 365);
+        return years === 1
+            ? this.formatDashboardLabel('previewLastOpenedYearAgo', {}, '1 year ago')
+            : this.formatDashboardLabel('previewLastOpenedYearsAgo', { count: years }, `${years} years ago`);
+    }
+
+    formatPreviewUsageText(openCount, lastOpened) {
+        const countText = openCount === 1
+            ? this.formatDashboardLabel('previewOpenedOnce', {}, 'opened once')
+            : this.formatDashboardLabel('previewOpenedMany', { count: openCount }, `opened ${openCount} times`);
+        if (!lastOpened) {
+            return countText;
+        }
+        const date = new Date(lastOpened);
+        const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
+        const lastText = this.formatPreviewLastOpened(diffDays);
+        return this.formatDashboardLabel(
+            'previewUsageWithLast',
+            { count: countText, last: lastText },
+            `${countText} · last ${lastText}`
+        );
+    }
+
     ensureBookmarkPreviewCard() {
         if (this.previewCardElement) {
             return this.previewCardElement;
@@ -7271,7 +7449,7 @@ class Dashboard {
         const card = document.createElement('div');
         card.className = 'bookmark-preview-card';
         card.innerHTML = `
-            <button type="button" class="bookmark-preview-card-refresh" aria-label="Refresh preview">
+            <button type="button" class="bookmark-preview-card-refresh">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
                     <polyline points="21 3 21 9 15 9"/>
@@ -7290,6 +7468,10 @@ class Dashboard {
         `;
         const refreshBtn = card.querySelector('.bookmark-preview-card-refresh');
         if (refreshBtn) {
+            refreshBtn.setAttribute(
+                'aria-label',
+                this.formatDashboardLabel('previewCardRefreshAria', {}, 'Refresh preview')
+            );
             refreshBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -7392,20 +7574,7 @@ class Dashboard {
             const openCount = Number(preview?.openCount || 0);
             const lastOpened = preview?.lastOpened || null;
             if (openCount > 0) {
-                let lastText = '';
-                if (lastOpened) {
-                    const date = new Date(lastOpened);
-                    const now = new Date();
-                    const diffDays = Math.floor((now - date) / 86400000);
-                    if (diffDays === 0) lastText = 'today';
-                    else if (diffDays === 1) lastText = 'yesterday';
-                    else if (diffDays < 7) lastText = `${diffDays} days ago`;
-                    else if (diffDays < 30) lastText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`;
-                    else if (diffDays < 365) lastText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) === 1 ? '' : 's'} ago`;
-                    else lastText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) === 1 ? '' : 's'} ago`;
-                }
-                const countText = `opened ${openCount} time${openCount === 1 ? '' : 's'}`;
-                usageEl.textContent = lastText ? `${countText} · last ${lastText}` : countText;
+                usageEl.textContent = this.formatPreviewUsageText(openCount, lastOpened);
                 usageEl.style.display = 'block';
             } else {
                 usageEl.textContent = '';
@@ -7415,9 +7584,11 @@ class Dashboard {
 
         if (image) {
             imageEl.src = image;
+            imageEl.alt = title;
             imageWrap.style.display = 'block';
         } else {
             imageEl.removeAttribute('src');
+            imageEl.alt = '';
             imageWrap.style.display = 'none';
         }
 

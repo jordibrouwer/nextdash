@@ -76,7 +76,7 @@ kbd,
     text-decoration: none;
 }
 
-.skip-to-content:focus {
+.skip-to-content:focus-visible {
     left: 0.5rem;
     top: 0.5rem;
 }

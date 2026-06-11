@@ -48,12 +48,13 @@ _No unreleased changes at this time._
 
 ## v2026.06.16 — June 2026
 
-**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish, navigation guards** — per-release JSON for the ★ modal with scroll fetch and skeleton; page-scoped async saves; serialized bookmark POSTs; tab-close reorder keepalive; inline-edit confirm on page switch; Shift+Arrow vs grid-nav fix; smart-collection refresh without full re-render; find/launcher/status/open-tracking fixes; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized inline-edit toasts, smart collection titles, and delete notifications.
+**What's new lazy loading, dashboard hardening, keyboard & inline-edit polish, navigation guards, inline-edit hardening & quick wins** — per-release JSON for the ★ modal with scroll fetch and skeleton; shorter Ko-fi intro; page-scoped async saves; serialized bookmark POSTs; debounced reorder save with toast; tab-close reorder keepalive; inline-edit confirm on page/config/tag-filter change; page-move rollback; keyboard paused during inline edit; Shift+Arrow vs grid-nav fix; find-hidden rows skipped; smart-collection refresh without full re-render; page-tab tablist a11y; preview usage i18n; http(s)-only images and recent-modal links; opaque inline-edit panel in glass launcher; mouse-softened keyboard highlight; skipped collapsed/dimmed rows; localized toasts and error messages.
 
 ### What's new modal
 
 - **new** **Lazy-loaded release history** — latest release renders first; older releases fetch on scroll with inline skeleton placeholders.
 - **new** **Stub bootstrap** — `whats-new-stub.js` sets the release token and loads `whats-new-modal.js` on first open; content lives in `/static/data/whats-new/*.json`.
+- **fix** **Shorter support intro** — concise Ko-fi message at the top of the ★ modal.
 
 ### Dashboard
 
@@ -78,6 +79,10 @@ _No unreleased changes at this time._
 - **fix** **Extension reload guard** — `nextdash:bookmark-saved` skips full reload while inline edit is active.
 - **fix** **Smart collection titles** — Recently opened, Stale bookmarks, and Most used use locale strings.
 - **fix** **Delete toast i18n** — `dashboard.bookmarkDeleted` in EN / NL / DE / FR.
+- **fix** **Inline edit guards** — config sync and tag-filter changes confirm before discarding unsaved edits; **Esc** and click-outside use the same discard prompt.
+- **fix** **Inline page-move rollback** — page move no longer mutates `this.bookmarks` before API success; failed moves restore local state and remove `bookmark-move-out`.
+- **fix** **Debounced reorder save** — drag reorder POSTs debounce 1s (like categories) and show a localized success toast.
+- **fix** **More dashboard i18n** — move-to-page, load/save errors, stale-section info, shortcut conflicts, and preview usage lines localized.
 
 ### Keyboard & mobile
 
@@ -91,6 +96,15 @@ _No unreleased changes at this time._
 - **fix** **Shift+Arrow page keys** — `Shift+←/→` no longer also moves the bookmark grid in capture-phase keyboard nav.
 - **fix** **Collapsed category highlight** — `keyboard-selected` clears when the selected row leaves the navigable set.
 - **fix** **Swipe guards** — horizontal swipes ignored while modal, tag cloud, or search is open; page swipes use inline-edit discard confirm.
+- **fix** **Inline edit keyboard pause** — grid navigation disabled while inline editor is open; page keys `1–9` blocked during inline edit.
+- **fix** **Find-hidden rows** — bookmarks hidden by find filter excluded from keyboard navigation.
+- **fix** **Esc undo reorder** — cheat sheet and rotating tips document **Esc** undo for unsaved drag reorders.
+
+### Accessibility
+
+- **fix** **Page tab semantics** — `tablist` / `tab` roles, `aria-selected`, and `:focus-visible` ring on page tabs.
+- **fix** **Preview card image alt** — preview thumbnails use link title as `alt` text.
+- **fix** **Skip link focus** — skip-to-content uses `:focus-visible` (keyboard only).
 
 ### Security
 
@@ -103,13 +117,14 @@ _No unreleased changes at this time._
 
 ### Documentation
 
-- **fix** **README & MANUAL** — inline-edit page-switch confirm, Shift+Arrow vs plain arrows, and navigation hardening notes for v2026.06.16.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 modal, hardening, UX polish, and navigation hardening highlights.
+- **fix** **README & MANUAL** — debounced reorder save, Esc undo reorder, inline-edit guards (config/tag filter), and page-tab a11y for v2026.06.16.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.16 inline-edit hardening and dashboard quick wins.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v60` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, and `swipe-navigation.js` query strings for Docker-mounted static files.
-- **fix** **Keyboard nav cleanup** — `KeyboardNavigation.cleanup()` removes capture-phase listeners on `pagehide` and before re-init.
+- **fix** **Cache-bust** — `whats-new-v61` data version and `2026.06-dashboard-release-v56` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `swipe-navigation.js`, and dashboard CSS query strings for Docker-mounted static files.
+- **fix** **Keyboard & swipe cleanup** — `KeyboardNavigation.cleanup()` and `SwipeNavigation.cleanup()` on `pagehide`.
+- **fix** **Inline icon-fetch timer** — auto-favicon timers cleared on inline-edit close/abort.
 - **fix** **What's new JSON tracked** — `.gitignore` exception for `static/data/whats-new/` so per-release JSON ships with the repo.
 
 ---
