@@ -51,6 +51,65 @@
     padding-right: 0.25rem;
 }
 
+.wn-skeleton-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-top: 0.5rem;
+}
+
+.wn-skeleton-line {
+    height: 0.72rem;
+    border-radius: 0.25rem;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--border-primary) 55%, transparent) 0%,
+        color-mix(in srgb, var(--border-primary) 25%, transparent) 50%,
+        color-mix(in srgb, var(--border-primary) 55%, transparent) 100%
+    );
+    background-size: 200% 100%;
+    animation: wnSkeletonShimmer 1.2s ease-in-out infinite;
+}
+
+.wn-skeleton-line--short {
+    width: 62%;
+}
+
+.wn-lazy-sentinel {
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+}
+
+.wn-load-more-hint {
+    margin: 1rem 0 0.5rem;
+    font-size: calc(var(--font-size-controls) * 0.9);
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.wn-empty {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.wn-release-loading {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+@keyframes wnSkeletonShimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+body.no-animations .wn-skeleton-line {
+    animation: none;
+}
+
 /* ── What's New intro block ─────────────────────────────────────── */
 .wn-intro {
     display: flex;
