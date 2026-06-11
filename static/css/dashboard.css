@@ -2034,6 +2034,22 @@ a.bookmark-open:hover {
     min-width: 0;
 }
 
+/* Launcher tiles are narrow glass chips; inline edit needs a full-width panel row. */
+.layout-launcher .bookmark-link.bookmark-inline-editing {
+    width: auto;
+    min-width: min(420px, 90vw);
+    max-width: min(520px, 95vw);
+    flex: 1 1 100%;
+    align-items: stretch;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform: none;
+}
+
 .bookmark-link.bookmark-inline-editing.keyboard-selected {
     background: none;
 }
@@ -2065,7 +2081,10 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     opacity: 1;
     pointer-events: auto;
     position: relative;
-    z-index: 8;
+    z-index: 20;
+    isolation: isolate;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 body.bookmark-inline-edit-active .category .bookmarks-list {
@@ -2085,6 +2104,12 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     }
 }
 
+body.bookmark-inline-edit-active .bookmark-inline-form {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    filter: none;
+}
+
 .bookmark-inline-form {
     width: 100%;
     min-width: min(420px, 90vw);
@@ -2092,7 +2117,31 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 8px;
+    /* Opaque panel: theme modal colors are often rgba; secondary is solid in presets. */
+    background-color: color-mix(
+        in srgb,
+        var(--background-modal, var(--background-secondary)) 72%,
+        var(--background-secondary)
+    );
+    border: 2px solid var(--border-primary);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary)),
+        0 12px 36px color-mix(in srgb, var(--text-primary) 18%, transparent);
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
     animation: inlineEditReveal 180ms ease-out;
+}
+
+.bookmark-inline-form .bookmark-inline-input,
+.bookmark-inline-form .bookmark-inline-select,
+.bookmark-inline-form .bookmark-inline-textarea,
+.bookmark-inline-form .bookmark-inline-icon-preview,
+.bookmark-inline-form .bookmark-inline-action-btn {
+    background: var(--background-secondary);
 }
 
 @keyframes inlineEditReveal {

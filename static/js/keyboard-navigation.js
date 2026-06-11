@@ -11,6 +11,9 @@ class KeyboardNavigation {
         this._keydownHandler = null;
         this._focusInHandler = null;
         this._focusInLayout = null;
+        this._pointerOverLayout = null;
+        this._pointerOverHandler = null;
+        this._kbdSelectionDimmed = false;
 
         this.init();
     }
@@ -24,6 +27,10 @@ class KeyboardNavigation {
     setupEventListeners() {
         // Capture phase so we can intercept '[' before the search handler sees it.
         this._keydownHandler = (e) => {
+            if (!this.isEnabled) {
+                return;
+            }
+
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;
@@ -116,11 +123,52 @@ class KeyboardNavigation {
                 }
             };
             dashboardLayout.addEventListener('focusin', this._focusInHandler);
+
+            this._pointerOverLayout = dashboardLayout;
+            this._pointerOverHandler = (e) => {
+                if (e.pointerType && e.pointerType !== 'mouse') {
+                    return;
+                }
+                if (!e.target.closest?.('.bookmark-link:not(.bookmark-inline-editing)')) {
+                    return;
+                }
+                this.dimKbdSelection();
+            };
+            dashboardLayout.addEventListener('pointerover', this._pointerOverHandler, true);
         }
+    }
+
+    dimKbdSelection() {
+        if (this._kbdSelectionDimmed || this.currentIndex < 0) {
+            return;
+        }
+        this._kbdSelectionDimmed = true;
+        document.body.classList.add('bookmark-kbd-selection-dimmed');
+    }
+
+    restoreKbdSelection() {
+        if (!this._kbdSelectionDimmed) {
+            return;
+        }
+        this._kbdSelectionDimmed = false;
+        document.body.classList.remove('bookmark-kbd-selection-dimmed');
     }
 
     _gridNavActive() {
         return this.currentIndex >= 0;
+    }
+
+    _handleGridArrowKey() {
+        this.updateNavigableElements();
+        if (this.navigableElements.length === 0) {
+            return false;
+        }
+        if (this._gridNavActive()) {
+            return true;
+        }
+        // No bookmark selected yet: first arrow key starts grid navigation.
+        this.restoreKbdSelection();
+        return true;
     }
 
     getGridElement() {
@@ -158,8 +206,14 @@ class KeyboardNavigation {
         if (this._focusInLayout && this._focusInHandler) {
             this._focusInLayout.removeEventListener('focusin', this._focusInHandler);
         }
+        if (this._pointerOverLayout && this._pointerOverHandler) {
+            this._pointerOverLayout.removeEventListener('pointerover', this._pointerOverHandler, true);
+        }
         this._focusInLayout = null;
         this._focusInHandler = null;
+        this._pointerOverLayout = null;
+        this._pointerOverHandler = null;
+        this.restoreKbdSelection();
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
@@ -205,7 +259,7 @@ class KeyboardNavigation {
         const rows = category ? this.getCategoryRows(category) : [];
         const target = rows[0] || this.navigableElements[0];
         this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateCategoryEnd() {
@@ -217,7 +271,7 @@ class KeyboardNavigation {
         const rows = category ? this.getCategoryRows(category) : [];
         const target = rows.length ? rows[rows.length - 1] : this.navigableElements[this.navigableElements.length - 1];
         this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateCtrlHome() {
@@ -226,7 +280,7 @@ class KeyboardNavigation {
             return;
         }
         this.currentIndex = 0;
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateCtrlEnd() {
@@ -235,7 +289,7 @@ class KeyboardNavigation {
             return;
         }
         this.currentIndex = this.navigableElements.length - 1;
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigatePageUp() {
@@ -245,7 +299,7 @@ class KeyboardNavigation {
         }
         if (this.currentIndex < 0) {
             this.currentIndex = 0;
-            this.highlightCurrentElement();
+            this.highlightCurrentElement({ keyboardNav: true });
             return;
         }
         const current = this.navigableElements[this.currentIndex];
@@ -260,7 +314,7 @@ class KeyboardNavigation {
             }
         }
         this.currentIndex = targetIndex;
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigatePageDown() {
@@ -270,7 +324,7 @@ class KeyboardNavigation {
         }
         if (this.currentIndex < 0) {
             this.currentIndex = this.navigableElements.length - 1;
-            this.highlightCurrentElement();
+            this.highlightCurrentElement({ keyboardNav: true });
             return;
         }
         const current = this.navigableElements[this.currentIndex];
@@ -285,7 +339,7 @@ class KeyboardNavigation {
             }
         }
         this.currentIndex = targetIndex;
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     syncRovingTabStops(options = {}) {
@@ -357,13 +411,13 @@ class KeyboardNavigation {
             } else {
                 this.currentIndex = (this.currentIndex + 1) % this.navigableElements.length;
             }
-            this.highlightCurrentElement();
+            this.highlightCurrentElement({ keyboardNav: true });
             return;
         }
 
         switch(key) {
             case 'ArrowDown':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -371,7 +425,7 @@ class KeyboardNavigation {
                 break;
 
             case 'ArrowUp':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -379,7 +433,7 @@ class KeyboardNavigation {
                 break;
 
             case 'ArrowRight':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -387,7 +441,7 @@ class KeyboardNavigation {
                 break;
 
             case 'ArrowLeft':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -395,7 +449,7 @@ class KeyboardNavigation {
                 break;
 
             case 'Home':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -403,7 +457,7 @@ class KeyboardNavigation {
                 break;
 
             case 'End':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -411,7 +465,7 @@ class KeyboardNavigation {
                 break;
 
             case 'PageUp':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -419,7 +473,7 @@ class KeyboardNavigation {
                 break;
 
             case 'PageDown':
-                if (!this._gridNavActive()) {
+                if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
@@ -463,7 +517,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     this._clearGState();
                     this.currentIndex = 0;
-                    this.highlightCurrentElement();
+                    this.highlightCurrentElement({ keyboardNav: true });
                 } else {
                     e.preventDefault();
                     this._gPressed = true;
@@ -497,7 +551,7 @@ class KeyboardNavigation {
         if (idx === -1) return;
 
         this.currentIndex = idx;
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateDown() {
@@ -523,7 +577,7 @@ class KeyboardNavigation {
             }
         }
         
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateUp() {
@@ -549,7 +603,7 @@ class KeyboardNavigation {
             }
         }
         
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateRight() {
@@ -573,7 +627,7 @@ class KeyboardNavigation {
             }
         }
         
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     navigateLeft() {
@@ -597,7 +651,7 @@ class KeyboardNavigation {
             }
         }
         
-        this.highlightCurrentElement();
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     findElementBelow(currentElement) {
@@ -734,6 +788,9 @@ class KeyboardNavigation {
 
     highlightCurrentElement(options = {}) {
         const doFocus = options.focus !== false;
+        if (options.keyboardNav) {
+            this.restoreKbdSelection();
+        }
         // Dismiss any open keyboard-triggered preview card when moving to a new row
         if (this.dashboard && typeof this.dashboard.hideBookmarkPreviewCard === 'function') {
             this.dashboard.hideBookmarkPreviewCard();
@@ -900,6 +957,7 @@ class KeyboardNavigation {
     }
 
     clearSelection() {
+        this.restoreKbdSelection();
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
             element.removeAttribute('aria-current');

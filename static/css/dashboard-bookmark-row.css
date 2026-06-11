@@ -67,3 +67,30 @@ body:not(.status-color-lock) .bookmark-link.status-checking:is(:hover, .keyboard
     border-color: color-mix(in srgb, currentColor 42%, var(--border-secondary));
     color: currentColor;
 }
+
+/* While the mouse explores bookmarks, soften the stale keyboard selection until the next keyboard move. */
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
+    );
+}
+
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-superscript-badge,
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-shortcut {
+    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    border-color: color-mix(in srgb, var(--border-primary) 65%, transparent);
+    color: var(--text-tertiary);
+}
+
+body:not(.status-color-lock).bookmark-kbd-selection-dimmed .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
+    background: var(--status-offline-bg, color-mix(in srgb, var(--accent-error, #ef4444) 20%, var(--background-primary)));
+    box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
+}
+
+body:not(.status-color-lock).bookmark-kbd-selection-dimmed .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
+    background: var(--status-checking-bg, color-mix(in srgb, var(--accent-warning, #f59e0b) 14%, var(--background-primary)));
+    box-shadow: none;
+}
