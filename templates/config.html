@@ -19,14 +19,15 @@
     <link rel="stylesheet" href="/static/css/config.css">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v3">
-    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v3">
+    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
-    <link rel="stylesheet" href="/static/css/config/config-stats.css">
+    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-phase2-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css">
     <link rel="stylesheet" href="/static/css/config/config-tags.css">
+    <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-simple-list-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css">
     <link rel="stylesheet" href="/static/css/config/config-backups.css">
     <link rel="stylesheet" href="/static/css/search.css">
@@ -1179,12 +1180,19 @@
             <div class="tab-content" data-tab-content="tags">
             <div class="tags-tab">
                 <div class="tags-toolbar">
-                    <span class="tags-tab-intro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag.</span>
+                    <span class="tags-tab-intro" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</span>
+                    <div class="tags-filter-wrap">
+                        <label class="visually-hidden" for="tags-filter-input" data-i18n="config.tagsFilterLabel">Filter tags</label>
+                        <input type="search" id="tags-filter-input" class="tags-filter-input" data-i18n-placeholder="config.tagsFilterPlaceholder" placeholder="Filter tags…" autocomplete="off">
+                        <button type="button" id="tags-filter-clear" class="tags-filter-clear" data-i18n-aria="config.tagsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                    </div>
                 </div>
-                <div id="tags-cloud" class="tags-cloud"></div>
-                <div id="tags-list" class="tags-list"></div>
-                <div id="tags-empty-state" class="tags-empty-state" style="display:none">
-                    <p>No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
+                <div id="tags-body" class="tags-body">
+                    <div id="tags-cloud" class="tags-cloud" role="list" hidden></div>
+                    <ul id="tags-list" class="tags-list" role="list"></ul>
+                </div>
+                <div id="tags-empty-state" class="tags-empty-state" hidden>
+                    <p data-i18n="config.tagsListEmptyHint">No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
                 </div>
             </div>
             </div>
@@ -1486,11 +1494,20 @@
             <div class="tab-content" data-tab-content="finders">
             <div class="simple-tab">
                 <div class="simple-toolbar">
-                    <span class="simple-tab-intro" data-i18n="config.findersIntro">Finders are quick-search shortcuts that open a filtered view on the dashboard when triggered by a key combination.</span>
-                    <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+                    <span class="simple-tab-intro" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</span>
+                    <div class="simple-toolbar-right">
+                        <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+                    </div>
                 </div>
-                <div id="finders-list" class="finders-list js-list simple-list">
-                    <!-- Finders will be loaded here -->
+                <div class="finders-body">
+                    <div class="finders-filter-wrap">
+                        <label class="visually-hidden" for="finders-filter-input" data-i18n="config.findersFilterLabel">Filter finders</label>
+                        <input type="search" id="finders-filter-input" class="finders-filter-input" data-i18n-placeholder="config.findersFilterPlaceholder" placeholder="Filter finders…" autocomplete="off">
+                        <button type="button" id="finders-filter-clear" class="finders-filter-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
+                    </div>
+                    <div id="finders-list" class="finders-list js-list simple-list">
+                        <!-- Finders will be loaded here -->
+                    </div>
                 </div>
             </div>
             </div>
@@ -1544,11 +1561,11 @@
             <div class="tab-content" data-tab-content="backups">
             <div class="backups-tab">
                 <div class="backups-tab-intro">
-                    <p>Back up and restore your entire dashboard — pages, categories, bookmarks, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
+                    <p data-i18n="config.backupsIntro">Back up and restore your entire dashboard — pages, categories, bookmarks, finders, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
                 </div>
 
                 <div class="backups-section">
-                    <h3 class="section-title">ZIP Backup &amp; Restore</h3>
+                    <h3 class="section-title" data-i18n="config.backupsZipSectionTitle">ZIP Backup &amp; Restore</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
@@ -1570,11 +1587,11 @@
                 </div>
 
                 <div class="backups-section">
-                    <h3 class="section-title">Import &amp; Export</h3>
+                    <h3 class="section-title" data-i18n="config.backupsImportExportSectionTitle">Import &amp; Export</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
-                            <p class="backups-action-hint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped.</p>
+                            <p class="backups-action-hint" data-i18n="config.backupsBrowserImportHint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped.</p>
                             <div class="backups-action-buttons">
                                 <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
                                 <button type="button" id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
@@ -1582,7 +1599,7 @@
                         </div>
                         <div class="backups-action-item">
                             <p class="backups-action-label" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
-                            <p class="backups-action-hint">Downloads all bookmarks from all pages as a single CSV file (Name, URL, Category, Page, Shortcut). Opens in Excel, Google Sheets, or any text editor.</p>
+                            <p class="backups-action-hint" data-i18n="config.backupsCsvExportHint">Downloads all bookmarks from all pages as a single CSV file (name, URL, category, page, shortcut, tags, notes). Opens in Excel, Google Sheets, or any text editor.</p>
                             <div class="backups-action-buttons">
                                 <button type="button" id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
                             </div>
@@ -1616,14 +1633,28 @@
 
             <div class="tab-content" data-tab-content="stats">
             <div class="stats-page-intro">
-                <p data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Open the tab again after saving to refresh. Use the index on the left to jump to any section.</p>
+                <p data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
+                <div class="stats-page-intro-actions">
+                    <button type="button" id="stats-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.statsRefresh">Refresh</button>
+                    <button type="button" id="stats-export-csv-btn" class="btn btn-secondary btn-small" data-i18n="config.statsExportCsv">Export CSV</button>
+                </div>
             </div>
+            <div class="stats-filter-bar">
+                <div class="stats-filter-wrap">
+                    <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
+                    <input type="search" id="stats-filter-input" class="stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
+                    <button type="button" id="stats-filter-clear" class="stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                </div>
+                <p id="stats-filter-hint" class="stats-filter-hint" hidden></p>
+            </div>
+            <nav id="stats-chip-nav" class="stats-chip-nav" data-i18n-aria="config.statsChipNavAria" aria-label="Stats sections"></nav>
             <div class="stats-layout">
 
                 <aside class="stats-index">
                     <h3 class="section-title" data-i18n="config.statsIndexTitle">quick links</h3>
                     <ul class="stats-index-list">
                         <li><a href="#stats-overview" data-i18n="config.statsNavOverview">overview</a></li>
+                        <li><a href="#stats-insights" data-i18n="config.statsNavInsights">insights</a></li>
                         <li><a href="#stats-score" data-i18n="config.statsNavScore">cleanup score</a></li>
                         <li><a href="#stats-activity" data-i18n="config.statsNavActivity">activity</a></li>
                         <li><a href="#stats-top" data-i18n="config.statsNavTop">top bookmarks</a></li>
@@ -1631,6 +1662,7 @@
                         <li><a href="#stats-categories" data-i18n="config.statsNavCategories">categories</a></li>
                         <li><a href="#stats-tags" data-i18n="config.statsNavTags">tags</a></li>
                         <li><a href="#stats-shortcuts" data-i18n="config.statsNavShortcuts">shortcuts</a></li>
+                        <li><a href="#stats-finders" data-i18n="config.statsNavFinders">finders</a></li>
                         <li><a href="#stats-rot" data-i18n="config.statsNavRot">rot &amp; cleanup</a></li>
                         <li><a href="#stats-conflicts" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</a></li>
                         <li><a href="#stats-search" data-i18n="config.statsNavSearch">search &amp; status</a></li>
@@ -1656,6 +1688,15 @@
                             <div><dt data-i18n="config.statsWithoutShortcut">Without shortcut</dt><dd id="stats-without-shortcut">0</dd></div>
                             <div><dt data-i18n="config.statsAvgOpensLabel">Avg opens / bookmark</dt><dd id="stats-avg-opens">0</dd></div>
                         </dl>
+                    </section>
+
+                    <section id="stats-insights" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsInsightsSection">Personal usage insights</h3>
+                            <button type="button" class="info-button" id="stats-insights-info-btn">ℹ</button>
+                        </div>
+                        <p class="stats-muted" data-i18n="config.statsInsightsIntro">Quick interpretation of your usage patterns.</p>
+                        <ul id="stats-insights-list" class="stats-insights-list"></ul>
                     </section>
 
                     <section id="stats-score" class="stats-block">
@@ -1688,7 +1729,7 @@
                             <button type="button" class="stats-period-btn" data-period="0" data-i18n="config.statsPeriodAllTime">all time</button>
                         </div>
                         <div class="stats-activity-row">
-                            <span class="stats-muted" data-i18n="config.statsActivityOpensInPeriod">Opens in period:</span> <strong id="stats-activity-total">—</strong>
+                            <span id="stats-activity-opens-label" class="stats-muted" data-i18n="config.statsActivityOpensLifetimeActive">Lifetime opens (active in period):</span> <strong id="stats-activity-total">—</strong>
                             <span class="stats-activity-sep">·</span>
                             <span class="stats-muted" data-i18n="config.statsActivityActive">Active bookmarks:</span> <strong id="stats-activity-active">—</strong>
                         </div>
@@ -1714,7 +1755,7 @@
                                 <thead><tr>
                                     <th>#</th>
                                     <th data-i18n="config.statsColName">Name</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColLastOpened">Last opened</th>
                                 </tr></thead>
@@ -1726,7 +1767,7 @@
                             <table class="stats-table">
                                 <thead><tr>
                                     <th data-i18n="config.statsColName">Name</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColLastOpened">Last opened</th>
                                 </tr></thead>
@@ -1752,7 +1793,7 @@
                                 <thead><tr>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColBookmarks">Bookmarks</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColNeverOpened">Never opened</th>
                                 </tr></thead>
                                 <tbody id="stats-pages-body"></tbody>
@@ -1778,7 +1819,7 @@
                                     <th data-i18n="config.statsColCategory">Category</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                     <th data-i18n="config.statsColBookmarks">Bookmarks</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                 </tr></thead>
                                 <tbody id="stats-categories-body"></tbody>
                             </table>
@@ -1816,7 +1857,7 @@
                                 <thead><tr>
                                     <th data-i18n="config.statsColTag">Tag</th>
                                     <th data-i18n="config.statsColBookmarks">Bookmarks</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPagesUsingTag">Pages</th>
                                 </tr></thead>
                                 <tbody id="stats-tags-body"></tbody>
@@ -1828,7 +1869,7 @@
                                 <thead><tr>
                                     <th data-i18n="config.statsColName">Name</th>
                                     <th data-i18n="config.statsColTag">Tags</th>
-                                    <th data-i18n="config.statsColOpens">Opens</th>
+                                    <th data-stats-opens-col data-i18n="config.statsColOpens">Opens</th>
                                     <th data-i18n="config.statsColPage">Page</th>
                                 </tr></thead>
                                 <tbody id="stats-top-tagged-body"></tbody>
@@ -1857,6 +1898,30 @@
                                     <th data-i18n="config.statsColPage">Page</th>
                                 </tr></thead>
                                 <tbody id="stats-shortcuts-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="stats-finders" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavFinders">finders</h3>
+                            <button type="button" class="info-button" id="stats-finders-info-btn">ℹ</button>
+                        </div>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsFindersTotal">Finders total</dt><dd id="stats-finders-count">0</dd></div>
+                            <div><dt data-i18n="config.statsFindersUsesTotal">Total finder uses</dt><dd id="stats-finders-uses-total">0</dd></div>
+                            <div><dt data-i18n="config.statsFindersWithShortcut">With shortcut</dt><dd id="stats-finders-with-shortcut">0</dd></div>
+                        </dl>
+                        <h4 class="stats-subtitle" data-i18n="config.statsSubTopFinders">top finders by use count</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsColName">Name</th>
+                                    <th data-i18n="config.statsColShortcut">Shortcut</th>
+                                    <th data-i18n="config.statsColUses">Uses</th>
+                                    <th data-i18n="config.statsColLastOpened">Last used</th>
+                                </tr></thead>
+                                <tbody id="stats-finders-body"></tbody>
                             </table>
                         </div>
                     </section>
@@ -2219,7 +2284,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v66"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v68"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2242,8 +2307,8 @@
     <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
     <script src="/static/js/config/config-bookmarks.js?v=bookmarks-phase2-1"></script>
     <script src="/static/js/config/config-collections.js"></script>
-    <script src="/static/js/config/config-finders.js"></script>
-    <script src="/static/js/config/config-backup.js"></script>
+    <script src="/static/js/config/config-finders.js?v=finders-simple-list-1"></script>
+    <script src="/static/js/config/config-backup.js?v=backups-p0-p2-1"></script>
     <script src="/static/js/config/config-font.js"></script>
     <script src="/static/js/config/config-settings.js"></script>
     <script src="/static/js/config/config-language.js"></script>
@@ -2266,7 +2331,7 @@
     <script src="/static/js/config/config-custom-themes.js"></script>
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-preview-v2"></script>
-    <script src="/static/js/config/config-stats.js"></script>
+    <script src="/static/js/config/config-stats.js?v=stats-filter-1"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>
     <script src="/static/js/search-commands/search-commands-new.js"></script>
@@ -2277,7 +2342,7 @@
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/config.js?v=bookmarks-phase2-1"></script>
+    <script src="/static/js/config.js?v=finders-add-fix-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

@@ -174,6 +174,8 @@ Type these directly in the search bar:
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks)
+- **Config → tags** (desktop) — global rename/merge/delete across all pages; drill-down with **Open** (correct page via `pageId`); filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
+- **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
 - Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it
@@ -212,8 +214,7 @@ Dynamic bookmark groups that appear automatically:
 - Health badge on the dashboard header: text pill (e.g. `3 broken`) with red/yellow styling; bulk open broken links asks for confirmation with a per-batch limit
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage)
 - Favicon auto-refresh from the health view
-- Usage stats in the config: top patterns, open counts, last-used dates
-- Conflicts & duplicates block in stats: shows duplicate URL count and shortcut conflicts with a direct link to health; merge combines metadata into the kept bookmark
+- **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav; conflicts link to health
 
 ### Bookmarks
 
@@ -224,8 +225,8 @@ Dynamic bookmark groups that appear automatically:
 - Open-count badge tracking usage per bookmark
 - Pin bookmarks to keep them at the top
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped
-- Export all bookmarks to CSV (Name, URL, Category, Page, Shortcut)
-- Full ZIP backup and restore (pages, bookmarks, categories, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup; **last backup date** shown in Config → Backups
+- Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes)
+- Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups
 - Settings-only **export/import** of `settings.json` (migration-safe) from Config → Backups
 - Bookmark icons: upload, URL fetch, link-preview fetch; re-upload **overwrites** same filename
 

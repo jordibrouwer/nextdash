@@ -131,6 +131,7 @@
         const tabLabel = getTabLabel(tabId);
 
         root.querySelectorAll('.section-title').forEach((titleEl) => {
+            if (tabId === 'stats' && titleEl.closest('.stats-content')) return;
             const title = textOf(titleEl);
             if (!title) return;
             const panel = titleEl.closest('[data-general-panel]');
@@ -174,6 +175,50 @@
         });
 
         if (tabId === 'stats') {
+            const intro = root.querySelector('.stats-page-intro p');
+            if (intro) {
+                const title = textOf(intro);
+                if (title) {
+                    addEntry(entries, seen, {
+                        tab: tabId,
+                        tabLabel,
+                        title,
+                        subtitle: tabLabel,
+                        targetEl: intro,
+                    });
+                }
+            }
+            const refreshBtn = document.getElementById('stats-refresh-btn');
+            if (refreshBtn) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(refreshBtn),
+                    subtitle: tabLabel,
+                    targetEl: refreshBtn,
+                });
+            }
+            const exportBtn = document.getElementById('stats-export-csv-btn');
+            if (exportBtn) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(exportBtn),
+                    subtitle: tabLabel,
+                    targetEl: exportBtn,
+                });
+            }
+            const filterLabel = document.querySelector('label[for="stats-filter-input"]');
+            const filterInput = document.getElementById('stats-filter-input');
+            if (filterLabel && filterInput) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(filterLabel),
+                    subtitle: tabLabel,
+                    targetEl: filterInput,
+                });
+            }
             root.querySelectorAll('#stats-index a').forEach((link) => {
                 const title = textOf(link);
                 if (!title) return;
@@ -251,6 +296,113 @@
                 subtitle: tabLabel,
                 extra: t('pagesIntro', 'Pages'),
                 targetEl: root.querySelector('.simple-tab-intro') || root,
+            });
+        }
+
+        if (tabId === 'finders') {
+            const filterInput = document.getElementById('finders-filter-input');
+            if (filterInput) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: t('findersFilterLabel', 'Filter finders'),
+                    subtitle: tabLabel,
+                    targetEl: filterInput,
+                });
+            }
+            const addBtn = document.getElementById('add-finder-btn');
+            if (addBtn) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: t('addFinder', '+ Add finder'),
+                    subtitle: tabLabel,
+                    extra: t('findersIntro', 'Finders'),
+                    targetEl: addBtn,
+                });
+            }
+        }
+
+        if (tabId === 'backups') {
+            const intro = root.querySelector('.backups-tab-intro');
+            if (intro) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: t('backupsIntro', 'Backups'),
+                    subtitle: tabLabel,
+                    targetEl: intro,
+                });
+            }
+            [
+                ['backup-btn', 'createBackup'],
+                ['import-btn', 'selectImportFile'],
+                ['browser-import-btn', 'browserImportBtn'],
+                ['csv-export-btn', 'csvExportBtn'],
+                ['settings-export-btn', 'settingsExportBtn'],
+                ['settings-import-btn', 'settingsImportBtn'],
+            ].forEach(([id, key]) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(btn) || t(key, ''),
+                    subtitle: tabLabel,
+                    extra: t('backupsZipSectionTitle', 'ZIP Backup & Restore'),
+                    targetEl: btn,
+                });
+            });
+            root.querySelectorAll('.backups-action-label').forEach((labelEl) => {
+                const title = textOf(labelEl);
+                if (!title) return;
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title,
+                    subtitle: tabLabel,
+                    targetEl: labelEl.closest('.backups-action-item') || labelEl,
+                });
+            });
+        }
+
+        if (tabId === 'tags') {
+            const filterInput = document.getElementById('tags-filter-input');
+            if (filterInput) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: t('tagsFilterLabel', 'Filter tags'),
+                    subtitle: tabLabel,
+                    targetEl: filterInput,
+                });
+            }
+            const renameLabel = t('rename', 'Rename');
+            addEntry(entries, seen, {
+                tab: tabId,
+                tabLabel,
+                title: renameLabel,
+                subtitle: tabLabel,
+                extra: t('tagsTabIntro', 'Tags'),
+                targetEl: document.getElementById('tags-list') || root,
+            });
+            const searchLabel = t('tagSearch', 'Search');
+            addEntry(entries, seen, {
+                tab: tabId,
+                tabLabel,
+                title: searchLabel,
+                subtitle: tabLabel,
+                extra: t('tagsTab', 'tags'),
+                targetEl: document.getElementById('tags-cloud') || root,
+            });
+            const deleteLabel = t('tagDeleteLabel', 'Delete tag');
+            addEntry(entries, seen, {
+                tab: tabId,
+                tabLabel,
+                title: deleteLabel,
+                subtitle: tabLabel,
+                extra: t('tagsTabIntro', 'Tags'),
+                targetEl: document.getElementById('tags-list') || root,
             });
         }
 

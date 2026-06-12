@@ -246,6 +246,19 @@ body[data-layout-version="glass"] .tags-tab {
     box-shadow: none;
 }
 
+body[data-layout-version="glass"] .tags-tab {
+    min-height: calc(100vh - 180px);
+    height: calc(100vh - 180px);
+}
+
+body[data-layout-version="glass"] .tags-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    gap: var(--config-tab-gap);
+}
+
 body[data-layout-version="glass"] :is(
     .simple-toolbar,
     .collections-toolbar,
@@ -271,9 +284,16 @@ body[data-layout-version="glass"] .tags-toolbar {
 }
 
 body[data-layout-version="glass"] .simple-list,
-body[data-layout-version="glass"] .collections-list,
-body[data-layout-version="glass"] .tags-list {
+body[data-layout-version="glass"] .collections-list {
     overflow: hidden;
+    padding: 0;
+}
+
+body[data-layout-version="glass"] .tags-list {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-height: 0;
     padding: 0;
 }
 
@@ -350,6 +370,8 @@ body[data-layout-version="glass"] .form-group input:focus,
 body[data-layout-version="glass"] .form-group select:focus,
 body[data-layout-version="glass"] .form-group textarea:focus,
 body[data-layout-version="glass"] .help-search-filter:focus,
+body[data-layout-version="glass"] .tags-filter-input:focus,
+body[data-layout-version="glass"] .tag-rename-input:focus,
 body[data-layout-version="glass"] .page-selector:focus,
 body[data-layout-version="glass"] .color-text-input:focus,
 body[data-layout-version="glass"] .color-text-input-full:focus {
@@ -359,6 +381,8 @@ body[data-layout-version="glass"] .color-text-input-full:focus {
 }
 
 body[data-layout-version="glass"] .help-search-filter,
+body[data-layout-version="glass"] .tags-filter-input,
+body[data-layout-version="glass"] .tag-rename-input,
 body[data-layout-version="glass"] .page-selector,
 body[data-layout-version="glass"] .color-text-input,
 body[data-layout-version="glass"] .color-text-input-full {

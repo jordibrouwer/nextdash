@@ -35,6 +35,7 @@ type Bookmark struct {
 }
 
 type Finder struct {
+	ID        string   `json:"id,omitempty"`
 	Name      string   `json:"name"`
 	SearchUrl string   `json:"searchUrl"`
 	Shortcut  string   `json:"shortcut"`

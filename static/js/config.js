@@ -154,8 +154,7 @@ class ConfigManager {
         window.ConfigGeneralTour?.recoverStaleDom?.();
         window.MobileExperience?.initConfig?.();
         await this.loadData();
-        // Align categories page with bookmarks page before first render
-        this.currentCategoriesPageId = parseInt(this.currentPageId) || 1;
+        this.currentCategoriesPageId = this.getLastCategoriesPageId();
         await this.language.init(this.settingsData.language);
         window.MobileExperience?.refreshBannerTranslations?.();
         if (typeof ConfigStats === 'function') {
@@ -215,7 +214,7 @@ class ConfigManager {
         }
 
 
-        if (this.stats && window.location.hash === '#stats') {
+        if (this.stats && this.isConfigStatsTabActive()) {
             this.stats.refresh(this);
         }
         if (window.location.hash.startsWith('#colors')) {
@@ -240,7 +239,13 @@ class ConfigManager {
 
         this.scheduleConfigGeneralTour();
         this.scheduleConfigBookmarksTour();
-        this.scheduleConfigFindersTour();
+        if (this.isConfigFindersTabActive() && !this.hasSeenConfigFindersTour()) {
+            void this.onConfigFindersTabOpened();
+        } else if (this.isConfigFindersTabActive()) {
+            void this.reloadFindersTabData();
+        } else {
+            this.scheduleConfigFindersTour();
+        }
         this.scheduleConfigStatsTour();
         if (this.isConfigCategoriesTabActive() && !this.hasSeenConfigCategoriesTour()) {
             void this.onConfigCategoriesTabOpened();
@@ -320,16 +325,101 @@ class ConfigManager {
         }
     }
 
-    onConfigCategoriesTabOpened() {
-        if (this.hasSeenConfigCategoriesTour()) return Promise.resolve();
-        this.dismissOtherConfigTabTours('categories');
-        const schedule = () => this.scheduleConfigCategoriesTour();
-        const pageId = this.currentCategoriesPageId || this.currentPageId || 1;
-        if (typeof this.loadPageCategories === 'function') {
-            return this.loadPageCategories(pageId).finally(schedule);
+    _lastCategoryFilterStorageKey(pageId) {
+        return `nextdash:config:last-category-filter:${Number(pageId) || 1}`;
+    }
+
+    _lastUsedCategoryStorageKey(pageId) {
+        return `nextdash:config:last-used-category:${Number(pageId) || 1}`;
+    }
+
+    _lastCategoriesPageStorageKey() {
+        return 'nextdash:config:last-categories-page';
+    }
+
+    getDefaultCategoriesPageId() {
+        const visible = this.getVisiblePages();
+        return visible.length > 0 ? Number(visible[0].id) : 1;
+    }
+
+    getLastCategoriesPageId() {
+        try {
+            const parsed = Number(sessionStorage.getItem(this._lastCategoriesPageStorageKey()));
+            if (Number.isFinite(parsed) && parsed >= 1) {
+                const visible = this.getVisiblePages();
+                if (visible.some((page) => Number(page.id) === parsed)) {
+                    return parsed;
+                }
+            }
+        } catch {
+            // ignore
         }
-        schedule();
-        return Promise.resolve();
+        return this.getDefaultCategoriesPageId();
+    }
+
+    saveLastCategoriesPageId(pageId) {
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid < 1) return;
+        try {
+            sessionStorage.setItem(this._lastCategoriesPageStorageKey(), String(pid));
+        } catch {
+            // ignore
+        }
+    }
+
+    getLastCategoryFilterForPage(pageId) {
+        try {
+            return sessionStorage.getItem(this._lastCategoryFilterStorageKey(pageId)) || '__all__';
+        } catch {
+            return '__all__';
+        }
+    }
+
+    saveLastCategoryFilterForPage(pageId, value) {
+        try {
+            sessionStorage.setItem(this._lastCategoryFilterStorageKey(pageId), String(value || '__all__'));
+        } catch {
+            // ignore
+        }
+    }
+
+    getLastUsedCategoryIdForPage(pageId) {
+        try {
+            return sessionStorage.getItem(this._lastUsedCategoryStorageKey(pageId)) || '';
+        } catch {
+            return '';
+        }
+    }
+
+    saveLastUsedCategoryIdForPage(pageId, categoryId) {
+        const id = String(categoryId || '').trim();
+        if (!id) return;
+        try {
+            sessionStorage.setItem(this._lastUsedCategoryStorageKey(pageId), id);
+        } catch {
+            // ignore
+        }
+    }
+
+    async syncCategoriesTabToCurrentPage() {
+        const pageId = this.getLastCategoriesPageId();
+        if (Number(this.currentCategoriesPageId) !== pageId) {
+            const flushed = await this.flushCategoriesPageBeforeSwitch();
+            if (!flushed) {
+                this.syncCategoriesPageSelectorUI(this.currentCategoriesPageId);
+                return;
+            }
+        }
+        this.currentCategoriesPageId = pageId;
+        this.syncCategoriesPageSelectorUI(pageId);
+        await this.loadPageCategories(pageId);
+    }
+
+    async onConfigCategoriesTabOpened() {
+        await this.syncCategoriesTabToCurrentPage();
+        if (this.hasSeenConfigCategoriesTour()) return;
+        this.dismissOtherConfigTabTours('categories');
+        this.scheduleConfigCategoriesTour();
     }
 
     async reloadTagsTabData() {
@@ -353,6 +443,53 @@ class ConfigManager {
         }
         this.dismissOtherConfigTabTours('tags');
         this.scheduleConfigTagsTour();
+    }
+
+    cancelPendingFindersTabReload() {
+        this._findersTabLoadSeq = (this._findersTabLoadSeq || 0) + 1;
+    }
+
+    async reloadFindersTabData(options = {}) {
+        const seq = ++this._findersTabLoadSeq;
+        const force = options.force === true;
+
+        if (!force && this.savedSnapshot) {
+            const currentFinders = JSON.stringify(this.findersData || []);
+            const savedFinders = JSON.stringify(this.savedSnapshot.findersData || []);
+            if (currentFinders !== savedFinders) {
+                this.finders?.refresh(this);
+                return;
+            }
+        }
+
+        try {
+            const loaded = await this.data.loadFinders();
+            if (seq !== this._findersTabLoadSeq) {
+                return;
+            }
+            this.findersData = window.ConfigFinders?.normalizeFinders
+                ? window.ConfigFinders.normalizeFinders(loaded, this.generateId.bind(this))
+                : loaded;
+        } catch (error) {
+            if (seq !== this._findersTabLoadSeq) {
+                return;
+            }
+            console.warn('Could not reload finders', error);
+        }
+        if (seq !== this._findersTabLoadSeq) {
+            return;
+        }
+        this.finders?.refresh(this);
+    }
+
+    async onConfigFindersTabOpened() {
+        await this.reloadFindersTabData();
+        if (this.hasSeenConfigFindersTour()) return;
+        if (this._configFindersTourActive || this._configFindersTourStarting) {
+            return;
+        }
+        this.dismissOtherConfigTabTours('finders');
+        this.scheduleConfigFindersTour();
     }
 
     onConfigPagesTabOpened() {
@@ -1495,6 +1632,14 @@ class ConfigManager {
     }
 
     ensureTagsTabActive() {
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            this.ui?.showNotification?.(
+                this.language.t('config.tagsMobileOnlyDesktop'),
+                'info'
+            );
+            this.ui?.switchToTab?.('general');
+            return false;
+        }
         if (this.ui?.switchToTab) {
             this.ui.switchToTab('tags');
         } else {
@@ -1506,6 +1651,37 @@ class ConfigManager {
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (hash !== 'tags') {
             window.history.replaceState(null, '', '#tags');
+        }
+        return true;
+    }
+
+    async persistTagsChanges(options = {}) {
+        if (window.ConfigTags?.normalizeTagList) {
+            for (const bm of this.bookmarkStore.getAll()) {
+                bm.tags = window.ConfigTags.normalizeTagList(bm.tags);
+            }
+        }
+        try {
+            await this.saveAllBookmarkPages();
+            this.signalDashboardReload(options.eventType || 'tags-updated');
+            this.savedSnapshot = this.captureUndoSnapshot();
+            this.setDirtyState(false);
+            this.refreshBookmarksList();
+            this.collections?.refresh?.(this);
+            this.tags?.refresh?.(this);
+            if (!options.silent) {
+                this.showSyncToast(
+                    this.language.t('config.dashboardSyncComplete'),
+                    'success'
+                );
+            }
+        } catch (error) {
+            console.error('Error persisting tag changes:', error);
+            this.showSyncToast(
+                this.language.t('config.dashboardSyncFailed'),
+                'error'
+            );
+            throw error;
         }
     }
 
@@ -2160,7 +2336,9 @@ class ConfigManager {
 
             this.pagesData = this.applyPagesNormalization(pages, { trackRepair: true });
             this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
-            this.findersData = await this.data.loadFinders();
+            this.findersData = window.ConfigFinders?.normalizeFinders
+                ? window.ConfigFinders.normalizeFinders(await this.data.loadFinders(), this.generateId.bind(this))
+                : await this.data.loadFinders();
             await this.bookmarkStore.loadAll();
             if (this.bookmarkStore.getAll().length === 0 && Array.isArray(bookmarks) && bookmarks.length > 0) {
                 const seedPageId = Number(settings?.currentPage) || Number(this.currentPageId) || 1;
@@ -2386,6 +2564,7 @@ class ConfigManager {
             this.currentPageId = parseInt(pageId);
             await this.bookmarkStore.loadPage(pageId);
             this.bookmarksPageCategories = (await this.data.loadCategoriesByPage(pageId)).map(cat => ({ ...cat }));
+            this.currentBookmarksCategoryFilter = this.getLastCategoryFilterForPage(this.currentPageId);
 
             if (this.bookmarks) {
                 this.bookmarks.activeDetailIndex = null;
@@ -2497,19 +2676,44 @@ class ConfigManager {
         }
     }
 
+    /**
+     * Persist the current categories page before switching away.
+     * Does not reload UI — a full persist+refresh would reset the page selector
+     * to the old page while the change handler is still applying the new value.
+     * @returns {Promise<boolean>} false when validation/save failed (caller should abort switch)
+     */
     async flushCategoriesPageBeforeSwitch() {
         clearTimeout(this._categoryReorderPersistTimer);
+        const pageId = Number(this.currentCategoriesPageId);
+        if (!this.categoriesListHydrated || !Number.isFinite(pageId) || pageId < 1) {
+            return true;
+        }
+
         const fromDom = this.getCategoriesFromDOM();
-        if (fromDom) {
+        if (!fromDom) {
+            return true;
+        }
+
+        const validationError = this.validateCategoriesData(fromDom);
+        if (validationError) {
+            this.ui.showNotification(validationError, 'error');
+            return false;
+        }
+
+        try {
             this.categoriesData = fromDom;
+            await this.withRetry(() => this.data.saveCategoriesByPage(fromDom, pageId));
+            this.signalDashboardReload('category-page-switch');
+            this.syncSnapshotAfterStructurePersist();
+            return true;
+        } catch (error) {
+            console.error('Error flushing categories before page switch:', error);
+            this.ui.showNotification(
+                this.language.t('config.dashboardSyncFailed'),
+                'error'
+            );
+            return false;
         }
-        if (!this.categoriesListHydrated || !this.currentCategoriesPageId) {
-            return;
-        }
-        await this.persistCategoriesStructureAndRefresh({
-            eventType: 'category-page-switch',
-            silent: true
-        });
     }
 
     handleCategoriesReordered(newCategories) {
@@ -2520,6 +2724,89 @@ class ConfigManager {
         this._categoryReorderPersistTimer = setTimeout(() => {
             void this.persistCategoriesStructureAndRefresh({ eventType: 'category-reordered' });
         }, 600);
+    }
+
+    handleFindersReordered(newFinders) {
+        this.findersData = newFinders;
+        this.finders.syncFinderIndices?.();
+        this.markDirty();
+        clearTimeout(this._finderReorderPersistTimer);
+        this._finderReorderPersistTimer = setTimeout(() => {
+            void this.persistFindersChanges({ silent: true, eventType: 'finder-reordered' });
+        }, 600);
+    }
+
+    scheduleFinderValidationRefresh() {
+        clearTimeout(this._finderValidationTimer);
+        this._finderValidationTimer = setTimeout(() => {
+            this.finders?.updateFieldWarnings?.(this);
+        }, 150);
+    }
+
+    validateFindersData(finders = this.findersData) {
+        const list = Array.isArray(finders) ? finders : [];
+        const shortcuts = new Map();
+        for (let i = 0; i < list.length; i += 1) {
+            const shortcut = String(list[i]?.shortcut || '').trim().toUpperCase();
+            if (!shortcut) continue;
+            if (shortcuts.has(shortcut)) {
+                return this.language.t('config.finderDuplicateShortcutSaveError')
+                    || 'Two or more finders share the same shortcut. Each shortcut must be unique.';
+            }
+            shortcuts.set(shortcut, i);
+        }
+        return null;
+    }
+
+    async persistFindersChanges(options = {}) {
+        this.findersData = window.ConfigFinders?.normalizeFinders
+            ? window.ConfigFinders.normalizeFinders(this.findersData, this.generateId.bind(this))
+            : this.findersData;
+        const validationError = this.validateFindersData();
+        if (validationError) {
+            this.ui.showNotification(validationError, 'error');
+            throw new Error(validationError);
+        }
+        const seq = (this._findersPersistSeq = (this._findersPersistSeq || 0) + 1);
+        try {
+            await this.data.saveFinders(this.findersData);
+            if (seq !== this._findersPersistSeq) return;
+            this.signalDashboardReload?.(options.eventType || 'finders-updated');
+            this.savedSnapshot = this.captureUndoSnapshot();
+            this.recomputeDirtyState();
+            if (options.skipUiRefresh !== true) {
+                this.finders?.refresh(this);
+            }
+            if (!options.silent) {
+                this.showSyncToast(
+                    this.language.t('config.dashboardSyncComplete'),
+                    'success'
+                );
+            }
+        } catch (error) {
+            console.error('Error persisting finders:', error);
+            if (!options.silent) {
+                this.showSyncToast(
+                    this.language.t('config.dashboardSyncFailed'),
+                    'error'
+                );
+            }
+            throw error;
+        }
+    }
+
+    moveFinderById(finderId, direction) {
+        const index = this.findersData.findIndex((f) => f.id === finderId);
+        if (index < 0) return;
+        const swap = direction === 'up' ? index - 1 : index + 1;
+        if (swap < 0 || swap >= this.findersData.length) return;
+        const order = [...this.findersData];
+        [order[index], order[swap]] = [order[swap], order[index]];
+        this.findersData = order;
+        this.finders.refresh(this);
+        const focusEl = document.querySelector(`.finder-item[data-finder-id="${finderId}"]`);
+        focusEl?.focus?.();
+        this.handleFindersReordered(this.findersData);
     }
 
     moveCategoryById(categoryId, direction) {
@@ -2571,9 +2858,23 @@ class ConfigManager {
         for (let i = 0; i < sel.options.length; i++) {
             if (String(sel.options[i].value) === want) {
                 sel.selectedIndex = i;
-                if (typeof this.refreshCustomSelects === 'function') {
-                    this.refreshCustomSelects();
-                }
+                sel.__customSelectInstance?.refresh?.();
+                return;
+            }
+        }
+    }
+
+    /** Keep native + custom #categories-page-selector aligned with the categories page we loaded. */
+    syncCategoriesPageSelectorUI(pageId) {
+        const sel = document.getElementById('categories-page-selector');
+        if (!sel || !sel.options?.length) {
+            return;
+        }
+        const want = String(Number(pageId));
+        for (let i = 0; i < sel.options.length; i++) {
+            if (String(sel.options[i].value) === want) {
+                sel.selectedIndex = i;
+                sel.__customSelectInstance?.refresh?.();
                 return;
             }
         }
@@ -3457,8 +3758,22 @@ class ConfigManager {
             });
         }
 
-        const addFinderBtn = document.getElementById('add-finder-btn');
-        if (addFinderBtn) addFinderBtn.addEventListener('click', () => this.addFinder());
+        if (!this._findersAddDelegationBound) {
+            this._findersAddDelegationBound = true;
+            document.addEventListener('click', (e) => {
+                const btn = e.target?.closest?.('#add-finder-btn');
+                if (!btn || btn.disabled) {
+                    return;
+                }
+                const findersPanel = document.querySelector('[data-tab-content="finders"]');
+                if (!findersPanel?.classList.contains('active')) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                void this.addFinder();
+            }, true);
+        }
 
         const addCollectionBtn = document.getElementById('add-collection-btn');
         if (addCollectionBtn) addCollectionBtn.addEventListener('click', () => {
@@ -3472,18 +3787,14 @@ class ConfigManager {
                 if (!Number.isFinite(pid)) {
                     return;
                 }
-                this.currentCategoriesPageId = pid;
-                const categoriesSelector = document.getElementById('categories-page-selector');
-                if (categoriesSelector) {
-                    categoriesSelector.value = String(pid);
-                }
+                this.saveLastCategoryFilterForPage(this.currentPageId, this.currentBookmarksCategoryFilter);
+                this.currentBookmarksCategoryFilter = this.getLastCategoryFilterForPage(pid);
                 this.currentBookmarksSearch = '';
                 const searchEl = document.getElementById('bookmarks-search');
                 if (searchEl) searchEl.value = '';
                 const clearEl = document.getElementById('bookmarks-search-clear');
                 if (clearEl) clearEl.hidden = true;
                 await this.loadPageBookmarks(e.target.value);
-                await this.loadPageCategories(pid);
                 this.renderStructureWorkspace();
             });
         }
@@ -3513,7 +3824,15 @@ class ConfigManager {
         if (bookmarksFilterSelector) {
             bookmarksFilterSelector.addEventListener('change', (e) => {
                 this.currentBookmarksCategoryFilter = e.target.value;
+                this.saveLastCategoryFilterForPage(this.currentPageId, this.currentBookmarksCategoryFilter);
+                if (
+                    this.currentBookmarksCategoryFilter &&
+                    !String(this.currentBookmarksCategoryFilter).startsWith('__')
+                ) {
+                    this.saveLastUsedCategoryIdForPage(this.currentPageId, this.currentBookmarksCategoryFilter);
+                }
                 this.refreshBookmarksList();
+                this.renderStructureWorkspace();
             });
         }
 
@@ -3555,9 +3874,24 @@ class ConfigManager {
         const categoriesPageSelector = document.getElementById('categories-page-selector');
         if (categoriesPageSelector) {
             categoriesPageSelector.addEventListener('change', async (e) => {
-                await this.flushCategoriesPageBeforeSwitch();
-                this.currentCategoriesPageId = parseInt(e.target.value, 10);
-                await this.loadPageCategories(e.target.value);
+                const nextPageId = parseInt(String(e.target.value), 10);
+                if (!Number.isFinite(nextPageId)) {
+                    return;
+                }
+                if (Number(nextPageId) === Number(this.currentCategoriesPageId)) {
+                    return;
+                }
+
+                const flushed = await this.flushCategoriesPageBeforeSwitch();
+                if (!flushed) {
+                    this.syncCategoriesPageSelectorUI(this.currentCategoriesPageId);
+                    return;
+                }
+
+                this.currentCategoriesPageId = nextPageId;
+                this.saveLastCategoriesPageId(nextPageId);
+                await this.loadPageCategories(nextPageId);
+                this.syncCategoriesPageSelectorUI(nextPageId);
             });
         }
 
@@ -3984,6 +4318,7 @@ class ConfigManager {
                 const validationError = this.validateCategoriesData(categoriesForSelectedPage);
                 if (validationError) {
                     this.ui.showNotification(validationError, 'error');
+                    await this.loadPageCategories(this.currentCategoriesPageId);
                     return;
                 }
                 this.categoriesData = categoriesForSelectedPage;
@@ -4019,7 +4354,11 @@ class ConfigManager {
                 }
             }
 
-            await this.refreshStructureDependentUI();
+            const categoriesPageId = Number(this.currentCategoriesPageId);
+            await this.refreshCategoriesDependentUI();
+            this.currentCategoriesPageId = categoriesPageId;
+            this.saveLastCategoriesPageId(categoriesPageId);
+            this.syncCategoriesPageSelectorUI(categoriesPageId);
             this.signalDashboardReload(options.eventType || 'category-updated');
             this.syncSnapshotAfterStructurePersist();
             if (!options.silent) {
@@ -4039,17 +4378,38 @@ class ConfigManager {
         }
     }
 
+    async refreshCategoriesDependentUI() {
+        const categoriesPageId = this.resolvePageId(
+            this.currentCategoriesPageId,
+            this.getVisiblePages()
+        );
+        this.currentCategoriesPageId = categoriesPageId;
+
+        await this.loadPageCategories(categoriesPageId);
+        this.syncCategoriesPageSelectorUI(categoriesPageId);
+
+        if (Number(this.currentPageId) === categoriesPageId) {
+            this.bookmarksPageCategories = this.categoriesData.map((cat) => ({ ...cat }));
+            this.refreshBookmarksFilterOptions();
+        }
+
+        this.renderStructureWorkspace();
+    }
+
     async refreshStructureDependentUI() {
         const previousPageId = Number(this.currentPageId) || 1;
-        const previousCategoriesPageId = Number(this.currentCategoriesPageId) || previousPageId;
+        const previousCategoriesPageId = Number(this.currentCategoriesPageId) || this.getDefaultCategoriesPageId();
         const selectedPageExists = this.pagesData.some((page) => Number(page.id) === previousPageId);
         const selectedCategoriesPageExists = this.pagesData.some((page) => Number(page.id) === previousCategoriesPageId);
 
         this.currentPageId = selectedPageExists ? previousPageId : (this.pagesData[0]?.id || 1);
-        this.currentCategoriesPageId = selectedCategoriesPageExists ? previousCategoriesPageId : this.currentPageId;
+        this.currentCategoriesPageId = selectedCategoriesPageExists
+            ? previousCategoriesPageId
+            : this.getDefaultCategoriesPageId();
 
         await this.loadPageBookmarks(this.currentPageId);
         await this.loadPageCategories(this.currentCategoriesPageId);
+        this.syncCategoriesPageSelectorUI(this.currentCategoriesPageId);
         this.renderConfig();
         this.initReordering();
     }
@@ -4368,8 +4728,15 @@ class ConfigManager {
     }
 
     captureUndoSnapshot() {
+        const allBookmarkPages = {};
+        if (this.bookmarkStore?._byPage) {
+            for (const [pageId, list] of this.bookmarkStore._byPage) {
+                allBookmarkPages[pageId] = JSON.parse(JSON.stringify(list || []));
+            }
+        }
         return {
             bookmarksData: JSON.parse(JSON.stringify(this.bookmarksData || [])),
+            allBookmarkPages,
             categoriesData: JSON.parse(JSON.stringify(this.categoriesData || [])),
             findersData: JSON.parse(JSON.stringify(this.findersData || [])),
             settingsData: JSON.parse(JSON.stringify(this.settingsData || {})),
@@ -4383,7 +4750,13 @@ class ConfigManager {
     restoreUndoSnapshot(snapshot) {
         if (!snapshot) return;
         this.suppressDirtyTracking = true;
-        this.bookmarksData = snapshot.bookmarksData;
+        if (snapshot.allBookmarkPages && Object.keys(snapshot.allBookmarkPages).length > 0 && this.bookmarkStore?._byPage) {
+            for (const [pageId, list] of Object.entries(snapshot.allBookmarkPages)) {
+                this.bookmarkStore.setPage(Number(pageId), list);
+            }
+        } else {
+            this.bookmarksData = snapshot.bookmarksData;
+        }
         this.categoriesData = snapshot.categoriesData;
         this.findersData = snapshot.findersData;
         this.settingsData = snapshot.settingsData;
@@ -4399,19 +4772,35 @@ class ConfigManager {
         this.markDirty();
     }
 
-    showUndoNotification(message, snapshot = null) {
+    showUndoNotification(message, snapshot = null, options = {}) {
         const activeSnapshot = snapshot || this.captureUndoSnapshot();
         if (!activeSnapshot) return;
         this.undoSnapshot = activeSnapshot;
         this.setDirtyState(this.isDirty);
         this.ui.showNotification(message, 'warning', {
-            actionLabel: 'Undo',
+            actionLabel: this.language.t('config.undoShort') || 'Undo',
             durationMs: 8000,
             onAction: () => {
-                this.restoreUndoSnapshot(this.undoSnapshot);
-                this.undoSnapshot = null;
-                this.setDirtyState(this.isDirty);
-                this.ui.showNotification('Undone.', 'success');
+                void (async () => {
+                    this.restoreUndoSnapshot(this.undoSnapshot);
+                    this.undoSnapshot = null;
+                    if (options.persistTags && this.persistTagsChanges) {
+                        try {
+                            await this.persistTagsChanges({ silent: true });
+                        } catch {
+                            // restoreUndoSnapshot already marked dirty for manual save
+                        }
+                    }
+                    if (options.persistFinders && this.persistFindersChanges) {
+                        try {
+                            await this.persistFindersChanges({ silent: true });
+                        } catch {
+                            // restoreUndoSnapshot already marked dirty for manual save
+                        }
+                    }
+                    this.setDirtyState(this.isDirty);
+                    this.ui.showNotification(this.language.t('config.undone') || 'Undone.', 'success');
+                })();
             }
         });
     }
@@ -4805,19 +5194,19 @@ class ConfigManager {
                 }
                 categoriesSelector.appendChild(option);
             });
-            if (!catMatched && categoriesSelector.options.length > 0) {
-                categoriesSelector.options[0].selected = true;
-                this.currentCategoriesPageId = Number(categoriesSelector.options[0].value);
+            if (catMatched) {
+                categoriesSelector.value = String(wantCatPage);
+            } else if (categoriesSelector.options.length > 0) {
+                categoriesSelector.value = categoriesSelector.options[0].value;
+                this.currentCategoriesPageId = Number(categoriesSelector.value);
             }
-            if (categoriesSelector.__customSelectInstance) {
-                categoriesSelector.__customSelectInstance.refresh();
-            }
+            categoriesSelector.__customSelectInstance?.refresh?.();
         }
 
         this.refreshBookmarksFilterOptions();
         this.refreshBookmarksList();
         this.renderStructureWorkspace();
-        this.finders.render(this.findersData);
+        this.finders.refresh(this);
         this.refreshCustomSelects();
         this.refreshPageDropdowns();
         if (this.collections) this.collections.refresh(this);
@@ -4880,10 +5269,6 @@ class ConfigManager {
         );
 
         this.refreshBookmarksList();
-
-        this.finders.initReorder(this.findersData, (newFinders) => {
-            this.findersData = newFinders;
-        });
     }
 
     async addPage(options = {}) {
@@ -4943,15 +5328,40 @@ class ConfigManager {
     async addCategory() {
         if (!this.categoriesData) this.categoriesData = [];
 
-        this.categories.add(this.categoriesData, this.generateId.bind(this));
+        const categoriesPageId = Number(this.currentCategoriesPageId) || this.getDefaultCategoriesPageId();
+
+        const newCategory = this.categories.add(
+            this.categoriesData,
+            this.generateId.bind(this),
+            () => this.generateStableCategoryId()
+        );
+        if (!newCategory) return;
+
         this.renderCategoriesList();
         await this.persistCategoriesStructureAndRefresh({ eventType: 'category-added' });
+        this.currentCategoriesPageId = categoriesPageId;
+        this.saveLastCategoriesPageId(categoriesPageId);
+        this.syncCategoriesPageSelectorUI(categoriesPageId);
+        this.saveLastUsedCategoryIdForPage(categoriesPageId, newCategory.id);
         this.renderStructureWorkspace();
+
+        requestAnimationFrame(() => {
+            const row = document.querySelector(`.category-item[data-category-id="${newCategory.id}"]`);
+            const nameInput = row?.querySelector('input[data-field="name"]');
+            nameInput?.focus?.();
+            nameInput?.select?.();
+            row?.scrollIntoView?.({ block: 'nearest' });
+        });
     }
 
     addBookmark() {
         const filterValue = this.currentBookmarksCategoryFilter || '__all__';
-        const preferredCategory = (filterValue !== '__all__' && filterValue !== '__none__') ? filterValue : '';
+        let preferredCategory = '';
+        if (filterValue !== '__all__' && filterValue !== '__none__' && !String(filterValue).startsWith('__')) {
+            preferredCategory = filterValue;
+        } else {
+            preferredCategory = this.getLastUsedCategoryIdForPage(this.currentPageId) || '';
+        }
         const newBookmark = this.bookmarks.add(this.bookmarksData, { preferredCategory });
         this.warnDuplicateUrl(newBookmark.url);
         const newIndex = this.bookmarksData.length - 1;
@@ -4965,13 +5375,58 @@ class ConfigManager {
         this.markDirty();
     }
 
-    addFinder() {
-        this.finders.add(this.findersData);
-        this.finders.render(this.findersData);
-        this.finders.initReorder(this.findersData, (newFinders) => {
-            this.findersData = newFinders;
-        });
-        this.markDirty();
+    async addFinder() {
+        try {
+            if (!this.finders || typeof this.finders.add !== 'function') {
+                this.ui.showNotification(
+                    this.language.t('config.findersModuleUnavailable') || 'Finders could not load. Refresh the page and try again.',
+                    'error'
+                );
+                return;
+            }
+
+            this.cancelPendingFindersTabReload();
+            if (!Array.isArray(this.findersData)) {
+                this.findersData = [];
+            } else if (!Object.isExtensible(this.findersData)) {
+                this.findersData = [...this.findersData];
+            }
+
+            this.finders.clearFilter?.();
+
+            const newFinder = this.finders.add(this.findersData, this.generateId.bind(this));
+            if (!newFinder) {
+                this.ui.showNotification(
+                    this.language.t('config.finderAddFailed') || 'Could not add finder. Refresh the page and try again.',
+                    'error'
+                );
+                return;
+            }
+
+            this.finders.refresh(this);
+            this.markDirty();
+
+            requestAnimationFrame(() => {
+                document.querySelector(`.finder-item[data-finder-id="${newFinder.id}"] input[data-field="name"]`)?.focus?.();
+                document.querySelector(`.finder-item[data-finder-id="${newFinder.id}"]`)?.scrollIntoView?.({ block: 'nearest' });
+            });
+
+            try {
+                await this.persistFindersChanges({
+                    silent: true,
+                    eventType: 'finder-added',
+                    skipUiRefresh: true
+                });
+            } catch (error) {
+                console.warn('Finder added in UI; background save failed:', error);
+            }
+        } catch (error) {
+            console.error('addFinder failed:', error);
+            this.ui.showNotification(
+                this.language.t('config.finderAddFailed') || 'Could not add finder. Refresh the page and try again.',
+                'error'
+            );
+        }
     }
 
     async removePage(index) {
@@ -5250,15 +5705,30 @@ class ConfigManager {
     }
 
     async removeFinder(index) {
+        const finder = this.findersData[index];
+        if (!finder?.id) return;
+        await this.removeFinderById(finder.id);
+    }
+
+    async removeFinderById(finderId) {
         const undoSnapshot = this.captureUndoSnapshot();
-        const removed = await this.finders.remove(this.findersData, index);
-        if (removed) {
-            this.finders.render(this.findersData);
-            this.finders.initReorder(this.findersData, (newFinders) => {
-                this.findersData = newFinders;
-            });
-            this.showUndoNotification('Finder removed.', undoSnapshot);
-            this.markDirty();
+        const removed = await this.finders.removeById(this.findersData, finderId);
+        if (!removed) return;
+
+        try {
+            await this.persistFindersChanges({ silent: true, eventType: 'finder-removed' });
+            this.showUndoNotification(
+                this.language.t('config.finderRemoved') || 'Finder removed.',
+                undoSnapshot,
+                { persistFinders: true }
+            );
+        } catch (error) {
+            this.restoreUndoSnapshot(undoSnapshot);
+            this.undoSnapshot = null;
+            this.ui.showNotification(
+                this.language.t('config.finderRemoveFailed') || 'Failed to remove finder. Changes reverted.',
+                'error'
+            );
         }
     }
 
@@ -5406,13 +5876,13 @@ class ConfigManager {
                 }
                 catSel.appendChild(opt);
             });
-            if (!catMatched && catSel.options.length > 0) {
-                catSel.options[0].selected = true;
-                this.currentCategoriesPageId = Number(catSel.options[0].value);
+            if (catMatched) {
+                catSel.value = String(wantCatPage);
+            } else if (catSel.options.length > 0) {
+                catSel.value = catSel.options[0].value;
+                this.currentCategoriesPageId = Number(catSel.value);
             }
-            if (catSel.__customSelectInstance) {
-                catSel.__customSelectInstance.refresh();
-            }
+            catSel.__customSelectInstance?.refresh?.();
         }
 
         // Settings tab smart-collection page selectors
@@ -5563,15 +6033,19 @@ class ConfigManager {
             button.className = `structure-list-item${Number(page.id) === Number(this.currentPageId) ? ' is-active' : ''}`;
             button.textContent = page.name;
             button.addEventListener('click', async () => {
-                await this.flushCategoriesPageBeforeSwitch();
-                this.currentPageId = Number(page.id);
-                this.currentCategoriesPageId = Number(page.id);
-                const pageSelector = document.getElementById('page-selector');
-                if (pageSelector) pageSelector.value = String(page.id);
-                const categoriesSelector = document.getElementById('categories-page-selector');
-                if (categoriesSelector) categoriesSelector.value = String(page.id);
-                await this.loadPageBookmarks(page.id);
-                await this.loadPageCategories(page.id);
+                const targetPageId = Number(page.id);
+                const flushed = await this.flushCategoriesPageBeforeSwitch();
+                if (!flushed) {
+                    this.syncCategoriesPageSelectorUI(this.currentCategoriesPageId);
+                    return;
+                }
+                this.currentPageId = targetPageId;
+                this.currentCategoriesPageId = targetPageId;
+                this.saveLastCategoriesPageId(targetPageId);
+                this.syncBookmarksPageSelectorUI(targetPageId);
+                this.syncCategoriesPageSelectorUI(targetPageId);
+                await this.loadPageBookmarks(targetPageId);
+                await this.loadPageCategories(targetPageId);
                 this.renderStructureWorkspace();
             });
             pagesList.appendChild(button);
@@ -5603,6 +6077,8 @@ class ConfigManager {
             button.textContent = category.name;
             button.addEventListener('click', () => {
                 this.currentBookmarksCategoryFilter = category.id;
+                this.saveLastCategoryFilterForPage(this.currentPageId, category.id);
+                this.saveLastUsedCategoryIdForPage(this.currentPageId, category.id);
                 const filterSelect = document.getElementById('bookmarks-category-filter');
                 if (filterSelect) filterSelect.value = category.id;
                 this.refreshBookmarksList();
@@ -5983,6 +6459,14 @@ class ConfigManager {
         if (conflicts.hasConflicts) {
             return;
         }
+        const finderValidationError = this.validateFindersData();
+        if (finderValidationError) {
+            this.ui.showNotification(finderValidationError, 'error');
+            return;
+        }
+        this.findersData = window.ConfigFinders?.normalizeFinders
+            ? window.ConfigFinders.normalizeFinders(this.findersData, this.generateId.bind(this))
+            : this.findersData;
         const changeScope = this.getPendingChangeScope();
         const showSaveToasts = changeScope.hasStructuralChanges || !changeScope.settingsOnly;
         const saveStatus = document.getElementById('save-status-indicator');
@@ -6056,7 +6540,7 @@ class ConfigManager {
                 // keep previous store state
             }
             this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
-            if (this.stats && window.location.hash === '#stats') {
+            if (this.stats && this.isConfigStatsTabActive()) {
                 this.stats.refresh(this);
             }
         } catch (error) {

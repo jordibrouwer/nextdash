@@ -314,15 +314,151 @@
       ]
     },
     {
+      "title": "Config → Tags",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Cross-page data</strong> — tag map and drill-down read all bookmark pages; <strong>Open</strong> loads the correct page via <code>pageId</code> + <code>findByUrl</code> (not URL-only on the current page)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Auto-save</strong> — rename, merge, delete, and per-bookmark tag removal debounce ~600&nbsp;ms with a localized dashboard-sync toast; undo restores all pages and re-persists."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Filter &amp; list</strong> — filter narrows cloud and list; clear button and <code>Escape</code>; compact empty-filter hint; full-height scrollable list (bookmarks-style viewport)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Drill-down</strong> — page name, category, <strong>Open</strong>, <strong>− tag</strong>, show-all for large sets; <strong>Search</strong> opens Bookmarks with <code>tag:</code> filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Rename guard &amp; keyboard</strong> — inline rename survives background re-renders; <strong>↑</strong> / <strong>↓</strong> moves focus between tag rows; mobile guard; settings search + tour a11y polish."
+        }
+      ]
+    },
+    {
+      "title": "Config → Finders",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>DragReorder guard</strong> — <strong>+ Add finder</strong> no longer fails when reorder cleanup runs on a null container."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Filter</strong> — search finders by name, shortcut, URL, or tags; <strong>✕</strong> and <code>Escape</code> clear."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>List &amp; reorder</strong> — bookmarks-style rows with drag handle; <strong>↑</strong> / <strong>↓</strong> keyboard reorder; debounced auto-save (~600&nbsp;ms) with localized sync toast."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Usage stats</strong> — per-finder use count and last-used date refresh when the tab opens."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Stable ids</strong> — <code>normalizeFinders()</code> assigns unique ids; duplicate shortcuts highlighted inline; save blocked until resolved."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Polish</strong> — dedicated CSS; mobile guard; settings search indexes filter and actions; tour a11y."
+        }
+      ]
+    },
+    {
+      "title": "Config → Backups",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Finders in ZIP</strong> — <code>finders.json</code> always written from the store snapshot on backup."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Import safety</strong> — when a ZIP omits <code>finders.json</code>, existing finders are preserved (not deleted as orphans)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Template i18n</strong> — intro, section titles, and hints in EN / NL / DE / FR."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Import preview</strong> — localized page/bookmark count summary instead of hardcoded English."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Import UX</strong> — case-insensitive <code>.zip</code>; <code>window.confirm</code> fallback when <code>AppModal</code> is unavailable."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>CSV export</strong> — localized column headers, resolved category display names, <strong>Tags</strong> and <strong>Notes</strong> columns."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings search</strong> — backups intro, ZIP/CSV/browser actions indexed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help &amp; tips</strong> — rotating tips and help text point to <strong>config → backups</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Config → Stats",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Insights</strong> — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with jump links."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Finders section</strong> — finder totals and top-20 table by <code>useCount</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Refresh &amp; Export CSV</strong> — reload stats in-tab; multi-section CSV export respects active period filters."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Table filter</strong> — one search field filters rows across all stats tables; match count hint."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Row navigation</strong> — click (or <code>Enter</code>) a bookmark row to open it in <strong>Config → Bookmarks</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mobile chip-nav</strong> — horizontal scroll chips replace the sidebar index on narrow screens."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Honest period labels</strong> — opens columns describe lifetime <code>openCount</code> for bookmarks active in the period; sparkline hint clarifies bookmark counts per bucket."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Accessibility</strong> — <code>aria-pressed</code> on period buttons; sparkline <code>aria-label</code> + screen-reader table; ℹ buttons get <code>aria-label</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Refresh reliability</strong> — <code>IntersectionObserver</code> disconnected on re-render; post-save refresh uses active stats tab (not hash-only)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>i18n &amp; data</strong> — localized yes/no; <strong>Tags</strong> tour strings in all locales; period filter on top-tagged; duplicate URL detail list; cleanup score bar resets when empty."
+        }
+      ]
+    },
+    {
       "title": "Documentation",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>README &amp; MANUAL</strong> — Config → Theme editor (packaged themes, export/import, undo), Pages (reorder, archive, keyboard), and Categories (reorder, merge counts, page flush) documented for v2026.06.17."
+          "text": "<strong>README &amp; MANUAL</strong> — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), and Stats (insights, filter, export, row navigation, chip-nav, honest labels) documented for v2026.06.17."
         },
         {
           "badge": "fix",
-          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap extended with Theme, Pages, and Categories polish under v2026.06.17."
+          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap extended with Finders, Backups, and Stats polish under v2026.06.17."
         }
       ]
     },
@@ -331,7 +467,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v66</code> data version; Config Theme (<code>colors.js</code>, <code>color-value-utils.js</code>), Pages (<code>config-pages.js</code>), and Categories (<code>config-categories.js</code>) assets plus existing General/dashboard query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v68</code> data version; Config Finders (<code>config-finders.js</code>, <code>config-finders.css</code>), Backups (<code>config-backup.js</code>), Stats (<code>config-stats.js</code>, <code>config-stats.css</code>), Tags (<code>config-tags.js</code>), and <code>reorder.js</code> assets plus existing General/dashboard query strings updated for Docker-mounted static files."
         }
       ]
     }

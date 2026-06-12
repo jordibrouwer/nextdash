@@ -2783,7 +2783,7 @@ class Dashboard {
             ['tipAddTagsConfig', 'Tip: add tags to bookmarks in <code>config</code> → bookmarks'],
             ['tipDynamicCollections', 'Tip: create dynamic collections in <code>config</code> → collections'],
             ['tipTagCollections', 'Tip: enable tag collections in <code>config</code> → general → Smart Collections'],
-            ['tipBackupsConfig', 'Tip: backups under <code>config</code> → general → Backup & restore'],
+            ['tipBackupsConfig', 'Tip: backups under <code>config</code> → backups'],
             ['tipCollapseCategory', 'Tip: click a category header to collapse or expand it'],
             ['tipGlobalShortcuts', 'Tip: global shortcuts from all pages in <code>config</code> → general → Dashboard'],
             ['tipLayoutPreset', 'Tip: layout preset & density in <code>config</code> → general → Basics'],

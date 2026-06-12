@@ -225,13 +225,61 @@ class ConfigBackup {
         return names;
     }
 
+    resolveZipFile(zip, normalizedName) {
+        const direct = zip.file(normalizedName);
+        if (direct && !direct.dir) {
+            return direct;
+        }
+        for (const entry of Object.values(zip.files)) {
+            if (!entry || entry.dir) {
+                continue;
+            }
+            if (this.normalizeZipEntryName(entry.name) === normalizedName) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    async buildCategoryNameMap(pages) {
+        const map = {};
+        const list = Array.isArray(pages) ? pages : [];
+        await Promise.all(list.map(async (page) => {
+            try {
+                const res = await fetch(`/api/categories?page=${page.id}`);
+                if (!res.ok) return;
+                const categories = await res.json();
+                if (!Array.isArray(categories)) return;
+                categories.forEach((cat) => {
+                    if (!cat?.id) return;
+                    map[`${page.id}:${cat.id}`] = cat.name || cat.id;
+                });
+            } catch {
+                /* skip page */
+            }
+        }));
+        return map;
+    }
+
+    resolveCategoryDisplayName(bookmark, categoryNames) {
+        const pageId = bookmark?.pageId;
+        const categoryId = bookmark?.category;
+        if (pageId != null && categoryId) {
+            const key = `${pageId}:${categoryId}`;
+            if (categoryNames[key]) {
+                return categoryNames[key];
+            }
+        }
+        return categoryId || '';
+    }
+
     /**
      * Handle the selected import file
      * @param {File} file
      */
     async handleImportFile(file) {
         try {
-            if (!file.name.endsWith('.zip')) {
+            if (!/\.zip$/i.test(file.name || '')) {
                 if (typeof configManager !== 'undefined' && configManager.ui) {
                     configManager.ui.showNotification(this.t('config.importInvalidFile'), 'error');
                 }
@@ -265,12 +313,17 @@ class ConfigBackup {
             let totalBookmarks = 0;
             for (const fileName of bookmarkFiles) {
                 try {
-                    const content = await zip.file(fileName).async('string');
+                    const zipEntry = this.resolveZipFile(zip, fileName);
+                    if (!zipEntry) continue;
+                    const content = await zipEntry.async('string');
                     const parsed = JSON.parse(content);
                     totalBookmarks += Array.isArray(parsed.bookmarks) ? parsed.bookmarks.length : 0;
                 } catch { /* skip unreadable files */ }
             }
             const pageCount = bookmarkFiles.length;
+            const previewLine = (this.t('config.importConfirmPreview') || '{pageCount} pages, {bookmarkCount} bookmarks')
+                .replace('{pageCount}', String(pageCount))
+                .replace('{bookmarkCount}', String(totalBookmarks));
 
             let confirmed = false;
             if (window.AppModal) {
@@ -279,8 +332,7 @@ class ConfigBackup {
                     htmlMessage: `
                         <p>${this.t('config.importConfirmMessage')}</p>
                         <p style="margin-top:0.75rem;opacity:0.8;font-size:0.9em;">
-                            ${pageCount} page${pageCount !== 1 ? 's' : ''},
-                            ${totalBookmarks} bookmark${totalBookmarks !== 1 ? 's' : ''}
+                            ${previewLine}
                         </p>`,
                     confirmText: this.t('config.importConfirm'),
                     cancelText: this.t('config.cancelImport'),
@@ -327,16 +379,27 @@ class ConfigBackup {
 
             const bookmarks = await bookmarksRes.json();
             const pages = await pagesRes.json();
-            const pageNames = Object.fromEntries(pages.map(p => [p.id, p.name]));
+            const pageNames = Object.fromEntries(pages.map((p) => [p.id, p.name]));
+            const categoryNames = await this.buildCategoryNameMap(pages);
 
             const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-            const header = ['Name', 'URL', 'Category', 'Page', 'Shortcut'].map(escape).join(',');
-            const rows = bookmarks.map(bm => [
+            const header = [
+                this.t('config.csvColName') || 'Name',
+                this.t('config.csvColUrl') || 'URL',
+                this.t('config.csvColCategory') || 'Category',
+                this.t('config.csvColPage') || 'Page',
+                this.t('config.csvColShortcut') || 'Shortcut',
+                this.t('config.csvColTags') || 'Tags',
+                this.t('config.csvColNotes') || 'Notes',
+            ].map(escape).join(',');
+            const rows = bookmarks.map((bm) => [
                 escape(bm.name),
                 escape(bm.url),
-                escape(bm.category),
+                escape(this.resolveCategoryDisplayName(bm, categoryNames)),
                 escape(pageNames[bm.pageId] ?? bm.pageId ?? ''),
-                escape(bm.shortcut)
+                escape(bm.shortcut),
+                escape(Array.isArray(bm.tags) ? bm.tags.join(', ') : ''),
+                escape(bm.note || ''),
             ].join(','));
 
             const csv = '﻿' + [header, ...rows].join('\r\n');
@@ -545,7 +608,15 @@ class ConfigBackup {
             noNew: currentPlan.newCount === 0,
         });
 
-        if (!window.AppModal) return;
+        if (!window.AppModal) {
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(
+                    this.t('config.browserImportModalUnavailable') || 'Could not open the import dialog. Refresh the page and try again.',
+                    'error'
+                );
+            }
+            return;
+        }
 
         let importPlan = currentPlan;
         const confirmed = await new Promise((resolve) => {
@@ -762,14 +833,19 @@ class ConfigBackup {
             }
             return;
         }
+        const settingsConfirmMessage = this.t('config.settingsImportConfirmMessage')
+            || 'This will overwrite your current settings. Continue?';
+        let confirmed = false;
         if (window.AppModal) {
-            const confirmed = await window.AppModal.danger({
+            confirmed = await window.AppModal.danger({
                 title: this.t('config.settingsImportConfirmTitle') || 'Import Settings',
-                message: this.t('config.settingsImportConfirmMessage') || 'This will overwrite your current settings. Continue?',
+                message: settingsConfirmMessage,
                 confirmText: this.t('config.settingsImportConfirm') || 'Import',
             });
-            if (!confirmed) return;
+        } else {
+            confirmed = window.confirm(settingsConfirmMessage);
         }
+        if (!confirmed) return;
         await this._doSettingsImport(parsed);
     }
 

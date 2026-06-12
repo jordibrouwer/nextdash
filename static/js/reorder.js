@@ -427,6 +427,9 @@ class DragReorder {
 
     // Public method to destroy the instance
     destroy() {
+        if (!this.container) {
+            return;
+        }
         this.enablePageScroll();
         this.removeAllPlaceholders();
         this.container.classList.remove('reorder-container');

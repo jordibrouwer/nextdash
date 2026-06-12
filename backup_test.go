@@ -267,3 +267,24 @@ func TestCommitPreparedImportRemovesOrphans(t *testing.T) {
 		t.Fatalf("keep.png content = %q err=%v", keep, err)
 	}
 }
+
+func TestRemoveImportOrphansPreservesFindersWhenMissing(t *testing.T) {
+	dataDir := t.TempDir()
+	findersPath := filepath.Join(dataDir, "finders.json")
+	if err := os.WriteFile(findersPath, []byte(`[{"id":"finder-1","name":"Test"}]`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "settings.json"), []byte(`{}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	prepared := []preparedImportFile{
+		{relPath: "settings.json", content: []byte(`{"theme":"new"}`)},
+	}
+	if err := removeImportOrphans(dataDir, prepared); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(findersPath); err != nil {
+		t.Fatalf("finders.json should be preserved when import ZIP omits it: %v", err)
+	}
+}

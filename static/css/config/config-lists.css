@@ -333,7 +333,8 @@
     border-color: var(--text-secondary);
 }
 
-.finder-item input[name="shortcut"] {
+.finder-item input[data-field="shortcut"],
+.finder-item .finder-shortcut-input {
     flex: 0 0 100px;
     text-align: center;
     text-transform: uppercase;

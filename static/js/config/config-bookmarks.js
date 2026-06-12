@@ -647,6 +647,12 @@ class ConfigBookmarks {
 
         if (catEl) catEl.addEventListener('change', (e) => {
             bookmark.category = e.target.value;
+            if (e.target.value) {
+                window.configManager?.saveLastUsedCategoryIdForPage?.(
+                    window.configManager?.currentPageId,
+                    e.target.value
+                );
+            }
             this._syncRow(index, bookmark);
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });

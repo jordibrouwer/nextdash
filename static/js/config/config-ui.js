@@ -128,8 +128,12 @@ class ConfigUI {
                         void mgr.onConfigPagesTabOpened();
                     }
                 }
-                if (targetTab === 'categories' && typeof mgr.onConfigCategoriesTabOpened === 'function') {
-                    void mgr.onConfigCategoriesTabOpened();
+                if (targetTab === 'categories') {
+                    if (typeof mgr.onConfigCategoriesTabOpened === 'function') {
+                        void mgr.onConfigCategoriesTabOpened();
+                    } else {
+                        void mgr.syncCategoriesTabToCurrentPage?.();
+                    }
                 } else if (targetTab === 'stats' && mgr.stats) {
                     mgr.stats.refresh(mgr);
                     window.ConfigSettingsSearch?.refreshIndex?.();
@@ -199,12 +203,14 @@ class ConfigUI {
                 ) {
                     mgr.scheduleConfigBookmarksTour?.();
                 }
-                if (
-                    targetTab === 'finders' &&
-                    !mgr._configFindersTourActive &&
-                    !mgr._configFindersTourStarting
-                ) {
-                    mgr.scheduleConfigFindersTour?.();
+                if (targetTab === 'finders') {
+                    if (mgr._configFindersTourActive || mgr._configFindersTourStarting) {
+                        mgr.finders?.refresh(mgr);
+                    } else if (typeof mgr.onConfigFindersTabOpened === 'function') {
+                        void mgr.onConfigFindersTabOpened();
+                    } else {
+                        void mgr.reloadFindersTabData?.();
+                    }
                 }
                 if (
                     targetTab === 'stats' &&

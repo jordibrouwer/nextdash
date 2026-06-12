@@ -49,7 +49,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.17 — June 2026
 
-**Search guards, smart-collection sync, inline-edit polish, Config → General overhaul & structure-tab hardening** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes. Config → Theme gains a packaged-themes editor, export/import, undo, scoped preview, and mobile read-only mode. Config → Pages and Categories get ID-safe remove/merge/archive, debounced reorder auto-save, keyboard ↑/↓, localized sync toasts, and mobile/search/tour polish.
+**Search guards, smart-collection sync, inline-edit polish, Config → General overhaul & structure-tab hardening** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes. Config → Theme gains a packaged-themes editor, export/import, undo, scoped preview, and mobile read-only mode. Config → Pages, Categories, and Tags get ID-safe actions, debounced auto-save, keyboard ↑/↓, cross-page tag drill-down, localized sync toasts, and mobile/search/tour polish. Config → Finders is rebuilt with filter, usage stats, keyboard reorder, and stable ids. Config → Backups always embeds finders in ZIP and preserves them on partial import; CSV export and settings-search improve. Config → Stats adds insights, finder usage, Refresh/Export CSV, table filter, row-to-editor navigation, mobile chip-nav, and honest period/open labels.
 
 ### Dashboard
 
@@ -146,14 +146,58 @@ _No unreleased changes at this time._
 - **fix** **Delete flow** — impacted bookmarks counted on the categories page even when bookmarks tab shows a different page.
 - **fix** **Validation & polish** — duplicate/empty names blocked on persist; icon autosave on blur; empty-state hint; mobile guard; settings search indexes add-category and merge; tour a11y + Escape dismiss.
 
+### Config → Tags
+
+- **fix** **Cross-page data** — tag map and drill-down use all bookmark pages; **Open** loads the correct page via `pageId` + `findByUrl` (not URL-only on the current page).
+- **new** **Auto-save** — rename, merge, delete, and per-bookmark tag removal debounce ~600 ms with localized dashboard-sync toast; undo restores all pages and re-persists.
+- **new** **Filter & list** — filter narrows cloud and list; clear button and `Escape`; compact empty-filter hint in the list; full-height scrollable list (bookmarks-style viewport).
+- **new** **Drill-down** — page name, category, **Open**, **− tag**, show-all for large tag sets; **Search** opens Bookmarks with `tag:` filter.
+- **fix** **Rename guard** — inline rename is not cleared by background re-renders during debounced save.
+- **fix** **Keyboard & polish** — ↑/↓ moves focus between tag rows; semantic `<ul>` list; i18n (EN / NL / DE / FR); mobile guard; settings search indexes filter, rename, search, delete; tour `aria-labelledby` + Escape dismiss; themed filter/rename inputs in glass/modern.
+
+### Config → Finders
+
+- **fix** **DragReorder guard** — `destroy()` no longer throws when the list container is null (fixes **+ Add finder** failing after reorder cleanup).
+- **new** **Filter** — search finders by name, shortcut, URL, or tags; **✕** and `Escape` clear.
+- **new** **List & reorder** — bookmarks-style rows with drag handle; **↑** / **↓** keyboard reorder; debounced auto-save (~600 ms) with localized sync toast.
+- **new** **Usage stats** — per-finder use count and last-used date refresh when the tab opens.
+- **new** **Stable ids** — `normalizeFinders()` assigns unique ids; duplicate shortcuts highlighted inline; save blocked until resolved.
+- **fix** **Polish** — dedicated CSS; mobile guard; settings search indexes filter and actions; tour a11y; Go model adds optional `id` field.
+
+### Config → Backups
+
+- **fix** **Finders in ZIP** — `finders.json` always written from the store snapshot on backup (not skipped as a managed root file).
+- **fix** **Import safety** — when a ZIP omits `finders.json`, existing finders are preserved (not deleted as orphans).
+- **new** **Template i18n** — intro, section titles, and hints in EN / NL / DE / FR.
+- **new** **Import preview** — localized `{pageCount}` / `{bookmarkCount}` summary instead of hardcoded English.
+- **fix** **Import UX** — case-insensitive `.zip`; `window.confirm` fallback when `AppModal` is unavailable; browser-import error when modal missing.
+- **new** **CSV export** — localized column headers, resolved category display names, **Tags** and **Notes** columns.
+- **new** **Settings search** — backups intro, ZIP/CSV/browser actions indexed.
+- **fix** **Help & tips** — rotating tips and help text point to **config → backups** (not General → Backup).
+
+### Config → Stats
+
+- **new** **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
+- **new** **Finders section** — finder totals and top-20 table by `useCount`.
+- **new** **Refresh & Export CSV** — reload stats in-tab; multi-section CSV export respects active period filters.
+- **new** **Table filter** — one search field filters rows across all stats tables; match count hint.
+- **new** **Row navigation** — click (or Enter) a bookmark row to open it in **Config → Bookmarks** detail panel.
+- **new** **Mobile chip-nav** — horizontal scroll chips replace the sidebar index on narrow screens.
+- **fix** **Honest period labels** — opens columns and activity total describe lifetime `openCount` for bookmarks active in the period; sparkline hint clarifies bookmark counts per bucket.
+- **fix** **Accessibility** — `aria-pressed` on period buttons; sparkline `aria-label` + screen-reader table; ℹ buttons get `aria-label`.
+- **fix** **Refresh reliability** — `IntersectionObserver` disconnected on re-render; post-save refresh uses active stats tab (not hash-only).
+- **fix** **i18n & tour** — Search & status uses localized yes/no; **Tags** tour strings in all locales; dynamic opens column headers when a period is active.
+- **fix** **Data display** — period filter on top-tagged bookmarks; duplicate URL detail list in conflicts; cleanup score bar resets when library is empty.
+- **fix** **Settings search** — stats section titles deduplicated; intro, Refresh, Export, and filter indexed.
+
 ### Documentation
 
-- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, overlay paste guards, Config → General layers, and Config → Theme / Pages / Categories structure-tab polish for v2026.06.17.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 dashboard search guards, smart-collection sync, General overhaul, and Theme / Pages / Categories updates.
+- **fix** **README & MANUAL** — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), and Stats (insights, filter, export, row navigation, chip-nav, honest labels) documented for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap extended with Finders, Backups, and Stats polish under v2026.06.17.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v66` data version; Config Theme (`colors.js`, `color-value-utils.js`), Pages (`config-pages.js`), and Categories (`config-categories.js`) assets plus existing General/dashboard query strings updated for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v68` data version; Config Finders (`config-finders.js`, `config-finders.css`), Backups (`config-backup.js`), Stats (`config-stats.js`, `config-stats.css`), Tags (`config-tags.js`), and `reorder.js` assets plus existing General/dashboard query strings updated for Docker-mounted static files.
 
 ---
 

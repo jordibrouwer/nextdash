@@ -441,7 +441,13 @@ Search **all pages**; each result shows which page it belongs to.
 
 Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https://www.google.com/search?q=%s`.
 
-Configure finders in **config → finders**.
+Configure finders in **config → finders** (desktop):
+
+- **Filter** — narrow the list by name, shortcut, URL, or tags; **✕** or `Escape` clears.
+- **Reorder** — drag the grip or press **↑** / **↓** on a focused row; order auto-saves after ~600 ms with a localized sync toast.
+- **Usage stats** — each row shows use count and last-used date (refreshed when you open the tab).
+- **Stable ids** — remove/reorder cannot target the wrong row; duplicate shortcuts are highlighted and block save until resolved.
+- Use `%s` in the search URL where the query is inserted (e.g. `https://www.google.com/search?q=%s`).
 
 ### 10.7 In-page filter (`:find`)
 
@@ -502,7 +508,14 @@ Click category header or chevron. **Always collapse categories** can be set in g
 - **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
 - **Dashboard tag cloud (desktop):** `/` or / FAB — filters **dashboard tiles**; keyboard navigation; Clear returns focus to bookmarks.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
-- **config → tags**: rename, merge, delete, tag cloud overview.  
+- **config → tags** (desktop): global tag management across all pages.  
+  - **Tag cloud:** size reflects usage; click a chip to scroll to that tag in the list.  
+  - **List:** each row shows bookmark count; click the label or count to expand a drill-down with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
+  - **Rename** merges into an existing tag when the new name already exists (with confirmation).  
+  - **Search** opens Bookmarks with `tag:name` in the filter.  
+  - **Filter** narrows the cloud and list; **✕** or **Escape** clears it; empty filter shows a short hint in the list.  
+  - **↑/↓** on a focused tag row moves between rows. Changes **save automatically** (dashboard sync toast).  
+  - **Undo** after rename/delete/remove-from-bookmark restores all pages and re-persists (cross-page safe).  
 - **Tag collections**: optional dashboard group per tag (general settings).
 
 ### Notes
@@ -659,7 +672,16 @@ The dashboard **health** link badge counts broken links and warnings (including 
 
 ### Stats (`config#stats`)
 
-Read-only analytics: activity, top bookmarks, cleanup score, **tags** (coverage, most-used tag, untagged count, per-tag tables), rot tables, duplicate/conflict links to health.
+Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar.
+
+- **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
+- **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), and sparklines. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
+- **Top bookmarks, pages, categories, shortcuts** — sortable tables; click a bookmark row (or press `Enter`) to open it in **Config → Bookmarks**.
+- **Finders** — finder totals and top-20 table by `useCount`.
+- **Tags** — coverage, most-used tag, untagged count, per-tag tables.
+- **Rot & cleanup** — stale bookmarks, cleanup score (resets when the library is empty).
+- **Conflicts** — duplicate URL detail list and shortcut conflicts with a link to **Health**.
+- **Toolbar** — **Refresh** reloads stats in-tab; **Export CSV** downloads multiple sections (respects active period filters); **Filter tables** narrows rows across all stats tables with a visible/total hint.
 
 ---
 
@@ -746,7 +768,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **config → backups → Create backup**
 
-Includes pages, bookmarks (with tags), categories, settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
+Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
 
 The panel shows **Last backup: …** after you create a ZIP (stored locally in the browser).
 
@@ -754,7 +776,7 @@ The panel shows **Last backup: …** after you create a ZIP (stored locally in t
 
 Do not rename files inside the ZIP.
 
-Import is **atomic**: files are staged, orphan icons and stale JSON are removed, then everything is committed in one step.
+Import is **atomic**: files are staged, orphan icons and stale JSON are removed, then everything is committed in one step. If the ZIP **omits** `finders.json`, your **existing finders are preserved** (not deleted as orphans).
 
 Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (read **before** bookmarks — not the server’s current setting).
 
@@ -783,7 +805,7 @@ Permanently deletes pages, categories, bookmarks, finders, settings, custom them
 
 ### CSV export
 
-All bookmarks: Name, URL, Category, Page, Shortcut — for Excel/Sheets.
+All bookmarks: localized column headers — Name, URL, Category (display name), Page, Shortcut, **Tags**, **Notes** — for Excel/Sheets.
 
 ### When to use which
 

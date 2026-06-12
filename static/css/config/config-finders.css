@@ -1,0 +1,124 @@
+/* Config → Finders tab (same list pattern as pages / categories / tags) */
+.finders-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.finders-filter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    background: color-mix(in srgb, var(--background-primary) 18%, transparent);
+}
+
+.finders-filter-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+}
+
+.finders-filter-input:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+.finders-filter-input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.finders-filter-clear {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    line-height: 1;
+}
+
+.finders-filter-clear:hover {
+    color: var(--text-primary);
+}
+
+.finders-list-empty-hint,
+.finders-filter-empty-hint {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+/* Outer shell — like .tag-item */
+.finders-body .finder-item {
+    display: block;
+    padding: 0;
+    gap: 0;
+}
+
+/* Main row — like .category-item / .tag-item-row */
+.finders-body .finder-item-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    min-width: 0;
+}
+
+.finders-body .finder-item-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.finders-body .finder-item-meta {
+    padding: 0 0.75rem 0.45rem calc(0.75rem + 1.25rem + 1rem);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary);
+    line-height: 1.3;
+}
+
+.finder-item input.field-warning {
+    border-color: var(--warning-color, #c9a227);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning-color, #c9a227) 35%, transparent);
+}
+
+.finders-body .finder-item-meta:empty {
+    display: none;
+}
+
+@media (max-width: 991px) {
+    .finders-body .finder-item-row {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .finders-body .finder-item-row input[data-field="name"],
+    .finders-body .finder-item-row input[data-field="searchUrl"],
+    .finders-body .finder-item-row input[data-field="tags"] {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .finders-body .finder-item-actions {
+        margin-left: 0;
+    }
+
+    .finders-body .finder-item-meta {
+        white-space: normal;
+    }
+}

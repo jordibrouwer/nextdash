@@ -180,14 +180,48 @@ class ConfigCategories {
         });
     }
 
-    add(categories, generateId) {
+    add(categories, generateId, generateStableId) {
         if (!categories || !Array.isArray(categories)) {
             console.error('Categories must be an array');
             return null;
         }
+
+        const prefix = this.t('config.newCategoryPrefix') || 'Category';
+        const usedNames = new Set(
+            categories.map((c) => String(c?.name || '').trim().toLowerCase()).filter(Boolean)
+        );
+        const usedIds = new Set(
+            categories.map((c) => String(c?.id || '').trim()).filter(Boolean)
+        );
+
+        let n = categories.length + 1;
+        let name = `${prefix} ${n}`;
+        while (usedNames.has(name.toLowerCase())) {
+            n += 1;
+            name = `${prefix} ${n}`;
+        }
+
+        let id = '';
+        if (typeof generateStableId === 'function') {
+            do {
+                id = generateStableId();
+            } while (usedIds.has(id));
+        } else if (typeof generateId === 'function') {
+            id = generateId(name);
+            let suffix = 2;
+            const base = id;
+            while (usedIds.has(id)) {
+                id = `${base}-${suffix}`;
+                suffix += 1;
+            }
+        } else {
+            id = `cat_${Date.now().toString(36)}`;
+        }
+
         const newCategory = {
-            id: generateId(`category-${categories.length + 1}`),
-            name: `${this.t('config.newCategoryPrefix')} ${categories.length + 1}`,
+            id,
+            originalId: id,
+            name,
             icon: ''
         };
         categories.push(newCategory);

@@ -1009,10 +1009,12 @@ class ConfigTagsTour {
         card.className = 'config-tags-tour-card';
         card.setAttribute('role', 'dialog');
         card.setAttribute('aria-modal', 'true');
+        card.setAttribute('aria-labelledby', 'config-tags-tour-title');
+        card.setAttribute('aria-describedby', 'config-tags-tour-body');
         card.innerHTML = `
-            <div class="config-general-tour-progress"></div>
-            <h3 class="config-general-tour-title"></h3>
-            <p class="config-general-tour-body"></p>
+            <div class="config-general-tour-progress" aria-live="polite"></div>
+            <h3 id="config-tags-tour-title" class="config-general-tour-title"></h3>
+            <p id="config-tags-tour-body" class="config-general-tour-body"></p>
             <div class="config-general-tour-actions">
                 <button type="button" class="config-general-tour-btn config-general-tour-back"></button>
                 <button type="button" class="config-general-tour-btn config-general-tour-skip"></button>
@@ -1032,9 +1034,13 @@ class ConfigTagsTour {
         card.querySelector('.config-general-tour-next').addEventListener('click', () => this.nextStep());
 
         this.keyHandler = (e) => {
-            if (e.key === 'Escape') this.finish();
+            if (e.key === 'Escape') this.dismissWithoutComplete();
         };
         document.addEventListener('keydown', this.keyHandler);
+    }
+
+    dismissWithoutComplete() {
+        void this.ensureDemoRemoved().finally(() => this.close());
     }
 
     updateStepContent(step, index) {

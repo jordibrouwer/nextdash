@@ -156,11 +156,8 @@ class ConfigFindersTour {
 
     ensureFindersRendered() {
         const mgr = window.configManager;
-        if (!mgr?.finders?.render || !Array.isArray(mgr.findersData)) return;
-        mgr.finders.render(mgr.findersData);
-        mgr.finders.initReorder(mgr.findersData, (newFinders) => {
-            mgr.findersData = newFinders;
-        });
+        if (!mgr?.finders?.refresh || !Array.isArray(mgr.findersData)) return;
+        mgr.finders.refresh(mgr);
     }
 
     waitMs(ms) {
@@ -266,6 +263,7 @@ class ConfigFindersTour {
         }
 
         const finder = {
+            id: typeof mgr.generateId === 'function' ? mgr.generateId('finder-google') : 'finder-google',
             name: this.t('configFindersTourGoogleName', 'Google'),
             searchUrl: ConfigFindersTour.GOOGLE_URL,
             shortcut: letter,
@@ -274,10 +272,7 @@ class ConfigFindersTour {
             lastUsed: 0,
         };
         mgr.findersData.push(finder);
-        mgr.finders.render(mgr.findersData);
-        mgr.finders.initReorder(mgr.findersData, (newFinders) => {
-            mgr.findersData = newFinders;
-        });
+        mgr.finders.refresh(mgr);
         mgr.markDirty?.();
         this._googleExampleShortcut = letter;
         this._googleExampleAdded = true;

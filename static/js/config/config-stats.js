@@ -1,19 +1,21 @@
 /**
  * Config "Stats" tab — two-column insights dashboard.
- * Sections: overview, cleanup score, activity, top bookmarks,
- *           pages, categories, tags, shortcuts, rot & cleanup, conflicts, search & status.
+ * Sections: overview, insights, cleanup score, activity, top bookmarks,
+ *           pages, categories, tags, shortcuts, finders, rot & cleanup, conflicts, search & status.
  */
 class ConfigStats {
     constructor(t) {
         this.t = typeof t === 'function' ? t : (k) => k;
         this.lastManager = null;
+        this._scrollspyObs = null;
+        this._filterQuery = '';
         // Current period (days) per section; 0 = all time
         this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, tags: 0, rot: 90 };
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
-    yn(val) { return val ? 'yes' : 'no'; }
+    yn(val) { return val ? this.t('config.statsYes') : this.t('config.statsNo'); }
 
     setText(id, text) {
         const el = document.getElementById(id);
@@ -23,7 +25,24 @@ class ConfigStats {
     pageName(pages, pageId) {
         const id = Number(pageId);
         const p = pages.find((x) => Number(x.id) === id);
-        return p && p.name ? String(p.name) : (Number.isFinite(id) ? `Page ${id}` : '');
+        return p && p.name ? String(p.name) : (Number.isFinite(id)
+            ? this.t('config.statsPageFallback').replace('{id}', String(id))
+            : '');
+    }
+
+    uncategorizedLabel() {
+        return this.t('config.statsUncategorized');
+    }
+
+    sparklineLabels(days) {
+        const today = this.t('config.statsSparklineToday');
+        const dayLbl = (n) => this.t('config.statsSparklineDaysAgo').replace('{n}', String(n));
+        const moLbl = (n) => this.t('config.statsSparklineMonthsAgo').replace('{n}', String(n));
+        if (days === 7) return [6, 5, 4, 3, 2, 1, 0].map((n) => (n === 0 ? today : dayLbl(n)));
+        if (days === 30) return [30, 24, 18, 12, 6].map(dayLbl);
+        if (days === 90) return [90, 80, 70, 60, 50, 40, 30, 20, 10].map(dayLbl);
+        if (days === 180) return [6, 5, 4, 3, 2, 1].map(moLbl);
+        return [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(moLbl);
     }
 
     formatWhen(ts, locale) {
@@ -61,7 +80,64 @@ class ConfigStats {
             }
             tr.appendChild(td);
         });
+        if (opts.bookmark && this.lastManager) {
+            const bm = opts.bookmark;
+            const name = String(bm.name || '—');
+            tr.classList.add('stats-row-clickable');
+            tr.title = this.t('config.statsRowOpenHint').replace('{name}', name);
+            tr.tabIndex = 0;
+            tr.setAttribute('role', 'button');
+            tr.setAttribute('aria-label', this.t('config.statsRowOpenAria').replace('{name}', name));
+            const open = (e) => {
+                if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+                if (e.type === 'keydown') e.preventDefault();
+                void this.openBookmarkInConfig(bm, this.lastManager);
+            };
+            tr.addEventListener('click', open);
+            tr.addEventListener('keydown', open);
+        }
         tb.appendChild(tr);
+    }
+
+    csvEscape(value) {
+        return `"${String(value ?? '').replace(/"/g, '""')}"`;
+    }
+
+    csvRow(...cells) {
+        return cells.map((c) => this.csvEscape(c)).join(',');
+    }
+
+    async openBookmarkInConfig(bm, manager) {
+        if (!manager || !bm) return;
+        const pageId = Number(bm.pageId) || Number(manager.currentPageId) || 1;
+        if (manager.ui?.switchToTab) {
+            manager.ui.switchToTab('bookmarks');
+        }
+        window.location.hash = '#bookmarks';
+        manager.currentPageId = pageId;
+        try {
+            await manager.loadPageBookmarks(pageId);
+            await manager.loadPageCategories(pageId);
+        } catch (e) {
+            console.warn('Could not load bookmark page', e);
+        }
+        const match = manager.bookmarkStore?.findByUrl?.(bm, pageId);
+        const idx = match
+            ? (manager.bookmarksData || []).indexOf(match)
+            : (manager.bookmarksData || []).findIndex(
+                (b) =>
+                    String(b.url || '').trim().toLowerCase() ===
+                    String(bm.url || '').trim().toLowerCase()
+            );
+        if (idx >= 0 && manager.bookmarks?.openDetailPanel) {
+            manager.bookmarks.openDetailPanel(
+                idx,
+                manager.bookmarksData,
+                manager.bookmarksPageCategories || []
+            );
+        }
+        manager.syncBookmarksPageSelectorUI?.(pageId);
+        manager.refreshBookmarksList?.();
     }
 
     noData(tbodyId, cols) {
@@ -71,10 +147,94 @@ class ConfigStats {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
         td.colSpan = cols;
-        td.textContent = '—';
+        td.textContent = this.t('config.statsNoData');
         td.style.opacity = '0.5';
+        tr.classList.add('stats-row-nodata');
         tr.appendChild(td);
         tb.appendChild(tr);
+    }
+
+    bindTableFilter() {
+        const input = document.getElementById('stats-filter-input');
+        if (!input || input.dataset.statsFilterBound === '1') return;
+        input.dataset.statsFilterBound = '1';
+        const clearBtn = document.getElementById('stats-filter-clear');
+        const syncClear = () => {
+            if (clearBtn) clearBtn.hidden = !input.value;
+        };
+        input.addEventListener('input', () => {
+            this._filterQuery = String(input.value || '').trim().toLowerCase();
+            syncClear();
+            this.applyTableFilter();
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && input.value) {
+                e.preventDefault();
+                input.value = '';
+                this._filterQuery = '';
+                syncClear();
+                this.applyTableFilter();
+            }
+        });
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                input.value = '';
+                this._filterQuery = '';
+                clearBtn.hidden = true;
+                input.focus();
+                this.applyTableFilter();
+            });
+        }
+    }
+
+    applyTableFilter() {
+        const q = this._filterQuery;
+        const hint = document.getElementById('stats-filter-hint');
+        let totalRows = 0;
+        let visibleRows = 0;
+
+        document.querySelectorAll('.stats-content .stats-table tbody').forEach((tbody) => {
+            let tbodyVisible = 0;
+            let dataRowCount = 0;
+            tbody.querySelectorAll('tr.stats-row-filter-empty').forEach((r) => r.remove());
+            tbody.querySelectorAll('tr').forEach((tr) => {
+                if (tr.classList.contains('stats-row-nodata')) {
+                    tr.hidden = !!q;
+                    return;
+                }
+                dataRowCount += 1;
+                totalRows += 1;
+                const match = !q || tr.textContent.toLowerCase().includes(q);
+                tr.hidden = !match;
+                if (match) {
+                    visibleRows += 1;
+                    tbodyVisible += 1;
+                }
+            });
+            if (q && tbodyVisible === 0 && dataRowCount > 0) {
+                const tr = document.createElement('tr');
+                tr.className = 'stats-row-filter-empty';
+                const td = document.createElement('td');
+                const colCount = tbody.closest('table')?.querySelectorAll('thead th').length || 4;
+                td.colSpan = colCount;
+                td.textContent = this.t('config.statsFilterNoMatches');
+                td.style.opacity = '0.5';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+        });
+
+        if (hint) {
+            if (q) {
+                hint.textContent = this.t('config.statsFilterShowing')
+                    .replace('{visible}', String(visibleRows))
+                    .replace('{total}', String(totalRows));
+                hint.hidden = false;
+            } else {
+                hint.textContent = '';
+                hint.hidden = true;
+            }
+        }
     }
 
     filterByPeriod(bookmarks, days) {
@@ -83,7 +243,36 @@ class ConfigStats {
         return bookmarks.filter((b) => Number(b?.lastOpened || 0) >= cutoff);
     }
 
+    opensColLabel(days) {
+        return days
+            ? this.t('config.statsColOpensLifetimeActive')
+            : this.t('config.statsColOpens');
+    }
+
+    updateOpensColumnHeaders(blockId, days) {
+        const block = document.getElementById(blockId);
+        if (!block) return;
+        const label = this.opensColLabel(days);
+        block.querySelectorAll('th[data-stats-opens-col]').forEach((th) => {
+            th.textContent = label;
+        });
+    }
+
+    updateActivityOpensLabel(days) {
+        const el = document.getElementById('stats-activity-opens-label');
+        if (!el) return;
+        el.textContent = days
+            ? this.t('config.statsActivityOpensLifetimeActive')
+            : this.t('config.statsActivityOpensLifetimeYear');
+    }
+
     // ── Period button binding ───────────────────────────────────────────────
+
+    syncPeriodButtonAria(bar) {
+        bar.querySelectorAll('.stats-period-btn').forEach((btn) => {
+            btn.setAttribute('aria-pressed', btn.classList.contains('active') ? 'true' : 'false');
+        });
+    }
 
     bindPeriodButtons(bookmarks, pages, locale) {
         document.querySelectorAll('.stats-period-bar').forEach((bar) => {
@@ -96,11 +285,13 @@ class ConfigStats {
                 btn.addEventListener('click', () => {
                     bar.querySelectorAll('.stats-period-btn').forEach((b) => b.classList.remove('active'));
                     btn.classList.add('active');
+                    this.syncPeriodButtonAria(bar);
                     const days = Number(btn.getAttribute('data-period'));
                     this.sectionPeriods[section] = days;
                     this.renderSection(section, bookmarks, pages, locale);
                 });
             });
+            this.syncPeriodButtonAria(bar);
         });
     }
 
@@ -114,26 +305,54 @@ class ConfigStats {
             case 'tags':        this.renderTagsBlock(bookmarks, pages, days); break;
             case 'rot':         this.renderRotBlock(bookmarks, pages, locale, days); break;
         }
+        this.applyTableFilter();
     }
 
     // ── Scrollspy ──────────────────────────────────────────────────────────
 
+    buildChipNav() {
+        const host = document.getElementById('stats-chip-nav');
+        const indexLinks = document.querySelectorAll('.stats-index-list a');
+        if (!host || !indexLinks.length) return;
+        host.textContent = '';
+        indexLinks.forEach((link) => {
+            const a = document.createElement('a');
+            a.href = link.getAttribute('href') || '#';
+            a.textContent = link.textContent;
+            a.className = 'stats-chip';
+            if (link.classList.contains('is-active')) a.classList.add('is-active');
+            host.appendChild(a);
+        });
+    }
+
+    setActiveNavSection(sectionId) {
+        document.querySelectorAll('.stats-index-list a, #stats-chip-nav a').forEach((a) => {
+            a.classList.toggle('is-active', a.getAttribute('href') === `#${sectionId}`);
+        });
+    }
+
     initScrollspy() {
+        if (this._scrollspyObs) {
+            this._scrollspyObs.disconnect();
+            this._scrollspyObs = null;
+        }
+
+        this.buildChipNav();
+
         const sections = document.querySelectorAll('.stats-content .stats-block[id]');
-        const links = document.querySelectorAll('.stats-index-list a');
+        const links = document.querySelectorAll('.stats-index-list a, #stats-chip-nav a');
         if (!sections.length || !links.length || !('IntersectionObserver' in window)) return;
 
         const obs = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                    links.forEach((a) => {
-                        a.classList.toggle('is-active', a.getAttribute('href') === `#${entry.target.id}`);
-                    });
+                    this.setActiveNavSection(entry.target.id);
                 }
             });
         }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
 
         sections.forEach((s) => obs.observe(s));
+        this._scrollspyObs = obs;
     }
 
     // ── Overview ───────────────────────────────────────────────────────────
@@ -175,6 +394,7 @@ class ConfigStats {
     bindInfoButtons() {
         const sections = [
             ['stats-overview-info-btn',   'statsInfoOverviewTitle',   'statsInfoOverviewMsg'],
+            ['stats-insights-info-btn',   'statsInfoInsightsTitle',   'statsInfoInsightsMsg'],
             ['stats-score-info-btn',      'statsInfoScoreTitle',      'statsInfoScoreMsg'],
             ['stats-activity-info-btn',   'statsInfoActivityTitle',   'statsInfoActivityMsg'],
             ['stats-top-info-btn',        'statsInfoTopTitle',        'statsInfoTopMsg'],
@@ -182,6 +402,7 @@ class ConfigStats {
             ['stats-categories-info-btn', 'statsInfoCategoriesTitle', 'statsInfoCategoriesMsg'],
             ['stats-tags-info-btn',       'statsInfoTagsTitle',       'statsInfoTagsMsg'],
             ['stats-shortcuts-info-btn',  'statsInfoShortcutsTitle',  'statsInfoShortcutsMsg'],
+            ['stats-finders-info-btn',   'statsInfoFindersTitle',    'statsInfoFindersMsg'],
             ['stats-rot-info-btn',        'statsInfoRotTitle',        'statsInfoRotMsg'],
             ['stats-conflicts-info-btn',  'statsInfoConflictsTitle',  'statsInfoConflictsMsg'],
             ['stats-search-info-btn',     'statsInfoSearchTitle',     'statsInfoSearchMsg'],
@@ -191,6 +412,7 @@ class ConfigStats {
             if (!btn) return;
             const fresh = btn.cloneNode(true);
             btn.replaceWith(fresh);
+            fresh.setAttribute('aria-label', this.t(`config.${titleKey}`));
             fresh.addEventListener('click', () => {
                 if (!window.AppModal) return;
                 window.AppModal.alert({
@@ -212,6 +434,11 @@ class ConfigStats {
 
         if (total === 0) {
             this.setText('stats-score-value', '—');
+            const fill = document.getElementById('stats-score-bar-fill');
+            if (fill) fill.style.width = '0%';
+            const scoreEl = document.getElementById('stats-score-value');
+            if (scoreEl) scoreEl.style.color = '';
+            if (fill) fill.style.background = '';
             return;
         }
 
@@ -327,22 +554,17 @@ class ConfigStats {
         let effectiveDays = days;
         if (days === 7) {
             bucketCount = 7; bucketMs = 86400000;
-            labels = ['–6d','–5d','–4d','–3d','–2d','–1d','today'];
         } else if (days === 30) {
             bucketCount = 5; bucketMs = 6 * 86400000;
-            labels = ['–30d','–24d','–18d','–12d','–6d'];
         } else if (days === 90) {
             bucketCount = 9; bucketMs = 10 * 86400000;
-            labels = ['–90d','–80d','–70d','–60d','–50d','–40d','–30d','–20d','–10d'];
         } else if (days === 180) {
             bucketCount = 6; bucketMs = 30 * 86400000;
-            labels = ['–6mo','–5mo','–4mo','–3mo','–2mo','–1mo'];
         } else {
-            // all time → last 12 months
             bucketCount = 12; bucketMs = 30 * 86400000;
             effectiveDays = 365;
-            labels = ['–12mo','–11mo','–10mo','–9mo','–8mo','–7mo','–6mo','–5mo','–4mo','–3mo','–2mo','–1mo'];
         }
+        labels = this.sparklineLabels(days || 0);
 
         const cutoff = now - effectiveDays * 86400000;
         const buckets = Array(bucketCount).fill(0);
@@ -362,6 +584,7 @@ class ConfigStats {
             return lo >= cutoff ? s + Number(b?.openCount || 0) : s;
         }, 0);
 
+        this.updateActivityOpensLabel(days);
         this.setText('stats-activity-total',  String(totalInPeriod));
         this.setText('stats-activity-active', String(active));
 
@@ -386,13 +609,45 @@ class ConfigStats {
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('height', '72');
+        svg.setAttribute('role', 'img');
+        const summary = labels.map((lbl, i) => `${lbl}: ${buckets[i]}`).join(', ');
+        svg.setAttribute('aria-label', this.t('config.statsSparklineAria').replace('{summary}', summary));
         svg.style.cssText = 'display:block;width:100%;';
         svg.innerHTML = rects;
         wrap.appendChild(svg);
 
+        const srTable = document.createElement('table');
+        srTable.className = 'stats-sr-only';
+        const caption = document.createElement('caption');
+        caption.textContent = this.t('config.statsSparklineTableCaption');
+        srTable.appendChild(caption);
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        [this.t('config.statsSparklineColBucket'), this.t('config.statsSparklineColCount')].forEach((txt) => {
+            const th = document.createElement('th');
+            th.scope = 'col';
+            th.textContent = txt;
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        srTable.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        labels.forEach((lbl, i) => {
+            const tr = document.createElement('tr');
+            [lbl, String(buckets[i])].forEach((txt) => {
+                const td = document.createElement('td');
+                td.textContent = txt;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        srTable.appendChild(tbody);
+        wrap.appendChild(srTable);
+
         // Labels row
         const labelRow = document.createElement('div');
         labelRow.className = 'stats-sparkline-labels';
+        labelRow.setAttribute('aria-hidden', 'true');
         const step = Math.max(1, Math.floor(bucketCount / 5));
         labels.forEach((lbl, i) => {
             const span = document.createElement('span');
@@ -405,6 +660,7 @@ class ConfigStats {
     // ── Top bookmarks ──────────────────────────────────────────────────────
 
     renderTopBookmarks(bookmarks, pages, locale, days) {
+        this.updateOpensColumnHeaders('stats-top', days);
         const subset = this.filterByPeriod(bookmarks, days);
 
         const top = [...subset]
@@ -424,7 +680,7 @@ class ConfigStats {
                     String(Number(b.openCount || 0)),
                     this.pageName(pages, b.pageId),
                     this.formatWhen(b.lastOpened, locale)
-                ], { rankCol: 0, barCol: 2, barPct: maxOpens > 0 ? Math.round((Number(b.openCount||0)/maxOpens)*100) : 0 });
+                ], { rankCol: 0, barCol: 2, barPct: maxOpens > 0 ? Math.round((Number(b.openCount||0)/maxOpens)*100) : 0, bookmark: b });
             });
         }
 
@@ -443,7 +699,7 @@ class ConfigStats {
                     String(Number(b.openCount || 0)),
                     this.pageName(pages, b.pageId),
                     this.formatWhen(b.lastOpened, locale)
-                ]);
+                ], { bookmark: b });
             });
         }
     }
@@ -451,6 +707,7 @@ class ConfigStats {
     // ── Pages ──────────────────────────────────────────────────────────────
 
     renderPagesBlock(bookmarks, pages, days) {
+        this.updateOpensColumnHeaders('stats-pages', days);
         const tbodyId = 'stats-pages-body';
         this.clearTable(tbodyId);
         if (!bookmarks.length || !pages.length) { this.noData(tbodyId, 4); return; }
@@ -458,7 +715,10 @@ class ConfigStats {
         const cutoff = days ? Date.now() - days * 86400000 : 0;
 
         const map = new Map();
-        pages.forEach((p) => map.set(Number(p.id), { name: p.name || `Page ${p.id}`, count: 0, opens: 0, never: 0 }));
+        pages.forEach((p) => map.set(Number(p.id), {
+            name: p.name || this.pageName(pages, p.id),
+            count: 0, opens: 0, never: 0,
+        }));
         bookmarks.forEach((b) => {
             const pid = Number(b?.pageId) || 0;
             if (!map.has(pid)) return;
@@ -503,6 +763,7 @@ class ConfigStats {
     // ── Categories ─────────────────────────────────────────────────────────
 
     renderCategoriesBlock(bookmarks, pages, days) {
+        this.updateOpensColumnHeaders('stats-categories', days);
         const tbodyId = 'stats-categories-body';
         this.clearTable(tbodyId);
         if (!bookmarks.length) { this.noData(tbodyId, 4); return; }
@@ -511,7 +772,7 @@ class ConfigStats {
         const map = new Map();
         bookmarks.forEach((b) => {
             const pid = Number(b?.pageId) || 0;
-            const cat = String(b?.category || '').trim() || '(uncategorized)';
+            const cat = String(b?.category || '').trim() || this.uncategorizedLabel();
             const key = `${pid}::${cat}`;
             const e = map.get(key) || { pageId: pid, cat, count: 0, opens: 0 };
             e.count += 1;
@@ -553,6 +814,7 @@ class ConfigStats {
     // ── Tags ───────────────────────────────────────────────────────────────
 
     renderTagsBlock(bookmarks, pages, days) {
+        this.updateOpensColumnHeaders('stats-tags', days);
         const total = bookmarks.length;
         const cutoff = days ? Date.now() - days * 86400000 : 0;
         const tagMap = new Map();
@@ -651,7 +913,8 @@ class ConfigStats {
 
         const topTaggedId = 'stats-top-tagged-body';
         this.clearTable(topTaggedId);
-        const topTagged = bookmarks
+        const taggedSubset = this.filterByPeriod(bookmarks, days);
+        const topTagged = taggedSubset
             .filter((b) => Array.isArray(b?.tags) && b.tags.some((t) => String(t || '').trim()))
             .sort((a, b) => Number(b?.openCount || 0) - Number(a?.openCount || 0))
             .slice(0, 20);
@@ -666,7 +929,7 @@ class ConfigStats {
                     tags.join(', ') || '—',
                     String(Number(b.openCount || 0)),
                     this.pageName(pages, b.pageId),
-                ]);
+                ], { bookmark: b });
             });
         }
     }
@@ -696,7 +959,7 @@ class ConfigStats {
                 String(b.name || '—'),
                 String(Number(b.openCount || 0)),
                 this.pageName(pages, b.pageId)
-            ]);
+            ], { bookmark: b });
         });
     }
 
@@ -739,7 +1002,7 @@ class ConfigStats {
                     this.pageName(pages, b.pageId),
                     String(b.category || '—'),
                     added ? this.formatWhen(added, locale) : '—'
-                ]);
+                ], { bookmark: b });
             });
         }
 
@@ -758,7 +1021,7 @@ class ConfigStats {
                         this.pageName(pages, b.pageId),
                         String(Number(b.openCount || 0)),
                         this.formatWhen(b.lastOpened, locale)
-                    ]);
+                    ], { bookmark: b });
                 });
         }
     }
@@ -796,10 +1059,27 @@ class ConfigStats {
             return;
         }
 
+        const duplicateUrls = [...urlMap.entries()].filter(([, c]) => c > 1);
+        if (duplicateUrls.length > 0) {
+            const p = document.createElement('p');
+            p.className = 'stats-muted';
+            const labels = duplicateUrls.slice(0, 8).map(([url, c]) => {
+                const display = url.length > 50 ? `${url.slice(0, 47)}…` : url;
+                return `${display} (×${c})`;
+            }).join(', ');
+            const more = duplicateUrls.length > 8
+                ? this.t('config.statsConflictMore').replace('{count}', duplicateUrls.length - 8)
+                : '';
+            p.textContent = this.t('config.statsDuplicateUrlsDetail')
+                .replace('{labels}', labels)
+                .replace('{more}', more);
+            detail.appendChild(p);
+        }
+
         if (conflicting.length > 0) {
             const p = document.createElement('p');
             p.className = 'stats-muted';
-            p.style.marginTop = '0.75rem';
+            p.style.marginTop = duplicateUrls.length > 0 ? '0.5rem' : '0';
             const labels = conflicting.slice(0, 8).map(([sc, c]) => `${sc} (×${c})`).join(', ');
             const more   = conflicting.length > 8
                 ? this.t('config.statsConflictMore').replace('{count}', conflicting.length - 8)
@@ -808,6 +1088,311 @@ class ConfigStats {
                 .replace('{labels}', labels)
                 .replace('{more}', more);
             detail.appendChild(p);
+        }
+    }
+
+    // ── Insights ─────────────────────────────────────────────────────────
+
+    renderInsightsBlock(bookmarks, pages) {
+        const list = document.getElementById('stats-insights-list');
+        if (!list) return;
+        list.textContent = '';
+
+        const total = bookmarks.length;
+        if (total === 0) {
+            const li = document.createElement('li');
+            li.className = 'stats-muted';
+            li.textContent = this.t('config.statsNoData');
+            list.appendChild(li);
+            return;
+        }
+
+        const items = [];
+        const pageOpens = new Map();
+        pages.forEach((p) => {
+            pageOpens.set(Number(p.id), { name: this.pageName(pages, p.id), opens: 0 });
+        });
+        bookmarks.forEach((b) => {
+            const pid = Number(b?.pageId) || 0;
+            if (!pageOpens.has(pid)) return;
+            pageOpens.get(pid).opens += Number(b?.openCount || 0);
+        });
+        const topPage = [...pageOpens.values()].sort((a, b) => b.opens - a.opens)[0];
+        if (topPage && topPage.opens > 0) {
+            items.push({
+                text: this.t('config.statsInsightTopPage')
+                    .replace('{page}', topPage.name)
+                    .replace('{opens}', String(topPage.opens)),
+                actionHref: '#stats-pages',
+                actionKey: 'statsActionOpenTopPage',
+            });
+        }
+
+        const topBm = [...bookmarks].sort((a, b) => Number(b?.openCount || 0) - Number(a?.openCount || 0))[0];
+        if (topBm && Number(topBm.openCount) > 0) {
+            items.push({
+                text: this.t('config.statsInsightTopBookmark')
+                    .replace('{name}', String(topBm.name || '—'))
+                    .replace('{count}', String(Number(topBm.openCount))),
+                actionHref: '#stats-top',
+                actionKey: 'statsActionOpenTopBookmark',
+            });
+        }
+
+        const neverOpened = bookmarks.filter((b) => !Number(b?.openCount) && !Number(b?.lastOpened)).length;
+        if (neverOpened > 0) {
+            items.push({
+                text: this.t('config.statsInsightNeverOpened')
+                    .replace('{percent}', String(Math.round((neverOpened / total) * 100)))
+                    .replace('{count}', String(neverOpened))
+                    .replace('{total}', String(total)),
+                actionHref: '#stats-rot',
+                actionKey: 'statsActionReviewNeverOpened',
+            });
+        }
+
+        const statusCount = bookmarks.filter((b) => b?.checkStatus === true).length;
+        items.push({
+            text: this.t('config.statsInsightStatusCoverage')
+                .replace('{percent}', String(Math.round((statusCount / total) * 100)))
+                .replace('{count}', String(statusCount))
+                .replace('{total}', String(total)),
+        });
+
+        const cutoff48 = Date.now() - 48 * 3600000;
+        const recentCount = bookmarks.filter((b) => Number(b?.lastOpened || 0) >= cutoff48).length;
+        if (recentCount > 0) {
+            items.push({
+                text: this.t('config.statsInsightRecentActivity').replace('{count}', String(recentCount)),
+                actionHref: '#stats-activity',
+                actionKey: 'statsActionOpen',
+            });
+        } else {
+            items.push({ text: this.t('config.statsInsightNoRecent') });
+        }
+
+        items.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'stats-insight-item';
+            const span = document.createElement('span');
+            span.textContent = item.text;
+            li.appendChild(span);
+            if (item.actionHref && item.actionKey) {
+                const a = document.createElement('a');
+                a.href = item.actionHref;
+                a.className = 'stats-insight-action';
+                a.textContent = this.t(`config.${item.actionKey}`);
+                li.appendChild(a);
+            }
+            list.appendChild(li);
+        });
+    }
+
+    // ── Finders ──────────────────────────────────────────────────────────
+
+    renderFindersBlock(finders, locale) {
+        const list = Array.isArray(finders) ? finders : [];
+        const totalUses = list.reduce((s, f) => s + Number(f?.useCount || 0), 0);
+        const withShortcut = list.filter((f) => String(f?.shortcut || '').trim()).length;
+
+        this.setText('stats-finders-count', String(list.length));
+        this.setText('stats-finders-uses-total', String(totalUses));
+        this.setText('stats-finders-with-shortcut', String(withShortcut));
+
+        const tbodyId = 'stats-finders-body';
+        this.clearTable(tbodyId);
+        const top = [...list].sort((a, b) => Number(b?.useCount || 0) - Number(a?.useCount || 0)).slice(0, 20);
+        if (top.length === 0) {
+            this.noData(tbodyId, 4);
+            return;
+        }
+        top.forEach((f) => {
+            this.appendRow(tbodyId, [
+                String(f.name || '—'),
+                String(f.shortcut || '—'),
+                String(Number(f.useCount || 0)),
+                this.formatWhen(f.lastUsed, locale),
+            ]);
+        });
+    }
+
+    bindRefreshButton(manager) {
+        const btn = document.getElementById('stats-refresh-btn');
+        if (!btn) return;
+        const fresh = btn.cloneNode(true);
+        btn.replaceWith(fresh);
+        fresh.addEventListener('click', () => {
+            this.refresh(manager);
+            if (typeof manager?.bookmarks?.notify === 'function') {
+                manager.bookmarks.notify(this.t('config.statsRefreshDone'), 'success');
+            }
+        });
+    }
+
+    bindExportButton(manager) {
+        const btn = document.getElementById('stats-export-csv-btn');
+        if (!btn) return;
+        const fresh = btn.cloneNode(true);
+        btn.replaceWith(fresh);
+        fresh.addEventListener('click', () => this.exportStatsCSV(manager, fresh));
+    }
+
+    exportStatsCSV(manager, btn) {
+        const label = this.t('config.statsExportCsv');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = this.t('config.statsExportInProgress');
+        }
+        try {
+            const bookmarks = Array.isArray(manager.allBookmarksData) ? manager.allBookmarksData : [];
+            const pages = Array.isArray(manager.pagesData) ? manager.pagesData : [];
+            const finders = Array.isArray(manager.findersData) ? manager.findersData : [];
+            const locale = manager.settingsData?.language;
+            const lines = [];
+            const addSection = (title) => {
+                if (lines.length) lines.push('');
+                lines.push(this.csvEscape(title));
+            };
+
+            const catKeys = new Set();
+            bookmarks.forEach((b) => {
+                catKeys.add(`${Number(b.pageId) || 0}::${String(b.category || '').trim()}`);
+            });
+            const totalOpens = bookmarks.reduce((s, b) => s + Number(b?.openCount || 0), 0);
+            const avg = bookmarks.length > 0 ? Math.round((totalOpens / bookmarks.length) * 10) / 10 : 0;
+
+            addSection(this.t('config.statsNavOverview'));
+            lines.push(this.csvRow(this.t('config.statsExportMetric'), this.t('config.statsExportValue')));
+            [
+                [this.t('config.statsPages'), pages.length],
+                [this.t('config.statsCategories'), catKeys.size],
+                [this.t('config.statsBookmarksTotal'), bookmarks.length],
+                [this.t('config.statsAvgOpensLabel'), avg],
+            ].forEach(([k, v]) => lines.push(this.csvRow(k, v)));
+
+            const exportTop = (title, rows, headers, mapRow) => {
+                addSection(title);
+                lines.push(this.csvRow(...headers));
+                rows.forEach((row) => lines.push(this.csvRow(...mapRow(row))));
+            };
+
+            const topDays = this.sectionPeriods.top || 0;
+            const topSubset = this.filterByPeriod(bookmarks, topDays);
+            const opensHdr = this.opensColLabel(topDays);
+            const topOpens = [...topSubset]
+                .filter((b) => Number(b?.openCount || 0) > 0)
+                .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
+                .slice(0, 20);
+            exportTop(
+                this.t('config.statsSubMostOpened'),
+                topOpens,
+                [this.t('config.statsColName'), opensHdr, this.t('config.statsColPage'), this.t('config.statsColLastOpened')],
+                (b) => [b.name || '', Number(b.openCount || 0), this.pageName(pages, b.pageId), this.formatWhen(b.lastOpened, locale)]
+            );
+
+            const recent = [...topSubset]
+                .filter((b) => Number(b?.lastOpened || 0) > 0)
+                .sort((a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0))
+                .slice(0, 20);
+            exportTop(
+                this.t('config.statsSubRecentlyOpened'),
+                recent,
+                [this.t('config.statsColName'), opensHdr, this.t('config.statsColPage'), this.t('config.statsColLastOpened')],
+                (b) => [b.name || '', Number(b.openCount || 0), this.pageName(pages, b.pageId), this.formatWhen(b.lastOpened, locale)]
+            );
+
+            const pageDays = this.sectionPeriods.pages || 0;
+            const pageCutoff = pageDays ? Date.now() - pageDays * 86400000 : 0;
+            const pageMap = new Map();
+            pages.forEach((p) => pageMap.set(Number(p.id), {
+                name: p.name || this.pageName(pages, p.id),
+                count: 0, opens: 0,
+            }));
+            bookmarks.forEach((b) => {
+                const pid = Number(b?.pageId) || 0;
+                if (!pageMap.has(pid)) return;
+                const e = pageMap.get(pid);
+                e.count += 1;
+                const lo = Number(b?.lastOpened || 0);
+                if (!pageCutoff || lo >= pageCutoff) e.opens += Number(b?.openCount || 0);
+            });
+            exportTop(
+                this.t('config.statsNavPages'),
+                [...pageMap.values()].sort((a, b) => b.opens - a.opens),
+                [this.t('config.statsColPage'), this.t('config.statsColBookmarks'), this.opensColLabel(pageDays)],
+                (r) => [r.name, r.count, r.opens]
+            );
+
+            const catDays = this.sectionPeriods.categories || 0;
+            const catCutoff = catDays ? Date.now() - catDays * 86400000 : 0;
+            const catMap = new Map();
+            bookmarks.forEach((b) => {
+                const pid = Number(b?.pageId) || 0;
+                const cat = String(b?.category || '').trim() || this.uncategorizedLabel();
+                const key = `${pid}::${cat}`;
+                const e = catMap.get(key) || { cat, pageId: pid, count: 0, opens: 0 };
+                e.count += 1;
+                const lo = Number(b?.lastOpened || 0);
+                if (!catCutoff || lo >= catCutoff) e.opens += Number(b?.openCount || 0);
+                catMap.set(key, e);
+            });
+            exportTop(
+                this.t('config.statsNavCategories'),
+                [...catMap.values()].sort((a, b) => b.opens - a.opens),
+                [this.t('config.statsColCategory'), this.t('config.statsColPage'), this.t('config.statsColBookmarks'), this.opensColLabel(catDays)],
+                (r) => [r.cat, this.pageName(pages, r.pageId), r.count, r.opens]
+            );
+
+            const withSc = bookmarks.filter((b) => String(b?.shortcut || '').trim());
+            exportTop(
+                this.t('config.statsSubTopShortcuts'),
+                [...withSc].sort((a, b) => Number(b?.openCount || 0) - Number(a?.openCount || 0)).slice(0, 20),
+                [this.t('config.statsColShortcut'), this.t('config.statsColName'), this.t('config.statsColOpens'), this.t('config.statsColPage')],
+                (b) => [b.shortcut || '', b.name || '', Number(b.openCount || 0), this.pageName(pages, b.pageId)]
+            );
+
+            exportTop(
+                this.t('config.statsSubTopFinders'),
+                [...finders].sort((a, b) => Number(b?.useCount || 0) - Number(a?.useCount || 0)).slice(0, 20),
+                [this.t('config.statsColName'), this.t('config.statsColShortcut'), this.t('config.statsColUses'), this.t('config.statsColLastOpened')],
+                (f) => [f.name || '', f.shortcut || '', Number(f.useCount || 0), this.formatWhen(f.lastUsed, locale)]
+            );
+
+            const neverOpened = bookmarks.filter((b) => !Number(b?.openCount) && !Number(b?.lastOpened));
+            exportTop(
+                this.t('config.statsSubNeverOpened'),
+                neverOpened.slice(0, 30),
+                [this.t('config.statsColName'), this.t('config.statsColPage'), this.t('config.statsColCategory'), this.t('config.statsColAdded')],
+                (b) => {
+                    const added = Number(b?.addedAt || b?.createdAt || b?.created || b?.added || 0);
+                    return [b.name || '', this.pageName(pages, b.pageId), b.category || '', added ? this.formatWhen(added, locale) : ''];
+                }
+            );
+
+            const csv = '\uFEFF' + lines.join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nextdash-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            if (typeof manager?.bookmarks?.notify === 'function') {
+                manager.bookmarks.notify(this.t('config.statsExportSuccess'), 'success');
+            }
+        } catch (e) {
+            console.error('Stats CSV export error:', e);
+            if (typeof manager?.bookmarks?.notify === 'function') {
+                manager.bookmarks.notify(this.t('config.statsExportError'), 'error');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = label;
+            }
         }
     }
 
@@ -833,6 +1418,7 @@ class ConfigStats {
         const locale    = settings.language || undefined;
 
         this.renderOverview(bookmarks, pages);
+        this.renderInsightsBlock(bookmarks, pages);
         this.renderCleanupScore(bookmarks);
         this.renderActivity(bookmarks, this.sectionPeriods.activity, locale);
         this.renderTopBookmarks(bookmarks, pages, locale, this.sectionPeriods.top);
@@ -840,12 +1426,22 @@ class ConfigStats {
         this.renderCategoriesBlock(bookmarks, pages, this.sectionPeriods.categories);
         this.renderTagsBlock(bookmarks, pages, this.sectionPeriods.tags);
         this.renderShortcutsBlock(bookmarks, pages);
+        this.renderFindersBlock(manager.findersData, locale);
         this.renderRotBlock(bookmarks, pages, locale, this.sectionPeriods.rot);
         this.renderConflictsBlock(bookmarks);
         this.renderSearchStatus(settings, bookmarks);
 
+        const filterInput = document.getElementById('stats-filter-input');
+        if (filterInput) {
+            this._filterQuery = String(filterInput.value || '').trim().toLowerCase();
+        }
+
         this.bindPeriodButtons(bookmarks, pages, locale);
         this.bindInfoButtons();
+        this.bindRefreshButton(manager);
+        this.bindExportButton(manager);
+        this.bindTableFilter();
+        this.applyTableFilter();
         this.initScrollspy();
     }
 }

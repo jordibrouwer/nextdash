@@ -248,6 +248,19 @@ body[data-layout-version="modern"] .tags-tab {
     box-shadow: none;
 }
 
+body[data-layout-version="modern"] .tags-tab {
+    min-height: calc(100vh - 180px);
+    height: calc(100vh - 180px);
+}
+
+body[data-layout-version="modern"] .tags-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    gap: var(--config-tab-gap);
+}
+
 body[data-layout-version="modern"] :is(
     .simple-toolbar,
     .collections-toolbar,
@@ -273,9 +286,16 @@ body[data-layout-version="modern"] .tags-toolbar {
 }
 
 body[data-layout-version="modern"] .simple-list,
-body[data-layout-version="modern"] .collections-list,
-body[data-layout-version="modern"] .tags-list {
+body[data-layout-version="modern"] .collections-list {
     overflow: hidden;
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .tags-list {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-height: 0;
     padding: 0;
 }
 
@@ -352,6 +372,8 @@ body[data-layout-version="modern"] .form-group input:focus,
 body[data-layout-version="modern"] .form-group select:focus,
 body[data-layout-version="modern"] .form-group textarea:focus,
 body[data-layout-version="modern"] .help-search-filter:focus,
+body[data-layout-version="modern"] .tags-filter-input:focus,
+body[data-layout-version="modern"] .tag-rename-input:focus,
 body[data-layout-version="modern"] .page-selector:focus,
 body[data-layout-version="modern"] .color-text-input:focus,
 body[data-layout-version="modern"] .color-text-input-full:focus {
@@ -361,6 +383,8 @@ body[data-layout-version="modern"] .color-text-input-full:focus {
 }
 
 body[data-layout-version="modern"] .help-search-filter,
+body[data-layout-version="modern"] .tags-filter-input,
+body[data-layout-version="modern"] .tag-rename-input,
 body[data-layout-version="modern"] .page-selector,
 body[data-layout-version="modern"] .color-text-input,
 body[data-layout-version="modern"] .color-text-input-full {

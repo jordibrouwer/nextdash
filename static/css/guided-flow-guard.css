@@ -1,9 +1,13 @@
-/* Reinforce capture-phase lock: main page chrome stays inert while a guided flow runs. */
+/* Reinforce capture-phase lock on the dashboard only — config must stay clickable during tab tours. */
 body.guided-flow-locked .dashboard-section,
-body.guided-flow-locked #dashboard-layout,
+body.guided-flow-locked #dashboard-layout {
+    pointer-events: none;
+}
+
+/* Config page (tabs, + Add finder/category, lists) stays interactive under guided-flow-locked. */
 body.guided-flow-locked .config-section,
 body.guided-flow-locked #config-main {
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 body.guided-flow-locked .onboarding-overlay,
@@ -48,9 +52,9 @@ body.guided-flow-locked [class$="-tour-card"] .config-general-tour-btn {
     cursor: pointer;
 }
 
-/* Dim cutout must not steal clicks from the tour card. */
+/* Highlighted controls stay clickable during config tab tours (e.g. + Add finder). */
 body.guided-flow-locked [class$="-tour-highlight"] {
-    pointer-events: none !important;
+    pointer-events: auto !important;
 }
 
 /* AppModal above tour backdrop (2147482000), tour card (2147483000), and highlight (12550). */

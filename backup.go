@@ -314,6 +314,10 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 
 	for _, name := range importManagedRootFilenames {
 		if !preparedHasRelPath(prepared, name) {
+			// Keep existing finders when older ZIPs omit finders.json.
+			if name == "finders.json" {
+				continue
+			}
 			_ = os.Remove(filepath.Join(dataDir, name))
 		}
 	}
@@ -598,6 +602,11 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 		}
 		relPath = strings.ReplaceAll(relPath, "\\", "/")
 
+		// finders.json is always written from the store snapshot below.
+		if relPath == "finders.json" {
+			return nil
+		}
+
 		// Only include files that are valid for import.
 		// This keeps backup->import round-trips stable even when data/ contains
 		// unrelated files (e.g. acme-account keys from reverse proxies).
@@ -653,6 +662,22 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to write categories in backup", http.StatusInternalServerError)
 			return
 		}
+	}
+
+	finders := h.store.GetFinders()
+	findersData, err := json.MarshalIndent(finders, "", "  ")
+	if err != nil {
+		http.Error(w, "Failed to serialize finders", http.StatusInternalServerError)
+		return
+	}
+	findersZip, err := zipWriter.Create("finders.json")
+	if err != nil {
+		http.Error(w, "Failed to include finders in backup", http.StatusInternalServerError)
+		return
+	}
+	if _, err := findersZip.Write(findersData); err != nil {
+		http.Error(w, "Failed to write finders in backup", http.StatusInternalServerError)
+		return
 	}
 
 	// Close the zip writer
