@@ -87,43 +87,134 @@
       ]
     },
     {
-      "title": "Config → General",
+      "title": "Config → General — Layers & panels",
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Essentials / Advanced / All</strong> — layered General tab with persisted view, hash deep links (<code>#general/advanced/…</code>), sticky section nav with scroll highlighting, smart-collections and status summaries in Essentials, and <strong>Expand all</strong> / <strong>Collapse all</strong> in the All view."
+          "text": "<strong>Essentials / Advanced / All</strong> — three views on <code>config#general</code> with a persisted layer preference (<code>localStorage</code>), per-layer intros, and <strong>Show all sections on one page</strong> as a third tab with <code>aria-selected</code>."
         },
         {
           "badge": "new",
-          "text": "<strong>↺ Reset to default</strong> — per-control reset buttons across General (theme, layout, background, smart-collection limits, status tuning, search flags, and more); custom-select UI refreshes after reset."
+          "text": "<strong>Panel restructure</strong> — Appearance split into essentials vs advanced; everyday bookmark options moved to <strong>Bookmarks (essentials)</strong>; compact <strong>Smart collections</strong> and <strong>Status monitoring</strong> summaries in Essentials; full tuning stays under Advanced."
         },
         {
           "badge": "new",
-          "text": "<strong>Settings search</strong> — matching panels expand before scroll; General tour step for <code>Ctrl+Shift+K</code> / <code>Cmd+Shift+K</code> (desktop); on phone, a subset search lives inside the General tab (language, theme, layout)."
+          "text": "<strong>Collapsible sections</strong> — every General card can collapse/expand (click or keyboard on the title); state persists per panel; default open sets differ per layer; the <strong>Reset</strong> card always starts collapsed."
         },
         {
           "badge": "new",
-          "text": "<strong>Mobile General</strong> — device-specific intro; settings search moved into the General tab; clearer message when a panel is hidden on small screens."
+          "text": "<strong>Hash deep links</strong> — <code>#general/advanced/layout</code> opens the right layer and scrolls to the panel; <code>sessionStorage</code> restores your General sub-path when you switch away and back from another config tab."
         },
         {
           "badge": "new",
-          "text": "<strong>Theme editor link</strong> — open <strong>Config → Theme</strong> from Appearance essentials (unsaved-changes guard); favicon styling follows Save/dirty like other settings."
+          "text": "<strong>Smart collections summary</strong> — Essentials shows an enabled count (<em>{count} of {total}</em>) and a master toggle that mirrors the individual collection checkboxes."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Status essentials</strong> — compact on/off summary with monitored bookmark count and a contextual <strong>Health →</strong> link; refreshes when the header health badge updates."
+        }
+      ]
+    },
+    {
+      "title": "Config → General — Navigation & search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Section nav</strong> — sticky jump links for every Essentials and Advanced panel (including separate <em>Smart (overview)</em> vs <em>Smart (settings)</em>); horizontal scroll on narrow widths; active link highlights while you scroll (<code>IntersectionObserver</code>, tuned for All view)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Expand / collapse all</strong> — bulk controls in the All view; respects the always-collapsed Reset card and syncs expand state + reset-button guard."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Jump to Advanced</strong> — summary panels link deeper settings with a toast (<em>Switched to Advanced</em>) and automatic layer switch + scroll."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings search</strong> — results show <code>Tab › Layer › Section</code> subtitles; matching General panels expand before scroll; Help blocks scroll to the right anchor; General tour step for <code>Ctrl+Shift+K</code> / <code>Cmd+Shift+K</code> (desktop only)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mobile search in General</strong> — on phone, settings search moves into the General tab and indexes only language, theme, and layout panels with a device-specific label."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Scroll margins</strong> — panel jump targets account for the sticky save bar and section nav (<code>scroll-margin-top</code> / tour scroll padding)."
+        }
+      ]
+    },
+    {
+      "title": "Config → General — Resets, ℹ help & polish",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>↺ Reset to default</strong> — per-control reset on theme, layout version/preset, sort, columns, density, font preset/weight/size group, background type/opacity/gradient grid/image URL, weather, date/time formats, link-preview delay, status retries, smart-collection limits/keywords/page picks, search flags, bookmark display toggles, and more; tooltip shows previous vs default value."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>More ℹ info buttons</strong> — short explanations added for packed columns, rotating tips, Hypr mode, fuzzy search, interleave mode, search-flow banner, finders-in-search, sync toasts, page tabs, tag cloud, health dashboard, status retries, bookmark preview maintenance, and related toggles."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Theme editor link</strong> — <strong>Open theme editor →</strong> from Appearance essentials with unsaved General/colour guards before navigating to <code>#colors</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Theme icon styling</strong> — favicon harmonization controls mark the form dirty and show a <em>Preview only — click Save</em> hint instead of autosaving immediately."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Language hint</strong> — <em>Language changes apply immediately (no Save needed)</em> under the language dropdown; option names follow the current UI language."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Gradient preset names</strong> — background gradient chips use localized display names in EN / NL / DE / FR."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mobile General UX</strong> — device-specific intro; layer toolbar, section nav, and bulk bar hidden on phone; named toast when a hidden panel is requested (<em>\"{name}\" is only available on a wider screen</em>); layout restores on resize."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>General tour (11 steps)</strong> — adds a desktop <strong>Search settings…</strong> step before Save; skipped on mobile when the search field is not shown."
+        }
+      ]
+    },
+    {
+      "title": "Config → General — Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collections master</strong> — Essentials master toggle syncs child checkboxes, dirty state, and the enabled-count line; <code>updateFromUI</code> re-syncs before save."
         },
         {
           "badge": "fix",
-          "text": "<strong>Smart collections master</strong> — the Essentials master toggle syncs child checkboxes and dirty state correctly."
+          "text": "<strong>Hash &amp; panel open</strong> — bare <code>#general</code> keeps your stored layer (not forced to Essentials); nav links, hash routes, and settings-search hits force collapsed panels open."
         },
         {
           "badge": "fix",
-          "text": "<strong>Hash &amp; nav jumps</strong> — <code>#general</code> preserves your stored layer; section links and settings-search results force collapsed panels open."
+          "text": "<strong>Reset section guard</strong> — destructive <strong>Reset all data</strong> button stays disabled until the Reset card is expanded."
         },
         {
           "badge": "fix",
-          "text": "<strong>Reset section guard</strong> — Advanced reset card must be expanded before the destructive button is enabled."
+          "text": "<strong>↺ control sync</strong> — custom selects, range sliders, and number inputs refresh their UI after reset; duplicate reset listeners prevented (<code>data-setting-reset-bound</code>)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Language labels</strong> — language names in the dropdown follow the current UI language; gradient presets use localized display names."
+          "text": "<strong>Form readback</strong> — <code>updateFromUI</code> reads font size from the active button, gradient from the active preset chip, and guards invalid column input (<code>NaN</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Checkbox cascades</strong> — page-tab names depend on <strong>Show page tabs</strong>; turning status monitoring off clears <strong>Show ping</strong>; smart-collection label clicks no longer toggle the parent card."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Defaults &amp; markup</strong> — <code>showTips</code> defaults to on; Add-bookmark footer button no longer ships <code>checked</code> in HTML; <code>tag-collections-min-count</code> row has a stable <code>id</code> for show/hide logic."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Accessibility labels</strong> — breadcrumb, layer toolbar, advanced nav, columns steppers, and custom title field use <code>data-i18n-aria</code> in EN / NL / DE / FR; collapsible titles expose <code>aria-expanded</code>."
         }
       ]
     },
@@ -132,7 +223,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v64</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, <code>dashboard.css</code>, and Config General assets (<code>config-general-layers</code>, <code>settings-search</code>, <code>general-tour</code>) query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v65</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, <code>dashboard.css</code>, and Config General assets (<code>config-general-layers</code>, <code>settings-search</code>, <code>general-tour</code>) query strings updated for Docker-mounted static files."
         }
       ]
     }
