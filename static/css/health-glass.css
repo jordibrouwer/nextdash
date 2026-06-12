@@ -20,8 +20,7 @@ body[data-layout-version="glass"] .health-shell {
 
 body[data-layout-version="glass"] .health-header,
 body[data-layout-version="glass"] .health-summary,
-body[data-layout-version="glass"] .health-filters,
-body[data-layout-version="glass"] .health-bulk-actions,
+body[data-layout-version="glass"] .health-controls,
 body[data-layout-version="glass"] .health-issues-panel,
 body[data-layout-version="glass"] .health-duplicates-panel {
     margin: 0;
@@ -66,8 +65,7 @@ body[data-layout-version="glass"] .back-link-button:hover {
 body[data-layout-version="glass"] :is(
     .health-intro,
     .health-card,
-    .health-filters,
-    .health-bulk-actions,
+    .health-controls,
     .health-issues-panel,
     .health-duplicates-panel
 ) {
@@ -91,22 +89,24 @@ body[data-layout-version="glass"] .health-subtitle {
 }
 
 body[data-layout-version="glass"] .health-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: var(--config-tab-gap);
+    gap: 6px;
 }
 
 body[data-layout-version="glass"] .health-card {
-    padding: 0.9rem 1rem;
+    padding: 0.35rem 0.45rem;
     backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
-body[data-layout-version="glass"] .health-filters,
-body[data-layout-version="glass"] .health-bulk-actions,
+body[data-layout-version="glass"] .health-controls {
+    padding: 0.4rem 0.6rem;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
 body[data-layout-version="glass"] .health-issues-panel,
 body[data-layout-version="glass"] .health-duplicates-panel {
-    padding: 0.9rem 1rem;
+    padding: 0.5rem 0.65rem;
     backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
@@ -133,16 +133,18 @@ body[data-layout-version="glass"] .health-page-filter-wrap label {
 }
 
 body[data-layout-version="glass"] .health-search-wrap input,
+body[data-layout-version="glass"] .health-filter-input,
 body[data-layout-version="glass"] .health-page-filter,
 body[data-layout-version="glass"] .health-sort-select {
     border-radius: var(--layout-radius-sm);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface-inset);
-    padding: 0.5rem 0.65rem;
+    padding: 0.26rem 0.45rem;
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
 }
 
 body[data-layout-version="glass"] .health-search-wrap input:focus,
+body[data-layout-version="glass"] .health-filter-input:focus,
 body[data-layout-version="glass"] .health-page-filter:focus,
 body[data-layout-version="glass"] .health-sort-select:focus {
     outline: none;
@@ -178,15 +180,14 @@ body[data-layout-version="glass"] .health-issues {
     gap: var(--config-tab-gap);
 }
 
-body[data-layout-version="glass"] .health-issue,
+body[data-layout-version="glass"] .health-row,
 body[data-layout-version="glass"] .health-duplicate-group {
     border-radius: var(--layout-radius-sm);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
     background: var(--layout-surface-inset);
 }
 
-body[data-layout-version="glass"] .health-issue {
-    padding: 0.85rem 1rem;
+body[data-layout-version="glass"] .health-row {
+    border-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
 }
 
 body[data-layout-version="glass"] .health-duplicate-group {
@@ -200,28 +201,27 @@ body[data-layout-version="glass"] .health-duplicates {
     gap: var(--config-tab-gap);
 }
 
-body[data-layout-version="glass"] .health-score {
+body[data-layout-version="glass"] .health-row-score {
     border-radius: var(--layout-radius-sm);
     background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
 }
 
-body[data-layout-version="glass"] .health-issue-meta span,
-body[data-layout-version="glass"] .health-times span,
-body[data-layout-version="glass"] .health-reasons span,
+body[data-layout-version="glass"] .health-row-meta span,
+body[data-layout-version="glass"] .health-row-times span,
+body[data-layout-version="glass"] .health-row-reasons span,
 body[data-layout-version="glass"] .health-duplicate-items span {
     border-radius: var(--layout-radius-pill);
     background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
 }
 
-body[data-layout-version="glass"] .health-issue-actions {
+body[data-layout-version="glass"] .health-actions-menu {
     border-radius: var(--layout-radius-sm);
-    border-color: color-mix(in srgb, var(--border-primary) 40%, transparent);
     background: var(--layout-surface);
-    overflow: hidden;
 }
 
-body[data-layout-version="glass"] .health-issue-toolbar-heal {
-    background: color-mix(in srgb, var(--layout-surface-inset) 55%, var(--layout-surface));
+body[data-layout-version="glass"] .health-card,
+body[data-layout-version="glass"] .health-panel {
+    border-radius: var(--layout-radius-sm);
 }
 
 body[data-layout-version="glass"] .health-empty {
@@ -235,7 +235,7 @@ body[data-layout-version="glass"] .health-empty {
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
-body[data-layout-version="glass"] .health-bulk-button,
+body[data-layout-version="glass"] .health-bulk-toolbar .btn,
 body[data-layout-version="glass"] .health-action-link,
 body[data-layout-version="glass"] .health-keep-first-btn,
 body[data-layout-version="glass"] .health-merge-pick-btn {
@@ -246,7 +246,7 @@ body[data-layout-version="glass"] .health-merge-pick-btn {
         box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="glass"] .health-bulk-button:hover:not(:disabled),
+body[data-layout-version="glass"] .health-bulk-toolbar .btn:hover:not(:disabled),
 body[data-layout-version="glass"] .health-action-link:hover,
 body[data-layout-version="glass"] .health-keep-first-btn:hover:not(:disabled),
 body[data-layout-version="glass"] .health-merge-pick-btn:hover {

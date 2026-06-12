@@ -1,14 +1,45 @@
 (function () {
     const STORAGE_KEY = 'nextdash_health_state';
+    const HEALTH_OPEN_KEY = 'nextdash_health_open_bookmark';
+    const DEFAULT_FILTER = 'broken';
 
     const healthState = {
         report: null,
-        filter: 'all',
+        filter: DEFAULT_FILTER,
         sort: 'score',
         query: '',
         pageId: 'all',
-        language: null
+        language: null,
+        selected: new Set(),
+        focusedRowIndex: -1,
+        visibleIssues: []
     };
+
+    const EMPTY_FILTER_KEYS = {
+        all: 'health.emptyAll',
+        broken: 'health.emptyBroken',
+        duplicate: 'health.emptyDuplicate',
+        'shortcut-conflict': 'health.emptyShortcutConflict',
+        unchecked: 'health.emptyUnchecked',
+        stale: 'health.emptyStale',
+        unused: 'health.emptyUnused',
+        'missing-preview': 'health.emptyMissingPreview',
+        healthy: 'health.emptyHealthy'
+    };
+
+    function syncUrlParams() {
+        const params = new URLSearchParams();
+        if (healthState.filter && healthState.filter !== 'all') params.set('filter', healthState.filter);
+        if (healthState.sort && healthState.sort !== 'score') params.set('sort', healthState.sort);
+        if (healthState.pageId && healthState.pageId !== 'all') params.set('page', healthState.pageId);
+        if (healthState.query) params.set('q', healthState.query);
+        const qs = params.toString();
+        const next = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (current !== next) {
+            history.replaceState(null, '', next);
+        }
+    }
 
     function saveState() {
         try {
@@ -19,6 +50,20 @@
                 pageId: healthState.pageId
             }));
         } catch (e) { /* quota or private mode */ }
+        syncUrlParams();
+    }
+
+    async function confirmDialog({ title, message, confirmText, cancelText, confirmClass }) {
+        if (window.AppModal && typeof window.AppModal.confirm === 'function') {
+            return window.AppModal.confirm({
+                title: title || '',
+                message,
+                confirmText: confirmText || t('health.confirm', 'Confirm'),
+                cancelText: cancelText || t('health.cancel', 'Cancel'),
+                confirmClass: confirmClass || ''
+            });
+        }
+        return window.confirm(message);
     }
 
     function restoreState() {
@@ -83,6 +128,31 @@
 
     const filterOrder = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
 
+    const HEALTH_ICONS = {
+        external: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5z"></path></svg>',
+        dashboard: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"></path></svg>',
+        fix: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg>',
+        ping: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"></path></svg>',
+        favicon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.83 2.83H22V4l-4.35 4.35z"></path></svg>',
+        more: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path></svg>'
+    };
+
+    function iconButton(className, attrs, iconKey, tooltip) {
+        const tip = tooltip ? ` data-tooltip="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}"` : '';
+        return `<button type="button" class="${className}"${attrs}${tip}>${HEALTH_ICONS[iconKey] || ''}</button>`;
+    }
+
+    function labeledButton(className, attrs, iconKey, label) {
+        return `<button type="button" class="${className}"${attrs} aria-label="${escapeHtml(label)}"><span class="health-btn-icon">${HEALTH_ICONS[iconKey] || ''}</span><span class="health-btn-label">${escapeHtml(label)}</span></button>`;
+    }
+
+    function setButtonBusy(button, busy) {
+        if (!button) return;
+        button.disabled = busy;
+        button.classList.toggle('btn-loading', busy);
+        button.setAttribute('aria-busy', busy ? 'true' : 'false');
+    }
+
     function t(key, fallback, replacements = {}) {
         const translated = healthState.language && typeof healthState.language.t === 'function'
             ? healthState.language.t(key)
@@ -144,6 +214,94 @@
         return trimmed;
     }
 
+    function translateReasonDetail(item) {
+        if (!item || typeof item !== 'object') {
+            return translateReason(String(item || ''));
+        }
+        const code = item.code || '';
+        const params = item.params || {};
+        const detail = item.detail || '';
+        switch (code) {
+            case 'duplicate_url':
+                return t('health.reasonDuplicateUrl', 'Duplicate URL in {count} bookmarks', { count: params.count || '' });
+            case 'shortcut_conflict':
+                return t('health.reasonShortcutConflict', 'Shortcut conflict with {count} bookmarks', { count: params.count || '' });
+            case 'status_never_run':
+                return t('health.reasonStatusNeverRun', 'Status check has never run');
+            case 'status_stale':
+                return t('health.reasonStatusStale', 'Status check is stale');
+            case 'not_opened_30_days':
+                return t('health.reasonNotOpened30Days', 'Not opened in over 30 days');
+            case 'never_opened':
+                return t('health.reasonNeverOpened', 'Never opened');
+            case 'no_preview':
+                return t('health.reasonNoPreview', 'No preview metadata yet');
+            case 'unreachable':
+                return t('health.errorUnreachable', 'Unreachable');
+            case 'last_error':
+                return translateReason(detail) || detail;
+            default:
+                return detail || translateReason(detail) || code;
+        }
+    }
+
+    function getIssueReasonLabels(issue) {
+        if (Array.isArray(issue?.reasonDetails) && issue.reasonDetails.length) {
+            return issue.reasonDetails.map((item) => translateReasonDetail(item));
+        }
+        return (issue?.reasons || []).map((reason) => translateReason(reason));
+    }
+
+    function emptyMessageForFilter(filter) {
+        const key = EMPTY_FILTER_KEYS[filter] || 'health.noMatchingIssues';
+        const fallbacks = {
+            'health.emptyAll': 'No bookmarks match the current filters.',
+            'health.emptyBroken': 'No broken bookmarks — nice work.',
+            'health.emptyDuplicate': 'No duplicate URLs in this view.',
+            'health.emptyShortcutConflict': 'No shortcut conflicts in this view.',
+            'health.emptyUnchecked': 'All visible bookmarks have a recent status check.',
+            'health.emptyStale': 'No stale bookmarks in this view.',
+            'health.emptyUnused': 'No never-opened bookmarks in this view.',
+            'health.emptyMissingPreview': 'No missing preview metadata in this view.',
+            'health.emptyHealthy': 'No healthy-only rows match the current filters.',
+            'health.noMatchingIssues': 'No issues match the current filter.'
+        };
+        return t(key, fallbacks[key] || fallbacks['health.noMatchingIssues']);
+    }
+
+    function issueSelectionKey(issue) {
+        return `${issue.pageId}-${issue.index}`;
+    }
+
+    function openBookmarkInConfig(issue) {
+        if (!issue) return;
+        try {
+            sessionStorage.setItem(HEALTH_OPEN_KEY, JSON.stringify({
+                pageId: issue.pageId,
+                index: issue.index,
+                url: issue.url || ''
+            }));
+        } catch (e) { /* quota */ }
+        window.location.href = '/config#bookmarks';
+    }
+
+    function resolveBookmarkIconSrc(icon) {
+        const raw = String(icon || '').trim();
+        if (!raw) return '';
+        if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/')) {
+            return raw;
+        }
+        return `/data/icons/${raw}`;
+    }
+
+    function renderFavicon(issue) {
+        const src = resolveBookmarkIconSrc(issue?.icon);
+        if (src) {
+            return `<img class="health-row-favicon" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />`;
+        }
+        return '<span class="health-row-favicon health-row-favicon--empty" aria-hidden="true"></span>';
+    }
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replaceAll('&', '&amp;')
@@ -171,24 +329,214 @@
             url: issue.url,
         });
         const label = t('health.openInDashboard', 'dashboard');
-        return `<a class="btn btn-small btn-secondary health-action-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+        return `<a class="btn btn-small btn-secondary health-action-link health-btn-with-icon" href="${escapeHtml(href)}" aria-label="${escapeHtml(label)}"><span class="health-btn-icon">${HEALTH_ICONS.dashboard}</span><span class="health-btn-label">${escapeHtml(label)}</span></a>`;
     }
 
     function shouldShowHealActions(issue) {
-        return Boolean(issue?.url);
+        if (!issue?.url) return false;
+        return ['broken', 'unchecked', 'missing-preview'].includes(issue.status);
     }
 
-    function renderHealActions(issue) {
-        if (!shouldShowHealActions(issue)) return '';
+    function issueRowKey(issue) {
+        return `${issue.pageId}-${issue.index}`;
+    }
+
+    function renderIssueActions(issue) {
+        const key = issueRowKey(issue);
+        const healable = shouldShowHealActions(issue);
+        const openLabel = t('health.openLink', 'Open link');
+        const moreLabel = t('health.moreActions', 'More actions');
+        const pingLabel = t('health.retestRow', 'Re-check status');
+        const faviconLabel = t('health.refreshFavicon', 'favicon');
+        const fixLabel = t('health.autoHealOneClick', '1-click fix');
+
+        const primaryFix = healable
+            ? labeledButton(
+                'btn btn-small btn-primary health-btn-with-icon',
+                ` data-heal-fix-page="${escapeHtml(issue.pageId)}" data-heal-fix-index="${escapeHtml(issue.index)}"`,
+                'fix',
+                fixLabel
+            )
+            : '';
+
+        const healMenuItems = healable ? `
+                <p class="health-actions-menu-label" role="presentation">${escapeHtml(t('health.menuRepair', 'Repair'))}</p>
+                <button type="button" class="health-actions-menu-item" role="menuitem" data-heal-redirect-page="${escapeHtml(issue.pageId)}" data-heal-redirect-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealRedirect', 'detect redirect'))}</button>
+                <button type="button" class="health-actions-menu-item" role="menuitem" data-heal-title-page="${escapeHtml(issue.pageId)}" data-heal-title-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealTitle', 'refresh title'))}</button>
+                <button type="button" class="health-actions-menu-item" role="menuitem" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
+            ` : `
+                <button type="button" class="health-actions-menu-item" role="menuitem" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
+            `;
 
         return `
-            <div class="health-issue-toolbar health-issue-toolbar-heal">
-                <button type="button" class="btn btn-small btn-secondary" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
-                <button type="button" class="btn btn-small btn-secondary" data-heal-redirect-page="${escapeHtml(issue.pageId)}" data-heal-redirect-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealRedirect', 'detect redirect'))}</button>
-                <button type="button" class="btn btn-small btn-secondary" data-heal-title-page="${escapeHtml(issue.pageId)}" data-heal-title-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealTitle', 'refresh title'))}</button>
-                <button type="button" class="btn btn-small btn-primary" data-heal-fix-page="${escapeHtml(issue.pageId)}" data-heal-fix-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.autoHealOneClick', '1-click fix'))}</button>
+            <div class="health-row-actions" role="group" aria-label="${escapeHtml(t('health.rowActionsLabel', 'Bookmark actions'))}">
+                <div class="health-row-actions-primary">
+                    ${labeledButton(
+                        'btn btn-small btn-secondary health-btn-with-icon',
+                        ` data-open-url="${escapeHtml(issue.url)}"`,
+                        'external',
+                        openLabel
+                    )}
+                    ${renderOpenInDashboardAction(issue)}
+                    ${primaryFix}
+                </div>
+                <span class="health-actions-divider" aria-hidden="true"></span>
+                <div class="health-row-actions-secondary">
+                    ${iconButton(
+                        'btn btn-small btn-secondary btn-icon-only',
+                        ` data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}"`,
+                        'ping',
+                        pingLabel
+                    )}
+                    ${iconButton(
+                        'btn btn-small btn-secondary btn-icon-only',
+                        ` data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}"`,
+                        'favicon',
+                        faviconLabel
+                    )}
+                    <div class="health-actions-menu-wrap">
+                        ${iconButton(
+                            'btn btn-small btn-secondary btn-icon-only health-actions-more-btn',
+                            ` aria-haspopup="menu" aria-expanded="false" data-menu-toggle="${escapeHtml(key)}"`,
+                            'more',
+                            moreLabel
+                        )}
+                        <div class="health-actions-menu" role="menu" hidden data-menu-for="${escapeHtml(key)}">
+                            ${healMenuItems}
+                            <p class="health-actions-menu-label health-actions-menu-label-danger" role="presentation">${escapeHtml(t('health.menuDanger', 'Remove'))}</p>
+                            <button type="button" class="health-actions-menu-item health-actions-menu-item-danger" role="menuitem" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
+    }
+
+    function closeAllActionMenus() {
+        document.querySelectorAll('.health-actions-menu').forEach((menu) => {
+            menu.hidden = true;
+        });
+        document.querySelectorAll('.health-actions-more-btn').forEach((btn) => {
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function toggleActionMenu(key) {
+        const menu = document.querySelector(`.health-actions-menu[data-menu-for="${CSS.escape(key)}"]`);
+        const btn = document.querySelector(`.health-actions-more-btn[data-menu-toggle="${CSS.escape(key)}"]`);
+        if (!menu || !btn) return;
+        const willOpen = menu.hidden;
+        closeAllActionMenus();
+        if (willOpen) {
+            menu.hidden = false;
+            menu.classList.remove('health-actions-menu--up');
+            btn.setAttribute('aria-expanded', 'true');
+            requestAnimationFrame(() => {
+                const menuRect = menu.getBoundingClientRect();
+                if (menuRect.bottom > window.innerHeight - 8) {
+                    menu.classList.add('health-actions-menu--up');
+                }
+            });
+        }
+    }
+
+    function pruneSelection() {
+        const visible = new Set((healthState.visibleIssues || []).map(issueSelectionKey));
+        for (const key of [...healthState.selected]) {
+            if (!visible.has(key)) healthState.selected.delete(key);
+        }
+    }
+
+    function syncSelectionToolbar() {
+        const bar = document.getElementById('health-selection-toolbar');
+        const countEl = document.getElementById('health-selection-count');
+        if (!bar || !countEl) return;
+        const count = healthState.selected.size;
+        bar.hidden = count === 0;
+        countEl.textContent = t('health.selectionCount', '{count} selected', { count });
+    }
+
+    function focusRowByIndex(index) {
+        const rows = document.querySelectorAll('#health-issues .health-row');
+        if (!rows.length) return;
+        const clamped = Math.max(0, Math.min(index, rows.length - 1));
+        healthState.focusedRowIndex = clamped;
+        rows.forEach((row, i) => {
+            row.classList.toggle('health-row--focused', i === clamped);
+        });
+        rows[clamped]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function moveRowFocus(delta) {
+        const rows = document.querySelectorAll('#health-issues .health-row');
+        if (!rows.length) return;
+        const start = healthState.focusedRowIndex < 0 ? 0 : healthState.focusedRowIndex;
+        focusRowByIndex(start + delta);
+    }
+
+    function findIssueBySelectionKey(key) {
+        return (healthState.visibleIssues || []).find((issue) => issueSelectionKey(issue) === key);
+    }
+
+    async function bulkDeleteSelected() {
+        const keys = [...healthState.selected];
+        if (!keys.length) return;
+        const confirmed = await confirmDialog({
+            title: t('health.bulkDeleteTitle', 'Delete selected'),
+            message: t('health.bulkDeleteConfirm', 'Delete {count} bookmark(s) from the dashboard?', { count: keys.length }),
+            confirmText: t('health.delete', 'delete'),
+            cancelText: t('health.cancel', 'Cancel'),
+            confirmClass: 'danger'
+        });
+        if (!confirmed) return;
+
+        let deleted = 0;
+        for (const key of keys) {
+            const issue = findIssueBySelectionKey(key);
+            if (!issue) continue;
+            try {
+                const response = await apiFetch('/api/health/delete-bookmark', {
+                    method: 'POST',
+                    headers: writeJsonHeaders(),
+                    body: JSON.stringify({ pageId: issue.pageId, index: issue.index })
+                });
+                if (response.ok) deleted += 1;
+            } catch (e) { /* continue */ }
+        }
+        healthState.selected.clear();
+        showBulkStatus(t('health.bulkDeleted', 'Deleted {count} bookmark(s).', { count: deleted }));
+        await loadReport();
+        render();
+    }
+
+    async function bulkRefreshFaviconsSelected() {
+        const keys = [...healthState.selected];
+        if (!keys.length) return;
+        let updated = 0;
+        for (const key of keys) {
+            const issue = findIssueBySelectionKey(key);
+            if (!issue?.url) continue;
+            try {
+                const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+                if (typeof fetchIcon !== 'function') break;
+                const iconPath = await fetchIcon(issue.url);
+                if (!iconPath) continue;
+                const res = await fetch(`/api/bookmarks?page=${issue.pageId}`);
+                if (!res.ok) continue;
+                const bookmarks = await res.json();
+                if (!Array.isArray(bookmarks) || !bookmarks[issue.index]) continue;
+                bookmarks[issue.index].icon = iconPath;
+                const saveRes = await apiFetch(`/api/bookmarks?page=${issue.pageId}`, {
+                    method: 'POST',
+                    headers: writeJsonHeaders(),
+                    body: JSON.stringify(bookmarks)
+                });
+                if (saveRes.ok) updated += 1;
+            } catch (e) { /* continue */ }
+        }
+        showBulkStatus(t('health.bulkFaviconsDone', 'Updated {count} favicon(s).', { count: updated }));
+        await loadReport();
+        render();
     }
 
     function fmtDate(value) {
@@ -254,9 +602,32 @@
         return issue.status === filter;
     }
 
-    function buildSummaryCard(label, value, meta, tone = 'neutral') {
+    const summaryFilterKeys = {
+        healthy: 'healthy',
+        broken: 'broken',
+        duplicate: 'duplicate',
+        shortcutConflicts: 'shortcut-conflict',
+        unchecked: 'unchecked',
+        stale: 'stale',
+        missingPreview: 'missing-preview',
+        unused: 'unused'
+    };
+
+    function buildSummaryCard(label, value, meta, tone = 'neutral', filterKey = null) {
+        const isActive = filterKey && healthState.filter === filterKey;
+        const activeClass = isActive ? ' active' : '';
+        const metaTitle = meta ? ` title="${escapeHtml(meta)}"` : '';
+        if (filterKey) {
+            return `
+                <button type="button" class="health-card health-card-${tone} health-card-button${activeClass}" data-filter="${escapeHtml(filterKey)}"${metaTitle}>
+                    <div class="health-card-label">${escapeHtml(label)}</div>
+                    <div class="health-card-value">${escapeHtml(value)}</div>
+                    <div class="health-card-meta">${escapeHtml(meta || '')}</div>
+                </button>
+            `;
+        }
         return `
-            <article class="health-card health-card-${tone}">
+            <article class="health-card health-card-${tone}"${metaTitle}>
                 <div class="health-card-label">${escapeHtml(label)}</div>
                 <div class="health-card-value">${escapeHtml(value)}</div>
                 <div class="health-card-meta">${escapeHtml(meta || '')}</div>
@@ -267,15 +638,15 @@
     function renderSummary(report) {
         const summary = report?.summary || {};
         const cards = [
-            buildSummaryCard(t('health.summaryTotal', 'Total'), summary.totalBookmarks || 0, t('health.summaryTotalMeta', 'All bookmarks'), 'neutral'),
-            buildSummaryCard(t('health.summaryHealthy', 'Healthy'), summary.healthyCount || 0, t('health.summaryHealthyMeta', 'No active issues'), 'good'),
-            buildSummaryCard(t('health.summaryBroken', 'Broken'), summary.brokenCount || 0, t('health.summaryBrokenMeta', 'Last error recorded'), 'bad'),
-            buildSummaryCard(t('health.summaryDuplicates', 'Duplicates'), summary.duplicateCount || 0, t('health.summaryDuplicatesMeta', 'Duplicate URLs'), 'warn'),
-            buildSummaryCard(t('health.summaryShortcutConflicts', 'Shortcut conflicts'), summary.shortcutConflictCount || 0, t('health.summaryShortcutConflictsMeta', 'Duplicate shortcuts'), 'warn'),
-            buildSummaryCard(t('health.summaryUnchecked', 'Unchecked'), summary.uncheckedCount || 0, t('health.summaryUncheckedMeta', 'Status checks missing or stale'), 'warn'),
-            buildSummaryCard(t('health.summaryStale', 'Stale'), summary.staleCount || 0, t('health.summaryStaleMeta', 'Not opened recently'), 'warn'),
-            buildSummaryCard(t('health.summaryMissingPreview', 'Missing preview'), summary.missingPreviewCount || 0, t('health.summaryMissingPreviewMeta', 'No preview metadata yet'), 'neutral'),
-            buildSummaryCard(t('health.summaryUnused', 'Unused'), summary.unusedCount || 0, t('health.summaryUnusedMeta', 'Never opened'), 'neutral')
+            buildSummaryCard(t('health.summaryTotal', 'Total'), summary.totalBookmarks || 0, t('health.summaryTotalMeta', 'All bookmarks'), 'neutral', 'all'),
+            buildSummaryCard(t('health.summaryHealthy', 'Healthy'), summary.healthyCount || 0, t('health.summaryHealthyMeta', 'No active issues'), 'good', summaryFilterKeys.healthy),
+            buildSummaryCard(t('health.summaryBroken', 'Broken'), summary.brokenCount || 0, t('health.summaryBrokenMeta', 'Last error recorded'), 'bad', summaryFilterKeys.broken),
+            buildSummaryCard(t('health.summaryDuplicates', 'Duplicates'), summary.duplicateCount || 0, t('health.summaryDuplicatesMeta', 'Duplicate URLs'), 'warn', summaryFilterKeys.duplicate),
+            buildSummaryCard(t('health.summaryShortcutConflicts', 'Shortcut conflicts'), summary.shortcutConflictCount || 0, t('health.summaryShortcutConflictsMeta', 'Duplicate shortcuts'), 'warn', summaryFilterKeys.shortcutConflicts),
+            buildSummaryCard(t('health.summaryUnchecked', 'Unchecked'), summary.uncheckedCount || 0, t('health.summaryUncheckedMeta', 'Status checks missing or stale'), 'warn', summaryFilterKeys.unchecked),
+            buildSummaryCard(t('health.summaryStale', 'Stale'), summary.staleCount || 0, t('health.summaryStaleMeta', 'Not opened recently'), 'warn', summaryFilterKeys.stale),
+            buildSummaryCard(t('health.summaryMissingPreview', 'Missing preview'), summary.missingPreviewCount || 0, t('health.summaryMissingPreviewMeta', 'No preview metadata yet'), 'neutral', summaryFilterKeys.missingPreview),
+            buildSummaryCard(t('health.summaryUnused', 'Unused'), summary.unusedCount || 0, t('health.summaryUnusedMeta', 'Never opened'), 'neutral', summaryFilterKeys.unused)
         ];
         return cards.join('');
     }
@@ -294,12 +665,37 @@
             healthy: summary.healthyCount || 0
         };
 
-        return filterOrder.map((filter) => `
-            <button class="health-pill ${healthState.filter === filter ? 'active' : ''}" type="button" data-filter="${filter}">
+        return filterOrder.map((filter) => {
+            const isActive = healthState.filter === filter;
+            return `
+            <button class="health-pill health-period-btn ${isActive ? 'active' : ''}" type="button" data-filter="${filter}" aria-pressed="${isActive ? 'true' : 'false'}">
                 ${escapeHtml(filter === 'all' ? t('health.filterAll', 'all') : statusLabel(filter))}
                 <span>${counts[filter] || 0}</span>
             </button>
-        `).join('');
+        `;
+        }).join('');
+    }
+
+    function getFilteredDuplicateGroups(report) {
+        const groups = (report?.duplicateGroups || []).map(orderDuplicateGroupBestFirst);
+        const query = healthState.query?.toLowerCase();
+        const pageId = healthState.pageId;
+        return groups.filter((group) => {
+            if (pageId && pageId !== 'all') {
+                const onPage = (group.bookmarks || []).some((b) => String(b.pageId) === String(pageId));
+                if (!onPage) return false;
+            }
+            if (query) {
+                const hay = `${group.url} ${(group.bookmarks || []).map((b) => b.name).join(' ')}`.toLowerCase();
+                if (!hay.includes(query)) return false;
+            }
+            return true;
+        }).sort((a, b) => (b.bookmarks?.length || 0) - (a.bookmarks?.length || 0));
+    }
+
+    function shouldShowDuplicatesPanel(report) {
+        if (!['all', 'duplicate'].includes(healthState.filter)) return false;
+        return getFilteredDuplicateGroups(report).length > 0;
     }
 
     const statusRank = { broken: 0, duplicate: 1, 'shortcut-conflict': 2, unchecked: 3, stale: 4, unused: 5, 'missing-preview': 6, healthy: 7 };
@@ -339,53 +735,58 @@
             resultsCount.textContent = t('health.visibleCount', '{count} visible', { count: issues.length });
         }
 
+        healthState.visibleIssues = issues;
+
         if (!issues.length) {
-            return `<div class="health-empty">${escapeHtml(t('health.noMatchingIssues', 'No issues match the current filter.'))}</div>`;
+            return `<div class="health-empty">${escapeHtml(emptyMessageForFilter(healthState.filter))}</div>`;
         }
 
-        return issues.map((issue) => `
-            <article class="health-issue health-issue-${escapeHtml(issue.status)}">
-                <div class="health-issue-main">
-                    <div class="health-issue-head">
-                        <div>
-                            <h3>${escapeHtml(issue.name || issue.url)}</h3>
-                            <p>${escapeHtml(issue.url)}</p>
-                        </div>
-                        <div class="health-score ${scoreClass(issue.score)}">${escapeHtml(issue.score)}</div>
+        return issues.map((issue, rowIndex) => {
+            const selKey = issueSelectionKey(issue);
+            const isSelected = healthState.selected.has(selKey);
+            const isFocused = healthState.focusedRowIndex === rowIndex;
+            const openAria = t('health.rowOpenAria', 'Open "{name}" in bookmark editor', { name: issue.name || issue.url });
+            return `
+            <article class="health-row health-row--${escapeHtml(issue.status)}${isSelected ? ' health-row--selected' : ''}${isFocused ? ' health-row--focused' : ''}" data-row-index="${rowIndex}" data-row-key="${escapeHtml(selKey)}">
+                <label class="health-row-select">
+                    <input type="checkbox" class="health-row-checkbox" data-select-key="${escapeHtml(selKey)}"${isSelected ? ' checked' : ''} aria-label="${escapeHtml(t('health.selectRow', 'Select bookmark'))}" />
+                </label>
+                <div class="health-row-leading">
+                    ${renderFavicon(issue)}
+                    <div class="health-row-score ${scoreClass(issue.score)}" aria-label="${escapeHtml(t('health.scoreLabel', 'Health score {score}', { score: issue.score }))}">${escapeHtml(issue.score)}</div>
+                </div>
+                <button type="button" class="health-row-main health-row-open" data-open-config="1" aria-label="${escapeHtml(openAria)}">
+                    <div class="health-row-head">
+                        <h3 class="health-row-name">${escapeHtml(issue.name || issue.url)}</h3>
+                        <p class="health-row-url">${escapeHtml(issue.url)}</p>
                     </div>
-                    <div class="health-issue-meta">
+                    <div class="health-row-meta">
+                        <span class="health-row-status">${escapeHtml(statusLabel(issue.status))}</span>
                         <span>${escapeHtml(issue.pageName || t('health.pageNumber', 'Page {id}', { id: issue.pageId }))}</span>
                         <span>${escapeHtml(issue.category || t('dashboard.uncategorized', 'uncategorized'))}</span>
                         ${issue.shortcut ? `<span>${escapeHtml(issue.shortcut)}</span>` : ''}
                         ${issue.pinned ? `<span>${escapeHtml(t('health.pinned', 'pinned'))}</span>` : ''}
-                        <span>${escapeHtml(statusLabel(issue.status))}</span>
                         ${issue.duplicateCount > 1 ? `<span>${escapeHtml(t('health.duplicateCount', '{count}x duplicate', { count: issue.duplicateCount }))}</span>` : ''}
                     </div>
-                    <div class="health-reasons">
-                        ${(issue.reasons || []).map((reason) => `<span>${escapeHtml(translateReason(reason))}</span>`).join('')}
+                    <div class="health-row-reasons">
+                        ${getIssueReasonLabels(issue).map((label) => `<span>${escapeHtml(label)}</span>`).join('')}
                     </div>
-                    <div class="health-times">
+                    <div class="health-row-times">
                         <span>${escapeHtml(t('health.openedCount', 'opened {count}x', { count: issue.openCount || 0 }))}</span>
                         <span>${escapeHtml(t('health.lastOpened', 'last opened {date}', { date: fmtDate(issue.lastOpened) }))}</span>
                         <span>${escapeHtml(t('health.lastChecked', 'last checked {date}', { date: fmtDate(issue.lastChecked) }))}</span>
                     </div>
-                </div>
-                <div class="health-issue-actions">
-                    <div class="health-issue-toolbar">
-                        ${renderOpenInDashboardAction(issue)}
-                        <button type="button" class="btn btn-small btn-secondary" data-open-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.open', 'open'))}</button>
-                        <button type="button" class="btn btn-small btn-secondary" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.ping', 'ping'))}</button>
-                        <button type="button" class="btn btn-small btn-secondary" data-favicon-url="${escapeHtml(issue.url)}" data-favicon-page="${escapeHtml(issue.pageId)}" data-favicon-index="${escapeHtml(issue.index)}">${escapeHtml(t('health.refreshFavicon', 'favicon'))}</button>
-                        <button type="button" class="btn btn-small btn-danger" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
-                    </div>
-                    ${renderHealActions(issue)}
+                </button>
+                <div class="health-row-actions-col">
+                    ${renderIssueActions(issue)}
                 </div>
             </article>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function renderDuplicates(report) {
-        const groups = (report?.duplicateGroups || []).map(orderDuplicateGroupBestFirst);
+        const groups = getFilteredDuplicateGroups(report);
         if (!groups.length) {
             return `<div class="health-empty">${escapeHtml(t('health.noDuplicateGroups', 'No duplicate groups found.'))}</div>`;
         }
@@ -434,8 +835,7 @@
         const pageId = Number(button.getAttribute('data-ping-page'));
         const index = Number(button.getAttribute('data-ping-index'));
         if (!url) return;
-        button.disabled = true;
-        button.textContent = t('health.pinging', 'pinging...');
+        setButtonBusy(button, true);
         try {
             const response = await apiFetch(`/api/ping?url=${encodeURIComponent(url)}`);
             const result = await response.json();
@@ -443,9 +843,10 @@
             const pingMs = result.ping || 0;
             const errorDetail = (result.errorDetail || '').trim()
                 || (status === 'online' ? '' : t('health.errorPingFailed', 'ping failed'));
-            button.textContent = status === 'online'
+            const statusMsg = status === 'online'
                 ? t('health.onlineMs', 'online {ms}ms', { ms: pingMs })
                 : (errorDetail || t('health.offline', 'offline'));
+            showBulkStatus(statusMsg);
 
             await cacheScanResult(url, status, pingMs, errorDetail);
             if (Number.isFinite(pageId) && Number.isFinite(index)) {
@@ -454,8 +855,8 @@
                 render();
             }
         } catch (error) {
-            button.textContent = t('health.failed', 'failed');
             const failDetail = error.message || t('health.errorPingFailed', 'ping failed');
+            showBulkStatus(t('health.failed', 'failed') + ': ' + failDetail);
             await cacheScanResult(url, 'error', 0, failDetail);
             if (Number.isFinite(pageId) && Number.isFinite(index)) {
                 await persistIssueStatus(pageId, index, 'offline', failDetail);
@@ -463,10 +864,7 @@
                 render();
             }
         } finally {
-            setTimeout(() => {
-                button.disabled = false;
-                button.textContent = t('health.ping', 'ping');
-            }, 1200);
+            setButtonBusy(button, false);
         }
     }
 
@@ -474,17 +872,125 @@
         if (healthListenersBound) return;
         healthListenersBound = true;
 
-        document.getElementById('health-filter-pills')?.addEventListener('click', (e) => {
-            const button = e.target.closest('[data-filter]');
-            if (!button) return;
-            healthState.filter = button.getAttribute('data-filter') || 'all';
+        document.getElementById('health-summary')?.addEventListener('click', (e) => {
+            const card = e.target.closest('[data-filter]');
+            if (!card || !card.classList.contains('health-card-button')) return;
+            healthState.filter = card.getAttribute('data-filter') || 'all';
+            healthState.selected.clear();
+            healthState.focusedRowIndex = -1;
             saveState();
             render();
         });
 
+        document.getElementById('health-filter-pills')?.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-filter]');
+            if (!button) return;
+            healthState.filter = button.getAttribute('data-filter') || 'all';
+            healthState.selected.clear();
+            healthState.focusedRowIndex = -1;
+            saveState();
+            render();
+        });
+
+        document.getElementById('health-select-all-btn')?.addEventListener('click', () => {
+            (healthState.visibleIssues || []).forEach((issue) => {
+                healthState.selected.add(issueSelectionKey(issue));
+            });
+            render();
+        });
+
+        document.getElementById('health-clear-selection-btn')?.addEventListener('click', () => {
+            healthState.selected.clear();
+            render();
+        });
+
+        document.getElementById('health-bulk-delete-btn')?.addEventListener('click', () => {
+            void bulkDeleteSelected();
+        });
+
+        document.getElementById('health-bulk-favicon-btn')?.addEventListener('click', () => {
+            void bulkRefreshFaviconsSelected();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.health-actions-menu-wrap')) return;
+            closeAllActionMenus();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAllActionMenus();
+                return;
+            }
+            const tag = (e.target?.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) {
+                return;
+            }
+            if (!document.getElementById('health-issues')?.contains(document.activeElement)
+                && tag !== 'body'
+                && !e.target?.closest('#health-issues')) {
+                // still allow when no specific focus inside issues
+            }
+            if (e.key === 'j' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveRowFocus(1);
+                return;
+            }
+            if (e.key === 'k' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveRowFocus(-1);
+                return;
+            }
+            if (e.key === 'Enter' && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue) {
+                    e.preventDefault();
+                    openBookmarkInConfig(issue);
+                }
+                return;
+            }
+            if ((e.key === 'o' || e.key === 'O') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue?.url) {
+                    e.preventDefault();
+                    window.open(issue.url, '_blank', 'noopener');
+                }
+            }
+        });
+
         document.getElementById('health-issues')?.addEventListener('click', async (e) => {
+            const checkbox = e.target.closest('.health-row-checkbox');
+            if (checkbox) {
+                const key = checkbox.getAttribute('data-select-key');
+                if (!key) return;
+                if (checkbox.checked) healthState.selected.add(key);
+                else healthState.selected.delete(key);
+                syncSelectionToolbar();
+                const row = checkbox.closest('.health-row');
+                row?.classList.toggle('health-row--selected', checkbox.checked);
+                return;
+            }
+
+            const openConfigBtn = e.target.closest('[data-open-config]');
+            if (openConfigBtn) {
+                const row = openConfigBtn.closest('.health-row');
+                const idx = Number(row?.getAttribute('data-row-index'));
+                const issue = healthState.visibleIssues[idx];
+                if (issue) openBookmarkInConfig(issue);
+                return;
+            }
+
+            const menuToggle = e.target.closest('[data-menu-toggle]');
+            if (menuToggle) {
+                e.stopPropagation();
+                toggleActionMenu(menuToggle.getAttribute('data-menu-toggle') || '');
+                return;
+            }
+
             const button = e.target.closest('button');
             if (!button) return;
+
+            closeAllActionMenus();
 
             if (button.hasAttribute('data-open-url')) {
                 window.open(button.getAttribute('data-open-url'), '_blank', 'noopener');
@@ -546,12 +1052,19 @@
             const btn = e.target.closest('.health-keep-first-btn');
             if (!btn) return;
             const idx = parseInt(btn.getAttribute('data-group-index'), 10);
-            const group = orderDuplicateGroupBestFirst(healthState.report?.duplicateGroups?.[idx]);
+            const groups = getFilteredDuplicateGroups(healthState.report);
+            const group = groups[idx];
             if (!group) return;
 
+            const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = t('health.removing', 'removing…');
-            await performMergeDuplicates(group);
+            try {
+                await performMergeDuplicates(group);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         });
 
         const sortSelect = document.getElementById('health-sort-select');
@@ -565,14 +1078,17 @@
             const btn = e.target;
             const originalText = btn.textContent;
             btn.disabled = true;
-            btn.classList.add('is-loading');
+            btn.classList.add('btn-loading');
             btn.textContent = t('health.retesting', 'retesting...');
             try {
-                const response = await apiFetch('/api/health/retest-all', { method: 'POST' });
+                const response = await apiFetch('/api/health/retest-all', {
+                    method: 'POST',
+                    headers: writeJsonHeaders()
+                });
                 if (response.ok) {
                     const result = await response.json();
                     showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
-                    btn.textContent = t('health.retesting', 'reloading...');
+                    btn.textContent = t('health.reloading', 'reloading...');
                     await loadReport();
                     render();
                 } else {
@@ -582,7 +1098,7 @@
                 showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
             } finally {
                 btn.disabled = false;
-                btn.classList.remove('is-loading');
+                btn.classList.remove('btn-loading');
                 btn.textContent = originalText;
             }
         });
@@ -621,7 +1137,7 @@
 
             const originalText = btn.textContent;
             btn.disabled = true;
-            btn.classList.add('is-loading');
+            btn.classList.add('btn-loading');
             btn.textContent = t('health.opening', 'opening...');
             try {
                 const response = await apiFetch('/api/health/open-broken', {
@@ -648,7 +1164,7 @@
                 showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
             } finally {
                 btn.disabled = false;
-                btn.classList.remove('is-loading');
+                btn.classList.remove('btn-loading');
                 btn.textContent = originalText;
             }
         });
@@ -662,19 +1178,20 @@
         const statusEl = document.getElementById('health-bulk-status');
         if (statusEl) {
             statusEl.textContent = message;
-            statusEl.style.display = 'block';
+            statusEl.hidden = false;
             setTimeout(() => {
-                statusEl.style.display = 'none';
-            }, 3000);
+                statusEl.hidden = true;
+            }, 4000);
         }
     }
 
     function showMergeDuplicatesFlow() {
-        if (!healthState.report?.duplicateGroups?.length) {
+        const groups = getFilteredDuplicateGroups(healthState.report);
+        if (!groups.length) {
             showBulkStatus(t('health.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'));
             return;
         }
-        pickDuplicateGroup(healthState.report.duplicateGroups).then((group) => {
+        pickDuplicateGroup(groups).then((group) => {
             if (group) confirmAndMergeDuplicateGroup(group);
         });
     }
@@ -705,7 +1222,8 @@
                 <div class="health-merge-pick-list">${itemsHtml}</div>`;
 
             if (!window.AppModal || typeof window.AppModal.show !== 'function') {
-                finish(groups[0]);
+                showBulkStatus(t('health.mergeModalRequired', 'Open the merge picker from a desktop browser with modals enabled.'));
+                finish(null);
                 return;
             }
 
@@ -874,18 +1392,19 @@
     }
 
     async function handleRedirectDetect(button, pageId, index) {
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = t('health.autoHealWorking', 'working...');
+        setButtonBusy(button, true);
         try {
             const suggestion = await fetchAutoHealSuggestion(pageId, index);
             if (!suggestion.redirectUrl) {
                 showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
                 return;
             }
-            const applyNow = window.confirm(
-                t('health.autoHealRedirectConfirm', 'Redirect found. Apply URL fix now?')
-            );
+            const applyNow = await confirmDialog({
+                title: t('health.autoHealRedirect', 'detect redirect'),
+                message: t('health.autoHealRedirectConfirm', 'Redirect found. Apply URL fix now?'),
+                confirmText: t('health.confirm', 'Confirm'),
+                cancelText: t('health.cancel', 'Cancel')
+            });
             if (!applyNow) {
                 showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: suggestion.redirectUrl }));
                 return;
@@ -897,15 +1416,12 @@
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
-            button.disabled = false;
-            button.textContent = original;
+            setButtonBusy(button, false);
         }
     }
 
     async function handleTitleRefresh(button, pageId, index) {
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = t('health.autoHealWorking', 'working...');
+        setButtonBusy(button, true);
         try {
             await applyAutoHeal(pageId, index, { refreshTitle: true });
             showBulkStatus(t('health.autoHealTitleApplied', 'Title refreshed.'));
@@ -914,15 +1430,12 @@
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
-            button.disabled = false;
-            button.textContent = original;
+            setButtonBusy(button, false);
         }
     }
 
     async function handleOneClickFix(button, pageId, index) {
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = t('health.autoHealWorking', 'working...');
+        setButtonBusy(button, true);
         try {
             const suggestion = await fetchAutoHealSuggestion(pageId, index);
             await applyAutoHeal(pageId, index, {
@@ -935,20 +1448,21 @@
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
-            button.disabled = false;
-            button.textContent = original;
+            setButtonBusy(button, false);
         }
     }
 
     async function handleDeleteIssue(button, pageId, index, bookmarkName) {
-        const confirmed = window.confirm(
-            t('health.deleteConfirm', 'Delete "{name}" from dashboard?', { name: bookmarkName || 'bookmark' })
-        );
+        const confirmed = await confirmDialog({
+            title: t('health.delete', 'delete'),
+            message: t('health.deleteConfirm', 'Delete "{name}" from dashboard?', { name: bookmarkName || 'bookmark' }),
+            confirmText: t('health.delete', 'delete'),
+            cancelText: t('health.cancel', 'Cancel'),
+            confirmClass: 'danger'
+        });
         if (!confirmed) return;
 
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = t('health.deleting', 'deleting...');
+        setButtonBusy(button, true);
         try {
             const response = await apiFetch('/api/health/delete-bookmark', {
                 method: 'POST',
@@ -964,15 +1478,12 @@
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
-            button.disabled = false;
-            button.textContent = original;
+            setButtonBusy(button, false);
         }
     }
 
     async function handleFaviconRefresh(button, url, pageId, index) {
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = t('health.autoHealWorking', 'working...');
+        setButtonBusy(button, true);
         try {
             const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
             if (typeof fetchIcon !== 'function') {
@@ -1003,9 +1514,15 @@
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
-            button.disabled = false;
-            button.textContent = original;
+            setButtonBusy(button, false);
         }
+    }
+
+    function syncFilterClearButton() {
+        const input = document.getElementById('health-search');
+        const clearBtn = document.getElementById('health-search-clear');
+        if (!input || !clearBtn) return;
+        clearBtn.hidden = !input.value.trim();
     }
 
     function syncPageFilterSelect(report) {
@@ -1037,20 +1554,35 @@
         const duplicatesEl = document.getElementById('health-duplicates');
 
         if (summaryEl) summaryEl.innerHTML = renderSummary(report);
-        if (pillsEl) pillsEl.innerHTML = renderFilterPills(report);
+        if (pillsEl) {
+            pillsEl.innerHTML = renderFilterPills(report);
+            if (!pillsEl.getAttribute('role')) {
+                pillsEl.setAttribute('role', 'group');
+                pillsEl.setAttribute('aria-label', t('health.filterGroupLabel', 'Filter by issue type'));
+            }
+        }
         syncPageFilterSelect(report);
         if (issuesEl) issuesEl.innerHTML = renderIssues(report);
         if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
 
+        const dupPanel = document.querySelector('.health-duplicates-panel');
+        if (dupPanel) {
+            dupPanel.hidden = !shouldShowDuplicatesPanel(report);
+        }
+
         const mergeBtn = document.getElementById('merge-duplicates-btn');
         if (mergeBtn) {
-            mergeBtn.disabled = !(report?.duplicateGroups || []).length;
+            mergeBtn.disabled = !getFilteredDuplicateGroups(report).length;
         }
 
         const sortSelect = document.getElementById('health-sort-select');
         if (sortSelect && sortSelect.value !== healthState.sort) {
             sortSelect.value = healthState.sort;
         }
+
+        syncFilterClearButton();
+        pruneSelection();
+        syncSelectionToolbar();
     }
 
     async function loadReport() {
@@ -1061,21 +1593,39 @@
         healthState.report = await response.json();
     }
 
+    function applyHealthControlTitles() {
+        document.querySelectorAll('[data-health-title]').forEach((el) => {
+            const key = el.getAttribute('data-health-title');
+            if (!key) return;
+            el.title = t(key, el.title || '');
+        });
+        const bulkToolbar = document.querySelector('.health-bulk-toolbar');
+        if (bulkToolbar) {
+            bulkToolbar.setAttribute('aria-label', t('health.bulkActions', 'Bulk actions'));
+        }
+    }
+
     async function main() {
         if (typeof ConfigLanguage === 'function') {
             healthState.language = new ConfigLanguage();
             await healthState.language.init(document.documentElement.lang || 'en');
             window.healthLanguage = healthState.language;
             document.title = t('health.pageTitle', 'health beta');
-            document.querySelectorAll('[data-i18n-title]').forEach((element) => {
-                const key = element.getAttribute('data-i18n-title');
-                const translated = t(key, element.getAttribute('title') || '');
-                if (translated) element.setAttribute('title', translated);
-            });
+            if (typeof healthState.language.applyTranslations === 'function') {
+                healthState.language.applyTranslations();
+            }
+            applyHealthControlTitles();
         }
 
+        const hadStoredState = Boolean(sessionStorage.getItem(STORAGE_KEY));
+        const urlHadFilter = Boolean(new URLSearchParams(window.location.search).get('filter'));
         restoreState();
         const shouldRetest = applyUrlParams();
+        if (!hadStoredState && !urlHadFilter) {
+            healthState.filter = DEFAULT_FILTER;
+            saveState();
+        }
+        syncUrlParams();
 
         const searchInput = document.getElementById('health-search');
         const refreshButton = document.getElementById('refresh-health-btn');
@@ -1092,7 +1642,18 @@
         searchInput?.addEventListener('input', () => {
             healthState.query = searchInput.value.trim();
             saveState();
+            syncFilterClearButton();
             render();
+        });
+
+        document.getElementById('health-search-clear')?.addEventListener('click', () => {
+            if (!searchInput) return;
+            searchInput.value = '';
+            healthState.query = '';
+            saveState();
+            syncFilterClearButton();
+            render();
+            searchInput.focus();
         });
 
         refreshButton?.addEventListener('click', async () => {

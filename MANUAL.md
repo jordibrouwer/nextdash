@@ -634,27 +634,35 @@ When enabled, bookmarks can show online/offline from ping checks. **Essentials**
 
 ### Health page (`/health`)
 
-Central place to triage issues:
+Central place to triage issues (still labeled **health beta** in the UI):
 
 ```
-Summary cards → Filter pills + page filter → Issue list → Action toolbar
-                                    ↓
-              Duplicate groups → merge (keep best)
+Summary row (9 stats, click to filter) → Compact controls (search, page, pills, bulk)
+                                              ↓
+                         Bookmark list (multi-select, favicon, row actions)
+                                              ↓
+                         Duplicate groups → merge (keep best)
 ```
 
 | Feature | Use |
 |---------|-----|
 | **Score 0–100** | Combines broken, duplicate, shortcut conflict, stale, missing preview, unused |
-| **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy |
+| **Summary row** | Nine compact stat cards on one row; click a card to jump to that filter |
+| **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy — default **broken** on first visit |
+| **Controls panel** | Search, page filter, status pills, and bulk buttons in one compact block |
 | **Page filter** | Limit the issue list to one dashboard page |
 | **Search** | Name, URL, category, page |
-| **Action toolbar** | Two compact rows per issue (config-style buttons): standard actions (dashboard, open, ping, favicon, delete) and auto-heal (archive, detect redirect, refresh title, 1-click fix) |
+| **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete |
+| **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
+| **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
+| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete) |
+| **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
 | **dashboard link** | Jump to bookmark on correct page/category |
-| **ping** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
+| **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
 | **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicate groups |
 | **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; merges tags, shortcut, opens, notes, and icons from removed rows into the keeper |
 
-Filter, sort, search, and page-filter state persist in the session across refreshes.
+Filter, sort, search, and page-filter state persist in the session across refreshes and sync to the URL (`filter`, `page`, `sort`, `q`).
 
 **URL deep links** — Open health with query parameters:
 

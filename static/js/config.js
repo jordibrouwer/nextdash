@@ -237,6 +237,8 @@ class ConfigManager {
             document.body.classList.remove('loading');
         }
 
+        await this.consumeHealthPendingBookmark();
+
         this.scheduleConfigGeneralTour();
         this.scheduleConfigBookmarksTour();
         if (this.isConfigFindersTabActive() && !this.hasSeenConfigFindersTour()) {
@@ -2577,6 +2579,51 @@ class ConfigManager {
             this.syncBookmarksPageSelectorUI(this.currentPageId);
         } catch (error) {
             this.ui.showErrorWithReload(this.language.t('config.errorLoadingBookmarks'));
+        }
+    }
+
+    async consumeHealthPendingBookmark() {
+        let raw = null;
+        try {
+            raw = sessionStorage.getItem('nextdash_health_open_bookmark');
+            if (!raw) return;
+            sessionStorage.removeItem('nextdash_health_open_bookmark');
+        } catch (e) {
+            return;
+        }
+
+        let pending = null;
+        try {
+            pending = JSON.parse(raw);
+        } catch (e) {
+            return;
+        }
+
+        const pageId = Number(pending?.pageId);
+        if (!Number.isFinite(pageId)) return;
+
+        if (this.ui?.switchToTab) {
+            this.ui.switchToTab('bookmarks');
+        }
+        window.location.hash = '#bookmarks';
+
+        if (Number(this.currentPageId) !== pageId) {
+            await this.loadPageBookmarks(pageId);
+        }
+
+        let idx = Number(pending?.index);
+        if (!Number.isFinite(idx) || !this.bookmarksData?.[idx]) {
+            const url = String(pending?.url || '').trim().toLowerCase();
+            idx = (this.bookmarksData || []).findIndex(
+                (bm) => String(bm?.url || '').trim().toLowerCase() === url
+            );
+        }
+
+        if (idx >= 0 && this.bookmarks?.openDetailPanel) {
+            this.bookmarks.openDetailPanel(idx, this.bookmarksData, this.bookmarksPageCategories);
+            requestAnimationFrame(() => {
+                document.querySelector(`[data-bookmark-index="${idx}"]`)?.scrollIntoView({ block: 'nearest' });
+            });
         }
     }
 

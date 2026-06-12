@@ -26,8 +26,7 @@ body[data-layout-version="modern"] .health-shell {
 
 body[data-layout-version="modern"] .health-header,
 body[data-layout-version="modern"] .health-summary,
-body[data-layout-version="modern"] .health-filters,
-body[data-layout-version="modern"] .health-bulk-actions,
+body[data-layout-version="modern"] .health-controls,
 body[data-layout-version="modern"] .health-issues-panel,
 body[data-layout-version="modern"] .health-duplicates-panel {
     margin: 0;
@@ -72,8 +71,7 @@ body[data-layout-version="modern"] .back-link-button:hover {
 body[data-layout-version="modern"] :is(
     .health-intro,
     .health-card,
-    .health-filters,
-    .health-bulk-actions,
+    .health-controls,
     .health-issues-panel,
     .health-duplicates-panel
 ) {
@@ -97,22 +95,24 @@ body[data-layout-version="modern"] .health-subtitle {
 }
 
 body[data-layout-version="modern"] .health-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: var(--config-tab-gap);
+    gap: 6px;
 }
 
 body[data-layout-version="modern"] .health-card {
-    padding: 0.9rem 1rem;
+    padding: 0.35rem 0.45rem;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-body[data-layout-version="modern"] .health-filters,
-body[data-layout-version="modern"] .health-bulk-actions,
+body[data-layout-version="modern"] .health-controls {
+    padding: 0.4rem 0.6rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 body[data-layout-version="modern"] .health-issues-panel,
 body[data-layout-version="modern"] .health-duplicates-panel {
-    padding: 0.9rem 1rem;
+    padding: 0.5rem 0.65rem;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
@@ -139,16 +139,18 @@ body[data-layout-version="modern"] .health-page-filter-wrap label {
 }
 
 body[data-layout-version="modern"] .health-search-wrap input,
+body[data-layout-version="modern"] .health-filter-input,
 body[data-layout-version="modern"] .health-page-filter,
 body[data-layout-version="modern"] .health-sort-select {
     border-radius: var(--layout-radius-sm);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface-inset);
-    padding: 0.5rem 0.65rem;
+    padding: 0.26rem 0.45rem;
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
 }
 
 body[data-layout-version="modern"] .health-search-wrap input:focus,
+body[data-layout-version="modern"] .health-filter-input:focus,
 body[data-layout-version="modern"] .health-page-filter:focus,
 body[data-layout-version="modern"] .health-sort-select:focus {
     outline: none;
@@ -184,15 +186,13 @@ body[data-layout-version="modern"] .health-issues {
     gap: var(--config-tab-gap);
 }
 
-body[data-layout-version="modern"] .health-issue,
+body[data-layout-version="modern"] .health-row,
 body[data-layout-version="modern"] .health-duplicate-group {
-    border-radius: var(--layout-radius-sm);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
     background: var(--layout-surface-inset);
 }
 
-body[data-layout-version="modern"] .health-issue {
-    padding: 0.85rem 1rem;
+body[data-layout-version="modern"] .health-row {
+    border-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
 }
 
 body[data-layout-version="modern"] .health-duplicate-group {
@@ -206,28 +206,27 @@ body[data-layout-version="modern"] .health-duplicates {
     gap: var(--config-tab-gap);
 }
 
-body[data-layout-version="modern"] .health-score {
+body[data-layout-version="modern"] .health-row-score {
     border-radius: var(--layout-radius-sm);
     background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
 }
 
-body[data-layout-version="modern"] .health-issue-meta span,
-body[data-layout-version="modern"] .health-times span,
-body[data-layout-version="modern"] .health-reasons span,
+body[data-layout-version="modern"] .health-row-meta span,
+body[data-layout-version="modern"] .health-row-times span,
+body[data-layout-version="modern"] .health-row-reasons span,
 body[data-layout-version="modern"] .health-duplicate-items span {
     border-radius: var(--layout-radius-pill);
     background: color-mix(in srgb, var(--text-secondary) 10%, var(--layout-surface-inset));
 }
 
-body[data-layout-version="modern"] .health-issue-actions {
+body[data-layout-version="modern"] .health-actions-menu {
     border-radius: var(--layout-radius-sm);
-    border-color: color-mix(in srgb, var(--border-primary) 40%, transparent);
     background: var(--layout-surface);
-    overflow: hidden;
 }
 
-body[data-layout-version="modern"] .health-issue-toolbar-heal {
-    background: color-mix(in srgb, var(--layout-surface-inset) 55%, var(--layout-surface));
+body[data-layout-version="modern"] .health-card,
+body[data-layout-version="modern"] .health-panel {
+    border-radius: var(--layout-radius-sm);
 }
 
 body[data-layout-version="modern"] .health-empty {
@@ -241,7 +240,7 @@ body[data-layout-version="modern"] .health-empty {
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
-body[data-layout-version="modern"] .health-bulk-button,
+body[data-layout-version="modern"] .health-bulk-toolbar .btn,
 body[data-layout-version="modern"] .health-action-link,
 body[data-layout-version="modern"] .health-keep-first-btn,
 body[data-layout-version="modern"] .health-merge-pick-btn {
@@ -252,7 +251,7 @@ body[data-layout-version="modern"] .health-merge-pick-btn {
         box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="modern"] .health-bulk-button:hover:not(:disabled),
+body[data-layout-version="modern"] .health-bulk-toolbar .btn:hover:not(:disabled),
 body[data-layout-version="modern"] .health-action-link:hover,
 body[data-layout-version="modern"] .health-keep-first-btn:hover:not(:disabled),
 body[data-layout-version="modern"] .health-merge-pick-btn:hover {

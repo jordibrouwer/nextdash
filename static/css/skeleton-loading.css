@@ -122,15 +122,15 @@ body.loading .colors-main > :not([data-skeleton-root]) {
 /* Health */
 .skeleton-health-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 0.75rem;
 }
 
 .skeleton-health-card {
-    min-height: 4.5rem;
+    min-height: 2.35rem;
     border: 1px solid color-mix(in srgb, var(--text-secondary, #888) 25%, transparent);
-    padding: 0.75rem;
+    padding: 0.35rem 0.45rem;
 }
 
 .skeleton-health-issues {

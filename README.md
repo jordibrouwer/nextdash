@@ -210,10 +210,11 @@ Dynamic bookmark groups that appear automatically:
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
+- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete, row favicons, keyboard navigation (`j`/`k`, `Enter` → Config editor, `O` → open URL), structured localized issue reasons, default `broken` filter on first visit, URL state sync
 - Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
 - Health badge on the dashboard header: text pill (e.g. `3 broken`) with red/yellow styling; bulk open broken links asks for confirmation with a per-batch limit
-- Filter, sort, and search state in the health view persists across page refreshes (sessionStorage)
-- Favicon auto-refresh from the health view
+- Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to query parameters
+- Favicon display and refresh from the health view (per row or bulk selection)
 - **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav; conflicts link to health
 
 ### Bookmarks

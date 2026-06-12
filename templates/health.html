@@ -20,11 +20,11 @@
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css">
-    <link rel="stylesheet" href="/static/css/health.css">
-    <link rel="stylesheet" href="/static/css/health-modern.css">
+    <link rel="stylesheet" href="/static/css/health.css?v=health-controls-compact-1">
+    <link rel="stylesheet" href="/static/css/health-modern.css?v=health-controls-compact-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/health-glass.css?v=glass-phase6-1">
+    <link rel="stylesheet" href="/static/css/health-glass.css?v=health-controls-compact-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -40,17 +40,21 @@
                 <h1 class="title" data-i18n="health.title">health beta</h1>
             </div>
             <div class="header-links">
-                <button id="refresh-health-btn" class="back-link back-link-button" type="button" data-i18n="health.refresh">refresh</button>
+                <button id="refresh-health-btn" class="btn btn-small btn-secondary" type="button" data-i18n="health.refresh">refresh</button>
                 <a href="/config" class="back-link" data-i18n="health.backToConfig">← back to config</a>
                 <a href="/" class="back-link" data-i18n="health.backToDashboard">← back to dashboard</a>
             </div>
         </header>
 
-        <section class="health-intro">
-            <p class="health-subtitle" data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
+        <main id="health-main">
+        <section class="health-page-intro">
+            <div>
+                <p data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
+                <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
+            </div>
         </section>
 
-        <section class="health-summary" id="health-summary">
+        <section class="health-summary" id="health-summary" aria-label="Summary">
             <div class="skeleton-root skeleton-health-summary" data-skeleton-root aria-hidden="true">
                 <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
                 <div class="skeleton-health-card"><div class="skeleton-shimmer skeleton-line skeleton-line--sm"></div><div class="skeleton-shimmer skeleton-line skeleton-line--wide"></div></div>
@@ -59,47 +63,46 @@
             </div>
         </section>
 
-        <section class="health-filters">
-            <div class="health-filter-row">
-                <div class="health-search-wrap">
-                    <label for="health-search" data-i18n="health.filterBookmarks">Filter bookmarks</label>
-                    <input id="health-search" type="search" placeholder="Search name, URL, category, page..." data-i18n-placeholder="health.searchPlaceholder" autocomplete="off" />
+        <section class="health-controls health-panel" aria-label="Filters and bulk actions">
+            <div class="health-controls-filters">
+                <div class="health-filter-bar">
+                    <div class="health-filter-wrap">
+                        <label class="visually-hidden" for="health-search" data-i18n="health.filterBookmarks">Filter bookmarks</label>
+                        <input id="health-search" class="health-filter-input" type="search" placeholder="Search name, URL, category, page..." data-i18n-placeholder="health.searchPlaceholder" autocomplete="off" />
+                        <button type="button" id="health-search-clear" class="health-filter-clear" hidden aria-label="Clear search" data-i18n-aria="health.clearSearch">✕</button>
+                    </div>
+                    <div class="health-page-filter-wrap health-page-filter-wrap--inline">
+                        <label class="visually-hidden" for="health-page-filter" data-i18n="health.filterPage">Filter by page</label>
+                        <select id="health-page-filter" class="health-page-filter bulk-select" data-i18n-aria="health.filterPage">
+                            <option value="all" data-i18n="health.filterPageAll">All pages</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="health-page-filter-wrap">
-                    <label for="health-page-filter" data-i18n="health.filterPage">Filter by page</label>
-                    <select id="health-page-filter" class="health-page-filter">
-                        <option value="all" data-i18n="health.filterPageAll">All pages</option>
-                    </select>
-                </div>
+                <div class="health-filter-pills" id="health-filter-pills" role="toolbar" aria-label="Status filters"></div>
             </div>
-            <div class="health-filter-pills" id="health-filter-pills"></div>
+            <div class="health-bulk-toolbar" role="toolbar" data-i18n-aria="health.bulkActions">
+                <button id="retest-all-btn" class="btn btn-small btn-primary" type="button" data-i18n="health.retestAllChecked" data-health-title="health.retestAllTitle">Retest all checked</button>
+                <button id="open-broken-btn" class="btn btn-small btn-secondary" type="button" data-i18n="health.openBrokenLinks" data-health-title="health.openBrokenTitle">Open broken links</button>
+                <button id="merge-duplicates-btn" class="btn btn-small btn-secondary" type="button" data-i18n="health.mergeDuplicateGroup" data-health-title="health.mergeDuplicateTitle" disabled>Merge duplicate group</button>
+            </div>
+            <div id="health-bulk-status" class="health-bulk-status" role="status" aria-live="polite" hidden></div>
         </section>
 
-        <section class="health-bulk-actions">
-            <div class="health-panel-header">
-                <h2 data-i18n="health.bulkActions">Bulk actions</h2>
+        <section class="health-issues-panel health-panel">
+            <div id="health-selection-toolbar" class="health-selection-toolbar" hidden>
+                <span id="health-selection-count" class="health-selection-count">0</span>
+                <button type="button" id="health-select-all-btn" class="btn btn-small btn-secondary" data-i18n="health.selectAllVisible">All visible</button>
+                <button type="button" id="health-clear-selection-btn" class="btn btn-small btn-secondary" data-i18n="health.clearSelection">Clear</button>
+                <span class="health-actions-divider" aria-hidden="true"></span>
+                <button type="button" id="health-bulk-favicon-btn" class="btn btn-small btn-secondary" data-i18n="health.bulkRefreshFavicons">Refresh favicons</button>
+                <button type="button" id="health-bulk-delete-btn" class="btn btn-small btn-danger" data-i18n="health.bulkDelete">Delete</button>
             </div>
-            <div class="health-bulk-buttons">
-                <button id="retest-all-btn" class="health-bulk-button health-bulk-button-primary" type="button" title="Re-test all bookmarks with checkStatus enabled" data-i18n-title="health.retestAllTitle" data-i18n="health.retestAllChecked">
-                    Retest all checked
-                </button>
-                <button id="open-broken-btn" class="health-bulk-button health-bulk-button-warn" type="button" title="Open all broken bookmarks in new tabs" data-i18n-title="health.openBrokenTitle" data-i18n="health.openBrokenLinks">
-                    Open broken links
-                </button>
-                <button id="merge-duplicates-btn" class="health-bulk-button" type="button" title="Merge selected duplicate group" data-i18n-title="health.mergeDuplicateTitle" data-i18n="health.mergeDuplicateGroup" disabled>
-                    Merge duplicate group
-                </button>
-            </div>
-            <div id="health-bulk-status" class="health-bulk-status"></div>
-        </section>
-
-        <section class="health-issues-panel">
             <div class="health-panel-header">
-                <h2 data-i18n="health.issues">Issues</h2>
+                <h2 class="section-title" data-i18n="health.bookmarksList">Bookmarks</h2>
                 <div class="health-panel-header-right">
                     <span id="health-results-count" class="health-results-count"></span>
                     <label class="health-sort-label" for="health-sort-select" data-i18n="health.sortLabel">sort by</label>
-                    <select id="health-sort-select" class="health-sort-select">
+                    <select id="health-sort-select" class="health-sort-select bulk-select">
                         <option value="score" data-i18n="health.sortScore">score</option>
                         <option value="status" data-i18n="health.sortStatus">status</option>
                         <option value="last-checked" data-i18n="health.sortLastCheckedAsc">last checked ↑</option>
@@ -108,7 +111,8 @@
                     </select>
                 </div>
             </div>
-            <div id="health-issues" class="health-issues">
+            <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
+            <div id="health-issues" class="health-issues health-list">
                 <div class="skeleton-root skeleton-health-issues" data-skeleton-root aria-hidden="true">
                     <div class="skeleton-shimmer skeleton-health-row"></div>
                     <div class="skeleton-shimmer skeleton-health-row"></div>
@@ -119,12 +123,13 @@
             </div>
         </section>
 
-        <section class="health-duplicates-panel">
+        <section class="health-duplicates-panel health-panel">
             <div class="health-panel-header">
-                <h2 data-i18n="health.duplicateGroups">Duplicate groups</h2>
+                <h2 class="section-title" data-i18n="health.duplicateGroups">Duplicate groups</h2>
             </div>
-            <div id="health-duplicates" class="health-duplicates"></div>
+            <div id="health-duplicates" class="health-duplicates health-list"></div>
         </section>
+        </main>
     </div>
 
     <script src="/static/js/skeleton-loading.js"></script>
@@ -134,6 +139,6 @@
     <script src="/static/js/modal.js"></script>
     <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
-    <script src="/static/js/health.js"></script>
+    <script src="/static/js/health.js?v=health-favicon-fix-1"></script>
 </body>
 </html>

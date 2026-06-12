@@ -181,6 +181,44 @@ func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(report)
 }
 
+func healthReasonLegacyLabel(r HealthReason) string {
+	switch r.Code {
+	case "duplicate_url":
+		if n := r.Params["count"]; n != "" {
+			return fmt.Sprintf("Duplicate URL in %s bookmarks", n)
+		}
+	case "shortcut_conflict":
+		if n := r.Params["count"]; n != "" {
+			return fmt.Sprintf("Shortcut conflict with %s bookmarks", n)
+		}
+	case "status_never_run":
+		return "Status check has never run"
+	case "status_stale":
+		return "Status check is stale"
+	case "not_opened_30_days":
+		return "Not opened in over 30 days"
+	case "never_opened":
+		return "Never opened"
+	case "no_preview":
+		return "No preview metadata yet"
+	case "unreachable":
+		return "Unreachable"
+	case "last_error":
+		if d := strings.TrimSpace(r.Detail); d != "" {
+			return d
+		}
+	}
+	if d := strings.TrimSpace(r.Detail); d != "" {
+		return d
+	}
+	return r.Code
+}
+
+func appendHealthReason(details *[]HealthReason, legacy *[]string, reason HealthReason) {
+	*details = append(*details, reason)
+	*legacy = append(*legacy, healthReasonLegacyLabel(reason))
+}
+
 func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	pages := h.store.GetPages()
 	pageNames := make(map[int]string, len(pages))
@@ -274,14 +312,15 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 			status := "healthy"
 			reasons := make([]string, 0, 4)
+			reasonDetails := make([]HealthReason, 0, 4)
 			score := 100
 
 			if isBroken {
 				status = "broken"
 				if detail := strings.TrimSpace(bm.LastError); detail != "" {
-					reasons = append(reasons, detail)
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail})
 				} else {
-					reasons = append(reasons, "Unreachable")
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable"})
 				}
 				score -= 60
 			}
@@ -289,48 +328,54 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "duplicate"
 				}
-				reasons = append(reasons, fmt.Sprintf("Duplicate URL in %d bookmarks", duplicateCount))
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{
+					Code:   "duplicate_url",
+					Params: map[string]string{"count": strconv.Itoa(duplicateCount)},
+				})
 				score -= 15
 			}
 			if isShortcutConflict {
 				if status == "healthy" {
 					status = "shortcut-conflict"
 				}
-				reasons = append(reasons, fmt.Sprintf("Shortcut conflict with %d bookmarks", shortcutCounts[shortcutKey]))
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{
+					Code:   "shortcut_conflict",
+					Params: map[string]string{"count": strconv.Itoa(shortcutCounts[shortcutKey])},
+				})
 				score -= 15
 			}
 			if isUnchecked {
 				if status == "healthy" {
 					status = "unchecked"
 				}
-				reasons = append(reasons, "Status check has never run")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_never_run"})
 				score -= 10
 			} else if isStaleCheck {
 				if status == "healthy" {
 					status = "unchecked"
 				}
-				reasons = append(reasons, "Status check is stale")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale"})
 				score -= 5
 			}
 			if isStale {
 				if status == "healthy" {
 					status = "stale"
 				}
-				reasons = append(reasons, "Not opened in over 30 days")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days"})
 				score -= 10
 			}
 			if isUnused {
 				if status == "healthy" {
 					status = "unused"
 				}
-				reasons = append(reasons, "Never opened")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened"})
 				score -= 10
 			}
 			if isMissingPreview {
 				if status == "healthy" {
 					status = "missing-preview"
 				}
-				reasons = append(reasons, "No preview metadata yet")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview"})
 				score -= 5
 			}
 
@@ -384,9 +429,11 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				PreviewTitle:   bm.PreviewTitle,
 				PreviewDesc:    bm.PreviewDesc,
 				PreviewImage:   bm.PreviewImage,
+				Icon:           bm.Icon,
 				Status:         status,
 				Score:          score,
 				Reasons:        reasons,
+				ReasonDetails:  reasonDetails,
 				DuplicateCount: duplicateCount,
 			})
 		}

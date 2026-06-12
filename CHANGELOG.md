@@ -49,7 +49,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.17 — June 2026
 
-**Search guards, smart-collection sync, inline-edit polish, Config → General overhaul & structure-tab hardening** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes. Config → Theme gains a packaged-themes editor, export/import, undo, scoped preview, and mobile read-only mode. Config → Pages, Categories, and Tags get ID-safe actions, debounced auto-save, keyboard ↑/↓, cross-page tag drill-down, localized sync toasts, and mobile/search/tour polish. Config → Finders is rebuilt with filter, usage stats, keyboard reorder, and stable ids. Config → Backups always embeds finders in ZIP and preserves them on partial import; CSV export and settings-search improve. Config → Stats adds insights, finder usage, Refresh/Export CSV, table filter, row-to-editor navigation, mobile chip-nav, and honest period/open labels.
+**Search guards, smart-collection sync, inline-edit polish, Config → General overhaul, structure-tab hardening & health beta overhaul** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes. Config → Theme gains a packaged-themes editor, export/import, undo, scoped preview, and mobile read-only mode. Config → Pages, Categories, and Tags get ID-safe actions, debounced auto-save, keyboard ↑/↓, cross-page tag drill-down, localized sync toasts, and mobile/search/tour polish. Config → Finders is rebuilt with filter, usage stats, keyboard reorder, and stable ids. Config → Backups always embeds finders in ZIP and preserves them on partial import; CSV export and settings-search improve. Config → Stats adds insights, finder usage, Refresh/Export CSV, table filter, row-to-editor navigation, mobile chip-nav, and honest period/open labels. **Health beta** (`/health`) gets a compact triage layout, multi-select bulk actions, Config editor handoff, favicon display/refresh, keyboard navigation, structured `reasonDetails`, URL state sync, and config-aligned styling.
 
 ### Dashboard
 
@@ -190,14 +190,30 @@ _No unreleased changes at this time._
 - **fix** **Data display** — period filter on top-tagged bookmarks; duplicate URL detail list in conflicts; cleanup score bar resets when library is empty.
 - **fix** **Settings search** — stats section titles deduplicated; intro, Refresh, Export, and filter indexed.
 
+### Health beta (`/health`)
+
+- **new** **Compact triage layout** — nine summary stat cards on one row (click to filter); search, page filter, status pills, and bulk buttons merged into one compact controls panel so the bookmark list starts higher.
+- **new** **Multi-select & bulk cleanup** — row checkboxes, select all visible, bulk favicon refresh, and bulk delete with `AppModal` confirm.
+- **new** **Open in Config** — click a row or press `Enter` to open the bookmark in **Config → Bookmarks** (`sessionStorage` handoff + hash).
+- **new** **Favicons & row toolbar** — per-row favicon from stored bookmark icon; config-style action buttons (open URL, dashboard deep link, re-check status, favicon refresh, overflow heal/delete).
+- **new** **Keyboard navigation** — `j`/`k` or arrow keys move row focus; `Enter` opens editor; `O` opens the bookmark URL.
+- **new** **Structured issue reasons** — API returns `reasonDetails` (`code`, `params`, `detail`) for localized labels; health report includes bookmark `icon`.
+- **new** **Default broken filter** — first visit pre-selects `broken` unless URL or saved session state overrides.
+- **fix** **URL state sync** — filter, sort, search, and page filter reflected in the address bar via `history.replaceState`.
+- **fix** **Retest-all write token** — retest-all and protected bulk saves send `X-NextDash-Token` when `NEXTDASH_WRITE_TOKEN` is set.
+- **fix** **Merge duplicate picker** — no longer silently picks the first group; keep-best control clears busy state in `finally`.
+- **fix** **Favicon display** — row icons load from `/data/icons/` (same path as dashboard/config).
+- **fix** **Confirms & empty states** — delete and risky actions use `AppModal`; per-filter friendly empty messages; duplicate groups sorted by copy count; overflow menu flips upward near the viewport bottom.
+- **fix** **i18n** — new health strings in EN / NL / DE / FR (selection, bulk, empty states, keyboard hint, structured reasons).
+
 ### Documentation
 
-- **fix** **README & MANUAL** — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), and Stats (insights, filter, export, row navigation, chip-nav, honest labels) documented for v2026.06.17.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap extended with Finders, Backups, and Stats polish under v2026.06.17.
+- **fix** **README & MANUAL** — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), Stats (insights, filter, export, row navigation, chip-nav, honest labels), and **health beta** overhaul documented for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap and **Bookmark health** help extended with health beta polish under v2026.06.17.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v68` data version; Config Finders (`config-finders.js`, `config-finders.css`), Backups (`config-backup.js`), Stats (`config-stats.js`, `config-stats.css`), Tags (`config-tags.js`), and `reorder.js` assets plus existing General/dashboard query strings updated for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v69` data version; health (`health.js`, `health.css`, `health-modern.css`, `health-glass.css`) plus Config Finders (`config-finders.js`, `config-finders.css`), Backups (`config-backup.js`), Stats (`config-stats.js`, `config-stats.css`), Tags (`config-tags.js`), and `reorder.js` assets plus existing General/dashboard query strings updated for Docker-mounted static files.
 
 ---
 

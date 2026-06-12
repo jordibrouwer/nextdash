@@ -450,15 +450,56 @@
       ]
     },
     {
+      "title": "Health beta",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Compact triage layout</strong> — nine summary cards on one row (click to filter); search, page filter, status pills, and bulk buttons in one compact panel so bookmarks start higher."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Multi-select &amp; bulk cleanup</strong> — row checkboxes, select all visible, bulk favicon refresh, and bulk delete with <code>AppModal</code> confirm."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Open in Config</strong> — click a row or press <code>Enter</code> to open the bookmark in <strong>Config → Bookmarks</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Favicons &amp; row toolbar</strong> — per-row favicon; config-style actions (open, dashboard, re-check status, favicon refresh, overflow heal/delete)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Keyboard navigation</strong> — <code>j</code>/<code>k</code> or arrows move focus; <code>Enter</code> opens editor; <code>O</code> opens the URL."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Structured issue reasons</strong> — API returns <code>reasonDetails</code> for localized labels; health report includes bookmark <code>icon</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>URL state &amp; defaults</strong> — filter/sort/search/page sync to the address bar; first visit defaults to <code>broken</code> unless URL or session overrides."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Retest &amp; merge reliability</strong> — retest-all sends write token when configured; merge picker no longer silently picks the first group."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon display</strong> — row icons load from <code>/data/icons/</code> like the dashboard."
+        }
+      ]
+    },
+    {
       "title": "Documentation",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>README &amp; MANUAL</strong> — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), and Stats (insights, filter, export, row navigation, chip-nav, honest labels) documented for v2026.06.17."
+          "text": "<strong>README &amp; MANUAL</strong> — Config → Finders, Backups, Stats, and <strong>health beta</strong> documented for v2026.06.17."
         },
         {
           "badge": "fix",
-          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap extended with Finders, Backups, and Stats polish under v2026.06.17."
+          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap and Bookmark health help extended under v2026.06.17."
         }
       ]
     },
@@ -467,7 +508,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v68</code> data version; Config Finders (<code>config-finders.js</code>, <code>config-finders.css</code>), Backups (<code>config-backup.js</code>), Stats (<code>config-stats.js</code>, <code>config-stats.css</code>), Tags (<code>config-tags.js</code>), and <code>reorder.js</code> assets plus existing General/dashboard query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v69</code> data version; health (<code>health.js</code>, <code>health.css</code>) plus Config Finders, Backups, Stats, Tags, and <code>reorder.js</code> assets updated for Docker-mounted static files."
         }
       ]
     }

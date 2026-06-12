@@ -1936,27 +1936,35 @@ type HealthSummary struct {
 	PinnedCount           int `json:"pinnedCount"`
 }
 
+type HealthReason struct {
+	Code   string            `json:"code"`
+	Params map[string]string `json:"params,omitempty"`
+	Detail string            `json:"detail,omitempty"`
+}
+
 type HealthIssue struct {
-	Name           string   `json:"name"`
-	URL            string   `json:"url"`
-	Shortcut       string   `json:"shortcut,omitempty"`
-	Category       string   `json:"category,omitempty"`
-	PageID         int      `json:"pageId"`
-	PageName       string   `json:"pageName,omitempty"`
-	Index          int      `json:"index"`
-	Pinned         bool     `json:"pinned"`
-	CheckStatus    bool     `json:"checkStatus"`
-	OpenCount      int      `json:"openCount"`
-	LastOpened     int64    `json:"lastOpened,omitempty"`
-	LastChecked    int64    `json:"lastChecked,omitempty"`
-	LastError      string   `json:"lastError,omitempty"`
-	PreviewTitle   string   `json:"previewTitle,omitempty"`
-	PreviewDesc    string   `json:"previewDesc,omitempty"`
-	PreviewImage   string   `json:"previewImage,omitempty"`
-	Status         string   `json:"status"`
-	Score          int      `json:"score"`
-	Reasons        []string `json:"reasons"`
-	DuplicateCount int      `json:"duplicateCount"`
+	Name           string         `json:"name"`
+	URL            string         `json:"url"`
+	Shortcut       string         `json:"shortcut,omitempty"`
+	Category       string         `json:"category,omitempty"`
+	PageID         int            `json:"pageId"`
+	PageName       string         `json:"pageName,omitempty"`
+	Index          int            `json:"index"`
+	Pinned         bool           `json:"pinned"`
+	CheckStatus    bool           `json:"checkStatus"`
+	OpenCount      int            `json:"openCount"`
+	LastOpened     int64          `json:"lastOpened,omitempty"`
+	LastChecked    int64          `json:"lastChecked,omitempty"`
+	LastError      string         `json:"lastError,omitempty"`
+	PreviewTitle   string         `json:"previewTitle,omitempty"`
+	PreviewDesc    string         `json:"previewDesc,omitempty"`
+	PreviewImage   string         `json:"previewImage,omitempty"`
+	Icon           string         `json:"icon,omitempty"`
+	Status         string         `json:"status"`
+	Score          int            `json:"score"`
+	Reasons        []string       `json:"reasons"`
+	ReasonDetails  []HealthReason `json:"reasonDetails,omitempty"`
+	DuplicateCount int            `json:"duplicateCount"`
 }
 
 type BookmarkHealthReport struct {
