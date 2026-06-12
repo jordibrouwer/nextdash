@@ -1001,7 +1001,11 @@ class Dashboard {
                 this.renderDashboard({ animate: true });
 
                 if (this.keyboardNavigation) {
-                    this.keyboardNavigation.resetToFirst();
+                    if (this.keyboardNavigation.isNavigating()) {
+                        this.keyboardNavigation.resetToFirst();
+                    } else {
+                        this.keyboardNavigation.clearSelection();
+                    }
                 }
             }
 
@@ -1311,6 +1315,8 @@ class Dashboard {
             const newName = nameInput.value.trim();
             const newIcon = iconInput.value.trim();
             if (!newName) { this._renderPageTabContent(btn, page, index); return; }
+            const previousName = page.name;
+            const previousIcon = page.icon;
             page.name = newName;
             page.icon = newIcon || undefined;
             this._renderPageTabContent(btn, page, index);
@@ -1321,7 +1327,19 @@ class Dashboard {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.pages)
                 });
-            } catch (e) { /* ignore */ }
+            } catch (error) {
+                page.name = previousName;
+                page.icon = previousIcon;
+                this._renderPageTabContent(btn, page, index);
+                this.updatePageTitle(previousName || '');
+                const message = this.formatDashboardLabel(
+                    'savePageFailed',
+                    {},
+                    'Failed to save page.'
+                );
+                const detail = error?.message ? `${message} ${error.message}` : message;
+                this.showErrorNotification(detail);
+            }
         };
         const cancel = () => {
             if (done) return;
@@ -1853,6 +1871,10 @@ class Dashboard {
                 return;
             }
 
+            if (this.searchComponent && this.searchComponent.isActive()) {
+                return;
+            }
+
             if (window.DashboardTagCloud?.modalOpen) {
                 if (e.key === '/' && window.DashboardTagCloud.handleSlashKey?.(e)) {
                     return;
@@ -1892,6 +1914,10 @@ class Dashboard {
             if (key === '?') this.markInlineTipUsed('finder_open');
             if (key === ':') this.markInlineTipUsed('command_open');
             if (key >= '1' && key <= '9') {
+                if (this.keyboardNavigation?.isGChordActive?.()) {
+                    return;
+                }
+
                 const pageIndex = parseInt(key) - 1;
                 
                 // Check if this page exists
@@ -2052,6 +2078,7 @@ class Dashboard {
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
             if (this.isModalOpen()) return;
+            if (window.DashboardTagCloud?.modalOpen) return;
             if (this.searchComponent && this.searchComponent.isActive()) return;
             if (this.isInlineEditActive()) return;
 
@@ -2955,6 +2982,7 @@ class Dashboard {
     isModalOpen() {
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
+        if (document.getElementById('omnibox-overlay')) return true;
         if (document.getElementById('page-overview-overlay')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
         const blockingSelectors = [
@@ -3049,6 +3077,7 @@ class Dashboard {
         const pages = Array.isArray(this.pages) ? this.pages : [];
         if (pages.length === 0) return;
 
+        const previousFocus = document.activeElement;
         const allBookmarks = Array.isArray(this.allBookmarks) ? this.allBookmarks : [];
 
         const overlay = document.createElement('div');
@@ -3075,18 +3104,16 @@ class Dashboard {
             : 'Pages';
         header.appendChild(headerTitle);
 
-        if (isMobileLayout) {
-            const closeBtn = document.createElement('button');
-            closeBtn.type = 'button';
-            closeBtn.className = 'page-overview-close';
-            const closeLabel = this.language?.t('dashboard.closePageOverview');
-            closeBtn.setAttribute(
-                'aria-label',
-                closeLabel && closeLabel !== 'dashboard.closePageOverview' ? closeLabel : 'Close'
-            );
-            closeBtn.textContent = '×';
-            header.appendChild(closeBtn);
-        }
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'page-overview-close';
+        const closeLabel = this.language?.t('dashboard.closePageOverview');
+        closeBtn.setAttribute(
+            'aria-label',
+            closeLabel && closeLabel !== 'dashboard.closePageOverview' ? closeLabel : 'Close'
+        );
+        closeBtn.textContent = '×';
+        header.appendChild(closeBtn);
 
         const ariaLabel = this.language?.t('dashboard.pagesOverviewAria');
         overlay.setAttribute(
@@ -3123,7 +3150,7 @@ class Dashboard {
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'page-overview-name';
-            nameSpan.textContent = page.name || `Page ${idx + 1}`;
+            nameSpan.textContent = pageName;
 
             const countSpan = document.createElement('span');
             countSpan.className = 'page-overview-count';
@@ -3152,7 +3179,10 @@ class Dashboard {
         const items = () => list.querySelectorAll('.page-overview-item');
 
         const setFocus = (idx) => {
-            focusedIndex = Math.max(0, Math.min(pages.length - 1, idx));
+            if (pages.length === 0) {
+                return;
+            }
+            focusedIndex = ((idx % pages.length) + pages.length) % pages.length;
             items().forEach((el, i) => {
                 el.classList.toggle('is-focused', i === focusedIndex);
                 const btn = el.querySelector('.page-overview-link');
@@ -3166,11 +3196,15 @@ class Dashboard {
         const close = () => {
             overlay.remove();
             document.removeEventListener('keydown', onKey, true);
+            const restoreTarget = (previousFocus && previousFocus.isConnected)
+                ? previousFocus
+                : document.getElementById('page-overview-header-btn');
+            if (restoreTarget && typeof restoreTarget.focus === 'function') {
+                restoreTarget.focus({ preventScroll: true });
+            }
         };
 
-        if (isMobileLayout) {
-            header.querySelector('.page-overview-close')?.addEventListener('click', close);
-        }
+        header.querySelector('.page-overview-close')?.addEventListener('click', close);
 
         const onKey = (e) => {
             if (e.key === 'Escape' || e.key === ',') {
@@ -3218,6 +3252,7 @@ class Dashboard {
     showOmnibox() {
         if (document.getElementById('omnibox-overlay')) return;
 
+        const previousFocus = document.activeElement;
         const overlay = document.createElement('div');
         overlay.id = 'omnibox-overlay';
         overlay.className = 'omnibox-overlay';
@@ -3249,6 +3284,12 @@ class Dashboard {
         const close = () => {
             overlay.remove();
             document.removeEventListener('keydown', onKey, true);
+            const restoreTarget = (previousFocus && previousFocus.isConnected)
+                ? previousFocus
+                : document.getElementById('quick-add-toolbar-btn');
+            if (restoreTarget && typeof restoreTarget.focus === 'function') {
+                restoreTarget.focus({ preventScroll: true });
+            }
         };
 
         const submit = async () => {
@@ -4235,6 +4276,13 @@ class Dashboard {
             clearTimeout(this.pendingReorderSave);
             this.pendingReorderSave = null;
         }
+        if (this.pendingReorderSnapshot) {
+            await this.saveBookmarkOrder({
+                successMessage: options.successMessage,
+                showReorderSavedToast: options.showReorderSavedToast ?? false
+            });
+            return;
+        }
         if (this._bookmarkOrderSaveInFlight) {
             await this._bookmarkOrderSaveInFlight;
         }
@@ -4744,6 +4792,15 @@ class Dashboard {
             {},
             'You have unsaved inline edits. Discard and leave?'
         );
+        if (window.AppModal && typeof window.AppModal.confirm === 'function') {
+            return window.AppModal.confirm({
+                title: this.formatDashboardLabel('inlineEditDiscardTitle', {}, 'Discard inline edits?'),
+                message,
+                confirmText: this.formatDashboardLabel('inlineEditDiscardConfirmBtn', {}, 'Discard'),
+                cancelText: this.configLabel('cancel', 'Cancel'),
+                confirmClass: 'danger'
+            });
+        }
         return window.confirm(message);
     }
 
@@ -6200,8 +6257,12 @@ class Dashboard {
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
         deleteBtn.textContent = cfg('delete', 'Delete');
+        deleteBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
         deleteBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            e.stopPropagation();
             await this.deleteBookmarkInline(bookmarkRef);
         });
 
@@ -6282,6 +6343,8 @@ class Dashboard {
         const onGlobalClickOutside = async (e) => {
             if (!document.contains(form)) { globalCleanup(); return; }
             if (form.contains(e.target)) return;
+            if (e.target.closest?.('#app-modal')) return;
+            if (this.isModalOpen()) return;
             if (!(await this.confirmDiscardInlineEdit())) {
                 return;
             }
@@ -6393,8 +6456,12 @@ class Dashboard {
         this._inlineEditGlobalCleanup?.();
         this.inlineEditingBookmarkIndex = null;
         this._inlineEditContext = null;
-        await this.loadAllBookmarks();
-        this.renderDashboard();
+        if (Number(bookmarkRef.pageId) === Number(this.currentPageId)) {
+            this.renderDashboard();
+        } else {
+            await this.loadAllBookmarks();
+            this.renderDashboard();
+        }
     }
 
     async _moveBookmarkToPage(bookmarkRef, bookmarkState, targetPageId, row) {
@@ -6632,6 +6699,35 @@ class Dashboard {
         this.initializeCategoryReorder();
     }
 
+    _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
+        if (!bookmarkRef || !candidate) {
+            return false;
+        }
+        const updatedPageId = Number(bookmarkRef.pageId || this.currentPageId);
+        const candidatePageId = Number(candidate.pageId || candidate.pageID || 0);
+        if (candidatePageId !== updatedPageId) {
+            return false;
+        }
+        const candidateUrl = String(candidate.url || '').trim();
+        return this.isSameBookmarkReference(bookmarkRef, candidate)
+            || (previousUrlTrimmed && candidateUrl === previousUrlTrimmed);
+    }
+
+    _applyBookmarkMutationFields(target, source) {
+        if (!target || !source) {
+            return;
+        }
+        target.name = source.name;
+        target.url = source.url;
+        target.icon = source.icon;
+        target.shortcut = source.shortcut;
+        target.category = source.category;
+        target.pinned = source.pinned;
+        target.checkStatus = source.checkStatus;
+        target.note = source.note || '';
+        target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
+    }
+
     syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl = '') {
         if (!bookmarkRef || !bookmarkRef.bookmark) {
             return;
@@ -6641,29 +6737,22 @@ class Dashboard {
         const previousUrlTrimmed = String(previousUrl || '').trim();
         const updatedUrlTrimmed = String(updated.url || '').trim();
 
-        if (!Array.isArray(this.allBookmarks)) {
-            return;
-        }
+        const syncList = (list) => {
+            if (!Array.isArray(list)) {
+                return;
+            }
+            list.forEach((bookmark) => {
+                if (!this._shouldSyncBookmarkMutation(bookmarkRef, bookmark, previousUrlTrimmed)) {
+                    return;
+                }
+                this._applyBookmarkMutationFields(bookmark, updated);
+            });
+        };
 
-        this.allBookmarks.forEach((bookmark) => {
-            const bookmarkPageId = Number(bookmark.pageId || bookmark.pageID || 0);
-            if (bookmarkPageId !== updatedPageId) {
-                return;
-            }
-            const bookmarkUrl = String(bookmark.url || '').trim();
-            const shouldSync = this.isSameBookmarkReference(bookmarkRef, bookmark)
-                || (previousUrlTrimmed && bookmarkUrl === previousUrlTrimmed);
-            if (!shouldSync) {
-                return;
-            }
-            bookmark.name = updated.name;
-            bookmark.url = updated.url;
-            bookmark.icon = updated.icon;
-            bookmark.shortcut = updated.shortcut;
-            bookmark.category = updated.category;
-            bookmark.pinned = updated.pinned;
-            bookmark.checkStatus = updated.checkStatus;
-        });
+        if (updatedPageId === Number(this.currentPageId)) {
+            syncList(this.bookmarks);
+        }
+        syncList(this.allBookmarks);
 
         if (updatedUrlTrimmed && previousUrlTrimmed && updatedUrlTrimmed !== previousUrlTrimmed) {
             bookmarkRef.original.url = updated.url;
@@ -6671,6 +6760,45 @@ class Dashboard {
         bookmarkRef.original.name = updated.name;
         bookmarkRef.original.shortcut = updated.shortcut;
         bookmarkRef.original.category = updated.category;
+        bookmarkRef.original.note = updated.note || '';
+        bookmarkRef.original.tags = Array.isArray(updated.tags) ? [...updated.tags] : [];
+    }
+
+    removeBookmarkFromAllBookmarks(bookmarkRef) {
+        if (!bookmarkRef || !Array.isArray(this.allBookmarks)) {
+            return;
+        }
+        const pageId = Number(bookmarkRef.pageId || this.currentPageId);
+        for (let i = this.allBookmarks.length - 1; i >= 0; i -= 1) {
+            const candidate = this.allBookmarks[i];
+            const candidatePageId = Number(candidate?.pageId || candidate?.pageID || 0);
+            if (candidatePageId !== pageId) {
+                continue;
+            }
+            if (this.isSameBookmarkReference(bookmarkRef, candidate)) {
+                this.allBookmarks.splice(i, 1);
+            }
+        }
+    }
+
+    restoreBookmarkInAllBookmarks(bookmark, pageId) {
+        if (!bookmark || !Array.isArray(this.allBookmarks)) {
+            return;
+        }
+        const pid = Number(pageId || this.currentPageId);
+        const ref = {
+            bookmark,
+            pageId: pid,
+            original: { ...bookmark },
+            scope: 'current',
+            index: -1
+        };
+        const exists = this.allBookmarks.some((candidate) => (
+            this._shouldSyncBookmarkMutation(ref, candidate, String(bookmark.url || '').trim())
+        ));
+        if (!exists) {
+            this.allBookmarks.push({ ...bookmark, pageId: pid });
+        }
     }
 
     findBookmarkIndexByReference(list, bookmarkRef) {
@@ -6771,14 +6899,25 @@ class Dashboard {
             return;
         }
         if (bookmarkRef.scope === 'current') {
-            await this.deleteBookmarkAtIndexInline(bookmarkRef.index);
+            await this.deleteBookmarkAtIndexInline(bookmarkRef);
             return;
         }
         await this.deleteRemoteBookmarkInline(bookmarkRef);
     }
 
-    async deleteBookmarkAtIndexInline(bookmarkIndex) {
-        const bookmark = this.bookmarks[bookmarkIndex];
+    async deleteBookmarkAtIndexInline(bookmarkRefOrIndex) {
+        const bookmarkRef = typeof bookmarkRefOrIndex === 'object' && bookmarkRefOrIndex !== null
+            ? bookmarkRefOrIndex
+            : {
+                bookmark: this.bookmarks[bookmarkRefOrIndex],
+                index: bookmarkRefOrIndex,
+                scope: 'current',
+                pageId: this.currentPageId,
+                original: this.bookmarks[bookmarkRefOrIndex]
+                    ? { ...this.bookmarks[bookmarkRefOrIndex] }
+                    : null
+            };
+        const bookmark = bookmarkRef.bookmark;
         if (!bookmark) {
             return;
         }
@@ -6788,10 +6927,29 @@ class Dashboard {
             return;
         }
 
+        let deleteIndex = this.findBookmarkIndexByReference(this.bookmarks, bookmarkRef);
+        if (deleteIndex < 0 && Number.isInteger(bookmarkRef.index) && bookmarkRef.index >= 0) {
+            deleteIndex = bookmarkRef.index;
+        }
+        if (deleteIndex < 0 || !this.bookmarks[deleteIndex]) {
+            this.showErrorNotification(
+                this.formatDashboardLabel('bookmarkNotFoundOnSourcePage', {}, 'Could not locate bookmark on source page.')
+            );
+            return;
+        }
+
         this.ensureBookmarkMutationSnapshot();
-        const deletedBookmark = { ...bookmark };
-        const deletedIndex = bookmarkIndex;
-        this.bookmarks.splice(bookmarkIndex, 1);
+        const deletedBookmark = { ...this.bookmarks[deleteIndex] };
+        const deletedIndex = deleteIndex;
+        const deleteRef = {
+            ...bookmarkRef,
+            bookmark: this.bookmarks[deleteIndex],
+            index: deleteIndex,
+            pageId: Number(bookmarkRef.pageId || this.currentPageId),
+            original: bookmarkRef.original || { ...deletedBookmark }
+        };
+        this.removeBookmarkFromAllBookmarks(deleteRef);
+        this.bookmarks.splice(deleteIndex, 1);
         this._inlineEditGlobalCleanup?.();
         this.inlineEditingBookmarkIndex = null;
         this.renderDashboard();
@@ -6806,6 +6964,7 @@ class Dashboard {
                 duration: 5000,
                 undoCallback: async () => {
                     this.bookmarks.splice(deletedIndex, 0, deletedBookmark);
+                    this.restoreBookmarkInAllBookmarks(deletedBookmark, deleteRef.pageId);
                     this.pendingReorderSnapshot = null;
                     this.renderDashboard();
                     try {
@@ -6991,6 +7150,10 @@ class Dashboard {
             ? this.getEffectiveColumnsPerRow()
             : 1;
         grid.setAttribute('aria-colcount', String(Math.max(1, layoutCols)));
+        grid.setAttribute(
+            'aria-label',
+            this.language?.t('dashboard.bookmarksGridLabel') || 'Bookmarks'
+        );
     }
 
     /**

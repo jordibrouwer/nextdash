@@ -2115,6 +2115,10 @@ body.bookmark-inline-edit-active .bookmark-inline-form {
     filter: none;
 }
 
+body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
+    z-index: 10050;
+}
+
 .bookmark-inline-form {
     width: 100%;
     min-width: min(420px, 90vw);

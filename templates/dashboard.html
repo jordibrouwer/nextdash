@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=quickwin-1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=quickwin-3">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/search.css">
@@ -63,7 +63,7 @@
                         <span class="status-loading-dots"></span>
                     </div>
                 </div>
-                <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" aria-label="Date and time"></div>
+                <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" data-i18n-aria="dashboard.dateBadgeAria" aria-label="Date and time"></div>
                 <div class="header-actions skeleton-hide-while-loading">
                     <button type="button" id="page-overview-header-btn" class="page-overview-header-btn" data-i18n="dashboard.pagesOverview">pages</button>
                     <div id="page-navigation" class="page-navigation">
@@ -93,7 +93,7 @@
     <!-- Container 3: Bookmarks -->
     <div class="dashboard-section section-content">
         <div class="container">
-            <main id="dashboard-layout" class="dashboard-grid" tabindex="-1" aria-busy="true" role="grid" aria-label="Bookmarks">
+            <main id="dashboard-layout" class="dashboard-grid" tabindex="-1" aria-busy="true" role="grid" data-i18n-aria="dashboard.bookmarksGridLabel" aria-label="Bookmarks">
                 <div class="skeleton-root skeleton-dashboard" data-skeleton-root aria-hidden="true">
                     <div class="skeleton-dashboard-col">
                         <div class="skeleton-shimmer skeleton-line skeleton-line--title"></div>
@@ -126,7 +126,7 @@
                 <span id="search-query" class="search-query"></span>
                 <span class="search-cursor" data-i18n="dashboard.searchCursor">_</span>
             </div>
-            <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div id="search-matches" class="search-matches"></div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
             <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
@@ -245,10 +245,10 @@
     <script src="/static/js/search-commands.js"></script>
     <script src="/static/js/search-finders.js"></script>
     <script src="/static/js/fuzzy-search.js"></script>
-    <script src="/static/js/search.js"></script>
+    <script src="/static/js/search.js?v=search-bugfix-1"></script>
     <script src="/static/js/status.js"></script>
-    <script src="/static/js/keyboard-navigation.js?v=kbd-bugfix-4"></script>
-    <script src="/static/js/swipe-navigation.js?v=bugfix-4"></script>
+    <script src="/static/js/keyboard-navigation.js?v=kbd-bugfix-7"></script>
+    <script src="/static/js/swipe-navigation.js?v=bugfix-5"></script>
     <script src="/static/js/hypr-mode.js"></script>
     <script src="/static/js/reorder.js"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3"></script>
@@ -268,7 +268,7 @@
     <script src="/static/js/dashboard-tag-cloud.js"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/dashboard.js?v=quickwin-2"></script>
+    <script src="/static/js/dashboard.js?v=quickwin-6"></script>
     <script src="/static/js/analytics.js"></script>
     <script>
         // Load translations

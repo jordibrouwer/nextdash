@@ -97,7 +97,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled (blocked while inline edit is open)
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
-- `Ctrl + C` — copy the URL of the focused bookmark (row flashes green)
+- `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
 - `[` — toggle the hover preview card on the focused bookmark
 - `Delete` — delete the focused bookmark
 

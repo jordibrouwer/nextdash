@@ -89,11 +89,12 @@ class SearchComponent {
     }
 
     buildShortcutsMap() {
+        if (this.searchActive) {
+            this.closeSearch();
+        }
+
         // Clear existing shortcuts
         this.shortcuts.clear();
-        this.currentQuery = '';
-        this.searchActive = false;
-        this.searchMatches = [];
 
         // Build shortcuts map
         this.bookmarks.forEach(bookmark => {
@@ -286,6 +287,23 @@ class SearchComponent {
         this.updateSelectionHighlight();
     }
 
+    shouldDeferToDashboardOverlay() {
+        const dash = window.dashboardInstance;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return true;
+        }
+        if (dash?.isInlineEditActive?.()) {
+            return true;
+        }
+        if (dash?.isModalOpen?.()) {
+            return true;
+        }
+        if (window.DashboardTagCloud?.modalOpen) {
+            return true;
+        }
+        return false;
+    }
+
     handleKeyPress(e) {
         const key = e.key.toUpperCase();
         
@@ -294,6 +312,19 @@ class SearchComponent {
             if (!this.isAppModalOpen()) {
                 this.closeSearch();
             }
+            return;
+        }
+
+        if (!this.searchActive && this.shouldDeferToDashboardOverlay()) {
+            return;
+        }
+
+        // G / GG category navigation — never open shortcut search
+        if (!this.searchActive && key === 'G') {
+            return;
+        }
+
+        if (!this.searchActive && key >= '1' && key <= '9' && window.dashboardInstance?.keyboardNavigation?.isGChordActive?.()) {
             return;
         }
 
@@ -1022,8 +1053,8 @@ class SearchComponent {
                 document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
             }
             
-            // Focus mobile input to show keyboard
-            if (mobileInput) {
+            // Focus mobile input to show keyboard (mobile layout only)
+            if (mobileInput && window.MobileExperience?.isMobileLayout?.()) {
                 mobileInput.value = this.currentQuery;
                 mobileInput.focus();
             }
@@ -1198,8 +1229,11 @@ class SearchComponent {
                     }
                     this.currentQuery = `:new ${q}`;
                     this.updateSearch();
-                    const input = document.getElementById('shortcut-search-input');
-                    if (input) { input.value = this.currentQuery; input.focus(); }
+                    const input = document.getElementById('search-input-mobile');
+                    if (input) {
+                        input.value = this.currentQuery;
+                        input.focus();
+                    }
                 };
                 newHint.addEventListener('click', hintNewAction);
                 matchesContainer.appendChild(newHint);

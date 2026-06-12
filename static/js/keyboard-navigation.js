@@ -57,21 +57,29 @@ class KeyboardNavigation {
                 return;
             }
 
+            if (document.getElementById('omnibox-overlay')) {
+                return;
+            }
+
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
+                return;
+            }
+
             // Don't handle if search is active
             if (this.dashboard.searchComponent && this.dashboard.searchComponent.isActive()) {
                 return;
             }
 
-            // Ctrl+C — copy URL of selected bookmark
-            if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyC' && this.currentIndex >= 0) {
+            // Ctrl/Cmd+C — copy URL of selected bookmark
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.code === 'KeyC' && this.currentIndex >= 0) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.copyUrlForCurrent();
                 return;
             }
 
-            // WAI-ARIA grid: Ctrl+Home / Ctrl+End — first / last bookmark
-            if (e.ctrlKey && !e.altKey && !e.metaKey && (e.key === 'Home' || e.key === 'End')) {
+            // WAI-ARIA grid: Ctrl/Cmd+Home / Ctrl/Cmd+End — first / last bookmark
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'Home' || e.key === 'End')) {
                 if (this.navigableElements.length === 0) {
                     return;
                 }
@@ -602,11 +610,13 @@ class KeyboardNavigation {
                 if (this._gPressed) {
                     // GG: jump to first bookmark
                     e.preventDefault();
+                    e.stopImmediatePropagation();
                     this._clearGState();
                     this.currentIndex = 0;
                     this.highlightCurrentElement({ keyboardNav: true });
                 } else {
                     e.preventDefault();
+                    e.stopImmediatePropagation();
                     this._gPressed = true;
                     this._gTimeout = setTimeout(() => this._clearGState(), 1000);
                 }
@@ -620,6 +630,10 @@ class KeyboardNavigation {
             clearTimeout(this._gTimeout);
             this._gTimeout = null;
         }
+    }
+
+    isGChordActive() {
+        return this._gPressed === true;
     }
 
     jumpToCategory(n) {
@@ -1006,11 +1020,25 @@ class KeyboardNavigation {
     deleteCurrentBookmark() {
         if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
         const dash = this.dashboard;
-        if (!dash || typeof dash.deleteBookmarkAtIndexInline !== 'function') return;
+        if (!dash) return;
         const row = this.navigableElements[this.currentIndex];
-        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
-        if (!Number.isFinite(bookmarkIndex) || bookmarkIndex < 0) return;
-        dash.deleteBookmarkAtIndexInline(bookmarkIndex);
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) {
+            return;
+        }
+        const bookmarkRef = typeof dash.resolveBookmarkReference === 'function'
+            ? dash.resolveBookmarkReference(bookmark)
+            : null;
+        if (!bookmarkRef) {
+            return;
+        }
+        if (typeof dash.deleteBookmarkInline === 'function') {
+            void dash.deleteBookmarkInline(bookmarkRef);
+            return;
+        }
+        if (bookmarkRef.scope === 'current' && typeof dash.deleteBookmarkAtIndexInline === 'function') {
+            void dash.deleteBookmarkAtIndexInline(bookmarkRef);
+        }
     }
 
     getSelectedBookmark() {

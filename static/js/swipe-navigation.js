@@ -183,6 +183,9 @@ class SwipeNavigation {
         if (document.querySelector('.modal-overlay.show')) {
             return true;
         }
+        if (typeof dashboard.isModalOpen === 'function' && dashboard.isModalOpen()) {
+            return true;
+        }
         if (window.DashboardTagCloud?.modalOpen) {
             return true;
         }
