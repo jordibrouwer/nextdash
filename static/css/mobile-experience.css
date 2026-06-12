@@ -234,7 +234,7 @@ body[data-mobile-hide-previews="true"] .bookmark-preview-popup {
 }
 
 /* ── Config: tabs & general panels ── */
-body[data-mobile-layout="true"] .tab-button:not([data-tab="general"]):not([data-tab="help"]),
+body[data-mobile-layout="true"] .tab-button:not([data-tab="general"]):not([data-tab="help"]):not([data-tab="colors"]),
 body[data-mobile-layout="true"] .config-keyboard-chip {
     display: none !important;
 }

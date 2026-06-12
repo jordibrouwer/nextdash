@@ -147,6 +147,22 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 	}
 }
 
+func sanitizeColorTheme(c ColorTheme) ColorTheme {
+	c.Light = sanitizeThemeColors(c.Light)
+	c.Dark = sanitizeThemeColors(c.Dark)
+	if c.BuiltIn != nil {
+		for id, tc := range c.BuiltIn {
+			c.BuiltIn[id] = sanitizeThemeColors(tc)
+		}
+	}
+	if c.Custom != nil {
+		for id, tc := range c.Custom {
+			c.Custom[id] = sanitizeThemeColors(tc)
+		}
+	}
+	return c
+}
+
 const jsonBodyLimit = 4 << 20 // 4 MB for JSON endpoints
 
 func securityHeaders(next http.Handler) http.Handler {

@@ -1141,6 +1141,7 @@ func (h *Handlers) SaveColors(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	colors = sanitizeColorTheme(colors)
 
 	if !respondStorePersistError(w, h.store.SaveColors(colors)) {
 		return

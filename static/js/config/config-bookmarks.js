@@ -159,11 +159,8 @@ class ConfigBookmarks {
                 name: 'Archive',
                 icon: '📦'
             });
-            if (window.configManager.categories && typeof window.configManager.categories.render === 'function') {
-                window.configManager.categories.render(
-                    window.configManager.categoriesData,
-                    window.configManager.generateId.bind(window.configManager)
-                );
+            if (typeof window.configManager.renderCategoriesList === 'function') {
+                window.configManager.renderCategoriesList();
             }
         }
 

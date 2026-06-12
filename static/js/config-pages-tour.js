@@ -304,10 +304,7 @@ class ConfigPagesTour {
 
             mgr.pages.render(mgr.pagesData, mgr.generateId.bind(mgr), mgr.isPageArchived.bind(mgr));
             mgr.pages.renderPageSelector(mgr.getVisiblePages(), 1);
-            mgr.pages.initReorder(mgr.pagesData, (newPages) => {
-                mgr.pagesData = newPages;
-                mgr.pages.renderPageSelector(mgr.pagesData, mgr.currentPageId);
-            });
+            mgr.pages.initReorder(mgr.pagesData, (newPages) => mgr.handlePagesReordered(newPages));
 
             mgr.currentPageId = 1;
             mgr.currentCategoriesPageId = 1;
@@ -712,10 +709,12 @@ class ConfigPagesTour {
         card.className = 'config-pages-tour-card';
         card.setAttribute('role', 'dialog');
         card.setAttribute('aria-modal', 'true');
+        card.setAttribute('aria-labelledby', 'config-pages-tour-title');
+        card.setAttribute('aria-describedby', 'config-pages-tour-body');
         card.innerHTML = `
-            <div class="config-general-tour-progress"></div>
-            <h3 class="config-general-tour-title"></h3>
-            <p class="config-general-tour-body"></p>
+            <div class="config-general-tour-progress" aria-live="polite"></div>
+            <h3 id="config-pages-tour-title" class="config-general-tour-title"></h3>
+            <p id="config-pages-tour-body" class="config-general-tour-body"></p>
             <div class="config-general-tour-actions">
                 <button type="button" class="config-general-tour-btn config-general-tour-back"></button>
                 <button type="button" class="config-general-tour-btn config-general-tour-skip"></button>
@@ -735,9 +734,13 @@ class ConfigPagesTour {
         card.querySelector('.config-general-tour-next').addEventListener('click', () => this.nextStep());
 
         this.keyHandler = (e) => {
-            if (e.key === 'Escape') this.finish();
+            if (e.key === 'Escape') this.dismissWithoutComplete();
         };
         document.addEventListener('keydown', this.keyHandler);
+    }
+
+    dismissWithoutComplete() {
+        void this.ensureDemoRemoved().finally(() => this.close());
     }
 
     updateStepContent(step, index) {

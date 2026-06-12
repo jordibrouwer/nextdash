@@ -219,11 +219,119 @@
       ]
     },
     {
+      "title": "Config → Theme",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Packaged themes editor</strong> — fourth subtab edits built-in palette families (Cherry Graphite, Nordic Frost, etc.); pick a theme, tweak colours, activate under <strong>General → Appearance</strong>, then <strong>Save</strong> in the config header."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Export / import</strong> — download the active dark, light, custom, or packaged palette as JSON; import merges into the editor (then <strong>Save colors</strong> to persist)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Undo</strong> — per-session undo stack for colour edits; <strong>↑</strong> / <strong>↓</strong> reorders custom themes in the list."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Scoped live preview</strong> — preview CSS applies to palette cards only (not the whole page); contrast warning when primary text vs background falls below WCAG-friendly ratios."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mobile viewer</strong> — on phone, the Theme tab is read-only with a banner; editing needs a wider screen (same tab set as other mobile config limits)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Navigation guards</strong> — leaving with unsaved colours reloads from disk after confirm; <code>#colors</code> subtab restores from hash + <code>sessionStorage</code>; tab revisit reloads when another tab saved colours."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Custom theme autosave</strong> — rename debounces to the server; built-in edits merge on save only (server <code>sanitizeColorTheme</code>); rgba/hex validation and <code>--accent-primary</code> mapping fixed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Editor shortcuts &amp; search</strong> — <code>S</code> saves colours from the editor; settings search indexes colour subtabs and groups; localized preview labels in EN / NL / DE / FR."
+        }
+      ]
+    },
+    {
+      "title": "Config → Pages",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>ID-based actions</strong> — remove, archive, and restore use page id (not list index), so drag-reorder no longer targets the wrong row."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Auto-save reorder</strong> — drag or <strong>↑</strong> / <strong>↓</strong> on a focused row debounces ~600&nbsp;ms, syncs to disk, and shows a localized dashboard-sync toast; dirty state clears after success."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Archive</strong> — hide a page from the dashboard and page picker without deleting its bookmarks; restore from Structure or the archived list."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>List &amp; a11y</strong> — semantic <code>&lt;ul&gt;</code> page list, visually hidden name labels, keyboard reorder, and an intro hint (drag, archive, rename)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Selectors &amp; templates</strong> — page dropdowns use visible (non-archived) pages; new-page templates ship localized default category names; mobile blocks page management with a toast."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tour &amp; search</strong> — pages tour uses the shared reorder handler; <code>Escape</code> dismisses without marking complete; settings search finds <strong>+ Add page</strong> and archive."
+        }
+      ]
+    },
+    {
+      "title": "Config → Categories",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>ID-based actions</strong> — remove and merge use category id (not list index) so reorder cannot delete or merge the wrong category."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Auto-save reorder</strong> — drag or <strong>↑</strong> / <strong>↓</strong> in <code>config → categories</code> debounces ~600&nbsp;ms with a localized sync toast (matches pages)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Bookmark counts</strong> — each row shows how many bookmarks use the category; merge modal previews how many will move."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Page switch flush</strong> — changing the categories page selector saves pending order, names, and icons before loading another page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Delete flow</strong> — impacted bookmarks are counted on the categories page even when the bookmarks tab shows a different page; move / uncategorize / delete choices apply to the correct data."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Validation &amp; polish</strong> — duplicate or empty names blocked on persist; icon edits autosave on blur; empty-state hint; mobile guard; settings search indexes add-category and merge; tour a11y + <code>Escape</code> dismiss."
+        }
+      ]
+    },
+    {
+      "title": "Documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README &amp; MANUAL</strong> — Config → Theme editor (packaged themes, export/import, undo), Pages (reorder, archive, keyboard), and Categories (reorder, merge counts, page flush) documented for v2026.06.17."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap extended with Theme, Pages, and Categories polish under v2026.06.17."
+        }
+      ]
+    },
+    {
       "title": "Developer",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v65</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, <code>dashboard.css</code>, and Config General assets (<code>config-general-layers</code>, <code>settings-search</code>, <code>general-tour</code>) query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v66</code> data version; Config Theme (<code>colors.js</code>, <code>color-value-utils.js</code>), Pages (<code>config-pages.js</code>), and Categories (<code>config-categories.js</code>) assets plus existing General/dashboard query strings updated for Docker-mounted static files."
         }
       ]
     }

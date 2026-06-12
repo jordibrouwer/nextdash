@@ -5,7 +5,7 @@
     'use strict';
 
     const MOBILE_FOOTER_BUTTONS = ['search'];
-    const MOBILE_CONFIG_TABS = ['general', 'help'];
+    const MOBILE_CONFIG_TABS = ['general', 'help', 'colors'];
     const MOBILE_GENERAL_PANELS = ['localization', 'basics-core', 'layout'];
     /** Set when the mobile info banner was shown and dismissed (persists across sessions). */
     const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
@@ -191,6 +191,8 @@
         if (bulkBar) bulkBar.hidden = true;
         const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
         if (mobileSearchHost) mobileSearchHost.hidden = false;
+        const themeEditorLink = document.querySelector('.general-appearance-actions');
+        if (themeEditorLink) themeEditorLink.hidden = true;
         window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 
@@ -209,6 +211,8 @@
         if (tabIntro) tabIntro.hidden = false;
         const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
         if (mobileSearchHost) mobileSearchHost.hidden = true;
+        const themeEditorLink = document.querySelector('.general-appearance-actions');
+        if (themeEditorLink) themeEditorLink.hidden = false;
         window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 
@@ -271,6 +275,8 @@
                 gl.applyLayer(gl.getStoredLayer(), { updateHash: false });
             }
         }
+
+        window.configManager?.colorsEditor?.applyReadonlyMode?.();
 
         if (nowMobile) {
             applyConfigTabGuard();

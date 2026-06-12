@@ -213,10 +213,7 @@ class ConfigCategoriesTour {
     syncCategoriesListUi() {
         const mgr = window.configManager;
         if (!mgr?.categories) return;
-        mgr.categories.render(mgr.categoriesData, mgr.generateId.bind(mgr));
-        mgr.categories.initReorder(mgr.categoriesData, (newCategories) => {
-            mgr.categoriesData = newCategories;
-        });
+        mgr.renderCategoriesList?.();
     }
 
     async persistCategoriesChanges(eventType) {
@@ -653,10 +650,12 @@ class ConfigCategoriesTour {
         card.className = 'config-categories-tour-card';
         card.setAttribute('role', 'dialog');
         card.setAttribute('aria-modal', 'true');
+        card.setAttribute('aria-labelledby', 'config-categories-tour-title');
+        card.setAttribute('aria-describedby', 'config-categories-tour-body');
         card.innerHTML = `
-            <div class="config-general-tour-progress"></div>
-            <h3 class="config-general-tour-title"></h3>
-            <p class="config-general-tour-body"></p>
+            <div class="config-general-tour-progress" aria-live="polite"></div>
+            <h3 id="config-categories-tour-title" class="config-general-tour-title"></h3>
+            <p id="config-categories-tour-body" class="config-general-tour-body"></p>
             <div class="config-general-tour-actions">
                 <button type="button" class="config-general-tour-btn config-general-tour-back"></button>
                 <button type="button" class="config-general-tour-btn config-general-tour-skip"></button>
@@ -676,9 +675,13 @@ class ConfigCategoriesTour {
         card.querySelector('.config-general-tour-next').addEventListener('click', () => this.nextStep());
 
         this.keyHandler = (e) => {
-            if (e.key === 'Escape') this.finish();
+            if (e.key === 'Escape') this.dismissWithoutComplete();
         };
         document.addEventListener('keydown', this.keyHandler);
+    }
+
+    dismissWithoutComplete() {
+        void this.ensureDemoRemoved().finally(() => this.close());
     }
 
     updateStepContent(step, index) {

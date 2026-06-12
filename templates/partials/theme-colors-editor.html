@@ -1,21 +1,28 @@
 {{define "theme-colors-editor"}}
 <div id="theme-colors-editor" class="theme-colors-editor">
+    <p id="colors-mobile-readonly-banner" class="colors-mobile-readonly-banner" hidden data-i18n="colors.mobileReadonlyBanner">Theme editing needs a wider screen. You can preview palettes here; open config on desktop to edit and save.</p>
+    <p id="colors-contrast-hint" class="colors-contrast-hint" hidden role="status"></p>
     <div class="theme-colors-intro">
         <span class="simple-tab-intro" data-i18n="config.colorsTabIntro">Fine-tune dashboard and config colors here. Edit the default dark and light palettes, or create your own under Custom themes — then click Save colors to apply. Dozens of built-in themes are already available in General → Appearance if you want a ready-made look without editing every color.<br><span class="simple-tab-hint">Auto dark mode (General → Appearance) only works with built-in dark/light theme pairs — it is disabled when a custom theme is selected.</span></span>
     </div>
     <div class="theme-colors-toolbar">
         <div class="theme-colors-actions">
-            <button type="button" id="save-colors-btn" class="btn btn-success btn-small" data-i18n="colors.saveColors">Save colors</button>
+            <button type="button" id="save-colors-btn" class="btn btn-success btn-small" data-i18n="colors.saveColorsButton">Save colors</button>
             <button type="button" id="colors-save-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.saveColorsInfoTitle">ℹ</button>
+            <button type="button" id="undo-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.undoColors">Undo</button>
+            <button type="button" id="export-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.exportTheme">Export</button>
+            <button type="button" id="import-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.importTheme">Import</button>
+            <input type="file" id="colors-import-file" accept="application/json,.json" hidden>
             <button type="button" id="reset-colors-btn" class="btn btn-danger btn-small" data-i18n="colors.resetColorsShort">Reset defaults</button>
             <span id="colors-unsaved-indicator" class="unsaved-badge colors-unsaved-indicator" hidden aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
         </div>
         <div class="colors-subtabs-header">
             <button type="button" id="colors-palettes-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.palettesInfoTitle">ℹ</button>
-            <div class="colors-subtabs" role="tablist" aria-label="Theme palettes">
+            <div class="colors-subtabs" role="tablist" data-i18n-aria="colors.palettesTablistAria">
             <button type="button" class="colors-tab-button" data-colors-tab="dark" data-i18n="dashboard.darkTheme">Dark</button>
             <button type="button" class="colors-tab-button" data-colors-tab="light" data-i18n="dashboard.lightTheme">Light</button>
             <button type="button" class="colors-tab-button active" data-colors-tab="custom" data-i18n="colors.customThemesTab">Custom themes</button>
+            <button type="button" class="colors-tab-button" data-colors-tab="builtin" data-i18n="colors.builtinThemesTab">Packaged themes</button>
             </div>
         </div>
     </div>
@@ -255,29 +262,29 @@
 
                     <div id="custom-theme-colors-section" class="custom-theme-colors-section" style="display: none;">
                         <div class="theme-preview-card" id="theme-preview-card">
-                            <div class="theme-preview-label">preview</div>
+                            <div class="theme-preview-label" data-i18n="colors.previewLabel">preview</div>
                             <div class="theme-preview-body">
                                 <div class="theme-preview-category">
-                                    <span class="theme-preview-category-title">// work</span>
+                                    <span class="theme-preview-category-title" data-i18n="colors.previewCategory">// work</span>
                                     <div class="theme-preview-bookmark">
-                                        <span class="theme-preview-bm-name">GitHub</span>
+                                        <span class="theme-preview-bm-name" data-i18n="colors.previewBm1">GitHub</span>
                                         <span class="theme-preview-bm-shortcut">GH</span>
                                     </div>
                                     <div class="theme-preview-bookmark">
-                                        <span class="theme-preview-bm-name">Linear</span>
+                                        <span class="theme-preview-bm-name" data-i18n="colors.previewBm2">Linear</span>
                                         <span class="theme-preview-bm-shortcut">LN</span>
                                     </div>
                                 </div>
                                 <div class="theme-preview-controls">
-                                    <input class="theme-preview-input" type="text" value="search..." readonly tabindex="-1">
-                                    <button class="theme-preview-btn" tabindex="-1">save</button>
-                                    <button class="theme-preview-btn theme-preview-btn-success" tabindex="-1">ok</button>
-                                    <button class="theme-preview-btn theme-preview-btn-danger" tabindex="-1">del</button>
+                                    <input class="theme-preview-input" type="text" data-i18n-placeholder="colors.previewSearch" placeholder="search..." readonly tabindex="-1">
+                                    <button class="theme-preview-btn" tabindex="-1" data-i18n="colors.previewSave">save</button>
+                                    <button class="theme-preview-btn theme-preview-btn-success" tabindex="-1" data-i18n="colors.previewOk">ok</button>
+                                    <button class="theme-preview-btn theme-preview-btn-danger" tabindex="-1" data-i18n="colors.previewDel">del</button>
                                 </div>
                                 <div class="theme-preview-badges">
-                                    <span class="theme-preview-badge theme-preview-badge-success">online</span>
-                                    <span class="theme-preview-badge theme-preview-badge-warning">stale</span>
-                                    <span class="theme-preview-badge theme-preview-badge-error">broken</span>
+                                    <span class="theme-preview-badge theme-preview-badge-success" data-i18n="colors.previewOnline">online</span>
+                                    <span class="theme-preview-badge theme-preview-badge-warning" data-i18n="colors.previewStale">stale</span>
+                                    <span class="theme-preview-badge theme-preview-badge-error" data-i18n="colors.previewBroken">broken</span>
                                 </div>
                             </div>
                         </div>
@@ -378,6 +385,116 @@
                                         <input type="color" id="custom-accent-error" data-theme="custom" data-prop="accentError">
                                         <input type="text" class="color-text-input" id="custom-accent-error-text" maxlength="25">
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="colors-tab-panel" data-colors-tab-panel="builtin" hidden>
+            <div class="config-section">
+                <p class="help-text colors-panel-hint" data-i18n="colors.builtinTabHint">Edit packaged theme palettes (Cherry Graphite, Nordic Frost, etc.). Activate a theme under General → Appearance, then Save in the config header.</p>
+                <div class="page-selector-wrapper">
+                    <label for="builtin-theme-selector" data-i18n="colors.selectBuiltInThemeLabel">Packaged theme:</label>
+                    <select id="builtin-theme-selector" class="page-selector">
+                        <option value="" data-i18n="colors.selectBuiltInTheme">Select a packaged theme</option>
+                    </select>
+                </div>
+                <div id="builtin-theme-colors-section" class="custom-theme-colors-section" hidden>
+                    <div class="theme-preview-card" id="builtin-theme-preview-card">
+                        <div class="theme-preview-label" data-i18n="colors.previewLabel">preview</div>
+                        <div class="theme-preview-body">
+                            <div class="theme-preview-category">
+                                <span class="theme-preview-category-title" data-i18n="colors.previewCategory">// work</span>
+                                <div class="theme-preview-bookmark">
+                                    <span class="theme-preview-bm-name" data-i18n="colors.previewBm1">GitHub</span>
+                                    <span class="theme-preview-bm-shortcut">GH</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="colors-grid colors-grid--builtin">
+                        <div class="color-group">
+                            <h3 data-i18n="colors.textColors">text colors</h3>
+                            <div class="color-item">
+                                <label for="builtin-text-primary" data-i18n="colors.primary">primary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-text-primary" data-theme="builtin" data-prop="textPrimary">
+                                    <input type="text" class="color-text-input" id="builtin-text-primary-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-text-secondary" data-i18n="colors.secondary">secondary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-text-secondary" data-theme="builtin" data-prop="textSecondary">
+                                    <input type="text" class="color-text-input" id="builtin-text-secondary-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-text-tertiary" data-i18n="colors.tertiary">tertiary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-text-tertiary" data-theme="builtin" data-prop="textTertiary">
+                                    <input type="text" class="color-text-input" id="builtin-text-tertiary-text" maxlength="25">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <h3 data-i18n="colors.backgroundColors">background colors</h3>
+                            <div class="color-item">
+                                <label for="builtin-background-primary" data-i18n="colors.primary">primary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-background-primary" data-theme="builtin" data-prop="backgroundPrimary">
+                                    <input type="text" class="color-text-input" id="builtin-background-primary-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-background-secondary" data-i18n="colors.secondary">secondary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-background-secondary" data-theme="builtin" data-prop="backgroundSecondary">
+                                    <input type="text" class="color-text-input" id="builtin-background-secondary-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-background-dots" data-i18n="colors.dots">dots:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-background-dots" data-theme="builtin" data-prop="backgroundDots">
+                                    <input type="text" class="color-text-input" id="builtin-background-dots-text" maxlength="25">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <h3 data-i18n="colors.borderColors">border colors</h3>
+                            <div class="color-item">
+                                <label for="builtin-border-primary" data-i18n="colors.primary">primary:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-border-primary" data-theme="builtin" data-prop="borderPrimary">
+                                    <input type="text" class="color-text-input" id="builtin-border-primary-text" maxlength="25">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <h3 data-i18n="colors.accentColors">accent colors</h3>
+                            <div class="color-item">
+                                <label for="builtin-accent-success" data-i18n="colors.success">success:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-accent-success" data-theme="builtin" data-prop="accentSuccess">
+                                    <input type="text" class="color-text-input" id="builtin-accent-success-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-accent-warning" data-i18n="colors.warning">warning:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-accent-warning" data-theme="builtin" data-prop="accentWarning">
+                                    <input type="text" class="color-text-input" id="builtin-accent-warning-text" maxlength="25">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="builtin-accent-error" data-i18n="colors.error">error:</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="builtin-accent-error" data-theme="builtin" data-prop="accentError">
+                                    <input type="text" class="color-text-input" id="builtin-accent-error-text" maxlength="25">
                                 </div>
                             </div>
                         </div>

@@ -29,6 +29,13 @@ class ConfigUI {
         return '#general';
     }
 
+    _colorsTabHash() {
+        const sub = (() => {
+            try { return sessionStorage.getItem('nextdash:colors-subtab') || 'custom'; } catch (_) { return 'custom'; }
+        })();
+        return sub === 'custom' ? '#colors' : `#colors/${sub}`;
+    }
+
     /**
      * Initialize tab switching functionality
      */
@@ -58,6 +65,9 @@ class ConfigUI {
         // Function to switch to a specific tab
         const switchToTab = (targetTab) => {
             const previousTab = this._currentTab;
+            if (previousTab === 'colors' && targetTab !== 'colors') {
+                window.configManager?.colorsEditor?.clearPreviewStyle?.();
+            }
             tabButtons.forEach(btn => {
                 btn.classList.remove('active');
                 btn.setAttribute('aria-selected', 'false');
@@ -147,6 +157,8 @@ class ConfigUI {
                     }
                 } else if (targetTab === 'colors') {
                     void mgr.ensureColorsEditor?.().then(() => {
+                        mgr.colorsEditor?.applyReadonlyMode?.();
+                        mgr.colorsEditor?.reloadIfStale?.();
                         window.ConfigSettingsSearch?.refreshIndex?.();
                     });
                     if (
@@ -244,7 +256,10 @@ class ConfigUI {
             if (tab !== this._currentTab) {
                 if (typeof configManager?.guardColorsTabLeave === 'function') {
                     const allowed = await configManager.guardColorsTabLeave(tab);
-                    if (!allowed) return;
+                    if (!allowed) {
+                        history.replaceState(null, '', this._colorsTabHash());
+                        return;
+                    }
                 }
                 switchToTab(tab);
             }
@@ -253,7 +268,7 @@ class ConfigUI {
                 window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
             }
             if (tab === 'colors' && window.configManager?.colorsEditor) {
-                const subMatch = hash.match(/^colors(?:\/(dark|light|custom))?$/);
+                const subMatch = hash.match(/^colors(?:\/(dark|light|custom|builtin))?$/);
                 const sub = subMatch?.[1] || 'custom';
                 window.configManager.colorsEditor.switchSubTab(sub, { updateHash: false });
             }

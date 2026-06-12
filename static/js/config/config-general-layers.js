@@ -143,6 +143,9 @@ class ConfigGeneralLayers {
         const row = document.createElement('p');
         row.className = 'general-card-intro general-appearance-actions';
         row.innerHTML = '<a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a>';
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            row.hidden = true;
+        }
         const intro = core.querySelector('.general-card-intro');
         if (intro) intro.after(row);
         else core.querySelector('.section-title')?.after(row);
@@ -154,10 +157,22 @@ class ConfigGeneralLayers {
         if (!link || link.dataset.colorsNavBound === '1') return;
         link.dataset.colorsNavBound = '1';
         link.addEventListener('click', async (e) => {
+            e.preventDefault();
             const mgr = window.configManager;
             if (!mgr) return;
-            if (!mgr.isDirty && !mgr.hasUnsavedColorChanges?.()) return;
-            e.preventDefault();
+
+            if (window.MobileExperience?.isMobileLayout?.()) {
+                const lang = mgr.language;
+                const linkLabel = this.t('openThemeColorsLink', 'Open theme editor →').replace(/\s*→\s*$/, '').trim();
+                const namedKey = 'config.generalPanelMobileHiddenNamed';
+                const namedTpl = lang?.t?.(namedKey);
+                const msg = namedTpl && namedTpl !== namedKey
+                    ? namedTpl.replace('{name}', linkLabel)
+                    : this.t('generalPanelMobileHidden', 'This section is only available on a wider screen.');
+                mgr.ui?.showNotification?.(msg, 'info');
+                return;
+            }
+
             if (mgr.isDirty) {
                 const ok = await mgr.confirmLeaveWithUnsavedChanges();
                 if (!ok) return;
@@ -166,9 +181,7 @@ class ConfigGeneralLayers {
                 const ok = await mgr.colorsEditor?.confirmLeave?.();
                 if (!ok) return;
             }
-            if (mgr.ui?.switchToTab) {
-                mgr.ui.switchToTab('colors');
-            }
+            mgr.ui?.switchToTab?.('colors');
             window.location.hash = '#colors';
             await mgr.ensureColorsEditor?.();
         });

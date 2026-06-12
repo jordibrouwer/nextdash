@@ -49,7 +49,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.17 — June 2026
 
-**Search guards, smart-collection sync, inline-edit polish & Config → General overhaul** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes.
+**Search guards, smart-collection sync, inline-edit polish, Config → General overhaul & structure-tab hardening** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General is reworked into Essentials / Advanced / All layers with restructured panels, sticky section nav, expand/collapse all, hash + sessionStorage deep links, ↺ resets on dozens of controls, expanded ℹ help, settings-search subtitles and panel expansion, mobile General search, 11-step General tour, smart-collection master sync, reset-card guard, and many form/a11y fixes. Config → Theme gains a packaged-themes editor, export/import, undo, scoped preview, and mobile read-only mode. Config → Pages and Categories get ID-safe remove/merge/archive, debounced reorder auto-save, keyboard ↑/↓, localized sync toasts, and mobile/search/tour polish.
 
 ### Dashboard
 
@@ -117,14 +117,43 @@ _No unreleased changes at this time._
 - **fix** **Defaults & markup** — `showTips` defaults to on; Add-bookmark footer button no longer ships `checked` in HTML; `tag-collections-min-count` row has a stable `id` for show/hide logic.
 - **fix** **Accessibility labels** — breadcrumb, layer toolbar, advanced nav, columns steppers, and custom title field use `data-i18n-aria` in EN / NL / DE / FR; collapsible titles expose `aria-expanded`.
 
+### Config → Theme
+
+- **new** **Packaged themes editor** — fourth subtab edits built-in palette families; activate under General → Appearance, then Save in the config header.
+- **new** **Export / import** — download active dark, light, custom, or packaged palette as JSON; import merges into the editor (Save colors to persist).
+- **new** **Undo & reorder** — per-session undo stack; ↑/↓ reorders custom themes in the list.
+- **new** **Scoped live preview** — preview CSS on palette cards only; contrast warning when primary text vs background is too low.
+- **new** **Mobile viewer** — Theme tab read-only on phone with a banner; editing needs a wider screen.
+- **fix** **Navigation guards** — unsaved-colour leave reloads from disk after confirm; `#colors` subtab restores from hash + `sessionStorage`; tab revisit reloads when another tab saved colours.
+- **fix** **Custom theme autosave** — rename debounces to server; built-in edits merge on save only (`sanitizeColorTheme`); rgba/hex validation and `--accent-primary` mapping.
+- **fix** **Editor shortcuts & search** — `S` saves colours from the editor; settings search indexes colour subtabs and groups; localized preview labels in EN / NL / DE / FR.
+
+### Config → Pages
+
+- **fix** **ID-based actions** — remove, archive, and restore use page id (not list index) so drag-reorder cannot target the wrong row.
+- **new** **Auto-save reorder** — drag or ↑/↓ on a focused row debounces ~600 ms, syncs to disk, localized dashboard-sync toast; dirty state clears after success.
+- **new** **Archive** — hide a page from dashboard and page picker without deleting bookmarks; restore from Structure or archived list.
+- **new** **List & a11y** — semantic `<ul>` page list, visually hidden name labels, keyboard reorder, intro hint (drag, archive, rename).
+- **fix** **Selectors & templates** — page dropdowns use visible (non-archived) pages; new-page templates ship localized default category names; mobile blocks page management with a toast.
+- **fix** **Tour & search** — pages tour uses shared reorder handler; Escape dismisses without marking complete; settings search finds + Add page and archive.
+
+### Config → Categories
+
+- **fix** **ID-based actions** — remove and merge use category id (not list index).
+- **new** **Auto-save reorder** — drag or ↑/↓ in config → categories debounces ~600 ms with localized sync toast.
+- **new** **Bookmark counts** — each row shows bookmark count; merge modal previews how many will move.
+- **new** **Page switch flush** — categories page selector saves pending order, names, and icons before loading another page.
+- **fix** **Delete flow** — impacted bookmarks counted on the categories page even when bookmarks tab shows a different page.
+- **fix** **Validation & polish** — duplicate/empty names blocked on persist; icon autosave on blur; empty-state hint; mobile guard; settings search indexes add-category and merge; tour a11y + Escape dismiss.
+
 ### Documentation
 
-- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, overlay paste guards, and Config → General layers (expand/collapse all, ↺ resets, mobile search, tour search step) for v2026.06.17.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 dashboard search guards, smart-collection sync, and Config → General polish.
+- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, overlay paste guards, Config → General layers, and Config → Theme / Pages / Categories structure-tab polish for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 dashboard search guards, smart-collection sync, General overhaul, and Theme / Pages / Categories updates.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v65` data version and `2026.06-dashboard-release-v57` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `search.js`, `dashboard.css`, and Config General assets (`config-general-layers`, `settings-search`, `general-tour`) query strings updated for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v66` data version; Config Theme (`colors.js`, `color-value-utils.js`), Pages (`config-pages.js`), and Categories (`config-categories.js`) assets plus existing General/dashboard query strings updated for Docker-mounted static files.
 
 ---
 

@@ -1,64 +1,72 @@
 /**
- * Custom Themes Module
- * Handles custom theme management (create, render, remove, reorder)
+ * Custom Themes Module — create, render, remove, and reorder custom themes.
  */
 
 class ConfigCustomThemes {
     constructor(onUpdate, t = null) {
-        this.onUpdate = onUpdate; // Callback when themes are updated
-        this.t = t || ((key) => key); // Translation function, default to return key
-        this.currentSelectedTheme = null; // Currently selected custom theme for editing
+        this.onUpdate = onUpdate;
+        this.t = t || ((key) => key);
+        this.currentSelectedTheme = null;
     }
 
-    /**
-     * Generate a unique ID for a custom theme
-     * @returns {string} - Unique ID
-     */
     generateUniqueId() {
         const timestamp = Date.now();
         const random = Math.floor(Math.random() * 10000);
         return `theme-${timestamp}-${random}`;
     }
 
-    /**
-     * Render custom themes list
-     * @param {Object} customThemes - Object with custom theme IDs as keys
-     */
     render(customThemes) {
         const container = document.getElementById('custom-themes-list');
         if (!container) return;
 
         container.innerHTML = '';
 
-        // Ensure customThemes is an object
         if (!customThemes || typeof customThemes !== 'object') {
             customThemes = {};
         }
 
-        // Convert object to array for rendering
-        const themesArray = Object.keys(customThemes).map(key => ({
+        const themesArray = Object.keys(customThemes).map((key) => ({
             id: key,
             name: customThemes[key].name || 'Unnamed Theme',
             colors: customThemes[key]
         }));
 
         themesArray.forEach((theme, index) => {
-            const themeElement = this.createThemeElement(theme, index, customThemes);
+            const themeElement = this.createThemeElement(theme, index, themesArray.length, customThemes);
             container.appendChild(themeElement);
         });
     }
 
-    /**
-     * Create a custom theme DOM element
-     * @param {Object} theme
-     * @param {number} index
-     * @param {Object} customThemes - Reference to custom themes object
-     * @returns {HTMLElement}
-     */
-    createThemeElement(theme, index, customThemes) {
+    createThemeElement(theme, index, total, customThemes) {
         const div = document.createElement('div');
-        div.className = 'category-item js-item is-idle';
+        div.className = 'category-item js-item is-idle custom-theme-list-item';
         div.setAttribute('data-theme-id', theme.id);
+
+        const reorderWrap = document.createElement('div');
+        reorderWrap.className = 'custom-theme-reorder-btns';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'btn btn-secondary btn-small custom-theme-move-btn';
+        upBtn.textContent = '↑';
+        upBtn.title = this.t('colors.moveThemeUp', 'Move up');
+        upBtn.disabled = index === 0;
+        upBtn.addEventListener('click', () => {
+            window.configManager?.colorsEditor?.reorderCustomTheme?.(theme.id, 'up');
+        });
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'btn btn-secondary btn-small custom-theme-move-btn';
+        downBtn.textContent = '↓';
+        downBtn.title = this.t('colors.moveThemeDown', 'Move down');
+        downBtn.disabled = index >= total - 1;
+        downBtn.addEventListener('click', () => {
+            window.configManager?.colorsEditor?.reorderCustomTheme?.(theme.id, 'down');
+        });
+
+        reorderWrap.appendChild(upBtn);
+        reorderWrap.appendChild(downBtn);
 
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
@@ -79,19 +87,19 @@ class ConfigCustomThemes {
             }
         });
 
+        div.appendChild(reorderWrap);
         div.appendChild(nameInput);
         div.appendChild(removeButton);
 
-        // Add event listener for name changes
         nameInput.addEventListener('input', (e) => {
             const themeId = e.target.getAttribute('data-theme-id');
             const newName = e.target.value;
-            
-            // Update only the name, keeping the same ID
+
             if (customThemes[themeId]) {
                 customThemes[themeId].name = newName;
                 this.updateThemeSelector(customThemes);
                 window.configManager?.colorsEditor?.markDirty?.();
+                window.configManager?.colorsEditor?.scheduleStructureAutosave?.();
             }
         });
 
@@ -119,7 +127,6 @@ class ConfigCustomThemes {
             selector.value = currentValue;
         }
 
-        // Prefer refreshing the specific CustomSelect instance attached to this select
         try {
             const instance = selector.__customSelectInstance;
             if (instance && typeof instance.refresh === 'function') {
@@ -130,13 +137,11 @@ class ConfigCustomThemes {
             // ignore and fall back
         }
 
-        // Fall back to global refresh helper if present
         if (typeof configManager !== 'undefined' && typeof configManager.refreshCustomSelects === 'function') {
             try { configManager.refreshCustomSelects(); } catch (e) { console.error('refreshCustomSelects error', e); }
             return;
         }
 
-        // If not initialized yet, initialize custom selects for the page
         if (typeof initCustomSelects === 'function') {
             try { initCustomSelects(); } catch (e) { /* ignore */ }
         }
@@ -146,46 +151,48 @@ class ConfigCustomThemes {
         const selector = document.getElementById('custom-theme-selector');
         if (!selector) return;
 
+        if (selector.dataset.themeSelectorBound === '1') {
+            this.updateThemeSelector(customThemes);
+            return;
+        }
+        selector.dataset.themeSelectorBound = '1';
+
         selector.addEventListener('change', (e) => {
             const themeId = e.target.value;
             this.currentSelectedTheme = themeId;
-            
+            window.configManager?.colorsEditor?.persistCustomThemeSelection?.(themeId);
+
             if (themeId && customThemes[themeId]) {
                 this.showThemeColors(customThemes[themeId]);
-                // Switch to custom theme preview
                 if (window.switchToTheme) {
                     window.switchToTheme('custom');
                 }
+                window.configManager?.colorsEditor?.applyColorsToPreview?.();
+                window.configManager?.colorsEditor?.updateContrastHints?.();
             } else {
                 this.hideThemeColors();
+                window.configManager?.colorsEditor?.clearPreviewStyle?.();
             }
         });
 
-        // Initialize selector options
         this.updateThemeSelector(customThemes);
     }
 
-    /**
-     * Show color inputs for selected custom theme
-     * @param {Object} themeColors
-     */
     showThemeColors(themeColors) {
         const colorSection = document.getElementById('custom-theme-colors-section');
         if (!colorSection) return;
 
         colorSection.style.display = 'block';
 
-        // Populate color inputs
         const colorInputs = colorSection.querySelectorAll('input[data-prop]');
         colorInputs.forEach(input => {
             const prop = input.dataset.prop;
             const value = themeColors[prop] || '';
-            
+
             if (input.type === 'color') {
                 if (value && value.startsWith('#')) {
                     input.value = value;
                 }
-                // Update corresponding text input
                 const textInput = document.getElementById(`${input.id}-text`);
                 if (textInput) {
                     textInput.value = value;
@@ -195,12 +202,13 @@ class ConfigCustomThemes {
             } else if (input.classList.contains('color-text-input-full')) {
                 input.value = value;
             }
+            const textEl = input.classList.contains('color-text-input') || input.classList.contains('color-text-input-full')
+                ? input
+                : document.getElementById(`${input.id}-text`);
+            window.ColorValueUtils?.validateTextInput(textEl);
         });
     }
 
-    /**
-     * Hide color inputs section
-     */
     hideThemeColors() {
         const colorSection = document.getElementById('custom-theme-colors-section');
         if (colorSection) {
@@ -208,12 +216,6 @@ class ConfigCustomThemes {
         }
     }
 
-    /**
-     * Update color value for current custom theme
-     * @param {Object} customThemes
-     * @param {string} prop
-     * @param {string} value
-     */
     updateColorValue(customThemes, prop, value) {
         if (!this.currentSelectedTheme || !customThemes[this.currentSelectedTheme]) {
             return;
@@ -222,14 +224,7 @@ class ConfigCustomThemes {
         customThemes[this.currentSelectedTheme][prop] = value;
     }
 
-    /**
-     * Add a new custom theme
-     * @param {Object} customThemes
-     * @param {Object} defaultColors - Default dark theme colors to use as template
-     * @returns {string} - The new theme ID
-     */
     add(customThemes, defaultColors) {
-        // Ensure customThemes is an object
         if (!customThemes || typeof customThemes !== 'object') {
             console.error('customThemes must be an object');
             return null;
@@ -239,7 +234,6 @@ class ConfigCustomThemes {
         const themeName = `${this.t('config.customThemePrefix')} ${themeCount + 1}`;
         const themeId = this.generateUniqueId();
 
-        // Create new theme with default dark colors
         customThemes[themeId] = {
             ...defaultColors,
             name: themeName
@@ -248,12 +242,6 @@ class ConfigCustomThemes {
         return themeId;
     }
 
-    /**
-     * Remove a custom theme (with confirmation)
-     * @param {Object} customThemes
-     * @param {string} themeId
-     * @returns {Promise<boolean>} - Whether the theme was removed
-     */
     async remove(customThemes, themeId) {
         const confirmed = await window.AppModal.danger({
             title: this.t('config.removeCustomThemeTitle'),
@@ -261,31 +249,24 @@ class ConfigCustomThemes {
             confirmText: this.t('config.remove'),
             cancelText: this.t('config.cancel')
         });
-        
+
         if (!confirmed) {
             return false;
         }
-        
+
         delete customThemes[themeId];
-        
-        // Clear selection if removed theme was selected
+
         if (this.currentSelectedTheme === themeId) {
             this.currentSelectedTheme = null;
             this.hideThemeColors();
         }
-        
+
         return true;
     }
 
-    /**
-     * Get all custom theme IDs
-     * @param {Object} customThemes
-     * @returns {Array<string>}
-     */
     getThemeIds(customThemes) {
         return Object.keys(customThemes || {});
     }
 }
 
-// Export for use in other modules
 window.ConfigCustomThemes = ConfigCustomThemes;

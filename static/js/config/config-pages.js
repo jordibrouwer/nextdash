@@ -1,19 +1,14 @@
 /**
- * Pages Module
- * Handles page management (create, render, remove, reorder)
+ * Pages Module — create, render, remove, reorder (drag + keyboard).
  */
 
 class ConfigPages {
     constructor(t) {
-        this.t = t; // Translation function
+        this.t = t;
         this.pageReorder = null;
+        this._keyboardMoveHandler = null;
     }
 
-    /**
-     * Render pages list
-     * @param {Array} pages
-     * @param {Function} generateId - Function to generate ID from name
-     */
     render(pages, generateId, isArchived) {
         const container = document.getElementById('pages-list');
         if (!container) return;
@@ -22,8 +17,9 @@ class ConfigPages {
 
         const list = Array.isArray(pages) ? pages : [];
         if (list.length === 0) {
-            const hint = document.createElement('p');
+            const hint = document.createElement('li');
             hint.className = 'pages-list-empty-hint';
+            hint.setAttribute('role', 'listitem');
             const defaultName = 'main';
             const tpl = this.t('config.pagesListDefaultHint');
             hint.textContent = tpl.includes('{name}')
@@ -34,16 +30,10 @@ class ConfigPages {
         }
 
         list.forEach((page, index) => {
-            const pageElement = this.createPageElement(page, index, list, generateId, isArchived);
-            container.appendChild(pageElement);
+            container.appendChild(this.createPageElement(page, index, list, generateId, isArchived));
         });
     }
 
-    /**
-     * Render pages in page selector dropdown
-     * @param {Array} pages
-     * @param {string} currentPageId - Currently selected page ID
-     */
     renderPageSelector(pages, currentPageId) {
         const selector = document.getElementById('page-selector');
         if (!selector) return;
@@ -68,51 +58,80 @@ class ConfigPages {
         }
     }
 
-    /**
-     * Create a page DOM element
-     * @param {Object} page
-     * @param {number} index
-     * @param {Array} pages - Reference to pages array
-     * @param {Function} generateId
-     * @returns {HTMLElement}
-     */
     createPageElement(page, index, pages, generateId, isArchived) {
-        const div = document.createElement('div');
-        div.className = 'page-item js-item is-idle';
-        div.setAttribute('data-page-index', index);
-        div.setAttribute('data-page-id', page.id); // Store the actual page ID
-
-        // Store reference to the actual page object
-        div._pageRef = page;
+        const li = document.createElement('li');
+        li.className = 'page-item js-item is-idle';
+        li.setAttribute('role', 'listitem');
+        li.setAttribute('data-page-index', String(index));
+        li.setAttribute('data-page-id', String(page.id));
+        li.tabIndex = 0;
+        li._pageRef = page;
 
         const isDefaultPage = Number(page.id) === 1;
         const archived = typeof isArchived === 'function' ? isArchived(page.id) : false;
-        if (archived) div.classList.add('is-archived');
-        const removeButton = isDefaultPage
-            ? `<button type="button" class="btn btn-danger" disabled title="${this.t('config.cannotRemoveDefaultPage')}">${this.t('config.remove')}</button>`
-            : `<button type="button" class="btn btn-danger" onclick="configManager.removePage(${index})">${this.t('config.remove')}</button>`;
-        const archiveButton = isDefaultPage
-            ? ''
-            : archived
-                ? `<button type="button" class="btn btn-secondary btn-small" onclick="configManager.restoreArchivedPage(${page.id})">${this.t('config.restore')}</button>`
-                : `<button type="button" class="btn btn-secondary btn-small" onclick="configManager.archivePage(${index})">${this.t('config.archive')}</button>`;
-        
-        div.innerHTML = `
+        if (archived) li.classList.add('is-archived');
+
+        const labelId = `page-name-label-${page.id}`;
+        const inputId = `page-name-${page.id}`;
+
+        li.innerHTML = `
             <span class="drag-handle js-drag-handle" title="${this.t('config.dragToReorder') || 'Drag to reorder'}" aria-label="${this.t('config.dragToReorder') || 'Drag to reorder'}">⠿</span>
-            <input type="text" id="page-name-${index}" name="page-name-${index}" value="${this.escapePageName(page.name)}" placeholder="${this.t('config.pageNamePlaceholder')}" data-page-id="${page.id}" data-field="name">
+            <label class="visually-hidden" id="${labelId}" for="${inputId}">${this.t('config.pageNameLabelShort') || 'Page name'}</label>
+            <input type="text" id="${inputId}" name="${inputId}" value="${this.escapePageName(page.name)}" placeholder="${this.t('config.pageNamePlaceholder')}" data-page-id="${page.id}" data-field="name" aria-labelledby="${labelId}">
             ${archived ? `<span class="page-archived-badge">${this.t('config.archived') || 'archived'}</span>` : ''}
-            ${archiveButton}
-            ${removeButton}
+            <span class="page-item-actions"></span>
         `;
 
-        // Add event listener for name changes
-        const nameInput = div.querySelector('input[data-field="name"]');
+        const actions = li.querySelector('.page-item-actions');
+
+        if (!isDefaultPage) {
+            const archiveBtn = document.createElement('button');
+            archiveBtn.type = 'button';
+            archiveBtn.className = 'btn btn-secondary btn-small';
+            archiveBtn.textContent = archived
+                ? (this.t('config.restore') || 'Restore')
+                : (this.t('config.archive') || 'Archive');
+            archiveBtn.addEventListener('click', () => {
+                if (archived) {
+                    window.configManager?.restoreArchivedPage?.(page.id);
+                } else {
+                    window.configManager?.archivePageById?.(page.id);
+                }
+            });
+            actions.appendChild(archiveBtn);
+        }
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger';
+        removeBtn.textContent = this.t('config.remove');
+        if (isDefaultPage) {
+            removeBtn.disabled = true;
+            removeBtn.title = this.t('config.cannotRemoveDefaultPage');
+        } else {
+            removeBtn.addEventListener('click', () => {
+                window.configManager?.removePageById?.(page.id);
+            });
+        }
+        actions.appendChild(removeBtn);
+
+        const nameInput = li.querySelector('input[data-field="name"]');
         nameInput.addEventListener('input', (e) => {
-            // Update the page object directly via stored reference
             page.name = e.target.value;
         });
 
-        return div;
+        li.addEventListener('keydown', (e) => {
+            if (e.target !== li && e.target !== li.querySelector('.drag-handle')) return;
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.configManager?.movePageById?.(
+                    page.id,
+                    e.key === 'ArrowUp' ? 'up' : 'down'
+                );
+            }
+        });
+
+        return li;
     }
 
     escapePageName(name) {
@@ -122,48 +141,37 @@ class ConfigPages {
             .replace(/</g, '&lt;');
     }
 
-    /**
-     * Initialize page reordering
-     * @param {Array} pages
-     * @param {Function} onReorder - Callback when reorder happens
-     */
+    syncPageIndices() {
+        const container = document.getElementById('pages-list');
+        if (!container) return;
+        container.querySelectorAll('.page-item[data-page-id]').forEach((el, index) => {
+            el.setAttribute('data-page-index', String(index));
+        });
+    }
+
     initReorder(pages, onReorder) {
-        // Destroy previous instance if it exists
         if (this.pageReorder) {
             this.pageReorder.destroy();
         }
-        
-        // Initialize drag-and-drop reordering
+
         this.pageReorder = new DragReorder({
             container: '#pages-list',
             itemSelector: '.page-item',
             handleSelector: '.js-drag-handle',
             onReorder: (newOrder) => {
-                // Update pages array based on new order
-                // Use stored page references instead of looking up by ID
                 const newPages = [];
                 newOrder.forEach((item) => {
-                    // Get the page object stored on the DOM element
                     const page = item.element._pageRef;
-                    if (page) {
-                        newPages.push(page);
-                    }
+                    if (page) newPages.push(page);
                 });
-                
+                this.syncPageIndices();
                 onReorder(newPages);
             }
         });
     }
 
-    /**
-     * Add a new page
-     * @param {Array} pages
-     * @param {Function} generateId - Not used anymore, kept for compatibility
-     * @returns {Object} - The new page
-     */
     add(pages, generateId) {
-        // Find the highest ID and add 1
-        const maxId = pages.length > 0 ? Math.max(...pages.map(p => p.id)) : 0;
+        const maxId = pages.length > 0 ? Math.max(...pages.map((p) => p.id)) : 0;
         const newPage = {
             id: maxId + 1,
             name: `${this.t('config.pagePrefix')} ${maxId + 1}`
@@ -172,27 +180,15 @@ class ConfigPages {
         return newPage;
     }
 
-    /**
-     * Remove a page
-     * @param {Array} pages
-     * @param {number} index
-     * @returns {boolean} - Whether removal was successful
-     */
-    remove(pages, index) {
-        if (index >= 0 && index < pages.length) {
-            // Don't allow removing the default page
-            if (pages[index].id === 'default') {
-                return false;
-            }
-            pages.splice(index, 1);
-            return true;
-        }
-        return false;
+    removeById(pages, pageId) {
+        const targetId = Number(pageId);
+        const index = pages.findIndex((p) => Number(p.id) === targetId);
+        if (index < 0) return false;
+        if (Number(pages[index].id) === 1) return false;
+        pages.splice(index, 1);
+        return true;
     }
 
-    /**
-     * Destroy reorder instance
-     */
     destroy() {
         if (this.pageReorder) {
             this.pageReorder.destroy();
@@ -200,3 +196,5 @@ class ConfigPages {
         }
     }
 }
+
+window.ConfigPages = ConfigPages;

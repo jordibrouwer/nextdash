@@ -1911,7 +1911,9 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 		colors.BuiltIn = make(map[string]ThemeColors)
 	}
 	for themeID, themeColors := range getDefaultBuiltInThemes() {
-		colors.BuiltIn[themeID] = themeColors
+		if _, ok := colors.BuiltIn[themeID]; !ok {
+			colors.BuiltIn[themeID] = themeColors
+		}
 	}
 	if colors.Custom == nil {
 		colors.Custom = map[string]ThemeColors{}

@@ -200,6 +200,60 @@
             });
         }
 
+        if (tabId === 'categories') {
+            const addBtn = document.getElementById('add-category-btn');
+            if (addBtn) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(addBtn),
+                    subtitle: tabLabel,
+                    targetEl: addBtn,
+                });
+            }
+            const pageLabel = document.querySelector('label[for="categories-page-selector"]');
+            if (pageLabel) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(pageLabel),
+                    subtitle: tabLabel,
+                    targetEl: document.getElementById('categories-page-selector') || pageLabel,
+                });
+            }
+            const mergeLabel = t('merge', 'Merge');
+            addEntry(entries, seen, {
+                tab: tabId,
+                tabLabel,
+                title: mergeLabel,
+                subtitle: tabLabel,
+                extra: t('categoriesIntro', 'Categories'),
+                targetEl: root.querySelector('.simple-tab-intro') || root,
+            });
+        }
+
+        if (tabId === 'pages') {
+            const addBtn = document.getElementById('add-page-btn');
+            if (addBtn) {
+                addEntry(entries, seen, {
+                    tab: tabId,
+                    tabLabel,
+                    title: textOf(addBtn),
+                    subtitle: tabLabel,
+                    targetEl: addBtn,
+                });
+            }
+            const archiveLabel = t('archive', 'Archive');
+            addEntry(entries, seen, {
+                tab: tabId,
+                tabLabel,
+                title: archiveLabel,
+                subtitle: tabLabel,
+                extra: t('pagesIntro', 'Pages'),
+                targetEl: root.querySelector('.simple-tab-intro') || root,
+            });
+        }
+
         if (tabId === 'colors') {
             root.querySelectorAll('.colors-tab-button').forEach((btn) => {
                 const title = textOf(btn);
@@ -210,17 +264,21 @@
                     title,
                     subtitle: tabLabel,
                     targetEl: btn,
+                    colorsSubTab: btn.getAttribute('data-colors-tab'),
                 });
             });
             root.querySelectorAll('.color-group h3').forEach((titleEl) => {
                 const title = textOf(titleEl);
                 if (!title) return;
+                const panel = titleEl.closest('[data-colors-tab-panel]');
+                const colorsSubTab = panel?.getAttribute('data-colors-tab-panel') || null;
                 addEntry(entries, seen, {
                     tab: tabId,
                     tabLabel,
                     title,
                     subtitle: tabLabel,
                     targetEl: titleEl,
+                    colorsSubTab,
                 });
             });
         }
@@ -338,6 +396,15 @@
                 mgr.keyboard.refresh(mgr);
             } else if (item.tab === 'colors' && mgr.ensureColorsEditor) {
                 await mgr.ensureColorsEditor();
+                if (item.colorsSubTab && mgr.colorsEditor?.switchSubTab) {
+                    mgr.colorsEditor.switchSubTab(item.colorsSubTab, { updateHash: false });
+                } else if (item.targetEl) {
+                    const panel = item.targetEl.closest?.('[data-colors-tab-panel]');
+                    const sub = panel?.getAttribute('data-colors-tab-panel');
+                    if (sub && mgr.colorsEditor?.switchSubTab) {
+                        mgr.colorsEditor.switchSubTab(sub, { updateHash: false });
+                    }
+                }
             } else if (item.tab === 'stats' && mgr.stats) {
                 mgr.stats.refresh(mgr);
             }

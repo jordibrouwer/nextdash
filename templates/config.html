@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="/static/css/config-save-sticky.css">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layers-v2">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-promo-v7">
-    <link rel="stylesheet" href="/static/css/colors.css">
+    <link rel="stylesheet" href="/static/css/colors.css?v=colors-preview-v2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
@@ -1152,9 +1152,9 @@
                     <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></span>
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
-                <div id="pages-list" class="pages-list js-list simple-list">
+                <ul id="pages-list" class="pages-list js-list simple-list" role="list">
                     <!-- Pages will be loaded here -->
-                </div>
+                </ul>
             </div>
             </div>
 
@@ -1170,9 +1170,9 @@
                         <button type="button" id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
                     </div>
                 </div>
-                <div id="categories-list" class="categories-list js-list simple-list">
+                <ul id="categories-list" class="categories-list js-list simple-list" role="list">
                     <!-- Categories will be loaded here -->
-                </div>
+                </ul>
             </div>
             </div>
 
@@ -2219,7 +2219,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v65"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v66"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2247,7 +2247,7 @@
     <script src="/static/js/config/config-font.js"></script>
     <script src="/static/js/config/config-settings.js"></script>
     <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/config/config-general-layers.js?v=general-layers-v2"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-layers-v3"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
     <script src="/static/js/config-general-tour.js?v=general-tour-v3"></script>
@@ -2260,11 +2260,12 @@
     <script src="/static/js/config-collections-tour.js"></script>
     <script src="/static/js/config-theme-tour.js"></script>
     <script src="/static/js/config/config-help-search.js"></script>
-    <script src="/static/js/config/config-settings-search.js?v=settings-search-promo-v7"></script>
+    <script src="/static/js/config/config-settings-search.js?v=settings-search-promo-v8"></script>
     <script src="/static/js/config/config-command-palette.js"></script>
     <script src="/static/js/config/config-setting-info.js"></script>
     <script src="/static/js/config/config-custom-themes.js"></script>
-    <script src="/static/js/colors.js"></script>
+    <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
+    <script src="/static/js/colors.js?v=colors-preview-v2"></script>
     <script src="/static/js/config/config-stats.js"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>

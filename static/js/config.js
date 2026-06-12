@@ -1297,6 +1297,14 @@ class ConfigManager {
     }
 
     ensureCategoriesTabActive() {
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            this.ui?.showNotification?.(
+                this.language.t('config.categoriesMobileOnlyDesktop'),
+                'info'
+            );
+            this.ui?.switchToTab?.('general');
+            return false;
+        }
         if (this.ui?.switchToTab) {
             this.ui.switchToTab('categories');
         } else {
@@ -1309,6 +1317,7 @@ class ConfigManager {
         if (hash !== 'categories') {
             window.history.replaceState(null, '', '#categories');
         }
+        return true;
     }
 
     hasSeenConfigTagsTour() {
@@ -1676,6 +1685,14 @@ class ConfigManager {
     }
 
     ensurePagesTabActive() {
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            this.ui?.showNotification?.(
+                this.language.t('config.pagesMobileOnlyDesktop'),
+                'info'
+            );
+            this.ui?.switchToTab?.('general');
+            return false;
+        }
         if (this.ui?.switchToTab) {
             this.ui.switchToTab('pages');
         } else {
@@ -1688,6 +1705,8 @@ class ConfigManager {
         if (hash !== 'pages') {
             window.history.replaceState(null, '', '#pages');
         }
+        this.renderPagesTab();
+        return true;
     }
 
     hasSeenConfigCollectionsTour() {
@@ -2414,14 +2433,107 @@ class ConfigManager {
                 }
             }
 
-            this.categories.render(this.categoriesData, this.generateId.bind(this));
-            this.categories.initReorder(this.categoriesData, (newCategories) => {
-                this.categoriesData = newCategories;
-            });
+            this.rebuildCategoryBookmarkCounts(bookmarksForPage);
+            this.renderCategoriesList();
             this.categoriesListHydrated = true;
         } catch (error) {
             this.ui.showErrorWithReload(this.language.t('config.errorLoadingCategories'));
         }
+    }
+
+    rebuildCategoryBookmarkCounts(bookmarks) {
+        this._categoryBookmarkCounts = {};
+        (bookmarks || []).forEach((bookmark) => {
+            const cat = String(bookmark?.category || '').trim();
+            if (cat) {
+                this._categoryBookmarkCounts[cat] = (this._categoryBookmarkCounts[cat] || 0) + 1;
+            }
+        });
+    }
+
+    getCategoryBookmarkCount(categoryId) {
+        return this._categoryBookmarkCounts?.[categoryId] || 0;
+    }
+
+    renderCategoriesList() {
+        this.categories.render(
+            this.categoriesData,
+            this.generateId.bind(this),
+            (id) => this.getCategoryBookmarkCount(id)
+        );
+        this.categories.initReorder(
+            this.categoriesData,
+            (newCategories) => this.handleCategoriesReordered(newCategories)
+        );
+    }
+
+    async getBookmarksForCategoriesPage(pageId = this.currentCategoriesPageId) {
+        const pid = Number(pageId);
+        if (Number(this.currentPageId) === pid) {
+            return this.bookmarksData;
+        }
+        return this.withRetry(() => this.data.loadBookmarksByPage(pid));
+    }
+
+    async getBookmarksInCategory(categoryId, pageId = this.currentCategoriesPageId) {
+        const bookmarks = await this.getBookmarksForCategoriesPage(pageId);
+        return (bookmarks || []).filter((bookmark) => bookmark.category === categoryId);
+    }
+
+    async updateBookmarksOnCategoriesPage(updater) {
+        const pageId = Number(this.currentCategoriesPageId);
+        if (!Number.isFinite(pageId) || pageId < 1) return;
+
+        if (Number(this.currentPageId) === pageId) {
+            const next = updater([...this.bookmarksData]);
+            this.bookmarksData = Array.isArray(next) ? next : this.bookmarksData;
+            return;
+        }
+
+        const bookmarks = await this.getBookmarksForCategoriesPage(pageId);
+        const next = updater([...(bookmarks || [])]);
+        if (Array.isArray(next)) {
+            await this.saveBookmarksPage(pageId, next);
+        }
+    }
+
+    async flushCategoriesPageBeforeSwitch() {
+        clearTimeout(this._categoryReorderPersistTimer);
+        const fromDom = this.getCategoriesFromDOM();
+        if (fromDom) {
+            this.categoriesData = fromDom;
+        }
+        if (!this.categoriesListHydrated || !this.currentCategoriesPageId) {
+            return;
+        }
+        await this.persistCategoriesStructureAndRefresh({
+            eventType: 'category-page-switch',
+            silent: true
+        });
+    }
+
+    handleCategoriesReordered(newCategories) {
+        this.categoriesData = newCategories;
+        this.categories.syncCategoryIndices?.();
+        this.markDirty();
+        clearTimeout(this._categoryReorderPersistTimer);
+        this._categoryReorderPersistTimer = setTimeout(() => {
+            void this.persistCategoriesStructureAndRefresh({ eventType: 'category-reordered' });
+        }, 600);
+    }
+
+    moveCategoryById(categoryId, direction) {
+        const index = this.categoriesData.findIndex((c) => c.id === categoryId);
+        if (index < 0) return;
+        const swap = direction === 'up' ? index - 1 : index + 1;
+        if (swap < 0 || swap >= this.categoriesData.length) return;
+        const order = [...this.categoriesData];
+        [order[index], order[swap]] = [order[swap], order[index]];
+        this.categoriesData = order;
+        this.renderCategoriesList();
+        this.handleCategoriesReordered(this.categoriesData);
+        const focusEl = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+        focusEl?.focus?.();
     }
 
     /**
@@ -3442,9 +3554,10 @@ class ConfigManager {
 
         const categoriesPageSelector = document.getElementById('categories-page-selector');
         if (categoriesPageSelector) {
-            categoriesPageSelector.addEventListener('change', (e) => {
-                this.currentCategoriesPageId = parseInt(e.target.value);
-                this.loadPageCategories(e.target.value);
+            categoriesPageSelector.addEventListener('change', async (e) => {
+                await this.flushCategoriesPageBeforeSwitch();
+                this.currentCategoriesPageId = parseInt(e.target.value, 10);
+                await this.loadPageCategories(e.target.value);
             });
         }
 
@@ -3684,20 +3797,27 @@ class ConfigManager {
             categoriesList.addEventListener('change', async (event) => {
                 const target = event.target;
                 if (!(target instanceof HTMLInputElement)) return;
-                if (target.getAttribute('data-field') !== 'name') return;
+                const field = target.getAttribute('data-field');
                 const row = target.closest('.category-item');
                 const category = row ? row._categoryRef : null;
                 if (!category) return;
-                const categoryBeforeRename = category.originalId || category.id;
-                const renameResult = this.applyCategoryRenameWithConflictGuard(category, target.value, categoryBeforeRename);
-                if (!renameResult) {
+
+                if (field === 'name') {
+                    const categoryBeforeRename = category.originalId || category.id;
+                    const renameResult = this.applyCategoryRenameWithConflictGuard(category, target.value, categoryBeforeRename);
+                    if (!renameResult) return;
+                    await this.persistCategoriesStructureAndRefresh({
+                        persistBookmarks: true,
+                        eventType: 'category-renamed',
+                        categoryRenameMap: renameResult
+                    });
                     return;
                 }
-                await this.persistCategoriesStructureAndRefresh({
-                    persistBookmarks: true,
-                    eventType: 'category-renamed',
-                    categoryRenameMap: renameResult
-                });
+
+                if (field === 'icon') {
+                    category.icon = (target.value || '').trim();
+                    await this.persistCategoriesStructureAndRefresh({ eventType: 'category-icon-updated' });
+                }
             });
         }
     }
@@ -3718,11 +3838,11 @@ class ConfigManager {
             category.name = fallbackName;
             category.id = oldId;
             category.originalId = oldId;
-            this.categories.render(this.categoriesData, this.generateId.bind(this));
-            this.categories.initReorder(this.categoriesData, (newCategories) => {
-                this.categoriesData = newCategories;
-            });
-            this.ui.showNotification('Category name must be unique and not empty.', 'error');
+            this.renderCategoriesList();
+            this.ui.showNotification(
+                this.language.t('config.categoryNameMustBeUnique'),
+                'error'
+            );
             return false;
         }
 
@@ -3804,16 +3924,53 @@ class ConfigManager {
         this.ui.showNotification(message, type);
     }
 
+    syncSnapshotAfterStructurePersist() {
+        this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData || []));
+        this.savedSnapshot = this.captureUndoSnapshot();
+        this.setDirtyState(false);
+    }
+
+    handlePagesReordered(newPages) {
+        this.pagesData = newPages;
+        this.pages.syncPageIndices?.();
+        this.pages.renderPageSelector(this.getVisiblePages(), this.currentPageId);
+        this.markDirty();
+        clearTimeout(this._pageReorderPersistTimer);
+        this._pageReorderPersistTimer = setTimeout(() => {
+            void this.persistPagesStructureAndRefresh('page-reordered');
+        }, 600);
+    }
+
     async persistPagesStructureAndRefresh(eventType = 'page-updated') {
         try {
             await this.withRetry(() => this.data.savePages(this.pagesData));
             await this.refreshStructureDependentUI();
             this.signalDashboardReload(eventType);
-            this.showSyncToast('Dashboard sync complete.', 'success');
+            this.syncSnapshotAfterStructurePersist();
+            this.showSyncToast(
+                this.language.t('config.dashboardSyncComplete'),
+                'success'
+            );
         } catch (error) {
             console.error('Error persisting page structure:', error);
-            this.showSyncToast('Dashboard sync failed. Retry from config.', 'error');
+            this.showSyncToast(
+                this.language.t('config.dashboardSyncFailed'),
+                'error'
+            );
         }
+    }
+
+    validateCategoriesData(categories) {
+        if (!Array.isArray(categories)) return this.language.t('config.categoryNameMustBeUnique');
+        const seen = new Set();
+        for (const category of categories) {
+            const name = String(category?.name || '').trim().toLowerCase();
+            if (!name || seen.has(name)) {
+                return this.language.t('config.categoryNameMustBeUnique');
+            }
+            seen.add(name);
+        }
+        return null;
     }
 
     async persistCategoriesStructureAndRefresh(options = {}) {
@@ -3824,6 +3981,11 @@ class ConfigManager {
         try {
             const categoriesForSelectedPage = this.getCategoriesFromDOM();
             if (categoriesForSelectedPage && categoriesForSelectedPage.length >= 0) {
+                const validationError = this.validateCategoriesData(categoriesForSelectedPage);
+                if (validationError) {
+                    this.ui.showNotification(validationError, 'error');
+                    return;
+                }
                 this.categoriesData = categoriesForSelectedPage;
                 await this.withRetry(() => this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId));
             }
@@ -3859,10 +4021,21 @@ class ConfigManager {
 
             await this.refreshStructureDependentUI();
             this.signalDashboardReload(options.eventType || 'category-updated');
-            this.showSyncToast('Dashboard sync complete.', 'success');
+            this.syncSnapshotAfterStructurePersist();
+            if (!options.silent) {
+                this.showSyncToast(
+                    this.language.t('config.dashboardSyncComplete'),
+                    'success'
+                );
+            }
         } catch (error) {
             console.error('Error persisting category structure:', error);
-            this.showSyncToast('Dashboard sync failed. Retry from config.', 'error');
+            if (!options.silent) {
+                this.showSyncToast(
+                    this.language.t('config.dashboardSyncFailed'),
+                    'error'
+                );
+            }
         }
     }
 
@@ -4699,14 +4872,12 @@ class ConfigManager {
     }
 
     initReordering() {
-        this.pages.initReorder(this.pagesData, (newPages) => {
-            this.pagesData = newPages;
-            this.pages.renderPageSelector(this.getVisiblePages(), this.currentPageId);
-        });
+        this.pages.initReorder(this.pagesData, (newPages) => this.handlePagesReordered(newPages));
 
-        this.categories.initReorder(this.categoriesData, (newCategories) => {
-            this.categoriesData = newCategories;
-        });
+        this.categories.initReorder(
+            this.categoriesData,
+            (newCategories) => this.handleCategoriesReordered(newCategories)
+        );
 
         this.refreshBookmarksList();
 
@@ -4738,11 +4909,8 @@ class ConfigManager {
         }
         
         this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
-        this.pages.renderPageSelector(this.pagesData, newPage.id);
-        this.pages.initReorder(this.pagesData, (newPages) => {
-            this.pagesData = newPages;
-            this.pages.renderPageSelector(this.pagesData, this.currentPageId);
-        });
+        this.pages.renderPageSelector(this.getVisiblePages(), newPage.id);
+        this.pages.initReorder(this.pagesData, (newPages) => this.handlePagesReordered(newPages));
 
         const pageSelector = document.getElementById('page-selector');
         if (pageSelector) {
@@ -4774,13 +4942,9 @@ class ConfigManager {
 
     async addCategory() {
         if (!this.categoriesData) this.categoriesData = [];
-        
+
         this.categories.add(this.categoriesData, this.generateId.bind(this));
-        this.categories.render(this.categoriesData, this.generateId.bind(this));
-        this.categories.initReorder(this.categoriesData, (newCategories) => {
-            this.categoriesData = newCategories;
-        });
-        this.markDirty();
+        this.renderCategoriesList();
         await this.persistCategoriesStructureAndRefresh({ eventType: 'category-added' });
         this.renderStructureWorkspace();
     }
@@ -4813,12 +4977,19 @@ class ConfigManager {
     async removePage(index) {
         const page = this.pagesData[index];
         if (!page) return;
-        
-        if (page.id === 1) {
+        await this.removePageById(page.id);
+    }
+
+    async removePageById(pageId) {
+        const targetId = Number(pageId);
+        const page = this.pagesData.find((p) => Number(p.id) === targetId);
+        if (!page) return;
+
+        if (Number(page.id) === 1) {
             this.ui.showNotification(this.language.t('config.cannotRemoveMainPage'), 'error');
             return;
         }
-        
+
         let pageBookmarks = [], pageCategories = [];
         try {
             [pageBookmarks, pageCategories] = await Promise.all([
@@ -4834,25 +5005,25 @@ class ConfigManager {
             confirmText: this.language.t('config.remove'),
             cancelText: this.language.t('config.cancel')
         });
-        
+
         if (!confirmed) return;
-        
+
+        const index = this.pagesData.findIndex((p) => Number(p.id) === targetId);
+        if (index < 0) return;
+
         try {
             await this.data.deletePage(page.id);
-            
+
             this.pagesData.splice(index, 1);
-            
-            const origIndex = this.originalPagesData.findIndex(p => p.id === page.id);
+
+            const origIndex = this.originalPagesData.findIndex((p) => Number(p.id) === targetId);
             if (origIndex !== -1) {
                 this.originalPagesData.splice(origIndex, 1);
             }
-            
+
             this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
             this.pages.renderPageSelector(this.getVisiblePages(), 1);
-            this.pages.initReorder(this.pagesData, (newPages) => {
-                this.pagesData = newPages;
-                this.pages.renderPageSelector(this.pagesData, this.currentPageId);
-            });
+            this.pages.initReorder(this.pagesData, (newPages) => this.handlePagesReordered(newPages));
             
             this.currentPageId = 1;
             this.currentCategoriesPageId = 1;
@@ -4888,9 +5059,14 @@ class ConfigManager {
     async removeCategory(index) {
         const category = this.categoriesData[index];
         if (!category) return;
-        const impactedBookmarks = Number(this.currentPageId) === Number(this.currentCategoriesPageId)
-            ? this.bookmarksData.filter((bookmark) => bookmark.category === category.id)
-            : 0;
+        await this.removeCategoryById(category.id);
+    }
+
+    async removeCategoryById(categoryId) {
+        const category = this.categoriesData.find((c) => c.id === categoryId);
+        if (!category) return;
+
+        const impactedBookmarks = await this.getBookmarksInCategory(category.id);
         let deleteMode = 'uncategorize';
         let moveTargetId = '';
         if (impactedBookmarks.length > 0) {
@@ -4901,39 +5077,42 @@ class ConfigManager {
             deleteMode = flow.action;
             moveTargetId = flow.targetCategoryId || '';
         }
-        
+
+        const index = this.categoriesData.findIndex((c) => c.id === categoryId);
+        if (index < 0) return;
+
         const undoSnapshot = this.captureUndoSnapshot();
         const removed = await this.categories.remove(this.categoriesData, index, {
             message: this.language.t('config.removeCategoryMessage')
         });
-        if (removed) {
-            if (Number(this.currentPageId) === Number(this.currentCategoriesPageId)) {
-                if (deleteMode === 'move' && moveTargetId) {
-                    this.bookmarksData.forEach((bookmark) => {
-                        if (bookmark.category === category.id) {
-                            bookmark.category = moveTargetId;
-                        }
-                    });
-                } else if (deleteMode === 'delete') {
-                    this.bookmarksData = this.bookmarksData.filter((bookmark) => bookmark.category !== category.id);
-                } else {
-                    this.bookmarksData.forEach((bookmark) => {
-                        if (bookmark.category === category.id) {
-                            bookmark.category = '';
-                        }
-                    });
-                }
+        if (!removed) return;
+
+        await this.updateBookmarksOnCategoriesPage((bookmarks) => {
+            if (deleteMode === 'move' && moveTargetId) {
+                return bookmarks.map((bookmark) => (
+                    bookmark.category === category.id
+                        ? { ...bookmark, category: moveTargetId }
+                        : bookmark
+                ));
             }
-            
-            this.categories.render(this.categoriesData, this.generateId.bind(this));
-            this.categories.initReorder(this.categoriesData, (newCategories) => {
-                this.categoriesData = newCategories;
-            });
-            this.showUndoNotification('Category removed.', undoSnapshot);
-            this.markDirty();
-            await this.persistCategoriesStructureAndRefresh({ persistBookmarks: true, eventType: 'category-removed' });
-            this.renderStructureWorkspace();
-        }
+            if (deleteMode === 'delete') {
+                return bookmarks.filter((bookmark) => bookmark.category !== category.id);
+            }
+            return bookmarks.map((bookmark) => (
+                bookmark.category === category.id
+                    ? { ...bookmark, category: '' }
+                    : bookmark
+            ));
+        });
+
+        this.rebuildCategoryBookmarkCounts(await this.getBookmarksForCategoriesPage());
+        this.renderCategoriesList();
+        this.showUndoNotification(
+            this.language.t('config.categoryRemoved'),
+            undoSnapshot
+        );
+        await this.persistCategoriesStructureAndRefresh({ persistBookmarks: true, eventType: 'category-removed' });
+        this.renderStructureWorkspace();
     }
 
     async resolveCategoryDeleteFlow(category, impactedCount) {
@@ -4986,15 +5165,27 @@ class ConfigManager {
     async mergeCategory(index) {
         const sourceCategory = this.categoriesData[index];
         if (!sourceCategory) return;
+        await this.mergeCategoryById(sourceCategory.id);
+    }
+
+    async mergeCategoryById(sourceCategoryId) {
+        const sourceCategory = this.categoriesData.find((c) => c.id === sourceCategoryId);
+        if (!sourceCategory) return;
+
         const targetCategories = this.categoriesData.filter((item) => item.id !== sourceCategory.id);
         if (targetCategories.length === 0) {
             this.ui.showNotification(this.language.t('config.mergeNeedSecondCategory') || 'Need second category.', 'info');
             return;
         }
 
+        const sourceCount = this.getCategoryBookmarkCount(sourceCategory.id);
         const optionsHtml = this._categorySelectOptionsHtml(targetCategories);
+        const impactLine = sourceCount > 0
+            ? `<p>${(this.language.t('config.mergeCategoryImpact') || '{count} bookmarks will move.').replace('{count}', String(sourceCount))}</p>`
+            : '';
         const html = `
             <p>${this.language.t('config.mergeIntoLabel') || 'Merge into'} <strong>${this._escHtml(sourceCategory.name)}</strong>:</p>
+            ${impactLine}
             <select id="merge-category-target-select" class="page-selector" style="max-width:100%;">
                 ${optionsHtml}
             </select>
@@ -5014,22 +5205,23 @@ class ConfigManager {
         const targetCategory = this.categoriesData.find((item) => item.id === targetId);
         if (!targetCategory) return;
 
+        const index = this.categoriesData.findIndex((c) => c.id === sourceCategoryId);
+        if (index < 0) return;
+
         const undoSnapshot = this.captureUndoSnapshot();
-        if (Number(this.currentPageId) === Number(this.currentCategoriesPageId)) {
-            this.bookmarksData.forEach((bookmark) => {
-                if (bookmark.category === sourceCategory.id) {
-                    bookmark.category = targetId;
-                }
-            });
-        }
+        await this.updateBookmarksOnCategoriesPage((bookmarks) =>
+            bookmarks.map((bookmark) => (
+                bookmark.category === sourceCategory.id
+                    ? { ...bookmark, category: targetId }
+                    : bookmark
+            ))
+        );
+
         this.categoriesData.splice(index, 1);
-        this.categories.render(this.categoriesData, this.generateId.bind(this));
-        this.categories.initReorder(this.categoriesData, (newCategories) => {
-            this.categoriesData = newCategories;
-        });
+        this.rebuildCategoryBookmarkCounts(await this.getBookmarksForCategoriesPage());
+        this.renderCategoriesList();
         const mergedText = (this.language.t('config.categoryMergedInto') || 'Merged into {name}.').replace('{name}', targetCategory.name);
         this.showUndoNotification(mergedText, undoSnapshot);
-        this.markDirty();
         await this.persistCategoriesStructureAndRefresh({ persistBookmarks: true, eventType: 'category-merged' });
         this.renderStructureWorkspace();
     }
@@ -5371,6 +5563,7 @@ class ConfigManager {
             button.className = `structure-list-item${Number(page.id) === Number(this.currentPageId) ? ' is-active' : ''}`;
             button.textContent = page.name;
             button.addEventListener('click', async () => {
+                await this.flushCategoriesPageBeforeSwitch();
                 this.currentPageId = Number(page.id);
                 this.currentCategoriesPageId = Number(page.id);
                 const pageSelector = document.getElementById('page-selector');
@@ -5446,6 +5639,12 @@ class ConfigManager {
 
     async archivePage(index) {
         const page = this.pagesData[index];
+        if (!page) return;
+        await this.archivePageById(page.id);
+    }
+
+    async archivePageById(pageId) {
+        const page = this.pagesData.find((p) => Number(p.id) === Number(pageId));
         if (!page || Number(page.id) === 1) {
             return;
         }
@@ -5470,6 +5669,21 @@ class ConfigManager {
         this.ui.showNotification(this.language.t('config.pageArchived') || 'Page archived.', 'success');
     }
 
+    movePageById(pageId, direction) {
+        const targetId = Number(pageId);
+        const index = this.pagesData.findIndex((p) => Number(p.id) === targetId);
+        if (index < 0) return;
+        const swap = direction === 'up' ? index - 1 : index + 1;
+        if (swap < 0 || swap >= this.pagesData.length) return;
+        const order = [...this.pagesData];
+        [order[index], order[swap]] = [order[swap], order[index]];
+        this.pagesData = order;
+        this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
+        this.pages.initReorder(this.pagesData, (newPages) => this.handlePagesReordered(newPages));
+        const focusEl = document.querySelector(`.page-item[data-page-id="${targetId}"]`);
+        focusEl?.focus?.();
+    }
+
     async restoreArchivedPage(pageId) {
         const targetId = Number(pageId);
         this.settingsData.archivedPageIds = this.getArchivedPageIds().filter((id) => id !== targetId);
@@ -5486,9 +5700,9 @@ class ConfigManager {
         if (templateId === 'work') {
             return {
                 categories: [
-                    { id: 'planning', name: 'Planning' },
-                    { id: 'build', name: 'Build' },
-                    { id: 'docs', name: 'Docs' }
+                    { id: 'planning', name: this.language.t('config.pageTemplateWorkPlanning') },
+                    { id: 'build', name: this.language.t('config.pageTemplateWorkBuild') },
+                    { id: 'docs', name: this.language.t('config.pageTemplateWorkDocs') }
                 ],
                 bookmarks: []
             };
@@ -5496,9 +5710,9 @@ class ConfigManager {
         if (templateId === 'personal') {
             return {
                 categories: [
-                    { id: 'daily', name: 'Daily' },
-                    { id: 'finance', name: 'Finance' },
-                    { id: 'media', name: 'Media' }
+                    { id: 'daily', name: this.language.t('config.pageTemplatePersonalDaily') },
+                    { id: 'finance', name: this.language.t('config.pageTemplatePersonalFinance') },
+                    { id: 'media', name: this.language.t('config.pageTemplatePersonalMedia') }
                 ],
                 bookmarks: []
             };
@@ -5506,9 +5720,9 @@ class ConfigManager {
         if (templateId === 'learn') {
             return {
                 categories: [
-                    { id: 'courses', name: 'Courses' },
-                    { id: 'references', name: 'References' },
-                    { id: 'practice', name: 'Practice' }
+                    { id: 'courses', name: this.language.t('config.pageTemplateLearnCourses') },
+                    { id: 'references', name: this.language.t('config.pageTemplateLearnReferences') },
+                    { id: 'practice', name: this.language.t('config.pageTemplateLearnPractice') }
                 ],
                 bookmarks: []
             };
@@ -5572,11 +5786,12 @@ class ConfigManager {
             return;
         }
         if (command === 'add-page') {
-            this.ensurePagesTabActive();
+            if (!this.ensurePagesTabActive()) return;
             await this.addPage();
             return;
         }
         if (command === 'add-category') {
+            if (!this.ensureCategoriesTabActive()) return;
             await this.preparePaletteCategoriesContext();
             await this.addCategory();
             return;
@@ -6215,10 +6430,7 @@ class ConfigManager {
     renderPagesTab() {
         this.pagesData = this.applyPagesNormalization(this.pagesData);
         this.pages.render(this.pagesData, this.generateId.bind(this), this.isPageArchived.bind(this));
-        this.pages.initReorder(this.pagesData, (newPages) => {
-            this.pagesData = newPages;
-            this.pages.renderPageSelector(this.getVisiblePages(), this.currentPageId);
-        });
+        this.pages.initReorder(this.pagesData, (newPages) => this.handlePagesReordered(newPages));
     }
 
     async reloadPagesFromServerIfNeeded() {

@@ -459,7 +459,14 @@ Temporarily hides bookmark tiles that do not match. Run `:find` alone to clear.
 
 ### Reorder categories
 
-- Drag the **grip** on the category title on the dashboard, or drag rows in **config → categories**.
+- Drag the **grip** on the category title on the dashboard, or drag rows in **config → categories** (or focus a row and press **↑** / **↓**).
+- Order in **config → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
+
+### Reorder pages
+
+- Drag the **grip** on a row in **config → pages**, or focus a row and press **↑** / **↓**.
+- Order saves automatically after a short debounce (~600 ms) and shows a localized sync toast.
+- **Archive** hides a page from the dashboard and page picker without deleting its bookmarks (restore from the Structure workspace or the archived list).
 
 ### Move between pages
 
@@ -579,11 +586,16 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 ### Themes
 
 - 37+ built-in families (dark/light pairs).  
-- **config → theme** tab (`#colors`) — built-in dark/light subtabs, custom theme list, live preview, **Save colors**.  
+- **config → theme** tab (`#colors`) — four subtabs: **Dark**, **Light** (default palettes), **Custom themes** (your saved palettes), and **Packaged themes** (edit built-in families such as Cherry Graphite). Live preview applies to palette cards only; a contrast hint warns when text vs background is too weak. **Export** / **import** JSON, **Undo**, and **↑/↓** reorder for custom themes. Press **S** or **Save colors** to persist. On mobile the tab is read-only (viewer banner).  
 - **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
 - **Auto dark mode** follows system (built-in pairs only; disabled with custom theme).
 
 The first time you open the **Theme** tab on a desktop-width window, a **9-step guided tour** creates a temporary **Tour demo** palette, saves it, activates it on General, then removes it (see [Guided config tours](#guided-config-tours)).
+
+### Config → pages & categories (structure tabs)
+
+- **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). Page dropdowns skip archived pages. Desktop only (mobile shows a toast).  
+- **Categories** — per-page list with icon, name, **merge**, remove, bookmark count per row; drag or **↑/↓** reorder with auto-save; switching the page selector flushes pending edits first. Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Desktop only for full editing.
 
 ### Typography and density
 
@@ -660,15 +672,15 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | **general** | Language, appearance, layout, bookmarks (display + behaviour merged), smart collections, status, branding, search — split **Essentials** / **Advanced** |
 | **theme** | Built-in theme picker |
 | **collections** | Custom collection rules |
-| **pages** | Add, rename, archive, reorder pages |
-| **categories** | Per-page categories |
+| **pages** | Add, rename, archive, reorder pages (auto-save; ↑/↓ keyboard; desktop) |
+| **categories** | Per-page categories — merge, counts, auto-save reorder (desktop) |
 | **bookmarks** | Split-view editor, bulk actions |
 | **finders** | External search shortcuts |
 | **backups** | ZIP backup/restore, CSV, browser HTML import |
 | **help** | In-app documentation index |
 | **stats** | Usage insights (desktop) |
 | **keyboard** | Rebind shortcuts (link from help) |
-| **colors** | Custom theme editor (`#colors`) |
+| **colors** | Theme editor (`#colors`) — dark/light, custom & packaged palettes, export/import, undo |
 | **tags** | Tag management |
 
 ### Essentials vs Advanced (general)
