@@ -357,7 +357,7 @@ class ConfigStats {
 
     // ── Overview ───────────────────────────────────────────────────────────
 
-    renderOverview(bookmarks, pages) {
+    renderOverview(bookmarks, pages, manager) {
         const withUrl = bookmarks.filter((b) => String(b?.url || '').trim()).length;
         const withSc  = bookmarks.filter((b) => String(b?.shortcut || '').trim()).length;
         const catKeys = new Set();
@@ -387,6 +387,7 @@ class ConfigStats {
         this.setText('stats-with-shortcut',    String(withSc));
         this.setText('stats-without-shortcut', String(Math.max(0, bookmarks.length - withSc)));
         this.setText('stats-avg-opens',        String(avg));
+        manager?.backup?.updateLastBackupDisplay?.(manager.settingsData?.language);
     }
 
     // ── Info buttons ───────────────────────────────────────────────────────
@@ -1417,7 +1418,7 @@ class ConfigStats {
         const settings  = manager.settingsData || {};
         const locale    = settings.language || undefined;
 
-        this.renderOverview(bookmarks, pages);
+        this.renderOverview(bookmarks, pages, manager);
         this.renderInsightsBlock(bookmarks, pages);
         this.renderCleanupScore(bookmarks);
         this.renderActivity(bookmarks, this.sectionPeriods.activity, locale);

@@ -315,6 +315,8 @@
     applyLayoutVersion(layoutVersion);
     
     document.addEventListener('DOMContentLoaded', function() {
+        applyLayoutVersion(getLayoutVersion());
+
         if (!window.DashboardFont || typeof window.DashboardFont.applyMainFont !== 'function') {
             return;
         }

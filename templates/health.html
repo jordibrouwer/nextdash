@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>health beta</title>
     <script src="/static/js/write-api.js"></script>
+    <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/theme-loader.js"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
@@ -19,12 +20,14 @@
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/mobile-experience.css">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css">
-    <link rel="stylesheet" href="/static/css/health.css?v=health-controls-compact-1">
-    <link rel="stylesheet" href="/static/css/health-modern.css?v=health-controls-compact-1">
+    <link rel="stylesheet" href="/static/css/health.css?v=health-layout-parity-1">
+    <link rel="stylesheet" href="/static/css/layout-modern.css?v=health-layout-parity-1">
+    <link rel="stylesheet" href="/static/css/health-modern.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/health-glass.css?v=health-controls-compact-1">
+    <link rel="stylesheet" href="/static/css/health-glass.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -32,7 +35,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-layout-preset="{{if .LayoutPreset}}{{.LayoutPreset}}{{else}}default{{end}}" data-density-mode="{{if .DensityMode}}{{.DensityMode}}{{else}}compact{{end}}" data-show-background-dots="{{.ShowBackgroundDots}}">
     <div class="health-shell">
         <header class="health-header">
             <div>
@@ -133,12 +136,16 @@
     </div>
 
     <script src="/static/js/skeleton-loading.js"></script>
+    <script src="/static/js/layout-version-utils.js"></script>
+    <script src="/static/js/layout-utils.js"></script>
+    <script src="/static/js/visual-settings.js"></script>
+    <script src="/static/js/page-layout-sync.js"></script>
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
     <script src="/static/js/modal.js"></script>
     <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
-    <script src="/static/js/health.js?v=health-favicon-fix-1"></script>
+    <script src="/static/js/health.js?v=health-layout-parity-1"></script>
 </body>
 </html>

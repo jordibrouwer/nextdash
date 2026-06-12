@@ -49,22 +49,50 @@ class ConfigBackup {
         }
     }
 
-    updateLastBackupDisplay() {
-        const el = document.getElementById('backup-last-date');
-        if (!el) return;
-        const iso = localStorage.getItem('nextdash-last-backup');
-        if (!iso) {
-            el.hidden = true;
-            return;
-        }
+    formatLastBackupWhen(iso, locale) {
         const date = new Date(iso);
-        if (isNaN(date.getTime())) { el.hidden = true; return; }
-        const formatted = new Intl.DateTimeFormat(undefined, {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        }).format(date);
-        el.textContent = (this.t('config.lastBackupDate') || 'Last backup: {date}').replace('{date}', formatted);
-        el.hidden = false;
+        if (isNaN(date.getTime())) return '';
+        try {
+            return new Intl.DateTimeFormat(locale || undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            }).format(date);
+        } catch (e) {
+            return date.toLocaleString();
+        }
+    }
+
+    lastBackupLabel(formatted) {
+        let template = this.t('config.lastBackupDate');
+        if (!template || template === 'config.lastBackupDate') {
+            template = 'Last backup: {date}';
+        }
+        return template.replace('{date}', formatted);
+    }
+
+    updateLastBackupDisplay(locale) {
+        const iso = localStorage.getItem('nextdash-last-backup');
+        const formatted = iso ? this.formatLastBackupWhen(iso, locale) : '';
+        const label = formatted ? this.lastBackupLabel(formatted) : '';
+
+        const backupEl = document.getElementById('backup-last-date');
+        if (backupEl) {
+            if (!formatted) {
+                backupEl.hidden = true;
+                backupEl.textContent = '';
+            } else {
+                backupEl.textContent = label;
+                backupEl.hidden = false;
+            }
+        }
+
+        const statsEl = document.getElementById('stats-last-backup');
+        if (statsEl) {
+            statsEl.textContent = formatted || '—';
+        }
     }
 
     /**
@@ -75,7 +103,6 @@ class ConfigBackup {
         if (backupBtn) {
             backupBtn.addEventListener('click', () => this.createBackup());
         }
-        this.updateLastBackupDisplay();
 
         // Backup info button
         const backupInfoBtn = document.getElementById('backup-info-btn');
@@ -194,7 +221,9 @@ class ConfigBackup {
             document.body.removeChild(a);
 
             localStorage.setItem('nextdash-last-backup', now.toISOString());
-            this.updateLastBackupDisplay();
+            this.updateLastBackupDisplay(
+                typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined
+            );
             if (typeof configManager !== 'undefined' && configManager.ui) {
                 configManager.ui.showNotification(this.t('config.backupCreated') || 'Backup created successfully!', 'success');
             }

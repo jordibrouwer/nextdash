@@ -446,6 +446,10 @@
         {
           "badge": "fix",
           "text": "<strong>i18n &amp; data</strong> — localized yes/no; <strong>Tags</strong> tour strings in all locales; period filter on top-tagged; duplicate URL detail list; cleanup score bar resets when empty."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Last backup label</strong> — overview and backups tab show a formatted last-backup date instead of the raw translation key."
         }
       ]
     },
@@ -487,6 +491,18 @@
         {
           "badge": "fix",
           "text": "<strong>Favicon display</strong> — row icons load from <code>/data/icons/</code> like the dashboard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layout parity</strong> — health beta respects <strong>Classic / Modern / Glass</strong> and dashboard layout settings (preset, density, custom background, opacity, font weight, animations, auto dark mode); config saves apply live, including device-specific overrides."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Modern &amp; glass row actions</strong> — per-row toolbar buttons get rounded layout chip styling; overflow menu matches layout surfaces (blur in glass mode)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layout CSS selectors</strong> — intro and filter controls use the correct class names so modern/glass skins apply."
         }
       ]
     },
@@ -495,11 +511,11 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>README &amp; MANUAL</strong> — Config → Finders, Backups, Stats, and <strong>health beta</strong> documented for v2026.06.17."
+          "text": "<strong>README &amp; MANUAL</strong> — Config → Finders, Backups, Stats, and <strong>health beta</strong> (layout parity, row-action styling) documented for v2026.06.17."
         },
         {
           "badge": "fix",
-          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap and Bookmark health help extended under v2026.06.17."
+          "text": "<strong>In-app Help (EN / NL / DE / FR)</strong> — What's new recap and Bookmark health help extended with layout parity and stats last-backup label under v2026.06.17."
         }
       ]
     },
@@ -508,7 +524,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v69</code> data version; health (<code>health.js</code>, <code>health.css</code>) plus Config Finders, Backups, Stats, Tags, and <code>reorder.js</code> assets updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v70</code> data version (<code>2026.06-dashboard-release-v58</code>); health layout sync (<code>page-layout-sync.js</code>, <code>visual-settings.js</code>, row-action CSS) and backups last-date fix; prior v2026.06.17 asset query strings retained for Docker-mounted static files."
         }
       ]
     }

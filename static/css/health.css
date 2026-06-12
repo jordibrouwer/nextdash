@@ -839,6 +839,25 @@ body {
     }
 }
 
+/* Density modes (classic layout) */
+body[data-density-mode="comfortable"] .health-row {
+    padding: 0.85rem 0.95rem;
+    gap: 0.65rem 0.85rem;
+}
+
+body[data-density-mode="dense"] .health-row {
+    padding: 0.45rem 0.55rem;
+    gap: 0.35rem 0.5rem;
+}
+
+body[data-density-mode="comfortable"] .health-card {
+    padding: 0.5rem 0.55rem;
+}
+
+body[data-density-mode="dense"] .health-card {
+    padding: 0.25rem 0.35rem;
+}
+
 @media (max-width: 768px) {
     .health-shell {
         padding: 1.25rem 1rem;

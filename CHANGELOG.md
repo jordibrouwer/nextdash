@@ -189,6 +189,7 @@ _No unreleased changes at this time._
 - **fix** **i18n & tour** — Search & status uses localized yes/no; **Tags** tour strings in all locales; dynamic opens column headers when a period is active.
 - **fix** **Data display** — period filter on top-tagged bookmarks; duplicate URL detail list in conflicts; cleanup score bar resets when library is empty.
 - **fix** **Settings search** — stats section titles deduplicated; intro, Refresh, Export, and filter indexed.
+- **fix** **Last backup label** — stats overview and backups tab show a formatted last-backup date instead of the raw translation key when translations load after the backup module initializes.
 
 ### Health beta (`/health`)
 
@@ -205,15 +206,18 @@ _No unreleased changes at this time._
 - **fix** **Favicon display** — row icons load from `/data/icons/` (same path as dashboard/config).
 - **fix** **Confirms & empty states** — delete and risky actions use `AppModal`; per-filter friendly empty messages; duplicate groups sorted by copy count; overflow menu flips upward near the viewport bottom.
 - **fix** **i18n** — new health strings in EN / NL / DE / FR (selection, bulk, empty states, keyboard hint, structured reasons).
+- **fix** **Layout parity** — health beta respects **Classic / Modern / Glass** and dashboard layout settings (preset, density, custom background, opacity, font weight, animations, auto dark mode); changes in config apply live via `page-layout-sync.js` and `visual-settings.js` (including device-specific overrides).
+- **fix** **Modern & glass row actions** — per-row toolbar buttons (open, dashboard, fix, ping, favicon, overflow) get rounded layout chip styling; overflow menu uses layout surfaces and blur in glass mode.
+- **fix** **Modern/glass CSS selectors** — intro and filter controls use `health-page-intro` and `health-filter-wrap` so layout skins apply correctly.
 
 ### Documentation
 
-- **fix** **README & MANUAL** — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), Stats (insights, filter, export, row navigation, chip-nav, honest labels), and **health beta** overhaul documented for v2026.06.17.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap and **Bookmark health** help extended with health beta polish under v2026.06.17.
+- **fix** **README & MANUAL** — Config → Finders, Backups (finders in ZIP / import safety, CSV columns), Stats (insights, filter, export, row navigation, chip-nav, honest labels, last-backup label), and **health beta** (overhaul + layout parity, row-action styling) documented for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap and **Bookmark health** help extended with layout parity, row-action styling, and stats last-backup label under v2026.06.17.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v69` data version; health (`health.js`, `health.css`, `health-modern.css`, `health-glass.css`) plus Config Finders (`config-finders.js`, `config-finders.css`), Backups (`config-backup.js`), Stats (`config-stats.js`, `config-stats.css`), Tags (`config-tags.js`), and `reorder.js` assets plus existing General/dashboard query strings updated for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v70` data version (`2026.06-dashboard-release-v58`); health layout sync (`page-layout-sync.js`, `visual-settings.js`, `health-row-actions-1` CSS) plus backups last-date fix (`config-backup.js`, `backups-last-date-fix-1`); prior `whats-new-v69` health/Finders/Backups/Stats/Tags/`reorder.js` query strings retained for Docker-mounted static files.
 
 ---
 

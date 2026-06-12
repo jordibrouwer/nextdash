@@ -1606,6 +1606,10 @@
     }
 
     async function main() {
+        if (window.PageLayoutSync?.init) {
+            await window.PageLayoutSync.init();
+        }
+
         if (typeof ConfigLanguage === 'function') {
             healthState.language = new ConfigLanguage();
             await healthState.language.init(document.documentElement.lang || 'en');

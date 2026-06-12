@@ -63,7 +63,7 @@ body[data-layout-version="glass"] .back-link-button:hover {
 /* ─── Unified surfaces (stacked cards) ────────────────────────────────────── */
 
 body[data-layout-version="glass"] :is(
-    .health-intro,
+    .health-page-intro,
     .health-card,
     .health-controls,
     .health-issues-panel,
@@ -75,8 +75,10 @@ body[data-layout-version="glass"] :is(
     box-shadow: var(--layout-shadow-sm);
 }
 
-body[data-layout-version="glass"] .health-intro {
+body[data-layout-version="glass"] .health-page-intro {
     padding: 0.9rem 1rem;
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
 body[data-layout-version="glass"] .health-subtitle {
@@ -124,7 +126,7 @@ body[data-layout-version="glass"] .health-panel-header h2 {
 
 /* ─── Forms & filters ─────────────────────────────────────────────────────── */
 
-body[data-layout-version="glass"] .health-search-wrap label,
+body[data-layout-version="glass"] .health-filter-wrap label,
 body[data-layout-version="glass"] .health-page-filter-wrap label {
     margin-bottom: 0.4rem;
     font-size: var(--font-size-controls);
@@ -132,7 +134,7 @@ body[data-layout-version="glass"] .health-page-filter-wrap label {
     color: var(--text-secondary);
 }
 
-body[data-layout-version="glass"] .health-search-wrap input,
+body[data-layout-version="glass"] .health-filter-wrap input,
 body[data-layout-version="glass"] .health-filter-input,
 body[data-layout-version="glass"] .health-page-filter,
 body[data-layout-version="glass"] .health-sort-select {
@@ -143,7 +145,7 @@ body[data-layout-version="glass"] .health-sort-select {
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="glass"] .health-search-wrap input:focus,
+body[data-layout-version="glass"] .health-filter-wrap input:focus,
 body[data-layout-version="glass"] .health-filter-input:focus,
 body[data-layout-version="glass"] .health-page-filter:focus,
 body[data-layout-version="glass"] .health-sort-select:focus {
@@ -215,8 +217,21 @@ body[data-layout-version="glass"] .health-duplicate-items span {
 }
 
 body[data-layout-version="glass"] .health-actions-menu {
+    border-radius: var(--layout-radius-md);
+    background: var(--layout-surface-elevated);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--glass-panel-shadow);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .health-actions-menu-item {
     border-radius: var(--layout-radius-sm);
-    background: var(--layout-surface);
+    transition: background-color var(--layout-transition), color var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .health-actions-menu-item:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
 }
 
 body[data-layout-version="glass"] .health-card,
@@ -235,8 +250,29 @@ body[data-layout-version="glass"] .health-empty {
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
+body[data-layout-version="glass"] .btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .btn:hover:not(:disabled) {
+    box-shadow: var(--layout-shadow-sm);
+    transform: none;
+}
+
+body[data-layout-version="glass"] .health-selection-toolbar {
+    border-radius: var(--layout-radius-sm);
+    border-color: color-mix(in srgb, var(--accent-primary) 28%, var(--layout-surface-border));
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface));
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}
+
 body[data-layout-version="glass"] .health-bulk-toolbar .btn,
-body[data-layout-version="glass"] .health-action-link,
 body[data-layout-version="glass"] .health-keep-first-btn,
 body[data-layout-version="glass"] .health-merge-pick-btn {
     border-radius: var(--layout-radius-sm);
@@ -246,12 +282,50 @@ body[data-layout-version="glass"] .health-merge-pick-btn {
         box-shadow var(--layout-transition);
 }
 
+body[data-layout-version="glass"] .health-row-actions .btn-small,
+body[data-layout-version="glass"] .health-row-actions .btn-icon-only,
+body[data-layout-version="glass"] .health-row-actions .health-action-link {
+    border-radius: var(--layout-radius-sm);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--glass-chip-shadow);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="glass"] .health-row-actions .btn-primary {
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--layout-surface));
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--layout-surface-border));
+}
+
 body[data-layout-version="glass"] .health-bulk-toolbar .btn:hover:not(:disabled),
-body[data-layout-version="glass"] .health-action-link:hover,
 body[data-layout-version="glass"] .health-keep-first-btn:hover:not(:disabled),
-body[data-layout-version="glass"] .health-merge-pick-btn:hover {
+body[data-layout-version="glass"] .health-merge-pick-btn:hover,
+body[data-layout-version="glass"] .health-row-actions .btn:hover:not(:disabled),
+body[data-layout-version="glass"] .health-row-actions .health-action-link:hover {
     box-shadow: var(--layout-shadow-sm);
     transform: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--layout-surface-border));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface));
+}
+
+body[data-layout-version="glass"] .health-row-actions .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-primary) 24%, var(--layout-surface));
+}
+
+body[data-layout-version="glass"] .health-row-actions .btn-icon-only[data-tooltip]::after {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="glass"] .health-actions-divider {
+    background: var(--layout-surface-border);
 }
 
 body[data-layout-version="glass"] .health-bulk-status {
@@ -268,7 +342,27 @@ body[data-layout-version="glass"] .health-bulk-status {
         padding-bottom: 1.25rem;
     }
 
-    body[data-layout-version="glass"] .health-intro {
+    body[data-layout-version="glass"] .health-page-intro {
         display: none;
     }
+}
+
+/* ─── Density ─────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="glass"][data-density-mode="comfortable"] .health-row {
+    padding: 0.85rem 0.95rem;
+    gap: 0.65rem 0.85rem;
+}
+
+body[data-layout-version="glass"][data-density-mode="dense"] .health-row {
+    padding: 0.45rem 0.55rem;
+    gap: 0.35rem 0.5rem;
+}
+
+body[data-layout-version="glass"][data-density-mode="comfortable"] .health-card {
+    padding: 0.5rem 0.55rem;
+}
+
+body[data-layout-version="glass"][data-density-mode="dense"] .health-card {
+    padding: 0.25rem 0.35rem;
 }

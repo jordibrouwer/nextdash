@@ -593,6 +593,7 @@ class ConfigSettings {
                 const newLang = e.target.value;
                 settings.language = newLang;
                 await this.language.loadTranslations(newLang);
+                window.configManager?.backup?.updateLastBackupDisplay?.(newLang);
                 this.updateSystemAppearanceBadge(settings.theme);
                 const ok = await this.saveSettingsToServer(settings);
                 if (ok) {

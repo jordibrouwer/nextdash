@@ -657,6 +657,8 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete) |
 | **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
+| **Layout parity** | Uses the same **Classic / Modern / Glass** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
+| **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips; glass blur on glass layout) |
 | **dashboard link** | Jump to bookmark on correct page/category |
 | **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
 | **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicate groups |
@@ -690,6 +692,7 @@ Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizo
 - **Rot & cleanup** — stale bookmarks, cleanup score (resets when the library is empty).
 - **Conflicts** — duplicate URL detail list and shortcut conflicts with a link to **Health**.
 - **Toolbar** — **Refresh** reloads stats in-tab; **Export CSV** downloads multiple sections (respects active period filters); **Filter tables** narrows rows across all stats tables with a visible/total hint.
+- **Overview** — includes **Last backup** (formatted date from the backups tab when a ZIP was created in this browser).
 
 ---
 

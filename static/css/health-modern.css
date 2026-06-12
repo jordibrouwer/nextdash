@@ -69,7 +69,7 @@ body[data-layout-version="modern"] .back-link-button:hover {
 /* ─── Unified surfaces (stacked cards) ────────────────────────────────────── */
 
 body[data-layout-version="modern"] :is(
-    .health-intro,
+    .health-page-intro,
     .health-card,
     .health-controls,
     .health-issues-panel,
@@ -81,7 +81,7 @@ body[data-layout-version="modern"] :is(
     box-shadow: var(--layout-shadow-sm);
 }
 
-body[data-layout-version="modern"] .health-intro {
+body[data-layout-version="modern"] .health-page-intro {
     padding: 0.9rem 1rem;
 }
 
@@ -130,7 +130,7 @@ body[data-layout-version="modern"] .health-panel-header h2 {
 
 /* ─── Forms & filters ─────────────────────────────────────────────────────── */
 
-body[data-layout-version="modern"] .health-search-wrap label,
+body[data-layout-version="modern"] .health-filter-wrap label,
 body[data-layout-version="modern"] .health-page-filter-wrap label {
     margin-bottom: 0.4rem;
     font-size: var(--font-size-controls);
@@ -138,7 +138,7 @@ body[data-layout-version="modern"] .health-page-filter-wrap label {
     color: var(--text-secondary);
 }
 
-body[data-layout-version="modern"] .health-search-wrap input,
+body[data-layout-version="modern"] .health-filter-wrap input,
 body[data-layout-version="modern"] .health-filter-input,
 body[data-layout-version="modern"] .health-page-filter,
 body[data-layout-version="modern"] .health-sort-select {
@@ -149,7 +149,7 @@ body[data-layout-version="modern"] .health-sort-select {
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="modern"] .health-search-wrap input:focus,
+body[data-layout-version="modern"] .health-filter-wrap input:focus,
 body[data-layout-version="modern"] .health-filter-input:focus,
 body[data-layout-version="modern"] .health-page-filter:focus,
 body[data-layout-version="modern"] .health-sort-select:focus {
@@ -220,8 +220,19 @@ body[data-layout-version="modern"] .health-duplicate-items span {
 }
 
 body[data-layout-version="modern"] .health-actions-menu {
-    border-radius: var(--layout-radius-sm);
+    border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="modern"] .health-actions-menu-item {
+    border-radius: var(--layout-radius-sm);
+    transition: background-color var(--layout-transition), color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-actions-menu-item:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
 }
 
 body[data-layout-version="modern"] .health-card,
@@ -240,8 +251,27 @@ body[data-layout-version="modern"] .health-empty {
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
+body[data-layout-version="modern"] .btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .btn:hover:not(:disabled) {
+    box-shadow: var(--layout-shadow-sm);
+    transform: none;
+}
+
+body[data-layout-version="modern"] .health-selection-toolbar {
+    border-radius: var(--layout-radius-sm);
+    border-color: color-mix(in srgb, var(--accent-primary) 28%, var(--layout-surface-border));
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface));
+    box-shadow: var(--layout-shadow-sm);
+}
+
 body[data-layout-version="modern"] .health-bulk-toolbar .btn,
-body[data-layout-version="modern"] .health-action-link,
 body[data-layout-version="modern"] .health-keep-first-btn,
 body[data-layout-version="modern"] .health-merge-pick-btn {
     border-radius: var(--layout-radius-sm);
@@ -251,12 +281,47 @@ body[data-layout-version="modern"] .health-merge-pick-btn {
         box-shadow var(--layout-transition);
 }
 
+body[data-layout-version="modern"] .health-row-actions .btn-small,
+body[data-layout-version="modern"] .health-row-actions .btn-icon-only,
+body[data-layout-version="modern"] .health-row-actions .health-action-link {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-row-actions .btn-primary {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--layout-surface));
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--layout-surface-border));
+}
+
 body[data-layout-version="modern"] .health-bulk-toolbar .btn:hover:not(:disabled),
-body[data-layout-version="modern"] .health-action-link:hover,
 body[data-layout-version="modern"] .health-keep-first-btn:hover:not(:disabled),
-body[data-layout-version="modern"] .health-merge-pick-btn:hover {
+body[data-layout-version="modern"] .health-merge-pick-btn:hover,
+body[data-layout-version="modern"] .health-row-actions .btn:hover:not(:disabled),
+body[data-layout-version="modern"] .health-row-actions .health-action-link:hover {
     box-shadow: var(--layout-shadow-sm);
     transform: none;
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--layout-surface-border));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .health-row-actions .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-primary) 22%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .health-row-actions .btn-icon-only[data-tooltip]::after {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    border-radius: var(--layout-radius-sm);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .health-actions-divider {
+    background: var(--layout-surface-border);
 }
 
 body[data-layout-version="modern"] .health-bulk-status {
@@ -273,7 +338,27 @@ body[data-layout-version="modern"] .health-bulk-status {
         padding-bottom: 1.25rem;
     }
 
-    body[data-layout-version="modern"] .health-intro {
+    body[data-layout-version="modern"] .health-page-intro {
         display: none;
     }
+}
+
+/* ─── Density ─────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"][data-density-mode="comfortable"] .health-row {
+    padding: 0.85rem 0.95rem;
+    gap: 0.65rem 0.85rem;
+}
+
+body[data-layout-version="modern"][data-density-mode="dense"] .health-row {
+    padding: 0.45rem 0.55rem;
+    gap: 0.35rem 0.5rem;
+}
+
+body[data-layout-version="modern"][data-density-mode="comfortable"] .health-card {
+    padding: 0.5rem 0.55rem;
+}
+
+body[data-layout-version="modern"][data-density-mode="dense"] .health-card {
+    padding: 0.25rem 0.35rem;
 }

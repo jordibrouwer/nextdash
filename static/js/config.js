@@ -156,6 +156,7 @@ class ConfigManager {
         await this.loadData();
         this.currentCategoriesPageId = this.getLastCategoriesPageId();
         await this.language.init(this.settingsData.language);
+        this.backup.updateLastBackupDisplay(this.settingsData.language);
         window.MobileExperience?.refreshBannerTranslations?.();
         if (typeof ConfigStats === 'function') {
             this.stats = new ConfigStats(this.language.t.bind(this.language));
