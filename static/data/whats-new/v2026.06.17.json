@@ -1,0 +1,99 @@
+{
+  "tag": "v2026.06.17",
+  "date": "June 2026",
+  "releasedAt": "2026-06-10",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collection sync</strong> — inline edit and delete from smart-collection rows update the canonical bookmark on the page and <code>allBookmarks</code>; <code>note</code> and <code>tags</code> stay in sync across columns; delete undo restores the global view too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline delete confirm</strong> — delete from the inline editor no longer conflicts with click-outside handlers; the confirm modal stacks above the editor with correct focus."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Discard confirm modal</strong> — unsaved inline-edit dismiss uses <code>AppModal</code> instead of a native browser dialog."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reorder flush</strong> — debounced bookmark reorder persists immediately on page switch or tab hide (mirrors category-order flush)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page rename errors</strong> — failed page-tab rename rolls back the local name and shows a localized error toast."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Neutral grid on page switch</strong> — keyboard selection clears on page change unless you were already navigating with the keyboard."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard & search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>G chord</strong> — <code>G</code> then <code>1–9</code> jumps to a category only; it no longer switches pages or feeds into shortcut search."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search overlay guards</strong> — <code>&gt;</code>, <code>:</code>, <code>?</code>, <code>+</code>, and <code>&amp;</code> are blocked while page overview, omnibox, inline edit, tag cloud, or other modals are open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search ghost overlay</strong> — rebuilding shortcuts after a page switch or reorder closes an open search UI instead of leaving a stale overlay."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page shortcuts vs search</strong> — <code>1–9</code> and <code>Shift+←/→</code> no longer change pages while the search overlay is active."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Delete on smart rows</strong> — the <code>Delete</code> key resolves the bookmark by URL/reference (same as <code>;</code>) so it works on smart-collection copies."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Mac shortcuts</strong> — <code>Cmd+C</code> copies the selected URL; <code>Cmd+Home</code> / <code>Cmd+End</code> jump to the first/last bookmark on the page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Swipe &amp; omnibox guards</strong> — horizontal swipes and keyboard grid navigation respect <code>isModalOpen()</code> (page overview, omnibox, app modal)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Paste during tag cloud</strong> — <code>Ctrl+V</code> quick-add paste is ignored while the tag word cloud is open."
+        }
+      ]
+    },
+    {
+      "title": "Accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Page overview</strong> — desktop close button; focus returns to the trigger; list wraps at the ends; visible page names use locale fallbacks."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Omnibox focus</strong> — closing the quick-add omnibox restores keyboard focus to the prior control."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search input a11y</strong> — mobile search field and bookmark grid use <code>data-i18n-aria</code> labels in EN / NL / DE / FR."
+        }
+      ]
+    },
+    {
+      "title": "Developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v63</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, and <code>dashboard.css</code> query strings updated for Docker-mounted static files."
+        }
+      ]
+    }
+  ]
+}

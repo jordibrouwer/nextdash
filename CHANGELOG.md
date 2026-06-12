@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.17 — June 2026](#v20260617--june-2026)
 - [v2026.06.16 — June 2026](#v20260616--june-2026)
 - [v2026.06.15 — June 2026](#v20260615--june-2026)
 - [v2026.06.14 — June 2026](#v20260614--june-2026)
@@ -43,6 +44,47 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.17 — June 2026
+
+**Search guards, smart-collection sync & inline-edit polish** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud.
+
+### Dashboard
+
+- **fix** **Smart collection sync** — inline edit and delete from smart-collection rows update the canonical bookmark on the page and `allBookmarks`; `note` and `tags` stay in sync across columns; delete undo restores the global view too.
+- **fix** **Inline delete confirm** — delete from the inline editor no longer conflicts with click-outside handlers; the confirm modal stacks above the editor with correct focus.
+- **fix** **Discard confirm modal** — unsaved inline-edit dismiss uses `AppModal` instead of a native browser dialog.
+- **fix** **Reorder flush** — debounced bookmark reorder persists immediately on page switch or tab hide (mirrors category-order flush).
+- **fix** **Page rename errors** — failed page-tab rename rolls back the local name and shows a localized error toast.
+- **fix** **Neutral grid on page switch** — keyboard selection clears on page change unless you were already navigating with the keyboard.
+
+### Keyboard & search
+
+- **fix** **G chord** — `G` then `1–9` jumps to a category only; it no longer switches pages or feeds into shortcut search.
+- **fix** **Search overlay guards** — `>`, `:`, `?`, `+`, and `&` are blocked while page overview, omnibox, inline edit, tag cloud, or other modals are open.
+- **fix** **Search ghost overlay** — rebuilding shortcuts after a page switch or reorder closes an open search UI instead of leaving a stale overlay.
+- **fix** **Page shortcuts vs search** — `1–9` and `Shift+←/→` no longer change pages while the search overlay is active.
+- **fix** **Delete on smart rows** — the `Delete` key resolves the bookmark by URL/reference (same as `;`) so it works on smart-collection copies.
+- **fix** **Mac shortcuts** — `Cmd+C` copies the selected URL; `Cmd+Home` / `Cmd+End` jump to the first/last bookmark on the page.
+- **fix** **Swipe & omnibox guards** — horizontal swipes and keyboard grid navigation respect `isModalOpen()` (page overview, omnibox, app modal).
+- **fix** **Paste during tag cloud** — `Ctrl+V` quick-add paste is ignored while the tag word cloud is open.
+
+### Accessibility
+
+- **fix** **Page overview** — desktop close button; focus returns to the trigger; list wraps at the ends; visible page names use locale fallbacks.
+- **fix** **Omnibox focus** — closing the quick-add omnibox restores keyboard focus to the prior control.
+- **fix** **Search input a11y** — mobile search field and bookmark grid use `data-i18n-aria` labels in EN / NL / DE / FR.
+
+### Documentation
+
+- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, and overlay paste guards for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 search guards and smart-collection sync.
+
+### Developer
+
+- **fix** **Cache-bust** — `whats-new-v63` data version and `2026.06-dashboard-release-v57` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `search.js`, and `dashboard.css` query strings updated for Docker-mounted static files.
 
 ---
 

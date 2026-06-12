@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.16**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.17**.
 
 ---
 
@@ -86,7 +86,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
-- `G + 1–9` — jump to the nth category and select its first bookmark
+- `G + 1–9` — jump to the nth category and select its first bookmark (`G` is for categories only — it does not switch pages)
+- `Ctrl + Home` / `Ctrl + End` — first / last bookmark on the page (`Cmd` on Mac)
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
 
@@ -94,7 +95,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
 - `&` — quick-add omnibox: type `name | url | shortcut` in one line
 - `Ctrl + Shift + A` — same full new-bookmark modal from anywhere
-- `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled (blocked while inline edit is open)
+- `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled (blocked while inline edit or the tag word cloud is open)
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
@@ -170,7 +171,7 @@ Type these directly in the search bar:
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast
-- Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
+- Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Double-click a category header to rename it
 - Collapsible categories with optional always-collapsed default

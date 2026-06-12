@@ -263,11 +263,11 @@ The modal includes page, category, preview, tags, note, pin, and status options.
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. Paste is ignored while **inline edit** is open. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard. The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button). Press **ESC** or click outside to dismiss; both ask to confirm if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first, then persists right away; undo in the toast restores the bookmark on the server too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -332,7 +332,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 |------|--------|
 | `1`–`9` | Jump to page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
-| `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; each row announces name + count; arrow keys do not move bookmarks behind the overlay |
+| `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages (wrap at the ends); each row announces name + count; arrow keys do not move bookmarks behind the overlay; closing restores focus to the trigger |
 
 ### 9.2 Bookmark grid
 
@@ -341,8 +341,9 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark (when a row is already selected) |
-| `G` then `1`–`9` | Jump to nth category, select first bookmark |
+| `G` then `1`–`9` | Jump to nth category, select first bookmark (`G` is for categories — it does not switch pages or open shortcut search) |
 | `GG` | Jump to very first bookmark |
+| `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Enter` / `Space` | Open selected |
 | `Esc` | Clear selection; may undo last drag reorder |
 
@@ -354,7 +355,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 | `Shift + M` | Move to… (category or another page) |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
-| `Delete` | Delete selected bookmark |
+| `Delete` | Delete selected bookmark (resolves by URL/reference — works on smart-collection rows too) |
 
 ### 9.4 Cheat sheet
 
@@ -529,6 +530,8 @@ Enabled in **config → general → smart collections**:
 | **Stale** | Not opened within threshold days |
 
 Each can be limited to certain pages and item limits (`0` = unlimited).
+
+You can **long-press** or press **`;`** on a smart-collection row to inline-edit or delete; changes apply to the real bookmark on its page and stay in sync across collection columns.
 
 ### Custom collections
 
