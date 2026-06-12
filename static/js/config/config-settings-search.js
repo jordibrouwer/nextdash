@@ -54,17 +54,37 @@
         });
     }
 
+    function isMobileGeneralSearch() {
+        return Boolean(window.MobileExperience?.isMobileLayout?.());
+    }
+
+    function isMobileIndexedPanel(panel) {
+        if (!isMobileGeneralSearch() || !panel) return true;
+        const id = panel.getAttribute('data-general-panel');
+        const allowed = window.MobileExperience?.MOBILE_GENERAL_PANELS || ['localization', 'basics-core', 'layout'];
+        return allowed.includes(id);
+    }
+
     function indexGeneralTab(entries, seen) {
         const tabLabel = getTabLabel('general');
         document.querySelectorAll('#general-advanced-nav [data-advanced-nav]').forEach((link) => {
             const panelId = link.getAttribute('data-advanced-nav');
             const title = textOf(link);
             if (!panelId || !title) return;
+            const panel = document.querySelector(`[data-general-panel="${panelId}"]`);
+            if (!isMobileIndexedPanel(panel)) return;
+            const sectionName = textOf(panel?.querySelector('.section-title')) || title;
+            const tier = panel?.dataset?.configTier;
+            const layerPart = tier === 'essentials'
+                ? t('generalLayerEssentials', 'Essentials')
+                : tier === 'advanced'
+                    ? t('generalLayerAdvanced', 'Advanced')
+                    : t('generalLayerAll', 'All sections');
             addEntry(entries, seen, {
                 tab: 'general',
                 tabLabel,
                 title,
-                subtitle: `${tabLabel} › ${t('generalLayerAdvanced', 'Advanced')}`,
+                subtitle: `${tabLabel} › ${layerPart} › ${sectionName}`,
                 generalPanel: panelId,
                 targetEl: link,
             });
@@ -72,7 +92,7 @@
 
         document.querySelectorAll('[data-tab-content="general"] [data-general-panel]').forEach((panel) => {
             const panelId = panel.getAttribute('data-general-panel');
-            if (!panelId) return;
+            if (!panelId || !isMobileIndexedPanel(panel)) return;
 
             const sectionTitle = panel.querySelector('.section-title');
             const sectionName = textOf(sectionTitle) || panelId;
@@ -263,12 +283,16 @@
     function buildIndex() {
         const entries = [];
         const seen = new Set();
-        indexTabs(entries, seen);
-        indexGeneralTab(entries, seen);
-        ['pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'stats', 'colors', 'help'].forEach((tabId) => {
-            indexTabContent(tabId, entries, seen);
-        });
-        indexKeyboardTab(entries, seen);
+        if (isMobileGeneralSearch()) {
+            indexGeneralTab(entries, seen);
+        } else {
+            indexTabs(entries, seen);
+            indexGeneralTab(entries, seen);
+            ['pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'stats', 'colors', 'help'].forEach((tabId) => {
+                indexTabContent(tabId, entries, seen);
+            });
+            indexKeyboardTab(entries, seen);
+        }
         index = entries;
         indexReady = true;
     }
@@ -296,8 +320,17 @@
         if (item.tab === 'general') {
             mgr.ui.switchToTab('general');
             await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-            if (item.generalPanel && mgr.generalLayers) {
-                mgr.generalLayers.scrollToPanel(item.generalPanel, { switchLayer: true });
+
+            let scrollTarget = item.targetEl;
+            if (item.helpBlockId) {
+                scrollTarget = document.getElementById(item.helpBlockId) || scrollTarget;
+            }
+            let panelId = item.generalPanel;
+            if (!panelId && scrollTarget?.isConnected) {
+                panelId = scrollTarget.closest('[data-general-panel]')?.getAttribute('data-general-panel');
+            }
+            if (panelId && mgr.generalLayers) {
+                mgr.generalLayers.scrollToPanel(panelId, { switchLayer: true });
             }
         } else {
             mgr.ui.switchToTab(item.tab);
@@ -312,7 +345,11 @@
         }
 
         let scrollTarget = item.targetEl;
-        if (item.helpBlockId) {
+        if (item.tab !== 'general') {
+            if (item.helpBlockId) {
+                scrollTarget = document.getElementById(item.helpBlockId) || scrollTarget;
+            }
+        } else if (item.helpBlockId) {
             scrollTarget = document.getElementById(item.helpBlockId) || scrollTarget;
         }
         if (scrollTarget?.isConnected) {
@@ -397,7 +434,6 @@
     }
 
     function focusSearch() {
-        if (window.MobileExperience?.isMobileLayout?.()) return false;
         const inputEl = document.getElementById('config-settings-search-input');
         if (!inputEl) return false;
         if (!indexReady) buildIndex();
@@ -595,24 +631,56 @@
         promoShowTimer = setTimeout(() => maybeShowPromo(rootEl, inputEl), delayMs);
     }
 
-    function ensureDesktopSearchVisible(rootEl) {
-        if (!rootEl || window.MobileExperience?.isMobileLayout?.()) return false;
+    function ensureSearchVisible(rootEl) {
+        if (!rootEl) return false;
         rootEl.hidden = false;
+        rootEl.classList.toggle('config-settings-search--mobile', isMobileGeneralSearch());
         return true;
     }
 
-    /** Hide search and promo when the config viewport becomes mobile-sized. */
+    function relocateForLayout() {
+        const search = document.querySelector('.config-settings-search');
+        const mobileHost = document.getElementById('general-mobile-settings-search-host');
+        const desktopAnchor = document.getElementById('config-settings-search-anchor');
+        if (!search) return;
+        if (isMobileGeneralSearch() && mobileHost) {
+            mobileHost.appendChild(search);
+            mobileHost.hidden = false;
+        } else if (desktopAnchor) {
+            desktopAnchor.appendChild(search);
+            if (mobileHost) mobileHost.hidden = true;
+        }
+    }
+
+    /** Adjust search for mobile (Essentials subset) vs desktop. */
     function syncMobileLayout() {
         const rootEl = document.querySelector('.config-settings-search');
-        if (!window.MobileExperience?.isMobileLayout?.()) {
-            ensureDesktopSearchVisible(rootEl);
+        if (!rootEl) return;
+        relocateForLayout();
+        const label = rootEl?.querySelector('.config-settings-search-label');
+        if (label) {
+            if (isMobileGeneralSearch()) {
+                label.textContent = t('settingsSearchMobileHint', 'Search language, theme, and layout settings on this device.');
+                label.setAttribute('data-i18n', 'config.settingsSearchMobileHint');
+            } else {
+                label.textContent = t('settingsSearchLabel', 'Search settings');
+                label.setAttribute('data-i18n', 'config.settingsSearchLabel');
+            }
+        }
+        if (isMobileGeneralSearch()) {
+            ensureSearchVisible(rootEl);
+            clearTimeout(promoShowTimer);
+            promoShowTimer = null;
+            clearPromoAutoRetries();
+            dismissPromo(false, { blockSession: false });
+            indexReady = false;
+            buildIndex();
             return;
         }
-        if (rootEl) rootEl.hidden = true;
-        clearTimeout(promoShowTimer);
-        promoShowTimer = null;
-        clearPromoAutoRetries();
-        dismissPromo(false, { blockSession: false });
+        rootEl.classList.remove('config-settings-search--mobile');
+        ensureSearchVisible(rootEl);
+        indexReady = false;
+        buildIndex();
     }
 
     /** Re-queue promo after config finishes loading or a guided tour ends. */
@@ -621,7 +689,7 @@
         if (window.MobileExperience?.isMobileLayout?.()) return;
         const rootEl = document.querySelector('.config-settings-search');
         const inputEl = document.getElementById('config-settings-search-input');
-        if (!rootEl || !inputEl || !ensureDesktopSearchVisible(rootEl)) return;
+        if (!rootEl || !inputEl || isMobileGeneralSearch() || !ensureSearchVisible(rootEl)) return;
         if (!promoEverShown) {
             promoDismissed = false;
         }
@@ -667,11 +735,8 @@
         const rootEl = document.querySelector('.config-settings-search');
         if (!inputEl || !resultsEl) return;
 
-        if (window.MobileExperience?.isMobileLayout?.()) {
-            if (rootEl) rootEl.hidden = true;
-            return;
-        }
-        ensureDesktopSearchVisible(rootEl);
+        ensureSearchVisible(rootEl);
+        syncMobileLayout();
 
         if (listenersBound) return;
         listenersBound = true;
@@ -755,6 +820,7 @@
         bootPromoAutoStart,
         resetPromoSeen,
         syncMobileLayout,
+        relocateForLayout,
         PROMO_STORAGE_KEY,
         PROMO_CONFIRMED_KEY,
     };

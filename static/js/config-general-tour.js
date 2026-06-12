@@ -110,7 +110,7 @@ class ConfigGeneralTour {
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (!hash.startsWith('general')) {
             window.history.replaceState(null, '', '#general');
-            window.configManager?.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            window.configManager?.generalLayers?.applyHash?.('#general');
         }
     }
 
@@ -127,18 +127,9 @@ class ConfigGeneralTour {
     ensureGeneralLayersReady() {
         const gl = window.configManager?.generalLayers;
         if (!gl) return;
-        if (!gl.root) {
-            gl.root = document.querySelector('.general-layout');
-            gl.toolbar = gl.toolbar || document.getElementById('general-layer-toolbar');
-            gl.advancedNav = gl.advancedNav || document.getElementById('general-advanced-nav');
-        }
-        if (!gl.root || !gl.toolbar || gl.root.dataset.layersReady === '1') return;
+        if (gl.root?.dataset?.layersReady === '1') return;
         try {
-            gl.restructurePanels();
-            gl.assignPanelTiers?.();
-            gl.reorderPanels?.();
-            gl.refreshCheckboxTreeSymbols?.();
-            gl.root.dataset.layersReady = '1';
+            gl.init();
         } catch (error) {
             console.warn('ConfigGeneralLayers setup before tour', error);
         }
@@ -312,7 +303,7 @@ class ConfigGeneralTour {
     }
 
     buildSteps() {
-        return [
+        const steps = [
             {
                 title: this.t('configGeneralTourWelcomeTitle', 'Welcome to General settings'),
                 body: this.t(
@@ -410,6 +401,16 @@ class ConfigGeneralTour {
                 scrollBlock: 'center',
             },
             {
+                title: this.t('configGeneralTourSearchTitle', 'Find any setting'),
+                body: this.t(
+                    'configGeneralTourSearchBody',
+                    'Use the search box to jump to a setting on any tab. Matching sections expand automatically so the control is visible.'
+                ),
+                selector: '#config-settings-search-input',
+                layer: 'essentials',
+                scrollBlock: 'center',
+            },
+            {
                 title: this.t('configGeneralTourSaveTitle', 'Save your changes'),
                 body: this.t(
                     'configGeneralTourSaveBody',
@@ -420,6 +421,14 @@ class ConfigGeneralTour {
                 scrollBlock: 'center',
             },
         ];
+        return steps.filter((step) => {
+            if (step.selector === '#config-settings-search-input') {
+                if (window.MobileExperience?.isMobileLayout?.()) return false;
+                const input = document.getElementById('config-settings-search-input');
+                if (!input || input.closest('[hidden]')) return false;
+            }
+            return true;
+        });
     }
 
     async prepareAndStart({ force = false } = {}) {

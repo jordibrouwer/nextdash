@@ -375,13 +375,38 @@
     }
 }
 
-body[data-mobile-layout="true"] .config-settings-search {
-    display: none !important;
+.general-mobile-settings-search-host {
+    margin: 0 0 0.75rem;
+}
+
+.general-mobile-settings-search-host .config-settings-search {
+    display: block;
+    width: 100%;
+}
+
+body[data-mobile-layout="true"] .config-breadcrumb-row .config-settings-search-anchor {
+    display: none;
+}
+
+body[data-mobile-layout="true"] .config-settings-search.config-settings-search--mobile {
+    display: block;
+    width: 100%;
+}
+
+body[data-mobile-layout="true"] .config-breadcrumb-row {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+body[data-mobile-layout="true"] .config-settings-search--mobile .config-settings-search-input {
+    min-height: 44px;
+    font-size: 1rem;
 }
 
 @media (max-width: 768px) {
-    .config-settings-search {
-        display: none !important;
+    .config-settings-search.config-settings-search--mobile {
+        display: block;
+        width: 100%;
     }
 }
 

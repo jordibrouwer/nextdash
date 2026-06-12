@@ -177,7 +177,21 @@
         if (showAll) showAll.hidden = true;
         const introAdv = document.getElementById('general-layer-intro-advanced');
         if (introAdv) introAdv.hidden = true;
-        if (layers.advancedNav) layers.advancedNav.hidden = true;
+        const introEss = document.getElementById('general-layer-intro-essentials');
+        if (introEss) introEss.hidden = true;
+        const introAll = document.getElementById('general-layer-intro-all');
+        if (introAll) introAll.hidden = true;
+        const tabIntro = document.querySelector('.general-tab-intro');
+        if (tabIntro) tabIntro.hidden = true;
+        const mobileIntro = document.getElementById('general-layer-intro-mobile');
+        if (mobileIntro) mobileIntro.hidden = false;
+        const navWrap = document.getElementById('general-advanced-nav-wrap');
+        if (navWrap) navWrap.hidden = true;
+        const bulkBar = document.getElementById('general-panels-bulk-actions');
+        if (bulkBar) bulkBar.hidden = true;
+        const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
+        if (mobileSearchHost) mobileSearchHost.hidden = false;
+        window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 
     function clearConfigGeneralPanels(layers) {
@@ -189,6 +203,13 @@
         if (toolbar) toolbar.hidden = false;
         const showAll = document.getElementById('general-layer-show-all');
         if (showAll) showAll.hidden = false;
+        const mobileIntro = document.getElementById('general-layer-intro-mobile');
+        if (mobileIntro) mobileIntro.hidden = true;
+        const tabIntro = document.querySelector('.general-tab-intro');
+        if (tabIntro) tabIntro.hidden = false;
+        const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
+        if (mobileSearchHost) mobileSearchHost.hidden = true;
+        window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 
     function removeBanners() {
@@ -246,10 +267,8 @@
                 applyConfigGeneralPanels(window.configManager.generalLayers);
             } else if (wasMobile && !nowMobile) {
                 clearConfigGeneralPanels(window.configManager.generalLayers);
-                window.configManager.generalLayers.applyLayer(
-                    window.configManager.generalLayers.getStoredLayer(),
-                    { updateHash: false }
-                );
+                const gl = window.configManager.generalLayers;
+                gl.applyLayer(gl.getStoredLayer(), { updateHash: false });
             }
         }
 

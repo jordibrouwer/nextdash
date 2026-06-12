@@ -108,6 +108,7 @@ body[data-layout-version="glass"] :is(
     .general-tab-intro,
     .general-layer-toolbar,
     .general-layer-intro,
+    .general-advanced-nav-wrap,
     .general-advanced-nav,
     .stats-page-intro,
     .stats-index,
@@ -151,7 +152,7 @@ body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > div
 
 body[data-layout-version="glass"] .general-layer-toolbar,
 body[data-layout-version="glass"] .general-layer-intro,
-body[data-layout-version="glass"] .general-advanced-nav {
+body[data-layout-version="glass"] .general-advanced-nav-wrap {
     margin: 0;
 }
 
@@ -196,12 +197,16 @@ body[data-layout-version="glass"] .general-layer-intro {
     line-height: 1.5;
 }
 
-body[data-layout-version="glass"] .general-advanced-nav {
+body[data-layout-version="glass"] .general-advanced-nav-wrap {
     padding: 0.75rem 1rem;
     background: var(--layout-surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border-bottom: 1px solid var(--layout-surface-border);
+}
+
+body[data-layout-version="glass"] .general-advanced-nav {
+    padding: 0;
 }
 
 body[data-layout-version="glass"] .general-advanced-nav a {

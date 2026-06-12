@@ -49,7 +49,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.17 — June 2026
 
-**Search guards, smart-collection sync & inline-edit polish** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud.
+**Search guards, smart-collection sync, inline-edit polish & Config → General layers** — `G` chord no longer leaks into page switch or shortcut search; search launcher keys respect overlays; inline delete and discard confirm work reliably over smart-collection rows with live sync to category columns and `allBookmarks`; reorder flush on navigation; page-rename error toast; Mac `Cmd+C` / `Cmd+Home`/`End`; overlay guards for swipe, omnibox, and paste during tag cloud. Config → General adds Essentials/Advanced/All layers with section nav, expand/collapse all, ↺ per-control resets, settings-search panel expansion, mobile search in General, General tour search step, and smart-collection master dirty sync.
 
 ### Dashboard
 
@@ -77,14 +77,26 @@ _No unreleased changes at this time._
 - **fix** **Omnibox focus** — closing the quick-add omnibox restores keyboard focus to the prior control.
 - **fix** **Search input a11y** — mobile search field and bookmark grid use `data-i18n-aria` labels in EN / NL / DE / FR.
 
+### Config → General
+
+- **new** **Essentials / Advanced / All** — layered General tab with persisted view, hash deep links (`#general/advanced/…`), sticky section nav with scroll highlighting, smart-collections and status summaries in Essentials, and **Expand all** / **Collapse all** in the All view.
+- **new** **↺ Reset to default** — per-control reset buttons across General (theme, layout, background, smart-collection limits, status tuning, search flags, and more); custom-select UI refreshes after reset.
+- **new** **Settings search** — matching panels expand before scroll; General tour step for `Ctrl+Shift+K` / `Cmd+Shift+K` (desktop); on phone, a subset search lives inside the General tab (language, theme, layout).
+- **new** **Mobile General** — device-specific intro; settings search moved into the General tab; clearer message when a panel is hidden on small screens.
+- **new** **Theme editor link** — open **Config → Theme** from Appearance essentials (unsaved-changes guard); favicon styling follows Save/dirty like other settings.
+- **fix** **Smart collections master** — the Essentials master toggle syncs child checkboxes and dirty state correctly.
+- **fix** **Hash & nav jumps** — `#general` preserves your stored layer; section links and settings-search results force collapsed panels open.
+- **fix** **Reset section guard** — Advanced reset card must be expanded before the destructive button is enabled.
+- **fix** **Language labels** — language names in the dropdown follow the current UI language; gradient presets use localized display names.
+
 ### Documentation
 
-- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, and overlay paste guards for v2026.06.17.
-- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 search guards and smart-collection sync.
+- **fix** **README & MANUAL** — smart-collection inline edit/delete sync, `G` chord vs page switch, `Ctrl`/`Cmd+Home`/`End`, overlay paste guards, and Config → General layers (expand/collapse all, ↺ resets, mobile search, tour search step) for v2026.06.17.
+- **fix** **In-app Help (EN / NL / DE / FR)** — What's new recap lists v2026.06.17 dashboard search guards, smart-collection sync, and Config → General polish.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v63` data version and `2026.06-dashboard-release-v57` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `search.js`, and `dashboard.css` query strings updated for Docker-mounted static files.
+- **fix** **Cache-bust** — `whats-new-v64` data version and `2026.06-dashboard-release-v57` dashboard release token; `dashboard.js`, `keyboard-navigation.js`, `search.js`, `dashboard.css`, and Config General assets (`config-general-layers`, `settings-search`, `general-tour`) query strings updated for Docker-mounted static files.
 
 ---
 

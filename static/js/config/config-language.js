@@ -132,10 +132,18 @@ class ConfigLanguage {
 
         // Populate options
         languageSelect.innerHTML = '';
+        const nameKeys = {
+            en: 'config.languageNameEn',
+            nl: 'config.languageNameNl',
+            de: 'config.languageNameDe',
+            fr: 'config.languageNameFr',
+        };
         Object.keys(this.availableLanguages).forEach(lang => {
             const option = document.createElement('option');
             option.value = lang;
-            option.textContent = this.availableLanguages[lang];
+            const labelKey = nameKeys[lang];
+            const label = labelKey ? this.t(labelKey) : '';
+            option.textContent = label && label !== labelKey ? label : this.availableLanguages[lang];
             languageSelect.appendChild(option);
         });
 

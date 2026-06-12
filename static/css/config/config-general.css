@@ -1,4 +1,8 @@
 /* ── General tab intro ── */
+.general-tab-intro:not([hidden]) ~ #general-layer-intro-essentials .general-layer-intro-hint {
+    display: none;
+}
+
 .general-tab-intro {
     padding: 0.85rem 1rem;
     border: 1px solid var(--border-primary);
@@ -53,6 +57,10 @@ body {
 .config-section.section-header {
     padding-top: 2rem;
     padding-bottom: 1.5rem;
+}
+
+:root {
+    --config-general-nav-sticky-top: 3.25rem;
 }
 
 .config-section.section-controls {

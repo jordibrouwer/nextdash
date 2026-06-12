@@ -673,14 +673,16 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Essentials vs Advanced (general)
 
-- **Essentials** — Language, appearance (including favicon styling), layout, everyday bookmark options, smart collections, and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`).  
-- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new.  
-- **Show all sections** button — toggles a flat view with every panel visible regardless of layer.  
+- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.  
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Sticky **section links** at the top jump to panels; the active section highlights while you scroll.  
+- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; same section nav as Advanced.  
+- **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).  
+- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav.  
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
 
 ### Find settings & quick actions (desktop config)
 
-- **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer and scroll there.  
+- **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
 - **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon explain settings search vs quick actions. Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
 
@@ -695,7 +697,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
-| **General** (10 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Save** |
+| **General** (11 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Search settings…** (`Ctrl+Shift+K`), **Save** |
 | **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed structure panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
@@ -812,7 +814,7 @@ See `extension/README.md` for development notes.
 
 On small screens, config limits to **General** and **Help**; use desktop for full bookmark editing and for **guided config tours** (General and Bookmarks).
 
-Within **General** on phone you only get **language**, **theme**, and **layout basics** — not the full Essentials/Advanced layers.
+Within **General** on phone you get **language**, **theme**, and **layout basics**, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers or guided General tour.
 
 ### Phone vs desktop
 

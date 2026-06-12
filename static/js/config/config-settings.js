@@ -1326,7 +1326,9 @@ class ConfigSettings {
             showPageTabsCheckbox.checked = settings.showPageTabs;
             showPageTabsCheckbox.addEventListener('change', (e) => {
                 settings.showPageTabs = e.target.checked;
+                this.setDependentControlState(['show-page-names-in-tabs-checkbox'], e.target.checked);
             });
+            this.setDependentControlState(['show-page-names-in-tabs-checkbox'], showPageTabsCheckbox.checked);
         }
 
         // Hide empty categories checkbox
@@ -1563,7 +1565,7 @@ class ConfigSettings {
         const showSmartRecentCollectionCheckbox = document.getElementById('show-smart-recent-collection-checkbox');
         const showSmartTodayCollectionCheckbox = document.getElementById('show-smart-today-collection-checkbox');
         if (showSmartTodayCollectionCheckbox) {
-            showSmartTodayCollectionCheckbox.checked = settings.showSmartTodayCollection !== false;
+            showSmartTodayCollectionCheckbox.checked = settings.showSmartTodayCollection ?? true;
             showSmartTodayCollectionCheckbox.addEventListener('change', (e) => {
                 settings.showSmartTodayCollection = e.target.checked;
                 this.toggleSmartCollectionControls('today', e.target.checked);
@@ -1614,7 +1616,7 @@ class ConfigSettings {
         }
 
         if (showSmartRecentCollectionCheckbox) {
-            showSmartRecentCollectionCheckbox.checked = settings.showSmartRecentCollection !== false;
+            showSmartRecentCollectionCheckbox.checked = settings.showSmartRecentCollection === true;
             showSmartRecentCollectionCheckbox.addEventListener('change', (e) => {
                 settings.showSmartRecentCollection = e.target.checked;
                 this.toggleSmartCollectionControls('recent', e.target.checked);
@@ -1624,7 +1626,7 @@ class ConfigSettings {
 
         const showSmartStaleCollectionCheckbox = document.getElementById('show-smart-stale-collection-checkbox');
         if (showSmartStaleCollectionCheckbox) {
-            showSmartStaleCollectionCheckbox.checked = settings.showSmartStaleCollection !== false;
+            showSmartStaleCollectionCheckbox.checked = settings.showSmartStaleCollection === true;
             showSmartStaleCollectionCheckbox.addEventListener('change', (e) => {
                 settings.showSmartStaleCollection = e.target.checked;
                 this.toggleSmartCollectionControls('stale', e.target.checked);
@@ -1900,7 +1902,12 @@ class ConfigSettings {
         const fontPresetSelect = document.getElementById('font-preset-select');
 
         if (themeSelect) settings.theme = themeSelect.value;
-        if (columnsInput) settings.columnsPerRow = parseInt(columnsInput.value);
+        if (columnsInput) {
+            const parsed = Number.parseInt(columnsInput.value, 10);
+            settings.columnsPerRow = Number.isFinite(parsed)
+                ? Math.min(6, Math.max(1, parsed))
+                : (settings.columnsPerRow ?? 3);
+        }
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
         const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
@@ -2049,6 +2056,44 @@ class ConfigSettings {
         if (showPinIconCheckbox) settings.showPinIcon = showPinIconCheckbox.checked;
         const showNoteIconCheckbox = document.getElementById('show-note-icon-checkbox');
         if (showNoteIconCheckbox) settings.showNoteIcon = showNoteIconCheckbox.checked;
+        const sortMethodSelectUI = document.getElementById('sort-method-select');
+        if (sortMethodSelectUI) settings.sortMethod = sortMethodSelectUI.value;
+        const autoDarkModeCheckboxUI = document.getElementById('auto-dark-mode-checkbox');
+        if (autoDarkModeCheckboxUI) settings.autoDarkMode = autoDarkModeCheckboxUI.checked;
+        const showSearchFlowBannerCheckboxUI = document.getElementById('show-search-flow-banner-checkbox');
+        if (showSearchFlowBannerCheckboxUI) settings.showSearchFlowBanner = showSearchFlowBannerCheckboxUI.checked;
+        const backgroundOpacityInputUI = document.getElementById('background-opacity-input');
+        if (backgroundOpacityInputUI) {
+            settings.backgroundOpacity = Number(backgroundOpacityInputUI.value);
+        }
+        const activeFontSizeBtn = document.querySelector('.font-size-option.active');
+        if (activeFontSizeBtn?.dataset?.size) {
+            settings.fontSize = activeFontSizeBtn.dataset.size;
+        }
+        const activeBgBtn = document.querySelector('.bg-type-btn.active');
+        if (activeBgBtn?.dataset?.bgType) settings.backgroundType = activeBgBtn.dataset.bgType;
+        const activePresetBtn = document.querySelector('.bg-preset-btn.active');
+        if (activePresetBtn?.dataset?.preset) settings.backgroundGradient = activePresetBtn.dataset.preset;
+        const bgImageUrlInputUI = document.getElementById('bg-image-url-input');
+        if (bgImageUrlInputUI) settings.backgroundImageUrl = bgImageUrlInputUI.value.trim();
+        const fontWeightSelectUI = document.getElementById('font-weight-select');
+        if (fontWeightSelectUI) settings.fontWeight = fontWeightSelectUI.value;
+        const showBackgroundDotsCheckboxUI = document.getElementById('show-background-dots-checkbox');
+        if (showBackgroundDotsCheckboxUI) settings.showBackgroundDots = showBackgroundDotsCheckboxUI.checked;
+        const themeForIcons = settings.theme || themeSelect?.value;
+        const themeIconEnable = document.getElementById('theme-iconstyling-enable');
+        const themeIconStyle = document.getElementById('theme-iconstyling-style');
+        const themeIconIntensity = document.getElementById('theme-iconstyling-intensity');
+        if (themeForIcons && themeIconEnable) {
+            settings.themeIconStyling = settings.themeIconStyling || {};
+            settings.themeIconStyling[themeForIcons] = {
+                enabled: themeIconEnable.checked,
+                style: themeIconStyle?.value || 'muted',
+                intensity: parseFloat(themeIconIntensity?.value) || 0.5,
+            };
+        }
+
+        window.configManager?.generalLayers?.syncSmartCollectionsMasterFromChildren?.();
     }
 
     /**
@@ -2144,6 +2189,8 @@ class ConfigSettings {
         if (!enabled) {
             const ping = document.getElementById('show-ping-checkbox');
             if (ping) ping.checked = false;
+            const settings = window.configManager?.settingsData;
+            if (settings) settings.showPing = false;
         }
     }
 
@@ -2333,14 +2380,42 @@ class ConfigSettings {
      * @param {Object} settings - Live settings object
      * @param {Function} [onReset] - Optional callback after reset (receives new value)
      */
+    getResetLabel(key, fallback) {
+        const full = `config.${key}`;
+        const v = this.t(full);
+        return v !== full ? v : fallback;
+    }
+
+    syncBoundControlUI(el) {
+        if (!el) return;
+        el.__customSelectInstance?.refresh?.();
+    }
+
+    getSettingResetHost(el) {
+        if (!el) return null;
+        if (el.type === 'checkbox') {
+            return el.closest('.checkbox-label') || el.closest('.checkbox-tree-item') || el.parentElement;
+        }
+        return el.closest('.form-group') || el.closest('.number-input-group')?.closest('.form-group')
+            || el.parentElement;
+    }
+
     watchSetting(el, key, defaultValue, settings, onReset) {
         if (!el) return;
+        if (el.dataset.settingResetBound === '1') return;
+
+        const host = this.getSettingResetHost(el);
+        if (host?.querySelector('.setting-reset-btn')) return;
+        el.dataset.settingResetBound = '1';
+
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const resetAria = this.getResetLabel('settingResetAria', resetTitle);
 
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'setting-reset-btn';
-        btn.title = 'Reset to default';
-        btn.setAttribute('aria-label', 'Reset to default');
+        btn.title = resetTitle;
+        btn.setAttribute('aria-label', resetAria);
         btn.textContent = '↺';
 
         const getElValue = () => {
@@ -2365,9 +2440,12 @@ class ConfigSettings {
             const isDefault = valuesEqual(current, defaultValue);
             btn.classList.toggle('setting-reset-btn--visible', !isDefault);
             if (!isDefault) {
-                btn.title = `Reset to default: ${formatVal(defaultValue)} (was ${formatVal(current)})`;
+                const changed = this.getResetLabel('settingResetChanged', 'Reset to {default} (was {previous})')
+                    .replace('{default}', formatVal(defaultValue))
+                    .replace('{previous}', formatVal(current));
+                btn.title = changed;
             } else {
-                btn.title = 'Reset to default';
+                btn.title = resetTitle;
             }
         };
 
@@ -2379,29 +2457,258 @@ class ConfigSettings {
                 el.value = String(defaultValue);
             }
             settings[key] = defaultValue;
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+            const eventName = (el.type === 'number' || el.type === 'range') ? 'input' : 'change';
+            el.dispatchEvent(new Event(eventName, { bubbles: true }));
+            this.syncBoundControlUI(el);
             updateVisibility();
             if (onReset) onReset(defaultValue);
             const ui = window.configManager && window.configManager.ui;
             if (ui && typeof ui.showNotification === 'function') {
-                ui.showNotification(
-                    `Reset to ${formatVal(defaultValue)} (was ${formatVal(previousValue)})`,
-                    'success'
-                );
+                const msg = this.getResetLabel('settingResetChanged', 'Reset to {default} (was {previous})')
+                    .replace('{default}', formatVal(defaultValue))
+                    .replace('{previous}', formatVal(previousValue));
+                ui.showNotification(msg, 'success');
             }
         });
 
-        // Initialise element value from settings
-        if (el.type === 'checkbox') {
-            el.checked = typeof settings[key] === 'boolean' ? settings[key] : Boolean(defaultValue);
-        } else if (el.type === 'number') {
-            el.value = settings[key] ?? defaultValue;
+        if (host) {
+            host.style.position = 'relative';
+            host.appendChild(btn);
         } else {
-            if (settings[key] !== undefined) el.value = settings[key];
+            el.insertAdjacentElement('afterend', btn);
         }
+        el.addEventListener('change', updateVisibility);
+        if (el.type === 'number') {
+            el.addEventListener('input', updateVisibility);
+        }
+        updateVisibility();
+    }
 
-        el.parentElement.style.position = 'relative';
-        el.insertAdjacentElement('afterend', btn);
+    /**
+     * ↺ reset for font-size button group (no single select element).
+     */
+    watchFontSizeGroup(settings, markDirty) {
+        const selector = document.querySelector('.font-size-selector');
+        const options = selector ? [...selector.querySelectorAll('.font-size-option')] : [];
+        if (!selector || options.length === 0 || selector.querySelector('.setting-reset-btn')) return;
+
+        const defaultValue = this.getDefaults().fontSize;
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const resetAria = this.getResetLabel('settingResetAria', resetTitle);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'setting-reset-btn';
+        btn.title = resetTitle;
+        btn.setAttribute('aria-label', resetAria);
+        btn.textContent = '↺';
+
+        const getActiveSize = () => {
+            const active = selector.querySelector('.font-size-option.active');
+            return active?.dataset?.size || settings.fontSize || defaultValue;
+        };
+
+        const updateVisibility = () => {
+            const current = getActiveSize();
+            btn.classList.toggle('setting-reset-btn--visible', current !== defaultValue);
+        };
+
+        btn.addEventListener('click', () => {
+            const previousValue = getActiveSize();
+            settings.fontSize = defaultValue;
+            options.forEach((opt) => {
+                opt.classList.toggle('active', opt.dataset.size === defaultValue);
+            });
+            this.applyFontSize(defaultValue);
+            updateVisibility();
+            if (markDirty) markDirty();
+            options[0]?.dispatchEvent(new Event('change', { bubbles: true }));
+            const ui = window.configManager?.ui;
+            if (ui && typeof ui.showNotification === 'function') {
+                const formatVal = (v) => String(v);
+                const msg = this.getResetLabel('settingResetChanged', 'Reset to {default} (was {previous})')
+                    .replace('{default}', formatVal(defaultValue))
+                    .replace('{previous}', formatVal(previousValue));
+                ui.showNotification(msg, 'success');
+            }
+        });
+
+        selector.style.position = 'relative';
+        selector.appendChild(btn);
+        options.forEach((opt) => opt.addEventListener('click', () => {
+            setTimeout(updateVisibility, 0);
+        }));
+        updateVisibility();
+    }
+
+    watchBgTypeGroup(settings, markDirty) {
+        const group = document.querySelector('.bg-type-selector');
+        if (!group || group.querySelector('.setting-reset-btn')) return;
+
+        const defaultValue = this.getDefaults().backgroundType;
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const resetAria = this.getResetLabel('settingResetAria', resetTitle);
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.className = 'setting-reset-btn';
+        resetBtn.title = resetTitle;
+        resetBtn.setAttribute('aria-label', resetAria);
+        resetBtn.textContent = '↺';
+
+        const getCurrent = () => settings.backgroundType || defaultValue;
+        const updateVisibility = () => {
+            resetBtn.classList.toggle('setting-reset-btn--visible', getCurrent() !== defaultValue);
+        };
+
+        resetBtn.addEventListener('click', () => {
+            settings.backgroundType = defaultValue;
+            settings.backgroundGradient = '';
+            settings.backgroundImageUrl = '';
+            this.syncBgTypeUI(defaultValue);
+            this.syncPresetUI('');
+            this.applyBackground(settings);
+            updateVisibility();
+            if (markDirty) markDirty();
+            group.querySelector('.bg-type-btn')?.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        group.classList.add('setting-reset-host');
+        group.appendChild(resetBtn);
+        document.querySelectorAll('.bg-type-btn').forEach((typeBtn) => {
+            typeBtn.addEventListener('click', () => requestAnimationFrame(updateVisibility));
+        });
+        updateVisibility();
+    }
+
+    bgPresetLabel(id) {
+        const key = `bgPreset${id.charAt(0).toUpperCase()}${id.slice(1)}`;
+        const full = `config.${key}`;
+        const label = this.t(full);
+        return label !== full ? label : id;
+    }
+
+    watchRangeSetting(el, key, defaultValue, settings, markDirty, { onApply } = {}) {
+        if (!el || el.type !== 'range') return;
+        if (el.dataset.settingResetBound === '1') return;
+        const rangeHost = el.closest('.form-group') || el.parentElement;
+        if (rangeHost?.querySelector('.setting-reset-btn')) return;
+        el.dataset.settingResetBound = '1';
+
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const resetAria = this.getResetLabel('settingResetAria', resetTitle);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'setting-reset-btn';
+        btn.title = resetTitle;
+        btn.setAttribute('aria-label', resetAria);
+        btn.textContent = '↺';
+
+        const getVal = () => parseFloat(el.value);
+        const updateVisibility = () => {
+            btn.classList.toggle('setting-reset-btn--visible', getVal() !== Number(defaultValue));
+        };
+
+        btn.addEventListener('click', () => {
+            el.value = String(defaultValue);
+            settings[key] = defaultValue;
+            if (onApply) onApply(defaultValue);
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            updateVisibility();
+            if (markDirty) markDirty();
+        });
+
+        const host = el.closest('.form-group') || el.parentElement;
+        if (host) {
+            host.style.position = 'relative';
+            host.appendChild(btn);
+        }
+        el.addEventListener('input', updateVisibility);
+        updateVisibility();
+    }
+
+    watchBgOpacity(settings, markDirty) {
+        this.watchRangeSetting(
+            document.getElementById('background-opacity-input'),
+            'backgroundOpacity',
+            this.getDefaults().backgroundOpacity,
+            settings,
+            markDirty,
+            {
+                onApply: (val) => this.applyBackgroundOpacity(val),
+            }
+        );
+    }
+
+    watchBgGradientPreset(settings, markDirty) {
+        const grid = document.getElementById('bg-preset-grid');
+        if (!grid || grid.querySelector('.setting-reset-btn')) return;
+
+        const defaultValue = '';
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'setting-reset-btn';
+        btn.title = resetTitle;
+        btn.setAttribute('aria-label', resetTitle);
+        btn.textContent = '↺';
+
+        const getCurrent = () => settings.backgroundGradient || '';
+        const updateVisibility = () => {
+            btn.classList.toggle('setting-reset-btn--visible', getCurrent() !== defaultValue);
+        };
+
+        btn.addEventListener('click', () => {
+            settings.backgroundGradient = defaultValue;
+            this.syncPresetUI('');
+            this.applyBackground(settings);
+            updateVisibility();
+            if (markDirty) markDirty();
+        });
+
+        grid.classList.add('setting-reset-host');
+        grid.appendChild(btn);
+        grid.addEventListener('click', (e) => {
+            if (e.target.closest('.bg-preset-btn')) requestAnimationFrame(updateVisibility);
+        });
+        updateVisibility();
+    }
+
+    watchSmartPageSelect(selectId, key, settings, markDirty) {
+        const el = document.getElementById(selectId);
+        const host = el?.closest('.form-group') || el?.parentElement;
+        if (!el || el.dataset.settingResetBound === '1' || host?.querySelector('.setting-reset-btn')) return;
+        el.dataset.settingResetBound = '1';
+
+        const defaultValue = [];
+        const resetTitle = this.getResetLabel('settingResetTitle', 'Reset to default');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'setting-reset-btn';
+        btn.title = resetTitle;
+        btn.setAttribute('aria-label', resetTitle);
+        btn.textContent = '↺';
+
+        const getSelected = () => this.getSelectedPageIds(el);
+        const arraysEqual = (a, b) => {
+            if (a.length !== b.length) return false;
+            return a.every((v, i) => Number(v) === Number(b[i]));
+        };
+        const updateVisibility = () => {
+            btn.classList.toggle('setting-reset-btn--visible', !arraysEqual(getSelected(), defaultValue));
+        };
+
+        btn.addEventListener('click', () => {
+            [...el.options].forEach((opt) => { opt.selected = false; });
+            settings[key] = [];
+            updateVisibility();
+            if (markDirty) markDirty();
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        if (host) {
+            host.style.position = 'relative';
+            host.appendChild(btn);
+        }
         el.addEventListener('change', updateVisibility);
         updateVisibility();
     }
@@ -2425,14 +2732,17 @@ class ConfigSettings {
         watch('theme-select', 'theme');
         watch('columns-input', 'columnsPerRow');
         watch('density-mode-select', 'densityMode');
-        watch('language-select', 'language');
-        watch('font-size-select', 'fontSize');
+        watch('layout-version-select', 'layoutVersion');
+        watch('layout-preset-select', 'layoutPreset');
+        watch('sort-method-select', 'sortMethod');
+        this.watchFontSizeGroup(settings, markDirty);
+        watch('font-preset-select', 'fontPreset');
         watch('font-weight-select', 'fontWeight');
         watch('date-format-select', 'dateFormat');
         watch('time-format-select', 'timeFormat');
         watch('weather-unit-select', 'weatherUnit');
         watch('weather-refresh-select', 'weatherRefreshMinutes');
-        watch('link-preview-delay-select', 'linkPreviewHoverDelayMs');
+        watch('link-preview-hover-delay-select', 'linkPreviewHoverDelayMs');
         watch('new-tab-checkbox', 'openInNewTab');
         watch('show-background-dots-checkbox', 'showBackgroundDots');
         watch('show-title-checkbox', 'showTitle');
@@ -2455,7 +2765,46 @@ class ConfigSettings {
         watch('packed-columns-checkbox', 'packedColumns');
         watch('include-finders-in-search-checkbox', 'includeFindersInSearch');
         watch('enable-fuzzy-suggestions-checkbox', 'enableFuzzySuggestions');
+        watch('fuzzy-suggestions-start-with-checkbox', 'fuzzySuggestionsStartWith');
+        watch('keep-search-open-when-empty-checkbox', 'keepSearchOpenWhenEmpty');
+        watch('show-search-flow-banner-checkbox', 'showSearchFlowBanner');
+        watch('show-weather-with-date-checkbox', 'showWeatherWithDate');
         watch('interleave-mode-checkbox', 'interleaveMode');
+        watch('status-offline-retries-input', 'statusOfflineRetries');
+        watch('status-offline-retry-delay-input', 'statusOfflineRetryDelayMs');
+        watch('status-recheck-interval-select', 'statusRecheckIntervalMinutes');
+        watch('weather-source-select', 'weatherSource');
+        watch('weather-location-input', 'weatherLocation');
+        watch('tag-collections-min-count', 'tagCollectionsMinCount');
+        watch('smart-today-limit-select', 'smartTodayLimit');
+        watch('smart-recent-limit-select', 'smartRecentLimit');
+        watch('smart-stale-limit-select', 'smartStaleLimit');
+        watch('smart-most-used-limit-select', 'smartMostUsedLimit');
+        watch('bg-image-url-input', 'backgroundImageUrl');
+        watch('auto-dark-mode-checkbox', 'autoDarkMode');
+        watch('paste-url-quick-add-checkbox', 'pasteUrlQuickAdd');
+        watch('show-status-checkbox', 'showStatus');
+        watch('show-ping-checkbox', 'showPing');
+        watch('colorize-status-checkbox', 'colorizeStatus');
+        watch('skip-fast-ping-checkbox', 'skipFastPing');
+        watch('hypr-mode-checkbox', 'hyprMode');
+        watch('show-pin-icon-checkbox', 'showPinIcon');
+        watch('show-note-icon-checkbox', 'showNoteIcon');
+        watch('show-tag-collections-checkbox', 'showTagCollections');
+        watch('show-smart-today-collection-checkbox', 'showSmartTodayCollection');
+        watch('show-smart-recent-collection-checkbox', 'showSmartRecentCollection');
+        watch('show-smart-stale-collection-checkbox', 'showSmartStaleCollection');
+        watch('show-smart-most-used-collection-checkbox', 'showSmartMostUsedCollection');
+        watch('smart-today-work-keywords-input', 'smartTodayWorkKeywords');
+        watch('smart-today-evening-keywords-input', 'smartTodayEveningKeywords');
+        watch('smart-today-weekend-keywords-input', 'smartTodayWeekendKeywords');
+        this.watchBgTypeGroup(settings, markDirty);
+        this.watchBgOpacity(settings, markDirty);
+        this.watchBgGradientPreset(settings, markDirty);
+        this.watchSmartPageSelect('smart-today-pages-select', 'smartTodayPageIds', settings, markDirty);
+        this.watchSmartPageSelect('smart-recent-pages-select', 'smartRecentPageIds', settings, markDirty);
+        this.watchSmartPageSelect('smart-stale-pages-select', 'smartStalePageIds', settings, markDirty);
+        this.watchSmartPageSelect('smart-most-used-pages-select', 'smartMostUsedPageIds', settings, markDirty);
     }
 
     /**
@@ -2513,7 +2862,14 @@ class ConfigSettings {
             enableCustomFavicon: false,
             customFaviconPath: '',
             language: 'en',
+            sortMethod: 'order',
+            layoutVersion: 'classic',
+            layoutPreset: 'default',
+            pasteUrlQuickAdd: true,
+            skipFastPing: false,
             interleaveMode: false,
+            fuzzySuggestionsStartWith: false,
+            keepSearchOpenWhenEmpty: false,
             showPageTabs: true,
             hideEmptyCategories: true,
             alwaysCollapseCategories: false,
@@ -2525,6 +2881,8 @@ class ConfigSettings {
             showSmartTodayCollection: true,
             showSmartStaleCollection: false,
             showSmartMostUsedCollection: false,
+            showTagCollections: false,
+            tagCollectionsMinCount: 0,
             smartTodayLimit: 8,
             smartRecentLimit: 50,
             smartStaleLimit: 50,
@@ -2648,14 +3006,22 @@ class ConfigSettings {
             btn.className = 'bg-preset-btn';
             btn.dataset.preset = id;
             btn.style.background = css;
-            btn.title = id;
-            btn.setAttribute('aria-label', id);
+            const displayName = this.bgPresetLabel(id);
+            const ariaTpl = this.t('config.bgPresetAria');
+            const ariaLabel = ariaTpl !== 'config.bgPresetAria'
+                ? ariaTpl.replace('{name}', displayName)
+                : `Background preset: ${displayName}`;
+            btn.title = displayName;
+            btn.setAttribute('aria-label', ariaLabel);
             btn.addEventListener('click', () => {
                 const settingsData = this._currentSettings;
                 if (!settingsData) return;
+                settingsData.backgroundType = 'gradient';
                 settingsData.backgroundGradient = id;
+                this.syncBgTypeUI('gradient');
                 this.syncPresetUI(id);
                 this.applyBackground(settingsData);
+                window.configManager?.scheduleDirtyRecompute?.();
             });
             grid.appendChild(btn);
         });

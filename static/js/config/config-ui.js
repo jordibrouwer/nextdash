@@ -3,6 +3,8 @@
  * Handles tabs, number inputs, and notifications
  */
 
+const CONFIG_GENERAL_HASH_KEY = 'nextdash:config-general-hash';
+
 class ConfigUI {
     constructor() {
         this.notificationTimeout = null;
@@ -10,6 +12,21 @@ class ConfigUI {
         this._currentTab = 'general';
         this.initTabs();
         this.initNumberInputControls();
+    }
+
+    _saveGeneralHash(hash) {
+        if (!/^#general(\/|$)/.test(hash || '')) return;
+        try {
+            sessionStorage.setItem(CONFIG_GENERAL_HASH_KEY, hash);
+        } catch { /* ignore */ }
+    }
+
+    _restoreGeneralHash() {
+        try {
+            const saved = sessionStorage.getItem(CONFIG_GENERAL_HASH_KEY);
+            if (saved && /^#general(\/|$)/.test(saved)) return saved;
+        } catch { /* ignore */ }
+        return '#general';
     }
 
     /**
@@ -40,6 +57,7 @@ class ConfigUI {
 
         // Function to switch to a specific tab
         const switchToTab = (targetTab) => {
+            const previousTab = this._currentTab;
             tabButtons.forEach(btn => {
                 btn.classList.remove('active');
                 btn.setAttribute('aria-selected', 'false');
@@ -65,17 +83,23 @@ class ConfigUI {
             this.updateBreadcrumb(targetTab, generalSub);
             this.initBreadcrumbObserver(targetTab);
 
-            // Update URL hash (preserve general layer subpaths)
+            // Update URL hash (preserve general layer subpaths across tab switches)
             if (targetTab === 'colors') {
                 const sub = (() => {
                     try { return sessionStorage.getItem('nextdash:colors-subtab') || 'custom'; } catch (_) { return 'custom'; }
                 })();
                 window.location.hash = sub === 'custom' ? '#colors' : `#colors/${sub}`;
-            } else if (targetTab !== 'general') {
+            } else if (targetTab === 'general') {
+                if (!/^#general(\/|$)/.test(window.location.hash)) {
+                    const restored = this._restoreGeneralHash();
+                    window.location.hash = restored;
+                    window.configManager?.generalLayers?.applyHash?.(restored);
+                }
+            } else {
+                if (previousTab === 'general' && /^#general(\/|$)/.test(window.location.hash)) {
+                    this._saveGeneralHash(window.location.hash);
+                }
                 window.location.hash = `#${targetTab}`;
-            } else if (!/^#general(\/|$)/.test(window.location.hash)) {
-                window.location.hash = '#general';
-                window.configManager?.generalLayers?.applyLayer?.('essentials', { updateHash: false });
             }
             
             // Keep the selected page when switching tabs; only refresh custom-select chrome.

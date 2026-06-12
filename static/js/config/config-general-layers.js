@@ -7,9 +7,12 @@ class ConfigGeneralLayers {
         this.root = null;
         this.toolbar = null;
         this.advancedNav = null;
+        this.advancedNavWrap = null;
         this.layer = 'essentials';
+        this._syncSmartMasterFromChildren = null;
         this._navObserver = null;
         this._smartSyncing = false;
+        this._handlersWired = false;
 
         this.smartCheckboxIds = [
             'show-smart-today-collection-checkbox',
@@ -32,17 +35,22 @@ class ConfigGeneralLayers {
         this.root = document.querySelector('.general-layout');
         this.toolbar = document.getElementById('general-layer-toolbar');
         this.advancedNav = document.getElementById('general-advanced-nav');
+        this.advancedNavWrap = document.getElementById('general-advanced-nav-wrap');
         if (!this.root || !this.toolbar) return;
 
         this.restructurePanels();
-        this.setupLayerSwitcher();
-        this.setupSmartCollectionsMaster();
-        this.setupSmartCollectionLabelPropagation();
-        this.setupAdvancedNav();
+        if (!this._handlersWired) {
+            this.setupLayerSwitcher();
+            this.setupExpandCollapseAll();
+            this.setupLayerJumps();
+            this.setupSmartCollectionsMaster();
+            this.setupSmartCollectionLabelPropagation();
+            this.setupAdvancedNav();
+            window.addEventListener('hashchange', () => this.applyHash(window.location.hash));
+            this._handlersWired = true;
+        }
         this.refreshCheckboxTreeSymbols();
         this.applyLayer(this.getStoredLayer(), { updateHash: false });
-        this.applyHash(window.location.hash);
-        window.addEventListener('hashchange', () => this.applyHash(window.location.hash));
         if (window.MobileExperience?.isMobileLayout?.()) {
             window.MobileExperience.applyConfigGeneralPanels(this);
         }
@@ -52,12 +60,15 @@ class ConfigGeneralLayers {
         if (this.root.dataset.layersReady === '1') return;
 
         this.splitBasicsPanel();
+        this.injectAppearanceEssentialsActions(this.root.querySelector('[data-general-panel="basics-core"]'));
+        this.wireThemeColorsLink();
         this.createBookmarksEssentialsPanel();
         this.createSmartCollectionsSummary();
         this.createStatusEssentialsSummary();
         this.splitAdvancedGeneralPanel();
         this.assignPanelTiers();
         this.reorderPanels();
+        this.refreshCheckboxTreeSymbols();
         this.root.dataset.layersReady = '1';
     }
 
@@ -124,6 +135,52 @@ class ConfigGeneralLayers {
         moveToAdvanced.forEach((el) => advanced.appendChild(el));
 
         basics.replaceWith(core, advanced);
+        this.injectAppearanceEssentialsActions(core);
+    }
+
+    injectAppearanceEssentialsActions(core) {
+        if (!core || core.querySelector('#general-theme-colors-link')) return;
+        const row = document.createElement('p');
+        row.className = 'general-card-intro general-appearance-actions';
+        row.innerHTML = '<a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a>';
+        const intro = core.querySelector('.general-card-intro');
+        if (intro) intro.after(row);
+        else core.querySelector('.section-title')?.after(row);
+        this.wireThemeColorsLink();
+    }
+
+    wireThemeColorsLink() {
+        const link = document.getElementById('general-theme-colors-link');
+        if (!link || link.dataset.colorsNavBound === '1') return;
+        link.dataset.colorsNavBound = '1';
+        link.addEventListener('click', async (e) => {
+            const mgr = window.configManager;
+            if (!mgr) return;
+            if (!mgr.isDirty && !mgr.hasUnsavedColorChanges?.()) return;
+            e.preventDefault();
+            if (mgr.isDirty) {
+                const ok = await mgr.confirmLeaveWithUnsavedChanges();
+                if (!ok) return;
+            }
+            if (mgr.hasUnsavedColorChanges?.()) {
+                const ok = await mgr.colorsEditor?.confirmLeave?.();
+                if (!ok) return;
+            }
+            if (mgr.ui?.switchToTab) {
+                mgr.ui.switchToTab('colors');
+            }
+            window.location.hash = '#colors';
+            await mgr.ensureColorsEditor?.();
+        });
+    }
+
+    syncGeneralCardsA11y(scope = this.root) {
+        if (!scope) return;
+        scope.querySelectorAll('.general-card[data-general-panel]').forEach((card) => {
+            const title = card.querySelector('.section-title');
+            if (!title) return;
+            title.setAttribute('aria-expanded', card.classList.contains('is-collapsed') ? 'false' : 'true');
+        });
     }
 
     createBookmarksEssentialsPanel() {
@@ -139,20 +196,29 @@ class ConfigGeneralLayers {
         essentials.innerHTML = `
             <h3 class="section-title" data-i18n="config.generalBookmarksEssentialsTitle">Bookmarks</h3>
             <p class="general-card-intro" data-i18n="config.generalBookmarksEssentialsIntro">Everyday bookmark display and navigation.</p>
+            <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Pin icons, link previews, category collapse, and more are under Advanced → Bookmarks.</p>
         `;
 
         const sortGroup = display.querySelector('#sort-method-select')?.closest('.form-group');
         if (sortGroup) essentials.appendChild(sortGroup);
 
-        const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
-        if (iconsItem) essentials.appendChild(iconsItem);
+        const tree = document.createElement('div');
+        tree.className = 'checkbox-tree';
 
-        ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'hide-empty-categories-checkbox', 'show-page-tabs-checkbox'].forEach((id) => {
+        const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
+        if (iconsItem) tree.appendChild(iconsItem);
+
+        ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'hide-empty-categories-checkbox'].forEach((id) => {
             const item = display.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
-            if (item) essentials.appendChild(item);
+            if (item) tree.appendChild(item);
         });
+        const pageTabsItem = display.querySelector('#show-page-tabs-checkbox')?.closest('.checkbox-tree-item');
+        if (pageTabsItem) tree.appendChild(pageTabsItem);
         const pageNamesItem = display.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
-        if (pageNamesItem) essentials.appendChild(pageNamesItem);
+        if (pageNamesItem) tree.appendChild(pageNamesItem);
+
+        if (tree.children.length > 0) essentials.appendChild(tree);
+        this.refreshCheckboxTreeSymbols(tree);
 
         display.parentNode.insertBefore(essentials, display);
     }
@@ -169,6 +235,7 @@ class ConfigGeneralLayers {
         summary.dataset.configTier = 'essentials';
         summary.innerHTML = `
             <h3 class="section-title" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</h3>
+            <p id="smart-collections-enabled-summary" class="smart-collections-enabled-summary" aria-live="polite"></p>
             <div class="checkbox-tree">
                 <div class="checkbox-tree-item">
                     <label class="checkbox-label">
@@ -193,6 +260,17 @@ class ConfigGeneralLayers {
         if (full.dataset.configTier !== 'advanced') {
             full.dataset.configTier = 'advanced';
         }
+        this.syncSmartCollectionsSummaryCount();
+    }
+
+    syncSmartCollectionsSummaryCount() {
+        const el = document.getElementById('smart-collections-enabled-summary');
+        if (!el) return;
+        const total = this.smartCheckboxIds.length;
+        const on = this.smartCheckboxIds.filter((id) => document.getElementById(id)?.checked).length;
+        const tpl = this.t('smartCollectionsEnabledCount', '{count} of {total} enabled');
+        el.textContent = tpl.replace('{count}', String(on)).replace('{total}', String(total));
+        el.hidden = total === 0;
     }
 
     createStatusEssentialsSummary() {
@@ -344,6 +422,76 @@ class ConfigGeneralLayers {
                 this.applyLayer('all', { updateHash: true });
             });
         }
+
+        this.setupLayerToolbarA11y(buttons, showAllLink);
+    }
+
+    setupExpandCollapseAll() {
+        const bar = document.getElementById('general-panels-bulk-actions');
+        const expandBtn = document.getElementById('general-expand-all-btn');
+        const collapseBtn = document.getElementById('general-collapse-all-btn');
+        if (!bar || !expandBtn || !collapseBtn) return;
+
+        const visibleCards = () => [...this.root.querySelectorAll('[data-general-panel]')].filter((card) => !card.hidden);
+
+        expandBtn.addEventListener('click', () => {
+            visibleCards().forEach((card) => {
+                if (card.getAttribute('data-general-panel') === 'reset') return;
+                card.classList.remove('is-collapsed');
+            });
+            this.syncGeneralCardsA11y();
+            window.configManager?._persistGeneralPanelState?.();
+            window.configManager?.syncResetPanelGuard?.();
+        });
+
+        collapseBtn.addEventListener('click', () => {
+            visibleCards().forEach((card) => {
+                card.classList.add('is-collapsed');
+            });
+            this.syncGeneralCardsA11y();
+            window.configManager?._persistGeneralPanelState?.();
+            window.configManager?.syncResetPanelGuard?.();
+        });
+    }
+
+    setupLayerToolbarA11y(layerButtons, showAllLink) {
+        const layerBtnList = Array.from(layerButtons);
+        const focusables = [...layerBtnList];
+        if (showAllLink) focusables.push(showAllLink);
+
+        const syncTabIndex = (activeEl) => {
+            focusables.forEach((el) => {
+                el.setAttribute('tabindex', el === activeEl ? '0' : '-1');
+            });
+        };
+
+        this._toolbarFocusables = focusables;
+        this.syncToolbarTabIndex = syncTabIndex;
+
+        const initial = layerBtnList.find((btn) => btn.classList.contains('is-active')) || layerBtnList[0];
+        if (this.layer === 'all' && showAllLink) syncTabIndex(showAllLink);
+        else if (initial) syncTabIndex(initial);
+
+        layerBtnList.forEach((btn) => {
+            btn.addEventListener('click', () => syncTabIndex(btn));
+        });
+        if (showAllLink) {
+            showAllLink.addEventListener('click', () => syncTabIndex(showAllLink));
+        }
+
+        this.toolbar.addEventListener('keydown', (e) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+            const current = document.activeElement;
+            if (!focusables.includes(current)) return;
+            e.preventDefault();
+            let idx = focusables.indexOf(current);
+            if (e.key === 'ArrowRight') idx = (idx + 1) % focusables.length;
+            else if (e.key === 'ArrowLeft') idx = (idx - 1 + focusables.length) % focusables.length;
+            else if (e.key === 'Home') idx = 0;
+            else if (e.key === 'End') idx = focusables.length - 1;
+            focusables[idx].focus();
+            syncTabIndex(focusables[idx]);
+        });
     }
 
     getStoredLayer() {
@@ -359,6 +507,7 @@ class ConfigGeneralLayers {
             this.root = document.querySelector('.general-layout');
             this.toolbar = this.toolbar || document.getElementById('general-layer-toolbar');
             this.advancedNav = this.advancedNav || document.getElementById('general-advanced-nav');
+            this.advancedNavWrap = this.advancedNavWrap || document.getElementById('general-advanced-nav-wrap');
         }
         if (!this.root) return;
 
@@ -384,12 +533,17 @@ class ConfigGeneralLayers {
 
         const introEss = document.getElementById('general-layer-intro-essentials');
         const introAdv = document.getElementById('general-layer-intro-advanced');
+        const introAll = document.getElementById('general-layer-intro-all');
         if (introEss) introEss.hidden = this.layer !== 'essentials';
         if (introAdv) introAdv.hidden = this.layer !== 'advanced';
+        if (introAll) introAll.hidden = this.layer !== 'all';
 
-        if (this.advancedNav) {
-            this.advancedNav.hidden = this.layer !== 'advanced';
-        }
+        const showNav = this.layer === 'advanced' || this.layer === 'all';
+        if (this.advancedNavWrap) this.advancedNavWrap.hidden = !showNav;
+        else if (this.advancedNav) this.advancedNav.hidden = !showNav;
+
+        const bulkBar = document.getElementById('general-panels-bulk-actions');
+        if (bulkBar) bulkBar.hidden = this.layer !== 'all';
 
         this.toolbar.querySelectorAll('[data-general-layer]').forEach((btn) => {
             const active = btn.getAttribute('data-general-layer') === this.layer;
@@ -397,7 +551,16 @@ class ConfigGeneralLayers {
             btn.setAttribute('aria-selected', active ? 'true' : 'false');
         });
         const showAllLink = document.getElementById('general-layer-show-all');
-        if (showAllLink) showAllLink.classList.toggle('is-active', this.layer === 'all');
+        if (showAllLink) {
+            showAllLink.classList.toggle('is-active', this.layer === 'all');
+            showAllLink.setAttribute('aria-selected', this.layer === 'all' ? 'true' : 'false');
+        }
+
+        const layerBtns = Array.from(this.toolbar.querySelectorAll('[data-general-layer]'));
+        const activeToolbarEl = this.layer === 'all'
+            ? showAllLink
+            : layerBtns.find((b) => b.getAttribute('data-general-layer') === this.layer) || layerBtns[0];
+        if (activeToolbarEl) this.syncToolbarTabIndex?.(activeToolbarEl);
 
         if (updateHash) {
             const panelPart = scrollPanel ? `/${scrollPanel}` : '';
@@ -405,11 +568,17 @@ class ConfigGeneralLayers {
             if (window.location.hash !== hash) {
                 window.history.replaceState(null, '', hash);
             }
+            try {
+                sessionStorage.setItem('nextdash:config-general-hash', hash);
+            } catch { /* ignore */ }
         }
 
         if (scrollPanel) {
             this.scrollToPanel(scrollPanel, { switchLayer: true });
         }
+
+        this.refreshAdvancedNavObserver();
+        window.configManager?.refreshGeneralPanelExpandState?.();
 
         window.configManager?.ui?.updateBreadcrumb?.(
             'general',
@@ -431,7 +600,7 @@ class ConfigGeneralLayers {
 
         const rest = raw.slice('general'.length).replace(/^\//, '');
         const parts = rest ? rest.split('/') : [];
-        let layer = 'essentials';
+        let layer = null;
         let panel = null;
 
         if (parts[0] === 'advanced' || parts[0] === 'all') {
@@ -441,13 +610,31 @@ class ConfigGeneralLayers {
             panel = parts[0];
         }
 
-        this.applyLayer(layer, { updateHash: false, scrollPanel: panel });
+        if (layer !== null) {
+            this.applyLayer(layer, { updateHash: false, scrollPanel: panel });
+        } else if (panel) {
+            this.scrollToPanel(panel, { switchLayer: true });
+        }
     }
 
     scrollToPanel(panelId, { switchLayer = false } = {}) {
         if (!this.root) return;
         const card = this.root.querySelector(`[data-general-panel="${panelId}"]`);
         if (!card) return;
+
+        if (card.dataset.mobilePanelHidden === 'true') {
+            const ui = window.configManager?.ui;
+            const lang = window.configManager?.language;
+            const sectionName = card.querySelector('.section-title')?.textContent?.trim() || panelId;
+            const namedKey = 'config.generalPanelMobileHiddenNamed';
+            const namedTpl = lang?.t(namedKey);
+            const msg = namedTpl && namedTpl !== namedKey
+                ? namedTpl.replace('{name}', sectionName)
+                : (lang?.t('config.generalPanelMobileHidden')
+                    || 'This section is only available on a wider screen.');
+            ui?.showNotification?.(msg, 'info');
+            return;
+        }
 
         if (switchLayer) {
             const tier = card.dataset.configTier || 'advanced';
@@ -457,6 +644,12 @@ class ConfigGeneralLayers {
         }
 
         card.classList.remove('is-collapsed');
+        const title = card.querySelector('.section-title');
+        if (title) {
+            title.setAttribute('aria-expanded', 'true');
+        }
+        window.configManager?._persistGeneralPanelState?.();
+        window.configManager?.syncResetPanelGuard?.();
         const tourActive = document.body.hasAttribute('data-config-general-tour-active');
         card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
     }
@@ -470,6 +663,7 @@ class ConfigGeneralLayers {
             const anyOn = this.smartCheckboxIds.some((id) => document.getElementById(id)?.checked);
             master.checked = anyOn;
             master.indeterminate = anyOn && !this.smartCheckboxIds.every((id) => document.getElementById(id)?.checked);
+            this.syncSmartCollectionsSummaryCount();
         };
 
         const applyMasterToChildren = (enabled) => {
@@ -490,6 +684,9 @@ class ConfigGeneralLayers {
                     today.checked = true;
                 }
             }
+            this.smartCheckboxIds.forEach((id) => {
+                document.getElementById(id)?.dispatchEvent(new Event('change', { bubbles: true }));
+            });
         });
 
         this.smartCheckboxIds.forEach((id) => {
@@ -497,13 +694,38 @@ class ConfigGeneralLayers {
         });
 
         syncMasterFromChildren();
+        this._syncSmartMasterFromChildren = syncMasterFromChildren;
+    }
+
+    setupLayerJumps() {
+        if (!this.root || this.root.dataset.layerJumpsBound === '1') return;
+        this.root.dataset.layerJumpsBound = '1';
 
         this.root.querySelectorAll('.general-layer-jump').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const panel = btn.getAttribute('data-jump-panel');
+                const card = panel ? this.root.querySelector(`[data-general-panel="${panel}"]`) : null;
+                if (card?.dataset.mobilePanelHidden === 'true') {
+                    const sectionName = card.querySelector('.section-title')?.textContent?.trim() || panel;
+                    const lang = window.configManager?.language;
+                    const namedKey = 'config.generalPanelMobileHiddenNamed';
+                    const namedTpl = lang?.t(namedKey);
+                    const msg = namedTpl && namedTpl !== namedKey
+                        ? namedTpl.replace('{name}', sectionName)
+                        : this.t('generalPanelMobileHidden', 'This section is only available on a wider screen.');
+                    window.configManager?.ui?.showNotification?.(msg, 'info');
+                    return;
+                }
                 this.applyLayer('advanced', { updateHash: true, scrollPanel: panel });
+                const msg = this.t('generalLayerJumpToast', 'Switched to Advanced');
+                window.configManager?.ui?.showNotification?.(msg, 'info');
             });
         });
+    }
+
+    syncSmartCollectionsMasterFromChildren() {
+        this._syncSmartMasterFromChildren?.();
+        this.syncSmartCollectionsSummaryCount();
     }
 
     setupSmartCollectionLabelPropagation() {
@@ -523,28 +745,42 @@ class ConfigGeneralLayers {
             });
         });
 
+        this.refreshAdvancedNavObserver();
+    }
+
+    refreshAdvancedNavObserver() {
+        if (!this.advancedNav || !this.root) return;
+
+        if (this._navObserver) {
+            this._navObserver.disconnect();
+            this._navObserver = null;
+        }
+
+        if (this.layer !== 'advanced' && this.layer !== 'all') return;
         if (typeof IntersectionObserver === 'undefined') return;
 
-        if (this._navObserver) this._navObserver.disconnect();
+        const rootMargin = this.layer === 'all'
+            ? '-10% 0px -60% 0px'
+            : '-20% 0px -55% 0px';
 
         this._navObserver = new IntersectionObserver((entries) => {
-            if (this.layer !== 'advanced') return;
+            if (this.layer !== 'advanced' && this.layer !== 'all') return;
             let best = null;
             let bestRatio = 0;
             entries.forEach((entry) => {
-                if (entry.intersectionRatio > bestRatio) {
-                    bestRatio = entry.intersectionRatio;
-                    best = entry.target;
-                }
+                if (!entry.isIntersecting || entry.intersectionRatio <= bestRatio) return;
+                bestRatio = entry.intersectionRatio;
+                best = entry.target;
             });
             if (!best) return;
             const id = best.getAttribute('data-general-panel');
             this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
                 link.classList.toggle('is-active', link.getAttribute('data-advanced-nav') === id);
             });
-        }, { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.1, 0.25, 0.5] });
+        }, { rootMargin, threshold: [0, 0.1, 0.25, 0.5, 0.75] });
 
-        this.root.querySelectorAll('[data-config-tier="advanced"][data-general-panel]').forEach((panel) => {
+        this.root.querySelectorAll('[data-general-panel]').forEach((panel) => {
+            if (panel.hidden) return;
             this._navObserver.observe(panel);
         });
     }

@@ -242,7 +242,7 @@ body[data-mobile-layout="true"] .config-keyboard-chip {
 body[data-mobile-layout="true"] [data-general-panel][data-mobile-panel-hidden="true"],
 body[data-mobile-layout="true"] #general-layer-toolbar,
 body[data-mobile-layout="true"] #general-layer-show-all,
-body[data-mobile-layout="true"] #general-advanced-nav {
+body[data-mobile-layout="true"] #general-advanced-nav-wrap {
     display: none !important;
 }
 

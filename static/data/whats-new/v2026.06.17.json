@@ -87,11 +87,52 @@
       ]
     },
     {
+      "title": "Config → General",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Essentials / Advanced / All</strong> — layered General tab with persisted view, hash deep links (<code>#general/advanced/…</code>), sticky section nav with scroll highlighting, smart-collections and status summaries in Essentials, and <strong>Expand all</strong> / <strong>Collapse all</strong> in the All view."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>↺ Reset to default</strong> — per-control reset buttons across General (theme, layout, background, smart-collection limits, status tuning, search flags, and more); custom-select UI refreshes after reset."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings search</strong> — matching panels expand before scroll; General tour step for <code>Ctrl+Shift+K</code> / <code>Cmd+Shift+K</code> (desktop); on phone, a subset search lives inside the General tab (language, theme, layout)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mobile General</strong> — device-specific intro; settings search moved into the General tab; clearer message when a panel is hidden on small screens."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Theme editor link</strong> — open <strong>Config → Theme</strong> from Appearance essentials (unsaved-changes guard); favicon styling follows Save/dirty like other settings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collections master</strong> — the Essentials master toggle syncs child checkboxes and dirty state correctly."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Hash &amp; nav jumps</strong> — <code>#general</code> preserves your stored layer; section links and settings-search results force collapsed panels open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reset section guard</strong> — Advanced reset card must be expanded before the destructive button is enabled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Language labels</strong> — language names in the dropdown follow the current UI language; gradient presets use localized display names."
+        }
+      ]
+    },
+    {
       "title": "Developer",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v63</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, and <code>dashboard.css</code> query strings updated for Docker-mounted static files."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v64</code> data version and <code>2026.06-dashboard-release-v57</code> dashboard release token; <code>dashboard.js</code>, <code>keyboard-navigation.js</code>, <code>search.js</code>, <code>dashboard.css</code>, and Config General assets (<code>config-general-layers</code>, <code>settings-search</code>, <code>general-tour</code>) query strings updated for Docker-mounted static files."
         }
       ]
     }

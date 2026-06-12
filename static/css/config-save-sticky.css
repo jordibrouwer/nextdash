@@ -1,6 +1,8 @@
 :root {
     /* Visible sticky bar ≈ padding + button row + safe area */
     --config-save-sticky-height: 4.25rem;
+    /* Reserve at bottom so long General pages clear the sticky save bar when scrolled */
+    --config-general-scroll-padding-bottom: var(--config-save-sticky-reserve);
     --config-save-sticky-reserve: calc(
         var(--config-save-sticky-height) + 1.5rem + env(safe-area-inset-bottom, 0px)
     );

@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/config.css">
     <link rel="stylesheet" href="/static/css/onboarding.css">
-    <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v2">
+    <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v3">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v3">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
@@ -37,8 +37,8 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css">
-    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-promo-v6">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layers-v2">
+    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-promo-v7">
     <link rel="stylesheet" href="/static/css/colors.css">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
@@ -105,7 +105,8 @@
     <div class="config-section section-content">
         <div class="container">
             <div class="config-breadcrumb-row">
-                <div id="config-breadcrumb" class="config-breadcrumb" aria-label="Location"></div>
+                <div id="config-breadcrumb" class="config-breadcrumb" data-i18n-aria="config.breadcrumbAria"></div>
+                <div id="config-settings-search-anchor" class="config-settings-search-anchor">
                 <div class="config-settings-search" role="search">
                     <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
                     <div class="config-settings-search-field">
@@ -116,6 +117,7 @@
                         <ul id="config-settings-search-results" class="config-settings-search-results" role="listbox" hidden></ul>
                         <p id="config-settings-search-empty" class="config-settings-search-empty" hidden data-i18n="config.settingsSearchNoResults">No settings match your search.</p>
                     </div>
+                </div>
                 </div>
             </div>
             <main id="config-main" class="config-main" tabindex="-1" aria-busy="true">
@@ -140,29 +142,51 @@
             </div>
             <div class="tab-content active" data-tab-content="general">
             <div>
-                <div id="general-layer-toolbar" class="general-layer-toolbar" role="tablist" aria-label="Settings layer">
+                <div class="general-tab-intro">
+                    <p data-i18n="config.generalTabIntro">Dashboard-wide settings. Click Save to apply; the dashboard updates without a full reload.</p>
+                </div>
+                <p id="general-layer-intro-mobile" class="general-layer-intro general-mobile-intro" hidden data-i18n="config.generalMobileIntro">Core settings for this device: language, theme, and layout. Open config on a wider screen for bookmarks, smart collections, and more.</p>
+                <div id="general-mobile-settings-search-host" class="general-mobile-settings-search-host" hidden></div>
+                <div id="general-layer-toolbar" class="general-layer-toolbar" role="tablist" data-i18n-aria="config.generalLayerToolbarAria">
                     <div class="general-layer-switch">
                         <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" role="tab" aria-selected="true" data-i18n="config.generalLayerEssentials">Essentials</button>
                         <button type="button" class="general-layer-btn" data-general-layer="advanced" role="tab" aria-selected="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
                     </div>
-                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
+                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" role="tab" aria-selected="false" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
+                </div>
+                <div id="general-panels-bulk-actions" class="general-panels-bulk-actions" hidden>
+                    <button type="button" id="general-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
+                    <button type="button" id="general-collapse-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalCollapseAll">Collapse all sections</button>
                 </div>
                 <p id="general-layer-intro-essentials" class="general-layer-intro">
                     <span data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</span>
+                    <span class="general-layer-intro-hint" data-i18n="config.generalEssentialsHint">Tip: use ℹ next to a setting for help. Switch to Advanced for power features, or show all sections below.</span>
                 </p>
                 <p id="general-layer-intro-advanced" class="general-layer-intro" hidden>
                     <span data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</span>
                 </p>
-                <nav id="general-advanced-nav" class="general-advanced-nav" hidden aria-label="Advanced sections">
-                    <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance</a>
-                    <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks</a>
-                    <a href="#" data-advanced-nav="smart-collections" data-i18n="config.advancedNavSmart">Smart</a>
+                <p id="general-layer-intro-all" class="general-layer-intro" hidden>
+                    <span data-i18n="config.generalLayerAllIntro">Every Essentials and Advanced section on one scrollable page — use the section links above to jump, or expand/collapse all sections below.</span>
+                </p>
+                <div class="general-advanced-nav-wrap" id="general-advanced-nav-wrap" hidden>
+                <nav id="general-advanced-nav" class="general-advanced-nav" data-i18n-aria="config.advancedNavAria">
+                    <a href="#" data-advanced-nav="localization" data-i18n="config.advancedNavLocalization">Localization</a>
+                    <a href="#" data-advanced-nav="basics-core" data-i18n="config.advancedNavAppearanceEssentials">Appearance</a>
+                    <a href="#" data-advanced-nav="layout" data-i18n="config.advancedNavLayout">Layout</a>
+                    <a href="#" data-advanced-nav="bookmarks-essentials" data-i18n="config.advancedNavBookmarksEssentials">Bookmarks</a>
+                    <a href="#" data-advanced-nav="smart-collections-summary" data-i18n="config.advancedNavSmartOverview">Smart (overview)</a>
+                    <a href="#" data-advanced-nav="status-essentials-summary" data-i18n="config.statusEssentialsTitle">Status monitoring</a>
+                    <a href="#" data-advanced-nav="search-buttons" data-i18n="config.advancedNavHeaderButtons">Header &amp; buttons</a>
+                    <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance (advanced)</a>
+                    <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks (advanced)</a>
+                    <a href="#" data-advanced-nav="smart-collections" data-i18n="config.advancedNavSmartSettings">Smart (settings)</a>
                     <a href="#" data-advanced-nav="status" data-i18n="config.advancedNavStatus">Status</a>
                     <a href="#" data-advanced-nav="branding" data-i18n="config.advancedNavBranding">Branding</a>
                     <a href="#" data-advanced-nav="search-input" data-i18n="config.advancedNavSearch">Search</a>
                     <a href="#" data-advanced-nav="system-tools" data-i18n="config.advancedNavSystem">System</a>
                     <a href="#" data-advanced-nav="reset" data-i18n="config.advancedNavReset">Reset</a>
                 </nav>
+                </div>
 
                 <div class="general-layout">
                     <!-- 1. Appearance & Style: theme, background, font, animations -->
@@ -185,7 +209,7 @@
                                     <span class="checkbox-text" data-i18n="onboarding.autoDarkModeLabel"></span>
                                     <button type="button" id="auto-dark-mode-info-btn" class="info-button" data-i18n-aria="config.autoDarkModeInfoTitle">ℹ</button>
                                 </label>
-                                <span id="system-appearance-badge" class="system-appearance-badge" aria-live="polite" hidden>System: —</span>
+                                <span id="system-appearance-badge" class="system-appearance-badge" aria-live="polite" hidden></span>
                             </div>
                             <p id="auto-dark-mode-unavailable-hint" class="form-hint auto-dark-mode-hint" hidden data-i18n="config.autoDarkModeUnavailableHint">Auto dark mode is not available for custom themes. Custom themes use one fixed palette instead of separate dark and light variants.</p>
                         </div>
@@ -309,6 +333,7 @@
                                         <span class="preview-icon"></span>
                                     </div>
                                 </div>
+                                <p class="form-hint theme-iconstyling-preview-hint" data-i18n="config.themeIconStylingPreviewHint">Preview only — click Save to apply on the dashboard.</p>
                             </div>
                         </div>
                         <div class="checkbox-tree" style="margin-top:0.6rem">
@@ -329,10 +354,10 @@
                         <div class="form-group">
                             <label for="columns-input" data-i18n="config.columnsLabel">Columns per row:</label>
                             <div class="number-input-wrapper">
-                                <input type="number" id="columns-input" aria-label="Columns per row (1-6)" min="1" max="6" value="3">
+                                <input type="number" id="columns-input" data-i18n-aria="config.columnsInputAria" min="1" max="6" value="3">
                                 <div class="number-input-controls">
-                                    <button type="button" class="number-input-btn number-input-up" data-input="columns-input" aria-label="Increase columns">▲</button>
-                                    <button type="button" class="number-input-btn number-input-down" data-input="columns-input" aria-label="Decrease columns">▼</button>
+                                    <button type="button" class="number-input-btn number-input-up" data-input="columns-input" data-i18n-aria="config.columnsIncreaseAria">▲</button>
+                                    <button type="button" class="number-input-btn number-input-down" data-input="columns-input" data-i18n-aria="config.columnsDecreaseAria">▼</button>
                                 </div>
                             </div>
                         </div>
@@ -540,6 +565,7 @@
                                 <option value="de">Deutsch</option>
                                 <option value="fr">Français</option>
                             </select>
+                            <p class="form-hint" data-i18n="config.languageAppliesImmediately">Language changes apply immediately (no Save needed).</p>
                         </div>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
@@ -753,7 +779,7 @@
                                 </label>
                             </summary>
                             <div class="smart-collection-body">
-                                <div class="checkbox-tree-item">
+                                <div class="checkbox-tree-item" id="tag-collections-min-count-row">
                                     <label for="tag-collections-min-count" data-i18n="config.tagCollectionsMinCount">Minimum bookmarks per tag:</label>
                                     <div class="number-input-wrapper">
                                         <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
@@ -779,7 +805,7 @@
                             <tbody>
                                 <tr>
                                     <td data-i18n="config.addBookmarkButtonLabel">Add bookmark</td>
-                                    <td><input type="checkbox" id="show-add-bookmark-button-checkbox" checked></td>
+                                    <td><input type="checkbox" id="show-add-bookmark-button-checkbox"></td>
                                 </tr>
                                 <tr>
                                     <td data-i18n="config.searchButtonLabel">Search</td>
@@ -952,7 +978,7 @@
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">├──</span>
                                 <label for="custom-title-input" data-i18n="config.customTitleLabel">Custom title:</label>
-                                <input type="text" id="custom-title-input" maxlength="100" aria-label="Custom dashboard title (max 100 characters)" data-i18n-placeholder="config.customTitlePlaceholder" placeholder="Enter custom title">
+                                <input type="text" id="custom-title-input" maxlength="100" data-i18n-aria="config.customTitleInputAria" data-i18n-placeholder="config.customTitlePlaceholder" placeholder="Enter custom title">
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
@@ -1101,12 +1127,15 @@
                     <!-- Reset -->
                     <section class="general-card general-card-danger" data-general-panel="reset">
                         <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
-                        <p class="general-card-intro" data-i18n="config.resetSectionHint">Delete all pages, categories, bookmarks, finders, and settings — then start from the default sample dashboard.</p>
-                        <p class="setting-description" data-i18n="config.resetSectionCleared">Also clears custom theme colours, uploaded favicon/font, bookmark icons, and health/preview caches. Default sample bookmarks and built-in settings are recreated.</p>
-                        <div class="backups-actions-row">
-                            <div class="backups-action-item">
-                                <div class="backups-action-buttons">
-                                    <button id="reset-btn" type="button" class="btn btn-danger" data-i18n="config.resetAllDataButton">Reset all data and start over</button>
+                        <p class="general-card-intro reset-expand-hint" data-i18n="config.resetExpandToConfirm">Expand this section to access the reset button.</p>
+                        <div class="reset-danger-body">
+                            <p class="general-card-intro" data-i18n="config.resetSectionHint">Delete all pages, categories, bookmarks, finders, and settings — then start from the default sample dashboard.</p>
+                            <p class="setting-description" data-i18n="config.resetSectionCleared">Also clears custom theme colours, uploaded favicon/font, bookmark icons, and health/preview caches. Default sample bookmarks and built-in settings are recreated.</p>
+                            <div class="backups-actions-row">
+                                <div class="backups-action-item">
+                                    <div class="backups-action-buttons">
+                                        <button id="reset-btn" type="button" class="btn btn-danger" disabled data-i18n="config.resetAllDataButton">Reset all data and start over</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2190,7 +2219,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v63"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v64"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2218,10 +2247,10 @@
     <script src="/static/js/config/config-font.js"></script>
     <script src="/static/js/config/config-settings.js"></script>
     <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/config/config-general-layers.js"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-layers-v2"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
-    <script src="/static/js/config-general-tour.js?v=general-tour-v2"></script>
+    <script src="/static/js/config-general-tour.js?v=general-tour-v3"></script>
     <script src="/static/js/config-bookmarks-tour.js?v=bookmarks-phase5-1"></script>
     <script src="/static/js/config-finders-tour.js"></script>
     <script src="/static/js/config-stats-tour.js"></script>
@@ -2231,7 +2260,7 @@
     <script src="/static/js/config-collections-tour.js"></script>
     <script src="/static/js/config-theme-tour.js"></script>
     <script src="/static/js/config/config-help-search.js"></script>
-    <script src="/static/js/config/config-settings-search.js?v=settings-search-promo-v6"></script>
+    <script src="/static/js/config/config-settings-search.js?v=settings-search-promo-v7"></script>
     <script src="/static/js/config/config-command-palette.js"></script>
     <script src="/static/js/config/config-setting-info.js"></script>
     <script src="/static/js/config/config-custom-themes.js"></script>

@@ -54,7 +54,7 @@ class ConfigManager {
             showAddBookmarkButton: true,
             showRecentButton: true,
             showHealthDashboard: true,
-            showTips: false,
+            showTips: true,
             showSearchFlowBanner: true,
             showSyncToasts: false,
             showStatus: true,
@@ -180,6 +180,11 @@ class ConfigManager {
             this.generalLayers.applyHash(window.location.hash);
             this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
             this.settings?.updateStatusOptionsVisibility?.(this.settingsData.showStatus);
+            this.setupCascadingCheckboxes();
+            const pageTabsCheckbox = document.getElementById('show-page-tabs-checkbox');
+            if (pageTabsCheckbox && this.settings) {
+                this.settings.setDependentControlState(['show-page-names-in-tabs-checkbox'], pageTabsCheckbox.checked);
+            }
         }
         if (typeof window.installSettingInfoButtons === 'function' && this.settings) {
             window.installSettingInfoButtons(this.settings);
@@ -2090,7 +2095,7 @@ class ConfigManager {
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (!hash.startsWith('general')) {
             window.history.replaceState(null, '', '#general');
-            this.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            this.generalLayers?.applyHash?.('#general');
         }
     }
 
@@ -2169,7 +2174,7 @@ class ConfigManager {
                 this.settingsData.showHealthDashboard = true;
             }
             if (typeof this.settingsData.showTips === 'undefined') {
-                this.settingsData.showTips = false;
+                this.settingsData.showTips = true;
             }
             if (typeof this.settingsData.showSearchFlowBanner === 'undefined') {
                 this.settingsData.showSearchFlowBanner = true;
@@ -3514,56 +3519,54 @@ class ConfigManager {
         const intensityRange = document.getElementById('theme-iconstyling-intensity');
         const preview = document.getElementById('theme-iconstyling-preview');
         if (!enableCheckbox || !controls || !styleSelect || !intensityRange || !preview) return;
+        if (enableCheckbox.dataset.themeIconBound === '1') return;
+        enableCheckbox.dataset.themeIconBound = '1';
 
-        const theme = this.settingsData.theme || document.documentElement.getAttribute('data-theme') || 'default';
-        const entry = (this.settingsData.themeIconStyling && this.settingsData.themeIconStyling[theme]) || { enabled: false, style: 'muted', intensity: 0.5 };
+        const getTheme = () => this.settingsData.theme || document.documentElement.getAttribute('data-theme') || 'default';
+        const getEntry = (theme) => (this.settingsData.themeIconStyling && this.settingsData.themeIconStyling[theme])
+            || { enabled: false, style: 'muted', intensity: 0.5 };
 
+        const applyEntry = (partial) => {
+            const theme = getTheme();
+            this.settingsData.themeIconStyling = this.settingsData.themeIconStyling || {};
+            this.settingsData.themeIconStyling[theme] = { ...getEntry(theme), ...partial };
+            this.markDirty();
+            this.scheduleDirtyRecompute();
+            this.updateThemeIconStylingPreview(theme);
+        };
+
+        const theme = getTheme();
+        const entry = getEntry(theme);
         enableCheckbox.checked = !!entry.enabled;
         styleSelect.value = entry.style || 'muted';
         intensityRange.value = String(entry.intensity || 0.5);
         controls.hidden = !enableCheckbox.checked;
         this.updateThemeIconStylingPreview(theme);
 
-        enableCheckbox.addEventListener('change', async (e) => {
+        enableCheckbox.addEventListener('change', (e) => {
             const enabled = !!e.target.checked;
             controls.hidden = !enabled;
-            this.settingsData.themeIconStyling = this.settingsData.themeIconStyling || {};
-            this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
-            this.settingsData.themeIconStyling[theme].enabled = enabled;
-            await this.settings.saveSettingsToServer(this.settingsData);
-            this.onSettingsAutosaved();
-            this.signalDashboardSettingsUpdated('settings-updated');
-            this.updateThemeIconStylingPreview(theme);
+            applyEntry({ enabled });
         });
 
-        styleSelect.addEventListener('change', async (e) => {
-            const style = e.target.value;
-            this.settingsData.themeIconStyling = this.settingsData.themeIconStyling || {};
-            this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
-            this.settingsData.themeIconStyling[theme].style = style;
-            await this.settings.saveSettingsToServer(this.settingsData);
-            this.onSettingsAutosaved();
-            this.signalDashboardSettingsUpdated('settings-updated');
-            this.updateThemeIconStylingPreview(theme);
+        styleSelect.addEventListener('change', (e) => {
+            applyEntry({ style: e.target.value });
         });
 
-        intensityRange.addEventListener('input', async (e) => {
-            const intensity = parseFloat(e.target.value) || 0.5;
-            this.settingsData.themeIconStyling = this.settingsData.themeIconStyling || {};
-            this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
-            this.settingsData.themeIconStyling[theme].intensity = intensity;
-            this.updateThemeIconStylingPreview(theme);
+        intensityRange.addEventListener('input', (e) => {
+            applyEntry({ intensity: parseFloat(e.target.value) || 0.5 });
         });
 
-        intensityRange.addEventListener('change', async (e) => {
-            const intensity = parseFloat(e.target.value) || 0.5;
-            this.settingsData.themeIconStyling = this.settingsData.themeIconStyling || {};
-            this.settingsData.themeIconStyling[theme] = this.settingsData.themeIconStyling[theme] || { enabled: false, style: 'muted', intensity: 0.5 };
-            this.settingsData.themeIconStyling[theme].intensity = intensity;
-            await this.settings.saveSettingsToServer(this.settingsData);
-            this.onSettingsAutosaved();
-            this.signalDashboardSettingsUpdated('settings-updated');
+        intensityRange.addEventListener('change', (e) => {
+            applyEntry({ intensity: parseFloat(e.target.value) || 0.5 });
         });
+    }
+
+    syncResetPanelGuard() {
+        const resetCard = document.querySelector('[data-general-panel="reset"]');
+        const resetBtn = document.getElementById('reset-btn');
+        if (!resetCard || !resetBtn) return;
+        resetBtn.disabled = resetCard.classList.contains('is-collapsed');
     }
 
     updateThemeIconStylingPreview(theme) {
@@ -3605,6 +3608,7 @@ class ConfigManager {
                 onApplied: ({ broken }) => {
                     this._healthBrokenCount = broken;
                     this.settings?.applyStatusEssentialsHealthHref?.(broken);
+                    this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
                 },
             });
         } catch (e) {
@@ -4241,28 +4245,55 @@ class ConfigManager {
 
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
-        // Panels open by default; everything else starts collapsed.
         const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout', 'status-essentials-summary']);
         const DEFAULT_OPEN_ADVANCED = new Set([]);
-        const layer = this.generalLayers?.layer || 'essentials';
-        const DEFAULT_OPEN = layer === 'advanced'
-            ? DEFAULT_OPEN_ADVANCED
-            : layer === 'all'
-                ? new Set([...DEFAULT_OPEN_ESSENTIALS, ...DEFAULT_OPEN_ADVANCED])
-                : DEFAULT_OPEN_ESSENTIALS;
 
-        let saved = null;
-        try {
-            const raw = localStorage.getItem(storageKey);
-            if (raw) {
+        const getDefaultOpenForLayer = (layerMode) => {
+            if (layerMode === 'advanced') return DEFAULT_OPEN_ADVANCED;
+            if (layerMode === 'all') return new Set([...DEFAULT_OPEN_ESSENTIALS, ...DEFAULT_OPEN_ADVANCED]);
+            return DEFAULT_OPEN_ESSENTIALS;
+        };
+
+        const readSavedPanelState = () => {
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return null;
                 const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                    saved = parsed;
-                }
-            }
-        } catch {
-            saved = null;
-        }
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+            } catch { /* ignore */ }
+            return null;
+        };
+
+        const syncTitleA11y = (card, title) => {
+            const expanded = !card.classList.contains('is-collapsed');
+            title.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        };
+
+        this.refreshGeneralPanelExpandState = () => {
+            const layerMode = document.querySelector('[data-tab-content="general"] > div')?.dataset?.generalLayer
+                || this.generalLayers?.layer
+                || 'essentials';
+            const DEFAULT_OPEN = getDefaultOpenForLayer(layerMode);
+            const saved = readSavedPanelState();
+
+            document.querySelectorAll('.general-card[data-general-panel]').forEach((card) => {
+                if (card.hidden) return;
+                const title = card.querySelector('.section-title');
+                if (!title) return;
+                const panelId = card.getAttribute('data-general-panel');
+                if (!panelId) return;
+                const alwaysCollapsed = panelId === 'reset';
+                const expanded = !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                    ? Boolean(saved[panelId])
+                    : DEFAULT_OPEN.has(panelId));
+                card.classList.toggle('is-collapsed', !expanded);
+                syncTitleA11y(card, title);
+            });
+        };
+
+        const layer = this.generalLayers?.layer || 'essentials';
+        const DEFAULT_OPEN = getDefaultOpenForLayer(layer);
+        let saved = readSavedPanelState();
 
         const persistState = () => {
             const state = {};
@@ -4286,6 +4317,8 @@ class ConfigManager {
             const title = card.querySelector('.section-title');
             if (!title) return;
             card.classList.add('is-collapsible');
+            title.setAttribute('role', 'button');
+            title.setAttribute('tabindex', '0');
             const panelId = card.getAttribute('data-general-panel');
             if (panelId) {
                 const alwaysCollapsed = panelId === 'reset';
@@ -4297,9 +4330,19 @@ class ConfigManager {
                     : DEFAULT_OPEN.has(panelId));
                 card.classList.toggle('is-collapsed', !expanded);
             }
-            title.addEventListener('click', () => {
+            syncTitleA11y(card, title);
+            const toggleCard = () => {
                 card.classList.toggle('is-collapsed');
+                syncTitleA11y(card, title);
                 if (card.getAttribute('data-general-panel')) persistState();
+                if (panelId === 'reset') this.syncResetPanelGuard();
+            };
+            title.addEventListener('click', toggleCard);
+            title.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleCard();
+                }
             });
         });
 
@@ -4314,6 +4357,8 @@ class ConfigManager {
             el.open = savedOpen;
             el.addEventListener('toggle', () => persistState());
         });
+
+        this.syncResetPanelGuard();
     }
 
     setupBookmarksTabCollapsibles() {
@@ -4424,6 +4469,7 @@ class ConfigManager {
         // Define parent-child relationships for checkboxes
         const cascadingPairs = [
             { parent: 'show-status-checkbox', children: ['show-ping-checkbox', 'show-status-loading-checkbox', 'skip-fast-ping-checkbox'] },
+            { parent: 'show-page-tabs-checkbox', children: ['show-page-names-in-tabs-checkbox'] },
             { parent: 'enable-custom-title-checkbox', children: ['custom-title-input', 'show-page-in-title-checkbox'] },
             { parent: 'enable-fuzzy-suggestions-checkbox', children: ['fuzzy-suggestions-start-with-checkbox'] },
             { parent: 'enable-custom-favicon-checkbox', children: ['custom-favicon-input'] }

@@ -108,7 +108,7 @@ class ConfigThemeTour {
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (!hash.startsWith('general')) {
             window.history.replaceState(null, '', '#general');
-            mgr?.generalLayers?.applyLayer?.('essentials', { updateHash: true });
+            mgr?.generalLayers?.applyHash?.('#general');
         }
     }
 
