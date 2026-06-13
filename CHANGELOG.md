@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.19 — June 2026](#v20260619--june-2026)
 - [v2026.06.17 — June 2026](#v20260617--june-2026)
 - [v2026.06.16 — June 2026](#v20260616--june-2026)
 - [v2026.06.15 — June 2026](#v20260615--june-2026)
@@ -44,6 +45,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.19 — June 2026
+
+**Dashboard reliability hardening & startup performance** — init stops cleanly on bootstrap failure with skeleton cleanup; HTTP `.ok` checks on startup fetches; HTML-escaped empty states; inline-edit guard on full re-render; config cross-tab sync uses retry toasts instead of hard reload; corrupt device `localStorage` falls back safely; conditional `allBookmarks` load; shared `visual-settings.js` on dashboard; deferred non-critical scripts; single locale fetch; safer weather line rendering.
+
+### Dashboard reliability
+
+- **fix** **Init resilience** — `loadData()` rethrows after error toast; `init()` aborts in `catch`; `SkeletonLoading.finish()` in `finally`.
+- **fix** **HTTP bootstrap checks** — `.ok` on `/api/pages`, `/api/settings`, `/api/finders`, and `loadAllBookmarks()`.
+- **fix** **Empty-state XSS** — `escapeHtml()` on page names in empty states.
+- **fix** **Inline-edit guard** — `renderDashboard()` and `_abortInlineEditForRender()` skip when unsaved inline edits are open.
+- **fix** **Config sync without reload** — storage listener and `refreshAfterConfig*` show retry toasts instead of `window.location.reload()`.
+- **fix** **Corrupt localStorage** — try/catch around `JSON.parse(deviceSettings)` with server-settings fallback.
+
+### Dashboard performance & polish
+
+- **new** **Conditional all-bookmarks load** — `needsCrossPageBookmarks()` skips `/api/bookmarks?all=true` when global shortcuts, tag collections, and all smart collections are off.
+- **fix** **Shared visual settings** — `visual-settings.js` on dashboard; removed duplicate preset maps from `dashboard.js`.
+- **fix** **Script defer** — tours, onboarding, analytics, what's-new stub, PWA hint use `defer`.
+- **fix** **Locale fetch** — removed duplicate `loadTranslations` inline script from `dashboard.html`.
+- **fix** **Weather line** — condition/location text via `textContent`.
+
+### Developer
+
+- **fix** **Cache-bust** — `whats-new-v73` (`2026.06-dashboard-release-v61`); `dashboard.js?v=quickwin-7`.
 
 ---
 

@@ -1,0 +1,61 @@
+{
+  "tag": "v2026.06.19",
+  "date": "June 2026",
+  "releasedAt": "2026-06-13",
+  "sections": [
+    {
+      "title": "Dashboard reliability",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Init stops on load failure</strong> — a failed bootstrap fetch no longer leaves a half-loaded dashboard; the skeleton always clears and a reload toast appears."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>HTTP checks on startup</strong> — <code>/api/pages</code>, <code>/api/settings</code>, <code>/api/finders</code>, and <code>/api/bookmarks?all=true</code> verify <code>response.ok</code> before parsing JSON."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty-state XSS</strong> — page names in empty states are HTML-escaped."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline-edit guard</strong> — <code>renderDashboard()</code> skips while unsaved inline edits are open; re-render no longer silently discards your changes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config sync without reload</strong> — cross-tab structure/settings sync shows retry toasts instead of <code>window.location.reload()</code> on failure."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Corrupt device settings</strong> — bad <code>dashboardSettings</code> JSON in <code>localStorage</code> falls back to server settings instead of breaking init."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard performance & polish",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Conditional all-bookmarks load</strong> — <code>/api/bookmarks?all=true</code> runs at startup only when global shortcuts, tag collections, or smart collections need cross-page data."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shared visual settings</strong> — dashboard loads <code>visual-settings.js</code>; background presets and opacity/animation helpers are no longer duplicated in <code>dashboard.js</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Deferred non-critical scripts</strong> — tours, onboarding, analytics, what's-new stub, and PWA hint use <code>defer</code> for faster first paint."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Single locale fetch</strong> — removed the duplicate <code>loadTranslations</code> block from <code>dashboard.html</code>; <code>language.init()</code> handles i18n."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Weather line safety</strong> — location/condition text uses <code>textContent</code> instead of <code>innerHTML</code>."
+        }
+      ]
+    }
+  ]
+}

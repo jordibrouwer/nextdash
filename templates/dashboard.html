@@ -229,7 +229,7 @@
 
     <script src="/static/js/tips-policy.js"></script>
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v70"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v73" defer></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/config/config-language.js"></script>
@@ -251,32 +251,25 @@
     <script src="/static/js/swipe-navigation.js?v=bugfix-5"></script>
     <script src="/static/js/hypr-mode.js"></script>
     <script src="/static/js/reorder.js"></script>
-    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3"></script>
-    <script src="/static/js/onboarding.js"></script>
-    <script src="/static/js/feature-tour.js"></script>
-    <script src="/static/js/config-bookmarks-tour.js"></script>
-    <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
-    <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
+    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3" defer></script>
+    <script src="/static/js/onboarding.js" defer></script>
+    <script src="/static/js/feature-tour.js" defer></script>
+    <script src="/static/js/config-bookmarks-tour.js" defer></script>
+    <script src="/static/js/feature-spotlight.js?v=paste-replay-v1" defer></script>
+    <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2" defer></script>
     <script src="/static/js/weather.js"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
     <script src="/static/js/quick-add.js"></script>
     <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/shortcut-format.js"></script>
     <script src="/static/js/app-notification.js"></script>
-    <script src="/static/js/pwa-install-hint.js"></script>
+    <script src="/static/js/pwa-install-hint.js" defer></script>
     <script src="/static/js/mobile-experience.js"></script>
     <script src="/static/js/dashboard-tag-cloud.js"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/dashboard.js?v=quickwin-6"></script>
-    <script src="/static/js/analytics.js"></script>
-    <script>
-        // Load translations
-        document.addEventListener('DOMContentLoaded', async () => {
-            const language = new ConfigLanguage();
-            const lang = document.documentElement.getAttribute('data-lang') || 'en';
-            await language.loadTranslations(lang);
-        });
-    </script>
+    <script src="/static/js/visual-settings.js"></script>
+    <script src="/static/js/dashboard.js?v=quickwin-7"></script>
+    <script src="/static/js/analytics.js" defer></script>
 </body>
 </html>

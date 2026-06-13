@@ -267,7 +267,7 @@ With the dashboard focused and no text field active, paste a URL. The new-bookma
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **visible panel** (solid background and border) — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Background dashboard re-renders are skipped while unsaved inline edits are open. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -550,6 +550,8 @@ Enabled in **config → general → smart collections**:
 | **Stale** | Not opened within threshold days |
 
 Each can be limited to certain pages and item limits (`0` = unlimited).
+
+Cross-page bookmark data loads at startup only when smart collections, tag collections, or **Use shortcuts from all pages** need it — faster startup when those features are off.
 
 You can **long-press** or press **`;`** on a smart-collection row to inline-edit or delete; changes apply to the real bookmark on its page and stay in sync across collection columns.
 
@@ -992,6 +994,14 @@ Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/dupl
 ### Dashboard empty after install
 
 Normal. Add bookmarks via **&**, **+**, import, or config. Run onboarding if offered — the finish step covers pages and first bookmarks.
+
+### Dashboard failed to load
+
+If bootstrap data cannot be fetched, you get an error toast with **Reload** and the loading skeleton clears. Check that the server is running and `/api/pages`, `/api/settings`, and `/api/bookmarks` respond. Corrupt device settings in `localStorage` fall back to server settings automatically.
+
+### Config sync from another tab
+
+When you save in config while the dashboard stays open, changes apply live. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
 
 ### Shortcut does not open bookmark
 

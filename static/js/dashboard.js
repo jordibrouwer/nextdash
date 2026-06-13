@@ -18,81 +18,6 @@ const ANIM = Object.freeze({
 
 const _sessionTags = new Set();
 
-const BACKGROUND_PRESETS = {
-    // dark gradients
-    sunset:   'linear-gradient(135deg, #c94b4b 0%, #4b134f 100%)',
-    ocean:    'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-    aurora:   'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-    forest:   'linear-gradient(135deg, #0a3d0c 0%, #1a5e1f 50%, #0d2d0e 100%)',
-    ember:    'linear-gradient(135deg, #3a1500 0%, #8b3800 60%, #ff6600 100%)',
-    lavender: 'linear-gradient(135deg, #3d2b6b 0%, #7b5ea7 50%, #c2a0e0 100%)',
-    nordic:   'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
-    rose:     'linear-gradient(135deg, #b91d73 0%, #f953c6 100%)',
-    // light gradients
-    morning:  'linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%)',
-    meadow:   'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)',
-    blush:    'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-    mist:     'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
-    petal:    'linear-gradient(135deg, #ffd6e7 0%, #ffafcc 100%)',
-};
-
-const THEME_BACKGROUND_MAP = {
-    'cherry-graphite-dark':  'rose',
-    'desert-sand-dark':      'ember',
-    'forest-moss-dark':      'forest',
-    'lavender-mist-dark':    'lavender',
-    'midnight-neon-dark':    'aurora',
-    'neon-grid-dark':        'aurora',
-    'glacier-mint-dark':     'nordic',
-    'kelp-drift-dark':       'ocean',
-    'mulberry-silk-dark':    'rose',
-    'rusted-rail-dark':      'ember',
-    'steel-dawn-dark':       'nordic',
-    'nordic-frost-dark':     'nordic',
-    'ocean-depth-dark':      'ocean',
-    'paper-ink-dark':        'nordic',
-    'retro-crt-dark':        'ember',
-    'arctic-cyan-dark':      'ocean',
-    'copper-circuit-dark':   'ember',
-    'coral-reef-dark':       'sunset',
-    'emerald-matrix-dark':   'forest',
-    'monochrome-mist-dark':  'nordic',
-    'obsidian-gold-dark':    'aurora',
-    'royal-amethyst-dark':   'lavender',
-    'sakura-night-dark':     'rose',
-    'solar-ember-dark':      'sunset',
-    'sunflower-ink-dark':    'sunset',
-    'volcanic-ash-dark':     'ember',
-    'cherry-graphite-light': 'blush',
-    'desert-sand-light':     'morning',
-    'forest-moss-light':     'meadow',
-    'lavender-mist-light':   'petal',
-    'midnight-neon-light':   'mist',
-    'neon-grid-light':       'mist',
-    'glacier-mint-light':    'mist',
-    'kelp-drift-light':      'meadow',
-    'mulberry-silk-light':   'petal',
-    'rusted-rail-light':     'morning',
-    'steel-dawn-light':      'mist',
-    'nordic-frost-light':    'mist',
-    'ocean-depth-light':     'mist',
-    'paper-ink-light':       'morning',
-    'retro-crt-light':       'morning',
-    'arctic-cyan-light':     'mist',
-    'copper-circuit-light':  'morning',
-    'coral-reef-light':      'blush',
-    'emerald-matrix-light':  'meadow',
-    'monochrome-mist-light': 'mist',
-    'obsidian-gold-light':   'morning',
-    'royal-amethyst-light':  'petal',
-    'sakura-night-light':    'petal',
-    'solar-ember-light':     'morning',
-    'sunflower-ink-light':   'morning',
-    'volcanic-ash-light':    'morning',
-    'dark':  'aurora',
-    'light': 'mist',
-};
-
 class Dashboard {
     constructor() {
         this.bookmarks = [];
@@ -275,84 +200,86 @@ class Dashboard {
     }
 
     async init() {
-        await this.loadData();
-        if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
-            await window.TipsPolicy.applyExpiry(this);
-        }
-        this.applyVisualSettings();
-        this.initializeAutoDarkMode();
-        this.loadCollapsedStates();
-        await this.language.init(this.settings.language);
-        // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
-        window.dashboardInstance = this;
-        window.MobileExperience?.initDashboard?.();
-        this.setupDOM();
-        this.initializeSearchComponent();
-        this.initializeStatusMonitor();
-        window.MobileExperience?.refreshBannerTranslations?.();
-        this.initializeKeyboardNavigation();
-        this.initializeSwipeNavigation();
-        this.initializeHyprMode();
-        this.renderPageNavigation();
-        this.renderDashboard({ animate: false });
-        this.setupPageShortcuts();
-        this.setupTagFilterEscapeShortcut();
-        this.setupTagFilterIndicator();
-        this.setupReorderUndoShortcut();
-        this.setupPasteToQuickAdd();
-        if (typeof QuickAddWidget === 'function') {
-            this.quickAddWidget = new QuickAddWidget(this);
-        }
-        this.setupToolbarActions();
-        window.DashboardTagCloud?.init?.();
-        this.refreshAddBookmarkToolbarLabel();
-        this.setupHeaderEnhancements();
-        this.setupConfigStructureReloadListener();
-        this.setupConfigReturnRefreshListener();
-        this.setupExtensionBookmarkSavedListener();
-        this.scheduleBackupTip();
+        try {
+            await this.loadData();
+            if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
+                await window.TipsPolicy.applyExpiry(this);
+            }
+            this.applyVisualSettings();
+            this.initializeAutoDarkMode();
+            this.loadCollapsedStates();
+            await this.language.init(this.settings.language);
+            // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
+            window.dashboardInstance = this;
+            window.MobileExperience?.initDashboard?.();
+            this.setupDOM();
+            this.initializeSearchComponent();
+            this.initializeStatusMonitor();
+            window.MobileExperience?.refreshBannerTranslations?.();
+            this.initializeKeyboardNavigation();
+            this.initializeSwipeNavigation();
+            this.initializeHyprMode();
+            this.renderPageNavigation();
+            this.renderDashboard({ animate: false });
+            this.setupPageShortcuts();
+            this.setupTagFilterEscapeShortcut();
+            this.setupTagFilterIndicator();
+            this.setupReorderUndoShortcut();
+            this.setupPasteToQuickAdd();
+            if (typeof QuickAddWidget === 'function') {
+                this.quickAddWidget = new QuickAddWidget(this);
+            }
+            this.setupToolbarActions();
+            window.DashboardTagCloud?.init?.();
+            this.refreshAddBookmarkToolbarLabel();
+            this.setupHeaderEnhancements();
+            this.setupConfigStructureReloadListener();
+            this.setupConfigReturnRefreshListener();
+            this.setupExtensionBookmarkSavedListener();
+            this.scheduleBackupTip();
 
-            // Initialize new features
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
             this.buildSearchIndex();
-        
-        // Add hash change listener for navigation
-        window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.substring(1);
-            if (hash && /^\d+$/.test(hash)) {
-                const pageIndex = parseInt(hash) - 1;
-                if (pageIndex >= 0 && pageIndex < this.pages.length && this.pages[pageIndex].id !== this.currentPageId) {
-                    void this.requestPageNavigation(this.pages[pageIndex].id);
+
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash.substring(1);
+                if (hash && /^\d+$/.test(hash)) {
+                    const pageIndex = parseInt(hash) - 1;
+                    if (pageIndex >= 0 && pageIndex < this.pages.length && this.pages[pageIndex].id !== this.currentPageId) {
+                        void this.requestPageNavigation(this.pages[pageIndex].id);
+                    }
                 }
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    this.renderDateWeatherLine();
+                    this.updateHealthBadge();
+                    this.maybeRefreshAfterConfigReturn();
+                }
+            });
+
+            this._configRefreshReady = true;
+            this.markPendingConfigSyncAsAppliedAfterLoad();
+
+            this.updateMiniStatusLine();
+            this.initializeOnboarding();
+            this.initializeFeatureTour();
+            this.initializeConfigBookmarksTour();
+            window.LayoutVersionNudge?.consumeReplayPending?.();
+            window.FeatureSpotlight?.consumePasteReplayPending?.();
+            if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
+                this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.renderDateWeatherLine();
-                this.updateHealthBadge();
-                this.maybeRefreshAfterConfigReturn();
+        } catch (error) {
+            return;
+        } finally {
+            if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
+                window.SkeletonLoading.finish();
+            } else {
+                document.body.classList.remove('loading');
             }
-        });
-
-        this._configRefreshReady = true;
-        this.markPendingConfigSyncAsAppliedAfterLoad();
-
-        // Initialize follow-up UI immediately after first render (no extra frame delay).
-        if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
-            window.SkeletonLoading.finish();
-        } else {
-            document.body.classList.remove('loading');
-        }
-        this.updateMiniStatusLine();
-        this.initializeOnboarding();
-        this.initializeFeatureTour();
-        this.initializeConfigBookmarksTour();
-        window.LayoutVersionNudge?.consumeReplayPending?.();
-        window.FeatureSpotlight?.consumePasteReplayPending?.();
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
-            this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
         }
     }
 
@@ -415,7 +342,11 @@ class Dashboard {
                     this.showSyncToast(this.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
                 }
             } catch (error) {
-                window.location.reload();
+                console.warn('Config sync listener failed:', error);
+                this.showErrorNotification(
+                    this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to apply config changes from another tab.'),
+                    { retry: () => this.maybeRefreshAfterConfigReturn() }
+                );
             }
         });
     }
@@ -510,6 +441,18 @@ class Dashboard {
         return this.inlineEditingBookmarkIndex !== null || Boolean(document.querySelector('.bookmark-inline-editing'));
     }
 
+    needsCrossPageBookmarks() {
+        const s = this.settings;
+        if (!s) return false;
+        if (s.globalShortcuts === true) return true;
+        if (s.showTagCollections) return true;
+        if (s.showSmartTodayCollection !== false) return true;
+        if (s.showSmartRecentCollection !== false) return true;
+        if (s.showSmartStaleCollection !== false) return true;
+        if (s.showSmartMostUsedCollection === true) return true;
+        return false;
+    }
+
     async refreshAfterConfigStructureUpdate(payload = {}) {
         if (this.isInlineEditActive()) {
             if (!(await this.confirmInlineEditBeforeNavigation())) {
@@ -519,7 +462,11 @@ class Dashboard {
         try {
             await this.loadData();
             await this.withRetry(() => this.loadPageBookmarks(this.currentPageId), 2, 220);
-            await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+            if (this.needsCrossPageBookmarks()) {
+                await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+            } else {
+                this.allBookmarks = [];
+            }
             this.renderPageNavigation();
             this.renderDashboard();
             this.initializeButtonTipsRotation();
@@ -528,7 +475,11 @@ class Dashboard {
             }
             this.updateHealthBadge();
         } catch (error) {
-            window.location.reload();
+            console.warn('Config structure refresh failed:', error);
+            this.showErrorNotification(
+                this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to sync config changes. Please try again.'),
+                { retry: () => this.refreshAfterConfigStructureUpdate(payload) }
+            );
         }
     }
 
@@ -547,7 +498,11 @@ class Dashboard {
             this.setupDOM();
             this.updateStatusMonitor();
             await this.withRetry(() => this.loadPageBookmarks(this.currentPageId), 2, 220);
-            await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+            if (this.needsCrossPageBookmarks()) {
+                await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+            } else {
+                this.allBookmarks = [];
+            }
             this.renderPageNavigation();
             this.renderDashboard();
             this.initializeButtonTipsRotation();
@@ -558,7 +513,11 @@ class Dashboard {
                 this.statusMonitor.refreshAllStatuses();
             }
         } catch (error) {
-            window.location.reload();
+            console.warn('Config settings refresh failed:', error);
+            this.showErrorNotification(
+                this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to apply settings update. Please try again.'),
+                { retry: () => this.refreshAfterConfigSettingsUpdate(payload) }
+            );
         }
     }
 
@@ -585,6 +544,10 @@ class Dashboard {
                 fetch('/api/finders')
             ]);
 
+            if (!pagesRes.ok || !settingsRes.ok || !findersRes.ok) {
+                throw new Error('Failed to load dashboard bootstrap data');
+            }
+
             this.pages = await pagesRes.json();
             this.finders = await findersRes.json();
             
@@ -599,7 +562,15 @@ class Dashboard {
                 this.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
             } else if (deviceSpecific) {
                 const deviceSettings = localStorage.getItem('dashboardSettings');
-                this.settings = deviceSettings ? { ...serverSettings, ...JSON.parse(deviceSettings) } : serverSettings;
+                if (deviceSettings) {
+                    try {
+                        this.settings = { ...serverSettings, ...JSON.parse(deviceSettings) };
+                    } catch {
+                        this.settings = serverSettings;
+                    }
+                } else {
+                    this.settings = serverSettings;
+                }
             } else {
                 this.settings = serverSettings;
             }
@@ -766,11 +737,15 @@ class Dashboard {
             
             // Load bookmarks and categories for initial page
             await this.loadPageBookmarks(this.currentPageId);
-            
-            // Always load all bookmarks so smart collections can work across pages.
-            await this.loadAllBookmarks();
 
-            if (window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(this.settings, this.allBookmarks)) {
+            if (this.needsCrossPageBookmarks()) {
+                await this.loadAllBookmarks();
+            } else {
+                this.allBookmarks = [];
+            }
+
+            if (this.needsCrossPageBookmarks()
+                && window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(this.settings, this.allBookmarks)) {
                 this.saveSettings().catch(() => {});
             }
 
@@ -784,6 +759,7 @@ class Dashboard {
             } else {
                 this.showErrorNotification(translated, { reload: true });
             }
+            throw error;
         }
     }
 
@@ -1030,6 +1006,9 @@ class Dashboard {
     async loadAllBookmarks() {
         try {
             const allBookmarksRes = await fetch('/api/bookmarks?all=true');
+            if (!allBookmarksRes.ok) {
+                throw new Error('Failed to load all bookmarks');
+            }
             this.allBookmarks = await allBookmarksRes.json();
 
             // Update search component with all bookmarks
@@ -3534,14 +3513,20 @@ class Dashboard {
     }
 
     applyVisualSettings() {
-        const opacity = Number(this.settings.backgroundOpacity ?? 1);
-        const clampedOpacity = Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
-        document.documentElement.style.setProperty('--dashboard-bg-opacity', String(clampedOpacity));
-        document.body.style.setProperty('opacity', String(Math.max(0.65, clampedOpacity)));
+        if (window.VisualSettings) {
+            window.VisualSettings.applyBackgroundOpacity(this.settings.backgroundOpacity);
+            window.VisualSettings.applyFontWeight(this.settings.fontWeight);
+            window.VisualSettings.applyAnimations(this.settings.animationsEnabled !== false);
+        } else {
+            const opacity = Number(this.settings.backgroundOpacity ?? 1);
+            const clampedOpacity = Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+            document.documentElement.style.setProperty('--dashboard-bg-opacity', String(clampedOpacity));
+            document.body.style.setProperty('opacity', String(Math.max(0.65, clampedOpacity)));
 
-        const weight = this.settings.fontWeight || 'normal';
-        document.body.style.setProperty('--dashboard-font-weight', weight);
-        document.body.style.fontWeight = weight;
+            const weight = this.settings.fontWeight || 'normal';
+            document.body.style.setProperty('--dashboard-font-weight', weight);
+            document.body.style.fontWeight = weight;
+        }
 
         const iconSize = this.settings.launcherIconSize || 'normal';
         document.body.setAttribute('data-launcher-icon-size', iconSize);
@@ -3550,6 +3535,11 @@ class Dashboard {
     }
 
     applyBackground() {
+        if (window.VisualSettings?.applyBackground) {
+            window.VisualSettings.applyBackground(this.settings);
+            return;
+        }
+
         const type = this.settings.backgroundType || 'none';
         const body = document.body;
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
@@ -3566,13 +3556,13 @@ class Dashboard {
 
         let presetName = '';
         if (type === 'auto') {
-            presetName = THEME_BACKGROUND_MAP[this.settings.theme || ''] || '';
+            presetName = window.VisualSettings?.THEME_BACKGROUND_MAP?.[this.settings.theme || ''] || '';
         } else if (type === 'gradient') {
             presetName = this.settings.backgroundGradient || '';
         }
 
         if (presetName) {
-            const css = BACKGROUND_PRESETS[presetName] || '';
+            const css = window.VisualSettings?.BACKGROUND_PRESETS?.[presetName] || '';
             if (css) {
                 document.documentElement.style.setProperty('--custom-background-image', css);
                 body.classList.add('bg-gradient');
@@ -3590,6 +3580,17 @@ class Dashboard {
     }
 
     initializeAutoDarkMode() {
+        if (window.VisualSettings?.applyAutoDarkMode) {
+            window.VisualSettings.applyAutoDarkMode(this.settings, (preferred) => {
+                document.body.classList.remove('dark', 'light');
+                document.body.classList.add(preferred);
+                document.documentElement.setAttribute('data-theme', preferred);
+                document.body.setAttribute('data-theme', preferred);
+                this.applyBackground();
+            });
+            return;
+        }
+
         const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
         const applyPreferredTheme = () => {
             if (!this.settings.autoDarkMode || !media) {
@@ -3613,12 +3614,15 @@ class Dashboard {
 
     getPairedThemeVariant(themeId, wantsDark) {
         const base = String(themeId || 'dark');
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
-        }
         const userCustomIds = window.UserCustomThemeIds;
         if (Array.isArray(userCustomIds) && userCustomIds.includes(base)) {
             return base;
+        }
+        if (window.VisualSettings?.getPairedThemeVariant) {
+            return window.VisualSettings.getPairedThemeVariant(themeId, wantsDark);
+        }
+        if (base === 'dark' || base === 'light') {
+            return wantsDark ? 'dark' : 'light';
         }
         const match = base.match(/^(.*)-(dark|light)$/);
         if (!match) {
@@ -3628,6 +3632,9 @@ class Dashboard {
     }
 
     renderDashboard(options = {}) {
+        if (this.isInlineEditActive() && this.hasInlineEditUnsavedChanges()) {
+            return;
+        }
         const animate = options && options.animate === true;
         this._renderAnimationsEnabled = animate;
         const container = document.getElementById('dashboard-layout');
@@ -3654,7 +3661,7 @@ class Dashboard {
         if (!Array.isArray(this.bookmarks) || this.bookmarks.length === 0) {
             const hasBookmarksOnOtherPages = Array.isArray(this.allBookmarks) && this.allBookmarks.length > 0;
             const currentPage = this.pages.find(p => p.id === this.currentPageId);
-            const pageName = currentPage ? currentPage.name : '';
+            const pageName = currentPage ? this.escapeHtml(currentPage.name) : '';
 
             const addLabel = this.buildEmptyStateAddLabel();
             const addHint = this.buildEmptyStateAddHint();
@@ -4774,6 +4781,9 @@ class Dashboard {
 
     _abortInlineEditForRender() {
         if (this.inlineEditingBookmarkIndex !== null) {
+            if (this.hasInlineEditUnsavedChanges()) {
+                return;
+            }
             this._inlineEditGlobalCleanup?.();
             this.inlineEditingBookmarkIndex = null;
         }
@@ -7950,7 +7960,10 @@ class Dashboard {
     }
 
     applyAnimations() {
-        // Toggle animations class
+        if (window.VisualSettings?.applyAnimations) {
+            window.VisualSettings.applyAnimations(this.settings.animationsEnabled !== false);
+            return;
+        }
         if (this.settings.animationsEnabled !== false) {
             document.body.classList.remove('no-animations');
         } else {
@@ -8204,8 +8217,14 @@ class Dashboard {
         if (weatherPart) {
             const weatherLine = document.createElement('div');
             weatherLine.className = 'date-weather-line';
-            const weatherIcon = this.getWeatherIconMarkup(this.weatherData?.weatherCode);
-            weatherLine.innerHTML = `<span class="weather-icon" aria-hidden="true">${weatherIcon}</span><span class="weather-text">${weatherPart}</span>`;
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'weather-icon';
+            iconSpan.setAttribute('aria-hidden', 'true');
+            iconSpan.innerHTML = this.getWeatherIconMarkup(this.weatherData?.weatherCode);
+            const textSpan = document.createElement('span');
+            textSpan.className = 'weather-text';
+            textSpan.textContent = weatherPart;
+            weatherLine.append(iconSpan, textSpan);
             dateElement.appendChild(weatherLine);
         }
 
