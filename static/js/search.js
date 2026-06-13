@@ -1025,6 +1025,9 @@ class SearchComponent {
     }
 
     showSearch() {
+        if (!this.searchActive) {
+            this._searchOpenerElement = document.activeElement;
+        }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
         const queryElement = document.getElementById('search-query');
@@ -1098,15 +1101,30 @@ class SearchComponent {
         
         // Clear the displayed matches
         this.renderSearchMatches();
+
+        const opener = this._searchOpenerElement;
+        this._searchOpenerElement = null;
+        const fallback = document.getElementById('search-button');
+        if (window.FocusTrapUtils?.focusIfConnected) {
+            window.FocusTrapUtils.focusIfConnected(opener, fallback);
+        } else if (opener?.isConnected && typeof opener.focus === 'function') {
+            opener.focus({ preventScroll: true });
+        } else if (fallback?.focus) {
+            fallback.focus({ preventScroll: true });
+        }
     }
 
     updateSelectionHighlight() {
+        const isDesktopSearch = this.searchActive
+            && window.MobileExperience?.isMobileLayout?.() !== true;
         // Update keyboard-selected class on existing elements
         this.matchElements.forEach((element, index) => {
             element.querySelectorAll('.search-history-chip.keyboard-selected-chip').forEach((chip) => {
                 chip.classList.remove('keyboard-selected-chip');
             });
-            if (index === this.selectedMatchIndex) {
+            const selected = index === this.selectedMatchIndex;
+            element.setAttribute('tabindex', selected ? '0' : '-1');
+            if (selected) {
                 element.classList.add('keyboard-selected');
                 const match = this.selectableMatches[index];
                 if (this.isChipMatch(match)) {
@@ -1122,6 +1140,9 @@ class SearchComponent {
                     block: 'nearest'
                     // No 'inline' option to prevent horizontal scrolling
                 });
+                if (isDesktopSearch && typeof element.focus === 'function') {
+                    element.focus({ preventScroll: true });
+                }
             } else {
                 element.classList.remove('keyboard-selected');
             }
@@ -1291,6 +1312,7 @@ class SearchComponent {
                 const headerEl = document.createElement('div');
                 const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
                 headerEl.className = `search-command-group-header${selectedClass}`;
+                headerEl.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
                 headerEl.innerHTML = `
                     <span class="search-command-group-arrow">${match.expanded ? '▾' : '▸'}</span>
                     <span class="search-command-group-label">${this._escHtml(match.label)}</span>
@@ -1352,6 +1374,7 @@ class SearchComponent {
                     chipRow.appendChild(wrap);
                 });
                 fragment.appendChild(chipRow);
+                chipRow.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
                 this.matchElements.push(chipRow);
                 this.selectableMatches.push(match);
                 return;
@@ -1370,6 +1393,7 @@ class SearchComponent {
             const whatsNewClass = match.type === 'whats-new' ? ' whats-new-entry' : '';
             const groupChildClass = (match.groupId || match.type === 'filter-completion' || match.type === 'whats-new') ? ' command-group-child' : '';
             matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass;
+            matchElement.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
 
             // Get the display name based on match type
             let displayName;
@@ -1477,6 +1501,7 @@ class SearchComponent {
         
         // Batch append to DOM
         matchesContainer.appendChild(fragment);
+        this.updateSelectionHighlight();
     }
 
     navigateMatches(direction) {

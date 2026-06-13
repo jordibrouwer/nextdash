@@ -48,9 +48,15 @@ _No unreleased changes at this time._
 
 ---
 
+## Unreleased
+
+_No unreleased changes at this time._
+
+---
+
 ## v2026.06.19 — June 2026
 
-**Dashboard reliability, navigation hardening, security, startup performance & tag UX** — bootstrap failure shows an in-dashboard reload panel; HTTP `.ok` checks; inline-edit guards on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves, ignores unrelated `storage` events, and dedupes in-flight refreshes; page tabs stay in sync after every navigation; failed loads no longer report success; extension saves do not hijack the current page; bfcache back-navigation restores keyboard/swipe/tag cloud; safe `http(s)` links and escaped UI; smarter deferred `allBookmarks` load for default Today-only installs; **multi-tag cloud filter (OR match)** with per-tag indicator chips; tag-filter Escape restores focus; localized tag-cloud counts; gated `/` help copy.
+**Dashboard reliability, navigation hardening, security, startup performance, tag UX & keyboard focus** — bootstrap failure shows an in-dashboard reload panel; HTTP `.ok` checks; inline-edit guards on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves, ignores unrelated `storage` events, and dedupes in-flight refreshes; page tabs stay in sync after every navigation; failed loads no longer report success; extension saves do not hijack the current page; bfcache back-navigation restores keyboard/swipe/tag cloud; safe `http(s)` links and escaped UI; smarter deferred `allBookmarks` load for default Today-only installs; **multi-tag cloud filter (OR match)** with per-tag indicator chips; tag-filter Escape restores focus; localized tag-cloud counts; gated `/` help copy; **full keyboard-focus audit** — Tab entry, overlay traps, focus restore, page-tab/category/search/recent-modal polish.
 
 ### Dashboard reliability
 
@@ -100,9 +106,21 @@ _No unreleased changes at this time._
 - **fix** **Localized tag counts** — tag cloud chips use `formatTagFilterCountLabel()` / locale keys.
 - **fix** **Cheatsheet & tip gating** — `isTagCloudDesktopShortcutVisible()` / `isTagCloudTipRelevant()` hide `/` when tag cloud is off, mobile, or no tags exist.
 
+### Keyboard focus & accessibility
+
+- **fix** **Tab entry in bookmark grid** — first visible bookmark gets `tabindex="0"` when no keyboard selection so pure Tab users reach the grid.
+- **fix** **Overlay focus traps** — shared `focus-trap-utils.js`; Tab cycles within tag cloud, page overview, and quick-add omnibox.
+- **fix** **Focus restore** — search close returns to opener; inline-edit cancel restores bookmark focus and selection; tag-filter indicator rebuild preserves chip/remove/clear focus; `AppModal.hide` uses `isConnected` check.
+- **fix** **Cheatsheet initial focus** — filter input via `initialFocusSelector` (no race with confirm button).
+- **fix** **BFCache keyboard state** — stale `.keyboard-selected` cleared; `scheduleUpdate()` syncs roving tabindex after restore.
+- **fix** **Page tabs & categories** — `←`/`→`/`Home`/`End` on tablist; `Enter`/`Space` on category headers toggles collapse with `aria-expanded`.
+- **fix** **Tag cloud & search** — `Enter`/`Space` on Close/Clear; desktop search moves DOM focus to the selected match; tag cloud and date popover included in `isModalOpen()` shortcut guards.
+- **fix** **Grid Tab boundary** — `Tab`/`Shift+Tab` at first/last selected bookmark exits to header/FAB instead of trapping.
+- **fix** **Recent modal & overlays** — `↑`/`↓`/`Home`/`End` through recent items; page overview `Space` activates row; What's new focuses scroll content after load; page-tab rename Esc restores tab focus; grid `Esc` moves focus to first bookmark; `G`+digit includes smart collections.
+
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v76` (`2026.06-dashboard-release-v64`); `dashboard.js?v=multi-tag-2`; `dashboard-tag-cloud.js?v=multi-tag-2`; prior `nav-fix-*` / `whats-new-v75` query strings.
+- **fix** **Cache-bust** — `whats-new-v78` (`2026.06-dashboard-release-v65`); `focus-fix-2` on dashboard, tag-cloud, keyboard-navigation, and search scripts; `focus-trap-utils.js` added.
 
 ---
 

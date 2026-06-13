@@ -266,9 +266,15 @@ class Modal {
         }
         
         // Return focus to the element that triggered the modal
-        if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
+        const opener = this.previouslyFocusedElement;
+        this.previouslyFocusedElement = null;
+        if (window.FocusTrapUtils?.focusIfConnected) {
             setTimeout(() => {
-                this.previouslyFocusedElement.focus();
+                window.FocusTrapUtils.focusIfConnected(opener);
+            }, 0);
+        } else if (opener?.isConnected && typeof opener.focus === 'function') {
+            setTimeout(() => {
+                opener.focus({ preventScroll: true });
             }, 0);
         }
     }

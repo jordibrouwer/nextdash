@@ -306,6 +306,7 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 - Start grid navigation with **Tab**, a click on a bookmark, **`G` then `1–9`** / **`GG`**, or the **first arrow key**; then use **plain arrow keys** to move the selection (`Shift+←/→` changes pages only).  
 - After switching pages with **1–9**, the **first visible bookmark** on the new page is selected automatically.  
 - **Collapsed categories** and **launcher tiles dimmed by search** are skipped by keyboard navigation.  
+- **Category headers** are keyboard-focusable: **Enter** or **Space** toggles collapse (`aria-expanded` updates).  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
 - If the bookmark has a **shortcut** letter and you are not in an input, press that key to open.
@@ -320,7 +321,7 @@ Each open increments **open count** and updates **last opened**. This powers sma
 
 ### Recent panel (`*`)
 
-Shows bookmarks you opened recently **on the current page** (not global). From the panel you can open one or use bulk actions aligned with **`:open last`**.
+Shows bookmarks you opened recently **on the current page** (not global). Use **`↑`/`↓`/`Home`/`End`** to move between items and bulk-open buttons. From the panel you can open one or use bulk actions aligned with **`:open last`**.
 
 ---
 
@@ -331,8 +332,9 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 | Keys | Action |
 |------|--------|
 | `1`–`9` | Jump to page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
+| `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
-| `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages (wrap at the ends); each row announces name + count; arrow keys do not move bookmarks behind the overlay; closing restores focus to the trigger |
+| `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
 
 ### 9.2 Bookmark grid
 
@@ -340,12 +342,12 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 |------|--------|
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
-| `Tab` / `Shift+Tab` | Linear next/previous bookmark (when a row is already selected) |
-| `G` then `1`–`9` | Jump to nth category, select first bookmark (`G` is for categories — it does not switch pages or open shortcut search) |
+| `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
+| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark |
 | `GG` | Jump to very first bookmark |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Enter` / `Space` | Open selected |
-| `Esc` | Clear selection; may undo last drag reorder |
+| `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder |
 
 ### 9.3 Bookmark actions
 
@@ -359,7 +361,7 @@ Shows bookmarks you opened recently **on the current page** (not global). From t
 
 ### 9.4 Cheat sheet
 
-Press **`!`** or **`F1`**. Type in the filter box to narrow the list. The cheat sheet does not open while the **page overview** (`,`) is already open.
+Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open.
 
 Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link).
 
@@ -380,6 +382,7 @@ Three input modes share one overlay; switch with keys or footer chips.
 ### 10.1 Search (`>`)
 
 - Type to filter bookmarks on the current page (or configured scope).  
+- On desktop, the highlighted match receives keyboard focus (not only a visual highlight). Closing search restores focus to the control that opened it.  
 - Empty state: recent queries and saved searches as chips; **`←`/`→`** select a chip, **`Enter`** applies it; filter hints and finders below.  
 - **Filters** (type or pick from autocomplete):
 
@@ -399,8 +402,8 @@ When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on b
 - **OR logic** — the dashboard shows bookmarks that have **any** of the selected tags (not all).
 - Selected tags are highlighted in the cloud; active filters appear as **chips** under the page title (each chip has its own **×** to remove one tag) and on the **/** FAB (`#work` or `#work +1` when more than one).
 - **Escape** in the cloud closes the modal (filter remains). **Escape** on the dashboard (cloud closed) clears all tag filters and returns focus to bookmarks.
-- **Clear tag filter** in the cloud footer removes every selected tag.
-- **Arrow keys** move between tags and **Clear tag filter**.
+- **Clear tag filter** in the cloud footer removes every selected tag (`Enter` / `Space` on **Close** or **Clear** works too).
+- **Arrow keys** move between tags and **Clear tag filter**; `Tab` stays inside the modal.
 - Hidden on mobile / narrow layouts.
 
 With tag cloud off, or inside the search overlay, **`/`** follows your fuzzy/interleave search setting (see below).
@@ -499,7 +502,7 @@ Use **config → pages** to rename a page on any device.
 
 ### Collapse
 
-Click category header or chevron. **Always collapse categories** can be set in general settings.
+Click category header or chevron, or focus the header and press **Enter** / **Space**. **Always collapse categories** can be set in general settings.
 
 ---
 

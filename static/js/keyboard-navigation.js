@@ -425,7 +425,9 @@ class KeyboardNavigation {
             if (!openLink) {
                 return;
             }
-            openLink.tabIndex = this.currentIndex >= 0 && i === this.currentIndex ? 0 : -1;
+            openLink.tabIndex = this.currentIndex >= 0
+                ? (i === this.currentIndex ? 0 : -1)
+                : (i === 0 ? 0 : -1);
         });
         if (
             doFocus &&
@@ -498,6 +500,12 @@ class KeyboardNavigation {
         // Tab / Shift+Tab: linear bookmark navigation (only when a bookmark is selected)
         if (key === 'Tab' && this.currentIndex >= 0) {
             if (this.navigableElements.length === 0) {
+                return;
+            }
+            const atLast = this.currentIndex === this.navigableElements.length - 1;
+            const atFirst = this.currentIndex === 0;
+            if ((!e.shiftKey && atLast) || (e.shiftKey && atFirst)) {
+                this.clearSelection();
                 return;
             }
             e.preventDefault();
@@ -639,7 +647,7 @@ class KeyboardNavigation {
     jumpToCategory(n) {
         this.updateNavigableElements();
         const categories = Array.from(
-            document.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])')
+            document.querySelectorAll('.category[data-category-id]')
         ).filter(el => el.getAttribute('data-collapsed') !== 'true');
 
         const target = categories[n - 1];
@@ -1075,6 +1083,7 @@ class KeyboardNavigation {
     }
 
     clearSelection() {
+        const hadSelection = this.currentIndex >= 0;
         this.restoreKbdSelection();
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
@@ -1085,6 +1094,13 @@ class KeyboardNavigation {
         this.currentIndex = -1;
         this.syncRovingTabStops({ focus: false });
         this.syncGridActiveDescendant();
+
+        if (hadSelection) {
+            const firstLink = this.navigableElements[0]?.querySelector?.('a.bookmark-open');
+            if (firstLink && typeof firstLink.focus === 'function') {
+                firstLink.focus({ preventScroll: true });
+            }
+        }
     }
 
     // Public methods

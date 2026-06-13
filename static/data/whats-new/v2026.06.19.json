@@ -159,6 +159,35 @@
           "text": "<strong>Auto-dark listener guard</strong> — the dashboard fallback for <code>autoDarkMode</code> attaches one <code>matchMedia</code> listener instead of stacking on every settings apply."
         }
       ]
+    },
+    {
+      "title": "Keyboard focus & accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Tab entry in bookmark grid</strong> — the first visible bookmark is in the Tab order when no row is keyboard-selected."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overlay focus traps</strong> — shared <code>focus-trap-utils.js</code>; <kbd>Tab</kbd> stays inside the tag cloud, page overview, and quick-add omnibox."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Focus restore</strong> — closing search returns focus to the opener; cancelling inline edit restores the bookmark row; rebuilding tag-filter chips keeps focus on the active control; <code>AppModal.hide</code> checks <code>isConnected</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page tabs &amp; categories</strong> — <kbd>←</kbd>/<kbd>→</kbd>/<kbd>Home</kbd>/<kbd>End</kbd> on the tablist; <kbd>Enter</kbd>/<kbd>Space</kbd> on category headers toggles collapse."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search &amp; grid polish</strong> — desktop search moves DOM focus to the highlighted match; <kbd>Tab</kbd> at the grid edge exits to header/FAB; <kbd>Esc</kbd> clears selection and focuses the first bookmark; <kbd>G</kbd>+digit includes smart collections."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Modals &amp; overlays</strong> — recent panel arrow navigation; page overview <kbd>Space</kbd> activates a row; What's new focuses scroll content; tag cloud <kbd>Enter</kbd>/<kbd>Space</kbd> on Close/Clear; date popover blocks conflicting shortcuts."
+        }
+      ]
     }
   ]
 }

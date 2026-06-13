@@ -360,6 +360,14 @@
                 return;
             }
 
+            if (e.key === 'Tab' && this.modal) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                window.FocusTrapUtils?.trapTabKey(e, this.modal);
+                return;
+            }
+
             if (e.key === 'Enter' || e.key === ' ') {
                 const active = document.activeElement;
                 if (active?.classList?.contains('tag-cloud-word')) {
@@ -368,6 +376,20 @@
                     e.stopImmediatePropagation();
                     const tag = active.querySelector('.tag-cloud-word-label')?.textContent;
                     if (tag) this.selectTag(tag);
+                    return;
+                }
+                if (active === this.closeBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.closeModal();
+                    return;
+                }
+                if (active === this.clearBtn && this.isClearButtonFocusable()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.clearDashboardFilter({ closeModal: true, focusBookmarks: true });
                     return;
                 }
             }

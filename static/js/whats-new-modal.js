@@ -177,7 +177,7 @@
             ? '<div class="wn-lazy-sentinel" data-wn-sentinel aria-hidden="true"></div>'
             : '';
         return `
-            <div class="wn-content" data-wn-content>
+            <div class="wn-content" data-wn-content tabindex="-1">
                 ${buildIntroHtml()}
                 <div class="wn-releases-root" data-wn-releases-root>
                     ${firstReleaseHtml || ''}
@@ -404,6 +404,10 @@
                     }
                     textEl.innerHTML = buildShellHtml(visible, renderRelease(first));
                     textEl.querySelector('.wn-content')?.removeAttribute('aria-busy');
+                    const contentRoot = textEl.querySelector('[data-wn-content]');
+                    if (contentRoot && typeof contentRoot.focus === 'function') {
+                        contentRoot.focus({ preventScroll: true });
+                    }
 
                     if (visible.length > 1) {
                         const scrollRoot = getScrollRoot();

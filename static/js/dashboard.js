@@ -410,7 +410,19 @@ class Dashboard {
     }
 
     restoreDashboardInteractionAfterBfcache() {
+        document.querySelectorAll('#dashboard-layout .bookmark-link').forEach((row) => {
+            row.classList.remove('keyboard-selected');
+            row.removeAttribute('aria-current');
+            row.setAttribute('aria-selected', 'false');
+            const openLink = row.querySelector('a.bookmark-open');
+            if (openLink) {
+                openLink.tabIndex = -1;
+            }
+        });
+        document.getElementById('bookmark-grid')?.removeAttribute('aria-activedescendant');
+
         this.initializeKeyboardNavigation();
+        this.keyboardNavigation?.scheduleUpdate?.();
         this.swipeNavigation?.cleanup?.();
         this.initializeSwipeNavigation();
         window.DashboardTagCloud?.init?.();
@@ -1335,6 +1347,12 @@ class Dashboard {
                 this.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
+            pageBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    pageBtn.click();
+                }
+            });
             pageBtn.addEventListener('dblclick', (e) => {
                 if (!this.allowsPageTabInlineEdit()) return;
                 e.preventDefault();
@@ -1345,6 +1363,43 @@ class Dashboard {
         if (activeBtn) {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
         }
+
+        if (this._pageNavKeyHandler) {
+            container.removeEventListener('keydown', this._pageNavKeyHandler);
+        }
+        this._pageNavKeyHandler = (e) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+                return;
+            }
+            const tabs = Array.from(container.querySelectorAll('.page-nav-btn'));
+            if (tabs.length === 0) {
+                return;
+            }
+            let idx = tabs.findIndex((tab) => tab === document.activeElement);
+            if (idx < 0) {
+                idx = tabs.findIndex((tab) => tab.classList.contains('active'));
+            }
+            if (idx < 0) {
+                return;
+            }
+            e.preventDefault();
+            if (e.key === 'Home') {
+                idx = 0;
+            } else if (e.key === 'End') {
+                idx = tabs.length - 1;
+            } else if (e.key === 'ArrowRight') {
+                idx = (idx + 1) % tabs.length;
+            } else {
+                idx = (idx - 1 + tabs.length) % tabs.length;
+            }
+            tabs.forEach((tab, i) => {
+                tab.tabIndex = i === idx ? 0 : -1;
+            });
+            tabs[idx].focus({ preventScroll: true });
+            tabs[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        };
+        container.addEventListener('keydown', this._pageNavKeyHandler);
+
         this.updateMiniStatusLine();
     }
 
@@ -1531,6 +1586,7 @@ class Dashboard {
             removeRepositionListeners();
             popover.remove();
             this._renderPageTabContent(btn, page, index);
+            btn.focus({ preventScroll: true });
         };
 
         nameInput.addEventListener('keydown', (e) => {
@@ -2285,6 +2341,24 @@ class Dashboard {
             return;
         }
 
+        let focusRestore = null;
+        if (!wrap.hidden && wrap.contains(document.activeElement)) {
+            const active = document.activeElement;
+            if (active.classList?.contains('tag-filter-indicator-clear')) {
+                focusRestore = { kind: 'clear' };
+            } else if (active.classList?.contains('tag-filter-indicator-tag-remove')) {
+                focusRestore = {
+                    kind: 'remove',
+                    tag: active.closest('.tag-filter-indicator-tag-item')?.querySelector('.tag-filter-indicator-tag')?.textContent,
+                };
+            } else if (active.classList?.contains('tag-filter-indicator-chip')) {
+                focusRestore = {
+                    kind: 'chip',
+                    tag: active.querySelector('.tag-filter-indicator-tag')?.textContent,
+                };
+            }
+        }
+
         if (prev.tagsKey === tagsKey && this.tagFilterIndicatorSummary) {
             this.tagFilterIndicatorSummary.textContent = countLabel;
             wrap.setAttribute('aria-label', groupAria);
@@ -2370,6 +2444,31 @@ class Dashboard {
         this.tagFilterIndicatorSummary = summary;
         this.tagFilterIndicatorClear = clearBtn;
         this._tagFilterIndicatorState = { tagsKey, count };
+
+        if (focusRestore?.kind === 'clear') {
+            clearBtn.focus({ preventScroll: true });
+        } else if (focusRestore?.tag) {
+            let restored = false;
+            for (const item of chipsWrap.querySelectorAll('.tag-filter-indicator-tag-item')) {
+                const tagText = item.querySelector('.tag-filter-indicator-tag')?.textContent;
+                if (tagText !== focusRestore.tag) {
+                    continue;
+                }
+                const target = focusRestore.kind === 'remove'
+                    ? item.querySelector('.tag-filter-indicator-tag-remove')
+                    : item.querySelector('.tag-filter-indicator-chip');
+                if (target?.focus) {
+                    target.focus({ preventScroll: true });
+                    restored = true;
+                }
+                break;
+            }
+            if (!restored) {
+                const fallback = chipsWrap.querySelector('.tag-filter-indicator-chip, .tag-filter-indicator-tag-remove')
+                    || clearBtn;
+                fallback?.focus?.({ preventScroll: true });
+            }
+        }
     }
 
     setupReorderUndoShortcut() {
@@ -2674,6 +2773,9 @@ class Dashboard {
 
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '!') {
                 if (this.isModalOpen()) {
+                    return;
+                }
+                if (window.DashboardTagCloud?.modalOpen) {
                     return;
                 }
                 if (this.searchComponent && this.searchComponent.isActive()) {
@@ -3298,8 +3400,10 @@ class Dashboard {
     isModalOpen() {
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
+        if (window.DashboardTagCloud?.modalOpen) return true;
         if (document.getElementById('omnibox-overlay')) return true;
         if (document.getElementById('page-overview-overlay')) return true;
+        if (document.getElementById('date-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
         const blockingSelectors = [
             '.onboarding-overlay',
@@ -3358,12 +3462,11 @@ class Dashboard {
             confirmText: this.language?.t('dashboard.cheatsheetClose') || 'close',
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
+            initialFocusSelector: '#cheat-sheet-filter',
         });
 
         const filterInput = document.getElementById('cheat-sheet-filter');
         if (!filterInput) return;
-
-        setTimeout(() => filterInput.focus(), 60);
 
         filterInput.addEventListener('input', () => {
             const q = filterInput.value.toLowerCase().trim();
@@ -3531,13 +3634,17 @@ class Dashboard {
                 e.preventDefault();
                 e.stopPropagation();
                 close();
-            } else if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.FocusTrapUtils?.trapTabKey(e, panel);
+            } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setFocus(focusedIndex + 1);
-            } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+            } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 setFocus(focusedIndex - 1);
-            } else if (e.key === 'Enter') {
+            } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 const page = pages[focusedIndex];
                 if (page) {
@@ -3713,8 +3820,19 @@ class Dashboard {
         };
 
         const onKey = (e) => {
-            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
-            else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); submit(); }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.FocusTrapUtils?.trapTabKey(e, box);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                submit();
+            }
         };
 
         document.addEventListener('keydown', onKey, true);
@@ -4910,7 +5028,8 @@ class Dashboard {
         titleElement.id = titleDomId;
         categoryDiv.setAttribute('aria-labelledby', titleDomId);
         titleElement.setAttribute('role', 'rowheader');
-        titleElement.tabIndex = -1;
+        titleElement.tabIndex = 0;
+        titleElement.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
@@ -4967,11 +5086,21 @@ class Dashboard {
             }
         }
 
-        titleElement.addEventListener('click', () => {
-            const isCollapsed = categoryDiv.getAttribute('data-collapsed') === 'true';
-            categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
-            this.collapsedCategories[collapsedKey] = !isCollapsed;
+        const setCategoryCollapsed = (collapsed) => {
+            categoryDiv.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+            titleElement.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            this.collapsedCategories[collapsedKey] = collapsed;
             this.saveCollapsedStates();
+        };
+
+        titleElement.addEventListener('click', () => {
+            setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
+        });
+        titleElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
+            }
         });
 
         if (!isSmartCollection) {
@@ -7083,6 +7212,31 @@ class Dashboard {
         this.populateBookmarkRowView(row, bookmark, categoryId, true);
         this.destroyCategoryReorderInstances();
         this.initializeCategoryReorder();
+
+        const openLink = row.querySelector('a.bookmark-open');
+        if (openLink && typeof openLink.focus === 'function') {
+            openLink.focus({ preventScroll: true });
+        }
+        const kn = this.keyboardNavigation;
+        if (kn) {
+            kn.updateNavigableElements();
+            const idx = kn.navigableElements.indexOf(row);
+            if (idx >= 0) {
+                kn.currentIndex = idx;
+                kn.navigableElements.forEach((el, i) => {
+                    const selected = i === idx;
+                    el.classList.toggle('keyboard-selected', selected);
+                    el.setAttribute('aria-selected', selected ? 'true' : 'false');
+                    if (selected) {
+                        el.setAttribute('aria-current', 'true');
+                    } else {
+                        el.removeAttribute('aria-current');
+                    }
+                });
+                kn.syncRovingTabStops({ focus: false });
+                kn.syncGridActiveDescendant();
+            }
+        }
     }
 
     _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
@@ -7642,7 +7796,8 @@ class Dashboard {
             showCancel: false,
             modalClass: 'recent-bookmarks-modal',
             modalMaxWidth: '760px',
-            modalWidth: '92vw'
+            modalWidth: '92vw',
+            onHide: () => this._cleanupRecentModalKeyHandler(),
         });
 
         if (!this._bookmarksReady) {
@@ -7718,7 +7873,57 @@ class Dashboard {
                     if (plan?.bookmarks?.length) this.openBookmarksInNewTabs(plan.bookmarks);
                 });
             });
+            this._setupRecentModalKeyboardNav(body);
         }
+    }
+
+    _setupRecentModalKeyboardNav(body) {
+        this._cleanupRecentModalKeyHandler();
+        const getFocusables = () => Array.from(
+            body.querySelectorAll('.recent-bookmarks-open-btn, .recent-bookmarks-modal-item')
+        );
+        const focusables = getFocusables();
+        if (!focusables.length) {
+            return;
+        }
+        focusables[0].focus({ preventScroll: true });
+        this._recentModalKeyHandler = (e) => {
+            if (!this.isRecentBookmarksModalOpen()) {
+                this._cleanupRecentModalKeyHandler();
+                return;
+            }
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') {
+                return;
+            }
+            const items = getFocusables();
+            if (!items.length) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            let idx = items.indexOf(document.activeElement);
+            if (idx < 0) {
+                idx = 0;
+            } else if (e.key === 'Home') {
+                idx = 0;
+            } else if (e.key === 'End') {
+                idx = items.length - 1;
+            } else if (e.key === 'ArrowDown') {
+                idx = (idx + 1) % items.length;
+            } else {
+                idx = (idx - 1 + items.length) % items.length;
+            }
+            items[idx].focus({ preventScroll: true });
+        };
+        document.addEventListener('keydown', this._recentModalKeyHandler, true);
+    }
+
+    _cleanupRecentModalKeyHandler() {
+        if (!this._recentModalKeyHandler) {
+            return;
+        }
+        document.removeEventListener('keydown', this._recentModalKeyHandler, true);
+        this._recentModalKeyHandler = null;
     }
 
     escapeHtml(value) {
@@ -8957,6 +9162,7 @@ class Dashboard {
             pop.remove();
             document.removeEventListener('click', outside);
             document.removeEventListener('keydown', onKey);
+            dateEl.focus?.({ preventScroll: true });
         };
         const outside = (e) => { if (!pop.contains(e.target) && !dateEl.contains(e.target)) close(); };
         const onKey = (e) => { if (e.key === 'Escape') close(); };
