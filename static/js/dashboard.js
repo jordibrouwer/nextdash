@@ -114,6 +114,7 @@ class Dashboard {
             this.flushPendingDashboardSavesOnExit();
             this.keyboardNavigation?.cleanup?.();
             this.swipeNavigation?.cleanup?.();
+            window.DashboardTagCloud?.destroy?.();
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -261,7 +262,7 @@ class Dashboard {
             });
 
             this._configRefreshReady = true;
-            this.markPendingConfigSyncAsAppliedAfterLoad();
+            await this.reconcilePendingConfigSyncAfterLoad();
 
             this.updateMiniStatusLine();
             this.initializeOnboarding();
@@ -273,6 +274,7 @@ class Dashboard {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }
         } catch (error) {
+            this._renderBootstrapFatalError();
             return;
         } finally {
             if (window.SkeletonLoading && typeof window.SkeletonLoading.finish === 'function') {
@@ -281,6 +283,41 @@ class Dashboard {
                 document.body.classList.remove('loading');
             }
         }
+    }
+
+    _renderBootstrapFatalError() {
+        window.dashboardInstance = this;
+        const container = document.getElementById('dashboard-layout');
+        if (!container) {
+            return;
+        }
+        container.setAttribute('aria-busy', 'false');
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'empty-state dashboard-bootstrap-error';
+        wrap.setAttribute('role', 'alert');
+
+        const message = document.createElement('p');
+        message.className = 'empty-state-text';
+        message.textContent = this.formatDashboardLabel(
+            'loadFailed',
+            {},
+            'Failed to load dashboard. Please reload the page.'
+        );
+        wrap.appendChild(message);
+
+        const reloadBtn = document.createElement('button');
+        reloadBtn.type = 'button';
+        reloadBtn.className = 'empty-state--category-btn';
+        reloadBtn.textContent = this.formatDashboardLabel('reloadPage', {}, 'Reload page');
+        reloadBtn.addEventListener('click', () => window.location.reload());
+        wrap.appendChild(reloadBtn);
+
+        container.appendChild(wrap);
+    }
+
+    safeBookmarkOpenHref(url) {
+        return window.BookmarkUrlUtils?.safeHttpResourceUrl?.(url) || '';
     }
 
     setupExtensionBookmarkSavedListener() {
@@ -315,6 +352,9 @@ class Dashboard {
     setupConfigStructureReloadListener() {
         window.addEventListener('storage', async (event) => {
             if (!event.newValue) {
+                return;
+            }
+            if (event.key !== this.structureSyncEventKey && event.key !== this.settingsSyncEventKey) {
                 return;
             }
             try {
@@ -384,6 +424,41 @@ class Dashboard {
             this.lastAppliedStructureSyncAt = now;
             this.lastAppliedSettingsSyncAt = now;
         }
+    }
+
+    async reconcilePendingConfigSyncAfterLoad() {
+        const structurePending = this.readPendingConfigSync(this.pendingStructureSyncKey);
+        const settingsPending = this.readPendingConfigSync(this.pendingSettingsSyncKey);
+        const structureTs = structurePending?.timestamp || 0;
+        const settingsTs = settingsPending?.timestamp || 0;
+
+        if (structureTs > this.lastAppliedStructureSyncAt) {
+            try {
+                await this.refreshAfterConfigStructureUpdate(structurePending || {});
+                this.lastAppliedStructureSyncAt = structureTs;
+                try { sessionStorage.removeItem(this.pendingStructureSyncKey); } catch { /* ignore */ }
+                if (settingsTs > 0) {
+                    this.lastAppliedSettingsSyncAt = Math.max(this.lastAppliedSettingsSyncAt, settingsTs);
+                    try { sessionStorage.removeItem(this.pendingSettingsSyncKey); } catch { /* ignore */ }
+                }
+            } catch {
+                // Pending keys stay for maybeRefreshAfterConfigReturn / visibility retry.
+            }
+            return;
+        }
+
+        if (settingsTs > this.lastAppliedSettingsSyncAt) {
+            try {
+                await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
+                this.lastAppliedSettingsSyncAt = settingsTs;
+                try { sessionStorage.removeItem(this.pendingSettingsSyncKey); } catch { /* ignore */ }
+            } catch {
+                // Pending key stays for retry.
+            }
+            return;
+        }
+
+        this.markPendingConfigSyncAsAppliedAfterLoad();
     }
 
     async maybeRefreshAfterConfigReturn() {
@@ -461,9 +536,9 @@ class Dashboard {
         }
         try {
             await this.loadData();
-            await this.withRetry(() => this.loadPageBookmarks(this.currentPageId), 2, 220);
+            await this.withRetry(() => this.loadPageBookmarks(this.currentPageId, { rethrow: true }), 2, 220);
             if (this.needsCrossPageBookmarks()) {
-                await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+                await this.withRetry(() => this.loadAllBookmarks({ rethrow: true }), 2, 220);
             } else {
                 this.allBookmarks = [];
             }
@@ -480,6 +555,7 @@ class Dashboard {
                 this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to sync config changes. Please try again.'),
                 { retry: () => this.refreshAfterConfigStructureUpdate(payload) }
             );
+            throw error;
         }
     }
 
@@ -497,9 +573,9 @@ class Dashboard {
             this.applyVisualSettings();
             this.setupDOM();
             this.updateStatusMonitor();
-            await this.withRetry(() => this.loadPageBookmarks(this.currentPageId), 2, 220);
+            await this.withRetry(() => this.loadPageBookmarks(this.currentPageId, { rethrow: true }), 2, 220);
             if (this.needsCrossPageBookmarks()) {
-                await this.withRetry(() => this.loadAllBookmarks(), 2, 220);
+                await this.withRetry(() => this.loadAllBookmarks({ rethrow: true }), 2, 220);
             } else {
                 this.allBookmarks = [];
             }
@@ -518,6 +594,7 @@ class Dashboard {
                 this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to apply settings update. Please try again.'),
                 { retry: () => this.refreshAfterConfigSettingsUpdate(payload) }
             );
+            throw error;
         }
     }
 
@@ -920,8 +997,25 @@ class Dashboard {
         return loadId === this._pageBookmarksLoadId;
     }
 
-    async loadPageBookmarks(pageId) {
+    async loadPageBookmarks(pageId, options = {}) {
+        const { rethrow = false } = options;
         const targetPageId = Number(pageId);
+        if (!Number.isFinite(targetPageId)) {
+            if (rethrow) {
+                throw new Error('Invalid page id for loadPageBookmarks');
+            }
+            return;
+        }
+
+        if (this.isInlineEditActive() && this.hasInlineEditUnsavedChanges()) {
+            if (!(await this.confirmInlineEditBeforeNavigation())) {
+                if (rethrow) {
+                    throw new Error('loadPageBookmarks cancelled: unsaved inline edits');
+                }
+                return;
+            }
+        }
+
         const loadId = ++this._pageBookmarksLoadId;
 
         try {
@@ -955,13 +1049,13 @@ class Dashboard {
             this.initializeButtonTipsRotation();
 
             // Update URL hash
-            const pageIndex = this.pages.findIndex(p => p.id === targetPageId);
+            const pageIndex = this.pages.findIndex(p => Number(p.id) === targetPageId);
             if (pageIndex !== -1) {
                 window.location.hash = `#${pageIndex + 1}`;
             }
 
             // Update page title
-            const page = this.pages.find(p => p.id === targetPageId);
+            const page = this.pages.find(p => Number(p.id) === targetPageId);
             if (page) {
                 this.updatePageTitle(page.name);
             }
@@ -994,16 +1088,20 @@ class Dashboard {
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
                 return;
             }
+            if (rethrow) {
+                throw error;
+            }
             this.showErrorNotification(
                 this.formatDashboardLabel('loadPageBookmarksFailed', {}, 'Failed to load bookmarks for this page.'),
                 {
-                    retry: () => this.loadPageBookmarks(this.currentPageId),
+                    retry: () => this.loadPageBookmarks(targetPageId),
                 }
             );
         }
     }
 
-    async loadAllBookmarks() {
+    async loadAllBookmarks(options = {}) {
+        const { rethrow = false } = options;
         try {
             const allBookmarksRes = await fetch('/api/bookmarks?all=true');
             if (!allBookmarksRes.ok) {
@@ -1016,6 +1114,9 @@ class Dashboard {
                 this.updateSearchComponent();
             }
         } catch (error) {
+            if (rethrow) {
+                throw error;
+            }
             this.showErrorNotification(
                 this.formatDashboardLabel('refreshGlobalShortcutsFailed', {}, 'Failed to refresh global shortcuts.'),
                 {
@@ -1301,11 +1402,14 @@ class Dashboard {
             this._renderPageTabContent(btn, page, index);
             this.updatePageTitle(newName);
             try {
-                await dashFetch('/api/pages', {
+                const response = await dashFetch('/api/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.pages)
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
             } catch (error) {
                 page.name = previousName;
                 page.icon = previousIcon;
@@ -2807,16 +2911,16 @@ class Dashboard {
             }
             const currentContextTips = this.getInlineContextTipsForCurrentPage();
             if (currentContextTips.length > 0) {
-                hintEl.innerHTML = currentContextTips[this.contextTipRotationIndex % currentContextTips.length];
+                this.setTipHtml(hintEl, currentContextTips[this.contextTipRotationIndex % currentContextTips.length]);
                 this.contextTipRotationIndex += 1;
             } else {
                 const showPriority = normalCounter >= 5;
                 if (showPriority) {
-                    hintEl.innerHTML = priorityTips[this.tipPriorityIndex % priorityTips.length];
+                    this.setTipHtml(hintEl, priorityTips[this.tipPriorityIndex % priorityTips.length]);
                     this.tipPriorityIndex += 1;
                     normalCounter = 0;
                 } else {
-                    hintEl.innerHTML = normalTips[this.tipRotationIndex % normalTips.length];
+                    this.setTipHtml(hintEl, normalTips[this.tipRotationIndex % normalTips.length]);
                     this.tipRotationIndex += 1;
                     normalCounter += 1;
                 }
@@ -2856,7 +2960,8 @@ class Dashboard {
             }
 
             this.backupTipShown = true;
-            currentHintEl.innerHTML = this.language ? this.language.t('dashboard.tipBackup') : 'Tip: create a backup via <a class="button-hint-link" href="/config#backups">config → backups</a>.';
+            const backupTip = this.language ? this.language.t('dashboard.tipBackup') : 'Tip: create a backup via <a class="button-hint-link" href="/config#backups">config → backups</a>.';
+            this.setTipHtml(currentHintEl, backupTip);
         }, 30000);
     }
 
@@ -3607,8 +3712,9 @@ class Dashboard {
 
         applyPreferredTheme();
 
-        if (media && typeof media.addEventListener === 'function') {
+        if (media && typeof media.addEventListener === 'function' && !this._autoDarkModeListenerAttached) {
             media.addEventListener('change', applyPreferredTheme);
+            this._autoDarkModeListenerAttached = true;
         }
     }
 
@@ -3670,28 +3776,29 @@ class Dashboard {
             const searchLabel = this.language?.t('dashboard.searchLabel') || 'Search';
             const commandNewLabel = this.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
             const commandTagLabel = this.language?.t('dashboard.emptyStateCommandTag') || 'Browse by tag';
+            const esc = (value) => this.escapeHtml(value);
             const searchActionHtml = showKeyboardActions
-                ? `<button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>`
-                : `<button class="empty-state-action-btn" id="empty-state-search" type="button">${searchLabel}</button>`;
+                ? `<button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${esc(searchLabel)}</button>`
+                : `<button class="empty-state-action-btn" id="empty-state-search" type="button">${esc(searchLabel)}</button>`;
             const commandNewHtml = showKeyboardActions
-                ? `<button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${commandNewLabel}</button>`
+                ? `<button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${esc(commandNewLabel)}</button>`
                 : '';
             const commandTagHtml = showKeyboardActions
-                ? `<button class="empty-state-action-btn" id="empty-state-command-tag" type="button"><kbd>:tag</kbd> ${commandTagLabel}</button>`
+                ? `<button class="empty-state-action-btn" id="empty-state-command-tag" type="button"><kbd>:tag</kbd> ${esc(commandTagLabel)}</button>`
                 : '';
 
             if (hasBookmarksOnOtherPages) {
                 container.innerHTML = `
                     <div class="empty-state empty-state--page">
                         <div class="empty-state-label">// ${pageName}</div>
-                        <div class="empty-state-text" data-i18n="dashboard.emptyPage">${emptyPageText}</div>
+                        <div class="empty-state-text" data-i18n="dashboard.emptyPage">${esc(emptyPageText)}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark" type="button">${addLabel}</button>
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark" type="button">${esc(addLabel)}</button>
                             ${searchActionHtml}
                             ${commandNewHtml}
                             ${commandTagHtml}
                         </div>
-                        <p class="empty-state-hint">${addHint}</p>
+                        <p class="empty-state-hint">${esc(addHint)}</p>
                     </div>
                 `;
                 container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
@@ -3709,16 +3816,16 @@ class Dashboard {
             } else {
                 const freshText = this.language?.t('dashboard.emptyFresh') || 'No bookmarks yet';
                 const searchFreshHtml = showKeyboardActions
-                    ? `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${searchLabel}</button>`
-                    : `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button">${searchLabel}</button>`;
+                    ? `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${esc(searchLabel)}</button>`
+                    : `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button">${esc(searchLabel)}</button>`;
                 container.innerHTML = `
                     <div class="empty-state empty-state--fresh">
-                        <div class="empty-state-text" data-i18n="dashboard.emptyFresh">${freshText}</div>
+                        <div class="empty-state-text" data-i18n="dashboard.emptyFresh">${esc(freshText)}</div>
                         <div class="empty-state-actions">
-                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark-fresh" type="button">${addLabel}</button>
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark-fresh" type="button">${esc(addLabel)}</button>
                             ${searchFreshHtml}
                         </div>
-                        <p class="empty-state-hint">${addHint}</p>
+                        <p class="empty-state-hint">${esc(addHint)}</p>
                         <div class="empty-state-action">
                             <a class="btn btn-secondary" href="/config#pages" data-i18n="dashboard.emptyStateSetupPages">Set up pages in config</a>
                             <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
@@ -4668,10 +4775,16 @@ class Dashboard {
             } else if (!isTagFilterChunk) {
                 const emptyEl = document.createElement('div');
                 emptyEl.className = 'empty-state--category';
-                const addLabel = t('dashboard.emptyStateAddAction', '+ bookmark');
-                emptyEl.innerHTML = `<span class="empty-state--category-text">${t('dashboard.emptyCategoryText', 'no bookmarks')}</span>
-                    <button type="button" class="empty-state--category-btn">${addLabel}</button>`;
-                emptyEl.querySelector('button')?.addEventListener('click', () => {
+                const textSpan = document.createElement('span');
+                textSpan.className = 'empty-state--category-text';
+                textSpan.textContent = t('dashboard.emptyCategoryText', 'no bookmarks');
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'empty-state--category-btn';
+                addBtn.textContent = t('dashboard.emptyStateAddAction', '+ bookmark');
+                emptyEl.appendChild(textSpan);
+                emptyEl.appendChild(addBtn);
+                addBtn.addEventListener('click', () => {
                     window.dashboardInstance?.quickAddWidget?.open();
                 });
                 bookmarksList.appendChild(emptyEl);
@@ -5644,7 +5757,8 @@ class Dashboard {
 
         const openLink = document.createElement('a');
         openLink.className = 'bookmark-open';
-        openLink.href = bookmark.url || '#';
+        const safeHref = this.safeBookmarkOpenHref(bookmark.url);
+        openLink.href = safeHref || '#';
         openLink.id = this.bookmarkCellId(bookmark, bookmarkIndex, categoryId);
         openLink.setAttribute('role', 'gridcell');
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
@@ -5660,6 +5774,10 @@ class Dashboard {
             bookmarkIndex >= 0 ? bookmarkIndex : undefined
         );
         openLink.addEventListener('click', (e) => {
+            if (!safeHref) {
+                e.preventDefault();
+                return;
+            }
             recordOpen();
             if (document.getElementById('dashboard-layout')?.classList.contains('layout-launcher')) {
                 row.classList.remove('bookmark-pulse');
@@ -5669,15 +5787,19 @@ class Dashboard {
             }
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
-                window.hyprMode.handleBookmarkClick(bookmark.url);
+                window.hyprMode.handleBookmarkClick(safeHref);
             }
         });
         openLink.addEventListener('auxclick', (e) => {
             if (e.button === 1) {
+                if (!safeHref) {
+                    e.preventDefault();
+                    return;
+                }
                 recordOpen();
                 if (window.hyprMode && window.hyprMode.isEnabled()) {
                     e.preventDefault();
-                    window.hyprMode.handleBookmarkClick(bookmark.url);
+                    window.hyprMode.handleBookmarkClick(safeHref);
                 }
             }
         });
@@ -6507,16 +6629,22 @@ class Dashboard {
             targetBookmarks.push({ ...bookmarkState });
 
             const headers = { 'Content-Type': 'application/json' };
-            await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
+            const sourceSaveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(sourceBookmarks)
             });
-            await dashFetch(`/api/bookmarks?page=${targetPageId}`, {
+            if (!sourceSaveRes.ok) {
+                throw new Error('Failed to save source page bookmarks.');
+            }
+            const targetSaveRes = await dashFetch(`/api/bookmarks?page=${targetPageId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(targetBookmarks)
             });
+            if (!targetSaveRes.ok) {
+                throw new Error('Failed to save target page bookmarks.');
+            }
 
             if (isCurrentScope) {
                 this.bookmarks = sourceBookmarks;
@@ -7050,7 +7178,8 @@ class Dashboard {
 
     createRecentBookmarkElement(bookmark) {
         const link = document.createElement('a');
-        link.href = bookmark.url;
+        const safeHref = this.safeBookmarkOpenHref(bookmark.url);
+        link.href = safeHref || '#';
         link.className = 'bookmark-link recent-bookmark-link';
 
         const textWrapper = document.createElement('span');
@@ -7072,9 +7201,19 @@ class Dashboard {
             bookmark,
             this.resolveBookmarkIndex(bookmark)
         );
-        link.addEventListener('click', recordOpen);
+        link.addEventListener('click', (e) => {
+            if (!safeHref) {
+                e.preventDefault();
+                return;
+            }
+            recordOpen();
+        });
         link.addEventListener('auxclick', (e) => {
             if (e.button === 1) {
+                if (!safeHref) {
+                    e.preventDefault();
+                    return;
+                }
                 recordOpen();
             }
         });
@@ -7341,6 +7480,60 @@ class Dashboard {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    setTipHtml(element, html) {
+        if (!element) return;
+        element.innerHTML = this.sanitizeTipHtml(html);
+    }
+
+    sanitizeTipHtml(html) {
+        const source = String(html || '');
+        if (!source) return '';
+
+        const doc = new DOMParser().parseFromString(`<div>${source}</div>`, 'text/html');
+        const root = doc.body.firstElementChild;
+        if (!root) return this.escapeHtml(source);
+
+        const sanitizeNode = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return document.createTextNode(node.textContent);
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return null;
+            }
+
+            const tag = node.tagName.toLowerCase();
+            if (tag === 'code') {
+                const code = document.createElement('code');
+                node.childNodes.forEach((child) => {
+                    const sanitized = sanitizeNode(child);
+                    if (sanitized) code.appendChild(sanitized);
+                });
+                return code;
+            }
+
+            if (tag === 'a') {
+                const href = String(node.getAttribute('href') || '').trim();
+                const classes = String(node.getAttribute('class') || '').split(/\s+/);
+                if (classes.includes('button-hint-link') && /^\/[a-z0-9#./?=&_-]*$/i.test(href)) {
+                    const link = document.createElement('a');
+                    link.className = 'button-hint-link';
+                    link.href = href;
+                    link.textContent = node.textContent;
+                    return link;
+                }
+            }
+
+            return document.createTextNode(node.textContent);
+        };
+
+        const wrapper = document.createElement('div');
+        root.childNodes.forEach((child) => {
+            const sanitized = sanitizeNode(child);
+            if (sanitized) wrapper.appendChild(sanitized);
+        });
+        return wrapper.innerHTML;
     }
 
     /**

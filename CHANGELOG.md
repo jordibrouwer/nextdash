@@ -50,15 +50,17 @@ _No unreleased changes at this time._
 
 ## v2026.06.19 — June 2026
 
-**Dashboard reliability hardening & startup performance** — init stops cleanly on bootstrap failure with skeleton cleanup; HTTP `.ok` checks on startup fetches; HTML-escaped empty states; inline-edit guard on full re-render; config cross-tab sync uses retry toasts instead of hard reload; corrupt device `localStorage` falls back safely; conditional `allBookmarks` load; shared `visual-settings.js` on dashboard; deferred non-critical scripts; single locale fetch; safer weather line rendering.
+**Dashboard reliability hardening, config-sync fixes, security & startup performance** — bootstrap failure shows an in-dashboard error panel with reload; HTTP `.ok` checks on startup fetches; inline-edit guard on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves after navigation, and ignores unrelated `storage` events; page rename and bookmark move verify POST responses; safe `http(s)` bookmark links; escaped empty states and sanitized tip HTML; conditional `allBookmarks` load; shared `visual-settings.js`; deferred non-critical scripts; single locale fetch; safer weather line; auto-dark and tag-cloud listener hygiene.
 
 ### Dashboard reliability
 
-- **fix** **Init resilience** — `loadData()` rethrows after error toast; `init()` aborts in `catch`; `SkeletonLoading.finish()` in `finally`.
+- **fix** **Init failure UX** — `loadData()` rethrows after error toast; `init()` renders `_renderBootstrapFatalError()` in `#dashboard-layout` and sets `window.dashboardInstance` for retry.
 - **fix** **HTTP bootstrap checks** — `.ok` on `/api/pages`, `/api/settings`, `/api/finders`, and `loadAllBookmarks()`.
-- **fix** **Empty-state XSS** — `escapeHtml()` on page names in empty states.
-- **fix** **Inline-edit guard** — `renderDashboard()` and `_abortInlineEditForRender()` skip when unsaved inline edits are open.
-- **fix** **Config sync without reload** — storage listener and `refreshAfterConfig*` show retry toasts instead of `window.location.reload()`.
+- **fix** **Inline-edit guard** — `renderDashboard()` and `_abortInlineEditForRender()` skip when unsaved inline edits are open; `loadPageBookmarks()` confirms before reload (Quick Add, `:new`, extension refresh).
+- **fix** **Config sync retry** — `loadPageBookmarks` / `loadAllBookmarks` support `{ rethrow: true }`; `withRetry` in `refreshAfterConfig*` actually retries failed bookmark reloads.
+- **fix** **Pending config sync** — `reconcilePendingConfigSyncAfterLoad()` refreshes when pending timestamps are newer than applied; pending keys remain on failure.
+- **fix** **Config sync without reload** — storage listener and `refreshAfterConfig*` show retry toasts instead of `window.location.reload()`; `storage` handler checks sync keys before `JSON.parse`.
+- **fix** **Page rename & bookmark move** — POST `.ok` on `/api/pages` save and both bookmark move saves; rollback + error toast on failure.
 - **fix** **Corrupt localStorage** — try/catch around `JSON.parse(deviceSettings)` with server-settings fallback.
 
 ### Dashboard performance & polish
@@ -68,10 +70,18 @@ _No unreleased changes at this time._
 - **fix** **Script defer** — tours, onboarding, analytics, what's-new stub, PWA hint use `defer`.
 - **fix** **Locale fetch** — removed duplicate `loadTranslations` inline script from `dashboard.html`.
 - **fix** **Weather line** — condition/location text via `textContent`.
+- **fix** **Auto-dark listener guard** — dashboard `initializeAutoDarkMode` fallback attaches one `matchMedia` listener (`_autoDarkModeListenerAttached`).
+- **fix** **Tag cloud teardown** — `DashboardTagCloud.destroy()` on dashboard `pagehide`; idempotent `init()`.
+
+### Dashboard security
+
+- **fix** **Safe bookmark links** — `safeBookmarkOpenHref()` via `BookmarkUrlUtils.safeHttpResourceUrl` on grid and recent-modal links; blocks `javascript:` / `data:` navigation.
+- **fix** **Empty-state escaping** — all dynamic empty-state strings and category-empty UI use `escapeHtml()` or `textContent`.
+- **fix** **Tip sanitization** — `sanitizeTipHtml()` allows only `<code>` and internal `<a class="button-hint-link">` links in rotating tips.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v73` (`2026.06-dashboard-release-v61`); `dashboard.js?v=quickwin-7`.
+- **fix** **Cache-bust** — `whats-new-v74` (`2026.06-dashboard-release-v62`); `dashboard.js?v=reliability-2`.
 
 ---
 

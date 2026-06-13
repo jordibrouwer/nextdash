@@ -8,7 +8,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Init stops on load failure</strong> — a failed bootstrap fetch no longer leaves a half-loaded dashboard; the skeleton always clears and a reload toast appears."
+          "text": "<strong>Init stops on load failure</strong> — a failed bootstrap fetch shows a reload toast and an in-dashboard error panel with <strong>Reload</strong>; <code>window.dashboardInstance</code> is set so retry works."
         },
         {
           "badge": "fix",
@@ -16,15 +16,23 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Empty-state XSS</strong> — page names in empty states are HTML-escaped."
+          "text": "<strong>Inline-edit guard</strong> — <code>renderDashboard()</code> and <code>loadPageBookmarks()</code> skip or confirm while unsaved inline edits are open; Quick Add and <code>:new</code> no longer desync the editor."
         },
         {
           "badge": "fix",
-          "text": "<strong>Inline-edit guard</strong> — <code>renderDashboard()</code> skips while unsaved inline edits are open; re-render no longer silently discards your changes."
+          "text": "<strong>Config sync retry that works</strong> — bookmark reloads use <code>{ rethrow: true }</code> inside <code>withRetry</code>; failed structure/settings refresh shows a retry toast instead of rendering stale data."
         },
         {
           "badge": "fix",
-          "text": "<strong>Config sync without reload</strong> — cross-tab structure/settings sync shows retry toasts instead of <code>window.location.reload()</code> on failure."
+          "text": "<strong>Pending config sync</strong> — <code>reconcilePendingConfigSyncAfterLoad()</code> refreshes when a save landed after navigation; pending keys stay until sync succeeds."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config sync without reload</strong> — cross-tab structure/settings sync shows retry toasts instead of <code>window.location.reload()</code>; the <code>storage</code> listener ignores unrelated <code>localStorage</code> keys."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page rename &amp; bookmark move</strong> — page-tab rename and cross-page moves verify POST <code>response.ok</code> and roll back on failure."
         },
         {
           "badge": "fix",
@@ -54,6 +62,31 @@
         {
           "badge": "fix",
           "text": "<strong>Weather line safety</strong> — location/condition text uses <code>textContent</code> instead of <code>innerHTML</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Auto-dark listener guard</strong> — the dashboard fallback for <code>autoDarkMode</code> attaches one <code>matchMedia</code> listener instead of stacking on every settings apply."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag cloud teardown</strong> — <code>DashboardTagCloud.destroy()</code> removes global keydown/resize listeners on <code>pagehide</code>."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard security",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Safe bookmark links</strong> — main grid and recent-modal links use <code>safeHttpResourceUrl</code>; <code>javascript:</code> and <code>data:</code> URLs cannot navigate."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty-state escaping</strong> — page names, labels, hints, and category-empty copy use <code>escapeHtml</code> or <code>textContent</code> instead of raw <code>innerHTML</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tip sanitization</strong> — rotating header tips allow only <code>&lt;code&gt;</code> and safe internal <code>&lt;a class=\"button-hint-link\"&gt;</code> links."
         }
       ]
     }

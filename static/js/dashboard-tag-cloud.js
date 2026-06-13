@@ -70,8 +70,11 @@
         activeTag: '',
         _kbdFocusIndex: 0,
         _kbdFocusZone: 'chip',
+        _initialized: false,
+        _boundResize: null,
 
         init() {
+            if (this._initialized) return;
             this.wrap = document.getElementById('dashboard-tag-cloud-wrap');
             this.modal = document.getElementById('tag-cloud-modal');
             this.backdrop = document.getElementById('tag-cloud-modal-backdrop');
@@ -92,7 +95,7 @@
                 this.getTagChips().forEach((el) => el.classList.remove('is-keyboard-focused'));
                 this.clearBtn?.classList.add('is-keyboard-focused');
             });
-            window.addEventListener('resize', () => {
+            window.addEventListener('resize', this._boundResize = () => {
                 if (this.modalOpen) this.positionModal();
                 this.syncFromSettings();
             });
@@ -101,6 +104,21 @@
             document.addEventListener('keydown', this._boundModalKeydown, true);
 
             this.syncFromSettings();
+            this._initialized = true;
+        },
+
+        destroy() {
+            if (!this._initialized) return;
+            if (this._boundModalKeydown) {
+                document.removeEventListener('keydown', this._boundModalKeydown, true);
+                this._boundModalKeydown = null;
+            }
+            if (this._boundResize) {
+                window.removeEventListener('resize', this._boundResize);
+                this._boundResize = null;
+            }
+            this.closeModal();
+            this._initialized = false;
         },
 
         getTagChips() {
