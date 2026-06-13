@@ -67,7 +67,7 @@
         closeBtn: null,
         clearBtn: null,
         modalOpen: false,
-        activeTag: '',
+        activeTags: [],
         _kbdFocusIndex: 0,
         _kbdFocusZone: 'chip',
         _initialized: false,
@@ -145,6 +145,58 @@
             this._boundClearFocus = null;
             this.closeModal({ animate: false });
             this._initialized = false;
+        },
+
+        normalizeActiveTags(tags = this.activeTags) {
+            const dash = window.dashboardInstance;
+            if (dash?.normalizeTagFilters) {
+                return dash.normalizeTagFilters(tags);
+            }
+            const list = Array.isArray(tags) ? tags : [];
+            return list
+                .map((tag) => String(tag || '').trim().toLowerCase())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+        },
+
+        isTagActive(tag) {
+            const normalized = String(tag || '').trim().toLowerCase();
+            return this.normalizeActiveTags().includes(normalized);
+        },
+
+        syncActiveTagsFromDashboard() {
+            const dash = window.dashboardInstance;
+            this.activeTags = dash?.normalizeTagFilters
+                ? dash.normalizeTagFilters(dash._tagFilters || [])
+                : this.normalizeActiveTags();
+        },
+
+        updateChipSelection() {
+            const active = new Set(this.normalizeActiveTags());
+            this.getTagChips().forEach((chip) => {
+                const tag = chip.querySelector('.tag-cloud-word-label')?.textContent || '';
+                const selected = active.has(tag);
+                chip.classList.toggle('is-selected', selected);
+                chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
+        },
+
+        formatActiveTagsLabel() {
+            const tags = this.normalizeActiveTags();
+            const dash = window.dashboardInstance;
+            if (dash?.formatTagFilterTagsLabel) {
+                return dash.formatTagFilterTagsLabel(tags);
+            }
+            return tags.map((tag) => `#${tag}`).join(', ');
+        },
+
+        formatActiveBadgeText() {
+            const tags = this.normalizeActiveTags();
+            if (!tags.length) return '';
+            if (tags.length === 1) return `#${tags[0]}`;
+            return (t('dashboard.tagCloudBadgeMore', '#{tag} +{count}') || '#{tag} +{count}')
+                .replace('{tag}', tags[0])
+                .replace('{count}', String(tags.length - 1));
         },
 
         getTagChips() {
@@ -284,9 +336,10 @@
                 return;
             }
             let idx = 0;
-            if (this.activeTag) {
+            if (this.activeTags.length) {
+                const active = new Set(this.normalizeActiveTags());
                 const match = chips.findIndex(
-                    (el) => el.querySelector('.tag-cloud-word-label')?.textContent === this.activeTag
+                    (el) => active.has(el.querySelector('.tag-cloud-word-label')?.textContent || '')
                 );
                 if (match >= 0) idx = match;
             }
@@ -305,6 +358,18 @@
                 e.stopImmediatePropagation();
                 this.closeModal();
                 return;
+            }
+
+            if (e.key === 'Enter' || e.key === ' ') {
+                const active = document.activeElement;
+                if (active?.classList?.contains('tag-cloud-word')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    const tag = active.querySelector('.tag-cloud-word-label')?.textContent;
+                    if (tag) this.selectTag(tag);
+                    return;
+                }
             }
 
             const chips = this.getTagChips();
@@ -390,7 +455,8 @@
 
         syncToggleState() {
             if (!this.toggle) return;
-            const filtered = Boolean(this.activeTag);
+            const tags = this.normalizeActiveTags();
+            const filtered = tags.length > 0;
             this.toggle.classList.toggle('is-active', this.modalOpen || filtered);
             this.toggle.setAttribute('aria-expanded', this.modalOpen ? 'true' : 'false');
             document.body.setAttribute('data-tag-cloud-modal-open', this.modalOpen ? 'true' : 'false');
@@ -398,9 +464,9 @@
 
             const badge = document.getElementById('tag-cloud-active-badge');
             if (badge) {
-                if (filtered && this.activeTag) {
+                if (filtered) {
                     badge.hidden = false;
-                    badge.textContent = `#${this.activeTag}`;
+                    badge.textContent = this.formatActiveBadgeText();
                     badge.setAttribute('aria-hidden', 'false');
                 } else {
                     badge.hidden = true;
@@ -409,8 +475,9 @@
                 }
             }
 
-            if (filtered && this.activeTag) {
-                const tip = t('dashboard.tagFilterActiveTooltip', 'Filtering: #{tag}').replace('{tag}', this.activeTag);
+            if (filtered) {
+                const tagsLabel = this.formatActiveTagsLabel();
+                const tip = t('dashboard.tagFilterActiveTooltip', 'Filtering: {tags}').replace('{tags}', tagsLabel);
                 this.toggle.setAttribute('data-tooltip', tip);
             } else {
                 const defaultTip = t('dashboard.tagCloudToggleTooltip', '/ tags');
@@ -433,6 +500,7 @@
                 clearTimeout(this._closeTimerId);
                 this._closeTimerId = null;
             }
+            this.syncActiveTagsFromDashboard();
             this.renderWordCloud();
             this.updateClearButton();
             this.modal.hidden = false;
@@ -582,7 +650,8 @@
                 const chip = document.createElement('button');
                 chip.type = 'button';
                 chip.className = `tag-cloud-word ${tierClassForScale(scale)}`;
-                if (this.activeTag === tag) chip.classList.add('is-selected');
+                if (this.isTagActive(tag)) chip.classList.add('is-selected');
+                chip.setAttribute('aria-pressed', this.isTagActive(tag) ? 'true' : 'false');
                 chip.style.setProperty('--tag-scale', scale.toFixed(3));
                 chip.style.setProperty('--tag-rotate', `${hashRotate(tag).toFixed(2)}deg`);
                 chip.style.setProperty('--tag-index', String(index));
@@ -600,7 +669,7 @@
                 chip.title = `#${tag} — ${countLabel}`;
                 chip.setAttribute(
                     'aria-label',
-                    t('dashboard.tagCloudFilterAria', 'Show only bookmarks with tag {tag}').replace('{tag}', tag)
+                    t('dashboard.tagCloudFilterAria', 'Toggle tag {tag} in filter').replace('{tag}', tag)
                         + ` (${countLabel})`
                 );
                 chip.addEventListener('click', () => this.selectTag(tag));
@@ -625,19 +694,12 @@
         selectTag(tag) {
             const normalized = String(tag || '').trim().toLowerCase();
             if (!normalized) return;
-            if (this.activeTag === normalized) {
-                this.clearDashboardFilter({ closeModal: true, focusBookmarks: true });
-                return;
-            }
-            this.activeTag = normalized;
-            this.closeModal();
-            window.dashboardInstance?.applyTagFilter?.(normalized);
-            this.updateClearButton();
+            void window.dashboardInstance?.toggleTagFilter?.(normalized);
         },
 
         clearDashboardFilter({ animate = true, closeModal = false, focusBookmarks = false } = {}) {
-            this.activeTag = '';
-            window.dashboardInstance?.applyTagFilter?.('', { animate });
+            this.activeTags = [];
+            void window.dashboardInstance?.setTagFilters?.([], { animate });
             this.syncToggleState();
             this.updateClearButton();
 
@@ -647,7 +709,7 @@
             }
 
             if (this.modalOpen) {
-                this.renderWordCloud();
+                this.updateChipSelection();
                 if (this._kbdFocusZone === 'clear') {
                     requestAnimationFrame(() => this.focusInitialChip());
                 }
@@ -660,14 +722,22 @@
 
         updateClearButton() {
             if (!this.clearBtn) return;
-            const show = Boolean(this.activeTag);
+            const show = this.normalizeActiveTags().length > 0;
             this.clearBtn.hidden = !show;
         },
 
-        setActiveTag(tag) {
-            this.activeTag = String(tag || '').trim().toLowerCase();
+        setActiveTags(tags) {
+            this.activeTags = this.normalizeActiveTags(tags);
             this.syncToggleState();
             this.updateClearButton();
+            if (this.modalOpen) {
+                this.updateChipSelection();
+            }
+        },
+
+        setActiveTag(tag) {
+            const normalized = String(tag || '').trim().toLowerCase();
+            this.setActiveTags(normalized ? [normalized] : []);
         },
 
         handleSlashKey(event) {

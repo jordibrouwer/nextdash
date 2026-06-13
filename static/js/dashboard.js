@@ -136,6 +136,7 @@ class Dashboard {
         this.categoryReorderInstances = [];
         this.dashboardCategoryReorderInstances = [];
         this._categoryListsCache = null;
+        this._tagFilters = [];
         this._categoryDragRelayHandler = null;
         this._categoryDropHandler = null;
         this._pendingCategoryOrderFromDrop = null;
@@ -1851,50 +1852,116 @@ class Dashboard {
         this.keyboardNavigation?.scheduleUpdate?.();
     }
 
-    async applyTagFilter(tag, { animate = true } = {}) {
-        const normalized = String(tag || '').trim().toLowerCase();
-        const changed = this._tagFilter !== normalized;
-        if (!changed) {
+    normalizeTagFilters(tags) {
+        const list = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+        const seen = new Set();
+        const normalized = [];
+        for (const raw of list) {
+            const tag = String(raw || '').trim().toLowerCase();
+            if (!tag || seen.has(tag)) continue;
+            seen.add(tag);
+            normalized.push(tag);
+        }
+        return normalized.sort((a, b) => a.localeCompare(b));
+    }
+
+    tagFiltersKey(tags) {
+        return this.normalizeTagFilters(tags).join('\u0001');
+    }
+
+    tagFiltersEqual(a, b) {
+        return this.tagFiltersKey(a) === this.tagFiltersKey(b);
+    }
+
+    hasActiveTagFilters(tags = this._tagFilters) {
+        return this.normalizeTagFilters(tags).length > 0;
+    }
+
+    formatTagFilterTagsLabel(tags = this._tagFilters) {
+        return this.normalizeTagFilters(tags).map((tag) => `#${tag}`).join(', ');
+    }
+
+    formatTagFilterTagsListForMessage(tags = this._tagFilters) {
+        const list = this.normalizeTagFilters(tags).map((tag) => `#${tag}`);
+        if (list.length <= 1) return list[0] || '';
+        if (list.length === 2) {
+            const pair = this.language?.t?.('dashboard.tagFilterTagsPair', '{first} or {second}');
+            if (pair && pair !== 'dashboard.tagFilterTagsPair') {
+                return pair.replace('{first}', list[0]).replace('{second}', list[1]);
+            }
+            return `${list[0]} or ${list[1]}`;
+        }
+        return `${list.slice(0, -1).join(', ')}, or ${list[list.length - 1]}`;
+    }
+
+    _syncTagFilterDomAttributes() {
+        const tags = this._tagFilters || [];
+        const active = tags.length > 0;
+        document.body.setAttribute('data-tag-filter-active', active ? 'true' : 'false');
+        if (active) {
+            document.body.setAttribute('data-tag-filters', tags.join(','));
+        } else {
+            document.body.removeAttribute('data-tag-filters');
+        }
+        document.body.removeAttribute('data-tag-filter');
+    }
+
+    async setTagFilters(tags, { animate = true } = {}) {
+        const normalized = this.normalizeTagFilters(tags);
+        if (this.tagFiltersEqual(normalized, this._tagFilters)) {
             return;
         }
 
         if (this.isInlineEditActive()) {
             if (!(await this.confirmInlineEditBeforeNavigation())) {
-                window.DashboardTagCloud?.setActiveTag?.(this._tagFilter || '');
+                window.DashboardTagCloud?.setActiveTags?.(this._tagFilters);
                 return;
             }
         }
 
-        this._tagFilter = normalized;
-
-        document.body.setAttribute('data-tag-filter-active', normalized ? 'true' : 'false');
-        if (normalized) {
-            document.body.setAttribute('data-tag-filter', normalized);
-        } else {
-            document.body.removeAttribute('data-tag-filter');
-        }
-        window.DashboardTagCloud?.setActiveTag?.(normalized);
+        this._tagFilters = normalized;
+        this._syncTagFilterDomAttributes();
+        window.DashboardTagCloud?.setActiveTags?.(normalized);
         this.updateTagFilterIndicator();
-
         this.renderDashboard({ animate: Boolean(animate) });
     }
 
-    clearTagFilter() {
-        void this.applyTagFilter('', { animate: true });
+    async toggleTagFilter(tag, { animate = true } = {}) {
+        const normalized = String(tag || '').trim().toLowerCase();
+        if (!normalized) return;
+
+        const current = this.normalizeTagFilters(this._tagFilters);
+        const next = current.includes(normalized)
+            ? current.filter((item) => item !== normalized)
+            : [...current, normalized].sort((a, b) => a.localeCompare(b));
+        await this.setTagFilters(next, { animate });
     }
 
-    getBookmarksForTagFilter(tag) {
+    async removeTagFilter(tag, { animate = true } = {}) {
         const normalized = String(tag || '').trim().toLowerCase();
-        if (!normalized || !Array.isArray(this.bookmarks)) {
+        if (!normalized) return;
+        const next = this.normalizeTagFilters(this._tagFilters).filter((item) => item !== normalized);
+        await this.setTagFilters(next, { animate });
+    }
+
+    clearTagFilter() {
+        void this.setTagFilters([], { animate: true });
+    }
+
+    getBookmarksForTagFilters(tags = this._tagFilters) {
+        const required = this.normalizeTagFilters(tags);
+        if (!required.length || !Array.isArray(this.bookmarks)) {
             return [];
         }
         const seen = new Set();
         const matched = [];
         for (const bookmark of this.bookmarks) {
-            const tags = (bookmark.tags || [])
-                .map((raw) => String(raw || '').trim().toLowerCase())
-                .filter(Boolean);
-            if (!tags.includes(normalized)) {
+            const bookmarkTags = new Set(
+                (bookmark.tags || [])
+                    .map((raw) => String(raw || '').trim().toLowerCase())
+                    .filter(Boolean)
+            );
+            if (!required.some((tag) => bookmarkTags.has(tag))) {
                 continue;
             }
             const key = `${String(bookmark.url || '').trim()}|${String(bookmark.name || '').trim()}`;
@@ -1907,11 +1974,15 @@ class Dashboard {
         return this.sortBookmarks(matched);
     }
 
+    getBookmarksForTagFilter(tag) {
+        return this.getBookmarksForTagFilters([tag]);
+    }
+
     renderTagFilterDashboard(container, options = {}) {
         const animate = options && options.animate === true;
         this._renderAnimationsEnabled = animate;
-        const tag = this._tagFilter;
-        const matched = this.getBookmarksForTagFilter(tag);
+        const tags = this._tagFilters;
+        const matched = this.getBookmarksForTagFilters(tags);
         const CHUNK_SIZE = 10;
 
         container.innerHTML = '';
@@ -1922,7 +1993,11 @@ class Dashboard {
         if (matched.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'empty-state empty-state--tag-filter';
-            empty.textContent = this.language?.t?.('dashboard.tagFilterEmpty', 'No bookmarks with this tag on this page.') || 'No bookmarks with this tag on this page.';
+            const tagsLabel = this.formatTagFilterTagsListForMessage(tags);
+            const emptyText = (this.language?.t?.('dashboard.tagFilterEmpty', 'No bookmarks with {tags} on this page.')
+                || 'No bookmarks with {tags} on this page.')
+                .replace('{tags}', tagsLabel);
+            empty.textContent = emptyText;
             container.appendChild(empty);
             if (this.language?.applyTranslations) {
                 this.language.applyTranslations();
@@ -2151,7 +2226,7 @@ class Dashboard {
             if (window.DashboardTagCloud?.modalOpen) return;
             if (this.isModalOpen()) return;
             if (this.searchComponent && this.searchComponent.isActive()) return;
-            if (!this._tagFilter) return;
+            if (!this.hasActiveTagFilters()) return;
             e.preventDefault();
             e.stopPropagation();
             window.DashboardTagCloud?.clearDashboardFilter?.({ focusBookmarks: true });
@@ -2175,77 +2250,108 @@ class Dashboard {
         if (!wrap) return;
         this.tagFilterIndicator = wrap;
 
-        const tag = this._tagFilter || '';
-        const prev = this._tagFilterIndicatorState || { tag: '', count: -1 };
+        const tags = this.normalizeTagFilters(this._tagFilters);
+        const tagsKey = this.tagFiltersKey(tags);
+        const prev = this._tagFilterIndicatorState || { tagsKey: '', count: -1 };
 
-        if (!tag) {
-            if (!prev.tag && wrap.hidden) {
+        if (!tags.length) {
+            if (!prev.tagsKey && wrap.hidden) {
                 return;
             }
             wrap.replaceChildren();
             wrap.hidden = true;
-            this.tagFilterIndicatorChip = null;
+            wrap.removeAttribute('role');
+            wrap.removeAttribute('aria-label');
+            this.tagFilterIndicatorSummary = null;
             this.tagFilterIndicatorClear = null;
-            this._tagFilterIndicatorState = { tag: '', count: 0 };
+            this._tagFilterIndicatorState = { tagsKey: '', count: 0 };
             return;
         }
 
-        const count = this.getBookmarksForTagFilter(tag).length;
+        const count = this.getBookmarksForTagFilters(tags).length;
+        const countLabel = this.formatTagFilterCountLabel(count);
+        const tagsLabel = this.formatTagFilterTagsLabel(tags);
+        const groupAria = (this.language?.t('dashboard.tagFilterGroupAria')
+            || 'Active tag filters: {tags}, {count} on this page')
+            .replace('{tags}', tagsLabel)
+            .replace('{count}', countLabel);
+
         if (
-            prev.tag === tag
+            prev.tagsKey === tagsKey
             && prev.count === count
-            && this.tagFilterIndicatorChip
-            && this.tagFilterIndicatorTag
-            && this.tagFilterIndicatorCount
+            && this.tagFilterIndicatorSummary
             && !wrap.hidden
         ) {
             return;
         }
 
-        if (prev.tag === tag && this.tagFilterIndicatorChip && this.tagFilterIndicatorCount) {
-            const countLabel = this.formatTagFilterCountLabel(count);
-            this.tagFilterIndicatorCount.textContent = countLabel;
-            const chipAria = (this.language?.t('dashboard.tagFilterChipAria')
-                || 'Tag filter active: {tag}, {count} on this page')
-                .replace('{tag}', tag)
-                .replace('{count}', countLabel);
-            this.tagFilterIndicatorChip.setAttribute('aria-label', chipAria);
-            this._tagFilterIndicatorState = { tag, count };
+        if (prev.tagsKey === tagsKey && this.tagFilterIndicatorSummary) {
+            this.tagFilterIndicatorSummary.textContent = countLabel;
+            wrap.setAttribute('aria-label', groupAria);
+            this._tagFilterIndicatorState = { tagsKey, count };
             return;
         }
 
         wrap.replaceChildren();
-        const countLabel = this.formatTagFilterCountLabel(count);
-        const chipAria = (this.language?.t('dashboard.tagFilterChipAria')
-            || 'Tag filter active: {tag}, {count} on this page')
-            .replace('{tag}', tag)
-            .replace('{count}', countLabel);
+        wrap.hidden = false;
+        wrap.setAttribute('role', 'group');
+        wrap.setAttribute('aria-label', groupAria);
+
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'tag-filter-indicator-chips';
+
+        const chipTagAria = this.language?.t('dashboard.tagFilterChipTagAria')
+            || 'Tag filter #{tag}, click to edit';
+        const removeAriaTemplate = this.language?.t('dashboard.tagFilterChipRemoveAria')
+            || 'Remove tag {tag} from filter';
         const clearAria = this.language?.t('dashboard.tagFilterChipClear') || 'Clear tag filter';
 
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'tag-filter-indicator-chip';
-        chip.setAttribute('aria-label', chipAria);
+        tags.forEach((tag) => {
+            const item = document.createElement('span');
+            item.className = 'tag-filter-indicator-tag-item';
 
-        const prefix = document.createElement('span');
-        prefix.className = 'tag-filter-indicator-prefix';
-        prefix.setAttribute('aria-hidden', 'true');
-        prefix.textContent = '#';
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'tag-filter-indicator-chip';
+            chip.setAttribute(
+                'aria-label',
+                chipTagAria.replace('{tag}', tag)
+            );
 
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tag-filter-indicator-tag';
-        tagEl.textContent = tag;
+            const prefix = document.createElement('span');
+            prefix.className = 'tag-filter-indicator-prefix';
+            prefix.setAttribute('aria-hidden', 'true');
+            prefix.textContent = '#';
 
-        const countEl = document.createElement('span');
-        countEl.className = 'tag-filter-indicator-count';
-        countEl.textContent = countLabel;
+            const tagEl = document.createElement('span');
+            tagEl.className = 'tag-filter-indicator-tag';
+            tagEl.textContent = tag;
 
-        chip.append(prefix, tagEl, countEl);
-        chip.addEventListener('click', () => {
-            if (window.DashboardTagCloud?.isEligible?.()) {
-                window.DashboardTagCloud.openModal();
-            }
+            chip.append(prefix, tagEl);
+            chip.addEventListener('click', () => {
+                if (window.DashboardTagCloud?.isEligible?.()) {
+                    window.DashboardTagCloud.openModal();
+                }
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'tag-filter-indicator-tag-remove';
+            removeBtn.setAttribute('aria-label', removeAriaTemplate.replace('{tag}', tag));
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void this.removeTagFilter(tag);
+            });
+
+            item.append(chip, removeBtn);
+            chipsWrap.appendChild(item);
         });
+
+        const summary = document.createElement('span');
+        summary.className = 'tag-filter-indicator-summary';
+        summary.textContent = countLabel;
 
         const clearBtn = document.createElement('button');
         clearBtn.type = 'button';
@@ -2259,14 +2365,11 @@ class Dashboard {
             window.DashboardTagCloud?.restoreBookmarkFocus?.();
         });
 
-        wrap.append(chip, clearBtn);
-        wrap.hidden = false;
+        wrap.append(chipsWrap, summary, clearBtn);
 
-        this.tagFilterIndicatorChip = chip;
-        this.tagFilterIndicatorTag = tagEl;
-        this.tagFilterIndicatorCount = countEl;
+        this.tagFilterIndicatorSummary = summary;
         this.tagFilterIndicatorClear = clearBtn;
-        this._tagFilterIndicatorState = { tag, count };
+        this._tagFilterIndicatorState = { tagsKey, count };
     }
 
     setupReorderUndoShortcut() {
@@ -2275,7 +2378,7 @@ class Dashboard {
             if (window.DashboardTagCloud?.modalOpen) return;
             if (this.isModalOpen()) return;
             if (this.searchComponent && this.searchComponent.isActive()) return;
-            if (this._tagFilter) return;
+            if (this.hasActiveTagFilters()) return;
 
             if (!this.pendingReorderSnapshot) return;
             e.preventDefault();
@@ -3893,7 +3996,7 @@ class Dashboard {
 
         this._abortInlineEditForRender();
 
-        if (this._tagFilter) {
+        if (this.hasActiveTagFilters()) {
             this._categoryListsCache = null;
             this.renderTagFilterDashboard(container, options);
             return;
@@ -4997,7 +5100,7 @@ class Dashboard {
 
     refreshSmartCollectionSections() {
         const container = document.getElementById('dashboard-layout');
-        if (!container || this._tagFilter) {
+        if (!container || this.hasActiveTagFilters()) {
             this.renderDashboard();
             return;
         }

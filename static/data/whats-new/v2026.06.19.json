@@ -139,6 +139,10 @@
       "title": "UX, tags & accessibility",
       "items": [
         {
+          "badge": "new",
+          "text": "<strong>Multi-tag cloud filter</strong> — the <code>/</code> word cloud toggles multiple tags without closing; the dashboard shows bookmarks with <strong>any</strong> selected tag (OR); the filter bar lists per-tag chips with individual remove; <kbd>Enter</kbd>/<kbd>Space</kbd> toggles the focused chip."
+        },
+        {
           "badge": "fix",
           "text": "<strong>Tag-filter Escape focus</strong> — clearing an active tag filter with <kbd>Esc</kbd> restores keyboard focus to bookmarks (same as tag cloud Clear)."
         },

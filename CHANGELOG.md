@@ -50,7 +50,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.19 — June 2026
 
-**Dashboard reliability, navigation hardening, security, startup performance & tag UX** — bootstrap failure shows an in-dashboard reload panel; HTTP `.ok` checks; inline-edit guards on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves, ignores unrelated `storage` events, and dedupes in-flight refreshes; page tabs stay in sync after every navigation; failed loads no longer report success; extension saves do not hijack the current page; bfcache back-navigation restores keyboard/swipe/tag cloud; safe `http(s)` links and escaped UI; smarter deferred `allBookmarks` load for default Today-only installs; tag-filter Escape restores focus; localized tag-cloud counts; gated `/` help copy.
+**Dashboard reliability, navigation hardening, security, startup performance & tag UX** — bootstrap failure shows an in-dashboard reload panel; HTTP `.ok` checks; inline-edit guards on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves, ignores unrelated `storage` events, and dedupes in-flight refreshes; page tabs stay in sync after every navigation; failed loads no longer report success; extension saves do not hijack the current page; bfcache back-navigation restores keyboard/swipe/tag cloud; safe `http(s)` links and escaped UI; smarter deferred `allBookmarks` load for default Today-only installs; **multi-tag cloud filter (OR match)** with per-tag indicator chips; tag-filter Escape restores focus; localized tag-cloud counts; gated `/` help copy.
 
 ### Dashboard reliability
 
@@ -95,13 +95,14 @@ _No unreleased changes at this time._
 
 ### UX, tags & accessibility
 
+- **new** **Multi-tag cloud filter** — `_tagFilters[]` with OR match (`getBookmarksForTagFilters()`); `setTagFilters()` / `toggleTagFilter()` / `removeTagFilter()`; tag cloud modal stays open while toggling; per-tag indicator chips with individual remove; FAB badge `#tag +N`; `Enter`/`Space` toggles focused cloud chips; localized OR empty-state copy (EN/NL/DE/FR).
 - **fix** **Tag-filter Escape** — `clearDashboardFilter({ focusBookmarks: true })` restores bookmark keyboard focus.
 - **fix** **Localized tag counts** — tag cloud chips use `formatTagFilterCountLabel()` / locale keys.
 - **fix** **Cheatsheet & tip gating** — `isTagCloudDesktopShortcutVisible()` / `isTagCloudTipRelevant()` hide `/` when tag cloud is off, mobile, or no tags exist.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v75` (`2026.06-dashboard-release-v63`); `dashboard.js?v=nav-fix-6`; `swipe-navigation.js`, `dashboard-tag-cloud.js`, `search-commands-new.js` query strings.
+- **fix** **Cache-bust** — `whats-new-v76` (`2026.06-dashboard-release-v64`); `dashboard.js?v=multi-tag-2`; `dashboard-tag-cloud.js?v=multi-tag-2`; prior `nav-fix-*` / `whats-new-v75` query strings.
 
 ---
 

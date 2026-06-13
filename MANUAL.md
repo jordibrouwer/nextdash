@@ -395,8 +395,12 @@ Three input modes share one overlay; switch with keys or footer chips.
 When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on by default on desktop):
 
 - Press **`/`** on the dashboard (search closed) or click the **/** FAB to open a word cloud of all tags (size = usage).
-- **Arrow keys** move between tags and **Clear tag filter**; **Enter** applies a dashboard filter (only matching tiles stay visible).
-- **Escape** or **Clear tag filter** removes the filter and returns focus to bookmarks.
+- **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
+- **OR logic** — the dashboard shows bookmarks that have **any** of the selected tags (not all).
+- Selected tags are highlighted in the cloud; active filters appear as **chips** under the page title (each chip has its own **×** to remove one tag) and on the **/** FAB (`#work` or `#work +1` when more than one).
+- **Escape** in the cloud closes the modal (filter remains). **Escape** on the dashboard (cloud closed) clears all tag filters and returns focus to bookmarks.
+- **Clear tag filter** in the cloud footer removes every selected tag.
+- **Arrow keys** move between tags and **Clear tag filter**.
 - Hidden on mobile / narrow layouts.
 
 With tag cloud off, or inside the search overlay, **`/`** follows your fuzzy/interleave search setting (see below).
@@ -506,7 +510,7 @@ Click category header or chevron. **Always collapse categories** can be set in g
 - Comma-separated in modal, inline edit, or config detail.  
 - Stored lowercase, trimmed, deduplicated.  
 - **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
-- **Dashboard tag cloud (desktop):** `/` or / FAB — filters **dashboard tiles**; keyboard navigation; Clear returns focus to bookmarks.  
+- **Dashboard tag cloud (desktop):** `/` or / FAB — toggle one or more tags while the modal stays open; **OR match** (bookmarks with any selected tag); per-tag filter chips in the header; **Escape** on the dashboard clears all filters.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
 - **config → tags** (desktop): global tag management across all pages.  
   - **Tag cloud:** size reflects usage; click a chip to scroll to that tag in the list.  

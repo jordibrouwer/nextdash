@@ -362,9 +362,66 @@ body {
 .tag-filter-indicator {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.35rem;
     max-width: 100%;
     min-width: 0;
+}
+
+.tag-filter-indicator-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tag-filter-indicator-tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.tag-filter-indicator-tag-remove {
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.tag-filter-indicator-tag-remove:hover,
+.tag-filter-indicator-tag-remove:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    outline: none;
+}
+
+.tag-filter-indicator-summary {
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    font-weight: var(--font-weight-normal);
+    white-space: nowrap;
+}
+
+.tag-filter-indicator-summary::before {
+    content: '·';
+    margin-right: 0.28rem;
+    opacity: 0.55;
 }
 
 .tag-filter-indicator-chip {
