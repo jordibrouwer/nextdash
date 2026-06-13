@@ -72,6 +72,12 @@
         _kbdFocusZone: 'chip',
         _initialized: false,
         _boundResize: null,
+        _closeTimerId: null,
+        _boundToggleClick: null,
+        _boundCloseClick: null,
+        _boundBackdropClick: null,
+        _boundClearClick: null,
+        _boundClearFocus: null,
 
         init() {
             if (this._initialized) return;
@@ -84,17 +90,23 @@
             this.clearBtn = document.getElementById('tag-cloud-clear-filter');
             if (!this.wrap || !this.modal || !this.body || !this.toggle) return;
 
-            this.toggle.addEventListener('click', () => this.onToggleClick());
-            this.closeBtn?.addEventListener('click', () => this.closeModal());
-            this.backdrop?.addEventListener('click', () => this.closeModal());
-            this.clearBtn?.addEventListener('click', () => {
+            this._boundToggleClick = () => this.onToggleClick();
+            this._boundCloseClick = () => this.closeModal();
+            this._boundBackdropClick = () => this.closeModal();
+            this._boundClearClick = () => {
                 this.clearDashboardFilter({ closeModal: true, focusBookmarks: true });
-            });
-            this.clearBtn?.addEventListener('focus', () => {
+            };
+            this._boundClearFocus = () => {
                 this._kbdFocusZone = 'clear';
                 this.getTagChips().forEach((el) => el.classList.remove('is-keyboard-focused'));
                 this.clearBtn?.classList.add('is-keyboard-focused');
-            });
+            };
+
+            this.toggle.addEventListener('click', this._boundToggleClick);
+            this.closeBtn?.addEventListener('click', this._boundCloseClick);
+            this.backdrop?.addEventListener('click', this._boundBackdropClick);
+            this.clearBtn?.addEventListener('click', this._boundClearClick);
+            this.clearBtn?.addEventListener('focus', this._boundClearFocus);
             window.addEventListener('resize', this._boundResize = () => {
                 if (this.modalOpen) this.positionModal();
                 this.syncFromSettings();
@@ -109,6 +121,10 @@
 
         destroy() {
             if (!this._initialized) return;
+            if (this._closeTimerId) {
+                clearTimeout(this._closeTimerId);
+                this._closeTimerId = null;
+            }
             if (this._boundModalKeydown) {
                 document.removeEventListener('keydown', this._boundModalKeydown, true);
                 this._boundModalKeydown = null;
@@ -117,7 +133,17 @@
                 window.removeEventListener('resize', this._boundResize);
                 this._boundResize = null;
             }
-            this.closeModal();
+            this.toggle?.removeEventListener('click', this._boundToggleClick);
+            this.closeBtn?.removeEventListener('click', this._boundCloseClick);
+            this.backdrop?.removeEventListener('click', this._boundBackdropClick);
+            this.clearBtn?.removeEventListener('click', this._boundClearClick);
+            this.clearBtn?.removeEventListener('focus', this._boundClearFocus);
+            this._boundToggleClick = null;
+            this._boundCloseClick = null;
+            this._boundBackdropClick = null;
+            this._boundClearClick = null;
+            this._boundClearFocus = null;
+            this.closeModal({ animate: false });
             this._initialized = false;
         },
 
@@ -403,6 +429,10 @@
 
         openModal() {
             if (!this.isEligible() || !this.modal) return;
+            if (this._closeTimerId) {
+                clearTimeout(this._closeTimerId);
+                this._closeTimerId = null;
+            }
             this.renderWordCloud();
             this.updateClearButton();
             this.modal.hidden = false;
@@ -468,7 +498,13 @@
             }
             this.modal.classList.remove('is-open');
             this.backdrop?.classList.remove('is-open');
-            window.setTimeout(finish, 180);
+            if (this._closeTimerId) {
+                clearTimeout(this._closeTimerId);
+            }
+            this._closeTimerId = window.setTimeout(() => {
+                this._closeTimerId = null;
+                finish();
+            }, 180);
         },
 
         positionModal() {
@@ -512,6 +548,18 @@
             }
         },
 
+        getTagCountLabel(count) {
+            const dash = window.dashboardInstance;
+            if (dash?.formatTagFilterCountLabel) {
+                return dash.formatTagFilterCountLabel(count);
+            }
+            if (count === 1) {
+                return t('dashboard.tagFilterCountOne', '1 bookmark');
+            }
+            return (t('dashboard.tagFilterCountMany', '{count} bookmarks') || '{count} bookmarks')
+                .replace('{count}', String(count));
+        },
+
         renderWordCloud() {
             if (!this.body) return;
             const ranked = countTagsFromBookmarks(this.getBookmarkPool());
@@ -548,7 +596,7 @@
                 labelEl.textContent = tag;
                 chip.append(hashEl, labelEl);
 
-                const countLabel = count === 1 ? '1 bookmark' : `${count} bookmarks`;
+                const countLabel = this.getTagCountLabel(count);
                 chip.title = `#${tag} — ${countLabel}`;
                 chip.setAttribute(
                     'aria-label',
@@ -584,7 +632,6 @@
             this.activeTag = normalized;
             this.closeModal();
             window.dashboardInstance?.applyTagFilter?.(normalized);
-            this.syncToggleState();
             this.updateClearButton();
         },
 
@@ -604,6 +651,10 @@
                 if (this._kbdFocusZone === 'clear') {
                     requestAnimationFrame(() => this.focusInitialChip());
                 }
+            }
+
+            if (focusBookmarks) {
+                this.restoreBookmarkFocus();
             }
         },
 

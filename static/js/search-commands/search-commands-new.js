@@ -3,6 +3,20 @@
  * Unified bookmark add modal (also used by QuickAdd / + / Ctrl+Shift+A)
  */
 
+function escapeNewCommandHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function safeUploadedIconFilename(raw) {
+    const trimmed = String(raw || '').trim();
+    return /^[a-zA-Z0-9._-]+$/.test(trimmed) ? trimmed : '';
+}
+
 class SearchCommandNew {
     constructor(language = null) {
         this.language = language;
@@ -395,13 +409,13 @@ class SearchCommandNew {
         return this.pages.map(page => {
             const isCurrentPage = Number(page.id) === currentId;
             const pageName = this.language ? this.language.t(page.name) || page.name : page.name;
-            return `<option value="${page.id}" ${isCurrentPage ? 'selected' : ''}>${pageName}</option>`;
+            return `<option value="${escapeNewCommandHtml(page.id)}" ${isCurrentPage ? 'selected' : ''}>${escapeNewCommandHtml(pageName)}</option>`;
         }).join('');
     }
 
     generateCategoryOptions() {
         if (!this.categories || this.categories.length === 0) return '';
-        return this.categories.map(category => `<option value="${category.id}">${category.name}</option>`).join('');
+        return this.categories.map(category => `<option value="${escapeNewCommandHtml(category.id)}">${escapeNewCommandHtml(category.name)}</option>`).join('');
     }
 
     async updateCategoriesForPage(pageId) {
@@ -880,12 +894,20 @@ class SearchCommandNew {
         const previewEl = document.getElementById('new-bookmark-icon-preview');
         const clearBtn = document.getElementById('new-bookmark-icon-clear');
         if (!previewEl) return;
-        if (icon) {
-            previewEl.innerHTML = `<img src="/data/icons/${icon}" alt="">`;
+        previewEl.innerHTML = '';
+        const safeIcon = safeUploadedIconFilename(icon);
+        if (safeIcon) {
+            const img = document.createElement('img');
+            img.src = `/data/icons/${safeIcon}`;
+            img.alt = '';
+            previewEl.appendChild(img);
         } else {
-            previewEl.innerHTML = `<span class="nbm-icon-preview-empty">—</span>`;
+            const empty = document.createElement('span');
+            empty.className = 'nbm-icon-preview-empty';
+            empty.textContent = '—';
+            previewEl.appendChild(empty);
         }
-        if (clearBtn) clearBtn.hidden = !icon;
+        if (clearBtn) clearBtn.hidden = !safeIcon;
     }
 
     setModalIconFetchState(text) {

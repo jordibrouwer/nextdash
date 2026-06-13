@@ -50,38 +50,58 @@ _No unreleased changes at this time._
 
 ## v2026.06.19 — June 2026
 
-**Dashboard reliability hardening, config-sync fixes, security & startup performance** — bootstrap failure shows an in-dashboard error panel with reload; HTTP `.ok` checks on startup fetches; inline-edit guard on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves after navigation, and ignores unrelated `storage` events; page rename and bookmark move verify POST responses; safe `http(s)` bookmark links; escaped empty states and sanitized tip HTML; conditional `allBookmarks` load; shared `visual-settings.js`; deferred non-critical scripts; single locale fetch; safer weather line; auto-dark and tag-cloud listener hygiene.
+**Dashboard reliability, navigation hardening, security, startup performance & tag UX** — bootstrap failure shows an in-dashboard reload panel; HTTP `.ok` checks; inline-edit guards on re-render and `loadPageBookmarks`; config cross-tab sync retries bookmark reloads for real, reconciles pending saves, ignores unrelated `storage` events, and dedupes in-flight refreshes; page tabs stay in sync after every navigation; failed loads no longer report success; extension saves do not hijack the current page; bfcache back-navigation restores keyboard/swipe/tag cloud; safe `http(s)` links and escaped UI; smarter deferred `allBookmarks` load for default Today-only installs; tag-filter Escape restores focus; localized tag-cloud counts; gated `/` help copy.
 
 ### Dashboard reliability
 
 - **fix** **Init failure UX** — `loadData()` rethrows after error toast; `init()` renders `_renderBootstrapFatalError()` in `#dashboard-layout` and sets `window.dashboardInstance` for retry.
-- **fix** **HTTP bootstrap checks** — `.ok` on `/api/pages`, `/api/settings`, `/api/finders`, and `loadAllBookmarks()`.
-- **fix** **Inline-edit guard** — `renderDashboard()` and `_abortInlineEditForRender()` skip when unsaved inline edits are open; `loadPageBookmarks()` confirms before reload (Quick Add, `:new`, extension refresh).
+- **fix** **HTTP bootstrap checks** — `.ok` on `/api/pages`, `/api/settings`, `/api/finders`, and bookmark reload fetches.
+- **fix** **Inline-edit guard** — `renderDashboard()` and `_abortInlineEditForRender()` skip when unsaved inline edits are open; `loadPageBookmarks()` confirms before reload (Quick Add, `:new`); `skipInlineEditConfirm` avoids double confirm on page navigation.
 - **fix** **Config sync retry** — `loadPageBookmarks` / `loadAllBookmarks` support `{ rethrow: true }`; `withRetry` in `refreshAfterConfig*` actually retries failed bookmark reloads.
 - **fix** **Pending config sync** — `reconcilePendingConfigSyncAfterLoad()` refreshes when pending timestamps are newer than applied; pending keys remain on failure.
-- **fix** **Config sync without reload** — storage listener and `refreshAfterConfig*` show retry toasts instead of `window.location.reload()`; `storage` handler checks sync keys before `JSON.parse`.
+- **fix** **Config sync without reload** — storage listener and `refreshAfterConfig*` show retry toasts instead of `window.location.reload()`; `storage` handler checks sync keys before `JSON.parse`; `_configReturnRefreshInFlight` guard on storage path.
 - **fix** **Page rename & bookmark move** — POST `.ok` on `/api/pages` save and both bookmark move saves; rollback + error toast on failure.
 - **fix** **Corrupt localStorage** — try/catch around `JSON.parse(deviceSettings)` with server-settings fallback.
+- **fix** **BFCache restore** — skip `pagehide` cleanup when `event.persisted`; `restoreDashboardInteractionAfterBfcache()` on `pageshow`.
+
+### Dashboard navigation & sync
+
+- **fix** **Page tab sync** — `setActivePageNavButton()` called from successful `loadPageBookmarks()`; redundant post-navigation tab updates removed from tab click, `1–9`, Shift+arrows, and swipe.
+- **fix** **Navigation boolean** — `loadPageBookmarks()` returns `true`/`false`; `requestPageNavigation()` propagates failure (swipe/keyboard/page overview respect failed loads).
+- **fix** **samePageId()** — normalized `Number()` comparisons for hash, `updateDocumentTitle`, page overview, deep links, smart-collection page filter, and swipe wrap.
+- **fix** **Extension bookmark save** — saves to another page refresh `allBookmarks` only; no unwanted `loadPageBookmarks` navigation.
+- **fix** **Page overview counts** — `showPageOverlay()` lazy-loads `allBookmarks` when multi-page counts are missing.
 
 ### Dashboard performance & polish
 
-- **new** **Conditional all-bookmarks load** — `needsCrossPageBookmarks()` skips `/api/bookmarks?all=true` when global shortcuts, tag collections, and all smart collections are off.
+- **new** **Smarter all-bookmarks load** — `_smartCollectionFilterNeedsCrossPageData()` per collection; `needsCrossPageBookmarksAtStartup()` vs deferred `deferredLoadAllBookmarks()` for Today-only default installs (faster first paint).
+- **fix** **Tag cloud / overview data** — `showTagCloudButton` included in cross-page bookmark needs.
+- **fix** **Empty smart collections** — Recent, Stale, and Most Used omitted when length is zero.
 - **fix** **Shared visual settings** — `visual-settings.js` on dashboard; removed duplicate preset maps from `dashboard.js`.
 - **fix** **Script defer** — tours, onboarding, analytics, what's-new stub, PWA hint use `defer`.
 - **fix** **Locale fetch** — removed duplicate `loadTranslations` inline script from `dashboard.html`.
 - **fix** **Weather line** — condition/location text via `textContent`.
-- **fix** **Auto-dark listener guard** — dashboard `initializeAutoDarkMode` fallback attaches one `matchMedia` listener (`_autoDarkModeListenerAttached`).
-- **fix** **Tag cloud teardown** — `DashboardTagCloud.destroy()` on dashboard `pagehide`; idempotent `init()`.
+- **fix** **Tag cloud lifecycle** — cancellable close timer; full `destroy()` teardown; idempotent `init()`.
+- **fix** **Swipe re-init** — `initializeSwipeNavigation()` calls `cleanup()` first; removed dead mouse handlers and duplicate `scrollTo`.
+- **fix** **visibilitychange** — single listener (flush on hide, refresh on show).
+- **fix** **Tag-filter indicator** — early-return / count-only update when tag and count unchanged.
 
 ### Dashboard security
 
-- **fix** **Safe bookmark links** — `safeBookmarkOpenHref()` via `BookmarkUrlUtils.safeHttpResourceUrl` on grid and recent-modal links; blocks `javascript:` / `data:` navigation.
-- **fix** **Empty-state escaping** — all dynamic empty-state strings and category-empty UI use `escapeHtml()` or `textContent`.
-- **fix** **Tip sanitization** — `sanitizeTipHtml()` allows only `<code>` and internal `<a class="button-hint-link">` links in rotating tips.
+- **fix** **Safe bookmark links** — `safeBookmarkOpenHref()` via `BookmarkUrlUtils.safeHttpResourceUrl` on grid and recent-modal links.
+- **fix** **Empty-state escaping** — dynamic empty-state strings and category-empty UI use `escapeHtml()` or `textContent`.
+- **fix** **Tip sanitization** — `sanitizeTipHtml()` for rotating tips.
+- **fix**: **:new modal** — `escapeNewCommandHtml()` on page/category options; safe icon preview via DOM APIs and filename whitelist.
+
+### UX, tags & accessibility
+
+- **fix** **Tag-filter Escape** — `clearDashboardFilter({ focusBookmarks: true })` restores bookmark keyboard focus.
+- **fix** **Localized tag counts** — tag cloud chips use `formatTagFilterCountLabel()` / locale keys.
+- **fix** **Cheatsheet & tip gating** — `isTagCloudDesktopShortcutVisible()` / `isTagCloudTipRelevant()` hide `/` when tag cloud is off, mobile, or no tags exist.
 
 ### Developer
 
-- **fix** **Cache-bust** — `whats-new-v74` (`2026.06-dashboard-release-v62`); `dashboard.js?v=reliability-2`.
+- **fix** **Cache-bust** — `whats-new-v75` (`2026.06-dashboard-release-v63`); `dashboard.js?v=nav-fix-6`; `swipe-navigation.js`, `dashboard-tag-cloud.js`, `search-commands-new.js` query strings.
 
 ---
 

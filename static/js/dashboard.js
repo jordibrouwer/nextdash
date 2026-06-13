@@ -110,8 +110,11 @@ class Dashboard {
                 e.returnValue = '';
             }
         });
-        window.addEventListener('pagehide', () => {
+        window.addEventListener('pagehide', (event) => {
             this.flushPendingDashboardSavesOnExit();
+            if (event.persisted) {
+                return;
+            }
             this.keyboardNavigation?.cleanup?.();
             this.swipeNavigation?.cleanup?.();
             window.DashboardTagCloud?.destroy?.();
@@ -119,7 +122,11 @@ class Dashboard {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 void this.flushPendingDashboardSaves();
+                return;
             }
+            this.renderDateWeatherLine();
+            this.updateHealthBadge();
+            this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
         this.statusMonitor = null;
@@ -247,17 +254,9 @@ class Dashboard {
                 const hash = window.location.hash.substring(1);
                 if (hash && /^\d+$/.test(hash)) {
                     const pageIndex = parseInt(hash) - 1;
-                    if (pageIndex >= 0 && pageIndex < this.pages.length && this.pages[pageIndex].id !== this.currentPageId) {
+                    if (pageIndex >= 0 && pageIndex < this.pages.length && !this.samePageId(this.pages[pageIndex].id, this.currentPageId)) {
                         void this.requestPageNavigation(this.pages[pageIndex].id);
                     }
-                }
-            });
-
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    this.renderDateWeatherLine();
-                    this.updateHealthBadge();
-                    this.maybeRefreshAfterConfigReturn();
                 }
             });
 
@@ -320,6 +319,10 @@ class Dashboard {
         return window.BookmarkUrlUtils?.safeHttpResourceUrl?.(url) || '';
     }
 
+    samePageId(a, b) {
+        return Number(a) === Number(b);
+    }
+
     setupExtensionBookmarkSavedListener() {
         window.addEventListener('nextdash:bookmark-saved', async (event) => {
             const detail = event.detail || {};
@@ -335,9 +338,8 @@ class Dashboard {
 
             const pageId = detail.pageId != null ? String(detail.pageId) : null;
             if (pageId && pageId !== String(this.currentPageId)) {
-                const targetPage = this.pages.find((p) => String(p.id) === pageId);
-                if (targetPage) {
-                    await this.loadPageBookmarks(targetPage.id);
+                if (this.needsCrossPageBookmarks()) {
+                    await this.loadAllBookmarks();
                 }
             } else if (pageId) {
                 await this.loadPageBookmarks(this.currentPageId);
@@ -357,6 +359,10 @@ class Dashboard {
             if (event.key !== this.structureSyncEventKey && event.key !== this.settingsSyncEventKey) {
                 return;
             }
+            if (this._configReturnRefreshInFlight) {
+                return;
+            }
+            this._configReturnRefreshInFlight = true;
             try {
                 const payload = JSON.parse(event.newValue);
                 if (payload?.sourceTabId && payload.sourceTabId === this.tabId) {
@@ -387,14 +393,26 @@ class Dashboard {
                     this.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to apply config changes from another tab.'),
                     { retry: () => this.maybeRefreshAfterConfigReturn() }
                 );
+            } finally {
+                this._configReturnRefreshInFlight = false;
             }
         });
     }
 
     setupConfigReturnRefreshListener() {
-        window.addEventListener('pageshow', () => {
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                this.restoreDashboardInteractionAfterBfcache();
+            }
             this.maybeRefreshAfterConfigReturn();
         });
+    }
+
+    restoreDashboardInteractionAfterBfcache() {
+        this.initializeKeyboardNavigation();
+        this.swipeNavigation?.cleanup?.();
+        this.initializeSwipeNavigation();
+        window.DashboardTagCloud?.init?.();
     }
 
     readPendingConfigSync(key) {
@@ -521,11 +539,87 @@ class Dashboard {
         if (!s) return false;
         if (s.globalShortcuts === true) return true;
         if (s.showTagCollections) return true;
-        if (s.showSmartTodayCollection !== false) return true;
-        if (s.showSmartRecentCollection !== false) return true;
-        if (s.showSmartStaleCollection !== false) return true;
-        if (s.showSmartMostUsedCollection === true) return true;
+        if (s.showTagCloudButton === true) return true;
+        if (s.showSmartTodayCollection !== false && this._smartCollectionFilterNeedsCrossPageData(s.smartTodayPageIds)) {
+            return true;
+        }
+        if (s.showSmartRecentCollection !== false && this._smartCollectionFilterNeedsCrossPageData(s.smartRecentPageIds)) {
+            return true;
+        }
+        if (s.showSmartStaleCollection !== false && this._smartCollectionFilterNeedsCrossPageData(s.smartStalePageIds)) {
+            return true;
+        }
+        if (s.showSmartMostUsedCollection === true && this._smartCollectionFilterNeedsCrossPageData(s.smartMostUsedPageIds)) {
+            return true;
+        }
         return false;
+    }
+
+    needsCrossPageBookmarksAtStartup() {
+        const s = this.settings;
+        if (!s) return false;
+        if (s.globalShortcuts === true) return true;
+        if (s.showTagCollections) return true;
+        if (s.showTagCloudButton === true) return true;
+        if (s.showSmartRecentCollection !== false && this._smartCollectionFilterNeedsCrossPageData(s.smartRecentPageIds)) {
+            return true;
+        }
+        if (s.showSmartStaleCollection !== false && this._smartCollectionFilterNeedsCrossPageData(s.smartStalePageIds)) {
+            return true;
+        }
+        if (s.showSmartMostUsedCollection === true && this._smartCollectionFilterNeedsCrossPageData(s.smartMostUsedPageIds)) {
+            return true;
+        }
+        return false;
+    }
+
+    shouldDeferCrossPageBookmarksLoad() {
+        const s = this.settings;
+        if (!s || s.showSmartTodayCollection === false) {
+            return false;
+        }
+        if (this.needsCrossPageBookmarksAtStartup()) {
+            return false;
+        }
+        return this._smartCollectionFilterNeedsCrossPageData(s.smartTodayPageIds);
+    }
+
+    _smartCollectionFilterNeedsCrossPageData(pageIds) {
+        const currentPageId = Number(this.currentPageId);
+        const currentPageIndex = this.pages.findIndex((page) => Number(page.id) === currentPageId);
+        const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
+        if (!Array.isArray(pageIds) || pageIds.length === 0) {
+            return true;
+        }
+        const normalizedIds = pageIds
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value > 0);
+        if (normalizedIds.length === 0) {
+            return true;
+        }
+        return !normalizedIds.every((id) => id === currentPageId || id === currentPageNumber);
+    }
+
+    deferredLoadAllBookmarks() {
+        if (this._deferredAllBookmarksLoadInFlight) {
+            return this._deferredAllBookmarksLoadInFlight;
+        }
+        this._deferredAllBookmarksLoadInFlight = this.loadAllBookmarks()
+            .then(() => {
+                if (window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(this.settings, this.allBookmarks)) {
+                    this.saveSettings().catch(() => {});
+                }
+                if (this.settings?.showSmartTodayCollection !== false) {
+                    this.renderDashboard({ animate: false });
+                }
+                if (this.searchComponent) {
+                    this.updateSearchComponent();
+                }
+            })
+            .finally(() => {
+                this._deferredAllBookmarksLoadInFlight = null;
+            });
+        return this._deferredAllBookmarksLoadInFlight;
     }
 
     async refreshAfterConfigStructureUpdate(payload = {}) {
@@ -815,13 +909,16 @@ class Dashboard {
             // Load bookmarks and categories for initial page
             await this.loadPageBookmarks(this.currentPageId);
 
-            if (this.needsCrossPageBookmarks()) {
+            if (this.needsCrossPageBookmarksAtStartup()) {
                 await this.loadAllBookmarks();
             } else {
                 this.allBookmarks = [];
+                if (this.shouldDeferCrossPageBookmarksLoad()) {
+                    void this.deferredLoadAllBookmarks();
+                }
             }
 
-            if (this.needsCrossPageBookmarks()
+            if (this.needsCrossPageBookmarksAtStartup()
                 && window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(this.settings, this.allBookmarks)) {
                 this.saveSettings().catch(() => {});
             }
@@ -970,8 +1067,7 @@ class Dashboard {
         if (!(await this.confirmInlineEditBeforeNavigation())) {
             return false;
         }
-        await this.loadPageBookmarks(targetPageId);
-        return true;
+        return this.loadPageBookmarks(targetPageId, { skipInlineEditConfirm: true });
     }
 
     loadCollapsedStates() {
@@ -998,21 +1094,21 @@ class Dashboard {
     }
 
     async loadPageBookmarks(pageId, options = {}) {
-        const { rethrow = false } = options;
+        const { rethrow = false, skipInlineEditConfirm = false } = options;
         const targetPageId = Number(pageId);
         if (!Number.isFinite(targetPageId)) {
             if (rethrow) {
                 throw new Error('Invalid page id for loadPageBookmarks');
             }
-            return;
+            return false;
         }
 
-        if (this.isInlineEditActive() && this.hasInlineEditUnsavedChanges()) {
+        if (!skipInlineEditConfirm && this.isInlineEditActive() && this.hasInlineEditUnsavedChanges()) {
             if (!(await this.confirmInlineEditBeforeNavigation())) {
                 if (rethrow) {
                     throw new Error('loadPageBookmarks cancelled: unsaved inline edits');
                 }
-                return;
+                return false;
             }
         }
 
@@ -1022,7 +1118,7 @@ class Dashboard {
             this._abortInlineEditForRender();
             await this.flushPendingDashboardSaves();
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return;
+                return false;
             }
 
             const [bookmarksRes, categoriesRes] = await Promise.all([
@@ -1031,7 +1127,7 @@ class Dashboard {
             ]);
 
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return;
+                return false;
             }
             if (!bookmarksRes.ok || !categoriesRes.ok) {
                 throw new Error('Failed to load page bookmarks or categories');
@@ -1040,7 +1136,7 @@ class Dashboard {
             const bookmarks = await bookmarksRes.json();
             const categories = await categoriesRes.json();
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return;
+                return false;
             }
 
             this.bookmarks = bookmarks;
@@ -1079,14 +1175,17 @@ class Dashboard {
                 }
             }
 
+            this.setActivePageNavButton(targetPageId);
+
             this._bookmarksReady = true;
             if (this._pendingRecentModalRefresh && this.isRecentBookmarksModalOpen()) {
                 this._pendingRecentModalRefresh = false;
                 this._fillRecentBookmarksModal();
             }
+            return true;
         } catch (error) {
             if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return;
+                return false;
             }
             if (rethrow) {
                 throw error;
@@ -1097,6 +1196,7 @@ class Dashboard {
                     retry: () => this.loadPageBookmarks(targetPageId),
                 }
             );
+            return false;
         }
     }
 
@@ -1165,7 +1265,7 @@ class Dashboard {
 
     updateDocumentTitle() {
         const currentPage = this.pages && this.currentPageId
-            ? this.pages.find(p => p.id === this.currentPageId)
+            ? this.pages.find((p) => this.samePageId(p.id, this.currentPageId))
             : null;
         const pageName = currentPage?.name || '';
 
@@ -1193,7 +1293,8 @@ class Dashboard {
         if (!container) {
             return;
         }
-        const pageIndex = this.pages.findIndex((page) => page.id === pageId);
+        const targetPageId = Number(pageId);
+        const pageIndex = this.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
             const selected = index === pageIndex;
             btn.classList.toggle('active', selected);
@@ -1217,7 +1318,7 @@ class Dashboard {
             pageBtn.type = 'button';
             pageBtn.className = 'page-nav-btn';
             pageBtn.setAttribute('role', 'tab');
-            const isActive = page.id === this.currentPageId;
+            const isActive = this.samePageId(page.id, this.currentPageId);
             pageBtn.setAttribute('aria-selected', isActive ? 'true' : 'false');
             pageBtn.tabIndex = isActive ? 0 : -1;
             if (isActive) {
@@ -1230,7 +1331,6 @@ class Dashboard {
                 if (!switched) {
                     return;
                 }
-                this.setActivePageNavButton(page.id);
                 this.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
@@ -1895,6 +1995,7 @@ class Dashboard {
     }
 
     initializeSwipeNavigation() {
+        this.swipeNavigation?.cleanup?.();
         // Initialize swipe navigation component for touch gestures
         if (window.SwipeNavigation) {
             this.swipeNavigation = new window.SwipeNavigation(this);
@@ -2013,7 +2114,6 @@ class Dashboard {
                         if (!switched) {
                             return;
                         }
-                        this.setActivePageNavButton(page.id);
                         this.markInlineTipUsed('page_switch');
                     });
                 }
@@ -2024,7 +2124,7 @@ class Dashboard {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const currentIndex = this.pages.findIndex(page => page.id === this.currentPageId);
+                const currentIndex = this.pages.findIndex((page) => this.samePageId(page.id, this.currentPageId));
                 if (currentIndex === -1) return;
 
                 let newIndex;
@@ -2039,7 +2139,6 @@ class Dashboard {
                     if (!switched) {
                         return;
                     }
-                    this.setActivePageNavButton(page.id);
                     this.markInlineTipUsed('page_switch');
                 });
             }
@@ -2055,7 +2154,7 @@ class Dashboard {
             if (!this._tagFilter) return;
             e.preventDefault();
             e.stopPropagation();
-            window.DashboardTagCloud?.clearDashboardFilter?.();
+            window.DashboardTagCloud?.clearDashboardFilter?.({ focusBookmarks: true });
         });
     }
 
@@ -2076,17 +2175,46 @@ class Dashboard {
         if (!wrap) return;
         this.tagFilterIndicator = wrap;
 
-        const tag = this._tagFilter;
-        wrap.replaceChildren();
+        const tag = this._tagFilter || '';
+        const prev = this._tagFilterIndicatorState || { tag: '', count: -1 };
 
         if (!tag) {
+            if (!prev.tag && wrap.hidden) {
+                return;
+            }
+            wrap.replaceChildren();
             wrap.hidden = true;
             this.tagFilterIndicatorChip = null;
             this.tagFilterIndicatorClear = null;
+            this._tagFilterIndicatorState = { tag: '', count: 0 };
             return;
         }
 
         const count = this.getBookmarksForTagFilter(tag).length;
+        if (
+            prev.tag === tag
+            && prev.count === count
+            && this.tagFilterIndicatorChip
+            && this.tagFilterIndicatorTag
+            && this.tagFilterIndicatorCount
+            && !wrap.hidden
+        ) {
+            return;
+        }
+
+        if (prev.tag === tag && this.tagFilterIndicatorChip && this.tagFilterIndicatorCount) {
+            const countLabel = this.formatTagFilterCountLabel(count);
+            this.tagFilterIndicatorCount.textContent = countLabel;
+            const chipAria = (this.language?.t('dashboard.tagFilterChipAria')
+                || 'Tag filter active: {tag}, {count} on this page')
+                .replace('{tag}', tag)
+                .replace('{count}', countLabel);
+            this.tagFilterIndicatorChip.setAttribute('aria-label', chipAria);
+            this._tagFilterIndicatorState = { tag, count };
+            return;
+        }
+
+        wrap.replaceChildren();
         const countLabel = this.formatTagFilterCountLabel(count);
         const chipAria = (this.language?.t('dashboard.tagFilterChipAria')
             || 'Tag filter active: {tag}, {count} on this page')
@@ -2138,6 +2266,7 @@ class Dashboard {
         this.tagFilterIndicatorTag = tagEl;
         this.tagFilterIndicatorCount = countEl;
         this.tagFilterIndicatorClear = clearBtn;
+        this._tagFilterIndicatorState = { tag, count };
     }
 
     setupReorderUndoShortcut() {
@@ -2885,7 +3014,7 @@ class Dashboard {
             ['tipHealthFavicon', 'Tip: use <code>favicon</code> button in health view to refresh a bookmark\'s icon'],
             ['tipNewBookmarkTags', 'Tip: add tags when creating a bookmark via <code>:new</code> — autocomplete suggests existing tags'],
         );
-        if (this.settings?.showTagCloudButton === true) {
+        if (this.isTagCloudTipRelevant()) {
             normalTips.push(...tips(
                 ['tipTagCloudSlash', 'Tip: press <code>/</code> for the tag word cloud (desktop) — pick a tag to filter bookmarks on the dashboard'],
             ));
@@ -3155,11 +3284,15 @@ class Dashboard {
         });
     }
 
-    showPageOverlay() {
+    async showPageOverlay() {
         if (document.getElementById('page-overview-overlay')) return;
 
         const pages = Array.isArray(this.pages) ? this.pages : [];
         if (pages.length === 0) return;
+
+        if (pages.length > 1 && (!Array.isArray(this.allBookmarks) || this.allBookmarks.length === 0)) {
+            await this.loadAllBookmarks();
+        }
 
         const previousFocus = document.activeElement;
         const allBookmarks = Array.isArray(this.allBookmarks) ? this.allBookmarks : [];
@@ -3209,19 +3342,19 @@ class Dashboard {
         const list = document.createElement('ul');
         list.className = 'page-overview-list';
 
-        let focusedIndex = pages.findIndex(p => p.id === this.currentPageId);
+        let focusedIndex = pages.findIndex((p) => this.samePageId(p.id, this.currentPageId));
         if (focusedIndex < 0) focusedIndex = 0;
 
         pages.forEach((page, idx) => {
             const count = allBookmarks.filter(b => String(b.pageId) === String(page.id)).length;
             const li = document.createElement('li');
-            li.className = 'page-overview-item' + (page.id === this.currentPageId ? ' is-current' : '');
+            li.className = 'page-overview-item' + (this.samePageId(page.id, this.currentPageId) ? ' is-current' : '');
             li.setAttribute('data-idx', String(idx));
 
             const link = document.createElement('button');
             link.type = 'button';
             link.className = 'page-overview-link';
-            link.setAttribute('aria-current', page.id === this.currentPageId ? 'page' : 'false');
+            link.setAttribute('aria-current', this.samePageId(page.id, this.currentPageId) ? 'page' : 'false');
             const pageName = page.name || this.formatDashboardLabel('pageOverviewFallbackName', { index: idx + 1 }, `Page ${idx + 1}`);
             link.setAttribute(
                 'aria-label',
@@ -3490,6 +3623,16 @@ class Dashboard {
         });
     }
 
+    isTagCloudDesktopShortcutVisible() {
+        return this.settings?.showTagCloudButton === true
+            && window.MobileExperience?.isMobileLayout?.() !== true;
+    }
+
+    isTagCloudTipRelevant() {
+        return this.isTagCloudDesktopShortcutVisible()
+            && window.DashboardTagCloud?.libraryHasTags?.() === true;
+    }
+
     getKeyboardCheatSheetItems() {
         const t = (key, fallback) => {
             if (!this.language?.t) return fallback;
@@ -3534,7 +3677,9 @@ class Dashboard {
             ]),
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
-                item('/', 'smTagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search'),
+                ...(this.isTagCloudDesktopShortcutVisible()
+                    ? [item('/', 'smTagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search')]
+                    : []),
                 item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
                 item(':', 'smCommandPalette', 'Command palette — type a command name to run it'),
                 item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
@@ -4804,7 +4949,7 @@ class Dashboard {
 
     _isSmartCollectionPageAllowed(pageIds) {
         const currentPageId = Number(this.currentPageId);
-        const currentPageIndex = this.pages.findIndex((page) => page.id === this.currentPageId);
+        const currentPageIndex = this.pages.findIndex((page) => Number(page.id) === currentPageId);
         const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
         if (!Array.isArray(pageIds) || pageIds.length === 0) {
             return true;
@@ -4964,7 +5109,7 @@ class Dashboard {
             });
         }
 
-        if (this.settings.showSmartRecentCollection !== false && pageAllowed(this.settings.smartRecentPageIds)) {
+        if (this.settings.showSmartRecentCollection !== false && pageAllowed(this.settings.smartRecentPageIds) && recentBookmarks.length > 0) {
             const configuredLimit = Number(this.settings.smartRecentLimit ?? 50);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -4982,7 +5127,7 @@ class Dashboard {
             });
         }
 
-        if (this.settings.showSmartStaleCollection !== false && pageAllowed(this.settings.smartStalePageIds)) {
+        if (this.settings.showSmartStaleCollection !== false && pageAllowed(this.settings.smartStalePageIds) && staleBookmarks.length > 0) {
             const configuredLimit = Number(this.settings.smartStaleLimit ?? 50);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -5000,7 +5145,7 @@ class Dashboard {
             });
         }
 
-        if (this.settings.showSmartMostUsedCollection === true && pageAllowed(this.settings.smartMostUsedPageIds)) {
+        if (this.settings.showSmartMostUsedCollection === true && pageAllowed(this.settings.smartMostUsedPageIds) && mostUsedBookmarks.length > 0) {
             const configuredLimit = Number(this.settings.smartMostUsedLimit ?? 25);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -5341,8 +5486,8 @@ class Dashboard {
         const link = DashboardDeepLink.parseDashboardDeepLink();
         if (!DashboardDeepLink.hasDeepLinkTarget(link)) return;
 
-        if (link.pageId != null && this.pages.some((p) => p.id === link.pageId)) {
-            if (this.currentPageId !== link.pageId) {
+        if (link.pageId != null && this.pages.some((p) => this.samePageId(p.id, link.pageId))) {
+            if (!this.samePageId(this.currentPageId, link.pageId)) {
                 await this.requestPageNavigation(link.pageId);
             }
         }

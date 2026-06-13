@@ -12,7 +12,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>HTTP checks on startup</strong> — <code>/api/pages</code>, <code>/api/settings</code>, <code>/api/finders</code>, and <code>/api/bookmarks?all=true</code> verify <code>response.ok</code> before parsing JSON."
+          "text": "<strong>HTTP checks on startup</strong> — <code>/api/pages</code>, <code>/api/settings</code>, <code>/api/finders</code>, and bookmark fetches verify <code>response.ok</code> before parsing JSON."
         },
         {
           "badge": "fix",
@@ -28,7 +28,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Config sync without reload</strong> — cross-tab structure/settings sync shows retry toasts instead of <code>window.location.reload()</code>; the <code>storage</code> listener ignores unrelated <code>localStorage</code> keys."
+          "text": "<strong>Config sync without reload</strong> — cross-tab sync shows retry toasts instead of <code>window.location.reload()</code>; the <code>storage</code> listener ignores unrelated keys and uses an in-flight guard against overlapping refreshes."
         },
         {
           "badge": "fix",
@@ -37,6 +37,39 @@
         {
           "badge": "fix",
           "text": "<strong>Corrupt device settings</strong> — bad <code>dashboardSettings</code> JSON in <code>localStorage</code> falls back to server settings instead of breaking init."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>BFCache restore</strong> — back/forward cache navigation no longer tears down keyboard, swipe, and tag-cloud listeners; <code>pageshow</code> with <code>persisted</code> re-inits interaction modules."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard navigation & sync",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Page tab sync</strong> — <code>loadPageBookmarks()</code> updates the active tab (<code>aria-selected</code> / <code>.active</code>) after every successful navigation — hash, page overview, swipe, and deep links included."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Navigation success signal</strong> — <code>loadPageBookmarks()</code> returns <code>true</code>/<code>false</code>; <code>requestPageNavigation()</code> no longer reports success when the load failed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Single inline-edit confirm</strong> — page navigation confirms once via <code>skipInlineEditConfirm</code> instead of showing two discard dialogs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Consistent page IDs</strong> — <code>samePageId()</code> normalizes comparisons across tabs, hash, page overview, deep links, and swipe wrap."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Extension save stays on page</strong> — <code>nextdash:bookmark-saved</code> for another page refreshes <code>allBookmarks</code> only; it no longer navigates you away."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page overview counts</strong> — <code>,</code> overview lazy-loads <code>allBookmarks</code> when per-page counts are not yet available."
         }
       ]
     },
@@ -45,7 +78,15 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Conditional all-bookmarks load</strong> — <code>/api/bookmarks?all=true</code> runs at startup only when global shortcuts, tag collections, or smart collections need cross-page data."
+          "text": "<strong>Smarter all-bookmarks load</strong> — <code>needsCrossPageBookmarks()</code> checks per-feature page filters; Today-only default installs defer <code>/api/bookmarks?all=true</code> until after first paint, then re-render."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag cloud &amp; overview data</strong> — <code>showTagCloudButton</code> is included in cross-page bookmark needs; tag cloud and page overview get correct counts."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty smart collections</strong> — Recent, Stale, and Most Used collections are omitted when they have zero bookmarks."
         },
         {
           "badge": "fix",
@@ -65,11 +106,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Auto-dark listener guard</strong> — the dashboard fallback for <code>autoDarkMode</code> attaches one <code>matchMedia</code> listener instead of stacking on every settings apply."
+          "text": "<strong>Tag cloud lifecycle</strong> — close-animation timer is cancellable; <code>destroy()</code> removes all listeners; swipe re-init calls <code>cleanup()</code> first."
         },
         {
           "badge": "fix",
-          "text": "<strong>Tag cloud teardown</strong> — <code>DashboardTagCloud.destroy()</code> removes global keydown/resize listeners on <code>pagehide</code>."
+          "text": "<strong>Code cleanup</strong> — removed dead mouse-swipe handlers; merged duplicate <code>visibilitychange</code> listeners; tag-filter indicator skips unchanged DOM rebuilds."
         }
       ]
     },
@@ -87,6 +128,31 @@
         {
           "badge": "fix",
           "text": "<strong>Tip sanitization</strong> — rotating header tips allow only <code>&lt;code&gt;</code> and safe internal <code>&lt;a class=\"button-hint-link\"&gt;</code> links."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>:new modal escaping</strong> — page/category <code>&lt;option&gt;</code> labels and icon preview filenames are escaped or built with safe DOM APIs."
+        }
+      ]
+    },
+    {
+      "title": "UX, tags & accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Tag-filter Escape focus</strong> — clearing an active tag filter with <kbd>Esc</kbd> restores keyboard focus to bookmarks (same as tag cloud Clear)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Localized tag counts</strong> — tag cloud chip tooltips/aria use <code>tagFilterCountOne</code> / <code>tagFilterCountMany</code> via the dashboard formatter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet &amp; tips gating</strong> — the <code>/</code> tag-cloud shortcut appears in the keyboard cheatsheet and rotating tips only on desktop when the tag cloud is enabled and tags exist."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Auto-dark listener guard</strong> — the dashboard fallback for <code>autoDarkMode</code> attaches one <code>matchMedia</code> listener instead of stacking on every settings apply."
         }
       ]
     }

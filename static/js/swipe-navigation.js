@@ -123,52 +123,6 @@ class SwipeNavigation {
         this.handleSwipe();
     }
 
-    handleMouseDown(e) {
-        // Only track mouse events if not clicking on buttons or links
-        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
-            return;
-        }
-
-        this.touchStartX = e.clientX;
-        this.touchStartY = e.clientY;
-        this.touchMoveX = this.touchStartX;
-        this.touchMoveY = this.touchStartY;
-        this.isSwiping = null;
-        this.isMouseDown = true;
-        this.swipeStartTime = Date.now();
-    }
-
-    handleMouseMove(e) {
-        if (!this.isMouseDown) return;
-        if (this.isSwiping === false) return;
-
-        this.touchMoveX = e.clientX;
-        this.touchMoveY = e.clientY;
-
-        const diffX = Math.abs(this.touchMoveX - this.touchStartX);
-        const diffY = Math.abs(this.touchMoveY - this.touchStartY);
-
-        // Determine swipe direction on first significant movement
-        if (this.isSwiping === null && (diffX > 10 || diffY > 10)) {
-            this.isSwiping = diffX > diffY;
-        }
-    }
-
-    handleMouseUp(e) {
-        if (!this.isMouseDown) return;
-
-        this.isMouseDown = false;
-
-        // Only process if this was determined to be a horizontal swipe
-        if (this.isSwiping !== true) {
-            return;
-        }
-
-        this.touchEndX = e.clientX;
-        this.touchEndY = e.clientY;
-        this.handleSwipe();
-    }
-
     shouldBlockSwipeNavigation() {
         const dashboard = this.dashboard;
         if (!dashboard) {
@@ -230,7 +184,7 @@ class SwipeNavigation {
 
     async navigateToNextPage() {
         const pages = this.dashboard.pages;
-        const currentIndex = pages.findIndex(p => p.id === this.dashboard.currentPageId);
+        const currentIndex = pages.findIndex((p) => Number(p.id) === Number(this.dashboard.currentPageId));
 
         if (currentIndex === -1 || currentIndex === pages.length - 1) {
             // Already at last page, wrap to first
@@ -244,7 +198,7 @@ class SwipeNavigation {
 
     async navigateToPreviousPage() {
         const pages = this.dashboard.pages;
-        const currentIndex = pages.findIndex(p => p.id === this.dashboard.currentPageId);
+        const currentIndex = pages.findIndex((p) => Number(p.id) === Number(this.dashboard.currentPageId));
 
         if (currentIndex === -1 || currentIndex === 0) {
             // Already at first page, wrap to last
@@ -262,12 +216,6 @@ class SwipeNavigation {
         const switched = await this.dashboard.requestPageNavigation(page.id);
         if (!switched) {
             return;
-        }
-
-        window.scrollTo(0, 0);
-
-        if (typeof this.dashboard.setActivePageNavButton === 'function') {
-            this.dashboard.setActivePageNavButton(page.id);
         }
     }
 }
