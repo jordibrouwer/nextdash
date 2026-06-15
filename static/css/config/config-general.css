@@ -127,7 +127,7 @@ body {
     align-items: center;
     padding: 1rem 0;
     margin-bottom: 0;
-    background: var(--background-primary);
+    background: transparent;
 }
 
 /* Header */

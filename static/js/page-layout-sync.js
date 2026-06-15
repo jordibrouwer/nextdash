@@ -21,7 +21,11 @@
     }
 
     function applyBackgroundDots(show) {
-        document.body.classList.toggle('no-background-dots', show === false);
+        if (global.ThemeLoader?.syncBackgroundDots) {
+            global.ThemeLoader.syncBackgroundDots(show !== false);
+        } else {
+            document.body.classList.toggle('no-background-dots', show === false);
+        }
         document.documentElement.setAttribute(
             'data-show-background-dots',
             show === false ? 'false' : 'true'

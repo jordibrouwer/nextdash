@@ -5,7 +5,7 @@
     padding: 0;
     margin-bottom: 0;
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
     flex-wrap: wrap;
 }
 
@@ -26,7 +26,7 @@
     right: 0;
     bottom: 0;
     width: 3rem;
-    background: linear-gradient(to right, transparent, var(--background-primary));
+    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--background-primary) 25%, transparent));
     pointer-events: none;
     transition: opacity 0.2s ease;
 }

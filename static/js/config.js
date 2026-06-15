@@ -2951,6 +2951,7 @@ class ConfigManager {
             document.body.setAttribute('data-layout-version', layoutVersion);
         }
         document.body.setAttribute('data-density-mode', this.settingsData.densityMode || 'compact');
+        this.settings.applyBackground(this.settingsData);
         this.settings.applyBackgroundOpacity(this.settingsData.backgroundOpacity);
         this.settings.applyFontWeight(this.settingsData.fontWeight);
         if (window.DashboardFont) {

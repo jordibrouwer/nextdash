@@ -5,8 +5,37 @@
 html[data-theme] body {
     background-color: var(--background-primary);
     color: var(--text-primary);
+    isolation: isolate;
+}
+
+html[data-theme] body:not(.no-background-dots)::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image: radial-gradient(var(--background-dots) 1px, transparent 1px);
     background-size: 15px 15px;
+}
+
+body.no-background-dots::before {
+    content: none;
+}
+
+/* No Background Dots Option */
+body.no-background-dots:not(.has-custom-background) {
+    background-image: none !important;
+}
+
+/* Custom Background (auto / gradient / image) */
+body.has-custom-background {
+    background-image: var(--custom-background-image) !important;
+    background-size: cover !important;
+}
+
+body.has-custom-background.bg-image {
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
 }
 
 /* Preview icons in config */
@@ -43,28 +72,6 @@ html[data-theme] body {
     background-color: color-mix(in srgb, var(--accent-primary) var(--icon-theme-intensity, 0.12), transparent);
 }
 
-
-/* No Background Dots Option */
-body.no-background-dots {
-    background-image: none !important;
-}
-
-/* Custom Background (auto / gradient / image) */
-body.has-custom-background {
-    background-image: var(--custom-background-image) !important;
-    background-size: cover !important;
-}
-
-/* Dots overlay on gradient/auto backgrounds when dots are enabled */
-body.has-custom-background:not(.no-background-dots) {
-    background-image: radial-gradient(var(--background-dots) 1px, transparent 1px), var(--custom-background-image) !important;
-    background-size: 15px 15px, cover !important;
-}
-
-body.has-custom-background.bg-image {
-    background-position: center center !important;
-    background-repeat: no-repeat !important;
-}
 
 /* ── Focus styles (keyboard navigation) ── */
 

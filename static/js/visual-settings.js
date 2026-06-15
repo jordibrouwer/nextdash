@@ -105,16 +105,16 @@
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
         document.documentElement.style.removeProperty('--custom-background-image');
 
+        const showDots = settings ? settings.showBackgroundDots !== false : true;
+
         if (type === 'none') {
-            const showDots = settings ? settings.showBackgroundDots !== false : true;
             body.classList.toggle('no-background-dots', !showDots);
+            global.ThemeLoader?.syncBackgroundDots?.(showDots);
             return;
         }
 
-        const showDots = settings ? settings.showBackgroundDots !== false : true;
         const forceNoDots = type === 'image';
         body.classList.toggle('no-background-dots', forceNoDots || !showDots);
-        body.classList.add('has-custom-background');
 
         let presetName = '';
         if (type === 'auto') {
@@ -123,22 +123,22 @@
             presetName = (settings && settings.backgroundGradient) || '';
         }
 
+        let customBackground = '';
         if (presetName) {
-            const css = BACKGROUND_PRESETS[presetName] || '';
-            if (css) {
-                document.documentElement.style.setProperty('--custom-background-image', css);
-                body.classList.add('bg-gradient');
-            }
+            customBackground = BACKGROUND_PRESETS[presetName] || '';
+        } else if (type === 'image') {
+            customBackground = global.BookmarkUrlUtils?.safeCssImageUrl?.(settings?.backgroundImageUrl) || '';
+        }
+
+        if (!customBackground) {
+            global.ThemeLoader?.syncBackgroundDots?.(showDots);
             return;
         }
 
-        if (type === 'image') {
-            const cssUrl = global.BookmarkUrlUtils?.safeCssImageUrl?.(settings?.backgroundImageUrl);
-            if (cssUrl) {
-                document.documentElement.style.setProperty('--custom-background-image', cssUrl);
-                body.classList.add('bg-image');
-            }
-        }
+        document.documentElement.style.setProperty('--custom-background-image', customBackground);
+        body.classList.add('has-custom-background');
+        body.classList.add(presetName ? 'bg-gradient' : 'bg-image');
+        global.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
     }
 
     function applyBackgroundOpacity(value) {

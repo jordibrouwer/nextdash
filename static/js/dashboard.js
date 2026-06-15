@@ -4659,14 +4659,16 @@ class Dashboard {
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
         document.documentElement.style.removeProperty('--custom-background-image');
 
+        const showDots = this.settings.showBackgroundDots !== false;
+
         if (type === 'none') {
-            body.classList.toggle('no-background-dots', !this.settings.showBackgroundDots);
+            body.classList.toggle('no-background-dots', !showDots);
+            window.ThemeLoader?.syncBackgroundDots?.(showDots);
             return;
         }
 
         const forceNoDots = (type === 'image');
-        body.classList.toggle('no-background-dots', forceNoDots || !this.settings.showBackgroundDots);
-        body.classList.add('has-custom-background');
+        body.classList.toggle('no-background-dots', forceNoDots || !showDots);
 
         let presetName = '';
         if (type === 'auto') {
@@ -4675,22 +4677,22 @@ class Dashboard {
             presetName = this.settings.backgroundGradient || '';
         }
 
+        let customBackground = '';
         if (presetName) {
-            const css = window.VisualSettings?.BACKGROUND_PRESETS?.[presetName] || '';
-            if (css) {
-                document.documentElement.style.setProperty('--custom-background-image', css);
-                body.classList.add('bg-gradient');
-            }
+            customBackground = window.VisualSettings?.BACKGROUND_PRESETS?.[presetName] || '';
+        } else if (type === 'image') {
+            customBackground = window.BookmarkUrlUtils?.safeCssImageUrl?.(this.settings.backgroundImageUrl) || '';
+        }
+
+        if (!customBackground) {
+            window.ThemeLoader?.syncBackgroundDots?.(showDots);
             return;
         }
 
-        if (type === 'image') {
-            const cssUrl = window.BookmarkUrlUtils?.safeCssImageUrl?.(this.settings.backgroundImageUrl);
-            if (cssUrl) {
-                document.documentElement.style.setProperty('--custom-background-image', cssUrl);
-                body.classList.add('bg-image');
-            }
-        }
+        document.documentElement.style.setProperty('--custom-background-image', customBackground);
+        body.classList.add('has-custom-background');
+        body.classList.add(presetName ? 'bg-gradient' : 'bg-image');
+        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
     }
 
     initializeAutoDarkMode() {

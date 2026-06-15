@@ -8,9 +8,9 @@ body[data-layout-version="modern"] {
     --layout-shadow-sm: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
     --layout-shadow-md: 0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent);
     --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-surface: var(--background-secondary);
-    --layout-surface-inset: var(--background-primary);
-    --layout-surface-border: var(--border-primary);
+    --layout-surface: color-mix(in srgb, var(--background-secondary) 78%, transparent);
+    --layout-surface-inset: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    --layout-surface-border: color-mix(in srgb, var(--border-primary) 48%, transparent);
     --config-tab-gap: 0.85rem;
 }
 
@@ -25,7 +25,7 @@ body[data-layout-version="modern"] .config-actions-top {
 }
 
 body[data-layout-version="modern"] .config-controls-wrapper {
-    background: var(--background-primary);
+    background: transparent;
 }
 
 body[data-layout-version="modern"] .tabs-scroll-wrapper::after {

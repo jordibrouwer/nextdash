@@ -1237,7 +1237,7 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 
 func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	s := sanitizeThemeColors(tc)
-	return `html[data-theme="` + selector + `"] body {
+	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
     --text-tertiary: ` + s.TextTertiary + `;

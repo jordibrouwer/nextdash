@@ -110,6 +110,23 @@
       ]
     },
     {
+      "title": "Background dots & config theme polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Dotted background restored</strong> — the dot pattern uses a dedicated <code>body::before</code> layer in <code>theme.css</code>; theme colour tokens load on <code>html[data-theme]</code> so <code>--background-dots</code> resolves reliably; <code>ThemeLoader.syncBackgroundDots()</code> keeps the class and <code>data-show-background-dots</code> attribute in sync."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Custom background guard</strong> — <code>has-custom-background</code> is only applied when a gradient or image is actually resolved; invalid Auto/Gradient/Image picks no longer wipe the dot pattern."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config surfaces</strong> — semi-transparent tab bar and modern/glass layout tokens so dots show through panels; action bar no longer paints a solid opaque strip over the page background."
+        }
+      ]
+    },
+    {
       "title": "Help, tips & developer",
       "items": [
         {
@@ -130,7 +147,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v80</code> (<code>2026.06-dashboard-release-v66</code>); <code>bookmark-row-end-pad-1</code> on <code>dashboard.css</code>; prior promo script/CSS bundles and <code>date-popover-theme-1</code> on layout sheets."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v81</code> (<code>2026.06-dashboard-release-v66</code>); <code>theme.css?v=bg-dots-layer-1</code>; <code>config-bg-dots-2</code> on config CSS/JS; prior <code>bookmark-row-end-pad-1</code> and promo bundles retained."
         }
       ]
     }

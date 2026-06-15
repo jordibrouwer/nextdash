@@ -89,7 +89,7 @@
             // Use server-side setting from html element data attribute
             const htmlAttr = document.documentElement.getAttribute('data-show-background-dots');
             if (htmlAttr !== null) {
-                showBackgroundDots = htmlAttr === 'true';
+                showBackgroundDots = htmlAttr !== 'false';
             }
         }
         
@@ -170,6 +170,15 @@
         return version;
     }
 
+    function syncBackgroundDots(showBackgroundDots) {
+        const show = showBackgroundDots !== false;
+        document.documentElement.setAttribute('data-show-background-dots', show ? 'true' : 'false');
+        if (document.body) {
+            document.body.setAttribute('data-show-background-dots', show ? 'true' : 'false');
+            document.body.classList.toggle('no-background-dots', !show);
+        }
+    }
+
     /**
      * Applies critical theme styles to prevent FOUC
      * @param {string} theme - The theme to apply ('dark' or 'light')
@@ -185,20 +194,16 @@
         
         // Set data-theme on html element
         document.documentElement.setAttribute('data-theme', theme);
+        syncBackgroundDots(showBackgroundDots);
 
         // Create and inject critical CSS using CSS variables
         const style = document.createElement('style');
         style.setAttribute('data-fouc-prevention', 'true');
-        
-        const backgroundImage = showBackgroundDots
-            ? 'background-image: radial-gradient(var(--background-dots) 1px, transparent 1px) !important; background-size: 15px 15px !important;'
-            : 'background-image: none !important;';
 
         style.textContent = `
             body {
                 background-color: var(--background-primary) !important;
                 color: var(--text-primary) !important;
-                ${backgroundImage}
             }
 
             /* Critical responsive styles to prevent FOUC on mobile */
@@ -293,11 +298,7 @@
             document.body.setAttribute('data-theme', theme);
             
             // Apply background dots class
-            if (!showBackgroundDots) {
-                document.body.classList.add('no-background-dots');
-            } else {
-                document.body.classList.remove('no-background-dots');
-            }
+            syncBackgroundDots(showBackgroundDots);
             
             // Apply font size class
             document.body.classList.remove('font-size-xs', 'font-size-s', 'font-size-sm', 'font-size-m', 'font-size-lg', 'font-size-l', 'font-size-xl');
@@ -336,6 +337,7 @@
         getLayoutVersion: getLayoutVersion,
         applyTheme: applyTheme,
         applyLayoutVersion: applyLayoutVersion,
+        syncBackgroundDots: syncBackgroundDots,
         onThemeChange: function(cb) {
             if (typeof cb !== 'function') return function() {};
             const handler = (e) => cb(e?.detail?.theme);

@@ -20,7 +20,7 @@ body[data-layout-version="glass"] .config-actions-top {
 }
 
 body[data-layout-version="glass"] .config-controls-wrapper {
-    background: var(--background-primary);
+    background: transparent;
 }
 
 body[data-layout-version="glass"] .tabs-scroll-wrapper::after {

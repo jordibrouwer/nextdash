@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{.ShowBackgroundDots}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,8 +15,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/config.css">
+    <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-bg-dots-2">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v3">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
@@ -44,17 +44,17 @@
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
-    <link rel="stylesheet" href="/static/css/config-modern.css?v=bookmarks-phase2-1">
+    <link rel="stylesheet" href="/static/css/config-modern.css?v=config-bg-dots-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/config-glass.css?v=glass-phase6-1">
+    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-bg-dots-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{.ShowBackgroundDots}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
     <!-- Section 1: Title and nav links -->
     <div class="config-section section-header">
@@ -2303,7 +2303,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v80"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v81"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2363,7 +2363,7 @@
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/config.js?v=finders-add-fix-1"></script>
+    <script src="/static/js/config.js?v=config-bg-dots-2"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">
