@@ -93,6 +93,14 @@
             bodyFallback: '<kbd>↑</kbd>/<kbd>↓</kbd> or <kbd>Tab</kbd> move · <kbd>Enter</kbd> switch page · <kbd>1</kbd>–<kbd>9</kbd> jump · counts show bookmarks per page',
             dismissKey: 'pageOverviewPromoDismiss',
         },
+        cheatsheet: {
+            storageKey: 'nextdash:dashboard-cheatsheet-promo-confirmed-v1',
+            titleKey: 'cheatsheetPromoTitle',
+            titleFallback: 'Keyboard cheat sheet',
+            bodyKey: 'cheatsheetPromoBody',
+            bodyFallback: 'Opened with <kbd>!</kbd> or <kbd>F1</kbd> · filter shortcuts at the top · <kbd>Esc</kbd> closes · reopen anytime from the Help footer button',
+            dismissKey: 'cheatsheetPromoDismiss',
+        },
     };
 
     let openKind = null;
@@ -155,11 +163,14 @@
         if (overlay?.classList.contains('show')) {
             const recentOpen = pendingKind === 'recentBookmarks'
                 && global.dashboardInstance?.isRecentBookmarksModalOpen?.() === true;
-            if (!recentOpen) return true;
+            const cheatsheetOpen = pendingKind === 'cheatsheet'
+                && overlay.querySelector('.keyboard-cheat-sheet-modal');
+            if (!recentOpen && !cheatsheetOpen) return true;
         }
         if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
         if (global.dashboardInstance?.searchComponent?.isActive?.()) return true;
         if (global.DashboardGridKeyboardPromo?.isPromoOpen?.()) return true;
+        if (global.DashboardGJumpPromo?.isPromoOpen?.()) return true;
         if (global.DashboardSmartCollectionPromo?.isPromoOpen?.()) return true;
         if (document.querySelector('.dashboard-search-promo')) return true;
         const isVisibleTourCard = (el) => {
@@ -372,6 +383,26 @@
         return pop.getBoundingClientRect();
     }
 
+    function getCheatsheetModalElement() {
+        if (anchorEl instanceof HTMLElement && anchorEl.classList.contains('keyboard-cheat-sheet-modal')) {
+            return anchorEl;
+        }
+        return document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+    }
+
+    function getCheatsheetModalRect() {
+        const panel = getCheatsheetModalElement();
+        return panel?.getBoundingClientRect() || null;
+    }
+
+    function bindCheatsheetModalResize() {
+        unbindPanelResize();
+        const panel = getCheatsheetModalElement();
+        if (!panel || typeof ResizeObserver === 'undefined') return;
+        boundPanelResize = new ResizeObserver(() => reposition());
+        boundPanelResize.observe(panel);
+    }
+
     function getRecentBookmarksModalElement() {
         if (anchorEl instanceof HTMLElement && anchorEl.classList.contains('recent-bookmarks-modal')) {
             return anchorEl;
@@ -565,6 +596,16 @@
             return;
         }
 
+        if (openKind === 'cheatsheet') {
+            const rect = getCheatsheetModalRect();
+            if (!rect) {
+                dismissOpen();
+                return;
+            }
+            applyBesidePlacement(rect);
+            return;
+        }
+
         applyBesidePlacement(getAnchorRect());
     }
 
@@ -633,6 +674,9 @@
         if (kind === 'datePopover') {
             bindAnchorResize(getDatePopoverElement);
         }
+        if (kind === 'cheatsheet') {
+            bindCheatsheetModalResize();
+        }
         const positionAfterLayout = () => {
             positionPromo();
             promoEl?.querySelector('.dashboard-feature-promo-close')?.focus({ preventScroll: true });
@@ -640,10 +684,10 @@
         if (kind === 'tagCloud' || kind === 'pageOverview' || kind === 'inlineEdit'
             || kind === 'tagFilterBulk' || kind === 'recentBookmarks'
             || kind === 'previewCard' || kind === 'quickAddOmnibox' || kind === 'datePopover'
-            || kind === 'categoryCollapse') {
+            || kind === 'categoryCollapse' || kind === 'cheatsheet') {
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 positionAfterLayout();
-                if (kind === 'pageOverview' || kind === 'recentBookmarks') {
+                if (kind === 'pageOverview' || kind === 'recentBookmarks' || kind === 'cheatsheet') {
                     setTimeout(positionAfterLayout, 180);
                 }
                 if (kind === 'inlineEdit' || kind === 'tagFilterBulk' || kind === 'previewCard'

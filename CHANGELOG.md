@@ -51,15 +51,17 @@ _No unreleased changes at this time._
 
 ## v2026.06.20 — June 2026
 
-**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid navigation, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, and page overview; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
 
 ### Desktop discoverability promos
 
 - **new** **Shared placement** — `dashboard-promo-placement.js` with `positionBesideAnchor()` (prefer right, fallback left, vertical center); used by search, feature, grid-keyboard, and smart-collection promos.
 - **new** **Search promos** — one-time balloons for `>` search, `:` commands, and `?` finders beside the search bar; separate **filters** promo after the search promo is dismissed and you first type `tag:`, `category:`, `status:`, `page:`, or `@`.
-- **new** **Grid & smart collection** — first arrow selection and first smart-collection navigation each get a beside-row/header promo.
-- **new** **Feature promos** — inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview card (`[`), quick-add omnibox (`&`), week overview (date click), category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), and page overview (`,`).
-- **fix** **Promo deferral** — promos wait for tours, modals, search, and other promos; host overlay close dismisses without persisting “seen”; `tryShowDeferred` retries when the tag cloud is still open.
+- **new** **Grid & smart collection** — first arrow selection and first smart-collection navigation each get a beside-row/header promo; grid promo no longer covers <code>G</code> jumps — first <code>G</code>+<code>1</code>–<code>9</code> or <code>GG</code> shows a dedicated G-jump promo.
+- **new** **Feature promos** — inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview card (`[`), quick-add omnibox (`&`), week overview (date click), category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), and keyboard cheat sheet (`!` / `F1`).
+- **new** **Config settings search promo** — breadcrumb search balloon uses beside-anchor placement (`DashboardPromoPlacement`); repositions on scroll/resize.
+- **fix** **Promo deferral** — promos wait for tours, modals, search, and other promos; host overlay close dismisses without persisting “seen” (including <code>Esc</code> on quick-move/delete popovers); `tryShowDeferred` retries when the tag cloud is still open.
+- **fix** **Cheat sheet promo layering** — cheat-sheet balloon renders above the modal overlay so **Got it** dismisses only the promo.
 
 ### Quick actions & popovers
 

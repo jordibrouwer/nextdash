@@ -58,11 +58,9 @@
 }
 
 .config-settings-search-promo {
-    position: absolute;
-    z-index: 40;
-    top: calc(100% + 0.55rem);
-    right: 0;
-    left: 0;
+    position: fixed;
+    z-index: 1900;
+    width: min(22rem, calc(100vw - 1.5rem));
     pointer-events: auto;
 }
 
@@ -82,15 +80,32 @@
 
 .config-settings-search-promo-tail {
     position: absolute;
-    top: -7px;
-    right: 1.15rem;
+    top: 50%;
+    margin-top: -7px;
     width: 14px;
     height: 14px;
     background: var(--background-primary);
-    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
-    border-left: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
     transform: rotate(45deg);
-    box-shadow: -2px -2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+    box-shadow: -2px 2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+}
+
+.config-settings-search-promo--beside-right .config-settings-search-promo-tail {
+    left: -7px;
+    right: auto;
+    border-right: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-left: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+}
+
+.config-settings-search-promo--beside-left .config-settings-search-promo-tail {
+    left: auto;
+    right: -7px;
+    border-left: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-right: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    box-shadow: 2px 2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
 }
 
 .config-settings-search-promo-title {

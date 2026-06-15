@@ -24,6 +24,7 @@
     let promoBlockedSince = 0;
     let listenersBound = false;
     let promoPageShowBound = false;
+    let promoRepositionBound = null;
 
     function t(key, fallback) {
         if (!language?.t) return fallback;
@@ -752,6 +753,57 @@
         );
     }
 
+    function unbindPromoReposition() {
+        if (!promoRepositionBound) return;
+        window.removeEventListener('scroll', promoRepositionBound, true);
+        window.removeEventListener('resize', promoRepositionBound);
+        promoRepositionBound = null;
+    }
+
+    function positionConfigSearchPromo(inputEl) {
+        if (!promoEl || !inputEl?.isConnected || !window.DashboardPromoPlacement?.positionBesideAnchor) {
+            return;
+        }
+
+        const rect = inputEl.getBoundingClientRect();
+        if (rect.width < 1 && rect.height < 1) {
+            return;
+        }
+
+        promoEl.style.visibility = 'hidden';
+        promoEl.style.display = 'block';
+        promoEl.style.right = 'auto';
+        promoEl.style.bottom = 'auto';
+
+        const balloon = promoEl.querySelector('.config-settings-search-promo-balloon');
+        const balloonRect = balloon?.getBoundingClientRect();
+        const initialWidth = balloonRect?.width || 300;
+        const height = balloonRect?.height || 140;
+        const placement = window.DashboardPromoPlacement.positionBesideAnchor(rect, initialWidth, height);
+
+        promoEl.style.width = `${Math.round(placement.width)}px`;
+        promoEl.style.maxWidth = `${Math.round(placement.width)}px`;
+        promoEl.classList.remove(
+            'config-settings-search-promo--beside-right',
+            'config-settings-search-promo--beside-left'
+        );
+        promoEl.classList.add(
+            placement.placeRight
+                ? 'config-settings-search-promo--beside-right'
+                : 'config-settings-search-promo--beside-left'
+        );
+        promoEl.style.left = `${Math.round(placement.left)}px`;
+        promoEl.style.top = `${Math.round(placement.top)}px`;
+        promoEl.style.visibility = 'visible';
+    }
+
+    function bindPromoReposition(inputEl) {
+        unbindPromoReposition();
+        promoRepositionBound = () => positionConfigSearchPromo(inputEl);
+        window.addEventListener('scroll', promoRepositionBound, true);
+        window.addEventListener('resize', promoRepositionBound);
+    }
+
     function dismissPromo(persist = true, { blockSession = null } = {}) {
         const wasVisible = isPromoVisible();
         clearTimeout(promoShowTimer);
@@ -764,6 +816,7 @@
         if (persist && (wasVisible || blockSession === true)) {
             markPromoSeen();
         }
+        unbindPromoReposition();
         promoEl?.remove();
         promoEl = null;
         const root = document.querySelector('.config-settings-search');
@@ -832,7 +885,9 @@
         }
 
         promoEl = buildPromoHtml();
-        rootEl.appendChild(promoEl);
+        document.body.appendChild(promoEl);
+        bindPromoReposition(inputEl);
+        requestAnimationFrame(() => positionConfigSearchPromo(inputEl));
 
         promoEl.querySelector('.config-settings-search-promo-try')?.addEventListener('click', () => {
             dismissPromo(true);

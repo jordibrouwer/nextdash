@@ -490,9 +490,11 @@ class KeyboardNavigation {
     handleKeyPress(e) {
         const key = e.key;
         const gridPromo = window.DashboardGridKeyboardPromo;
+        const gJumpPromo = window.DashboardGJumpPromo;
         const smartPromo = window.DashboardSmartCollectionPromo;
         const featurePromos = window.DashboardFeaturePromos;
         const discoverabilityPromoOpen = gridPromo?.isPromoOpen?.()
+            || gJumpPromo?.isPromoOpen?.()
             || smartPromo?.isPromoOpen?.()
             || featurePromos?.isAnyOpen?.();
 
@@ -501,6 +503,8 @@ class KeyboardNavigation {
                 e.preventDefault();
                 if (gridPromo?.isPromoOpen?.()) {
                     gridPromo.confirmPromo();
+                } else if (gJumpPromo?.isPromoOpen?.()) {
+                    gJumpPromo.confirmPromo();
                 } else if (smartPromo?.isPromoOpen?.()) {
                     smartPromo.confirmPromo();
                 } else {
@@ -510,7 +514,7 @@ class KeyboardNavigation {
             }
             if (key === 'Tab') {
                 const closeBtn = document.querySelector(
-                    '.dashboard-grid-kbd-promo-close, .dashboard-smart-collection-promo-close, .dashboard-feature-promo-close'
+                    '.dashboard-grid-kbd-promo-close, .dashboard-g-jump-promo-close, .dashboard-smart-collection-promo-close, .dashboard-feature-promo-close'
                 );
                 if (closeBtn && document.activeElement !== closeBtn) {
                     e.preventDefault();
@@ -677,6 +681,9 @@ class KeyboardNavigation {
                     this.currentIndex = 0;
                     this.highlightCurrentElement({ keyboardNav: true });
                     this._syncGridKeyboardPromoAnchor();
+                    if (this.navigableElements[0]) {
+                        window.DashboardGJumpPromo?.onFirstGgJump?.(this.navigableElements[0]);
+                    }
                 } else {
                     e.preventDefault();
                     e.stopImmediatePropagation();
@@ -731,6 +738,8 @@ class KeyboardNavigation {
 
         if (isSmartCollection) {
             window.DashboardSmartCollectionPromo?.onFirstNavigation?.(target);
+        } else {
+            window.DashboardGJumpPromo?.onFirstCategoryJump?.(target);
         }
     }
 

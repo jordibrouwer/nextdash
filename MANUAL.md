@@ -362,7 +362,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 
 ### 9.4 Cheat sheet
 
-Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open.
+Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
 Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link).
 
@@ -595,7 +595,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), and page overview (`,`). Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9` or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), and keyboard cheat sheet (`!` / `F1`). Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -739,7 +739,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 ### Find settings & quick actions (desktop config)
 
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
-- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon explain settings search vs quick actions. Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
+- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll). Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
 
 #### Layout and structure

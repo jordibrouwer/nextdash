@@ -20,15 +20,23 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Grid &amp; collections</strong> — first arrow-key selection shows a grid-navigation promo beside the bookmark row; first jump into a smart collection shows a promo beside the category header."
+          "text": "<strong>Grid &amp; collections</strong> — first arrow-key selection shows a grid-navigation promo beside the bookmark row; first <code>G</code>+<code>1</code>–<code>9</code> or <code>GG</code> jump shows a separate G-jump promo; first jump into a smart collection shows a promo beside the category header."
         },
         {
           "badge": "new",
-          "text": "<strong>Feature promos</strong> — inline edit (<code>;</code>), tag cloud (<code>/</code>), tag-filter bulk toolbar, recent bookmarks (<code>*</code>), preview card (<code>[</code>), quick-add omnibox (<code>&amp;</code>), week overview (header date click), category collapse (<code>Enter</code>/<code>Space</code> on header), quick move (<code>Shift+M</code>), quick delete (<code>Shift+D</code>), and page overview (<code>,</code>)."
+          "text": "<strong>Feature promos</strong> — inline edit (<code>;</code>), tag cloud (<code>/</code>), tag-filter bulk toolbar, recent bookmarks (<code>*</code>), preview card (<code>[</code>), quick-add omnibox (<code>&amp;</code>), week overview (header date click), category collapse (<code>Enter</code>/<code>Space</code> on header), quick move (<code>Shift+M</code>), quick delete (<code>Shift+D</code>), page overview (<code>,</code>), and keyboard cheat sheet (<code>!</code>/<code>F1</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config settings search promo</strong> — the breadcrumb search balloon uses the same left/right beside-anchor placement as dashboard promos (repositions on scroll/resize)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Promo coordination</strong> — promos defer while search, modals, tours, or another promo is open; closing a host overlay dismisses its promo without marking it seen; filter and bulk promos can retry after a short delay when the tag cloud is still open."
+          "text": "<strong>Promo coordination</strong> — promos defer while search, modals, tours, or another promo is open; closing a host overlay dismisses its promo without marking it seen (including <code>Esc</code> on quick-move/delete popovers); filter and bulk promos can retry after a short delay when the tag cloud is still open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet promo layering</strong> — the <code>!</code>/<code>F1</code> balloon renders above the modal overlay so <strong>Got it</strong> dismisses only the promo, not the cheat sheet."
         }
       ]
     },

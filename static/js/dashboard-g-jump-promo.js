@@ -1,8 +1,8 @@
 /**
- * One-time promo for first keyboard arrow selection on the bookmark grid.
+ * One-time promo for first G+digit or GG category/bookmark jump.
  */
-(function initDashboardGridKeyboardPromo(global) {
-    const PROMO_CONFIRMED_KEY = 'nextdash:dashboard-grid-keyboard-promo-confirmed-v1';
+(function initDashboardGJumpPromo(global) {
+    const PROMO_CONFIRMED_KEY = 'nextdash:dashboard-g-jump-promo-confirmed-v1';
     const CLICK_SHIELD_MS = 600;
 
     let promoEl = null;
@@ -22,9 +22,7 @@
     function markConfirmedInStorage() {
         try {
             localStorage.setItem(PROMO_CONFIRMED_KEY, '1');
-        } catch {
-            // Ignore storage errors.
-        }
+        } catch { /* ignore */ }
     }
 
     function isPromoSuppressed() {
@@ -61,9 +59,10 @@
         if (overlay?.classList.contains('show')) return true;
         if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
         if (global.dashboardInstance?.searchComponent?.isActive?.()) return true;
-        if (global.DashboardGJumpPromo?.isPromoOpen?.()) return true;
+        if (global.DashboardGridKeyboardPromo?.isPromoOpen?.()) return true;
         if (global.DashboardSmartCollectionPromo?.isPromoOpen?.()) return true;
         if (global.DashboardFeaturePromos?.isAnyOpen?.()) return true;
+        if (document.querySelector('.dashboard-search-promo')) return true;
         const isVisibleTourCard = (el) => {
             if (!(el instanceof HTMLElement)) return false;
             const style = window.getComputedStyle(el);
@@ -121,8 +120,7 @@
     }
 
     function attachPromoButtonHandlers(wrap) {
-        const closeBtn = wrap.querySelector('.dashboard-grid-kbd-promo-close');
-
+        const closeBtn = wrap.querySelector('.dashboard-g-jump-promo-close');
         closeBtn?.addEventListener('mousedown', (event) => {
             stopPromoEvent(event);
         }, true);
@@ -136,16 +134,13 @@
         if (boundPromoKeydown) return;
         boundPromoKeydown = (event) => {
             if (!isPromoOpen()) return;
-
-            const closeBtn = promoEl?.querySelector('.dashboard-grid-kbd-promo-close');
+            const closeBtn = promoEl?.querySelector('.dashboard-g-jump-promo-close');
             if (!closeBtn) return;
-
             if (event.key === 'Escape') {
                 stopPromoEvent(event);
                 confirmPromo();
                 return;
             }
-
             if (event.key === 'Enter' && document.activeElement === closeBtn) {
                 stopPromoEvent(event);
                 confirmPromo();
@@ -155,46 +150,55 @@
     }
 
     function focusCloseButton() {
-        const closeBtn = promoEl?.querySelector('.dashboard-grid-kbd-promo-close');
-        closeBtn?.focus({ preventScroll: true });
+        promoEl?.querySelector('.dashboard-g-jump-promo-close')?.focus({ preventScroll: true });
     }
 
     function buildPromoElement() {
-        const title = t('gridKeyboardPromoTitle', 'Keyboard navigation');
+        const title = t('gJumpPromoTitle', 'Jump with G');
         const body = t(
-            'gridKeyboardPromoBody',
-            '<kbd>Enter</kbd> open · <kbd>;</kbd> inline edit · drag the left strip to reorder · long-press a row to edit on touch'
+            'gJumpPromoBody',
+            '<kbd>G</kbd> then <kbd>1</kbd>–<kbd>9</kbd> jumps to a category or smart collection · <kbd>G</kbd><kbd>G</kbd> jumps to the first bookmark'
         );
-        const closeLabel = t('gridKeyboardPromoDismiss', 'Got it');
+        const closeLabel = t('gJumpPromoDismiss', 'Got it');
 
         const wrap = document.createElement('div');
-        wrap.className = 'dashboard-grid-kbd-promo';
+        wrap.className = 'dashboard-g-jump-promo';
         wrap.setAttribute('role', 'dialog');
         wrap.setAttribute('aria-modal', 'false');
         wrap.setAttribute('aria-label', title);
         wrap.innerHTML = `
-            <div class="dashboard-grid-kbd-promo-balloon">
-                <span class="dashboard-grid-kbd-promo-tail" aria-hidden="true"></span>
-                <p class="dashboard-grid-kbd-promo-title"></p>
-                <div class="dashboard-grid-kbd-promo-text"></div>
-                <div class="dashboard-grid-kbd-promo-actions">
-                    <button type="button" class="dashboard-grid-kbd-promo-close"></button>
+            <div class="dashboard-g-jump-promo-balloon">
+                <span class="dashboard-g-jump-promo-tail" aria-hidden="true"></span>
+                <p class="dashboard-g-jump-promo-title"></p>
+                <div class="dashboard-g-jump-promo-text"></div>
+                <div class="dashboard-g-jump-promo-actions">
+                    <button type="button" class="dashboard-g-jump-promo-close"></button>
                 </div>
             </div>`;
-        wrap.querySelector('.dashboard-grid-kbd-promo-title').textContent = title;
-        wrap.querySelector('.dashboard-grid-kbd-promo-text').innerHTML = body;
-        wrap.querySelector('.dashboard-grid-kbd-promo-close').textContent = closeLabel;
+        wrap.querySelector('.dashboard-g-jump-promo-title').textContent = title;
+        wrap.querySelector('.dashboard-g-jump-promo-text').innerHTML = body;
+        wrap.querySelector('.dashboard-g-jump-promo-close').textContent = closeLabel;
         attachPromoButtonHandlers(wrap);
         return wrap;
     }
 
-    function positionPromo() {
-        if (!promoEl || !anchorEl?.isConnected) {
-            return;
+    function getAnchorRect() {
+        if (!(anchorEl instanceof HTMLElement) || !anchorEl.isConnected) {
+            return null;
         }
+        const category = anchorEl.closest?.('.category[data-category-id]');
+        const titleEl = category?.querySelector('.category-title') || anchorEl;
+        const rect = titleEl.getBoundingClientRect();
+        if (rect.width < 1 && rect.height < 1) {
+            return anchorEl.getBoundingClientRect();
+        }
+        return rect;
+    }
 
-        const rect = anchorEl.getBoundingClientRect();
-        if (rect.width < 1 || rect.height < 1) {
+    function positionPromo() {
+        if (!promoEl) return;
+        const anchorRect = getAnchorRect();
+        if (!anchorRect || (anchorRect.width < 1 && anchorRect.height < 1)) {
             return;
         }
 
@@ -203,23 +207,22 @@
         promoEl.style.right = 'auto';
         promoEl.style.bottom = 'auto';
 
-        const balloon = promoEl.querySelector('.dashboard-grid-kbd-promo-balloon');
+        const balloon = promoEl.querySelector('.dashboard-g-jump-promo-balloon');
         const balloonRect = balloon?.getBoundingClientRect();
         const initialWidth = balloonRect?.width || 280;
         const height = balloonRect?.height || 120;
-        const placement = global.DashboardPromoPlacement.positionBesideAnchor(rect, initialWidth, height);
+        const placement = global.DashboardPromoPlacement.positionBesideAnchor(anchorRect, initialWidth, height);
 
         promoEl.style.width = `${Math.round(placement.width)}px`;
         promoEl.style.maxWidth = `${Math.round(placement.width)}px`;
         promoEl.classList.remove(
-            'dashboard-grid-kbd-promo--above',
-            'dashboard-grid-kbd-promo--beside-right',
-            'dashboard-grid-kbd-promo--beside-left'
+            'dashboard-g-jump-promo--beside-right',
+            'dashboard-g-jump-promo--beside-left'
         );
         promoEl.classList.add(
             placement.placeRight
-                ? 'dashboard-grid-kbd-promo--beside-right'
-                : 'dashboard-grid-kbd-promo--beside-left'
+                ? 'dashboard-g-jump-promo--beside-right'
+                : 'dashboard-g-jump-promo--beside-left'
         );
         promoEl.style.left = `${Math.round(placement.left)}px`;
         promoEl.style.top = `${Math.round(placement.top)}px`;
@@ -237,6 +240,7 @@
         if (!canOfferPromo() || isPromoDeferred() || !(element instanceof HTMLElement)) {
             return;
         }
+        if (isPromoOpen()) return;
 
         removePromoFromDom();
         anchorEl = element;
@@ -250,24 +254,21 @@
         });
     }
 
-    function onFirstArrowSelection(element) {
-        if (!canOfferPromo() || promoEl?.isConnected) {
+    function onFirstCategoryJump(categoryEl) {
+        if (!categoryEl || categoryEl.getAttribute('data-smart-collection') === 'true') {
             return;
         }
-        showPromoForAnchor(element);
+        const anchor = categoryEl.querySelector('.bookmark-link[data-bookmark-index]') || categoryEl;
+        showPromoForAnchor(anchor);
     }
 
-    function onSelectionAnchorChanged(element) {
-        if (!isPromoOpen() || !(element instanceof HTMLElement)) {
-            return;
-        }
-        anchorEl = element;
-        positionPromo();
+    function onFirstGgJump(bookmarkEl) {
+        showPromoForAnchor(bookmarkEl);
     }
 
-    global.DashboardGridKeyboardPromo = {
-        onFirstArrowSelection,
-        onSelectionAnchorChanged,
+    global.DashboardGJumpPromo = {
+        onFirstCategoryJump,
+        onFirstGgJump,
         isPromoOpen,
         confirmPromo,
         dismissPopover,
@@ -279,9 +280,7 @@
             removePromoFromDom();
             try {
                 localStorage.removeItem(PROMO_CONFIRMED_KEY);
-            } catch {
-                // Ignore storage errors.
-            }
+            } catch { /* ignore */ }
         },
     };
 }(window));

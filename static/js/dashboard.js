@@ -4083,6 +4083,18 @@ class Dashboard {
             showCancel: false,
             modalClass: 'keyboard-cheat-sheet-modal',
             initialFocusSelector: '#cheat-sheet-filter',
+            onHide: () => {
+                if (window.DashboardFeaturePromos?.isPromoOpen?.('cheatsheet')) {
+                    window.DashboardFeaturePromos.dismissOpen();
+                }
+            },
+        });
+
+        requestAnimationFrame(() => {
+            const panel = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+            if (panel) {
+                window.DashboardFeaturePromos?.tryShowDeferred?.('cheatsheet', panel, [0, 180, 400]);
+            }
         });
 
         const filterInput = document.getElementById('cheat-sheet-filter');
@@ -9672,6 +9684,9 @@ class Dashboard {
             if (pop.parentNode) {
                 pop.remove();
             }
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickMove')) {
+                window.DashboardFeaturePromos.dismissOpen();
+            }
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -9806,6 +9821,9 @@ class Dashboard {
         const close = () => {
             if (pop.parentNode) {
                 pop.remove();
+            }
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickDelete')) {
+                window.DashboardFeaturePromos.dismissOpen();
             }
             unbindPosition?.();
             unbindPosition = null;

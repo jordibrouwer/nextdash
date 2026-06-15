@@ -63,6 +63,7 @@
         if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
         if (global.dashboardInstance?.searchComponent?.isActive?.()) return true;
         if (global.DashboardGridKeyboardPromo?.isPromoOpen?.()) return true;
+        if (global.DashboardGJumpPromo?.isPromoOpen?.()) return true;
         if (document.querySelector('.dashboard-search-promo')) return true;
         if (global.DashboardFeaturePromos?.isAnyOpen?.()) return true;
         const isVisibleTourCard = (el) => {
