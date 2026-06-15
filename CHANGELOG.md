@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.20 — June 2026](#v20260620--june-2026)
 - [v2026.06.19 — June 2026](#v20260619--june-2026)
 - [v2026.06.17 — June 2026](#v20260617--june-2026)
 - [v2026.06.16 — June 2026](#v20260616--june-2026)
@@ -48,9 +49,41 @@ _No unreleased changes at this time._
 
 ---
 
-## Unreleased
+## v2026.06.20 — June 2026
 
-_No unreleased changes at this time._
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid navigation, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, and page overview; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+
+### Desktop discoverability promos
+
+- **new** **Shared placement** — `dashboard-promo-placement.js` with `positionBesideAnchor()` (prefer right, fallback left, vertical center); used by search, feature, grid-keyboard, and smart-collection promos.
+- **new** **Search promos** — one-time balloons for `>` search, `:` commands, and `?` finders beside the search bar; separate **filters** promo after the search promo is dismissed and you first type `tag:`, `category:`, `status:`, `page:`, or `@`.
+- **new** **Grid & smart collection** — first arrow selection and first smart-collection navigation each get a beside-row/header promo.
+- **new** **Feature promos** — inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview card (`[`), quick-add omnibox (`&`), week overview (date click), category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), and page overview (`,`).
+- **fix** **Promo deferral** — promos wait for tours, modals, search, and other promos; host overlay close dismisses without persisting “seen”; `tryShowDeferred` retries when the tag cloud is still open.
+
+### Quick actions & popovers
+
+- **new** **`Shift+D` quick delete** — popover with Delete/Cancel (same styling as quick move); `Enter` confirms; undo toast; plain `Delete` still opens the confirmation dialog.
+- **fix** **Beside-anchor popovers** — `Shift+M`, `Shift+D`, and tag-filter bulk move reposition on scroll/resize via `DashboardPromoPlacement`.
+- **fix** **Move popover hint** — shows current category or categories above the destination list (`movePopoverCurrentCategory` / `movePopoverCurrentCategories`).
+
+### Tag filter bulk actions
+
+- **new** **Bulk toolbar** — when a tag filter has matches: open all / open first N, copy links, move (category or page), delete filtered bookmarks on the page.
+- **new** **Bulk promo** — one-time discoverability balloon beside the toolbar (after tag-cloud promo was seen).
+
+### Tag cloud & header polish
+
+- **fix** **Tag cloud layout** — dynamic width/height from tag count; prefers above/below the `/` FAB; scrollable body when capped by viewport.
+- **fix** **Active filter UI** — header chips and tooltip only; removed redundant FAB badge text.
+- **fix** **Date popover theming** — uses `--background-secondary`, `--border-primary`, `--text-primary`, and `--accent-primary`; modern/glass layout overrides aligned with move popover.
+
+### Help, tips & developer
+
+- **fix** **Cheat sheet & config Help** — `Shift+M` / `Shift+D` in keyboard cheat sheet and Help → Keyboard / Navigation (EN/NL/DE/FR).
+- **fix** **Rotating tips** — `tipQuickDelete` and `tipQuickMove` in dashboard tip rotation.
+- **fix** **AppModal repair** — `ensureModalStructure()` restores missing header/body on existing `#app-modal` (recent bookmarks modal).
+- **fix** **Cache-bust** — `whats-new-v79` (`2026.06-dashboard-release-v66`); promo script/CSS bundles; `date-popover-theme-1` on dashboard and layout sheets.
 
 ---
 

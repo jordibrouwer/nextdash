@@ -147,6 +147,7 @@ class Dashboard {
         this._bookmarkOrderSaveInFlight = null;
         this.pendingPreviewSave = null;
         this._movePopoverCleanup = null;
+        this._deletePopoverCleanup = null;
         this.notificationTimeout = null;
         this.tipRotationTimer = null;
         this.backupTipTimer = null;
@@ -1978,7 +1979,6 @@ class Dashboard {
         this._tagFilters = normalized;
         this._syncTagFilterDomAttributes();
         window.DashboardTagCloud?.setActiveTags?.(normalized);
-        this.updateTagFilterIndicator();
         this.renderDashboard({ animate: Boolean(animate) });
     }
 
@@ -2045,6 +2045,12 @@ class Dashboard {
         container.classList.remove('page-transition', 'tag-filter-layout');
         const gridLayout = this.syncDashboardGridLayout();
         container.classList.add('tag-filter-view');
+
+        const banner = document.createElement('div');
+        banner.className = 'tag-filter-banner';
+        banner.id = 'tag-filter-banner';
+        this.renderTagFilterBanner(banner, { tags, count: matched.length });
+        container.appendChild(banner);
 
         if (matched.length === 0) {
             const empty = document.createElement('div');
@@ -2301,73 +2307,581 @@ class Dashboard {
             .replace('{count}', String(count));
     }
 
-    updateTagFilterIndicator() {
-        const wrap = document.getElementById('tag-filter-indicator');
-        if (!wrap) return;
-        this.tagFilterIndicator = wrap;
+    getTagFilterMatchedBookmarksWithUrls() {
+        return this.getBookmarksForTagFilters().filter(
+            (bookmark) => bookmark && String(bookmark.url || '').trim()
+        );
+    }
 
-        const tags = this.normalizeTagFilters(this._tagFilters);
-        const tagsKey = this.tagFiltersKey(tags);
-        const prev = this._tagFilterIndicatorState || { tagsKey: '', count: -1 };
+    buildTagFilterOpenPlans() {
+        return this.buildOpenTabsPlans(this.getTagFilterMatchedBookmarksWithUrls(), {
+            all: 'tagFilterOpenAll',
+            first: 'tagFilterOpenFirst',
+        });
+    }
 
-        if (!tags.length) {
-            if (!prev.tagsKey && wrap.hidden) {
-                return;
-            }
-            wrap.replaceChildren();
-            wrap.hidden = true;
-            wrap.removeAttribute('role');
-            wrap.removeAttribute('aria-label');
-            this.tagFilterIndicatorSummary = null;
-            this.tagFilterIndicatorClear = null;
-            this._tagFilterIndicatorState = { tagsKey: '', count: 0 };
+    copyTagFilterLinksToClipboard() {
+        const urls = this.getTagFilterMatchedBookmarksWithUrls()
+            .map((bookmark) => window.BookmarkUrlUtils?.safeHttpResourceUrl?.(bookmark.url)
+                || String(bookmark.url || '').trim())
+            .filter(Boolean);
+        if (!urls.length) {
             return;
         }
 
-        const count = this.getBookmarksForTagFilters(tags).length;
+        const text = urls.join('\n');
+        const notify = () => {
+            const template = this.language?.t('dashboard.tagFilterLinksCopied')
+                || 'Copied {count} link(s) to clipboard';
+            const message = template.replace('{count}', String(urls.length));
+            this.showNotification(message, 'success', { duration: 2500 });
+        };
+
+        const fallbackCopy = () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                notify();
+            } catch {
+                this.showErrorNotification(
+                    this.language?.t('dashboard.tagFilterCopyFailed') || 'Could not copy links to clipboard.'
+                );
+            }
+            document.body.removeChild(textarea);
+        };
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).then(notify).catch(fallbackCopy);
+        } else {
+            fallbackCopy();
+        }
+    }
+
+    getTagFilterBookmarkRefs() {
+        return this.getBookmarksForTagFilters()
+            .map((bookmark) => this.resolveBookmarkReference(bookmark))
+            .filter((ref) => ref && ref.scope === 'current' && ref.index >= 0);
+    }
+
+    collectBookmarkCategoryIds(bookmarks = []) {
+        const ids = new Set();
+        (bookmarks || []).forEach((entry) => {
+            const bookmark = entry?.bookmark ?? entry;
+            if (!bookmark) {
+                return;
+            }
+            ids.add(String(bookmark.category ?? '').trim());
+        });
+        return ids;
+    }
+
+    formatMovePopoverCurrentCategoriesHint(categoryIds) {
+        const ids = [...(categoryIds || [])];
+        if (!ids.length) {
+            return this.formatDashboardLabel('movePopoverCurrentCategory', { name: '—' }, 'Current category: —');
+        }
+
+        const names = ids.map((id) => {
+            if (!id) {
+                return this.configLabel('noCategory', 'No category');
+            }
+            const cat = (this.categories || []).find((item) => String(item.id) === String(id));
+            return cat?.name || id;
+        });
+
+        if (names.length === 1) {
+            return this.formatDashboardLabel(
+                'movePopoverCurrentCategory',
+                { name: names[0] },
+                `Current category: ${names[0]}`
+            );
+        }
+
+        return this.formatDashboardLabel(
+            'movePopoverCurrentCategories',
+            { names: names.join(', ') },
+            `Current categories: ${names.join(', ')}`
+        );
+    }
+
+    syncInlineEditCategoryAfterMove(categoryId, affectedRefs = []) {
+        const ctx = this._inlineEditContext;
+        if (!ctx?.fields?.catSelect || !ctx.bookmarkRef?.bookmark) {
+            return;
+        }
+
+        const editingRef = ctx.bookmarkRef;
+        const isAffected = (affectedRefs || []).some((ref) => (
+            ref === editingRef
+            || ref?.bookmark === editingRef.bookmark
+            || this.isSameBookmarkReference(editingRef, ref?.bookmark)
+        ));
+        if (!isAffected) {
+            return;
+        }
+
+        const normalizedCategoryId = String(categoryId ?? '');
+        ctx.fields.catSelect.value = normalizedCategoryId;
+        editingRef.bookmark.category = categoryId;
+        if (editingRef.original) {
+            editingRef.original.category = categoryId;
+        }
+    }
+
+    updateBookmarkRowsCategoryInDom(refs, categoryId) {
+        const normalizedCategoryId = String(categoryId ?? '');
+        (refs || []).forEach((ref) => {
+            const bookmark = ref?.bookmark;
+            if (!bookmark) {
+                return;
+            }
+
+            let row = null;
+            if (ref.scope === 'current' && Number.isInteger(ref.index) && ref.index >= 0) {
+                row = document.querySelector(`[data-bookmark-index="${ref.index}"]`);
+            }
+            if (!row && bookmark.url) {
+                const url = String(bookmark.url).trim();
+                row = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(url)}"]`);
+            }
+            if (row) {
+                row.setAttribute('data-category-id', normalizedCategoryId);
+            }
+        });
+    }
+
+    applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
+        const refs = (Array.isArray(bookmarkRefs) ? bookmarkRefs : [bookmarkRefs])
+            .map((entry) => (entry?.bookmark ? entry : this.resolveBookmarkReference(entry)))
+            .filter((ref) => ref && ref.scope === 'current' && ref.bookmark);
+
+        if (!refs.length) {
+            return false;
+        }
+
+        const cat = (this.categories || []).find((item) => String(item.id) === String(categoryId));
+        const catName = cat?.name || categoryId;
+        const affectedCount = Number.isFinite(count) ? count : refs.length;
+
+        this.ensureBookmarkMutationSnapshot();
+        refs.forEach((ref) => {
+            ref.bookmark.category = categoryId;
+            if (ref.original) {
+                ref.original.category = categoryId;
+            }
+        });
+
+        this.syncInlineEditCategoryAfterMove(categoryId, refs);
+        this.updateBookmarkRowsCategoryInDom(refs, categoryId);
+        this.scheduleBookmarkOrderSave();
+
+        if (!this.isInlineEditActive()) {
+            this.renderDashboard({ animate: false });
+        }
+
+        if (notify) {
+            const message = affectedCount > 1
+                ? this.formatDashboardLabel(
+                    'tagFilterMovedToCategory',
+                    { count: affectedCount, name: catName },
+                    `Moved ${affectedCount} bookmark(s) to "${catName}"`
+                )
+                : this.formatDashboardLabel(
+                    'movedToCategory',
+                    { name: catName },
+                    `Moved to "${catName}"`
+                );
+            this.showNotification(message, 'success', { duration: 2500 });
+        }
+
+        return true;
+    }
+
+    async bulkDeleteTagFilterBookmarks() {
+        const refs = this.getTagFilterBookmarkRefs();
+        if (!refs.length) {
+            return;
+        }
+
+        const count = refs.length;
+        let confirmed = false;
+        if (window.AppModal && typeof window.AppModal.danger === 'function') {
+            confirmed = await window.AppModal.danger({
+                title: this.formatDashboardLabel('tagFilterDeleteTitle', {}, 'Delete filtered bookmarks'),
+                message: this.formatDashboardLabel(
+                    'tagFilterDeleteConfirm',
+                    { count },
+                    `Delete ${count} bookmark(s) on this page?`
+                ),
+                confirmText: this.configLabel('delete', 'Delete'),
+                cancelText: this.formatDashboardLabel('cancel', {}, 'Cancel'),
+            });
+        } else {
+            confirmed = window.confirm(
+                this.formatDashboardLabel(
+                    'tagFilterDeleteConfirm',
+                    { count },
+                    `Delete ${count} bookmark(s) on this page?`
+                )
+            );
+        }
+        if (!confirmed) {
+            return;
+        }
+
+        this.ensureBookmarkMutationSnapshot();
+        const sorted = [...refs].sort((a, b) => b.index - a.index);
+        sorted.forEach((ref) => {
+            this.removeBookmarkFromAllBookmarks(ref);
+            this.bookmarks.splice(ref.index, 1);
+        });
+
+        this._inlineEditGlobalCleanup?.();
+        this.inlineEditingBookmarkIndex = null;
+        this.renderDashboard();
+
+        try {
+            await this.saveBookmarkOrder();
+            this.showNotification(
+                this.formatDashboardLabel('tagFilterDeleted', { count }, `Deleted ${count} bookmark(s)`),
+                'success'
+            );
+        } catch (_error) {
+            this.showErrorNotification(
+                this.formatDashboardLabel('tagFilterDeleteFailed', {}, 'Failed to delete bookmarks.')
+            );
+        }
+    }
+
+    bulkMoveTagFilterToCategory(categoryId) {
+        const refs = this.getTagFilterBookmarkRefs();
+        this.applyBookmarkCategoryMove(refs, categoryId, { count: refs.length });
+    }
+
+    async bulkMoveTagFilterToPage(targetPageId) {
+        const refs = this.getTagFilterBookmarkRefs();
+        if (!refs.length) {
+            return;
+        }
+
+        const targetId = Number(targetPageId);
+        const sourcePageId = Number(this.currentPageId);
+        if (!Number.isFinite(targetId) || targetId <= 0 || targetId === sourcePageId) {
+            return;
+        }
+
+        const sorted = [...refs].sort((a, b) => b.index - a.index);
+        const toMove = sorted.map((ref) => ({ ...ref.bookmark }));
+
+        try {
+            const targetRes = await fetch(`/api/bookmarks?page=${targetId}`);
+            if (!targetRes.ok) {
+                throw new Error(this.formatDashboardLabel('loadSourcePageFailed', {}, 'Failed to load source page.'));
+            }
+            const targetBookmarks = await targetRes.json();
+
+            this.ensureBookmarkMutationSnapshot();
+            const remaining = [...this.bookmarks];
+            sorted.forEach((ref) => {
+                this.removeBookmarkFromAllBookmarks(ref);
+                remaining.splice(ref.index, 1);
+            });
+            targetBookmarks.push(...toMove);
+
+            const headers = { 'Content-Type': 'application/json' };
+            const sourceSaveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(remaining),
+            });
+            if (!sourceSaveRes.ok) {
+                throw new Error(this.formatDashboardLabel('saveBookmarkDeletionFailed', {}, 'Failed to save bookmark deletion.'));
+            }
+            const targetSaveRes = await dashFetch(`/api/bookmarks?page=${targetId}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(targetBookmarks),
+            });
+            if (!targetSaveRes.ok) {
+                throw new Error(this.formatDashboardLabel('moveBookmarkFailed', {}, 'Failed to move bookmark.'));
+            }
+
+            this.bookmarks = remaining;
+            await this.loadAllBookmarks();
+            this.renderDashboard();
+
+            const targetPage = (this.pages || []).find((page) => Number(page.id) === targetId);
+            const targetName = targetPage?.name || String(targetId);
+            this.showNotification(
+                this.formatDashboardLabel(
+                    'tagFilterMovedToPage',
+                    { count: toMove.length, name: targetName },
+                    `Moved ${toMove.length} bookmark(s) to "${targetName}"`
+                ),
+                'success',
+                { duration: 2500 }
+            );
+        } catch (error) {
+            this.showErrorNotification(
+                error.message || this.formatDashboardLabel('tagFilterMoveFailed', {}, 'Failed to move bookmarks.')
+            );
+        }
+    }
+
+    _closeMovePopover() {
+        if (this._movePopoverCleanup) {
+            this._movePopoverCleanup();
+            this._movePopoverCleanup = null;
+        }
+    }
+
+    _closeDeletePopover() {
+        if (this._deletePopoverCleanup) {
+            this._deletePopoverCleanup();
+            this._deletePopoverCleanup = null;
+        }
+    }
+
+    _closeActionPopovers() {
+        this._closeMovePopover();
+        this._closeDeletePopover();
+    }
+
+    _positionActionPopoverBeside(pop, anchorEl) {
+        if (!(pop instanceof HTMLElement) || !(anchorEl instanceof HTMLElement)) {
+            return;
+        }
+        const rect = anchorEl.getBoundingClientRect();
+        if (rect.width < 1 && rect.height < 1) {
+            return;
+        }
+        const popW = pop.offsetWidth || 220;
+        const popH = pop.offsetHeight || 120;
+        const placement = window.DashboardPromoPlacement?.positionBesideAnchor(rect, popW, popH)
+            || { left: rect.right + 8, top: rect.top, width: popW };
+        pop.style.left = `${Math.round(placement.left)}px`;
+        pop.style.top = `${Math.round(placement.top)}px`;
+    }
+
+    _attachActionPopoverPositioning(pop, anchorEl) {
+        this._positionActionPopoverBeside(pop, anchorEl);
+        const reposition = () => this._positionActionPopoverBeside(pop, anchorEl);
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+        return () => {
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+        };
+    }
+
+    showTagFilterBulkMovePopover(anchorEl) {
+        this._closeActionPopovers();
+
+        const refs = this.getTagFilterBookmarkRefs();
+        if (!refs.length || !anchorEl) {
+            return;
+        }
+
+        const t = (key, fallback) => {
+            const val = this.language?.t ? this.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+
+        const realCategories = (this.categories || []).filter((category) => !category.isSmartCollection);
+        const otherPages = (this.pages || []).filter((page) => String(page.id) !== String(this.currentPageId));
+
+        const pop = document.createElement('div');
+        pop.id = 'move-popover';
+        pop.className = 'move-popover';
+        pop.setAttribute('role', 'listbox');
+        pop.setAttribute('aria-label', t('dashboard.movePopoverTitle', 'Move to…'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = t('dashboard.movePopoverTitle', 'Move to…');
+        pop.appendChild(header);
+
+        const currentCategoryIds = this.collectBookmarkCategoryIds(
+            refs.map((ref) => ref.bookmark)
+        );
+        const currentHint = document.createElement('div');
+        currentHint.className = 'move-popover-current-hint';
+        currentHint.textContent = this.formatMovePopoverCurrentCategoriesHint(currentCategoryIds);
+        pop.appendChild(currentHint);
+
+        const items = [];
+
+        if (realCategories.length > 0) {
+            const catLabel = document.createElement('div');
+            catLabel.className = 'move-popover-section-label';
+            catLabel.textContent = t('dashboard.movePopoverCategorySection', 'Category');
+            pop.appendChild(catLabel);
+
+            realCategories.forEach((cat) => {
+                const isCurrent = currentCategoryIds.has(String(cat.id));
+                const item = document.createElement('div');
+                item.className = 'move-popover-item' + (isCurrent ? ' is-current' : '');
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-type', 'category');
+                item.setAttribute('data-id', String(cat.id));
+                item.setAttribute('aria-selected', String(isCurrent));
+
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                check.textContent = isCurrent ? '✓' : '';
+                item.appendChild(check);
+
+                const label = document.createElement('span');
+                label.textContent = cat.name;
+                item.appendChild(label);
+
+                pop.appendChild(item);
+                items.push(item);
+            });
+        }
+
+        if (otherPages.length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'move-popover-divider';
+            pop.appendChild(divider);
+
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'move-popover-section-label';
+            pageLabel.textContent = t('dashboard.movePopoverPageSection', 'Page');
+            pop.appendChild(pageLabel);
+
+            otherPages.forEach((page) => {
+                const item = document.createElement('div');
+                item.className = 'move-popover-item';
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-type', 'page');
+                item.setAttribute('data-id', String(page.id));
+                item.setAttribute('aria-selected', 'false');
+
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                check.textContent = '';
+                item.appendChild(check);
+
+                const label = document.createElement('span');
+                label.textContent = page.name;
+                item.appendChild(label);
+
+                pop.appendChild(item);
+                items.push(item);
+            });
+        }
+
+        if (!items.length) {
+            return;
+        }
+
+        document.body.appendChild(pop);
+        this._positionActionPopoverBeside(pop, anchorEl);
+
+        let focusedIdx = items.findIndex((item) => item.classList.contains('is-current'));
+        if (focusedIdx < 0) {
+            focusedIdx = 0;
+        }
+
+        const setFocus = (idx) => {
+            items.forEach((el, i) => el.classList.toggle('is-focused', i === idx));
+            focusedIdx = idx;
+            items[idx]?.scrollIntoView({ block: 'nearest' });
+        };
+        setFocus(focusedIdx);
+
+        let onOutside = null;
+        let unbindPosition = null;
+        const close = () => {
+            if (pop.parentNode) {
+                pop.remove();
+            }
+            unbindPosition?.();
+            unbindPosition = null;
+            document.removeEventListener('keydown', onKey, true);
+            if (onOutside) {
+                document.removeEventListener('click', onOutside);
+                onOutside = null;
+            }
+            if (this._movePopoverCleanup === close) {
+                this._movePopoverCleanup = null;
+            }
+        };
+        unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
+        this._movePopoverCleanup = close;
+
+        const confirm = (item) => {
+            const type = item.getAttribute('data-type');
+            const id = item.getAttribute('data-id');
+            if (type === 'category') {
+                const targetId = String(id);
+                const allAlreadyThere = refs.every(
+                    (ref) => String(ref.bookmark?.category ?? '') === targetId
+                );
+                if (allAlreadyThere) {
+                    return;
+                }
+            }
+            close();
+            if (type === 'category') {
+                this.bulkMoveTagFilterToCategory(id);
+            } else if (type === 'page') {
+                void this.bulkMoveTagFilterToPage(Number(id));
+            }
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
+            if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) confirm(items[focusedIdx]); return; }
+        };
+
+        items.forEach((item, idx) => {
+            item.addEventListener('mouseenter', () => setFocus(idx));
+            item.addEventListener('click', () => confirm(item));
+        });
+
+        document.addEventListener('keydown', onKey, true);
+        setTimeout(() => {
+            onOutside = (e) => { if (!pop.contains(e.target) && e.target !== anchorEl) close(); };
+            document.addEventListener('click', onOutside);
+        }, 0);
+    }
+
+    _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `recent-bookmarks-open-btn modal-button tag-filter-bulk-btn ${className}`.trim();
+        const labelEl = document.createElement('span');
+        labelEl.className = 'modal-button-name';
+        labelEl.textContent = label;
+        btn.appendChild(labelEl);
+        btn.addEventListener('click', onClick);
+        actions.appendChild(btn);
+        return btn;
+    }
+
+    renderTagFilterBanner(wrap, { tags, count = 0 } = {}) {
+        const normalized = this.normalizeTagFilters(tags);
+        wrap.replaceChildren();
+        if (!normalized.length) {
+            return;
+        }
+
         const countLabel = this.formatTagFilterCountLabel(count);
-        const tagsLabel = this.formatTagFilterTagsLabel(tags);
+        const tagsLabel = this.formatTagFilterTagsLabel(normalized);
         const groupAria = (this.language?.t('dashboard.tagFilterGroupAria')
             || 'Active tag filters: {tags}, {count} on this page')
             .replace('{tags}', tagsLabel)
             .replace('{count}', countLabel);
 
-        if (
-            prev.tagsKey === tagsKey
-            && prev.count === count
-            && this.tagFilterIndicatorSummary
-            && !wrap.hidden
-        ) {
-            return;
-        }
-
-        let focusRestore = null;
-        if (!wrap.hidden && wrap.contains(document.activeElement)) {
-            const active = document.activeElement;
-            if (active.classList?.contains('tag-filter-indicator-clear')) {
-                focusRestore = { kind: 'clear' };
-            } else if (active.classList?.contains('tag-filter-indicator-tag-remove')) {
-                focusRestore = {
-                    kind: 'remove',
-                    tag: active.closest('.tag-filter-indicator-tag-item')?.querySelector('.tag-filter-indicator-tag')?.textContent,
-                };
-            } else if (active.classList?.contains('tag-filter-indicator-chip')) {
-                focusRestore = {
-                    kind: 'chip',
-                    tag: active.querySelector('.tag-filter-indicator-tag')?.textContent,
-                };
-            }
-        }
-
-        if (prev.tagsKey === tagsKey && this.tagFilterIndicatorSummary) {
-            this.tagFilterIndicatorSummary.textContent = countLabel;
-            wrap.setAttribute('aria-label', groupAria);
-            this._tagFilterIndicatorState = { tagsKey, count };
-            return;
-        }
-
-        wrap.replaceChildren();
-        wrap.hidden = false;
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', groupAria);
 
@@ -2380,7 +2894,7 @@ class Dashboard {
             || 'Remove tag {tag} from filter';
         const clearAria = this.language?.t('dashboard.tagFilterChipClear') || 'Clear tag filter';
 
-        tags.forEach((tag) => {
+        normalized.forEach((tag) => {
             const item = document.createElement('span');
             item.className = 'tag-filter-indicator-tag-item';
 
@@ -2439,36 +2953,87 @@ class Dashboard {
             window.DashboardTagCloud?.restoreBookmarkFocus?.();
         });
 
-        wrap.append(chipsWrap, summary, clearBtn);
+        const head = document.createElement('div');
+        head.className = 'tag-filter-banner-head tag-filter-indicator-head';
+        head.append(chipsWrap, summary, clearBtn);
+        wrap.appendChild(head);
 
-        this.tagFilterIndicatorSummary = summary;
-        this.tagFilterIndicatorClear = clearBtn;
-        this._tagFilterIndicatorState = { tagsKey, count };
-
-        if (focusRestore?.kind === 'clear') {
-            clearBtn.focus({ preventScroll: true });
-        } else if (focusRestore?.tag) {
-            let restored = false;
-            for (const item of chipsWrap.querySelectorAll('.tag-filter-indicator-tag-item')) {
-                const tagText = item.querySelector('.tag-filter-indicator-tag')?.textContent;
-                if (tagText !== focusRestore.tag) {
-                    continue;
-                }
-                const target = focusRestore.kind === 'remove'
-                    ? item.querySelector('.tag-filter-indicator-tag-remove')
-                    : item.querySelector('.tag-filter-indicator-chip');
-                if (target?.focus) {
-                    target.focus({ preventScroll: true });
-                    restored = true;
-                }
-                break;
-            }
-            if (!restored) {
-                const fallback = chipsWrap.querySelector('.tag-filter-indicator-chip, .tag-filter-indicator-tag-remove')
-                    || clearBtn;
-                fallback?.focus?.({ preventScroll: true });
-            }
+        if (count <= 0) {
+            return;
         }
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'tag-filter-bulk-toolbar recent-bookmarks-modal-toolbar';
+        toolbar.setAttribute('role', 'toolbar');
+        toolbar.setAttribute(
+            'aria-label',
+            this.language?.t('dashboard.tagFilterToolbarAria') || 'Tag filter actions'
+        );
+
+        const actions = document.createElement('div');
+        actions.className = 'recent-bookmarks-open-actions';
+
+        const openPlans = this.buildTagFilterOpenPlans();
+        openPlans.forEach((plan, index) => {
+            this._appendTagFilterToolbarButton(actions, {
+                label: plan.label,
+                onClick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (plan.bookmarks?.length) {
+                        this.openBookmarksInNewTabs(plan.bookmarks);
+                    }
+                },
+            }).setAttribute('data-open-plan', String(index));
+        });
+
+        if (this.getTagFilterMatchedBookmarksWithUrls().length > 0) {
+            this._appendTagFilterToolbarButton(actions, {
+                label: this.language?.t('dashboard.tagFilterCopyLinks') || 'Copy links',
+                className: 'tag-filter-copy-btn',
+                onClick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.copyTagFilterLinksToClipboard();
+                },
+            });
+        }
+
+        const moveBtn = this._appendTagFilterToolbarButton(actions, {
+            label: this.language?.t('dashboard.tagFilterMove') || 'Move',
+            className: 'tag-filter-move-btn',
+            onClick: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showTagFilterBulkMovePopover(moveBtn);
+            },
+        });
+
+        this._appendTagFilterToolbarButton(actions, {
+            label: this.language?.t('dashboard.tagFilterDelete') || 'Delete',
+            className: 'tag-filter-delete-btn danger',
+            onClick: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void this.bulkDeleteTagFilterBookmarks();
+            },
+        });
+
+        toolbar.appendChild(actions);
+        wrap.appendChild(toolbar);
+        window.DashboardFeaturePromos?.tryShowDeferred?.('tagFilterBulk', toolbar);
+    }
+
+    updateTagFilterIndicator() {
+        const wrap = document.getElementById('tag-filter-indicator');
+        if (!wrap) {
+            return;
+        }
+        this.tagFilterIndicator = wrap;
+        wrap.replaceChildren();
+        wrap.hidden = true;
+        wrap.removeAttribute('role');
+        wrap.removeAttribute('aria-label');
     }
 
     setupReorderUndoShortcut() {
@@ -3170,6 +3735,8 @@ class Dashboard {
             ['tipCheatsheetBang', 'Tip: <code>!</code> cheatsheet'],
             ['tipNavigateArrows', 'Tip: <code>↑/↓</code> navigate bookmarks'],
             ['tipEditSemicolon', 'Tip: <code>;</code> edit bookmark (highlighted row or focused link)'],
+            ['tipQuickDelete', 'Tip: <code>Shift+D</code> quick-delete — confirm in the popover; undo in the toast'],
+            ['tipQuickMove', 'Tip: <code>Shift+M</code> quick-move — choose category or page in the popover'],
             ['tipCheatsheetCtrlSlash', 'Tip: <code>F1</code> cheatsheet'],
             ['tipPreviewBracket', 'Tip: <code>[</code> preview card on keyboard-selected bookmark'],
             ['tipCopyUrlCtrlC', 'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark'],
@@ -3673,6 +4240,12 @@ class Dashboard {
         requestAnimationFrame(() => {
             overlay.classList.add('is-visible');
             setFocus(focusedIndex);
+            requestAnimationFrame(() => {
+                window.DashboardFeaturePromos?.tryShow?.('pageOverview', panel);
+            });
+            overlay.addEventListener('transitionend', () => {
+                window.DashboardFeaturePromos?.reposition?.();
+            }, { once: true });
         });
     }
 
@@ -3709,6 +4282,9 @@ class Dashboard {
         document.body.appendChild(overlay);
 
         const close = () => {
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickAddOmnibox')) {
+                window.DashboardFeaturePromos?.dismissOpen?.();
+            }
             overlay.remove();
             document.removeEventListener('keydown', onKey, true);
             const restoreTarget = (previousFocus && previousFocus.isConnected)
@@ -3841,6 +4417,7 @@ class Dashboard {
         requestAnimationFrame(() => {
             overlay.classList.add('is-visible');
             input.focus();
+            window.DashboardFeaturePromos?.tryShowDeferred?.('quickAddOmnibox', box);
         });
     }
 
@@ -3889,9 +4466,10 @@ class Dashboard {
                 item('Ctrl + Shift + A', 'bmNewBookmarkModalGlobal', 'Open full new-bookmark modal from anywhere'),
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
+                item('Shift + D', 'bmQuickDelete', 'Quick-delete focused bookmark — confirm in popover'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
-                item('Delete', 'bmDelete', 'Delete focused bookmark (confirm, or Delete again in inline edit)'),
+                item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Double-click category', 'bmRenameCategory', 'Rename category header'),
                 item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
@@ -5100,6 +5678,9 @@ class Dashboard {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
+                if (!titleElement.classList.contains('category-title--renaming')) {
+                    window.DashboardFeaturePromos?.tryShowDeferred?.('categoryCollapse', titleElement);
+                }
             }
         });
 
@@ -6622,7 +7203,7 @@ class Dashboard {
             const o = document.createElement('option');
             o.value = cat.id || '';
             o.textContent = cat.name || cat.id || '';
-            if ((bookmark.category || '') === (cat.id || '')) {
+            if (String(bookmark.category ?? '') === String(cat.id ?? '')) {
                 o.selected = true;
             }
             catSelect.appendChild(o);
@@ -6812,6 +7393,7 @@ class Dashboard {
         }
 
         row.appendChild(form);
+        requestAnimationFrame(() => window.DashboardFeaturePromos?.reposition?.());
         this.destroyCategoryReorderInstances();
         this.initializeCategoryReorder();
         this._inlineEditContext = {
@@ -6833,6 +7415,11 @@ class Dashboard {
         this.enterBookmarkInlineEditFocusMode();
         nameInput.focus();
         nameInput.select();
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.DashboardFeaturePromos?.tryShow?.('inlineEdit', form);
+            });
+        });
 
         // Global ESC: close the form even when focus has drifted outside it
         const onGlobalEsc = async (e) => {
@@ -7434,18 +8021,18 @@ class Dashboard {
         return window.confirm(this.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));
     }
 
-    async deleteBookmarkInline(bookmarkRef) {
+    async deleteBookmarkInline(bookmarkRef, options = {}) {
         if (!bookmarkRef?.bookmark) {
             return;
         }
         if (bookmarkRef.scope === 'current') {
-            await this.deleteBookmarkAtIndexInline(bookmarkRef);
+            await this.deleteBookmarkAtIndexInline(bookmarkRef, options);
             return;
         }
-        await this.deleteRemoteBookmarkInline(bookmarkRef);
+        await this.deleteRemoteBookmarkInline(bookmarkRef, options);
     }
 
-    async deleteBookmarkAtIndexInline(bookmarkRefOrIndex) {
+    async deleteBookmarkAtIndexInline(bookmarkRefOrIndex, options = {}) {
         const bookmarkRef = typeof bookmarkRefOrIndex === 'object' && bookmarkRefOrIndex !== null
             ? bookmarkRefOrIndex
             : {
@@ -7462,7 +8049,7 @@ class Dashboard {
             return;
         }
 
-        const confirmed = await this.confirmDeleteBookmarkInline(bookmark);
+        const confirmed = options.skipConfirm || await this.confirmDeleteBookmarkInline(bookmark);
         if (!confirmed) {
             return;
         }
@@ -7517,9 +8104,9 @@ class Dashboard {
         );
     }
 
-    async deleteRemoteBookmarkInline(bookmarkRef) {
+    async deleteRemoteBookmarkInline(bookmarkRef, options = {}) {
         const bookmark = bookmarkRef.bookmark;
-        const confirmed = await this.confirmDeleteBookmarkInline(bookmark);
+        const confirmed = options.skipConfirm || await this.confirmDeleteBookmarkInline(bookmark);
         if (!confirmed) {
             return;
         }
@@ -7797,7 +8384,12 @@ class Dashboard {
             modalClass: 'recent-bookmarks-modal',
             modalMaxWidth: '760px',
             modalWidth: '92vw',
-            onHide: () => this._cleanupRecentModalKeyHandler(),
+            onHide: () => {
+                if (window.DashboardFeaturePromos?.isPromoOpen?.('recentBookmarks')) {
+                    window.DashboardFeaturePromos?.dismissOpen?.();
+                }
+                this._cleanupRecentModalKeyHandler();
+            },
         });
 
         if (!this._bookmarksReady) {
@@ -7809,8 +8401,11 @@ class Dashboard {
     }
 
     _fillRecentBookmarksModal() {
-        const body = document.querySelector('.recent-bookmarks-modal .modal-body');
-        if (!body) return;
+        const panel = document.querySelector('.recent-bookmarks-modal');
+        if (!panel) return;
+
+        const contentEl = document.getElementById('modal-text') || panel.querySelector('.modal-body');
+        if (!contentEl) return;
 
         const recentBookmarks = this.getRecentBookmarks(this.bookmarks, Dashboard.RECENT_MODAL_DISPLAY_LIMIT);
         const openInNewTab = this.settings.openInNewTab;
@@ -7854,10 +8449,10 @@ class Dashboard {
                </div>`
             : `<div class="recent-bookmarks-empty">${this.escapeHtml(noRecentText)}</div>`;
 
-        body.innerHTML = listHtml;
+        contentEl.innerHTML = listHtml;
 
         if (recentBookmarks.length > 0) {
-            body.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {
+            contentEl.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {
                 item.addEventListener('click', (e) => {
                     const index = parseInt(e.currentTarget.getAttribute('data-recent-index'), 10);
                     const bookmark = !Number.isNaN(index) ? recentBookmarks[index] : null;
@@ -7866,15 +8461,17 @@ class Dashboard {
                     }
                 });
             });
-            body.querySelectorAll('.recent-bookmarks-open-btn[data-open-plan]').forEach((btn) => {
+            contentEl.querySelectorAll('.recent-bookmarks-open-btn[data-open-plan]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const index = parseInt(btn.getAttribute('data-open-plan'), 10);
                     const plan = openPlans[index];
                     if (plan?.bookmarks?.length) this.openBookmarksInNewTabs(plan.bookmarks);
                 });
             });
-            this._setupRecentModalKeyboardNav(body);
+            this._setupRecentModalKeyboardNav(contentEl);
         }
+
+        window.DashboardFeaturePromos?.tryShowDeferred?.('recentBookmarks', panel);
     }
 
     _setupRecentModalKeyboardNav(body) {
@@ -8348,6 +8945,7 @@ class Dashboard {
                     clientX: event?.clientX ?? context.pointer?.clientX ?? 0,
                     clientY: event?.clientY ?? context.pointer?.clientY ?? 0,
                 },
+                promoSource: context.promoSource,
             };
         }
         const titleEl = card.querySelector('.bookmark-preview-card-title');
@@ -8433,6 +9031,9 @@ class Dashboard {
         card.classList.add('is-visible');
         document.body.classList.add('preview-card-active');
         this.positionBookmarkPreviewCard(event.clientX, event.clientY);
+        if (context?.promoSource === 'keyboard') {
+            window.DashboardFeaturePromos?.tryShowDeferred?.('previewCard', card);
+        }
     }
 
     positionBookmarkPreviewCard(clientX, clientY) {
@@ -8470,6 +9071,9 @@ class Dashboard {
 
     hideBookmarkPreviewCard() {
         if (!this.previewCardElement) return;
+        if (window.DashboardFeaturePromos?.isPromoOpen?.('previewCard')) {
+            window.DashboardFeaturePromos?.dismissOpen?.();
+        }
         this.previewCardElement.classList.remove('is-visible');
         this.previewCardElement._previewContext = null;
         this._previewCardHovered = false;
@@ -8904,6 +9508,7 @@ class Dashboard {
             this._movePopoverCleanup = null;
             return;
         }
+        this._closeDeletePopover();
 
         const t = (key, fallback) => {
             const val = this.language?.t ? this.language.t(key) : null;
@@ -8912,7 +9517,6 @@ class Dashboard {
 
         const realCategories = (this.categories || []).filter(c => !c.isSmartCollection);
         const otherPages = (this.pages || []).filter(p => String(p.id) !== String(this.currentPageId));
-        const currentCategoryId = String(bookmark.category ?? '').trim();
 
         const pop = document.createElement('div');
         pop.id = 'move-popover';
@@ -8925,6 +9529,12 @@ class Dashboard {
         header.textContent = t('dashboard.movePopoverTitle', 'Move to…');
         pop.appendChild(header);
 
+        const currentCategoryIds = this.collectBookmarkCategoryIds([bookmark]);
+        const currentHint = document.createElement('div');
+        currentHint.className = 'move-popover-current-hint';
+        currentHint.textContent = this.formatMovePopoverCurrentCategoriesHint(currentCategoryIds);
+        pop.appendChild(currentHint);
+
         const items = [];
 
         if (realCategories.length > 0) {
@@ -8934,7 +9544,7 @@ class Dashboard {
             pop.appendChild(catLabel);
 
             realCategories.forEach(cat => {
-                const isCurrent = String(cat.id) === currentCategoryId;
+                const isCurrent = currentCategoryIds.has(String(cat.id));
                 const item = document.createElement('div');
                 item.className = 'move-popover-item' + (isCurrent ? ' is-current' : '');
                 item.setAttribute('role', 'option');
@@ -8990,19 +9600,8 @@ class Dashboard {
 
         if (items.length === 0) return;
 
-        // Position: try right of row, fall back to left
-        const rect = anchorEl.getBoundingClientRect();
-        const vpW = window.innerWidth;
-        const vpH = window.innerHeight;
-        const popW = 220;
-        let left = rect.right + 8;
-        if (left + popW > vpW - 8) left = rect.left - popW - 8;
-        if (left < 8) left = 8;
-        pop.style.cssText = `left:${left}px;top:${rect.top}px;`;
         document.body.appendChild(pop);
-        const popH = pop.offsetHeight;
-        const top = Math.min(rect.top, vpH - popH - 8);
-        pop.style.top = `${Math.max(8, top)}px`;
+        this._positionActionPopoverBeside(pop, anchorEl);
 
         let focusedIdx = items.findIndex(i => i.classList.contains('is-current'));
         if (focusedIdx < 0) focusedIdx = 0;
@@ -9015,10 +9614,13 @@ class Dashboard {
         setFocus(focusedIdx);
 
         let onOutside = null;
+        let unbindPosition = null;
         const close = () => {
             if (pop.parentNode) {
                 pop.remove();
             }
+            unbindPosition?.();
+            unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
             if (onOutside) {
                 document.removeEventListener('click', onOutside);
@@ -9028,11 +9630,15 @@ class Dashboard {
                 this._movePopoverCleanup = null;
             }
         };
+        unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         this._movePopoverCleanup = close;
 
         const confirm = (item) => {
             const type = item.getAttribute('data-type');
             const id = item.getAttribute('data-id');
+            if (type === 'category' && item.classList.contains('is-current')) {
+                return;
+            }
             close();
             if (type === 'category') {
                 this._quickMoveToCategory(bookmark, id);
@@ -9059,23 +9665,151 @@ class Dashboard {
             onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
         }, 0);
+        window.DashboardFeaturePromos?.tryShow?.('quickMove', pop);
     }
 
-    _quickMoveToCategory(bookmark, categoryId) {
-        const cat = (this.categories || []).find(c => String(c.id) === String(categoryId));
-        const catName = cat?.name || categoryId;
-        this.ensureBookmarkMutationSnapshot();
-        bookmark.category = categoryId;
-        this.scheduleBookmarkOrderSave();
-        this.renderDashboard();
+    showDeletePopover(anchorEl, bookmark, bookmarkIndex) {
+        if (this._deletePopoverCleanup) {
+            this._deletePopoverCleanup();
+            this._deletePopoverCleanup = null;
+            return;
+        }
+        this._closeMovePopover();
+
+        const bookmarkRef = typeof this.resolveBookmarkReference === 'function'
+            ? this.resolveBookmarkReference(bookmark)
+            : null;
+        if (!bookmarkRef?.bookmark || !anchorEl) {
+            return;
+        }
+
         const t = (key, fallback) => {
             const val = this.language?.t ? this.language.t(key) : null;
             return (val && val !== key) ? val : fallback;
         };
-        this.showNotification(
-            t('dashboard.movedToCategory', 'Moved to "{name}"').replace('{name}', catName),
-            'success', { duration: 2500 }
+
+        const pop = document.createElement('div');
+        pop.id = 'delete-popover';
+        pop.className = 'move-popover delete-popover';
+        pop.setAttribute('role', 'listbox');
+        pop.setAttribute('aria-label', t('dashboard.deletePopoverTitle', 'Delete bookmark'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = t('dashboard.deletePopoverTitle', 'Delete bookmark');
+        pop.appendChild(header);
+
+        const currentHint = document.createElement('div');
+        currentHint.className = 'move-popover-current-hint';
+        const bookmarkName = String(bookmarkRef.bookmark.name || bookmarkRef.bookmark.url || '').trim();
+        currentHint.textContent = this.formatDashboardLabel(
+            'deletePopoverBookmarkHint',
+            { name: bookmarkName || '—' },
+            `"${bookmarkName || '—'}"`
         );
+        pop.appendChild(currentHint);
+
+        const items = [];
+        const makeItem = (action, label, { danger = false } = {}) => {
+            const item = document.createElement('div');
+            item.className = 'move-popover-item' + (danger ? ' is-danger' : '');
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-action', action);
+            item.setAttribute('aria-selected', 'false');
+
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            check.textContent = danger ? '✕' : '';
+            item.appendChild(check);
+
+            const text = document.createElement('span');
+            text.textContent = label;
+            item.appendChild(text);
+
+            pop.appendChild(item);
+            items.push(item);
+            return item;
+        };
+
+        makeItem('confirm', t('dashboard.deletePopoverConfirm', 'Delete'), { danger: true });
+        makeItem('cancel', t('dashboard.deletePopoverCancel', 'Cancel'));
+
+        document.body.appendChild(pop);
+        this._positionActionPopoverBeside(pop, anchorEl);
+
+        let focusedIdx = 0;
+        const setFocus = (idx) => {
+            items.forEach((el, i) => {
+                el.classList.toggle('is-focused', i === idx);
+                el.setAttribute('aria-selected', String(i === idx));
+            });
+            focusedIdx = idx;
+            items[idx]?.scrollIntoView({ block: 'nearest' });
+        };
+        setFocus(focusedIdx);
+
+        let onOutside = null;
+        let unbindPosition = null;
+        const close = () => {
+            if (pop.parentNode) {
+                pop.remove();
+            }
+            unbindPosition?.();
+            unbindPosition = null;
+            document.removeEventListener('keydown', onKey, true);
+            if (onOutside) {
+                document.removeEventListener('click', onOutside);
+                onOutside = null;
+            }
+            if (this._deletePopoverCleanup === close) {
+                this._deletePopoverCleanup = null;
+            }
+        };
+        unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
+        this._deletePopoverCleanup = close;
+
+        const confirm = (item) => {
+            const action = item.getAttribute('data-action');
+            if (action === 'cancel') {
+                close();
+                return;
+            }
+            if (action !== 'confirm') {
+                return;
+            }
+            close();
+            const ref = bookmarkRef.scope === 'current' && Number.isInteger(bookmarkIndex) && bookmarkIndex >= 0
+                ? { ...bookmarkRef, index: bookmarkIndex, scope: 'current' }
+                : bookmarkRef;
+            void this.deleteBookmarkInline(ref, { skipConfirm: true });
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
+            if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) confirm(items[focusedIdx]); return; }
+        };
+
+        items.forEach((item, idx) => {
+            item.addEventListener('mouseenter', () => setFocus(idx));
+            item.addEventListener('click', () => confirm(item));
+        });
+
+        document.addEventListener('keydown', onKey, true);
+        setTimeout(() => {
+            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+            document.addEventListener('click', onOutside);
+        }, 0);
+        window.DashboardFeaturePromos?.tryShow?.('quickDelete', pop);
+    }
+
+    _quickMoveToCategory(bookmark, categoryId) {
+        const ref = this.resolveBookmarkReference(bookmark);
+        if (!ref) {
+            return;
+        }
+        this.applyBookmarkCategoryMove(ref, categoryId);
     }
 
     showDatePopover() {
@@ -9159,6 +9893,9 @@ class Dashboard {
         document.body.appendChild(pop);
 
         const close = () => {
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('datePopover')) {
+                window.DashboardFeaturePromos?.dismissOpen?.();
+            }
             pop.remove();
             document.removeEventListener('click', outside);
             document.removeEventListener('keydown', onKey);
@@ -9170,6 +9907,7 @@ class Dashboard {
             document.addEventListener('click', outside);
             document.addEventListener('keydown', onKey);
         }, 0);
+        window.DashboardFeaturePromos?.tryShowDeferred?.('datePopover', pop);
     }
 
     formatWeatherText(weatherData) {

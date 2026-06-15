@@ -1,0 +1,104 @@
+{
+  "tag": "v2026.06.20",
+  "date": "June 2026",
+  "releasedAt": "2026-06-13",
+  "sections": [
+    {
+      "title": "Desktop discoverability promos",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One-time feature balloons (desktop)</strong> — contextual <strong>Got it</strong> promos appear beside the relevant control the first time you use a feature; stored in <code>localStorage</code> per promo kind. Hidden on mobile and during onboarding, tours, or other overlays."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shared left/right placement</strong> — <code>DashboardPromoPlacement.positionBesideAnchor()</code> picks the side with more viewport space and vertically centers the balloon (arrow points at the anchor)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Search promos</strong> — <code>&gt;</code> (search), <code>:</code> (commands), and <code>?</code> (finders) each get their own promo beside the search bar; a follow-up <strong>filters</strong> promo appears after you dismiss the search promo and first type <code>tag:</code>, <code>category:</code>, <code>status:</code>, <code>page:</code>, or <code>@</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Grid &amp; collections</strong> — first arrow-key selection shows a grid-navigation promo beside the bookmark row; first jump into a smart collection shows a promo beside the category header."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Feature promos</strong> — inline edit (<code>;</code>), tag cloud (<code>/</code>), tag-filter bulk toolbar, recent bookmarks (<code>*</code>), preview card (<code>[</code>), quick-add omnibox (<code>&amp;</code>), week overview (header date click), category collapse (<code>Enter</code>/<code>Space</code> on header), quick move (<code>Shift+M</code>), quick delete (<code>Shift+D</code>), and page overview (<code>,</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Promo coordination</strong> — promos defer while search, modals, tours, or another promo is open; closing a host overlay dismisses its promo without marking it seen; filter and bulk promos can retry after a short delay when the tag cloud is still open."
+        }
+      ]
+    },
+    {
+      "title": "Quick actions & popovers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shift+D quick delete</strong> — with a bookmark row selected, opens the same popover UI as <code>Shift+M</code>: choose <strong>Delete</strong> or <strong>Cancel</strong> with arrows and <code>Enter</code>; undo remains in the toast. Plain <code>Delete</code> still opens the confirmation dialog."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Move/delete popovers beside the row</strong> — <code>Shift+M</code>, <code>Shift+D</code>, and tag-filter bulk move menus use the shared beside-anchor placement and reposition on scroll/resize."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Move popover context</strong> — shows the bookmark’s current category (or categories) above the destination list."
+        }
+      ]
+    },
+    {
+      "title": "Tag filter bulk actions",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Bulk toolbar on filtered grid</strong> — when a tag filter has matches, a toolbar under the filter chips offers <strong>Open all</strong> / <strong>Open first N</strong>, <strong>Copy links</strong>, <strong>Move</strong> (category or page popover), and <strong>Delete</strong> (confirm + undo toast)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Bulk discoverability promo</strong> — one-time balloon beside the toolbar after the tag-cloud promo was dismissed and matches exist."
+        }
+      ]
+    },
+    {
+      "title": "Tag cloud & header polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Tag cloud positioning</strong> — modal sizes from tag count, prefers above or below the <code>/</code> FAB based on space, and scrolls the body when content exceeds the column."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Filter chips only</strong> — removed the redundant FAB badge text; active filters stay on the header chips and filter summary tooltip."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Week overview theming</strong> — the date popover uses dashboard theme tokens (<code>--background-secondary</code>, <code>--border-primary</code>, <code>--accent-primary</code>) instead of hardcoded dark-glass fallbacks; modern and glass layouts get matching elevation."
+        }
+      ]
+    },
+    {
+      "title": "Help, tips & developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet &amp; config Help</strong> — <code>Shift+D</code> quick delete documented in the keyboard cheat sheet and Help → Keyboard / Navigation (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Rotating tips</strong> — <code>tipQuickDelete</code> and <code>tipQuickMove</code> added to the dashboard tip rotation."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>AppModal structure repair</strong> — <code>ensureModalStructure()</code> rebuilds missing header/body on an existing <code>#app-modal</code> so recent-bookmarks and other modals render reliably."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v79</code> (<code>2026.06-dashboard-release-v66</code>); new promo scripts/CSS; <code>date-popover-theme-1</code> on dashboard and layout sheets."
+        }
+      ]
+    }
+  ]
+}

@@ -187,6 +187,23 @@ body[data-layout-version="modern"] .page-tab-popover-name {
     border-radius: var(--layout-radius-sm);
 }
 
+body[data-layout-version="modern"] .move-popover {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border, var(--border-primary));
+    box-shadow: var(--layout-shadow-md);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+body[data-layout-version="modern"] .move-popover-item {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .move-popover-item.is-focused {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
 /* ─── Title section ──────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .dashboard-section.section-title {
@@ -344,7 +361,9 @@ body[data-layout-version="modern"] .page-overview-link {
 body[data-layout-version="modern"] .date-popover {
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-lg);
-    border-color: var(--layout-surface-border);
+    border-color: var(--layout-surface-border, var(--border-primary));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 body[data-layout-version="modern"] .date-popover-day {
@@ -352,6 +371,7 @@ body[data-layout-version="modern"] .date-popover-day {
 }
 
 body[data-layout-version="modern"] .date-popover-day.is-today {
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary));
     box-shadow: var(--layout-shadow-sm);
 }
 

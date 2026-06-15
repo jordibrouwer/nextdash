@@ -1,0 +1,198 @@
+/* Desktop dashboard search promo (> overlay) */
+
+.search-container.search-container--promo .search-prompt {
+    position: relative;
+}
+
+.dashboard-search-promo-badge {
+    position: absolute;
+    top: -0.45rem;
+    right: -0.2rem;
+    z-index: 3;
+    padding: 0.1rem 0.38rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--background-primary, #fff);
+    background: var(--accent-primary);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    pointer-events: none;
+    animation: dashboard-search-promo-badge-pulse 2.2s ease-in-out infinite;
+}
+
+.dashboard-search-promo {
+    position: fixed;
+    z-index: 2010;
+    width: min(22rem, calc(100vw - 1.5rem));
+    pointer-events: auto;
+}
+
+.dashboard-search-promo-balloon {
+    position: relative;
+    padding: 0.65rem 0.75rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-radius: 10px;
+    background: var(--background-primary);
+    box-shadow:
+        0 10px 28px color-mix(in srgb, var(--background-modal, #000) 28%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    animation:
+        dashboard-search-promo-balloon-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both,
+        dashboard-search-promo-balloon-float 4.5s ease-in-out 0.55s infinite;
+}
+
+.dashboard-search-promo-tail {
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    margin-left: -7px;
+    width: 14px;
+    height: 14px;
+    background: var(--background-primary);
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-left: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    transform: rotate(45deg);
+    box-shadow: -2px -2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+}
+
+.dashboard-search-promo--beside-right .dashboard-search-promo-tail,
+.dashboard-search-promo--beside-left .dashboard-search-promo-tail {
+    top: 50%;
+    margin-top: -7px;
+    margin-left: 0;
+}
+
+.dashboard-search-promo--beside-right .dashboard-search-promo-tail {
+    left: -7px;
+    right: auto;
+    border-right: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-left: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    box-shadow: -2px 2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+}
+
+.dashboard-search-promo--beside-left .dashboard-search-promo-tail {
+    left: auto;
+    right: -7px;
+    border-left: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-right: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-top: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    box-shadow: 2px 2px 6px color-mix(in srgb, var(--background-modal, #000) 8%, transparent);
+}
+
+.search-mode-tab.search-mode-tab--promo {
+    position: relative;
+}
+
+.dashboard-search-promo-title {
+    margin: 0 0 0.3rem;
+    font-size: var(--font-size-controls);
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+}
+
+.dashboard-search-promo-text {
+    margin: 0;
+    font-size: calc(var(--font-size-controls) * 0.84);
+    line-height: 1.4;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+}
+
+.dashboard-search-promo-text kbd {
+    display: inline-block;
+    padding: 0.05rem 0.28rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    color: var(--text-primary);
+}
+
+.dashboard-search-promo-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.55rem;
+}
+
+.dashboard-search-promo-close {
+    padding: 0.28rem 0.55rem;
+    border-radius: 6px;
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.82);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dashboard-search-promo-close:hover,
+.dashboard-search-promo-close:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    outline: none;
+}
+
+@keyframes dashboard-search-promo-badge-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.88;
+    }
+}
+
+@keyframes dashboard-search-promo-balloon-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes dashboard-search-promo-balloon-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(3px);
+    }
+}
+
+body[data-layout-version="modern"] .dashboard-search-promo-balloon,
+body[data-layout-version="glass"] .dashboard-search-promo-balloon {
+    border-radius: var(--layout-radius-md, 10px);
+    box-shadow: var(--layout-shadow-lg, 0 10px 28px color-mix(in srgb, var(--background-modal, #000) 28%, transparent));
+}
+
+body[data-layout-version="glass"] .dashboard-search-promo-balloon {
+    background: var(--layout-surface-elevated, var(--background-primary));
+    border-color: var(--layout-surface-border, var(--border-primary));
+    backdrop-filter: blur(var(--glass-blur-md, 12px)) saturate(var(--glass-saturate, 1.2));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md, 12px)) saturate(var(--glass-saturate, 1.2));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-search-promo-badge,
+    .dashboard-search-promo-balloon {
+        animation: none !important;
+    }
+}
+
+body.no-animations .dashboard-search-promo-badge,
+body.no-animations .dashboard-search-promo-balloon {
+    animation: none !important;
+}

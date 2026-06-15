@@ -141,6 +141,38 @@ class SearchFindersComponent {
     }
 
     /**
+     * When a complete finder shortcut is typed after ?, append a trailing space
+     * so further input is treated as the search term (e.g. ?d zoeken).
+     * @param {string} query
+     * @returns {string}
+     */
+    completeShortcutWithSpace(query) {
+        if (!String(query || '').startsWith('?')) {
+            return query;
+        }
+
+        const afterQuestion = query.slice(1);
+        if (!afterQuestion || afterQuestion.includes(' ')) {
+            return query;
+        }
+
+        const shortcut = afterQuestion.toLowerCase();
+        if (!this.shortcuts.has(shortcut)) {
+            return query;
+        }
+
+        const hasLongerMatch = Array.from(this.shortcuts.keys()).some(
+            (entry) => entry.length > shortcut.length && entry.startsWith(shortcut)
+        );
+        if (hasLongerMatch) {
+            return query;
+        }
+
+        const finder = this.shortcuts.get(shortcut);
+        return `?${finder.shortcut.toUpperCase()} `;
+    }
+
+    /**
      * Open a finder with the given search text
      * @param {Object} finder
      * @param {string} searchText

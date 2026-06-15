@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=quickwin-3">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=date-popover-theme-1">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/app-notification.css">
     <link rel="stylesheet" href="/static/css/search.css">
@@ -33,17 +33,21 @@
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css">
     <link rel="stylesheet" href="/static/css/feature-tour.css">
-    <link rel="stylesheet" href="/static/css/dashboard-tag-cloud.css">
+    <link rel="stylesheet" href="/static/css/dashboard-tag-cloud.css?v=modal-auto-size-2">
+    <link rel="stylesheet" href="/static/css/dashboard-search-promo.css?v=search-promo-5">
+    <link rel="stylesheet" href="/static/css/dashboard-grid-keyboard-promo.css?v=grid-kbd-promo-4">
+    <link rel="stylesheet" href="/static/css/dashboard-smart-collection-promo.css?v=smart-collection-promo-2">
+    <link rel="stylesheet" href="/static/css/dashboard-feature-promos.css?v=feature-promos-11">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
     <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v=kbd-hover-dim-4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css">
-    <link rel="stylesheet" href="/static/css/layout-modern.css?v=kbd-hover-dim-4">
+    <link rel="stylesheet" href="/static/css/layout-modern.css?v=date-popover-theme-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/layout-glass.css?v=glass-phase6-4">
+    <link rel="stylesheet" href="/static/css/layout-glass.css?v=date-popover-theme-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
@@ -197,7 +201,6 @@
             title="/ tags"
         >
             <span class="search-button-icon">/</span>
-            <span id="tag-cloud-active-badge" class="tag-cloud-active-badge" hidden aria-hidden="true"></span>
         </button>
         <div id="tag-cloud-modal-backdrop" class="tag-cloud-modal-backdrop" hidden aria-hidden="true"></div>
         <div
@@ -228,9 +231,9 @@
     </button>
 
     <script src="/static/js/tips-policy.js"></script>
-    <script src="/static/js/modal.js"></script>
+    <script src="/static/js/modal.js?v=modal-shell-fix-1"></script>
     <script src="/static/js/focus-trap-utils.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v78" defer></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v79" defer></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/config/config-language.js"></script>
@@ -244,11 +247,16 @@
     <script src="/static/js/search-commands/search-commands-theme.js"></script>
     <script src="/static/js/search-commands/search-commands-note.js"></script>
     <script src="/static/js/search-commands.js"></script>
-    <script src="/static/js/search-finders.js"></script>
+    <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
     <script src="/static/js/fuzzy-search.js"></script>
-    <script src="/static/js/search.js?v=focus-fix-2"></script>
+    <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
+    <script src="/static/js/dashboard-search-promo.js?v=search-promo-5"></script>
+    <script src="/static/js/search.js?v=finder-auto-space-2"></script>
     <script src="/static/js/status.js"></script>
-    <script src="/static/js/keyboard-navigation.js?v=focus-fix-2"></script>
+    <script src="/static/js/dashboard-grid-keyboard-promo.js?v=grid-kbd-promo-4"></script>
+    <script src="/static/js/dashboard-smart-collection-promo.js?v=smart-collection-promo-2"></script>
+    <script src="/static/js/dashboard-feature-promos.js?v=feature-promos-11"></script>
+    <script src="/static/js/keyboard-navigation.js?v=quick-delete-1"></script>
     <script src="/static/js/swipe-navigation.js?v=nav-fix-4"></script>
     <script src="/static/js/hypr-mode.js"></script>
     <script src="/static/js/reorder.js"></script>
@@ -266,11 +274,11 @@
     <script src="/static/js/app-notification.js"></script>
     <script src="/static/js/pwa-install-hint.js" defer></script>
     <script src="/static/js/mobile-experience.js"></script>
-    <script src="/static/js/dashboard-tag-cloud.js?v=focus-fix-2"></script>
+    <script src="/static/js/dashboard-tag-cloud.js?v=feature-promos-3"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
     <script src="/static/js/visual-settings.js"></script>
-    <script src="/static/js/dashboard.js?v=focus-fix-2"></script>
+    <script src="/static/js/dashboard.js?v=quick-delete-2"></script>
     <script src="/static/js/analytics.js" defer></script>
 </body>
 </html>

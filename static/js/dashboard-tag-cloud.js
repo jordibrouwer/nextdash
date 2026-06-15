@@ -190,15 +190,6 @@
             return tags.map((tag) => `#${tag}`).join(', ');
         },
 
-        formatActiveBadgeText() {
-            const tags = this.normalizeActiveTags();
-            if (!tags.length) return '';
-            if (tags.length === 1) return `#${tags[0]}`;
-            return (t('dashboard.tagCloudBadgeMore', '#{tag} +{count}') || '#{tag} +{count}')
-                .replace('{tag}', tags[0])
-                .replace('{count}', String(tags.length - 1));
-        },
-
         getTagChips() {
             if (!this.body) return [];
             return [...this.body.querySelectorAll('.tag-cloud-word')];
@@ -484,19 +475,6 @@
             document.body.setAttribute('data-tag-cloud-modal-open', this.modalOpen ? 'true' : 'false');
             document.body.setAttribute('data-tag-filter-active', filtered ? 'true' : 'false');
 
-            const badge = document.getElementById('tag-cloud-active-badge');
-            if (badge) {
-                if (filtered) {
-                    badge.hidden = false;
-                    badge.textContent = this.formatActiveBadgeText();
-                    badge.setAttribute('aria-hidden', 'false');
-                } else {
-                    badge.hidden = true;
-                    badge.textContent = '';
-                    badge.setAttribute('aria-hidden', 'true');
-                }
-            }
-
             if (filtered) {
                 const tagsLabel = this.formatActiveTagsLabel();
                 const tip = t('dashboard.tagFilterActiveTooltip', 'Filtering: {tags}').replace('{tags}', tagsLabel);
@@ -534,6 +512,10 @@
             requestAnimationFrame(() => {
                 this.modal?.classList.add('is-open');
                 this.backdrop?.classList.add('is-open');
+                requestAnimationFrame(() => {
+                    this.positionModal();
+                    window.DashboardFeaturePromos?.tryShow?.('tagCloud', this.modal);
+                });
             });
             this.syncToggleState();
             window.dashboardInstance?.language?.applyTranslations?.();
@@ -597,45 +579,94 @@
             }, 180);
         },
 
+        getModalMaxHeight(rect, margin, vh, anchor = 'above') {
+            const spaceAlongAnchor = anchor === 'below'
+                ? Math.max(120, vh - rect.bottom - margin * 2)
+                : Math.max(120, rect.top - margin * 2);
+            let maxH = Math.min(vh * 0.88, spaceAlongAnchor);
+
+            const layout = document.getElementById('dashboard-layout');
+            if (layout) {
+                const layoutRect = layout.getBoundingClientRect();
+                const spaceInColumn = anchor === 'below'
+                    ? layoutRect.bottom - rect.bottom - margin
+                    : rect.top - layoutRect.top - margin;
+                if (spaceInColumn > 0) {
+                    maxH = Math.min(maxH, spaceInColumn);
+                }
+            }
+
+            return Math.round(maxH);
+        },
+
+        syncModalSize(maxHeight) {
+            if (!this.modal || !this.body) return;
+
+            this.modal.style.height = 'auto';
+            this.modal.style.maxHeight = 'none';
+            this.body.style.maxHeight = '';
+            this.body.classList.remove('is-scrollable');
+
+            const naturalH = this.modal.offsetHeight;
+            const cap = Math.max(120, maxHeight);
+            this.modal.style.maxHeight = `${cap}px`;
+            this.modal.style.setProperty('--tag-cloud-modal-max-height', `${cap}px`);
+
+            if (naturalH <= cap) {
+                this.modal.style.height = 'auto';
+                return;
+            }
+
+            const header = this.modal.querySelector('.tag-cloud-modal-header');
+            const footer = this.modal.querySelector('.tag-cloud-modal-footer');
+            const headerH = header?.offsetHeight || 0;
+            const footerH = footer?.hidden ? 0 : (footer?.offsetHeight || 0);
+            const bodyMax = Math.max(80, cap - headerH - footerH);
+
+            this.modal.style.height = `${cap}px`;
+            this.body.style.maxHeight = `${bodyMax}px`;
+            this.body.classList.add('is-scrollable');
+        },
+
         positionModal() {
             if (!this.modal || !this.toggle) return;
             const rect = this.toggle.getBoundingClientRect();
             const margin = 10;
-            const modalRect = this.modal.getBoundingClientRect();
             const vw = window.innerWidth;
             const vh = window.innerHeight;
 
-            let left = rect.left;
-            let bottom = vh - rect.top + margin;
+            const tagCount = this.body?.querySelectorAll('.tag-cloud-word').length || 0;
+            const idealW = 320 + Math.sqrt(tagCount) * 42;
+            const maxW = Math.min(Math.max(idealW, 300), Math.min(680, vw - margin * 2));
+            this.modal.style.width = `${Math.round(maxW)}px`;
+            this.modal.style.maxWidth = `${Math.round(maxW)}px`;
 
-            const maxW = Math.min(520, vw - margin * 2);
-            this.modal.style.width = `${maxW}px`;
-            this.modal.style.maxWidth = `${maxW}px`;
-
+            const dockRight = document.body.getAttribute('data-button-position') === 'bottom-left';
+            let left = dockRight ? rect.right - maxW : rect.left;
             if (left + maxW > vw - margin) {
                 left = vw - margin - maxW;
             }
             if (left < margin) left = margin;
-
-            const modalH = this.modal.offsetHeight || modalRect.height || 200;
-            if (rect.top - margin - modalH < margin) {
-                bottom = vh - rect.bottom - margin;
-                this.modal.style.bottom = `${bottom}px`;
-                this.modal.style.top = 'auto';
-            } else {
-                this.modal.style.bottom = `${bottom}px`;
-                this.modal.style.top = 'auto';
-            }
-
             this.modal.style.left = `${Math.round(left)}px`;
             this.modal.style.right = 'auto';
 
-            const dockRight = document.body.getAttribute('data-button-position') === 'bottom-left';
-            if (dockRight) {
-                left = rect.right - maxW;
-                if (left < margin) left = margin;
-                this.modal.style.left = `${Math.round(left)}px`;
+            let anchor = 'above';
+            let maxModalH = this.getModalMaxHeight(rect, margin, vh, anchor);
+            this.syncModalSize(maxModalH);
+
+            let modalH = this.modal.offsetHeight || 200;
+            let bottom = vh - rect.top + margin;
+            if (rect.top - margin - modalH < margin) {
+                anchor = 'below';
+                bottom = vh - rect.bottom - margin;
+                maxModalH = this.getModalMaxHeight(rect, margin, vh, anchor);
+                this.syncModalSize(maxModalH);
+                modalH = this.modal.offsetHeight || modalH;
             }
+
+            this.modal.style.bottom = `${bottom}px`;
+            this.modal.style.top = 'auto';
+            window.DashboardFeaturePromos?.reposition?.();
         },
 
         getTagCountLabel(count) {
@@ -662,6 +693,7 @@
                 empty.className = 'tag-cloud-modal-empty';
                 empty.textContent = t('dashboard.tagCloudEmpty', 'No tags yet — add tags in config → bookmarks.');
                 this.body.appendChild(empty);
+                requestAnimationFrame(() => this.positionModal());
                 return;
             }
 
@@ -694,7 +726,9 @@
                     t('dashboard.tagCloudFilterAria', 'Toggle tag {tag} in filter').replace('{tag}', tag)
                         + ` (${countLabel})`
                 );
-                chip.addEventListener('click', () => this.selectTag(tag));
+                chip.addEventListener('click', () => {
+                    this.selectTag(tag);
+                });
                 chip.addEventListener('focus', () => {
                     const chips = this.getTagChips();
                     const idx = chips.indexOf(chip);
@@ -746,6 +780,11 @@
             if (!this.clearBtn) return;
             const show = this.normalizeActiveTags().length > 0;
             this.clearBtn.hidden = !show;
+            const footer = this.clearBtn.closest('.tag-cloud-modal-footer');
+            if (footer) footer.hidden = !show;
+            if (this.modalOpen) {
+                requestAnimationFrame(() => this.positionModal());
+            }
         },
 
         setActiveTags(tags) {

@@ -97,14 +97,14 @@ body {
 .date-popover {
     position: fixed;
     z-index: 9000;
-    background: var(--bg-secondary, rgba(18, 18, 24, 0.92));
-    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
     padding: 0.85rem 1rem 0.7rem;
     min-width: 210px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
     animation: datePopoverIn 0.15s ease forwards;
 }
 
@@ -117,7 +117,7 @@ body {
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    opacity: 0.45;
+    color: var(--text-secondary);
     margin-bottom: 0.55rem;
 }
 
@@ -130,7 +130,7 @@ body {
 
 .date-popover-col-label {
     font-size: 0.62rem;
-    opacity: 0.45;
+    color: var(--text-tertiary, var(--text-secondary));
     padding-bottom: 0.25rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -142,34 +142,33 @@ body {
     padding: 0.3rem 0;
     border-radius: 6px;
     line-height: 1;
+    color: var(--text-primary);
 }
 
 .date-popover-day.is-weekend {
-    opacity: 0.45;
+    color: var(--text-tertiary, var(--text-secondary));
 }
 
 .date-popover-day.is-today {
-    background: var(--accent-color, rgba(255,255,255,0.18));
-    color: var(--accent-text, var(--text-primary));
-    opacity: 1;
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    color: var(--text-primary);
 }
 
 .date-popover-footer {
     margin-top: 0.7rem;
     padding-top: 0.55rem;
-    border-top: 1px solid var(--border-color, rgba(255,255,255,0.07));
+    border-top: 1px solid var(--border-primary);
     text-align: center;
 }
 
 .date-popover-cal-link {
     font-size: 0.68rem;
-    opacity: 0.55;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     text-decoration: none;
-    transition: opacity 0.1s ease;
+    transition: color 0.1s ease;
 }
 .date-popover-cal-link:hover {
-    opacity: 0.85;
+    color: var(--accent-primary);
     text-decoration: underline;
 }
 
@@ -177,73 +176,106 @@ body {
 .move-popover {
     position: fixed;
     z-index: 9000;
-    background: var(--bg-secondary, rgba(18, 18, 24, 0.95));
-    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-    border-radius: 10px;
-    padding: 0.4rem 0 0.4rem;
-    min-width: 200px;
-    max-width: 260px;
-    max-height: 70vh;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.65rem;
+    padding: 0.35rem 0 0.45rem;
+    min-width: 12rem;
+    max-width: min(16rem, calc(100vw - 1rem));
+    max-height: min(70vh, 20rem);
     overflow-y: auto;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
     animation: datePopoverIn 0.13s ease forwards;
 }
 
 .move-popover-header {
-    font-size: 0.68rem;
-    font-weight: var(--font-weight-semibold, 600);
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    opacity: 0.45;
-    padding: 0.35rem 0.85rem 0.55rem;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.85rem 0.25rem;
+}
+
+.move-popover-current-hint {
+    padding: 0 0.85rem 0.55rem;
+    font-size: calc(var(--font-size-controls) * 0.88);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    line-height: 1.35;
 }
 
 .move-popover-section-label {
-    font-size: 0.62rem;
+    font-size: calc(var(--font-size-controls) * 0.68);
+    font-weight: var(--font-weight-medium);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    opacity: 0.35;
-    padding: 0.55rem 0.85rem 0.2rem;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary, var(--text-secondary));
+    padding: 0.5rem 0.85rem 0.2rem;
 }
 
 .move-popover-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.42rem 0.85rem;
-    font-size: 0.82rem;
+    padding: 0.45rem 0.85rem;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 0.4rem;
     margin: 0 0.3rem;
-    transition: background 0.08s ease;
+    transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .move-popover-item.is-focused {
-    background: var(--hover-bg, rgba(255,255,255,0.09));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+    color: var(--text-primary);
 }
 
 .move-popover-item.is-current {
-    opacity: 0.5;
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
     cursor: default;
+}
+
+.move-popover-item.is-current.is-focused {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+}
+
+.move-popover-item.is-danger {
+    color: var(--accent-danger, #c0392b);
+}
+
+.move-popover-item.is-danger.is-focused {
+    background: color-mix(in srgb, var(--accent-danger, #c0392b) 14%, var(--background-primary));
+    color: var(--accent-danger, #c0392b);
+}
+
+.move-popover-item.is-danger .move-popover-check {
+    color: var(--accent-danger, #c0392b);
 }
 
 .move-popover-check {
     width: 0.9rem;
     flex-shrink: 0;
     font-size: 0.75rem;
-    opacity: 0.7;
+    color: var(--accent-primary);
     text-align: center;
 }
 
 .move-popover-divider {
     height: 1px;
-    background: var(--border-color, rgba(255,255,255,0.07));
+    background: var(--border-primary);
     margin: 0.35rem 0.85rem;
+    opacity: 0.65;
 }
 
 .date-weather-line {
@@ -310,10 +342,31 @@ body {
 
 .tag-filter-banner {
     display: flex;
-    align-items: center;
-    padding: 0.15rem 0.5rem 0.35rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+    padding: 0.35rem 0.5rem 0.65rem;
     flex-shrink: 0;
     width: 100%;
+}
+
+.tag-filter-banner-head {
+    width: 100%;
+}
+
+.tag-filter-bulk-toolbar {
+    width: 100%;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
+    flex: 0 1 auto;
+    min-width: min(100%, 10rem);
 }
 
 .tag-filter-indicator-chip {
@@ -360,6 +413,10 @@ body {
 }
 
 .tag-filter-indicator {
+    display: none;
+}
+
+.tag-filter-indicator-head {
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
@@ -463,27 +520,6 @@ body {
     color: var(--accent-primary);
     background: color-mix(in srgb, var(--background-primary) 94%, transparent);
     outline: none;
-}
-
-body[data-tag-filter-active="true"] .tag-cloud-toggle-btn.search-button {
-    flex-wrap: wrap;
-    row-gap: 0.15rem;
-    max-width: min(9rem, calc(100vw - 2 * var(--corner-fab-edge)));
-}
-
-.tag-cloud-active-badge {
-    display: block;
-    width: 100%;
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-controls) * 0.72);
-    font-weight: var(--font-weight-semibold);
-    color: var(--accent-primary);
-    line-height: 1.1;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    pointer-events: none;
 }
 
 #dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {

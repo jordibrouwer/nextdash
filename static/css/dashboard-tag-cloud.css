@@ -20,11 +20,6 @@ body[data-show-tag-cloud-button="true"] .dashboard-tag-cloud-wrap.is-eligible {
     left: var(--corner-fab-edge);
     bottom: calc(var(--corner-fab-edge) + var(--corner-fab-height) + var(--corner-fab-gap));
     padding: 0.62rem 0.82rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.12rem;
     pointer-events: auto;
 }
 
@@ -105,7 +100,8 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
 .tag-cloud-modal {
     position: fixed;
     z-index: 1002;
-    max-height: min(78vh, 34rem);
+    height: auto;
+    max-height: min(88vh, var(--tag-cloud-modal-max-height, 88vh));
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-primary);
@@ -164,11 +160,17 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
 }
 
 .tag-cloud-modal-body {
-    flex: 1 1 auto;
-    overflow-y: auto;
+    flex: 0 1 auto;
+    overflow-y: hidden;
     padding: 1rem 0.85rem 0.75rem;
     min-height: 4.5rem;
     scrollbar-width: thin;
+}
+
+.tag-cloud-modal-body.is-scrollable {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* Word cloud: wrapped rows, accent palette, gentle drift */

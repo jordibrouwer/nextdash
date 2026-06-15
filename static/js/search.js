@@ -493,15 +493,17 @@ class SearchComponent {
 
     addToQuery(key) {
         this.currentQuery += key;
-        
+
         // Auto-convert to finder mode if space is pressed after a finder shortcut
         if (key === ' ' && this.settings.includeFindersInSearch) {
             const trimmed = this.currentQuery.trim();
             if (this.findersComponent.shortcuts.has(trimmed.toLowerCase())) {
                 this.currentQuery = `?${trimmed.toUpperCase()} `;
             }
+        } else if (key !== ' ' && this.currentQuery.startsWith('?')) {
+            this.currentQuery = this.findersComponent.completeShortcutWithSpace(this.currentQuery);
         }
-        
+
         this.commandsComponent.resetState();
         
         // Check for exact match first
@@ -802,6 +804,11 @@ class SearchComponent {
     }
 
     updateSearch() {
+        if (this.currentQuery.length > 0) {
+            window.DashboardSearchPromo?.onSearchQueryStarted?.(this.currentQuery);
+            window.DashboardSearchPromo?.onSearchFilterPrefixUsed?.(this.currentQuery);
+        }
+
         // Find matching shortcuts
         this.searchMatches = [];
 
@@ -1027,6 +1034,7 @@ class SearchComponent {
     showSearch() {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
+            this._lastPromoMode = undefined;
         }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
@@ -1061,6 +1069,10 @@ class SearchComponent {
                 mobileInput.value = this.currentQuery;
                 mobileInput.focus();
             }
+
+            requestAnimationFrame(() => {
+                window.DashboardSearchPromo?.onSearchOpened?.({ query: this.currentQuery });
+            });
         }
     }
 
@@ -1079,6 +1091,8 @@ class SearchComponent {
         if (searchElement) {
             searchElement.classList.remove('show');
         }
+
+        window.DashboardSearchPromo?.onSearchClosed?.();
         
         // Restore body scroll only if this component changed it
         if (this.previousOverflow !== null) {
@@ -1176,6 +1190,7 @@ class SearchComponent {
         this.matchElements = []; // Clear element references
         this.selectableMatches = [];
         this.justCompleted = false; // Reset flag
+        this._lastPromoMode = undefined;
     }
 
     updateModeIndicator() {
@@ -1206,6 +1221,12 @@ class SearchComponent {
         document.querySelectorAll('.search-mode-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.mode === mode);
         });
+
+        const prevMode = this._lastPromoMode;
+        this._lastPromoMode = mode;
+        if (this.searchActive && prevMode !== undefined && prevMode !== mode) {
+            window.DashboardSearchPromo?.onSearchModeChanged?.({ query: this.currentQuery, mode });
+        }
     }
 
     renderSearchMatches() {
@@ -1334,8 +1355,10 @@ class SearchComponent {
 
             // Chip strip for history / recent command items
             if (match.type === 'history-chips' || match.type === 'command-chips') {
+                const mySelectableIndex = this.matchElements.length;
                 const chipRow = document.createElement('div');
-                chipRow.className = 'search-history-chip-row command-group-child';
+                const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
+                chipRow.className = `search-history-chip-row command-group-child${selectedClass}`;
                 match.queries.forEach((q) => {
                     const wrap = document.createElement('div');
                     wrap.className = match.type === 'history-chips'

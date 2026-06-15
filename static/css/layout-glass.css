@@ -209,6 +209,24 @@ body[data-layout-version="glass"] .page-tab-popover-name {
     border-radius: var(--layout-radius-sm);
 }
 
+body[data-layout-version="glass"] .move-popover {
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface-elevated);
+    box-shadow: var(--layout-shadow-lg);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .move-popover-item {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="glass"] .move-popover-item.is-focused {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--layout-surface-elevated));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
 /* ─── Title section ──────────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .dashboard-section.section-title {
@@ -388,6 +406,7 @@ body[data-layout-version="glass"] .date-popover-day {
 }
 
 body[data-layout-version="glass"] .date-popover-day.is-today {
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--layout-surface-elevated));
     box-shadow: var(--layout-shadow-sm);
 }
 

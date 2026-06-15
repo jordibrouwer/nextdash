@@ -12,7 +12,10 @@ class Modal {
 
     createModalHTML() {
         if (document.getElementById('app-modal')) {
-            return; // Modal already exists
+            this.modal = document.getElementById('app-modal');
+            this.modalPanel = this.modal.querySelector('.modal');
+            this.ensureModalStructure();
+            return;
         }
 
         const modalHTML = `
@@ -37,7 +40,68 @@ class Modal {
         this.modal.setAttribute('aria-hidden', 'true');
     }
 
+    ensureModalStructure() {
+        if (!document.getElementById('app-modal')) {
+            this.createModalHTML();
+            return;
+        }
+
+        this.modal = document.getElementById('app-modal');
+        this.modalPanel = this.modal.querySelector('.modal');
+        if (!this.modalPanel) {
+            this.modal.remove();
+            this.activeModalClasses = [];
+            this.createModalHTML();
+            return;
+        }
+
+        if (!this.modalPanel.querySelector('.modal-header')) {
+            const header = document.createElement('div');
+            header.className = 'modal-header';
+            header.innerHTML = '<span class="modal-title" id="modal-title"></span>';
+            this.modalPanel.insertBefore(header, this.modalPanel.firstChild);
+        } else if (!document.getElementById('modal-title')) {
+            const title = document.createElement('span');
+            title.className = 'modal-title';
+            title.id = 'modal-title';
+            this.modalPanel.querySelector('.modal-header')?.appendChild(title);
+        }
+
+        let body = this.modalPanel.querySelector('.modal-body');
+        if (!body) {
+            body = document.createElement('div');
+            body.className = 'modal-body';
+            const actions = this.modalPanel.querySelector('.modal-actions');
+            this.modalPanel.insertBefore(body, actions || null);
+        }
+
+        if (!document.getElementById('modal-text')) {
+            const text = document.createElement('div');
+            text.className = 'modal-text';
+            text.id = 'modal-text';
+            body.appendChild(text);
+        }
+
+        if (!document.getElementById('modal-actions')) {
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+            actions.id = 'modal-actions';
+            this.modalPanel.appendChild(actions);
+        }
+
+        if (!document.getElementById('modal-esc-hint')) {
+            const hint = document.createElement('div');
+            hint.className = 'modal-esc-hint';
+            hint.id = 'modal-esc-hint';
+            hint.setAttribute('aria-hidden', 'true');
+            this.modalPanel.appendChild(hint);
+        }
+    }
+
     setupEventListeners() {
+        if (!this.modal) {
+            return;
+        }
         // Close modal when clicking outside
         this.modal.addEventListener('mousedown', (e) => {
             this._mouseDownTarget = e.target;
@@ -125,18 +189,26 @@ class Modal {
             onHide = null
         } = options;
 
+        this.ensureModalStructure();
+
         this._onHideCallback = typeof onHide === 'function' ? onHide : null;
 
+        const titleEl = document.getElementById('modal-title');
+        const textEl = document.getElementById('modal-text');
+        const actionsContainer = document.getElementById('modal-actions');
+        if (!titleEl || !textEl || !actionsContainer) {
+            return;
+        }
+
         // Set content
-        document.getElementById('modal-title').textContent = title;
+        titleEl.textContent = title;
         if (htmlMessage !== null) {
-            document.getElementById('modal-text').innerHTML = htmlMessage;
+            textEl.innerHTML = htmlMessage;
         } else {
-            document.getElementById('modal-text').textContent = message;
+            textEl.textContent = message;
         }
 
         // Clear and set actions
-        const actionsContainer = document.getElementById('modal-actions');
         actionsContainer.innerHTML = '';
 
         // Confirm button (styled like search matches)

@@ -190,7 +190,7 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 
 ### Header
 
-- **Date/time** — Click for week overview; optional weather line below.  
+- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
 - **health** — Link to `/health` with badge (e.g. `3 broken`) when issues exist; when broken links are counted, the link opens `/health?filter=broken`.  
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
@@ -355,9 +355,10 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 |------|--------|
 | `;` | Inline-edit selected row (page switches confirm before discarding unsaved edits) |
 | `Shift + M` | Move to… (category or another page) |
+| `Shift + D` | Quick-delete selected row (popover; undo in toast) |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
-| `Delete` | Delete selected bookmark (resolves by URL/reference — works on smart-collection rows too) |
+| `Delete` | Delete selected bookmark (confirmation dialog; `Shift+D` uses the quick-delete popover instead) |
 
 ### 9.4 Cheat sheet
 
@@ -400,6 +401,7 @@ When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on b
 - Press **`/`** on the dashboard (search closed) or click the **/** FAB to open a word cloud of all tags (size = usage).
 - **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
 - **OR logic** — the dashboard shows bookmarks that have **any** of the selected tags (not all).
+- **Bulk toolbar** — when matches exist, a bar under the filter chips offers **Open all** / **Open first N**, **Copy links**, **Move**, and **Delete** for every filtered bookmark on the page.
 - Selected tags are highlighted in the cloud; active filters appear as **chips** under the page title (each chip has its own **×** to remove one tag) and on the **/** FAB (`#work` or `#work +1` when more than one).
 - **Escape** in the cloud closes the modal (filter remains). **Escape** on the dashboard (cloud closed) clears all tag filters and returns focus to bookmarks.
 - **Clear tag filter** in the cloud footer removes every selected tag (`Enter` / `Space` on **Close** or **Clear** works too).
@@ -593,7 +595,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Layout-versions** (classic layout) and **paste URL** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset them from **config → general → Advanced → System & tools → Tours & onboarding** (**Reset layout versions prompt**, **Reset paste spotlight**). Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), and page overview (`,`). Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout) and **paste URL** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -1063,7 +1065,7 @@ Verify server URL, CORS/network, and that nextDash is running. Check browser con
 ```
 > search    : commands    ? finders    & quick-add    + new modal
 1-9 pages   , overview    * recent     ! cheat sheet
-arrows nav  Enter open    ; edit       Shift+M move
+arrows nav  Enter open    ; edit       Shift+M move  Shift+D delete
 ```
 
 ### Config (desktop)
