@@ -48,7 +48,6 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
     background: var(--status-offline-bg, color-mix(in srgb, var(--accent-error, #ef4444) 24%, var(--background-primary)));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
-    font-weight: var(--font-weight-semibold, 600);
 }
 
 body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking {
@@ -62,7 +61,6 @@ body:not(.status-color-lock) .bookmark-link.status-offline:is(:hover, .keyboard-
     box-shadow:
         inset 3px 0 0 var(--status-offline-bar, var(--accent-error)),
         inset 0 0 0 1px var(--status-offline-ring, color-mix(in srgb, var(--accent-error) 55%, transparent));
-    font-weight: var(--font-weight-semibold, 600);
 }
 
 body:not(.status-color-lock) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {

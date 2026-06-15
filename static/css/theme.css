@@ -1,6 +1,10 @@
 /* Theme Variables - Simplified Color System */
 /* Colors are loaded dynamically from /api/theme.css */
 
+html {
+    scrollbar-gutter: stable;
+}
+
 /* Background Patterns */
 html[data-theme] body {
     background-color: var(--background-primary);

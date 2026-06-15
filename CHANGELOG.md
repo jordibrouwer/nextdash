@@ -51,7 +51,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.20 — June 2026
 
-**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; G+jump and cheat-sheet promo replay from Tours & onboarding; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; **bookmark row end-padding** so status/selection highlights are not clipped; **dotted background restored** on config/dashboard via `body::before` dot layer and safer custom-background handling; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; G+jump and cheat-sheet promo replay from Tours & onboarding; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; **bookmark row end-padding** so status/selection highlights are not clipped; **dotted background restored** on config/dashboard via `body::before` dot layer and safer custom-background handling; **status column stability** so packed columns no longer jump during ping/status updates; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
 
 ### Desktop discoverability promos
 
@@ -88,6 +88,7 @@ _No unreleased changes at this time._
 ### Bookmark grid polish
 
 - **fix** **Row highlight edge** — `--bookmark-row-end-pad: 2px` on bookmark rows so status, hover, and keyboard-selection backgrounds are not clipped by category `overflow: hidden`; expanded categories use `overflow-x: visible` on the list.
+- **fix** **Status column stability** — ping badges use a fixed grid column (`data-show-ping` on bookmark lists) instead of inline flex inside the link, so packed columns no longer shift when status/ping updates; empty ping cells reserve width; periodic rechecks skip the yellow checking flash when a confirmed status is already cached; rigid packed-column flex sizing and `scrollbar-gutter: stable` reduce horizontal jitter.
 
 ### Background dots & config theme polish
 
@@ -101,7 +102,7 @@ _No unreleased changes at this time._
 - **fix** **README & manual** — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours & onboarding documents promo reset buttons.
 - **fix** **Rotating tips** — `tipQuickDelete` and `tipQuickMove` in dashboard tip rotation.
 - **fix** **AppModal repair** — `ensureModalStructure()` restores missing header/body on existing `#app-modal` (recent bookmarks modal).
-- **fix** **Cache-bust** — `whats-new-v81` (`2026.06-dashboard-release-v66`); `theme.css?v=bg-dots-layer-1`; `config-bg-dots-2` on config CSS/JS; prior `bookmark-row-end-pad-1` and promo bundles retained.
+- **fix** **Cache-bust** — `whats-new-v82` (`2026.06-dashboard-release-v66`); `status-col-stable-1` on `dashboard.css`, `status.css`, and `dashboard-bookmark-row.css`; `theme.css?v=bg-dots-layer-2`; prior `whats-new-v81`, `config-bg-dots-2`, and `bookmark-row-end-pad-1` bundles retained.
 
 ---
 

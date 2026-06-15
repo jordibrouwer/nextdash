@@ -892,14 +892,18 @@ body {
     align-items: flex-start;
     justify-content: center;
     grid-template-columns: unset;
+    width: 100%;
 }
 
 .dashboard-grid.packed-columns .dashboard-column {
     display: flex;
     flex-direction: column;
     gap: 3rem;
-    flex: 0 1 var(--dashboard-column-max, 300px);
-    flex-basis: min(
+    flex: 0 0 min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
+    );
+    width: min(
         var(--dashboard-column-max, 300px),
         calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
     );
@@ -908,6 +912,12 @@ body {
         calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
     );
     min-width: 0;
+    contain: layout style;
+}
+
+.dashboard-grid.packed-columns .category {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Center column block when the viewport is wider than the configured column count needs */
@@ -1778,7 +1788,17 @@ body.no-animations .smart-collection-why-btn[data-tooltip]::after {
     row-gap: 0.5rem;
     min-width: 0;
     min-height: 2rem;
+    width: 100%;
     --bookmark-row-end-pad: 2px;
+    --bookmark-status-col: 3.35em;
+}
+
+.bookmarks-list[data-show-ping="true"] {
+    grid-template-columns:
+        var(--bookmark-lead-col, minmax(1.25rem, max-content))
+        minmax(0, 1fr)
+        var(--bookmark-status-col, 3.35em)
+        max-content;
 }
 
 .bookmarks-list > * {
@@ -1838,8 +1858,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
 /* Safety: status updates should never re-hide rows, even if animate-enter lingers. */
 .bookmark-link.animate-enter.status-online,
 .bookmark-link.animate-enter.status-offline,
-.bookmark-link.animate-enter.status-checking,
-.bookmark-link.animate-enter.status-transition-flash {
+.bookmark-link.animate-enter.status-checking {
     animation: none;
     opacity: 1;
     transform: none;
@@ -2009,6 +2028,17 @@ a.bookmark-open:hover {
     text-align: right;
     justify-self: end;
     white-space: nowrap;
+}
+
+.bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+}
+
+.bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
+    grid-column: 4;
 }
 
 .bookmark-shortcut.is-empty {

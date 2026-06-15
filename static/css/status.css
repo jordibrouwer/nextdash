@@ -16,23 +16,19 @@ body:not(.status-color-lock) {
     --status-checking-ring: color-mix(in srgb, var(--accent-warning) 48%, transparent);
 }
 
-/* Status indicators */
+/* Status indicators — colour/background only; avoid opacity/transform so rows keep stable height */
 .bookmark-link.status-checking {
-    opacity: 0.7;
-    transition: opacity var(--transition-normal), color var(--transition-normal);
-    animation: fadeInStatus var(--transition-normal);
+    transition: color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .bookmark-link.status-online {
     position: relative;
-    transition: color var(--transition-normal), opacity var(--transition-normal);
-    animation: fadeInStatus var(--transition-normal);
+    transition: color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .bookmark-link.status-offline {
     position: relative;
-    transition: color var(--transition-normal), opacity var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
-    animation: fadeInStatus var(--transition-normal);
+    transition: color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 /* Status colors — offline/checking rows only; online keeps default row chrome + ping badge */
@@ -40,7 +36,6 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
     background: var(--status-offline-bg, color-mix(in srgb, var(--accent-error, #ef4444) 24%, var(--background-primary)));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
-    font-weight: var(--font-weight-semibold, 600);
 }
 
 body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking {
@@ -55,25 +50,6 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     color: inherit;
 }
 
-.bookmark-link.status-transition-flash {
-    animation: statusTransitionPulse 240ms ease-out;
-}
-
-@keyframes statusTransitionPulse {
-    0% {
-        transform: scale(1);
-        opacity: 0.85;
-    }
-    50% {
-        transform: scale(1.01);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
 /* Hover/selection: keep offline/checking signal visible across all themes */
 body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
@@ -81,7 +57,6 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     box-shadow:
         inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444)),
         inset 0 0 0 1px var(--status-offline-ring, color-mix(in srgb, var(--accent-error, #ef4444) 55%, transparent));
-    font-weight: var(--font-weight-semibold, 600);
 }
 
 body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
@@ -115,15 +90,16 @@ body.status-color-lock .bookmark-link.status-checking .status-text {
     color: var(--text-secondary);
 }
 
-body.no-animations .bookmark-link.status-transition-flash {
-    animation: none !important;
-}
-
-/* Status text (ping time) — inline badge inside a.bookmark-open */
+/* Status text (ping time) — dedicated grid column; fixed width via bookmarks-list[data-show-ping] */
 .status-text {
     opacity: 0.9;
-    transition: opacity 0.3s ease;
+    transition: color 0.3s ease;
     color: var(--text-secondary);
+    min-width: 0;
+}
+
+.status-text.is-empty {
+    visibility: hidden;
 }
 
 /* Online status ping time — row stays neutral; badge shows reachability */

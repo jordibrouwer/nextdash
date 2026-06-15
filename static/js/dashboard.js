@@ -5768,6 +5768,9 @@ class Dashboard {
         bookmarksList.setAttribute('data-category-id', category.id || '');
         bookmarksList.setAttribute('data-bookmarks-list', 'true');
         bookmarksList.setAttribute('role', 'presentation');
+        if (this.settings.showStatus && this.settings.showPing) {
+            bookmarksList.setAttribute('data-show-ping', 'true');
+        }
         if (isSmartCollection) {
             bookmarksList.setAttribute('data-smart-collection', 'true');
         }
@@ -6837,6 +6840,13 @@ class Dashboard {
         this.attachBookmarkPreviewBehavior(openLink, bookmark);
 
         row.appendChild(openLink);
+
+        if (this.settings.showStatus && bookmark.checkStatus && this.settings.showPing) {
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'status-text bookmark-superscript-badge is-empty';
+            statusBadge.setAttribute('aria-hidden', 'true');
+            row.appendChild(statusBadge);
+        }
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';

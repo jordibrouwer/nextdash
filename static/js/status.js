@@ -385,7 +385,12 @@ class StatusMonitor {
             return null;
         }
 
-        this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
+        const cached = this.statusCache.get(cacheKey);
+        const hasRowStatus = bookmarkElement.classList.contains('status-online')
+            || bookmarkElement.classList.contains('status-offline');
+        if (!cached?.confirmed && !hasRowStatus) {
+            this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
+        }
 
         let lastResult = { status: 'offline', ping: null, errorDetail: 'Unreachable' };
 
@@ -432,39 +437,21 @@ class StatusMonitor {
             return;
         }
         bookmarkElement = target;
-        const previousStatus = bookmarkElement.classList.contains('status-online')
-            ? 'online'
-            : bookmarkElement.classList.contains('status-offline')
-                ? 'offline'
-                : bookmarkElement.classList.contains('status-checking')
-                    ? 'checking'
-                    : '';
         // Remove existing status classes
         bookmarkElement.classList.remove('status-online', 'status-offline', 'status-checking');
 
         // Add new status class
         bookmarkElement.classList.add(`status-${status}`);
-        if (previousStatus && previousStatus !== status) {
-            bookmarkElement.classList.add('status-transition-flash');
-            setTimeout(() => {
-                bookmarkElement.classList.remove('status-transition-flash');
-            }, 260);
-        }
 
-        // Update or create status text element (badge inside a.bookmark-open)
-        const openLink = bookmarkElement.querySelector('a.bookmark-open');
-        let statusElement = bookmarkElement.querySelector('.status-text');
+        // Update status text badge (row-level grid cell when showPing is on)
+        let statusElement = bookmarkElement.querySelector(':scope > .status-text');
 
         if (!statusElement && text && this.settings.showPing) {
             statusElement = document.createElement('span');
             statusElement.className = 'status-text bookmark-superscript-badge';
-            if (openLink) {
-                const firstBadge = openLink.querySelector('.bookmark-pin-badge, .bookmark-note-badge');
-                if (firstBadge) {
-                    openLink.insertBefore(statusElement, firstBadge);
-                } else {
-                    openLink.appendChild(statusElement);
-                }
+            const shortcut = bookmarkElement.querySelector(':scope > .bookmark-shortcut');
+            if (shortcut) {
+                bookmarkElement.insertBefore(statusElement, shortcut);
             } else {
                 bookmarkElement.appendChild(statusElement);
             }
@@ -473,10 +460,14 @@ class StatusMonitor {
         if (statusElement) {
             if (text && this.settings.showPing) {
                 statusElement.textContent = text;
-                statusElement.style.display = 'inline-flex';
+                statusElement.classList.remove('is-empty');
+                statusElement.removeAttribute('aria-hidden');
             } else {
-                statusElement.style.display = 'none';
+                statusElement.textContent = '';
+                statusElement.classList.add('is-empty');
+                statusElement.setAttribute('aria-hidden', 'true');
             }
+            statusElement.style.removeProperty('display');
         }
 
         // Status indicator dot removed - no longer used
@@ -536,9 +527,12 @@ class StatusMonitor {
         bookmarkElements.forEach(element => {
             element.classList.remove('status-online', 'status-offline', 'status-checking');
 
-            const statusText = element.querySelector('.status-text');
+            const statusText = element.querySelector(':scope > .status-text');
             if (statusText) {
-                statusText.remove();
+                statusText.textContent = '';
+                statusText.classList.add('is-empty');
+                statusText.setAttribute('aria-hidden', 'true');
+                statusText.style.removeProperty('display');
             }
 
             const indicator = element.querySelector('.status-indicator');
