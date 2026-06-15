@@ -271,6 +271,7 @@ class Dashboard {
             this.initializeConfigBookmarksTour();
             window.LayoutVersionNudge?.consumeReplayPending?.();
             window.FeatureSpotlight?.consumePasteReplayPending?.();
+            window.PreviewCardSpotlight?.consumeReplayPending?.();
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }
@@ -3404,6 +3405,8 @@ class Dashboard {
             afterOnboarding: false,
             skipWhatsNew: options.skipWhatsNew === true,
             skipLayoutNudge: options.skipLayoutNudge === true,
+            skipPasteSpotlight: options.skipPasteSpotlight === true,
+            skipPreviewCardSpotlight: options.skipPreviewCardSpotlight === true,
         };
         this._postOnboardingPromptsTimer = setTimeout(() => {
             this.runPostOnboardingPrompts(payload);
@@ -3413,12 +3416,20 @@ class Dashboard {
     runPostOnboardingPrompts(options = {}) {
         const skipWhatsNew = options.skipWhatsNew === true;
         const skipLayoutNudge = options.skipLayoutNudge === true;
+        const skipPasteSpotlight = options.skipPasteSpotlight === true;
+        const skipPreviewCardSpotlight = options.skipPreviewCardSpotlight === true;
         const maxWaitAttempts = 50;
 
         if (!this.canShowPostOnboardingPrompts()) {
             this._postOnboardingPromptsAttempts = (this._postOnboardingPromptsAttempts || 0) + 1;
             if (this._postOnboardingPromptsAttempts < maxWaitAttempts) {
-                this.schedulePostOnboardingPrompts({ delay: 600, skipWhatsNew, skipLayoutNudge });
+                this.schedulePostOnboardingPrompts({
+                    delay: 600,
+                    skipWhatsNew,
+                    skipLayoutNudge,
+                    skipPasteSpotlight,
+                    skipPreviewCardSpotlight,
+                });
                 return;
             }
             this._postOnboardingPromptsAttempts = 0;
@@ -3470,16 +3481,57 @@ class Dashboard {
             if (started) return;
         }
 
-        if (this.shouldShowPasteSpotlightPrompt()) {
-            this.maybeShowPasteSpotlight();
+        if (!skipPasteSpotlight && this.shouldShowPasteSpotlightPrompt()) {
+            this.maybeShowPasteSpotlight({
+                onDismiss: () => this.schedulePostOnboardingPrompts({
+                    delay: 1200,
+                    skipWhatsNew: true,
+                    skipLayoutNudge: true,
+                    skipPasteSpotlight: true,
+                }),
+            });
+            return;
+        }
+
+        if (!options.skipPreviewCardSpotlight && this.shouldShowPreviewCardSpotlightPrompt()) {
+            this.maybeShowPreviewCardSpotlight();
         }
     }
 
-    maybeShowPasteSpotlight() {
+    shouldShowPreviewCardSpotlightPrompt() {
+        return window.PreviewCardSpotlight?.shouldOffer?.(this) === true;
+    }
+
+    maybeShowPreviewCardSpotlight(options = {}) {
+        if (!this.shouldShowPreviewCardSpotlightPrompt()) return false;
+        if (!this.canShowPostOnboardingPrompts()) return false;
+
+        const spotlight = window.PreviewCardSpotlight?.create?.(this, {
+            onDismiss: () => {
+                if (this.previewCardSpotlight === spotlight) {
+                    this.previewCardSpotlight = null;
+                }
+                if (typeof options.onDismiss === 'function') {
+                    options.onDismiss();
+                }
+            },
+        });
+        if (!spotlight) return false;
+
+        const started = spotlight.show(1400, {
+            canShow: () => window.PreviewCardSpotlight?.canShowNow?.(this) === true,
+        });
+        if (!started) return false;
+        this.previewCardSpotlight = spotlight;
+        return true;
+    }
+
+    maybeShowPasteSpotlight(options = {}) {
         if (!this.shouldShowPasteSpotlightPrompt()) return false;
         if (!this.canShowPostOnboardingPrompts()) return false;
 
         const dash = this;
+        const onDismiss = typeof options.onDismiss === 'function' ? options.onDismiss : null;
         const spotlight = new window.FeatureSpotlight({
             language: this.language,
             onTry: () => {
@@ -3490,6 +3542,7 @@ class Dashboard {
                 if (dash.pasteSpotlight === spotlight) {
                     dash.pasteSpotlight = null;
                 }
+                onDismiss?.();
             },
         });
         const started = spotlight.show(1400, {

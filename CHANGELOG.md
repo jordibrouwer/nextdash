@@ -51,7 +51,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.20 — June 2026
 
-**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid navigation, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, and page overview; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid navigation, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, and page overview; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
 
 ### Desktop discoverability promos
 
@@ -77,6 +77,10 @@ _No unreleased changes at this time._
 - **fix** **Tag cloud layout** — dynamic width/height from tag count; prefers above/below the `/` FAB; scrollable body when capped by viewport.
 - **fix** **Active filter UI** — header chips and tooltip only; removed redundant FAB badge text.
 - **fix** **Date popover theming** — uses `--background-secondary`, `--border-primary`, `--text-primary`, and `--accent-primary`; modern/glass layout overrides aligned with move popover.
+
+### Post-onboarding spotlights
+
+- **new** **Preview cards spotlight** — after What's new, layout-versions, and paste-URL hints, a one-time bottom stripe offers **Enable** or **Never mind** when preview cards are still off; defers while tours, modals, search, or other promos are active. Reset from **config → Advanced → System & tools → Tours & onboarding**.
 
 ### Help, tips & developer
 

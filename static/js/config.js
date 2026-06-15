@@ -3609,6 +3609,29 @@ class ConfigManager {
             });
         }
 
+        const resetPreviewCardSpotlightBtn = document.getElementById('reset-preview-card-spotlight-btn');
+        if (resetPreviewCardSpotlightBtn) {
+            resetPreviewCardSpotlightBtn.addEventListener('click', () => {
+                let message;
+                if (window.dashboardInstance) {
+                    window.PreviewCardSpotlight?.reset?.();
+                    window.dashboardInstance.previewCardSpotlight?.dismiss?.(false);
+                    window.dashboardInstance.previewCardSpotlight = null;
+                    const started = window.dashboardInstance.maybeShowPreviewCardSpotlight?.() === true;
+                    message = started
+                        ? (this.language.t('config.resetPreviewCardSpotlightSuccessShown')
+                            || 'Preview cards spotlight shown on the dashboard.')
+                        : (this.language.t('config.resetPreviewCardSpotlightSuccess')
+                            || 'Preview cards spotlight reset — reload the dashboard if it does not appear.');
+                } else {
+                    window.PreviewCardSpotlight?.queueReplay?.();
+                    message = this.language.t('config.resetPreviewCardSpotlightSuccessOpenDashboard')
+                        || 'Preview cards spotlight reset — open the dashboard to see it.';
+                }
+                this.ui.showNotification(message, 'success');
+            });
+        }
+
         const resetSettingsSearchPromoBtn = document.getElementById('reset-settings-search-promo-btn');
         if (resetSettingsSearchPromoBtn) {
             resetSettingsSearchPromoBtn.addEventListener('click', () => {

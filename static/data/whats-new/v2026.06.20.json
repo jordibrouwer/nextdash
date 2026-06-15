@@ -80,6 +80,15 @@
       ]
     },
     {
+      "title": "Post-onboarding spotlights",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Preview cards spotlight</strong> — after What’s new, layout-versions, and paste-URL hints, desktop users who still have preview cards off may see a one-time bottom stripe with <strong>Enable</strong> or <strong>Never mind</strong>. It waits until onboarding, tours, modals, and other promos are idle. Reset from <strong>config → Advanced → System &amp; tools → Tours &amp; onboarding</strong>."
+        }
+      ]
+    },
+    {
       "title": "Help, tips & developer",
       "items": [
         {
