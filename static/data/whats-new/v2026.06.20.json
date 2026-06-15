@@ -119,6 +119,10 @@
           "badge": "fix",
           "text": "<strong>README &amp; manual</strong> — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours &amp; onboarding lists the new promo reset buttons."
         },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v79</code> (<code>2026.06-dashboard-release-v66</code>); new promo scripts/CSS; <code>date-popover-theme-1</code> on dashboard and layout sheets."
+        }
       ]
     }
   ]
