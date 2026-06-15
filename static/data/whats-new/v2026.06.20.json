@@ -101,6 +101,15 @@
       ]
     },
     {
+      "title": "Bookmark grid polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Row highlight edge</strong> — status, hover, and keyboard-selection backgrounds no longer clip at the right edge; bookmark rows keep <code>2px</code> end padding (<code>--bookmark-row-end-pad</code>) so the active colour shows beside the shortcut text."
+        }
+      ]
+    },
+    {
       "title": "Help, tips & developer",
       "items": [
         {
@@ -121,7 +130,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v79</code> (<code>2026.06-dashboard-release-v66</code>); new promo scripts/CSS; <code>date-popover-theme-1</code> on dashboard and layout sheets."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v80</code> (<code>2026.06-dashboard-release-v66</code>); <code>bookmark-row-end-pad-1</code> on <code>dashboard.css</code>; prior promo script/CSS bundles and <code>date-popover-theme-1</code> on layout sheets."
         }
       ]
     }

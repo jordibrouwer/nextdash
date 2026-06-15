@@ -51,7 +51,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.20 — June 2026
 
-**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; G+jump and cheat-sheet promo replay from Tours & onboarding; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; G+jump and cheat-sheet promo replay from Tours & onboarding; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; **bookmark row end-padding** so status/selection highlights are not clipped; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
 
 ### Desktop discoverability promos
 
@@ -85,13 +85,17 @@ _No unreleased changes at this time._
 
 - **new** **Preview cards spotlight** — after What's new, layout-versions, and paste-URL hints, a one-time bottom stripe offers **Enable** or **Never mind** when preview cards are still off; defers while tours, modals, search, or other promos are active. Reset from **config → Advanced → System & tools → Tours & onboarding**.
 
+### Bookmark grid polish
+
+- **fix** **Row highlight edge** — `--bookmark-row-end-pad: 2px` on bookmark rows so status, hover, and keyboard-selection backgrounds are not clipped by category `overflow: hidden`; expanded categories use `overflow-x: visible` on the list.
+
 ### Help, tips & developer
 
 - **fix** **Cheat sheet & config Help** — `Shift+M` / `Shift+D` in keyboard cheat sheet and Help → Keyboard / Navigation (EN/NL/DE/FR).
 - **fix** **README & manual** — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours & onboarding documents promo reset buttons.
 - **fix** **Rotating tips** — `tipQuickDelete` and `tipQuickMove` in dashboard tip rotation.
 - **fix** **AppModal repair** — `ensureModalStructure()` restores missing header/body on existing `#app-modal` (recent bookmarks modal).
-- **fix** **Cache-bust** — `whats-new-v79` (`2026.06-dashboard-release-v66`); promo script/CSS bundles; `date-popover-theme-1` on dashboard and layout sheets.
+- **fix** **Cache-bust** — `whats-new-v80` (`2026.06-dashboard-release-v66`); `bookmark-row-end-pad-1` on `dashboard.css`; prior promo script/CSS bundles and `date-popover-theme-1` on layout sheets.
 
 ---
 
