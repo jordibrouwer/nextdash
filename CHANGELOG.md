@@ -51,7 +51,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.20 — June 2026
 
-**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
+**Desktop discoverability promos, Shift+D quick delete, tag-filter bulk toolbar & popover polish** — one-time left/right balloons beside search modes, grid arrow navigation, G+jump, smart collections, inline edit, tag cloud, bulk filter actions, recent modal, preview card, quick-add omnibox, week overview, category collapse, quick move/delete, page overview, and keyboard cheat sheet; config settings-search beside placement; G+jump and cheat-sheet promo replay from Tours & onboarding; search-filters follow-up promo; `Shift+D` delete popover matching `Shift+M`; move/delete/bulk-move popovers beside the anchor; tag-filter bulk open/copy/move/delete; tag-cloud sizing; date popover theme tokens; **preview-cards spotlight** in post-onboarding chain; cheat sheet promo layering fix; cheat sheet & Help updates; `tipQuickMove` / `tipQuickDelete` tips.
 
 ### Desktop discoverability promos
 
@@ -62,6 +62,7 @@ _No unreleased changes at this time._
 - **new** **Config settings search promo** — breadcrumb search balloon uses beside-anchor placement (`DashboardPromoPlacement`); repositions on scroll/resize.
 - **fix** **Promo deferral** — promos wait for tours, modals, search, and other promos; host overlay close dismisses without persisting “seen” (including <code>Esc</code> on quick-move/delete popovers); `tryShowDeferred` retries when the tag cloud is still open.
 - **fix** **Cheat sheet promo layering** — cheat-sheet balloon renders above the modal overlay so **Got it** dismisses only the promo.
+- **new** **Promo replay controls** — **Reset G+jump promo** and **Reset cheat sheet promo** in **config → Advanced → System & tools → Tours & onboarding** (desktop); cheat-sheet reset opens the sheet when the dashboard tab is active.
 
 ### Quick actions & popovers
 
@@ -87,6 +88,7 @@ _No unreleased changes at this time._
 ### Help, tips & developer
 
 - **fix** **Cheat sheet & config Help** — `Shift+M` / `Shift+D` in keyboard cheat sheet and Help → Keyboard / Navigation (EN/NL/DE/FR).
+- **fix** **README & manual** — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours & onboarding documents promo reset buttons.
 - **fix** **Rotating tips** — `tipQuickDelete` and `tipQuickMove` in dashboard tip rotation.
 - **fix** **AppModal repair** — `ensureModalStructure()` restores missing header/body on existing `#app-modal` (recent bookmarks modal).
 - **fix** **Cache-bust** — `whats-new-v79` (`2026.06-dashboard-release-v66`); promo script/CSS bundles; `date-popover-theme-1` on dashboard and layout sheets.

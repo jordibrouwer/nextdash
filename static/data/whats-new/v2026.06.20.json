@@ -37,6 +37,10 @@
         {
           "badge": "fix",
           "text": "<strong>Cheat sheet promo layering</strong> — the <code>!</code>/<code>F1</code> balloon renders above the modal overlay so <strong>Got it</strong> dismisses only the promo, not the cheat sheet."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Promo replay controls</strong> — <strong>Reset G+jump promo</strong> and <strong>Reset cheat sheet promo</strong> in <strong>config → Advanced → System &amp; tools → Tours &amp; onboarding</strong> (desktop). Cheat-sheet reset opens the sheet when the dashboard tab is active."
         }
       ]
     },
@@ -113,8 +117,8 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v79</code> (<code>2026.06-dashboard-release-v66</code>); new promo scripts/CSS; <code>date-popover-theme-1</code> on dashboard and layout sheets."
-        }
+          "text": "<strong>README &amp; manual</strong> — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours &amp; onboarding lists the new promo reset buttons."
+        },
       ]
     }
   ]

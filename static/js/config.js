@@ -3652,6 +3652,52 @@ class ConfigManager {
             });
         }
 
+        const resetGJumpPromoBtn = document.getElementById('reset-g-jump-promo-btn');
+        if (resetGJumpPromoBtn) {
+            resetGJumpPromoBtn.addEventListener('click', () => {
+                if (window.MobileExperience?.isMobileLayout?.()) {
+                    this.ui.showNotification(
+                        this.language.t('config.resetGJumpPromoMobile')
+                            || 'G+jump promo is hidden on mobile — use a wider window.',
+                        'warning'
+                    );
+                    return;
+                }
+                window.DashboardGJumpPromo?.clearPromoSeen?.();
+                const message = window.dashboardInstance
+                    ? (this.language.t('config.resetGJumpPromoSuccess')
+                        || 'G+jump promo reset — press G then 1–9 or GG on the dashboard.')
+                    : (this.language.t('config.resetGJumpPromoSuccessOpenDashboard')
+                        || 'G+jump promo reset — open the dashboard and press G then 1–9 or GG.');
+                this.ui.showNotification(message, 'success');
+            });
+        }
+
+        const resetCheatsheetPromoBtn = document.getElementById('reset-cheatsheet-promo-btn');
+        if (resetCheatsheetPromoBtn) {
+            resetCheatsheetPromoBtn.addEventListener('click', () => {
+                if (window.MobileExperience?.isMobileLayout?.()) {
+                    this.ui.showNotification(
+                        this.language.t('config.resetCheatsheetPromoMobile')
+                            || 'Cheat sheet promo is hidden on mobile — use a wider window.',
+                        'warning'
+                    );
+                    return;
+                }
+                window.DashboardFeaturePromos?.clearPromoSeen?.('cheatsheet');
+                let message;
+                if (window.dashboardInstance) {
+                    window.dashboardInstance.showKeyboardCheatSheet?.();
+                    message = this.language.t('config.resetCheatsheetPromoSuccessShown')
+                        || 'Cheat sheet promo reset — cheat sheet opened on the dashboard.';
+                } else {
+                    message = this.language.t('config.resetCheatsheetPromoSuccessOpenDashboard')
+                        || 'Cheat sheet promo reset — open the dashboard and press ! or F1.';
+                }
+                this.ui.showNotification(message, 'success');
+            });
+        }
+
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 
         this.settings.attachSettingResetButtons(this.settingsData, () => this.markDirty());
