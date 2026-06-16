@@ -351,29 +351,9 @@ class ConfigUI {
                 const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 2;
                 tabWrapper.classList.toggle('is-scrolled-end', atEnd);
             };
-            const updateChrome = () => {
-                updateMask();
-                this._syncConfigChromeWidth(tabBar);
-            };
             tabBar.addEventListener('scroll', updateMask, { passive: true });
-            window.addEventListener('resize', updateChrome, { passive: true });
-            if (typeof ResizeObserver !== 'undefined') {
-                const chromeObserver = new ResizeObserver(() => updateChrome());
-                chromeObserver.observe(tabBar);
-                this._configChromeResizeObserver = chromeObserver;
-            }
-            if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(() => requestAnimationFrame(updateChrome));
-            }
-            requestAnimationFrame(updateChrome);
-        }
-    }
-
-    _syncConfigChromeWidth(tabBar) {
-        if (!tabBar) return;
-        const width = Math.ceil(tabBar.getBoundingClientRect().width);
-        if (width > 0) {
-            document.documentElement.style.setProperty('--config-chrome-content-width', `${width}px`);
+            window.addEventListener('resize', updateMask, { passive: true });
+            requestAnimationFrame(updateMask);
         }
     }
 

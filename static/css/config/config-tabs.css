@@ -14,9 +14,27 @@
     min-width: min-content;
 }
 
-/* Config main tabs: intrinsic width so chrome can align content to the tab bar edge */
+.config-controls-wrapper .tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    scroll-behavior: smooth;
+    background-color: var(--background-secondary);
+    width: 100%;
+    /* Bottom edge only — full box border leaves a stray top/right segment past the last tab */
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+}
+
 .config-controls-wrapper .tabs .tab-button {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-width: min-content;
+}
+
+.config-controls-wrapper .tabs::-webkit-scrollbar {
+    display: none;
 }
 
 /* Config tab bar: single scrollable row, never wraps */
@@ -38,21 +56,6 @@
 
 .tabs-scroll-wrapper.is-scrolled-end::after {
     opacity: 0;
-}
-
-.config-controls-wrapper .tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-    scroll-behavior: smooth;
-    background-color: var(--background-secondary);
-    width: max-content;
-    max-width: 100%;
-}
-
-.config-controls-wrapper .tabs::-webkit-scrollbar {
-    display: none;
 }
 
 .tab-button {
