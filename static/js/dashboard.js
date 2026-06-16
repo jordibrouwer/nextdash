@@ -1792,11 +1792,6 @@ class Dashboard {
         // Control date visibility and set up if visible
         this.updateDateVisibility();
 
-        // Apply theme - use classList to preserve other classes
-        document.body.classList.remove('dark', 'light');
-        document.body.classList.add(this.settings.theme);
-        document.documentElement.setAttribute('data-theme', this.settings.theme);
-        document.body.setAttribute('data-theme', this.settings.theme);
         document.body.setAttribute('data-show-title', this.settings.showTitle);
         document.body.setAttribute('data-show-date', this.settings.showDate);
         document.body.setAttribute('data-show-config-button', this.settings.showConfigButton);
@@ -3741,6 +3736,7 @@ class Dashboard {
             onApplySettings: (nextSettings) => {
                 dash.settings = nextSettings;
                 dash.setupDOM();
+                dash.initializeAutoDarkMode();
                 dash.renderPageNavigation();
                 dash.renderDashboard();
                 dash.updateSearchComponent();
@@ -4700,6 +4696,11 @@ class Dashboard {
     }
 
     initializeAutoDarkMode() {
+        document.documentElement.setAttribute(
+            'data-auto-dark-mode',
+            this.settings?.autoDarkMode ? 'true' : 'false'
+        );
+
         if (window.VisualSettings?.applyAutoDarkMode) {
             window.VisualSettings.applyAutoDarkMode(this.settings, () => {
                 this.applyBackground();
@@ -4707,10 +4708,10 @@ class Dashboard {
             return;
         }
 
-        const displayTheme = window.ThemeLoader?.getPairedThemeVariant
-            ? window.ThemeLoader.getPairedThemeVariant(
+        const displayTheme = window.ThemeLoader?.resolveDisplayTheme
+            ? window.ThemeLoader.resolveDisplayTheme(
                 this.settings.theme || 'dark',
-                window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
+                this.settings.autoDarkMode === true
             )
             : (this.settings.theme || 'dark');
         if (window.ThemeLoader?.applyTheme) {

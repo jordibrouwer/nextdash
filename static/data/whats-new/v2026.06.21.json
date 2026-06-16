@@ -38,6 +38,10 @@
         {
           "badge": "fix",
           "text": "<strong>Config FOUC guard</strong> — <code>data-auto-dark-mode</code> on the config <code>&lt;html&gt;</code> element; <code>theme-loader.js</code> and <code>visual-settings.js</code> load early on config/health."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Dashboard auto-dark apply</strong> — <code>setupDOM()</code> no longer overwrites the resolved display theme with the raw saved theme id after <code>initializeAutoDarkMode()</code>; <code>data-auto-dark-mode</code> syncs on the dashboard so config and dashboard match (e.g. light theme + auto dark on a light system)."
         }
       ]
     },
@@ -129,7 +133,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v83</code> (<code>2026.06-dashboard-release-v67</code>); <code>config-save-bar.css?v=config-tabs-solid-1</code>; <code>theme-sync-1</code> on <code>theme-loader.js</code> / <code>visual-settings.js</code>; <code>search-index-refresh-1</code> on settings search and language bundles; prior <code>whats-new-v82</code> and config layer bundles retained."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v84</code> (<code>2026.06-dashboard-release-v67</code>); <code>dashboard.js?v=theme-sync-2</code>; <code>config-save-bar.css?v=config-tabs-solid-1</code>; <code>theme-sync-1</code> on <code>theme-loader.js</code> / <code>visual-settings.js</code>; <code>search-index-refresh-1</code> on settings search and language bundles; prior <code>whats-new-v83</code> and config layer bundles retained."
         }
       ]
     }

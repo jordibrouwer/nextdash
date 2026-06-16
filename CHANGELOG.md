@@ -52,7 +52,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.21 — June 2026
 
-**Config chrome polish, theme drift fix, General UX/a11y/mobile** — opaque save bar and tab navigation; sticky layer toolbar in Advanced/All; advanced nav wrapping and Show-all grouping; phone-only reduced config (tablets keep full tabs); auto dark mode no longer overwrites saved theme; debounced settings-search index refresh; collapsible panel a11y; URL ↔ layer sync.
+**Config chrome polish, theme drift fix, General UX/a11y/mobile** — opaque save bar and tab navigation; sticky layer toolbar in Advanced/All; advanced nav wrapping and Show-all grouping; phone-only reduced config (tablets keep full tabs); auto dark mode no longer overwrites saved theme; dashboard applies resolved display theme after config save; debounced settings-search index refresh; collapsible panel a11y; URL ↔ layer sync.
 
 ### Config chrome & readability
 
@@ -66,6 +66,7 @@ _No unreleased changes at this time._
 - **fix** **Theme drift fixed** — auto dark mode no longer overwrites the saved theme id in settings; `VisualSettings.resolveTheme()` and `ThemeLoader.resolveDisplayTheme()` compute the display variant while the stored palette stays stable.
 - **fix** **Unified apply path** — dashboard, config, health, and `page-layout-sync` share `VisualSettings.applyAutoDarkMode()` / `applyDisplayTheme()`; Auto background presets follow the resolved display theme.
 - **fix** **Config FOUC guard** — `data-auto-dark-mode` on config `<html>`; `theme-loader.js` and `visual-settings.js` load early on config/health.
+- **fix** **Dashboard auto-dark apply** — `setupDOM()` no longer overwrites the resolved display theme with the raw saved theme id after `initializeAutoDarkMode()`; `data-auto-dark-mode` syncs on the dashboard so config and dashboard match (e.g. light theme + auto dark on a light system).
 
 ### General config UX
 
@@ -95,7 +96,7 @@ _No unreleased changes at this time._
 ### Help, docs & developer
 
 - **fix** **Help & manual** — Config → General help, README, and MANUAL document opaque chrome, phone vs tablet config, theme sync, and nav wrapping.
-- **fix** **Cache-bust** — `whats-new-v83` (`2026.06-dashboard-release-v67`); `config-save-bar.css?v=config-tabs-solid-1`; `theme-sync-1` on `theme-loader.js` / `visual-settings.js`; `search-index-refresh-1` on settings search and language bundles; prior `whats-new-v82` and config layer bundles retained.
+- **fix** **Cache-bust** — `whats-new-v84` (`2026.06-dashboard-release-v67`); `dashboard.js?v=theme-sync-2`; `config-save-bar.css?v=config-tabs-solid-1`; `theme-sync-1` on `theme-loader.js` / `visual-settings.js`; `search-index-refresh-1` on settings search and language bundles; prior `whats-new-v83` and config layer bundles retained.
 
 ---
 
