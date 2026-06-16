@@ -233,16 +233,16 @@ body[data-mobile-hide-previews="true"] .bookmark-preview-popup {
     display: none !important;
 }
 
-/* ── Config: tabs & general panels ── */
-body[data-mobile-layout="true"] .tab-button:not([data-tab="general"]):not([data-tab="help"]):not([data-tab="colors"]),
-body[data-mobile-layout="true"] .config-keyboard-chip {
+/* ── Config: tabs & general panels (phone only — tablets keep full config) ── */
+body[data-phone-layout="true"] .tab-button:not([data-tab="general"]):not([data-tab="help"]):not([data-tab="colors"]),
+body[data-phone-layout="true"] .config-keyboard-chip {
     display: none !important;
 }
 
-body[data-mobile-layout="true"] [data-general-panel][data-mobile-panel-hidden="true"],
-body[data-mobile-layout="true"] #general-layer-toolbar,
-body[data-mobile-layout="true"] #general-layer-show-all,
-body[data-mobile-layout="true"] #general-advanced-nav-wrap {
+body[data-phone-layout="true"] [data-general-panel][data-mobile-panel-hidden="true"],
+body[data-phone-layout="true"] #general-layer-toolbar,
+body[data-phone-layout="true"] #general-layer-show-all,
+body[data-phone-layout="true"] #general-advanced-nav-wrap {
     display: none !important;
 }
 

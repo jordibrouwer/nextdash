@@ -1,0 +1,106 @@
+/* Opaque save row on config — linked directly (not via @import) for reliable cache bust */
+
+.config-section.section-controls .config-actions-top {
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
+    background-color: var(--background-secondary);
+    background-image: none;
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--border-primary) 55%, transparent);
+}
+
+/* Solid layer behind buttons — covers dot grid and scrolled settings */
+.config-section.section-controls .config-actions-top::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--background-secondary);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Classic: span container horizontal padding */
+body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
+body:not([data-layout-version]) .config-section.section-controls .config-actions-top {
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+}
+
+body[data-layout-version="modern"] .config-section.section-controls .config-actions-top,
+body[data-layout-version="glass"] .config-section.section-controls .config-actions-top {
+    margin-inline: 0;
+    background-color: var(--background-secondary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 991px) {
+    body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
+    body:not([data-layout-version]) .config-section.section-controls .config-actions-top {
+        margin-inline: -0.75rem;
+        padding-inline: 0.75rem;
+    }
+}
+
+@media (max-width: 575px) {
+    body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
+    body:not([data-layout-version]) .config-section.section-controls .config-actions-top {
+        margin-inline: -0.5rem;
+        padding-inline: 0.5rem;
+    }
+}
+
+/* Opaque main tab nav — sticky chrome below save row */
+.config-section.section-controls .tabs-scroll-wrapper {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    background-color: var(--background-secondary);
+    background-image: none;
+}
+
+.config-section.section-controls .tabs-scroll-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--background-secondary);
+    z-index: -1;
+    pointer-events: none;
+}
+
+.config-section.section-controls .config-controls-wrapper .tabs {
+    background-color: var(--background-secondary);
+    background-image: none;
+}
+
+.config-section.section-controls .tabs-scroll-wrapper::after {
+    background: linear-gradient(to right, transparent, var(--background-secondary));
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
+body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+}
+
+body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper,
+body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper {
+    margin-inline: 0;
+    padding-inline: 0;
+}
+
+@media (max-width: 991px) {
+    body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
+    body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
+        margin-inline: -0.75rem;
+        padding-inline: 0.75rem;
+    }
+}
+
+@media (max-width: 575px) {
+    body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
+    body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
+        margin-inline: -0.5rem;
+        padding-inline: 0.5rem;
+    }
+}

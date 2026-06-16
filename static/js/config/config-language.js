@@ -7,6 +7,7 @@ class ConfigLanguage {
     constructor() {
         this.currentLanguage = 'en';
         this.translations = {};
+        this._searchIndexRefreshTimer = null;
         this.availableLanguages = {
             'en': 'English',
             'nl': 'Dutch',
@@ -26,7 +27,6 @@ class ConfigLanguage {
                 this.translations = await response.json();
                 this.currentLanguage = lang;
                 this.applyTranslations();
-                window.ConfigSettingsSearch?.refreshIndex?.();
             } else {
                 console.error(`Failed to load translations for ${lang}`);
             }
@@ -51,6 +51,15 @@ class ConfigLanguage {
             value = value[k];
         }
         return typeof value === 'string' ? value : key;
+    }
+
+    /** Debounced search index rebuild after translated DOM text changes. */
+    scheduleSearchIndexRefresh() {
+        if (!document.getElementById('config-main')) return;
+        clearTimeout(this._searchIndexRefreshTimer);
+        this._searchIndexRefreshTimer = setTimeout(() => {
+            window.ConfigSettingsSearch?.refreshIndex?.();
+        }, 120);
     }
 
     /**
@@ -120,6 +129,11 @@ class ConfigLanguage {
                 mgr.settingsData.layoutPreset || 'default',
                 mgr.settingsData.densityMode || 'compact'
             );
+        }
+        if (document.getElementById('config-main')) {
+            window.ConfigSettingsSearch?.relocateForLayout?.();
+            window.ConfigSettingsSearch?.syncMobileLayout?.({ rebuildIndex: false });
+            this.scheduleSearchIndexRefresh();
         }
     }
 

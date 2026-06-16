@@ -90,27 +90,21 @@
         visual().applyBackgroundOpacity?.(merged.backgroundOpacity);
         visual().applyFontWeight?.(merged.fontWeight);
         visual().applyAnimations?.(merged.animationsEnabled);
-        applyTheme(resolvedTheme, merged);
 
         if (global.ThemeLoader?.applyLayoutVersion) {
             global.ThemeLoader.applyLayoutVersion(merged.layoutVersion || 'classic');
         }
 
-        visual().applyBackground?.(merged);
+        visual().applyAutoDarkMode?.(merged, () => {
+            visual().applyBackground?.(merged);
+            if (themeChanged) {
+                visual().reloadThemeCSS?.();
+            }
+        });
 
         if (global.DashboardFont?.applyMainFont) {
             global.DashboardFont.applyMainFont(merged);
         }
-
-        if (themeChanged) {
-            visual().reloadThemeCSS?.();
-        }
-
-        visual().applyAutoDarkMode?.(merged, (nextTheme, nextSettings) => {
-            applyTheme(nextTheme, nextSettings);
-            visual().applyBackground?.(nextSettings);
-            visual().reloadThemeCSS?.();
-        });
 
         if (preserveLoading) {
             document.body.classList.add('loading');

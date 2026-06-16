@@ -10,13 +10,14 @@ body[data-layout-version="glass"] {
 /* ─── Page chrome (sticky header area) ────────────────────────────────────── */
 
 body[data-layout-version="glass"] .config-actions-top {
-    background: var(--layout-surface);
+    background-color: var(--background-secondary);
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
     padding: 0.85rem 1rem;
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    margin: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 body[data-layout-version="glass"] .config-controls-wrapper {

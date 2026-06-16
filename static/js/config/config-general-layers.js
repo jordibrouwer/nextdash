@@ -13,6 +13,8 @@ class ConfigGeneralLayers {
         this._navObserver = null;
         this._smartSyncing = false;
         this._handlersWired = false;
+        this._refreshIndexTimer = null;
+        this._lastObservedLayer = null;
 
         this.smartCheckboxIds = [
             'show-smart-today-collection-checkbox',
@@ -46,14 +48,34 @@ class ConfigGeneralLayers {
             this.setupSmartCollectionsMaster();
             this.setupSmartCollectionLabelPropagation();
             this.setupAdvancedNav();
-            window.addEventListener('hashchange', () => this.applyHash(window.location.hash));
             this._handlersWired = true;
         }
         this.refreshCheckboxTreeSymbols();
-        this.applyLayer(this.getStoredLayer(), { updateHash: false });
-        if (window.MobileExperience?.isMobileLayout?.()) {
-            window.MobileExperience.applyConfigGeneralPanels(this);
+        this.wireStatusEssentialsLinks();
+    }
+
+    syncLayerFromUrlOrStorage() {
+        if (window.MobileExperience?.isPhoneLayout?.()) {
+            this.applyLayer('essentials', { updateHash: false });
+            window.MobileExperience?.applyConfigGeneralPanels?.(this);
+            return;
         }
+
+        const hash = window.location.hash;
+        const raw = (hash || '').replace(/^#/, '');
+        if (!raw.startsWith('general')) {
+            this.applyLayer(this.getStoredLayer(), { updateHash: true });
+            return;
+        }
+
+        const rest = raw.slice('general'.length).replace(/^\//, '');
+        const parts = rest ? rest.split('/') : [];
+        if (parts.length === 0) {
+            this.applyLayer(this.getStoredLayer(), { updateHash: true });
+            return;
+        }
+
+        this.applyHash(hash);
     }
 
     restructurePanels() {
@@ -143,7 +165,7 @@ class ConfigGeneralLayers {
         const row = document.createElement('p');
         row.className = 'general-card-intro general-appearance-actions';
         row.innerHTML = '<a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a>';
-        if (window.MobileExperience?.isMobileLayout?.()) {
+        if (window.MobileExperience?.isPhoneLayout?.()) {
             row.hidden = true;
         }
         const intro = core.querySelector('.general-card-intro');
@@ -161,7 +183,7 @@ class ConfigGeneralLayers {
             const mgr = window.configManager;
             if (!mgr) return;
 
-            if (window.MobileExperience?.isMobileLayout?.()) {
+            if (window.MobileExperience?.isPhoneLayout?.()) {
                 const lang = mgr.language;
                 const linkLabel = this.t('openThemeColorsLink', 'Open theme editor →').replace(/\s*→\s*$/, '').trim();
                 const namedKey = 'config.generalPanelMobileHiddenNamed';
@@ -192,7 +214,12 @@ class ConfigGeneralLayers {
         scope.querySelectorAll('.general-card[data-general-panel]').forEach((card) => {
             const title = card.querySelector('.section-title');
             if (!title) return;
-            title.setAttribute('aria-expanded', card.classList.contains('is-collapsed') ? 'false' : 'true');
+            const expanded = !card.classList.contains('is-collapsed');
+            title.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            const panelId = card.getAttribute('data-general-panel');
+            if (panelId) {
+                title.setAttribute('aria-controls', `general-panel-body-${panelId}`);
+            }
         });
     }
 
@@ -308,7 +335,7 @@ class ConfigGeneralLayers {
                         <div class="config-advanced-action-actions">
                             <a href="/health" id="status-essentials-health-link" class="btn btn-secondary btn-small status-essentials-health-link" hidden data-i18n="config.statusEssentialsOpenHealth">Health →</a>
                             <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="status" data-i18n="config.configureStatusAdvanced">Advanced settings →</button>
-                            <a href="#bookmarks" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
+                            <a href="#bookmarks" id="status-essentials-bookmarks-link" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
                         </div>
                     </div>
                 </div>
@@ -326,6 +353,24 @@ class ConfigGeneralLayers {
         if (full.dataset.configTier !== 'advanced') {
             full.dataset.configTier = 'advanced';
         }
+        this.wireStatusEssentialsLinks();
+    }
+
+    wireStatusEssentialsLinks() {
+        const bookmarksLink = document.getElementById('status-essentials-bookmarks-link');
+        if (!bookmarksLink || bookmarksLink.dataset.bound === '1') return;
+        bookmarksLink.dataset.bound = '1';
+        bookmarksLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const mgr = window.configManager;
+            if (!mgr) return;
+            if (mgr.isDirty) {
+                const ok = await mgr.confirmLeaveWithUnsavedChanges();
+                if (!ok) return;
+            }
+            mgr.ui?.switchToTab?.('bookmarks');
+            window.location.hash = '#bookmarks';
+        });
     }
 
     splitAdvancedGeneralPanel() {
@@ -379,7 +424,6 @@ class ConfigGeneralLayers {
             'search-buttons': 'essentials',
             'appearance-advanced': 'advanced',
             'bookmarks-display': 'advanced',
-            bookmarks: 'advanced',
             'smart-collections': 'advanced',
             status: 'advanced',
             branding: 'advanced',
@@ -515,6 +559,74 @@ class ConfigGeneralLayers {
         return 'essentials';
     }
 
+    isMobileGeneralLocked() {
+        return Boolean(
+            window.MobileExperience?.isPhoneLayout?.()
+            && document.getElementById('general-layer-toolbar')?.hidden
+        );
+    }
+
+    syncAdvancedNavVisibility() {
+        if (!this.advancedNav || !this.root) return;
+
+        this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
+            const panelId = link.getAttribute('data-advanced-nav');
+            const card = this.root.querySelector(`[data-general-panel="${panelId}"]`);
+            const tier = link.getAttribute('data-nav-tier') || card?.dataset.configTier || 'advanced';
+            let visible = false;
+            if (this.layer === 'all') visible = true;
+            else if (this.layer === 'advanced') visible = tier === 'advanced';
+            link.hidden = !visible;
+        });
+        this.syncAdvancedNavDivider();
+    }
+
+    syncAdvancedNavDivider() {
+        if (!this.advancedNav) return;
+        this.advancedNav.querySelectorAll('.general-advanced-nav-divider').forEach((el) => el.remove());
+        if (this.layer !== 'all') return;
+
+        const links = [...this.advancedNav.querySelectorAll('[data-advanced-nav]')].filter((link) => !link.hidden);
+        const firstAdvanced = links.find((link) => {
+            const tier = link.getAttribute('data-nav-tier')
+                || this.root.querySelector(`[data-general-panel="${link.getAttribute('data-advanced-nav')}"]`)?.dataset.configTier
+                || 'advanced';
+            return tier === 'advanced';
+        });
+        if (!firstAdvanced) return;
+
+        const divider = document.createElement('span');
+        divider.className = 'general-advanced-nav-divider';
+        divider.setAttribute('role', 'separator');
+        divider.textContent = this.t('advancedNavSectionBreak', 'Advanced sections');
+        firstAdvanced.before(divider);
+    }
+
+    setAdvancedNavActive(panelId) {
+        if (!this.advancedNav) return;
+        this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
+            const active = link.getAttribute('data-advanced-nav') === panelId;
+            link.classList.toggle('is-active', active);
+            if (active) link.setAttribute('aria-current', 'location');
+            else link.removeAttribute('aria-current');
+        });
+    }
+
+    scheduleLayerSideEffects({ layerChanged = false } = {}) {
+        if (layerChanged || this._lastObservedLayer !== this.layer) {
+            this._lastObservedLayer = this.layer;
+            this.refreshAdvancedNavObserver();
+            window.configManager?.ui?.initBreadcrumbObserver?.('general');
+        }
+
+        if (!layerChanged) return;
+
+        clearTimeout(this._refreshIndexTimer);
+        this._refreshIndexTimer = setTimeout(() => {
+            window.ConfigSettingsSearch?.refreshIndex?.();
+        }, 120);
+    }
+
     applyLayer(layer, { updateHash = true, scrollPanel = null } = {}) {
         if (!this.root) {
             this.root = document.querySelector('.general-layout');
@@ -524,6 +636,14 @@ class ConfigGeneralLayers {
         }
         if (!this.root) return;
 
+        if (this.isMobileGeneralLocked()) {
+            if (scrollPanel) {
+                this.scrollToPanel(scrollPanel, { switchLayer: false });
+            }
+            return;
+        }
+
+        const prevLayer = this.layer;
         this.layer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
         try {
             localStorage.setItem(this.storageKey, this.layer);
@@ -554,6 +674,7 @@ class ConfigGeneralLayers {
         const showNav = this.layer === 'advanced' || this.layer === 'all';
         if (this.advancedNavWrap) this.advancedNavWrap.hidden = !showNav;
         else if (this.advancedNav) this.advancedNav.hidden = !showNav;
+        this.syncAdvancedNavVisibility();
 
         const bulkBar = document.getElementById('general-panels-bulk-actions');
         if (bulkBar) bulkBar.hidden = this.layer !== 'all';
@@ -561,12 +682,12 @@ class ConfigGeneralLayers {
         this.toolbar.querySelectorAll('[data-general-layer]').forEach((btn) => {
             const active = btn.getAttribute('data-general-layer') === this.layer;
             btn.classList.toggle('is-active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
         const showAllLink = document.getElementById('general-layer-show-all');
         if (showAllLink) {
             showAllLink.classList.toggle('is-active', this.layer === 'all');
-            showAllLink.setAttribute('aria-selected', this.layer === 'all' ? 'true' : 'false');
+            showAllLink.setAttribute('aria-pressed', this.layer === 'all' ? 'true' : 'false');
         }
 
         const layerBtns = Array.from(this.toolbar.querySelectorAll('[data-general-layer]'));
@@ -590,15 +711,13 @@ class ConfigGeneralLayers {
             this.scrollToPanel(scrollPanel, { switchLayer: true });
         }
 
-        this.refreshAdvancedNavObserver();
         window.configManager?.refreshGeneralPanelExpandState?.();
 
         window.configManager?.ui?.updateBreadcrumb?.(
             'general',
             this.getBreadcrumbSubsection()
         );
-        window.configManager?.ui?.initBreadcrumbObserver?.('general');
-        window.ConfigSettingsSearch?.refreshIndex?.();
+        this.scheduleLayerSideEffects({ layerChanged: prevLayer !== this.layer });
     }
 
     getBreadcrumbSubsection() {
@@ -611,6 +730,22 @@ class ConfigGeneralLayers {
         const raw = (hash || '').replace(/^#/, '');
         if (!raw.startsWith('general')) return;
 
+        if (window.MobileExperience?.isPhoneLayout?.()) {
+            const mobilePanels = new Set(window.MobileExperience.MOBILE_GENERAL_PANELS || []);
+            const rest = raw.slice('general'.length).replace(/^\//, '');
+            const parts = rest ? rest.split('/') : [];
+            let panel = null;
+            if (parts[0] === 'advanced' || parts[0] === 'all') {
+                panel = parts[1] || null;
+            } else if (parts[0]) {
+                panel = parts[0];
+            }
+            if (panel && mobilePanels.has(panel)) {
+                this.scrollToPanel(panel, { switchLayer: false });
+            }
+            return;
+        }
+
         const rest = raw.slice('general'.length).replace(/^\//, '');
         const parts = rest ? rest.split('/') : [];
         let layer = null;
@@ -621,6 +756,11 @@ class ConfigGeneralLayers {
             panel = parts[1] || null;
         } else if (parts[0]) {
             panel = parts[0];
+        }
+
+        if (layer === null && panel === null) {
+            this.applyLayer(this.getStoredLayer(), { updateHash: true });
+            return;
         }
 
         if (layer !== null) {
@@ -652,19 +792,25 @@ class ConfigGeneralLayers {
         if (switchLayer) {
             const tier = card.dataset.configTier || 'advanced';
             if (this.layer !== 'all' && tier !== this.layer) {
-                this.applyLayer(tier, { updateHash: false });
+                this.applyLayer(tier, { updateHash: false, scrollPanel: panelId });
+                return;
             }
         }
 
-        card.classList.remove('is-collapsed');
-        const title = card.querySelector('.section-title');
-        if (title) {
-            title.setAttribute('aria-expanded', 'true');
+        if (panelId !== 'reset') {
+            card.classList.remove('is-collapsed');
+            const title = card.querySelector('.section-title');
+            if (title) {
+                title.setAttribute('aria-expanded', 'true');
+            }
+            window.configManager?._persistGeneralPanelState?.();
+            window.configManager?.syncResetPanelGuard?.();
         }
-        window.configManager?._persistGeneralPanelState?.();
-        window.configManager?.syncResetPanelGuard?.();
         const tourActive = document.body.hasAttribute('data-config-general-tour-active');
         card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
+        if (this.layer === 'advanced' || this.layer === 'all') {
+            this.setAdvancedNavActive(panelId);
+        }
     }
 
     setupSmartCollectionsMaster() {
@@ -674,8 +820,14 @@ class ConfigGeneralLayers {
         const syncMasterFromChildren = () => {
             if (this._smartSyncing) return;
             const anyOn = this.smartCheckboxIds.some((id) => document.getElementById(id)?.checked);
+            const allOn = this.smartCheckboxIds.every((id) => document.getElementById(id)?.checked);
             master.checked = anyOn;
-            master.indeterminate = anyOn && !this.smartCheckboxIds.every((id) => document.getElementById(id)?.checked);
+            master.indeterminate = anyOn && !allOn;
+            if (master.indeterminate) {
+                master.setAttribute('aria-checked', 'mixed');
+            } else {
+                master.removeAttribute('aria-checked');
+            }
             this.syncSmartCollectionsSummaryCount();
         };
 
@@ -727,6 +879,10 @@ class ConfigGeneralLayers {
                         ? namedTpl.replace('{name}', sectionName)
                         : this.t('generalPanelMobileHidden', 'This section is only available on a wider screen.');
                     window.configManager?.ui?.showNotification?.(msg, 'info');
+                    return;
+                }
+                if (this.layer === 'advanced') {
+                    this.scrollToPanel(panel, { switchLayer: false });
                     return;
                 }
                 this.applyLayer('advanced', { updateHash: true, scrollPanel: panel });
@@ -787,9 +943,7 @@ class ConfigGeneralLayers {
             });
             if (!best) return;
             const id = best.getAttribute('data-general-panel');
-            this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
-                link.classList.toggle('is-active', link.getAttribute('data-advanced-nav') === id);
-            });
+            this.setAdvancedNavActive(id);
         }, { rootMargin, threshold: [0, 0.1, 0.25, 0.5, 0.75] });
 
         this.root.querySelectorAll('[data-general-panel]').forEach((panel) => {

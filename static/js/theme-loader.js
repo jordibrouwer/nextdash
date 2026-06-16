@@ -25,6 +25,33 @@
         if (!theme) return 'dark';
         return LEGACY_THEME_MAP[theme] || theme;
     }
+
+    function getPairedThemeVariant(themeId, wantsDark) {
+        const base = String(themeId || 'dark');
+        if (base === 'dark' || base === 'light') {
+            return wantsDark ? 'dark' : 'light';
+        }
+        const match = base.match(/^(.*)-(dark|light)$/);
+        if (!match) {
+            return base;
+        }
+        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
+    }
+
+    function shouldUseAutoDarkMode(parsedSettings) {
+        if (parsedSettings && typeof parsedSettings.autoDarkMode === 'boolean') {
+            return parsedSettings.autoDarkMode;
+        }
+        return document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
+    }
+
+    function resolveDisplayTheme(baseTheme, autoDarkMode) {
+        const normalized = normalizeTheme(baseTheme);
+        if (!autoDarkMode || !window.matchMedia) {
+            return normalized;
+        }
+        return getPairedThemeVariant(normalized, window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
     
     /**
      * Gets the current theme based on device-specific settings or server default
@@ -33,6 +60,7 @@
     function getTheme() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
         let theme = 'dark'; // default
+        let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
         
         if (deviceSpecific) {
             const settings = localStorage.getItem('dashboardSettings');
@@ -41,6 +69,7 @@
                     const parsedSettings = JSON.parse(settings);
                     const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
                     theme = normalizedTheme;
+                    autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
 
                     // Persist migrated theme for device-specific users.
                     if (parsedSettings.theme !== normalizedTheme) {
@@ -64,7 +93,7 @@
             }
         }
         
-        return normalizeTheme(theme);
+        return resolveDisplayTheme(theme, autoDarkMode);
     }
     
     /**
@@ -332,6 +361,8 @@
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
         getTheme: getTheme,
+        getPairedThemeVariant: getPairedThemeVariant,
+        resolveDisplayTheme: resolveDisplayTheme,
         getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,
         getLayoutVersion: getLayoutVersion,

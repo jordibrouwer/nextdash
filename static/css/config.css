@@ -1,5 +1,5 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css');
+@import url('config/config-general.css?v=config-scoped-reset-1');
 @import url('config/config-tabs.css');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');

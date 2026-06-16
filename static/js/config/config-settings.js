@@ -2929,39 +2929,30 @@ class ConfigSettings {
     }
 
     applyAutoDarkMode(enabled, settings) {
-        if (!enabled || !window.matchMedia) {
+        if (!settings) {
+            return;
+        }
+        settings.autoDarkMode = enabled === true;
+
+        const onApplied = (displayTheme) => {
+            this.updateAutoPreview(displayTheme);
+            this.applyBackground(settings);
+            this.updateSystemAppearanceBadge(settings.theme);
+        };
+
+        if (window.VisualSettings?.applyAutoDarkMode) {
+            window.VisualSettings.applyAutoDarkMode(settings, onApplied);
             return;
         }
 
-        const media = window.matchMedia('(prefers-color-scheme: dark)');
-        const apply = () => {
-            const nextTheme = this.getPairedThemeVariant(settings?.theme || 'dark', media.matches);
-            if (settings) {
-                settings.theme = nextTheme;
-            }
-            this.applyTheme(nextTheme);
-            this.updateAutoPreview(nextTheme);
-            this.applyBackground(settings);
-            const themeSelect = document.getElementById('theme-select');
-            if (themeSelect) {
-                const hasTheme = Array.from(themeSelect.options).some((option) => option.value === nextTheme);
-                if (hasTheme) {
-                    themeSelect.value = nextTheme;
-                }
-            }
-        };
-
-        apply();
-
-        if (!this._autoDarkModeListenerAttached && typeof media.addEventListener === 'function') {
-            media.addEventListener('change', () => {
-                apply();
-                this.updateSystemAppearanceBadge(settings?.theme);
-            });
-            this._autoDarkModeListenerAttached = true;
-        }
-
-        this.updateSystemAppearanceBadge(settings?.theme);
+        const displayTheme = settings.autoDarkMode && window.matchMedia
+            ? this.getPairedThemeVariant(
+                settings.theme || 'dark',
+                window.matchMedia('(prefers-color-scheme: dark)').matches
+            )
+            : (settings.theme || 'dark');
+        this.applyTheme(displayTheme);
+        onApplied(displayTheme);
     }
 
     /**
@@ -3074,7 +3065,8 @@ class ConfigSettings {
 
         let presetName = '';
         if (type === 'auto') {
-            presetName = CONFIG_THEME_BACKGROUND_MAP[(settings && settings.theme) || ''] || '';
+            const themeKey = window.VisualSettings?.resolveTheme?.(settings) || settings?.theme || '';
+            presetName = CONFIG_THEME_BACKGROUND_MAP[themeKey] || '';
         } else if (type === 'gradient') {
             presetName = (settings && settings.backgroundGradient) || '';
         }

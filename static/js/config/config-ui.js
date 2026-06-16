@@ -225,7 +225,7 @@ class ConfigUI {
     const validTabs = ['general', 'colors', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
 
     const getAllowedTabs = () => {
-        if (window.MobileExperience?.isMobileLayout?.()) {
+        if (window.MobileExperience?.isPhoneLayout?.()) {
             return window.MobileExperience.MOBILE_CONFIG_TABS;
         }
         return validTabs;
@@ -237,7 +237,7 @@ class ConfigUI {
         if (allowed.includes(hash)) return hash;
         if (hash.startsWith('colors') && allowed.includes('colors')) return 'colors';
         if (hash.startsWith('general') && allowed.includes('general')) return 'general';
-        if (window.MobileExperience?.isMobileLayout?.() && allowed.includes('general')) return 'general';
+        if (window.MobileExperience?.isPhoneLayout?.() && allowed.includes('general')) return 'general';
         if (validTabs.includes(hash)) return null;
         if (hash.startsWith('colors')) return allowed.includes('colors') ? 'colors' : (allowed[0] || 'general');
         if (hash.startsWith('general')) return allowed.includes('general') ? 'general' : (allowed[0] || 'general');

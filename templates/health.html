@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
     <script src="/static/js/write-api.js"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/font-presets.js"></script>
-    <script src="/static/js/theme-loader.js"></script>
+    <script src="/static/js/theme-loader.js?v=theme-sync-1"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
@@ -138,7 +138,7 @@
     <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
-    <script src="/static/js/visual-settings.js"></script>
+    <script src="/static/js/visual-settings.js?v=theme-sync-1"></script>
     <script src="/static/js/page-layout-sync.js"></script>
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>

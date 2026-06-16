@@ -612,7 +612,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - 37+ built-in families (dark/light pairs).  
 - **config → theme** tab (`#colors`) — four subtabs: **Dark**, **Light** (default palettes), **Custom themes** (your saved palettes), and **Packaged themes** (edit built-in families such as Cherry Graphite). Live preview applies to palette cards only; a contrast hint warns when text vs background is too weak. **Export** / **import** JSON, **Undo**, and **↑/↓** reorder for custom themes. Press **S** or **Save colors** to persist. On mobile the tab is read-only (viewer banner).  
 - **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
-- **Auto dark mode** follows system (built-in pairs only; disabled with custom theme).
+- **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
 
 The first time you open the **Theme** tab on a desktop-width window, a **9-step guided tour** creates a temporary **Tour demo** palette, saves it, activates it on General, then removes it (see [Guided config tours](#guided-config-tours)).
 
@@ -729,11 +729,12 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Essentials vs Advanced (general)
 
-- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.  
-- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Sticky **section links** at the top jump to panels; the active section highlights while you scroll.  
-- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; same section nav as Advanced.  
-- **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).  
-- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav.  
+- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Section nav links wrap on narrow widths; labels such as *Fine-tuning* and *Display options* group related panels. Sticky **section links** at the top jump to panels; the active section highlights while you scroll (`aria-current`).
+- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; nav shows Essentials links, an *Advanced sections* divider, then Advanced links.
+- **Sticky chrome** — In Advanced and All, the layer toolbar and section nav stay pinned while you scroll. Save row and main tab bar use a solid background so content does not show through.
+- **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
+- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav. Bare `#general` restores your last Essentials/Advanced/All choice.
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
 
 ### Find settings & quick actions (desktop config)
@@ -767,7 +768,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 **Replay** — Open **config → general → Advanced** → **System & tools** and expand the **Tours & onboarding** block. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start. If a tour leaves the page scroll-locked without a visible card, refresh once — stale tour state is cleared automatically on load.
 
-**Mobile** — Tours do not auto-start on the mobile config layout. Rotating footer tips, the settings search promo, and promo banners are also hidden on mobile.
+**Mobile** — Tours do not auto-start on the phone config layout (≤768px). Portrait tablets and wider touch layouts keep full config and may run tours. Rotating footer tips, the settings search promo, and promo banners are also hidden on the broader mobile dashboard layout.
 
 **Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`). After onboarding, **What's new** may open first; classic-layout users may then see a **layout-versions** tip, a **paste URL** spotlight, and a **preview cards** spotlight in the same session — separate from config tab tours.
 
@@ -868,9 +869,11 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On small screens, config limits to **General** and **Help**; use desktop for full bookmark editing and for **guided config tours** (General and Bookmarks).
+On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing and for **guided config tours** (General and Bookmarks).
 
-Within **General** on phone you get **language**, **theme**, and **layout basics**, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers or guided General tour.
+Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers or guided General tour.
+
+**Tablets** — Portrait tablets and other touch layouts above 768px keep the full config (all tabs, Essentials/Advanced layers, settings search in the breadcrumb, guided tours). Only true phone widths use the reduced layout.
 
 ### Phone vs desktop
 

@@ -1,0 +1,137 @@
+{
+  "tag": "v2026.06.21",
+  "date": "June 2026",
+  "releasedAt": "2026-06-13",
+  "sections": [
+    {
+      "title": "Config chrome & readability",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Opaque save bar</strong> — the header save row and sticky bottom save bar use a solid <code>--background-secondary</code> surface (no blur bleed-through) so scrolling settings never show through the buttons."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Opaque tab navigation</strong> — main config tabs (General, Theme, Pages, …) sit on the same solid chrome; classic layout negative margins align the bar with panel edges."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Modern/glass action bar</strong> — config header chrome matches the opaque treatment instead of semi-transparent glass over scrolling content."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Scoped box model</strong> — removed the global <code>* { margin: 0; padding: 0 }</code> reset from config CSS; box-sizing is scoped to <code>#config-main</code> so portaled overlays keep their spacing."
+        }
+      ]
+    },
+    {
+      "title": "Theme & auto dark mode",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Theme drift fixed</strong> — auto dark mode no longer overwrites your saved theme id in settings; <code>VisualSettings.resolveTheme()</code> and <code>ThemeLoader.resolveDisplayTheme()</code> compute the display variant while the stored palette stays stable."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unified apply path</strong> — dashboard, config, health, and <code>page-layout-sync</code> share <code>VisualSettings.applyAutoDarkMode()</code> / <code>applyDisplayTheme()</code>; Auto background presets follow the resolved display theme."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config FOUC guard</strong> — <code>data-auto-dark-mode</code> on the config <code>&lt;html&gt;</code> element; <code>theme-loader.js</code> and <code>visual-settings.js</code> load early on config/health."
+        }
+      ]
+    },
+    {
+      "title": "General config UX",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Phone vs tablet config</strong> — only phones (≤768px) get the reduced General + Help layout; portrait tablets and wider touch viewports keep full config tabs, Essentials/Advanced layers, and guided tours."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Mobile panel order</strong> — on phone, General panels reorder to language → theme → layout for a clearer top-to-bottom flow."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Sticky layer chrome</strong> — in <strong>Advanced</strong> and <strong>All</strong>, the Essentials/Advanced toolbar and section nav stay pinned while scrolling long General pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Advanced nav wrapping</strong> — section links wrap to multiple lines instead of forcing horizontal scroll; labels renamed to <em>Fine-tuning</em> and <em>Display options</em> where clearer."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Show all grouping</strong> — <strong>All</strong> mode inserts an <em>Advanced sections</em> divider between Essentials and Advanced nav links; nav filters to the active layer in Essentials/Advanced."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>URL ↔ layer sync</strong> — <code>syncLayerFromUrlOrStorage()</code> restores the saved Essentials/Advanced/All layer on load; bare <code>#general</code> no longer forces Essentials when you had Advanced stored."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Mobile hash guard</strong> — deep links like <code>#general/advanced/status</code> scroll only to phone-visible panels instead of switching layers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reset panel guard</strong> — the destructive Reset card no longer auto-expands when you jump to it from the section nav."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmark checks link</strong> — Essentials status <strong>Bookmark checks →</strong> respects unsaved-changes confirm before switching to the Bookmarks tab."
+        }
+      ]
+    },
+    {
+      "title": "Accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Layer toggle semantics</strong> — Essentials/Advanced/Show all use <code>role=\"group\"</code> with <code>aria-pressed</code> instead of incomplete tab roles; layer switch has visible <code>:focus-visible</code> rings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Section nav state</strong> — active jump links set <code>aria-current=\"location\"</code> as you scroll."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Collapsible panels</strong> — panel headers expose <code>aria-controls</code> on a dedicated <code>.general-card-body</code> wrapper for screen readers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collections master</strong> — the master checkbox sets <code>aria-checked=\"mixed\"</code> when some (not all) collection toggles are on."
+        }
+      ]
+    },
+    {
+      "title": "Settings search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Search index on translate</strong> — <code>applyTranslations()</code> debounces <code>refreshIndex()</code> (120 ms) so settings search picks up relabelled UI without a full language reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layer switch index</strong> — debounced rebuild when Essentials/Advanced/All changes; <code>syncMobileLayout({ rebuildIndex: false })</code> avoids duplicate builds during translation passes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Phone search scope</strong> — mobile settings search uses <code>isPhoneLayout()</code> (≤768px) so tablet-width config keeps the desktop search index."
+        }
+      ]
+    },
+    {
+      "title": "Help, docs & developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help &amp; manual</strong> — Config → General help, README, and MANUAL document opaque chrome, phone vs tablet config, theme sync, and nav wrapping."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v83</code> (<code>2026.06-dashboard-release-v67</code>); <code>config-save-bar.css?v=config-tabs-solid-1</code>; <code>theme-sync-1</code> on <code>theme-loader.js</code> / <code>visual-settings.js</code>; <code>search-index-refresh-1</code> on settings search and language bundles; prior <code>whats-new-v82</code> and config layer bundles retained."
+        }
+      ]
+    }
+  ]
+}

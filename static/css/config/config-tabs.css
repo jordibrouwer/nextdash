@@ -41,6 +41,7 @@
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
     scroll-behavior: smooth;
+    background-color: var(--background-secondary);
 }
 
 .config-controls-wrapper .tabs::-webkit-scrollbar {

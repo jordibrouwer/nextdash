@@ -17,11 +17,12 @@ body[data-layout-version="modern"] {
 /* ─── Page chrome (sticky header area) ────────────────────────────────────── */
 
 body[data-layout-version="modern"] .config-actions-top {
-    background: var(--layout-surface);
+    background-color: var(--background-secondary);
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
     padding: 0.85rem 1rem;
+    margin: 0;
 }
 
 body[data-layout-version="modern"] .config-controls-wrapper {

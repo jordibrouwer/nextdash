@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.20**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.21**.
 
 ---
 
@@ -149,7 +149,9 @@ Tours, rotating tips, discoverability promos, and promo banners do not run on th
 
 #### Config → General (for self-hosters)
 
-**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. Sticky section links jump and highlight as you scroll; **Show all sections on one page** flattens everything with **Expand all** / **Collapse all**. Hash links (`#general/advanced/…`) restore layer and open collapsed panels.
+**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. Sticky section links jump and highlight as you scroll; in **Advanced** and **All**, the layer toolbar and nav stay pinned. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all** and an *Advanced sections* divider in the nav. Hash links (`#general/advanced/…`) restore layer and open collapsed panels. Save row and main tab bar use a solid background so scrolling content does not show through.
+
+**Phone vs tablet** — Only phones (≤768px width) limit config to **General** + **Help** with language, theme, and layout panels. Portrait tablets and wider touch layouts keep the full config, Essentials/Advanced layers, and guided tours.
 
 **↺ Reset** — per-control reset buttons beside many General fields restore defaults (marks dirty until **Save**). Advanced **Reset to defaults** card requires expanding before the destructive button is enabled.
 
@@ -198,7 +200,7 @@ Dynamic bookmark groups that appear automatically:
 
 - 37+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink)
 - Custom theme editor (`config#colors`) — dark/light default palettes, **packaged themes** subtab (edit built-in families), custom theme list with **export/import** and **undo**; live preview on palette cards with contrast warnings; optional **Theme** tab guided tour; on mobile the editor is read-only (viewer mode)
-- Auto dark mode
+- Auto dark mode — follows system light/dark without overwriting your saved theme palette id
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`

@@ -399,21 +399,21 @@
     width: 100%;
 }
 
-body[data-mobile-layout="true"] .config-breadcrumb-row .config-settings-search-anchor {
+body[data-phone-layout="true"] .config-breadcrumb-row .config-settings-search-anchor {
     display: none;
 }
 
-body[data-mobile-layout="true"] .config-settings-search.config-settings-search--mobile {
+body[data-phone-layout="true"] .config-settings-search.config-settings-search--mobile {
     display: block;
     width: 100%;
 }
 
-body[data-mobile-layout="true"] .config-breadcrumb-row {
+body[data-phone-layout="true"] .config-breadcrumb-row {
     flex-wrap: wrap;
     gap: 0.35rem;
 }
 
-body[data-mobile-layout="true"] .config-settings-search--mobile .config-settings-search-input {
+body[data-phone-layout="true"] .config-settings-search--mobile .config-settings-search-input {
     min-height: 44px;
     font-size: 1rem;
 }

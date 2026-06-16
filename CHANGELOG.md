@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.21 — June 2026](#v20260621--june-2026)
 - [v2026.06.20 — June 2026](#v20260620--june-2026)
 - [v2026.06.19 — June 2026](#v20260619--june-2026)
 - [v2026.06.17 — June 2026](#v20260617--june-2026)
@@ -46,6 +47,55 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.21 — June 2026
+
+**Config chrome polish, theme drift fix, General UX/a11y/mobile** — opaque save bar and tab navigation; sticky layer toolbar in Advanced/All; advanced nav wrapping and Show-all grouping; phone-only reduced config (tablets keep full tabs); auto dark mode no longer overwrites saved theme; debounced settings-search index refresh; collapsible panel a11y; URL ↔ layer sync.
+
+### Config chrome & readability
+
+- **fix** **Opaque save bar** — header save row and sticky bottom save bar use solid `--background-secondary` (no blur bleed-through) so scrolling settings never show through the buttons.
+- **fix** **Opaque tab navigation** — main config tabs sit on the same solid chrome; classic layout negative margins align the bar with panel edges (`config-save-bar.css` linked directly for cache bust).
+- **fix** **Modern/glass action bar** — config header chrome matches the opaque treatment instead of semi-transparent glass over scrolling content.
+- **fix** **Scoped box model** — removed global `* { margin: 0; padding: 0 }` from config CSS; box-sizing scoped to `#config-main` so portaled overlays keep their spacing.
+
+### Theme & auto dark mode
+
+- **fix** **Theme drift fixed** — auto dark mode no longer overwrites the saved theme id in settings; `VisualSettings.resolveTheme()` and `ThemeLoader.resolveDisplayTheme()` compute the display variant while the stored palette stays stable.
+- **fix** **Unified apply path** — dashboard, config, health, and `page-layout-sync` share `VisualSettings.applyAutoDarkMode()` / `applyDisplayTheme()`; Auto background presets follow the resolved display theme.
+- **fix** **Config FOUC guard** — `data-auto-dark-mode` on config `<html>`; `theme-loader.js` and `visual-settings.js` load early on config/health.
+
+### General config UX
+
+- **new** **Phone vs tablet config** — only phones (≤768px) get the reduced General + Help layout; portrait tablets and wider touch viewports keep full config tabs, Essentials/Advanced layers, and guided tours (`isPhoneLayout()` vs `isMobileLayout()`).
+- **fix** **Mobile panel order** — on phone, General panels reorder to language → theme → layout.
+- **fix** **Sticky layer chrome** — in Advanced and All, the Essentials/Advanced toolbar and section nav stay pinned while scrolling long General pages (`general-config-chrome`).
+- **fix** **Advanced nav wrapping** — section links wrap instead of horizontal scroll; nav labels renamed to *Fine-tuning* and *Display options* where clearer (EN/NL/DE/FR).
+- **new** **Show all grouping** — All mode inserts an *Advanced sections* divider between Essentials and Advanced nav links; nav filters to the active layer in Essentials/Advanced (`data-nav-tier`).
+- **fix** **URL ↔ layer sync** — `syncLayerFromUrlOrStorage()` restores the saved layer on load; bare `#general` no longer forces Essentials when Advanced was stored.
+- **fix** **Mobile hash guard** — deep links scroll only to phone-visible panels instead of switching layers.
+- **fix** **Reset panel guard** — destructive Reset card no longer auto-expands when jumped to from section nav.
+- **fix** **Bookmark checks link** — Essentials status **Bookmark checks →** respects unsaved-changes confirm before switching to Bookmarks tab.
+
+### Accessibility
+
+- **fix** **Layer toggle semantics** — Essentials/Advanced/Show all use `role="group"` with `aria-pressed`; layer switch has visible `:focus-visible` rings.
+- **fix** **Section nav state** — active jump links set `aria-current="location"` as you scroll.
+- **fix** **Collapsible panels** — panel headers expose `aria-controls` on `.general-card-body` wrappers.
+- **fix** **Smart collections master** — master checkbox sets `aria-checked="mixed"` when some (not all) collection toggles are on.
+
+### Settings search
+
+- **fix** **Search index on translate** — `applyTranslations()` debounces `refreshIndex()` (120 ms) so settings search picks up relabelled UI without a full language reload.
+- **fix** **Layer switch index** — debounced rebuild when Essentials/Advanced/All changes; `syncMobileLayout({ rebuildIndex: false })` avoids duplicate builds during translation passes.
+- **fix** **Phone search scope** — mobile settings search uses `isPhoneLayout()` (≤768px) so tablet-width config keeps the desktop search index.
+
+### Help, docs & developer
+
+- **fix** **Help & manual** — Config → General help, README, and MANUAL document opaque chrome, phone vs tablet config, theme sync, and nav wrapping.
+- **fix** **Cache-bust** — `whats-new-v83` (`2026.06-dashboard-release-v67`); `config-save-bar.css?v=config-tabs-solid-1`; `theme-sync-1` on `theme-loader.js` / `visual-settings.js`; `search-index-refresh-1` on settings search and language bundles; prior `whats-new-v82` and config layer bundles retained.
 
 ---
 

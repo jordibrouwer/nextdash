@@ -1,8 +1,4 @@
 /* ── General tab intro ── */
-.general-tab-intro:not([hidden]) ~ #general-layer-intro-essentials .general-layer-intro-hint {
-    display: none;
-}
-
 .general-tab-intro {
     padding: 0.85rem 1rem;
     border: 1px solid var(--border-primary);
@@ -33,11 +29,18 @@
 }
 
 
-/* Configuration Styles */
-* {
+/* Configuration Styles — box model scoped to config chrome (not portaled overlays) */
+html:has(#config-main) {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+}
+
+html:has(#config-main) #config-main,
+html:has(#config-main) #config-main *,
+html:has(#config-main) .config-section,
+html:has(#config-main) .config-section *,
+html:has(#config-main) .config-save-sticky,
+html:has(#config-main) .config-save-sticky * {
+    box-sizing: inherit;
 }
 
 body {
@@ -118,16 +121,19 @@ body {
     opacity: 0.85;
 }
 
-/* Config Actions Top */
+/* Config Actions Top — solid bar so sticky scroll does not show content through Save */
 .config-actions-top {
     display: flex;
     flex-direction: row;
     gap: 0.75rem 1.5rem;
     justify-content: flex-start;
     align-items: center;
-    padding: 1rem 0;
+    padding: 1rem;
+    margin: 0 -1rem;
     margin-bottom: 0;
-    background: transparent;
+    background-color: var(--background-secondary);
+    position: relative;
+    z-index: 1;
 }
 
 /* Header */

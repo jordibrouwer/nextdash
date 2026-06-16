@@ -680,6 +680,7 @@ class Dashboard {
                 await this.language.loadTranslations(this.settings.language);
             }
             this.applyVisualSettings();
+            this.initializeAutoDarkMode();
             this.setupDOM();
             this.updateStatusMonitor();
             await this.withRetry(() => this.loadPageBookmarks(this.currentPageId, { rethrow: true }), 2, 220);
@@ -4672,7 +4673,10 @@ class Dashboard {
 
         let presetName = '';
         if (type === 'auto') {
-            presetName = window.VisualSettings?.THEME_BACKGROUND_MAP?.[this.settings.theme || ''] || '';
+            const themeKey = window.VisualSettings?.resolveTheme?.(this.settings)
+                || this.settings.theme
+                || '';
+            presetName = window.VisualSettings?.THEME_BACKGROUND_MAP?.[themeKey] || '';
         } else if (type === 'gradient') {
             presetName = this.settings.backgroundGradient || '';
         }
@@ -4697,36 +4701,26 @@ class Dashboard {
 
     initializeAutoDarkMode() {
         if (window.VisualSettings?.applyAutoDarkMode) {
-            window.VisualSettings.applyAutoDarkMode(this.settings, (preferred) => {
-                document.body.classList.remove('dark', 'light');
-                document.body.classList.add(preferred);
-                document.documentElement.setAttribute('data-theme', preferred);
-                document.body.setAttribute('data-theme', preferred);
+            window.VisualSettings.applyAutoDarkMode(this.settings, () => {
                 this.applyBackground();
             });
             return;
         }
 
-        const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-        const applyPreferredTheme = () => {
-            if (!this.settings.autoDarkMode || !media) {
-                return;
-            }
-            const preferred = this.getPairedThemeVariant(this.settings.theme || 'dark', media.matches);
-            document.body.classList.remove('dark', 'light');
-            document.body.classList.add(preferred);
-            document.documentElement.setAttribute('data-theme', preferred);
-            document.body.setAttribute('data-theme', preferred);
-            this.settings.theme = preferred;
-            this.applyBackground();
-        };
-
-        applyPreferredTheme();
-
-        if (media && typeof media.addEventListener === 'function' && !this._autoDarkModeListenerAttached) {
-            media.addEventListener('change', applyPreferredTheme);
-            this._autoDarkModeListenerAttached = true;
+        const displayTheme = window.ThemeLoader?.getPairedThemeVariant
+            ? window.ThemeLoader.getPairedThemeVariant(
+                this.settings.theme || 'dark',
+                window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
+            )
+            : (this.settings.theme || 'dark');
+        if (window.ThemeLoader?.applyTheme) {
+            window.ThemeLoader.applyTheme(
+                displayTheme,
+                this.settings.showBackgroundDots !== false,
+                this.settings.fontSize || 'm'
+            );
         }
+        this.applyBackground();
     }
 
     getPairedThemeVariant(themeId, wantsDark) {

@@ -11,13 +11,18 @@
     const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
     const DEVICE_SUGGEST_KEY = 'nextdash-mobile-device-suggest-done';
 
+    function isPhoneLayout() {
+        return typeof window.matchMedia === 'function'
+            && window.matchMedia('(max-width: 768px)').matches;
+    }
+
     function isPortraitTablet() {
         return window.matchMedia('(max-width: 991px) and (orientation: portrait)').matches;
     }
 
     function isMobileLayout() {
         if (typeof window.matchMedia !== 'function') return false;
-        if (window.matchMedia('(max-width: 768px)').matches) return true;
+        if (isPhoneLayout()) return true;
         if (isPortraitTablet()) return true;
         if (
             window.matchMedia('(hover: none) and (pointer: coarse)').matches
@@ -139,15 +144,18 @@
     }
 
     function applyBodyFlag() {
+        const phone = isPhoneLayout();
         const on = isMobileLayout();
+        document.body.dataset.phoneLayout = phone ? 'true' : 'false';
         document.body.dataset.mobileLayout = on ? 'true' : 'false';
         document.body.dataset.mobileHidePreviews = on ? 'true' : 'false';
         document.documentElement.classList.toggle('mobile-layout-active', on);
+        document.documentElement.classList.toggle('phone-layout-active', phone);
         return on;
     }
 
     function applyConfigTabGuard() {
-        if (!isMobileLayout()) return;
+        if (!isPhoneLayout()) return;
         const hash = (window.location.hash || '').replace(/^#/, '');
         if (!hash) return;
         let tab = hash.split('/')[0];
@@ -161,14 +169,22 @@
     }
 
     function applyConfigGeneralPanels(layers) {
-        if (!isMobileLayout() || !layers?.root) return;
+        if (!isPhoneLayout() || !layers?.root) return;
         layers.applyLayer('essentials', { updateHash: false });
         layers.root.querySelectorAll('[data-general-panel]').forEach((card) => {
             const id = card.getAttribute('data-general-panel');
             card.dataset.mobilePanelHidden = MOBILE_GENERAL_PANELS.includes(id) ? 'false' : 'true';
         });
         const themePanel = layers.root.querySelector('[data-general-panel="basics-core"]');
-        if (themePanel) {
+        const mobileOrder = ['localization', 'basics-core', 'layout'];
+        const mobileFrag = document.createDocumentFragment();
+        mobileOrder.forEach((id) => {
+            const el = layers.root.querySelector(`[data-general-panel="${id}"]`);
+            if (el) mobileFrag.appendChild(el);
+        });
+        if (mobileFrag.childNodes.length) {
+            layers.root.prepend(mobileFrag);
+        } else if (themePanel) {
             layers.root.prepend(themePanel);
         }
         const toolbar = document.getElementById('general-layer-toolbar');
@@ -262,14 +278,16 @@
 
     function onLayoutChange() {
         const wasMobile = document.body.dataset.mobileLayout === 'true';
+        const wasPhone = document.body.dataset.phoneLayout === 'true';
         const nowMobile = applyBodyFlag();
+        const nowPhone = isPhoneLayout();
         syncBannersForLayout();
         syncDashboardColumnLayout();
 
         if (window.configManager?.generalLayers) {
-            if (nowMobile) {
+            if (nowPhone) {
                 applyConfigGeneralPanels(window.configManager.generalLayers);
-            } else if (wasMobile && !nowMobile) {
+            } else if (wasPhone) {
                 clearConfigGeneralPanels(window.configManager.generalLayers);
                 const gl = window.configManager.generalLayers;
                 gl.applyLayer(gl.getStoredLayer(), { updateHash: false });
@@ -278,10 +296,13 @@
 
         window.configManager?.colorsEditor?.applyReadonlyMode?.();
 
-        if (nowMobile) {
+        if (nowPhone) {
             applyConfigTabGuard();
-            window.ConfigSettingsSearch?.syncMobileLayout?.();
-        } else if (wasMobile && window.configManager) {
+        }
+        window.ConfigSettingsSearch?.relocateForLayout?.();
+        window.ConfigSettingsSearch?.syncMobileLayout?.();
+
+        if (!nowMobile && wasMobile && window.configManager) {
             window.ConfigSettingsSearch?.init?.(window.configManager.language);
             window.ConfigSettingsSearch?.schedulePromoWhenIdle?.();
         }
@@ -329,6 +350,7 @@
         MOBILE_CONFIG_TABS,
         MOBILE_GENERAL_PANELS,
         isMobileLayout,
+        isPhoneLayout,
         isPortraitTablet,
         shouldSkipHeavyUi() {
             // Interactive tours / multi-step wizards on desktop-width layouts only.

@@ -177,7 +177,9 @@ class ConfigManager {
             this.generalLayers = new ConfigGeneralLayers();
             this.generalLayers.init();
             this.language.applyTranslations();
-            this.generalLayers.applyHash(window.location.hash);
+            this.generalLayers.syncLayerFromUrlOrStorage();
+            window.ConfigSettingsSearch?.relocateForLayout?.();
+            window.ConfigSettingsSearch?.syncMobileLayout?.();
             this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
             this.settings?.updateStatusOptionsVisibility?.(this.settingsData.showStatus);
             this.setupCascadingCheckboxes();
@@ -2929,7 +2931,7 @@ class ConfigManager {
     }
 
     setupDOM() {
-        this.settings.applyTheme(this.settingsData.theme);
+        this.settings.applyAutoDarkMode(this.settingsData.autoDarkMode, this.settingsData);
         this.settings.applyFontSize(this.settingsData.fontSize);
         this.settings.applyBackgroundDots(this.settingsData.showBackgroundDots);
         this.settings.applyAnimations(this.settingsData.animationsEnabled);
@@ -2957,7 +2959,6 @@ class ConfigManager {
         if (window.DashboardFont) {
             window.DashboardFont.applyMainFont(this.settingsData);
         }
-        this.settings.applyAutoDarkMode(this.settingsData.autoDarkMode, this.settingsData);
     }
 
     async setupEventListeners() {
@@ -2967,9 +2968,10 @@ class ConfigManager {
         // Setup settings listeners with callbacks
         await this.settings.setupListeners(this.settingsData, {
             onThemeChange: async (theme) => {
-                this.settings.applyTheme(theme);
+                const displayTheme = window.VisualSettings?.resolveTheme?.(this.settingsData) || theme;
+                this.settings.applyTheme(displayTheme);
                 this.settings.reloadThemeCSS();
-                this.settings.updateAutoPreview(theme);
+                this.settings.updateAutoPreview(displayTheme);
                 this.settings.applyBackground(this.settingsData);
                 try { this.initThemeIconStylingControls(); } catch (e) {}
                 await this.autosaveThemeSelection(theme);
@@ -4947,6 +4949,21 @@ class ConfigManager {
         const syncTitleA11y = (card, title) => {
             const expanded = !card.classList.contains('is-collapsed');
             title.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            const panelId = card.getAttribute('data-general-panel');
+            if (panelId) {
+                title.setAttribute('aria-controls', `general-panel-body-${panelId}`);
+            }
+        };
+
+        const ensureGeneralCardBody = (card, title, panelId) => {
+            if (!panelId || card.querySelector('.general-card-body')) return;
+            const body = document.createElement('div');
+            body.className = 'general-card-body';
+            body.id = `general-panel-body-${panelId}`;
+            while (title.nextElementSibling) {
+                body.appendChild(title.nextElementSibling);
+            }
+            title.after(body);
         };
 
         this.refreshGeneralPanelExpandState = () => {
@@ -5000,6 +5017,9 @@ class ConfigManager {
             title.setAttribute('role', 'button');
             title.setAttribute('tabindex', '0');
             const panelId = card.getAttribute('data-general-panel');
+            if (panelId) {
+                ensureGeneralCardBody(card, title, panelId);
+            }
             if (panelId) {
                 const alwaysCollapsed = panelId === 'reset';
                 const tier = card.dataset.configTier || 'advanced';

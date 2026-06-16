@@ -13,7 +13,7 @@
     display: inline-flex;
     border: 1px solid var(--border-primary);
     border-radius: 4px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .general-layer-btn {
@@ -26,6 +26,13 @@
     padding: 0.35rem 0.75rem;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
+    position: relative;
+}
+
+.general-layer-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    z-index: 1;
 }
 
 .general-layer-btn + .general-layer-btn {
@@ -91,14 +98,36 @@ body.config-is-dirty .general-layout {
     scroll-margin-top: 5rem;
 }
 
+/* Sticky layer toolbar + section nav while scrolling long General pages */
+[data-general-layer="advanced"] .general-config-chrome,
+[data-general-layer="all"] .general-config-chrome {
+    position: sticky;
+    top: var(--config-general-nav-sticky-top, 3.25rem);
+    z-index: 6;
+    margin: 0 0 0.65rem;
+    padding-bottom: 0.15rem;
+    background-color: var(--background-primary);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+
+[data-general-layer="advanced"] .general-config-chrome .general-advanced-nav-wrap,
+[data-general-layer="all"] .general-config-chrome .general-advanced-nav-wrap {
+    position: static;
+    top: auto;
+    margin-bottom: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
+    box-shadow: none;
+}
+
 .general-advanced-nav-wrap {
     position: sticky;
     top: var(--config-general-nav-sticky-top, 3.25rem);
     z-index: 6;
     margin: 0 0 0.65rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
+    overflow-x: visible;
     background: color-mix(in srgb, var(--background-primary) 92%, transparent);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--border-primary);
@@ -106,10 +135,10 @@ body.config-is-dirty .general-layout {
 
 .general-advanced-nav {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.35rem 0.5rem;
-    width: max-content;
-    min-width: 100%;
+    width: 100%;
     padding: 0.4rem 0;
 }
 
@@ -120,8 +149,7 @@ body.config-is-dirty .general-layout {
     padding: 0.2rem 0.45rem;
     border-radius: 3px;
     border: 1px solid transparent;
-    scroll-snap-align: start;
-    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .general-advanced-nav a:hover {
@@ -133,6 +161,20 @@ body.config-is-dirty .general-layout {
     color: var(--accent-primary);
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.general-advanced-nav-divider {
+    flex: 0 0 100%;
+    width: 100%;
+    margin: 0.2rem 0 0.05rem;
+    padding: 0.35rem 0 0.1rem;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 50%, transparent);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
 }
 
 .general-panels-bulk-actions {
@@ -176,14 +218,14 @@ body.config-is-dirty .general-layout {
     display: none !important;
 }
 
-body[data-mobile-layout="true"] .general-tab-intro,
-body[data-mobile-layout="true"] #general-layer-intro-essentials,
-body[data-mobile-layout="true"] #general-layer-intro-advanced,
-body[data-mobile-layout="true"] #general-layer-intro-all {
+body[data-phone-layout="true"] .general-tab-intro,
+body[data-phone-layout="true"] #general-layer-intro-essentials,
+body[data-phone-layout="true"] #general-layer-intro-advanced,
+body[data-phone-layout="true"] #general-layer-intro-all {
     display: none !important;
 }
 
-body[data-mobile-layout="true"] .general-mobile-intro {
+body[data-phone-layout="true"] .general-mobile-intro {
     display: block !important;
 }
 

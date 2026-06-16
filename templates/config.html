@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Configuration</title>
     <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
-    <script src="/static/js/theme-loader.js"></script>
+    <script src="/static/js/theme-loader.js?v=theme-sync-1"></script>
+    <script src="/static/js/visual-settings.js?v=theme-sync-1"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
@@ -16,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-bg-dots-2">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-scoped-reset-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v3">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
@@ -37,12 +38,12 @@
     <link rel="stylesheet" href="/static/css/font-size.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
-    <link rel="stylesheet" href="/static/css/config-save-sticky.css">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layers-v2">
-    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-promo-v9">
+    <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layer-focus-1">
+    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-phone-1">
     <link rel="stylesheet" href="/static/css/colors.css?v=colors-preview-v2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
-    <link rel="stylesheet" href="/static/css/mobile-experience.css">
+    <link rel="stylesheet" href="/static/css/mobile-experience.css?v=phone-layout-1">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-bg-dots-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
@@ -51,6 +52,7 @@
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-tabs-solid-1">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
@@ -146,14 +148,15 @@
                 <div class="general-tab-intro">
                     <p data-i18n="config.generalTabIntro">Dashboard-wide settings. Click Save to apply; the dashboard updates without a full reload.</p>
                 </div>
-                <p id="general-layer-intro-mobile" class="general-layer-intro general-mobile-intro" hidden data-i18n="config.generalMobileIntro">Core settings for this device: language, theme, and layout. Open config on a wider screen for bookmarks, smart collections, and more.</p>
+                <p id="general-layer-intro-mobile" class="general-layer-intro general-mobile-intro" hidden data-i18n="config.generalMobileIntro">On this screen: language, theme, and layout only. Open config on a wider display for bookmarks, smart collections, and the rest.</p>
                 <div id="general-mobile-settings-search-host" class="general-mobile-settings-search-host" hidden></div>
-                <div id="general-layer-toolbar" class="general-layer-toolbar" role="tablist" data-i18n-aria="config.generalLayerToolbarAria">
-                    <div class="general-layer-switch">
-                        <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" role="tab" aria-selected="true" data-i18n="config.generalLayerEssentials">Essentials</button>
-                        <button type="button" class="general-layer-btn" data-general-layer="advanced" role="tab" aria-selected="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
+                <div class="general-config-chrome" id="general-config-chrome">
+                <div id="general-layer-toolbar" class="general-layer-toolbar" role="group" data-i18n-aria="config.generalLayerToolbarAria">
+                    <div class="general-layer-switch" role="group" data-i18n-aria="config.generalLayerSwitchAria">
+                        <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" aria-pressed="true" data-i18n="config.generalLayerEssentials">Essentials</button>
+                        <button type="button" class="general-layer-btn" data-general-layer="advanced" aria-pressed="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
                     </div>
-                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" role="tab" aria-selected="false" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
+                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" aria-pressed="false" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
                 </div>
                 <div id="general-panels-bulk-actions" class="general-panels-bulk-actions" hidden>
                     <button type="button" id="general-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
@@ -171,22 +174,23 @@
                 </p>
                 <div class="general-advanced-nav-wrap" id="general-advanced-nav-wrap" hidden>
                 <nav id="general-advanced-nav" class="general-advanced-nav" data-i18n-aria="config.advancedNavAria">
-                    <a href="#" data-advanced-nav="localization" data-i18n="config.advancedNavLocalization">Localization</a>
-                    <a href="#" data-advanced-nav="basics-core" data-i18n="config.advancedNavAppearanceEssentials">Appearance</a>
-                    <a href="#" data-advanced-nav="layout" data-i18n="config.advancedNavLayout">Layout</a>
-                    <a href="#" data-advanced-nav="bookmarks-essentials" data-i18n="config.advancedNavBookmarksEssentials">Bookmarks</a>
-                    <a href="#" data-advanced-nav="smart-collections-summary" data-i18n="config.advancedNavSmartOverview">Smart (overview)</a>
-                    <a href="#" data-advanced-nav="status-essentials-summary" data-i18n="config.statusEssentialsTitle">Status monitoring</a>
-                    <a href="#" data-advanced-nav="search-buttons" data-i18n="config.advancedNavHeaderButtons">Header &amp; buttons</a>
-                    <a href="#" data-advanced-nav="appearance-advanced" data-i18n="config.advancedNavAppearance">Appearance (advanced)</a>
-                    <a href="#" data-advanced-nav="bookmarks-display" data-i18n="config.advancedNavBookmarks">Bookmarks (advanced)</a>
-                    <a href="#" data-advanced-nav="smart-collections" data-i18n="config.advancedNavSmartSettings">Smart (settings)</a>
-                    <a href="#" data-advanced-nav="status" data-i18n="config.advancedNavStatus">Status</a>
-                    <a href="#" data-advanced-nav="branding" data-i18n="config.advancedNavBranding">Branding</a>
-                    <a href="#" data-advanced-nav="search-input" data-i18n="config.advancedNavSearch">Search</a>
-                    <a href="#" data-advanced-nav="system-tools" data-i18n="config.advancedNavSystem">System</a>
-                    <a href="#" data-advanced-nav="reset" data-i18n="config.advancedNavReset">Reset</a>
+                    <a href="#" data-advanced-nav="localization" data-nav-tier="essentials" data-i18n="config.advancedNavLocalization">Localization</a>
+                    <a href="#" data-advanced-nav="basics-core" data-nav-tier="essentials" data-i18n="config.advancedNavAppearanceEssentials">Appearance</a>
+                    <a href="#" data-advanced-nav="layout" data-nav-tier="essentials" data-i18n="config.advancedNavLayout">Layout</a>
+                    <a href="#" data-advanced-nav="bookmarks-essentials" data-nav-tier="essentials" data-i18n="config.advancedNavBookmarksEssentials">Bookmarks</a>
+                    <a href="#" data-advanced-nav="smart-collections-summary" data-nav-tier="essentials" data-i18n="config.advancedNavSmartOverview">Smart (overview)</a>
+                    <a href="#" data-advanced-nav="status-essentials-summary" data-nav-tier="essentials" data-i18n="config.statusEssentialsTitle">Status monitoring</a>
+                    <a href="#" data-advanced-nav="search-buttons" data-nav-tier="essentials" data-i18n="config.advancedNavHeaderButtons">Header &amp; buttons</a>
+                    <a href="#" data-advanced-nav="appearance-advanced" data-nav-tier="advanced" data-i18n="config.advancedNavAppearance">Appearance (advanced)</a>
+                    <a href="#" data-advanced-nav="bookmarks-display" data-nav-tier="advanced" data-i18n="config.advancedNavBookmarks">Bookmarks (advanced)</a>
+                    <a href="#" data-advanced-nav="smart-collections" data-nav-tier="advanced" data-i18n="config.advancedNavSmartSettings">Smart (settings)</a>
+                    <a href="#" data-advanced-nav="status" data-nav-tier="advanced" data-i18n="config.advancedNavStatus">Status</a>
+                    <a href="#" data-advanced-nav="branding" data-nav-tier="advanced" data-i18n="config.advancedNavBranding">Branding</a>
+                    <a href="#" data-advanced-nav="search-input" data-nav-tier="advanced" data-i18n="config.advancedNavSearch">Search</a>
+                    <a href="#" data-advanced-nav="system-tools" data-nav-tier="advanced" data-i18n="config.advancedNavSystem">System</a>
+                    <a href="#" data-advanced-nav="reset" data-nav-tier="advanced" data-i18n="config.advancedNavReset">Reset</a>
                 </nav>
+                </div>
                 </div>
 
                 <div class="general-layout">
@@ -2303,7 +2307,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v82"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v83"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2330,8 +2334,8 @@
     <script src="/static/js/config/config-backup.js?v=backups-last-date-fix-1"></script>
     <script src="/static/js/config/config-font.js"></script>
     <script src="/static/js/config/config-settings.js"></script>
-    <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/config/config-general-layers.js?v=general-layers-v3"></script>
+    <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-phone-1"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
     <script src="/static/js/config-general-tour.js?v=general-tour-v3"></script>
@@ -2345,7 +2349,7 @@
     <script src="/static/js/config-theme-tour.js"></script>
     <script src="/static/js/config/config-help-search.js"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
-    <script src="/static/js/config/config-settings-search.js?v=settings-search-promo-v9"></script>
+    <script src="/static/js/config/config-settings-search.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>
     <script src="/static/js/config/config-setting-info.js"></script>
     <script src="/static/js/config/config-custom-themes.js"></script>
@@ -2358,12 +2362,12 @@
     <script src="/static/js/config/config-quick-add.js"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/mobile-experience.js"></script>
+    <script src="/static/js/mobile-experience.js?v=phone-layout-1"></script>
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/config.js?v=config-bg-dots-2"></script>
+    <script src="/static/js/config.js?v=config-general-phone-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

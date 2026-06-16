@@ -78,6 +78,8 @@
     };
 
     let autoDarkModeListenerAttached = false;
+    let autoDarkSettingsRef = null;
+    let autoDarkOnApply = null;
 
     function getPairedThemeVariant(themeId, wantsDark) {
         const base = String(themeId || 'dark');
@@ -92,11 +94,29 @@
     }
 
     function resolveTheme(settings) {
+        const baseTheme = settings?.theme || 'dark';
         if (!settings?.autoDarkMode || !global.matchMedia) {
-            return settings?.theme || 'dark';
+            return baseTheme;
         }
         const media = global.matchMedia('(prefers-color-scheme: dark)');
-        return getPairedThemeVariant(settings.theme || 'dark', media.matches);
+        return getPairedThemeVariant(baseTheme, media.matches);
+    }
+
+    function applyDisplayTheme(settings) {
+        const displayTheme = resolveTheme(settings);
+        const showDots = settings?.showBackgroundDots !== false;
+        const fontSize = settings?.fontSize || 'm';
+        if (global.ThemeLoader?.applyTheme) {
+            global.ThemeLoader.applyTheme(displayTheme, showDots, fontSize);
+        } else {
+            document.documentElement.setAttribute('data-theme', displayTheme);
+            if (document.body) {
+                document.body.setAttribute('data-theme', displayTheme);
+                document.body.classList.remove('dark', 'light');
+                document.body.classList.add(displayTheme);
+            }
+        }
+        return displayTheme;
     }
 
     function applyBackground(settings) {
@@ -118,7 +138,7 @@
 
         let presetName = '';
         if (type === 'auto') {
-            presetName = THEME_BACKGROUND_MAP[(settings && settings.theme) || ''] || '';
+            presetName = THEME_BACKGROUND_MAP[resolveTheme(settings)] || '';
         } else if (type === 'gradient') {
             presetName = (settings && settings.backgroundGradient) || '';
         }
@@ -168,24 +188,26 @@
         link.parentNode.replaceChild(newLink, link);
     }
 
+    function runAutoDarkApply() {
+        if (!autoDarkSettingsRef) {
+            return;
+        }
+        const displayTheme = applyDisplayTheme(autoDarkSettingsRef);
+        autoDarkOnApply?.(displayTheme, autoDarkSettingsRef);
+    }
+
     function applyAutoDarkMode(settings, onApply) {
+        autoDarkSettingsRef = settings;
+        autoDarkOnApply = onApply;
+        runAutoDarkApply();
+
         if (!settings?.autoDarkMode || !global.matchMedia) {
             return;
         }
 
-        const media = global.matchMedia('(prefers-color-scheme: dark)');
-        const apply = () => {
-            const nextTheme = getPairedThemeVariant(settings.theme || 'dark', media.matches);
-            if (settings) {
-                settings.theme = nextTheme;
-            }
-            onApply?.(nextTheme, settings);
-        };
-
-        apply();
-
-        if (!autoDarkModeListenerAttached && typeof media.addEventListener === 'function') {
-            media.addEventListener('change', apply);
+        const query = global.matchMedia('(prefers-color-scheme: dark)');
+        if (!autoDarkModeListenerAttached && typeof query.addEventListener === 'function') {
+            query.addEventListener('change', runAutoDarkApply);
             autoDarkModeListenerAttached = true;
         }
     }
@@ -195,6 +217,7 @@
         THEME_BACKGROUND_MAP,
         getPairedThemeVariant,
         resolveTheme,
+        applyDisplayTheme,
         applyBackground,
         applyBackgroundOpacity,
         applyFontWeight,

@@ -56,7 +56,7 @@
     }
 
     function isMobileGeneralSearch() {
-        return Boolean(window.MobileExperience?.isMobileLayout?.());
+        return Boolean(window.MobileExperience?.isPhoneLayout?.());
     }
 
     function isMobileIndexedPanel(panel) {
@@ -927,7 +927,7 @@
     }
 
     /** Adjust search for mobile (Essentials subset) vs desktop. */
-    function syncMobileLayout() {
+    function syncMobileLayout({ rebuildIndex = true } = {}) {
         const rootEl = document.querySelector('.config-settings-search');
         if (!rootEl) return;
         relocateForLayout();
@@ -947,14 +947,18 @@
             promoShowTimer = null;
             clearPromoAutoRetries();
             dismissPromo(false, { blockSession: false });
-            indexReady = false;
-            buildIndex();
+            if (rebuildIndex) {
+                indexReady = false;
+                buildIndex();
+            }
             return;
         }
         rootEl.classList.remove('config-settings-search--mobile');
         ensureSearchVisible(rootEl);
-        indexReady = false;
-        buildIndex();
+        if (rebuildIndex) {
+            indexReady = false;
+            buildIndex();
+        }
     }
 
     /** Re-queue promo after config finishes loading or a guided tour ends. */

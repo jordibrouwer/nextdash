@@ -44,14 +44,16 @@ body.config-is-dirty .bookmark-detail-form {
     bottom: 0;
     z-index: 800;
     padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    background-color: var(--background-secondary);
+    background-image: none;
     border-top: 1px solid var(--border-primary);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     transform: translateY(110%);
     opacity: 0;
     pointer-events: none;
     transition: transform 0.22s ease, opacity 0.22s ease;
+    isolation: isolate;
 }
 
 body.config-is-dirty .config-save-sticky.is-scroll-active {
@@ -83,7 +85,7 @@ body.config-is-dirty .config-save-sticky.is-scroll-active {
     gap: 0.5rem;
 }
 
-/* Match header save — solid surface on blurred footer */
+/* Match header save — solid surface on sticky footer */
 .config-save-sticky-actions .btn.btn-success {
     background: var(--background-primary);
 }
