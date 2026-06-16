@@ -57,6 +57,8 @@ body[data-layout-version="glass"] .config-section.section-controls .config-actio
     isolation: isolate;
     background-color: var(--background-secondary);
     background-image: none;
+    width: fit-content;
+    max-width: 100%;
 }
 
 .config-section.section-controls .tabs-scroll-wrapper::before {
@@ -103,4 +105,12 @@ body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-
         margin-inline: -0.5rem;
         padding-inline: 0.5rem;
     }
+}
+
+/* Breadcrumb, search, and tab panels share the measured main tab bar width */
+body:has(#config-main) .config-section.section-content > .container > .config-breadcrumb-row,
+body:has(#config-main) .config-section.section-content > .container > #config-main {
+    width: var(--config-chrome-content-width, 100%);
+    max-width: 100%;
+    box-sizing: border-box;
 }

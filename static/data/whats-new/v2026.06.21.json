@@ -21,6 +21,10 @@
         {
           "badge": "fix",
           "text": "<strong>Scoped box model</strong> — removed the global <code>* { margin: 0; padding: 0 }</code> reset from config CSS; box-sizing is scoped to <code>#config-main</code> so portaled overlays keep their spacing."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Chrome right-edge alignment</strong> — main tab bar background stops at the last tab (<code>help</code>); breadcrumb, settings search, and panel content share the same measured width via <code>--config-chrome-content-width</code> (<code>ResizeObserver</code> on the tab bar)."
         }
       ]
     },
@@ -121,6 +125,10 @@
         {
           "badge": "fix",
           "text": "<strong>Phone search scope</strong> — mobile settings search uses <code>isPhoneLayout()</code> (≤768px) so tablet-width config keeps the desktop search index."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search field width</strong> — settings search no longer uses a fixed <code>min-width</code> that overhangs the tab bar; it fits within the aligned chrome width."
         }
       ]
     },
@@ -133,7 +141,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v84</code> (<code>2026.06-dashboard-release-v67</code>); <code>dashboard.js?v=theme-sync-2</code>; <code>config-save-bar.css?v=config-tabs-solid-1</code>; <code>theme-sync-1</code> on <code>theme-loader.js</code> / <code>visual-settings.js</code>; <code>search-index-refresh-1</code> on settings search and language bundles; prior <code>whats-new-v83</code> and config layer bundles retained."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v84</code> (<code>2026.06-dashboard-release-v67</code>); <code>dashboard.js?v=theme-sync-2</code>; <code>config-save-bar.css?v=config-chrome-align-1</code>; <code>config.css?v=config-chrome-align-1</code>; <code>settings-search-align-1</code>; <code>theme-sync-1</code> on <code>theme-loader.js</code> / <code>visual-settings.js</code>; <code>search-index-refresh-1</code> on settings search and language bundles; prior <code>whats-new-v83</code> and config layer bundles retained."
         }
       ]
     }

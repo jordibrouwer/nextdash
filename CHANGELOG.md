@@ -52,7 +52,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.21 — June 2026
 
-**Config chrome polish, theme drift fix, General UX/a11y/mobile** — opaque save bar and tab navigation; sticky layer toolbar in Advanced/All; advanced nav wrapping and Show-all grouping; phone-only reduced config (tablets keep full tabs); auto dark mode no longer overwrites saved theme; dashboard applies resolved display theme after config save; debounced settings-search index refresh; collapsible panel a11y; URL ↔ layer sync.
+**Config chrome polish, theme drift fix, General UX/a11y/mobile** — opaque save bar and tab navigation; chrome right-edge alignment (tabs, search, panels); sticky layer toolbar in Advanced/All; advanced nav wrapping and Show-all grouping; phone-only reduced config (tablets keep full tabs); auto dark mode no longer overwrites saved theme; dashboard applies resolved display theme after config save; debounced settings-search index refresh; collapsible panel a11y; URL ↔ layer sync.
 
 ### Config chrome & readability
 
@@ -60,6 +60,7 @@ _No unreleased changes at this time._
 - **fix** **Opaque tab navigation** — main config tabs sit on the same solid chrome; classic layout negative margins align the bar with panel edges (`config-save-bar.css` linked directly for cache bust).
 - **fix** **Modern/glass action bar** — config header chrome matches the opaque treatment instead of semi-transparent glass over scrolling content.
 - **fix** **Scoped box model** — removed global `* { margin: 0; padding: 0 }` from config CSS; box-sizing scoped to `#config-main` so portaled overlays keep their spacing.
+- **fix** **Chrome right-edge alignment** — main tab bar background stops at the last tab (`help`); breadcrumb, settings search, and panel content share the same measured width via `--config-chrome-content-width` (`ResizeObserver` on the tab bar in `config-ui.js`).
 
 ### Theme & auto dark mode
 
@@ -92,11 +93,12 @@ _No unreleased changes at this time._
 - **fix** **Search index on translate** — `applyTranslations()` debounces `refreshIndex()` (120 ms) so settings search picks up relabelled UI without a full language reload.
 - **fix** **Layer switch index** — debounced rebuild when Essentials/Advanced/All changes; `syncMobileLayout({ rebuildIndex: false })` avoids duplicate builds during translation passes.
 - **fix** **Phone search scope** — mobile settings search uses `isPhoneLayout()` (≤768px) so tablet-width config keeps the desktop search index.
+- **fix** **Search field width** — settings search no longer uses a fixed `min-width` that overhangs the tab bar; it fits within the aligned chrome width.
 
 ### Help, docs & developer
 
 - **fix** **Help & manual** — Config → General help, README, and MANUAL document opaque chrome, phone vs tablet config, theme sync, and nav wrapping.
-- **fix** **Cache-bust** — `whats-new-v84` (`2026.06-dashboard-release-v67`); `dashboard.js?v=theme-sync-2`; `config-save-bar.css?v=config-tabs-solid-1`; `theme-sync-1` on `theme-loader.js` / `visual-settings.js`; `search-index-refresh-1` on settings search and language bundles; prior `whats-new-v83` and config layer bundles retained.
+- **fix** **Cache-bust** — `whats-new-v84` (`2026.06-dashboard-release-v67`); `dashboard.js?v=theme-sync-2`; `config-save-bar.css?v=config-chrome-align-1`; `config.css?v=config-chrome-align-1`; `settings-search-align-1`; `theme-sync-1` on `theme-loader.js` / `visual-settings.js`; `search-index-refresh-1` on settings search and language bundles; prior `whats-new-v83` and config layer bundles retained.
 
 ---
 

@@ -15,12 +15,13 @@
 }
 
 .config-settings-search {
-    flex: 0 0 auto;
+    flex: 0 1 min(24rem, 100%);
     margin-left: auto;
     position: relative;
-    /* Fit longest locale placeholder (e.g. "Find settings, tabs, help…") without clipping */
-    width: min(24rem, 46vw);
-    min-width: 22rem;
+    /* Fit longest locale placeholder (e.g. "Find settings, tabs, help…") within chrome width */
+    width: min(24rem, 100%);
+    min-width: 0;
+    max-width: 100%;
 }
 
 .config-settings-search-label {

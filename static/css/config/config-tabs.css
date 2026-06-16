@@ -14,6 +14,11 @@
     min-width: min-content;
 }
 
+/* Config main tabs: intrinsic width so chrome can align content to the tab bar edge */
+.config-controls-wrapper .tabs .tab-button {
+    flex: 0 0 auto;
+}
+
 /* Config tab bar: single scrollable row, never wraps */
 .tabs-scroll-wrapper {
     position: relative;
@@ -42,6 +47,8 @@
     -ms-overflow-style: none; /* IE/Edge */
     scroll-behavior: smooth;
     background-color: var(--background-secondary);
+    width: max-content;
+    max-width: 100%;
 }
 
 .config-controls-wrapper .tabs::-webkit-scrollbar {
