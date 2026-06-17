@@ -4,8 +4,9 @@
  */
 
 class ConfigBackup {
-    constructor(t) {
+    constructor(t, faviconPrefetch) {
         this.t = t; // Translation function
+        this.faviconPrefetch = faviconPrefetch || null;
         this.init();
     }
 
@@ -744,6 +745,9 @@ class ConfigBackup {
             if (typeof configManager !== 'undefined') {
                 await configManager.loadPageBookmarks(pageId);
             }
+            if (result.imported > 0 && this.faviconPrefetch) {
+                await this.faviconPrefetch.run([pageId]);
+            }
         } catch (e) {
             console.error('Browser import error:', e);
             if (configManager?.ui) configManager.ui.showNotification(this.t('config.browserImportError'), 'error');
@@ -794,6 +798,10 @@ class ConfigBackup {
                 } else {
                     configManager.ui.showNotification(this.t('config.importSuccess'), 'success');
                 }
+            }
+
+            if (this.faviconPrefetch) {
+                this.faviconPrefetch.markForZipImport();
             }
 
             setTimeout(() => {

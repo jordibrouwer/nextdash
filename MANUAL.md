@@ -860,6 +860,8 @@ Permanently deletes pages, categories, bookmarks, finders, settings, custom them
 4. Choose target **page**.  
 5. Confirm import.
 
+- After import, nextDash batch-fetches missing bookmark icons and shows a progress bar.
+
 - Folders in the HTML become **categories**.  
 - Duplicate URLs (same page + within file) are skipped using the same rules as the server.
 

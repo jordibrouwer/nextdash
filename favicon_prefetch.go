@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +12,20 @@ import (
 	"sync"
 	"time"
 )
+
+type prefetchIconsBatchResult struct {
+	Total     int  `json:"total"`
+	Remaining int  `json:"remaining"`
+	Attempted int  `json:"attempted"`
+	Applied   int  `json:"applied"`
+	Done      bool `json:"done"`
+}
+
+type pendingIconBookmark struct {
+	index  int
+	url    string
+	urlKey string
+}
 
 func deriveFaviconURL(bookmarkURL string) string {
 	bookmarkURL = strings.TrimSpace(bookmarkURL)
@@ -190,4 +205,128 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	if applied := h.store.MergePrefetchBookmarkIcons(pageID, updates); applied > 0 {
 		log.Printf("nextDash: prefetched favicons for %d default bookmarks on page %d", applied, pageID)
 	}
+}
+
+func bookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) []pendingIconBookmark {
+	var pending []pendingIconBookmark
+	for i, b := range bookmarks {
+		if strings.TrimSpace(b.Icon) != "" {
+			continue
+		}
+		urlStr := strings.TrimSpace(b.URL)
+		if urlStr == "" {
+			continue
+		}
+		if err := validateHTTPURL(urlStr, allowLocal); err != nil {
+			continue
+		}
+		pending = append(pending, pendingIconBookmark{
+			index:  i,
+			url:    urlStr,
+			urlKey: canonicalBookmarkURLKey(urlStr),
+		})
+	}
+	return pending
+}
+
+func countBookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) int {
+	return len(bookmarksNeedingIcons(bookmarks, allowLocal))
+}
+
+func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool) prefetchIconsBatchResult {
+	bookmarks := h.store.GetBookmarksByPage(pageID)
+	allowLocal := h.allowLocalBookmarks()
+	pending := bookmarksNeedingIcons(bookmarks, allowLocal)
+	total := len(pending)
+	if total == 0 {
+		return prefetchIconsBatchResult{Done: true}
+	}
+	if countOnly {
+		return prefetchIconsBatchResult{
+			Total:     total,
+			Remaining: total,
+			Done:      false,
+		}
+	}
+
+	batch := pending
+	if limit > 0 && len(batch) > limit {
+		batch = batch[:limit]
+	}
+
+	type iconResult struct {
+		index  int
+		urlKey string
+		icon   string
+	}
+
+	var wg sync.WaitGroup
+	results := make(chan iconResult, len(batch))
+	for _, item := range batch {
+		wg.Add(1)
+		go func(idx int, bookmarkURL, key string) {
+			defer wg.Done()
+			if icon := h.fetchAndStoreBookmarkIcon(bookmarkURL); icon != "" {
+				results <- iconResult{index: idx, urlKey: key, icon: icon}
+			}
+		}(item.index, item.url, item.urlKey)
+	}
+	wg.Wait()
+	close(results)
+
+	updates := make([]PrefetchIconUpdate, 0, len(batch))
+	for result := range results {
+		updates = append(updates, PrefetchIconUpdate{
+			Index:  result.index,
+			URLKey: result.urlKey,
+			Icon:   result.icon,
+		})
+	}
+
+	applied := h.store.MergePrefetchBookmarkIcons(pageID, updates)
+	remaining := countBookmarksNeedingIcons(h.store.GetBookmarksByPage(pageID), allowLocal)
+
+	return prefetchIconsBatchResult{
+		Total:     total,
+		Remaining: remaining,
+		Attempted: len(batch),
+		Applied:   applied,
+		Done:      remaining == 0 || len(batch) == 0,
+	}
+}
+
+func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var req struct {
+		PageID    int  `json:"pageId"`
+		Limit     int  `json:"limit"`
+		CountOnly bool `json:"countOnly"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if req.PageID <= 0 {
+		http.Error(w, "Invalid page ID", http.StatusBadRequest)
+		return
+	}
+
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 4
+	}
+	if limit > 8 {
+		limit = 8
+	}
+
+	result := h.prefetchBookmarkIconsBatch(req.PageID, limit, req.CountOnly)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }

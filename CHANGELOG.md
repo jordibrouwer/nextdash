@@ -77,6 +77,7 @@ _No unreleased changes at this time._
 - **new** **Stats week-over-week** — **Config → Stats → Activity** with the *week* period shows active bookmarks this week vs last week (with % change).
 - **new** **Add to home screen** — panel under **HyprMode** in Advanced with platform-specific steps and an install button when `beforeinstallprompt` is available.
 - **new** **Reset all dashboard promos** — **Tours & onboarding → Reset all dashboard promos** clears every discoverability promo via `dashboard-promo-registry.js`.
+- **new** **Import icon progress bar** — after importing browser bookmarks (or restoring a ZIP), nextDash batch-fetches missing bookmark icons and shows a progress bar.
 - **fix** **Settings defaults** — `showIcons` / `showConfigButton` semantics aligned across Go and JS; JSON migrations no longer write `false` for missing bool keys; `buttonBarPosition` server-authoritative in device merge; fresh-install defaults match Essentials visibility (`settings_defaults_test.go`).
 
 ### Health, weather & extension

@@ -73,6 +73,10 @@
           "text": "<strong>Reset all dashboard promos</strong> — <strong>Tours &amp; onboarding</strong> includes one button to clear every discoverability promo (search, G+jump, feature tips) via <code>dashboard-promo-registry.js</code>."
         },
         {
+          "badge": "new",
+          "text": "<strong>Import icon progress bar</strong> — after importing browser bookmarks (or restoring a ZIP), nextDash batch-fetches missing bookmark icons and shows a progress bar so you can see how far it got."
+        },
+        {
           "badge": "fix",
           "text": "<strong>Settings defaults</strong> — <code>showIcons</code> / <code>showConfigButton</code> semantics aligned across Go and JS; JSON migrations no longer write <code>false</code> for missing bool keys; <code>buttonBarPosition</code> stays server-authoritative; fresh-install defaults match Essentials visibility."
         }

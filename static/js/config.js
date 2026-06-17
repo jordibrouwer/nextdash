@@ -16,7 +16,8 @@ class ConfigManager {
         this.bookmarks = new ConfigBookmarks(this.language.t.bind(this.language));
         window.configBookmarks = this.bookmarks;
         this.finders = new ConfigFinders(this.language.t.bind(this.language));
-        this.backup = new ConfigBackup(this.language.t.bind(this.language));
+        this.faviconPrefetch = new ConfigFaviconPrefetch(this.language.t.bind(this.language));
+        this.backup = new ConfigBackup(this.language.t.bind(this.language), this.faviconPrefetch);
         this.settings = new ConfigSettings(this.language);
         this.stats = null;
 
@@ -241,6 +242,8 @@ class ConfigManager {
         }
 
         await this.consumeHealthPendingBookmark();
+
+        void this.faviconPrefetch.consumePendingAfterLoad();
 
         this.scheduleConfigGeneralTour();
         this.scheduleConfigBookmarksTour();

@@ -158,3 +158,59 @@
     color: var(--text-secondary);
     line-height: 1.45;
 }
+
+/* Favicon batch prefetch after import */
+.favicon-prefetch-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    backdrop-filter: blur(2px);
+}
+
+.favicon-prefetch-overlay[hidden] {
+    display: none !important;
+}
+
+.favicon-prefetch-panel {
+    width: min(22rem, 100%);
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary, var(--background-primary));
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.favicon-prefetch-title {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.favicon-prefetch-bar-track {
+    height: 0.45rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
+}
+
+.favicon-prefetch-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--accent-primary, var(--text-primary));
+    transition: width 0.2s ease;
+}
+
+.favicon-prefetch-status {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}

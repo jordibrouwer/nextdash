@@ -230,9 +230,9 @@ Dynamic bookmark groups that appear automatically:
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
 - Pin bookmarks to keep them at the top
-- Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped
+- Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped; **missing icons are batch-fetched with a progress bar**
 - Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes)
-- Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups
+- Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups; after restore, missing bookmark icons are prefetched the same way
 - Settings-only **export/import** of `settings.json` (migration-safe) from Config → Backups
 - Bookmark icons: upload, URL fetch, link-preview fetch; re-upload **overwrites** same filename
 
