@@ -157,7 +157,7 @@ type Settings struct {
 	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
 	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
 	CalendarUrl                 string                           `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
-	ButtonBarPosition           string                           `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right
+	ButtonBarPosition           string                           `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right, side-left
 	ShowDockLayoutSelector      bool                             `json:"showDockLayoutSelector"`      // Show layout selector button in side-dock
 	BackgroundOpacity           float64                          `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
 	FontWeight                  string                           `json:"fontWeight"`                  // Font weight: normal, 600, bold
@@ -1649,7 +1649,7 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"
 		}
-		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right") {
+		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left") {
 			settings.ButtonBarPosition = "bottom"
 		}
 		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {

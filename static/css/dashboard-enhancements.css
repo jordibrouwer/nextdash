@@ -47,6 +47,11 @@ kbd,
     opacity: 1;
 }
 
+/* Side rail: tooltip appears to the RIGHT of the button */
+.toolbar-kbd-tooltip--side-rail {
+    transform: translateY(-50%);
+}
+
 .toolbar-kbd-tooltip-label {
     font-size: calc(var(--font-size-controls) * 0.82);
     color: var(--text-secondary);

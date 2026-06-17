@@ -3219,8 +3219,16 @@ class Dashboard {
             tip.classList.add('is-visible');
             tip.setAttribute('aria-hidden', 'false');
             tip.dataset.for = btn.id || 'toolbar-btn';
-            tip.style.left = `${rect.left + rect.width / 2}px`;
-            tip.style.top = `${rect.top}px`;
+            const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+            if (isSideRail) {
+                tip.classList.add('toolbar-kbd-tooltip--side-rail');
+                tip.style.left = `${rect.right + 8}px`;
+                tip.style.top = `${rect.top + rect.height / 2}px`;
+            } else {
+                tip.classList.remove('toolbar-kbd-tooltip--side-rail');
+                tip.style.left = `${rect.left + rect.width / 2}px`;
+                tip.style.top = `${rect.top}px`;
+            }
         };
 
         const syncToolbarKbdTooltip = () => {

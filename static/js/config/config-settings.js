@@ -817,7 +817,7 @@ class ConfigSettings {
         const buttonBarPositionSelect = document.getElementById('button-bar-position-select');
 
         if (buttonBarPositionSelect) {
-            const validPositions = ['bottom', 'bottom-left', 'bottom-right'];
+            const validPositions = ['bottom', 'bottom-left', 'bottom-right', 'side-left'];
             buttonBarPositionSelect.value = validPositions.includes(settings.buttonBarPosition) ? settings.buttonBarPosition : 'bottom';
             buttonBarPositionSelect.addEventListener('change', () => {
                 if (callbacks.onButtonBarPositionChange) callbacks.onButtonBarPositionChange();
@@ -2038,7 +2038,7 @@ class ConfigSettings {
         if (calendarUrlInputUI) settings.calendarUrl = calendarUrlInputUI.value.trim();
         const buttonBarPositionSelectUI = document.getElementById('button-bar-position-select');
         if (buttonBarPositionSelectUI) {
-            settings.buttonBarPosition = ['bottom', 'bottom-left', 'bottom-right'].includes(buttonBarPositionSelectUI.value)
+            settings.buttonBarPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left'].includes(buttonBarPositionSelectUI.value)
                 ? buttonBarPositionSelectUI.value
                 : 'bottom';
         }

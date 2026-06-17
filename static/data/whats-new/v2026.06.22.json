@@ -1,0 +1,45 @@
+{
+  "tag": "v2026.06.22",
+  "date": "June 2026",
+  "releasedAt": "2026-06-17",
+  "sections": [
+    {
+      "title": "Side rail navigation",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Left side rail</strong> — a new optional navigation layout: a 44&thinsp;px vertical icon strip on the left edge replaces the floating bottom button bar. Select <em>Side rail (left)</em> in <strong>Config → General → Layout → Button bar position</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Button order</strong> — rail top to bottom: <code>+</code> add bookmark; spacer; <code>&gt;</code> search · <code>?</code> finders · <code>:</code> commands · <code>*</code> recent; separator; <code>/</code> tag cloud · <code>!</code> cheatsheet · <code>★</code> what's new pinned at the bottom."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Unified cell style</strong> — every rail button is a 44&thinsp;×&thinsp;44&thinsp;px square cell with no border-radius, transparent background, and a centred icon — matching the <code>★</code> what's new button. Border-top separators mark section boundaries. Hover slides the icon 2&thinsp;px right with a subtle accent tint."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tooltip placement</strong> — on side-rail, button tooltips appear to the <em>right</em> of the rail instead of above the button."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Content shift &amp; mobile fallback</strong> — the dashboard grid shifts right by 44&thinsp;px to clear the rail. On mobile (≤768&thinsp;px) the layout automatically reverts to a centred bottom bar."
+        }
+      ]
+    },
+    {
+      "title": "Help, docs & developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help &amp; manual</strong> — MANUAL and config help updated with the side rail option, button order, and tooltip placement."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v85</code> (<code>2026.06-dashboard-release-v68</code>); <code>layout-side-rail.css?v=side-rail-4</code>; <code>dashboard.js?v=side-rail-1</code>; <code>dashboard-enhancements.css?v=side-rail-1</code>."
+        }
+      ]
+    }
+  ]
+}

@@ -836,6 +836,10 @@ body[data-button-position="bottom-left"] .search-button:active {
 body.no-animations .button-container {
     transform: translateX(-50%) !important;
 }
+/* Side rail: no-animations must not re-center the rail */
+body.no-animations[data-button-position="side-left"] .button-container {
+    transform: none !important;
+}
 
 body.no-animations .shortcut-search,
 body.no-animations .search-container {

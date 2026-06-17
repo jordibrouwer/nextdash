@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.22 — June 2026](#v20260622--june-2026)
 - [v2026.06.21 — June 2026](#v20260621--june-2026)
 - [v2026.06.20 — June 2026](#v20260620--june-2026)
 - [v2026.06.19 — June 2026](#v20260619--june-2026)
@@ -47,6 +48,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.22 — June 2026
+
+**Side rail navigation** — optional 44 px vertical icon strip on the left edge; unified square cell style matching the ★ button; button order (+ → spacer → > ? : * → / ! ★); tooltips to the right; dashboard shifts right; mobile reverts to bottom bar.
+
+### Side rail navigation
+
+- **new** **Left side rail** — new optional layout: 44 px vertical icon rail on the left edge replacing the floating bottom button bar. Select *Side rail (left)* in **Config → General → Layout → Button bar position**.
+- **new** **Button order** — rail top to bottom: `+` add bookmark; spacer; `>` search · `?` finders · `:` commands · `*` recent; then `/` tag cloud · `!` cheatsheet · `★` what's new pinned at the bottom. Separator borders mark the transition to the fixed bottom section.
+- **new** **Unified cell style** — every rail button is a 44×44 px square cell: no border-radius, transparent background, icon centred, matching the ★ what's new button. Border-top separators on `/`, `!`, and `★`. Hover slides 2 px right with a subtle accent tint — same as ★ hover.
+- **new** **Tooltip placement** — side-rail tooltips appear to the *right* of the rail instead of above the button. The custom tooltip system (`setupToolbarKbdTooltips`) positions the tooltip at `rect.right + 8` with `translateY(-50%)` centering.
+- **new** **Content shift & mobile fallback** — `margin-left: 44px` on `.container` shifts the dashboard grid right to clear the rail. On mobile (≤768 px) the layout automatically reverts to a centred bottom bar.
+
+### Help, docs & developer
+
+- **fix** **Help & manual** — MANUAL and config help updated with the side rail option, button order, and tooltip placement.
+- **fix** **Cache-bust** — `whats-new-v85` (`2026.06-dashboard-release-v68`); `layout-side-rail.css?v=side-rail-4`; `dashboard.js?v=side-rail-1`; `dashboard-enhancements.css?v=side-rail-1`.
 
 ---
 

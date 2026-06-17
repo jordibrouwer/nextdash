@@ -188,6 +188,23 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 └─────────────────────────────────────────────────────────────┘
 ```
 
+Side rail layout (optional — **Config → General → Layout → Button bar position → Side rail**):
+
+```
+┌──┬────────────────────────────────────────────────────────┐
+│+ │  [header: date · health · config · pages]              │
+│──│                                                         │
+│> │  [Smart collections]  [Tag collections]  [Categories…] │
+│? │    └─ bookmark rows                                     │
+│: │                                                         │
+│* │  Rotating tips (optional)                               │
+│──│                                                         │
+│/ │                                                         │
+│! │                                                         │
+│★ │                                                         │
+└──┴────────────────────────────────────────────────────────┘
+```
+
 ### Header
 
 - **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
@@ -195,18 +212,37 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
 
-### Footer button bar
+### Button bar / side rail
+
+The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → General → Layout → Button bar position** or the `:buttonbar` command.
+
+**Bottom bar** — buttons float centred at the bottom of the viewport.
 
 | Button | Key | Role |
 |--------|-----|------|
+| `+` | `+` | Full new-bookmark modal |
+| `>` | `>` | Search |
 | `:` | `:` | Command palette |
 | `?` | `?` | Finders (external search shortcuts) |
-| `>` | `>` | Search |
 | `*` | `*` | Recent bookmarks on this page |
 | `!` | `!` / `F1` | Keyboard cheat sheet |
-| `+` | `+` | Full new-bookmark modal |
 
-Hover a button on desktop for a tooltip with shortcuts.
+**Side rail (left)** — 44×44 px square cells stacked vertically on the left edge; the dashboard grid shifts right by 44 px to clear the rail. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
+
+| Position | Button | Key | Role |
+|----------|--------|-----|------|
+| Top | `+` | `+` | Full new-bookmark modal |
+| *(spacer)* | — | — | — |
+| | `>` | `>` | Search |
+| | `?` | `?` | Finders |
+| | `:` | `:` | Command palette |
+| | `*` | `*` | Recent bookmarks |
+| *(separator)* | — | — | — |
+| | `/` | `/` | Tag cloud toggle |
+| | `!` | `!` / `F1` | Keyboard cheat sheet |
+| Bottom | `★` | — | What's new |
+
+Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail.
 
 ### Deep links from Health
 
@@ -442,7 +478,7 @@ Search **all pages**; each result shows which page it belongs to.
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
-| `:buttonbar bottom\|bottom-left\|bottom-right` | Button bar position |
+| `:buttonbar bottom\|bottom-left\|bottom-right\|side-left` | Button bar position (`side-left` = vertical rail on the left edge) |
 | `:save` / `:saved` | Save / list saved searches |
 | `:history` / `:history clear` | Search history |
 
@@ -629,11 +665,11 @@ The first time you open the **Theme** tab on a desktop-width window, a **9-step 
 ### Header and background
 
 - Optional title, background dots, gradient/image.  
-- Button bar: centre bottom or corner dock (`:buttonbar`).
+- **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar`). The side rail places all navigation buttons in a 44 px vertical strip on the left edge; the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
 
 ### What’s new
 
-**★** button (opposite the button bar) opens release notes.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes.
 
 ---
 

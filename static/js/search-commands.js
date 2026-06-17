@@ -943,6 +943,7 @@ class SearchCommandsComponent {
             { value: 'bottom',       label: 'bottom — centered (default)' },
             { value: 'bottom-right', label: 'bottom-right — corner dock' },
             { value: 'bottom-left',  label: 'bottom-left — corner dock' },
+            { value: 'side-left',    label: 'side-left — vertical rail' },
         ];
 
         const current = dashboard.settings.buttonBarPosition || 'bottom';
@@ -1243,7 +1244,7 @@ class SearchCommandsComponent {
     }
 
     applyButtonBarPosition(dashboard, position) {
-        const valid = ['bottom', 'bottom-left', 'bottom-right'];
+        const valid = ['bottom', 'bottom-left', 'bottom-right', 'side-left'];
         dashboard.settings.buttonBarPosition = valid.includes(position) ? position : 'bottom';
         if (typeof dashboard.setupDOM === 'function') {
             dashboard.setupDOM();

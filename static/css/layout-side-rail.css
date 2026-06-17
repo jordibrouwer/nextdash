@@ -1,0 +1,431 @@
+/* Side Rail navigation — body[data-button-position="side-left"]
+   Converts the bottom button bar into a 44px vertical rail on the left edge.
+   All other layouts (classic / modern / glass) are unaffected. */
+
+/* ── Variables ─────────────────────────────────────────────────────────────── */
+body[data-button-position="side-left"] {
+    --rail-width: 44px;
+    --rail-bg: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+    --rail-border: color-mix(in srgb, var(--border-primary) 45%, transparent);
+    --rail-btn-radius: 0.45rem;
+    --rail-btn-padding: 0.62rem 0;
+    --rail-sep-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
+}
+
+/* ── Rail container ─────────────────────────────────────────────────────────── */
+body[data-button-position="side-left"] .button-container {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    width: var(--rail-width);
+    max-width: var(--rail-width);
+
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+
+    /* bottom room for ★ + ! + / fixed elements */
+    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 3 + 0.3rem);
+    gap: 0;
+
+    background: var(--rail-bg);
+    border-right: 1px solid var(--rail-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    /* Above tag-cloud-wrap (1001) and toggle (1002) so rail buttons receive events */
+    z-index: 1003;
+    overflow: visible;
+    box-shadow: none;
+    border-radius: 0;
+    border-top: none;
+    border-bottom: none;
+    border-left: none;
+}
+
+/* ── Button groups: flatten into rail flex flow ──────────────────────────────── */
+body[data-button-position="side-left"] .btn-group {
+    display: contents;
+}
+
+/* ── Button order & spacers ──────────────────────────────────────────────────── */
+/* 1. add bookmark — top */
+body[data-button-position="side-left"] #quick-add-toolbar-btn   { order: 1; }
+/* spacer (one button height) before search */
+body[data-button-position="side-left"] #search-button           { order: 2; margin-top: var(--corner-fab-height, 2.75rem); }
+/* finders before commands */
+body[data-button-position="side-left"] #finders-button          { order: 3; }
+body[data-button-position="side-left"] #commands-button         { order: 4; }
+body[data-button-position="side-left"] #recent-bookmarks-button { order: 5; }
+
+/* cheatsheet: fixed directly above the what's new button */
+body[data-button-position="side-left"] #help-button {
+    position: fixed;
+    bottom: var(--corner-fab-height, 2.75rem);
+    left: 0;
+    width: var(--rail-width);
+    height: var(--corner-fab-height, 2.75rem);
+    padding: 0;
+    justify-content: center;
+    border-radius: 0;
+    border-top: 1px solid var(--rail-sep-color);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    background: transparent;
+    transform: none;
+    z-index: 1004;
+    order: unset;
+    margin-top: 0;
+}
+
+/* ── Individual buttons: same style as what's new ────────────────────────────── */
+body[data-button-position="side-left"] .search-button {
+    width: var(--rail-width);
+    height: var(--corner-fab-height, 2.75rem);
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    min-width: 0;
+    box-shadow: none;
+}
+
+body[data-button-position="side-left"] .search-button-labeled {
+    flex-direction: column;
+    min-width: 0;
+    gap: 0;
+}
+
+body[data-button-position="side-left"] .search-button-label {
+    display: none !important;
+}
+
+body[data-button-position="side-left"] .search-button:hover {
+    transform: translateX(2px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: none;
+}
+
+body[data-button-position="side-left"] .search-button:active {
+    transform: translateX(0);
+}
+
+body[data-button-position="side-left"] #help-button:hover {
+    transform: translateX(2px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: none;
+}
+
+/* ── Tooltips: show to the right of the rail ─────────────────────────────────── */
+body[data-button-position="side-left"] .search-button[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    right: auto;
+    transform: translateY(-50%);
+    white-space: nowrap;
+}
+
+/* ── Tag cloud button: above cheatsheet (which is above what's new) ──────────── */
+body[data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
+    position: fixed;
+    left: 0;
+    bottom: calc(var(--corner-fab-height, 2.75rem) * 2);
+    width: var(--rail-width);
+    height: var(--corner-fab-height, 2.75rem);
+    padding: 0;
+    justify-content: center;
+    border-radius: 0;
+    border-top: 1px solid var(--rail-sep-color);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    background: transparent;
+    transform: none;
+    z-index: 1004;
+}
+
+body[data-button-position="side-left"] .tag-cloud-toggle-btn[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    right: auto;
+    transform: translateY(-50%);
+    white-space: nowrap;
+}
+
+body[data-button-position="side-left"] .tag-cloud-toggle-btn:hover {
+    transform: translateX(2px);
+}
+
+/* ── What's new button: anchor to rail bottom ────────────────────────────────── */
+body[data-button-position="side-left"] .whats-new-btn {
+    left: 0;
+    right: auto;
+    bottom: 0;
+    width: var(--rail-width);
+    height: calc(var(--corner-fab-height, 2.75rem));
+    padding: 0;
+    justify-content: center;
+    border-radius: 0;
+    border-top: 1px solid var(--rail-sep-color);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    background: transparent;
+    z-index: 1004;
+}
+
+body[data-button-position="side-left"] .whats-new-btn:hover {
+    transform: translateX(2px);
+    box-shadow: none;
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+body[data-button-position="side-left"] .whats-new-btn[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    right: auto;
+    transform: translateY(-50%);
+}
+
+/* ── Hints: hidden in rail mode ──────────────────────────────────────────────── */
+body[data-button-position="side-left"] .button-hint,
+body[data-button-position="side-left"] .search-flow-hint {
+    display: none !important;
+}
+
+/* ── Content area: shift right to clear the rail ────────────────────────────── */
+body[data-button-position="side-left"] .container {
+    margin-left: var(--rail-width);
+}
+
+/* ── Page section: reduce bottom padding (no floating bar) ───────────────────── */
+body[data-button-position="side-left"] .dashboard-section.section-content {
+    padding-bottom: 3rem;
+}
+
+/* ── Page tabs: show only the colored dot ────────────────────────────────────── */
+body[data-button-position="side-left"] .page-nav-btn {
+    font-size: 0;
+    padding: 0.35rem 0.3rem;
+    min-width: 0;
+    border-bottom: 2px solid transparent;
+}
+
+body[data-button-position="side-left"] .page-tab-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+body[data-button-position="side-left"] .page-tab-icon {
+    display: none;
+}
+
+body[data-button-position="side-left"] .page-nav-btn.active {
+    background: transparent;
+    border-bottom-color: transparent;
+}
+
+body[data-button-position="side-left"] .page-nav-btn.active .page-tab-dot {
+    box-shadow: 0 0 0 2px var(--accent-primary);
+    width: 9px;
+    height: 9px;
+}
+
+body[data-button-position="side-left"] .page-nav-btn:hover .page-tab-dot {
+    box-shadow: 0 0 0 1px var(--border-primary);
+}
+
+/* ── Inline bookmark edit: keep rail visible ─────────────────────────────────── */
+body.bookmark-inline-edit-active[data-button-position="side-left"] .button-container {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ── Prevent no-animations from re-centering the rail ────────────────────────── */
+body.no-animations[data-button-position="side-left"] .button-container {
+    transform: none !important;
+}
+
+/* ── Modern layout overrides ─────────────────────────────────────────────────── */
+body[data-layout-version="modern"][data-button-position="side-left"] .button-container {
+    background: var(--layout-surface);
+    border-right-color: var(--layout-surface-border);
+    box-shadow: 2px 0 12px color-mix(in srgb, var(--text-primary) 8%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .search-button {
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn {
+    background: transparent;
+    border-top-color: var(--layout-surface-border);
+}
+
+/* ── Glass layout overrides ──────────────────────────────────────────────────── */
+body[data-layout-version="glass"][data-button-position="side-left"] .button-container {
+    background: var(--layout-surface);
+    border-right-color: var(--layout-surface-border);
+    box-shadow:
+        2px 0 12px color-mix(in srgb, var(--text-primary) 8%, transparent),
+        inset -1px 0 0 var(--glass-inset-highlight, color-mix(in srgb, var(--text-primary) 9%, transparent));
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"][data-button-position="side-left"] .search-button {
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-btn {
+    background: transparent;
+    border-top-color: var(--layout-surface-border);
+}
+
+/* ── Mobile: fall back to centered bottom bar ────────────────────────────────── */
+@media (max-width: 768px) {
+    body[data-button-position="side-left"] .button-container {
+        position: fixed;
+        left: 50%;
+        top: auto;
+        bottom: 2rem;
+        transform: translateX(-50%);
+        width: min(52rem, calc(100vw - 2.5rem));
+        max-width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0.7rem 0 0;
+        gap: 0;
+        background: transparent;
+        border-right: none;
+        border: 0;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* undo display:contents so groups become rows again */
+    body[data-button-position="side-left"] .btn-group {
+        display: flex;
+        flex-direction: row;
+        width: auto;
+        padding: 0;
+        gap: 0.55rem;
+    }
+
+    /* reset button ordering and spacers */
+    body[data-button-position="side-left"] #quick-add-toolbar-btn,
+    body[data-button-position="side-left"] #search-button,
+    body[data-button-position="side-left"] #finders-button,
+    body[data-button-position="side-left"] #commands-button,
+    body[data-button-position="side-left"] #recent-bookmarks-button,
+    body[data-button-position="side-left"] #help-button {
+        order: unset;
+        margin-top: 0;
+    }
+
+    /* cheatsheet: back into normal flow on mobile */
+    body[data-button-position="side-left"] #help-button {
+        position: static;
+        bottom: auto;
+        left: auto;
+        width: auto;
+        z-index: auto;
+    }
+
+    body[data-button-position="side-left"] .search-button {
+        padding: 0.62rem 0.92rem;
+        width: auto;
+        height: auto;
+        border-radius: 0.65rem;
+        border: 1px solid var(--border-primary);
+        background: var(--button-secondary-bg, var(--background-secondary));
+    }
+
+    body[data-button-position="side-left"] .search-button:hover {
+        transform: none;
+    }
+
+    body[data-button-position="side-left"] .container {
+        margin-left: 0;
+    }
+
+    body[data-button-position="side-left"] .dashboard-section.section-content {
+        padding-bottom: 8rem;
+    }
+
+    body[data-button-position="side-left"] .page-nav-btn {
+        font-size: var(--font-size-controls);
+        padding: 0.4rem 0.6rem;
+    }
+
+    body[data-button-position="side-left"] .page-tab-dot {
+        width: 0.45em;
+        height: 0.45em;
+        margin-right: 0.35em;
+    }
+
+    body[data-button-position="side-left"] .page-tab-icon {
+        display: inline;
+    }
+
+    body[data-button-position="side-left"] .page-nav-btn.active .page-tab-dot {
+        box-shadow: none;
+        width: 0.45em;
+        height: 0.45em;
+    }
+
+    body[data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
+        left: auto;
+        right: var(--corner-fab-edge, 1.5rem);
+        bottom: calc(var(--corner-fab-edge, 1.5rem) + var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem));
+        width: auto;
+        padding: 0.62rem 0.82rem;
+        margin: 0;
+        transform: none;
+    }
+
+    body[data-button-position="side-left"] .whats-new-btn {
+        left: auto;
+        right: var(--corner-fab-edge, 1.5rem);
+        bottom: var(--corner-fab-edge, 1.5rem);
+        width: auto;
+        height: auto;
+        padding: 0.62rem 0.72rem;
+        border-radius: 0.65rem;
+        border-top: 1px solid var(--border-primary);
+    }
+
+    body.no-animations[data-button-position="side-left"] .button-container {
+        transform: translateX(-50%) !important;
+    }
+}
