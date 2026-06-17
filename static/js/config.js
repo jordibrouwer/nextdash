@@ -77,7 +77,7 @@ class ConfigManager {
             enableFuzzySuggestions: false,
             fuzzySuggestionsStartWith: false,
             keepSearchOpenWhenEmpty: false,
-            showIcons: false,
+            showIcons: true,
             showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             showShortcuts: true,
@@ -3051,9 +3051,14 @@ class ConfigManager {
             },
             onButtonBarPositionChange: async () => {
                 this.settings.updateFromUI(this.settingsData);
-                await this.settings.saveSettingsToServer(this.settingsData);
+                const ok = await this.settings.saveSettingsToServer(this.settingsData);
+                if (!ok) {
+                    this.ui.showNotification(this.language.t('config.buttonBarPositionSaveError'), 'error');
+                    return;
+                }
                 this.onSettingsAutosaved();
                 this.signalDashboardSettingsUpdated('settings-updated');
+                this.ui.showNotification(this.language.t('config.buttonBarPositionSaved'), 'success');
             },
             onPackedColumnsChange: async () => {
                 this.settings.updateFromUI(this.settingsData);

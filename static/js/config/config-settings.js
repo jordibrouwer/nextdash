@@ -1298,7 +1298,7 @@ class ConfigSettings {
         // Show config button checkbox
         const showConfigButtonCheckbox = document.getElementById('show-config-button-checkbox');
         if (showConfigButtonCheckbox) {
-            showConfigButtonCheckbox.checked = settings.showConfigButton;
+            showConfigButtonCheckbox.checked = settings.showConfigButton !== false;
             showConfigButtonCheckbox.addEventListener('change', (e) => {
                 settings.showConfigButton = e.target.checked;
             });
@@ -2849,7 +2849,7 @@ class ConfigSettings {
             showPinIcon: false,
             showNoteIcon: true,
             showShortcuts: true,
-            showIcons: false,
+            showIcons: true,
             showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             globalShortcuts: true,

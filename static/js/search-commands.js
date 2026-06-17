@@ -939,11 +939,12 @@ class SearchCommandsComponent {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
 
+        const t = (key, fb) => (this.language?.t(key) && this.language.t(key) !== key ? this.language.t(key) : fb);
         const positions = [
-            { value: 'bottom',       label: 'bottom — centered (default)' },
-            { value: 'bottom-right', label: 'bottom-right — corner dock' },
-            { value: 'bottom-left',  label: 'bottom-left — corner dock' },
-            { value: 'side-left',    label: 'side-left — vertical rail' },
+            { value: 'bottom',       label: t('config.buttonBarPositionCmdBottom', 'bottom — centered (default)') },
+            { value: 'bottom-right', label: t('config.buttonBarPositionCmdBottomRight', 'bottom-right — corner dock') },
+            { value: 'bottom-left',  label: t('config.buttonBarPositionCmdBottomLeft', 'bottom-left — corner dock') },
+            { value: 'side-left',    label: t('config.buttonBarPositionCmdSideLeft', 'side-left — vertical rail') },
         ];
 
         const current = dashboard.settings.buttonBarPosition || 'bottom';
@@ -1071,7 +1072,7 @@ class SearchCommandsComponent {
 
         const stateArg = (args[0] || '').toLowerCase();
         const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
-        const enabled = dashboard.settings.showIcons === true;
+        const enabled = dashboard.settings.showIcons !== false;
 
         const actions = [];
         if (!stateArg || 'on'.startsWith(stateArg)) {

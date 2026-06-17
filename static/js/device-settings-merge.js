@@ -15,7 +15,8 @@
         'enableCustomFont',
         'customFontPath',
         'fontPreset',
-        'collections'
+        'collections',
+        'buttonBarPosition'
     ];
 
     function isDeviceSpecificEnabled() {

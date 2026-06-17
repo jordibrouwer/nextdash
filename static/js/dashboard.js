@@ -65,7 +65,7 @@ class Dashboard {
             enableFuzzySuggestions: false,
             fuzzySuggestionsStartWith: false,
             keepSearchOpenWhenEmpty: false,
-            showIcons: false,
+            showIcons: true,
             showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             sortMethod: 'order',
@@ -1794,7 +1794,7 @@ class Dashboard {
 
         document.body.setAttribute('data-show-title', this.settings.showTitle);
         document.body.setAttribute('data-show-date', this.settings.showDate);
-        document.body.setAttribute('data-show-config-button', this.settings.showConfigButton);
+        document.body.setAttribute('data-show-config-button', this.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-health-dashboard', this.settings.showHealthDashboard !== false);
         document.body.setAttribute('data-show-cheatsheet-button', this.settings.showCheatSheetButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', this.settings.showAddBookmarkButton !== false);
@@ -6740,7 +6740,7 @@ class Dashboard {
         reorderHandle.title = dragLabel;
         lead.appendChild(reorderHandle);
 
-        if (this.settings.showIcons) {
+        if (this.settings.showIcons !== false) {
             const iconSlot = document.createElement('span');
             iconSlot.className = 'bookmark-icon-slot';
             lead.appendChild(iconSlot);

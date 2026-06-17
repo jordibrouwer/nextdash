@@ -255,7 +255,7 @@ class SearchComponent {
     }
 
     buildSearchBookmarkIconHtml(match) {
-        if (!this.settings?.showIcons || match?.type !== 'bookmark') {
+        if (this.settings?.showIcons === false || match?.type !== 'bookmark') {
             return '';
         }
         const iconName = (match?.bookmark?.icon || '').trim();

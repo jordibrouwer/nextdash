@@ -387,17 +387,17 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherLocation:             "",
 			WeatherUnit:                 "celsius",
 			WeatherRefreshMinutes:       30,
-			ShowConfigButton:            false,
-			ShowHealthDashboard:         false,
+			ShowConfigButton:            true,
+			ShowHealthDashboard:         true,
 			ShowSearchButton:            true,
 			ShowAddBookmarkButton:       true,
 			ShowFindersButton:           true,
 			ShowCommandsButton:          true,
-			ShowRecentButton:            false,
+			ShowRecentButton:            true,
 			ShowTips:                    true,
 			ShowTagCloudButton:          true,
 			ShowSearchFlowBanner:        true,
-			ShowCheatSheetButton:        false,
+			ShowCheatSheetButton:        true,
 			ShowSearchButtonText:        true,
 			ShowFindersButtonText:       true,
 			ShowCommandsButtonText:      true,
@@ -527,18 +527,21 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 		return
 	}
 
-	var settings Settings
-	if err := json.Unmarshal(data, &settings); err != nil {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return
 	}
-	if settings.LinkPreviewCardsOffMigrated {
-		return
+	if migrated, ok := raw["linkPreviewCardsOffMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
 	}
 
-	settings.ShowLinkPreviewCards = false
-	settings.LinkPreviewCardsOffMigrated = true
+	raw["showLinkPreviewCards"] = json.RawMessage(`false`)
+	raw["linkPreviewCardsOffMigrated"] = json.RawMessage(`true`)
 
-	out, err := json.MarshalIndent(settings, "", "  ")
+	out, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
 		return
 	}
@@ -556,18 +559,21 @@ func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 		return
 	}
 
-	var settings Settings
-	if err := json.Unmarshal(data, &settings); err != nil {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return
 	}
-	if settings.HideEmptyCategoriesMigrated {
-		return
+	if migrated, ok := raw["hideEmptyCategoriesMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
 	}
 
-	settings.HideEmptyCategories = true
-	settings.HideEmptyCategoriesMigrated = true
+	raw["hideEmptyCategories"] = json.RawMessage(`true`)
+	raw["hideEmptyCategoriesMigrated"] = json.RawMessage(`true`)
 
-	out, err := json.MarshalIndent(settings, "", "  ")
+	out, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
 		return
 	}
@@ -1581,6 +1587,12 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showHealthDashboard"]; !ok {
 			settings.ShowHealthDashboard = true
+		}
+		if _, ok := rawSettings["showConfigButton"]; !ok {
+			settings.ShowConfigButton = true
+		}
+		if _, ok := rawSettings["showIcons"]; !ok {
+			settings.ShowIcons = true
 		}
 		if _, ok := rawSettings["showTips"]; !ok {
 			settings.ShowTips = false
