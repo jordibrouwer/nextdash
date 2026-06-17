@@ -215,40 +215,39 @@ body[data-button-position="side-left"] .dashboard-section.section-content {
     padding-bottom: 3rem;
 }
 
-/* ── Page tabs: show only the colored dot ────────────────────────────────────── */
+/* ── Page tabs: keep numbers/names visible (respect showPageNamesInTabs) ─────── */
 body[data-button-position="side-left"] .page-nav-btn {
-    font-size: 0;
-    padding: 0.35rem 0.3rem;
+    font-size: var(--font-size-controls);
+    padding: 0.4rem 0.6rem;
     min-width: 0;
-    border-bottom: 2px solid transparent;
 }
 
 body[data-button-position="side-left"] .page-tab-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin: 0;
+    width: 0.45em;
+    height: 0.45em;
+    margin-right: 0.35em;
     vertical-align: middle;
     flex-shrink: 0;
 }
 
 body[data-button-position="side-left"] .page-tab-icon {
-    display: none;
+    display: inline;
 }
 
 body[data-button-position="side-left"] .page-nav-btn.active {
-    background: transparent;
-    border-bottom-color: transparent;
+    background: var(--background-secondary);
+    border-bottom-color: var(--accent-primary);
 }
 
 body[data-button-position="side-left"] .page-nav-btn.active .page-tab-dot {
-    box-shadow: 0 0 0 2px var(--accent-primary);
-    width: 9px;
-    height: 9px;
+    box-shadow: none;
+    width: 0.45em;
+    height: 0.45em;
 }
 
 body[data-button-position="side-left"] .page-nav-btn:hover .page-tab-dot {
-    box-shadow: 0 0 0 1px var(--border-primary);
+    box-shadow: none;
 }
 
 /* ── Inline bookmark edit: keep rail visible ─────────────────────────────────── */

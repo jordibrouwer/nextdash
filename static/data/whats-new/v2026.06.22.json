@@ -25,6 +25,10 @@
         {
           "badge": "new",
           "text": "<strong>Content shift &amp; mobile fallback</strong> — the dashboard grid shifts right by 44&thinsp;px to clear the rail. On mobile (≤768&thinsp;px) the layout automatically reverts to a centred bottom bar."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page tab labels</strong> — side-rail mode no longer hides page numbers and names in the header tab bar (<code>font-size: 0</code> dots-only layout removed); icons, colour dots, and labels match the default page tabs (respects <em>Show page names in tabs</em>)."
         }
       ]
     },
@@ -37,7 +41,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v85</code> (<code>2026.06-dashboard-release-v68</code>); <code>layout-side-rail.css?v=side-rail-4</code>; <code>dashboard.js?v=side-rail-1</code>; <code>dashboard-enhancements.css?v=side-rail-1</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v85</code> (<code>2026.06-dashboard-release-v68</code>); <code>layout-side-rail.css?v=side-rail-5</code>; <code>dashboard.js?v=side-rail-1</code>; <code>dashboard-enhancements.css?v=side-rail-1</code>."
         }
       ]
     }

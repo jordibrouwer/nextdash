@@ -53,7 +53,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.22 — June 2026
 
-**Side rail navigation** — optional 44 px vertical icon strip on the left edge; unified square cell style matching the ★ button; button order (+ → spacer → > ? : * → / ! ★); tooltips to the right; dashboard shifts right; mobile reverts to bottom bar.
+**Side rail navigation** — optional 44 px vertical icon strip on the left edge; unified square cell style matching the ★ button; button order (+ → spacer → > ? : * → / ! ★); tooltips to the right; dashboard shifts right; page tab numbers/names visible in header; mobile reverts to bottom bar.
 
 ### Side rail navigation
 
@@ -62,11 +62,12 @@ _No unreleased changes at this time._
 - **new** **Unified cell style** — every rail button is a 44×44 px square cell: no border-radius, transparent background, icon centred, matching the ★ what's new button. Border-top separators on `/`, `!`, and `★`. Hover slides 2 px right with a subtle accent tint — same as ★ hover.
 - **new** **Tooltip placement** — side-rail tooltips appear to the *right* of the rail instead of above the button. The custom tooltip system (`setupToolbarKbdTooltips`) positions the tooltip at `rect.right + 8` with `translateY(-50%)` centering.
 - **new** **Content shift & mobile fallback** — `margin-left: 44px` on `.container` shifts the dashboard grid right to clear the rail. On mobile (≤768 px) the layout automatically reverts to a centred bottom bar.
+- **fix** **Page tab labels** — side-rail mode no longer hides page numbers and names in the header tab bar (`font-size: 0` dots-only layout removed); icons, colour dots, and labels match the default page tabs (respects *Show page names in tabs*).
 
 ### Help, docs & developer
 
 - **fix** **Help & manual** — MANUAL and config help updated with the side rail option, button order, and tooltip placement.
-- **fix** **Cache-bust** — `whats-new-v85` (`2026.06-dashboard-release-v68`); `layout-side-rail.css?v=side-rail-4`; `dashboard.js?v=side-rail-1`; `dashboard-enhancements.css?v=side-rail-1`.
+- **fix** **Cache-bust** — `whats-new-v85` (`2026.06-dashboard-release-v68`); `layout-side-rail.css?v=side-rail-5`; `dashboard.js?v=side-rail-1`; `dashboard-enhancements.css?v=side-rail-1`.
 
 ---
 
