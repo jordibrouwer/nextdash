@@ -237,8 +237,8 @@ The button bar can appear as a **floating bottom bar** (default) or as a **44 px
 | | `?` | `?` | Finders |
 | | `:` | `:` | Command palette |
 | | `*` | `*` | Recent bookmarks |
+| | `/` | `/` | Tag cloud (directly under recent in the rail flow) |
 | *(separator)* | — | — | — |
-| | `/` | `/` | Tag cloud toggle |
 | | `!` | `!` / `F1` | Keyboard cheat sheet |
 | Bottom | `★` | — | What's new |
 
@@ -380,6 +380,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
 | `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark |
+| `G` then `P` | Jump to first pinned bookmark on the page |
 | `GG` | Jump to very first bookmark |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Enter` / `Space` | Open selected |
@@ -398,7 +399,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 
 ### 9.4 Cheat sheet
 
-Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
+Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
 Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link).
 
@@ -434,10 +435,10 @@ Three input modes share one overlay; switch with keys or footer chips.
 
 When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on by default on desktop):
 
-- Press **`/`** on the dashboard (search closed) or click the **/** FAB to open a word cloud of all tags (size = usage).
+- Press **`/`** on the dashboard (search closed) or click the **/** button to open a word cloud of all tags (size = usage). With the **side rail**, the button sits under **\*** recent and the modal opens to the **right** of the rail, growing with tag count instead of using a fixed clipped height.
 - **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
 - **OR logic** — the dashboard shows bookmarks that have **any** of the selected tags (not all).
-- **Bulk toolbar** — when matches exist, a bar under the filter chips offers **Open all** / **Open first N**, **Copy links**, **Move**, and **Delete** for every filtered bookmark on the page.
+- **Bulk toolbar** — when matches exist, a bar under the filter chips offers **Open all** / **Open first N**, **Copy links**, **Move**, and **Delete** for every filtered bookmark on the page. Bulk move/delete shows one grouped toast (e.g. *3 bookmarks moved*).
 - Selected tags are highlighted in the cloud; active filters appear as **chips** under the page title (each chip has its own **×** to remove one tag) and on the **/** FAB (`#work` or `#work +1` when more than one).
 - **Escape** in the cloud closes the modal (filter remains). **Escape** on the dashboard (cloud closed) clears all tag filters and returns focus to bookmarks.
 - **Clear tag filter** in the cloud footer removes every selected tag (`Enter` / `Space` on **Close** or **Clear** works too).
@@ -631,7 +632,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9` or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), and keyboard cheat sheet (`!` / `F1`). Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9`, `G+P`, or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -665,7 +666,7 @@ The first time you open the **Theme** tab on a desktop-width window, a **9-step 
 ### Header and background
 
 - Optional title, background dots, gradient/image.  
-- **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar`). The side rail places all navigation buttons in a 44 px vertical strip on the left edge; the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
+- **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar side-left`). The side rail places navigation buttons in a 44 px vertical strip on the left edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
 
 ### What’s new
 
@@ -699,7 +700,7 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Controls panel** | Search, page filter, status pills, and bulk buttons in one compact block |
 | **Page filter** | Limit the issue list to one dashboard page |
 | **Search** | Name, URL, category, page |
-| **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete |
+| **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete (partial failures reported in a summary toast) |
 | **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
 | **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete) |
@@ -732,7 +733,7 @@ The dashboard **health** link badge counts broken links and warnings (including 
 Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar.
 
 - **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
-- **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), and sparklines. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
+- **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), sparklines, and **week-over-week** active-bookmark comparison when the **week** period is selected. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
 - **Top bookmarks, pages, categories, shortcuts** — sortable tables; click a bookmark row (or press `Enter`) to open it in **Config → Bookmarks**.
 - **Finders** — finder totals and top-20 table by `useCount`.
 - **Tags** — coverage, most-used tag, untagged count, per-tag tables.
@@ -782,7 +783,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 #### Layout and structure
 
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (icons, new-tab, sort, quick-add, page tabs).  
-- **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
+- **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
 
 ### Guided config tours
 
@@ -943,6 +944,8 @@ Keyboard hints in empty states are hidden on touch.
 ### Install as app
 
 **Add to Home Screen** uses `/manifest.webmanifest` — custom title/favicon from **branding** settings apply to the installed name/icon.
+
+In **Config → General → Advanced**, the panel under **HyprMode** shows platform-specific install steps and an **Add to home screen** button when your browser supports it. HyprMode (launcher behaviour: open bookmark in a new tab and close the dashboard) pairs well with an installed PWA.
 
 ---
 

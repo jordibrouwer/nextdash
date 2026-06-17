@@ -53,21 +53,43 @@ _No unreleased changes at this time._
 
 ## v2026.06.22 — June 2026
 
-**Side rail navigation** — optional 44 px vertical icon strip on the left edge; unified square cell style matching the ★ button; button order (+ → spacer → > ? : * → / ! ★); tooltips to the right; dashboard shifts right; page tab numbers/names visible in header; mobile reverts to bottom bar.
+**Side rail navigation** — optional 44 px vertical icon strip; tag cloud under recents with dynamic modal sizing; grouped bulk toasts; `G+P` pinned jump; stats week-over-week; PWA install helper; promo registry reset; settings-default fixes; health bulk feedback; weather geolocation promo; extension bookmark-form sync; reduced-motion coverage; side-rail i18n.
 
 ### Side rail navigation
 
 - **new** **Left side rail** — new optional layout: 44 px vertical icon rail on the left edge replacing the floating bottom button bar. Select *Side rail (left)* in **Config → General → Layout → Button bar position**.
-- **new** **Button order** — rail top to bottom: `+` add bookmark; spacer; `>` search · `?` finders · `:` commands · `*` recent; then `/` tag cloud · `!` cheatsheet · `★` what's new pinned at the bottom. Separator borders mark the transition to the fixed bottom section.
+- **new** **Button order** — rail top to bottom: `+` add bookmark; spacer; `>` search · `?` finders · `:` commands · `*` recent · `/` tag cloud; separator; `!` cheatsheet · `★` what's new pinned at the bottom.
+- **new** **Tag cloud in the rail** — `/` sits directly under `*` recent in the toolbar flow (not a separate fixed corner FAB). Word-cloud modal opens to the right of the rail and grows with tag content instead of clipping with a false scrollbar.
 - **new** **Unified cell style** — every rail button is a 44×44 px square cell: no border-radius, transparent background, icon centred, matching the ★ what's new button. Border-top separators on `/`, `!`, and `★`. Hover slides 2 px right with a subtle accent tint — same as ★ hover.
-- **new** **Tooltip placement** — side-rail tooltips appear to the *right* of the rail instead of above the button. The custom tooltip system (`setupToolbarKbdTooltips`) positions the tooltip at `rect.right + 8` with `translateY(-50%)` centering.
+- **new** **Tooltip placement** — side-rail tooltips appear to the *right* of the rail instead of above the button. The custom tooltip system (`setupToolbarKbdTooltips`) positions the tooltip at `rect.right + 8` with `translateY(-50%)` centering; `/` is included.
 - **new** **Content shift & mobile fallback** — `margin-left: 44px` on `.container` shifts the dashboard grid right to clear the rail. On mobile (≤768 px) the layout automatically reverts to a centred bottom bar.
 - **fix** **Page tab labels** — side-rail mode no longer hides page numbers and names in the header tab bar (`font-size: 0` dots-only layout removed); icons, colour dots, and labels match the default page tabs (respects *Show page names in tabs*).
 
+### Dashboard UX
+
+- **new** **Grouped bulk toasts** — `AppNotification.showGrouped()` coalesces rapid tag-filter move/delete and multi-bookmark category moves into one message (e.g. *3 bookmarks moved*).
+- **new** **`G + P` jump to pinned** — after `G`, press `P` to select the first pinned bookmark on the page. `G + 1`–`9` still jumps to the nth category or smart collection.
+- **new** **Cheat sheet — side rail** — when `buttonBarPosition` is `side-left`, the keyboard cheat sheet adds a *Layout (side rail)* section (tab order, page-tab scroll, `:buttonbar`).
+- **fix** **`prefers-reduced-motion`** — bookmark open flash, promo balloons, and config tab fade-in respect reduced motion and *Reduce animations* in settings.
+
+### Config, stats & PWA
+
+- **new** **Stats week-over-week** — **Config → Stats → Activity** with the *week* period shows active bookmarks this week vs last week (with % change).
+- **new** **Add to home screen** — panel under **HyprMode** in Advanced with platform-specific steps and an install button when `beforeinstallprompt` is available.
+- **new** **Reset all dashboard promos** — **Tours & onboarding → Reset all dashboard promos** clears every discoverability promo via `dashboard-promo-registry.js`.
+- **fix** **Settings defaults** — `showIcons` / `showConfigButton` semantics aligned across Go and JS; JSON migrations no longer write `false` for missing bool keys; `buttonBarPosition` server-authoritative in device merge; fresh-install defaults match Essentials visibility (`settings_defaults_test.go`).
+
+### Health, weather & extension
+
+- **new** **Health bulk feedback** — bulk delete and favicon refresh surface partial failures with summary toasts (`reportBulkOutcome`).
+- **new** **Weather location promo** — one-time dashboard promo when browser geolocation is blocked but weather uses browser location; reset from **Tours & onboarding → Reset weather location promo**.
+- **new** **Extension bookmark-form sync** — `npm run sync:extension-bookmark-form` copies `static/js/bookmark-form/*` → `extension/bookmark-form/`.
+
 ### Help, docs & developer
 
-- **fix** **Help & manual** — MANUAL and config help updated with the side rail option, button order, and tooltip placement.
-- **fix** **Cache-bust** — `whats-new-v85` (`2026.06-dashboard-release-v68`); `layout-side-rail.css?v=side-rail-5`; `dashboard.js?v=side-rail-1`; `dashboard-enhancements.css?v=side-rail-1`.
+- **fix** **Help & manual** — README, MANUAL, and whats-new updated for side-rail tag cloud, `G + P`, grouped toasts, stats week-over-week, PWA install helper, and promo registry.
+- **fix** **Side-rail i18n** — button-bar position, tooltips, and cheat-sheet layout strings in EN / NL / DE / FR.
+- **fix** **Cache-bust** — `whats-new-v86`; `layout-side-rail.css?v=side-rail-tag-cloud-1`; `dashboard-tag-cloud.js?v=rail-tag-cloud-2`; `app-notification.js?v=toast-grouped-1`; `dashboard-promo-registry.js`; `config-pwa-install.js`; `feature-promos-14`; `health-feedback-1`; `settings-parity-1` on config settings.
 
 ---
 

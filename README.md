@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.21**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.22**.
 
 ---
 
@@ -86,7 +86,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
-- `G + 1–9` — jump to the nth category and select its first bookmark (`G` is for categories only — it does not switch pages)
+- `G + 1–9` — jump to the nth category or smart collection and select its first bookmark (`G` is for categories only — it does not switch pages)
+- `G + P` — jump to the first pinned bookmark on the page
 - `Ctrl + Home` / `Ctrl + End` — first / last bookmark on the page (`Cmd` on Mac)
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
@@ -128,7 +129,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:columns <n>` — set column count (1–6)
 - `@` — global search across all pages at once; each result shows the page name as context
 - `:find <text>` — hide tiles whose name or URL don't match; clear with `:find`
-- `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right`
+- `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left`
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config page**
@@ -141,7 +142,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
 
-**Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9` or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), and keyboard cheat sheet (`!` / `F1`). Reset **G+jump** and **cheat sheet** promos from **Tours & onboarding**; the cheat-sheet reset opens the sheet when the dashboard tab is active.
+**Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9`, `G+P`, or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
@@ -159,7 +160,7 @@ Tours, rotating tips, discoverability promos, and promo banners do not run on th
 
 **ℹ info buttons** — Click the small ℹ next to any setting label for a short explanation in your current language (EN / NL / DE / FR). No need to leave the page or search the README for what a toggle does.
 
-**Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon.
+**Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon. **Advanced → HyprMode** includes an **Add to home screen** panel with platform steps and a browser install button when available.
 
 In-app help: Config → Help tab → *General settings* (same content, translated).
 
@@ -176,7 +177,7 @@ Type these directly in the search bar:
 ### Organisation
 
 - Unlimited pages and categories
-- Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard
+- Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard; bulk tag-filter move/delete groups rapid toasts into one message
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks)
 - **Config → tags** (desktop) — global rename/merge/delete across all pages; drill-down with **Open** (correct page via `pageId`); filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
@@ -214,12 +215,12 @@ Dynamic bookmark groups that appear automatically:
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
-- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete, row favicons, keyboard navigation (`j`/`k`, `Enter` → Config editor, `O` → open URL), structured localized issue reasons, default `broken` filter on first visit, URL state sync; **Classic / Modern / Glass** layout parity with dashboard/config (preset, density, backgrounds, opacity, row-action chip styling)
+- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete with partial-failure toasts, row favicons, keyboard navigation (`j`/`k`, `Enter` → Config editor, `O` → open URL), structured localized issue reasons, default `broken` filter on first visit, URL state sync; **Classic / Modern / Glass** layout parity with dashboard/config (preset, density, backgrounds, opacity, row-action chip styling)
 - Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
 - Health badge on the dashboard header: text pill (e.g. `3 broken`) with red/yellow styling; bulk open broken links asks for confirmation with a per-batch limit
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to query parameters
 - Favicon display and refresh from the health view (per row or bulk selection)
-- **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav, formatted **Last backup** on overview; conflicts link to health
+- **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **week-over-week** comparison on Activity when the week period is selected, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav, formatted **Last backup** on overview; conflicts link to health
 
 ### Bookmarks
 

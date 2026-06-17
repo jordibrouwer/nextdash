@@ -12,7 +12,11 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Button order</strong> — rail top to bottom: <code>+</code> add bookmark; spacer; <code>&gt;</code> search · <code>?</code> finders · <code>:</code> commands · <code>*</code> recent; separator; <code>/</code> tag cloud · <code>!</code> cheatsheet · <code>★</code> what's new pinned at the bottom."
+          "text": "<strong>Button order</strong> — rail top to bottom: <code>+</code> add bookmark; spacer; <code>&gt;</code> search · <code>?</code> finders · <code>:</code> commands · <code>*</code> recent · <code>/</code> tag cloud; separator; <code>!</code> cheatsheet · <code>★</code> what's new pinned at the bottom."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tag cloud in the rail</strong> — the <code>/</code> button sits directly under <code>*</code> recent in the toolbar flow (not a separate fixed corner FAB). The word-cloud modal opens to the right of the rail and <strong>grows with your tags</strong> instead of clipping with a false scrollbar."
         },
         {
           "badge": "new",
@@ -20,7 +24,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Tooltip placement</strong> — on side-rail, button tooltips appear to the <em>right</em> of the rail instead of above the button."
+          "text": "<strong>Tooltip placement</strong> — on side-rail, button tooltips (including <code>/</code>) appear to the <em>right</em> of the rail instead of above the button."
         },
         {
           "badge": "new",
@@ -33,15 +37,78 @@
       ]
     },
     {
-      "title": "Help, docs & developer",
+      "title": "Dashboard UX",
       "items": [
         {
-          "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — MANUAL and config help updated with the side rail option, button order, and tooltip placement."
+          "badge": "new",
+          "text": "<strong>Grouped bulk toasts</strong> — rapid tag-filter move/delete and multi-bookmark category moves coalesce into one toast (e.g. <em>3 bookmarks moved</em>) instead of stacking several messages."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><code>G + P</code> jump to pinned</strong> — after <code>G</code>, press <code>P</code> to select the first pinned bookmark on the page. <code>G + 1</code>–<code>9</code> still jumps to the nth category or smart collection."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Cheat sheet — side rail</strong> — when the side rail is active, the keyboard cheat sheet (<code>!</code> / <code>F1</code>) adds a <em>Layout (side rail)</em> section (tab order, page-tab scroll, <code>:buttonbar</code>)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v85</code> (<code>2026.06-dashboard-release-v68</code>); <code>layout-side-rail.css?v=side-rail-5</code>; <code>dashboard.js?v=side-rail-1</code>; <code>dashboard-enhancements.css?v=side-rail-1</code>."
+          "text": "<strong><code>prefers-reduced-motion</code></strong> — additional coverage for bookmark open flash, promo balloons, and config tab fade-in; honours <em>Reduce animations</em> in settings."
+        }
+      ]
+    },
+    {
+      "title": "Config, stats &amp; PWA",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Stats week-over-week</strong> — <strong>Config → Stats → Activity</strong> with the <em>week</em> period shows active bookmarks this week vs last week (with % change)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Add to home screen</strong> — panel under <strong>HyprMode</strong> in <strong>Advanced</strong> with platform steps and an install button when the browser offers <code>beforeinstallprompt</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Reset all dashboard promos</strong> — <strong>Tours &amp; onboarding</strong> includes one button to clear every discoverability promo (search, G+jump, feature tips) via <code>dashboard-promo-registry.js</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings defaults</strong> — <code>showIcons</code> / <code>showConfigButton</code> semantics aligned across Go and JS; JSON migrations no longer write <code>false</code> for missing bool keys; <code>buttonBarPosition</code> stays server-authoritative; fresh-install defaults match Essentials visibility."
+        }
+      ]
+    },
+    {
+      "title": "Health, weather &amp; extension",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health bulk feedback</strong> — bulk delete and favicon refresh report partial failures with a summary toast instead of failing silently."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Weather location promo</strong> — when browser geolocation is blocked but weather uses browser location, a one-time dashboard promo links to <strong>Config → General</strong>. Reset from <strong>Tours &amp; onboarding → Reset weather location promo</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Extension bookmark-form sync</strong> — <code>npm run sync:extension-bookmark-form</code> copies <code>static/js/bookmark-form/*</code> into <code>extension/bookmark-form/</code> so the extension stays aligned with the dashboard form modules."
+        }
+      ]
+    },
+    {
+      "title": "Help, docs &amp; developer",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, and this release note updated for side-rail tag cloud, <code>G + P</code>, grouped toasts, stats week-over-week, PWA install helper, and promo registry."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Side-rail i18n</strong> — button-bar position, tooltips, and cheat-sheet layout strings in EN / NL / DE / FR."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v86</code>; <code>layout-side-rail.css?v=side-rail-tag-cloud-1</code>; <code>dashboard-tag-cloud.js?v=rail-tag-cloud-2</code>; <code>app-notification.js?v=toast-grouped-1</code>; <code>dashboard-promo-registry.js</code>; <code>config-pwa-install.js</code>; <code>feature-promos-14</code>; <code>health-feedback-1</code>."
         }
       ]
     }
