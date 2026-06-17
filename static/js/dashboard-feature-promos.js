@@ -265,7 +265,6 @@
             if (!closeBtn) return;
 
             if (event.key === 'Escape') {
-                stopPromoEvent(event);
                 confirmOpen();
                 return;
             }

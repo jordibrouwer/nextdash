@@ -1,0 +1,1096 @@
+/**
+ * Dashboard grid render, categories, reorder.
+ */
+class DashboardRenderCore {
+    constructor(dashboard) {
+        this.dash = dashboard;
+    }
+
+    shouldStackDashboardCategories() {
+        const d = this.dash;
+        return (
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(max-width: 767px)').matches
+        );
+    }
+
+
+    getEffectiveColumnsPerRow() {
+        const d = this.dash;
+        if (this.shouldStackDashboardCategories()) {
+            return 1;
+        }
+        return this.getNormalizedColumnsPerRow();
+    }
+
+
+    shouldPackDashboardColumns() {
+        const d = this.dash;
+        if (this.shouldStackDashboardCategories()) {
+            return false;
+        }
+        return (
+            d.settings.packedColumns === true &&
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(min-width: 768px)').matches
+        );
+    }
+
+
+    getNormalizedColumnsPerRow() {
+        const d = this.dash;
+        const parsed = parseInt(String(d.settings.columnsPerRow), 10);
+        return Math.max(1, Math.min(12, Number.isFinite(parsed) ? parsed : 3));
+    }
+
+
+    syncDashboardGridLayout() {
+        const d = this.dash;
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) {
+            return null;
+        }
+
+        const configuredColCount = this.getNormalizedColumnsPerRow();
+        d.settings.columnsPerRow = configuredColCount;
+        const colCount = this.getEffectiveColumnsPerRow();
+        const packed = this.shouldPackDashboardColumns();
+        const packedClass = packed ? ' packed-columns' : '';
+
+        grid.className = `dashboard-grid columns-${colCount} layout-${d.settings.layoutPreset || 'default'} density-${d.settings.densityMode || 'compact'}${packedClass}`;
+        grid.setAttribute('role', 'grid');
+        grid.setAttribute(
+            'aria-label',
+            d.language?.t('dashboard.bookmarksGridLabel') || 'Bookmarks'
+        );
+        grid.style.setProperty('--packed-columns', String(colCount));
+        document.body.setAttribute(
+            'data-dashboard-stack-categories',
+            this.shouldStackDashboardCategories() ? 'true' : 'false'
+        );
+        const colMin = 'var(--dashboard-column-min, 250px)';
+        const colMax = 'var(--dashboard-column-max, 300px)';
+        grid.style.setProperty(
+            '--dashboard-grid-max-width',
+            `calc(${colCount} * ${colMax} + ${Math.max(0, colCount - 1)} * var(--gap, 1.5rem))`
+        );
+
+        if (packed) {
+            grid.style.removeProperty('grid-template-columns');
+        } else if (colCount === 1) {
+            grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
+        } else {
+            grid.style.gridTemplateColumns = `repeat(${colCount}, minmax(${colMin}, ${colMax}))`;
+        }
+
+        return { grid, colCount, packed };
+    }
+
+
+    _distributeDashboardColumnBlocks(container, columnBlocks, { animate = false, gridLayout = null } = {}) {
+        const d = this.dash;
+        if (!container || !columnBlocks.length) {
+            return;
+        }
+
+        const colCount = gridLayout?.colCount ?? this.getEffectiveColumnsPerRow();
+        const shouldPackColumns = gridLayout?.packed ?? this.shouldPackDashboardColumns();
+
+        if (shouldPackColumns) {
+            const columns = Array.from({ length: colCount }, () => {
+                const col = document.createElement('div');
+                col.className = 'dashboard-column';
+                return col;
+            });
+            columnBlocks.forEach((el, i) => {
+                if (animate) {
+                    el.style.setProperty('--stagger-index', String(i));
+                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+                }
+                columns[i % colCount].appendChild(el);
+            });
+            columns.forEach((c) => container.appendChild(c));
+            return;
+        }
+
+        columnBlocks.forEach((el, i) => {
+            if (animate) {
+                el.style.setProperty('--stagger-index', String(i));
+                const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+                setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+            }
+            container.appendChild(el);
+        });
+    }
+
+
+    _copyDashboardGridLayoutToElement(target, sourceGrid) {
+        const d = this.dash;
+        if (!target || !sourceGrid) {
+            return;
+        }
+        const layoutClasses = [...sourceGrid.classList].filter((cls) =>
+            cls === 'dashboard-grid'
+            || cls === 'packed-columns'
+            || cls.startsWith('columns-')
+            || cls.startsWith('layout-')
+            || cls.startsWith('density-')
+        );
+        target.className = `tag-filter-view-body ${layoutClasses.join(' ')}`.trim();
+        target.setAttribute('role', 'grid');
+        target.setAttribute(
+            'aria-label',
+            d.language?.t('dashboard.tagFilterGridLabel') || 'Filtered bookmarks'
+        );
+    }
+
+    /**
+     * Tag filter: one equal-width dashboard column per chunk (10 bookmarks), not round-robin.
+     */
+
+    renderDashboard(options = {}) {
+        const d = this.dash;
+        if (d.isInlineEditActive() && d.hasInlineEditUnsavedChanges()) {
+            return;
+        }
+        if (options.incremental === 'status') {
+            d.statusMonitor?.refreshAllStatuses?.();
+            return;
+        }
+        const animate = options && options.animate === true;
+        d._renderAnimationsEnabled = animate;
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+
+        d._abortInlineEditForRender();
+
+        if (d.hasActiveTagFilters()) {
+            d._categoryListsCache = null;
+            d.renderTagFilterDashboard(container, options);
+            return;
+        }
+
+        d.updateTagFilterIndicator();
+
+        // Group bookmarks by category
+        const groupedBookmarks = this.groupBookmarksByCategory();
+        
+        // Clear container
+        container.innerHTML = '';
+        d._categoryListsCache = null;
+        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view');
+
+        if (!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) {
+            const hasBookmarksOnOtherPages = Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0;
+            const currentPage = d.pages.find(p => p.id === d.currentPageId);
+            const pageName = currentPage ? d.escapeHtml(currentPage.name) : '';
+
+            const addLabel = d.buildEmptyStateAddLabel();
+            const addHint = d.buildEmptyStateAddHint();
+            const showKeyboardActions = d.shouldShowEmptyStateKeyboardActions();
+            const emptyPageText = d.language?.t('dashboard.emptyPage') || 'This page is empty';
+            const searchLabel = d.language?.t('dashboard.searchLabel') || 'Search';
+            const commandNewLabel = d.language?.t('dashboard.emptyStateCommandNew') || 'Add via command';
+            const commandTagLabel = d.language?.t('dashboard.emptyStateCommandTag') || 'Browse by tag';
+            const esc = (value) => d.escapeHtml(value);
+            const searchActionHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-search" type="button"><kbd>&gt;</kbd> ${esc(searchLabel)}</button>`
+                : `<button class="empty-state-action-btn" id="empty-state-search" type="button">${esc(searchLabel)}</button>`;
+            const commandNewHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-command-new" type="button"><kbd>:new</kbd> ${esc(commandNewLabel)}</button>`
+                : '';
+            const commandTagHtml = showKeyboardActions
+                ? `<button class="empty-state-action-btn" id="empty-state-command-tag" type="button"><kbd>:tag</kbd> ${esc(commandTagLabel)}</button>`
+                : '';
+
+            if (hasBookmarksOnOtherPages) {
+                container.innerHTML = `
+                    <div class="empty-state empty-state--page">
+                        <div class="empty-state-label">// ${pageName}</div>
+                        <div class="empty-state-text" data-i18n="dashboard.emptyPage">${esc(emptyPageText)}</div>
+                        <div class="empty-state-actions">
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark" type="button">${esc(addLabel)}</button>
+                            ${searchActionHtml}
+                            ${commandNewHtml}
+                            ${commandTagHtml}
+                        </div>
+                        <p class="empty-state-hint">${esc(addHint)}</p>
+                    </div>
+                `;
+                container.querySelector('#empty-state-new-bookmark')?.addEventListener('click', () => {
+                    d.openEmptyStateAdd();
+                });
+                container.querySelector('#empty-state-search')?.addEventListener('click', () => {
+                    d.searchComponent?.openSearchInterface();
+                });
+                container.querySelector('#empty-state-command-new')?.addEventListener('click', () => {
+                    d.openEmptyStateCommand(':new');
+                });
+                container.querySelector('#empty-state-command-tag')?.addEventListener('click', () => {
+                    d.openEmptyStateCommand(':tag');
+                });
+            } else {
+                const freshText = d.language?.t('dashboard.emptyFresh') || 'No bookmarks yet';
+                const searchFreshHtml = showKeyboardActions
+                    ? `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button"><kbd>&gt;</kbd> ${esc(searchLabel)}</button>`
+                    : `<button class="empty-state-action-btn" id="empty-state-search-fresh" type="button">${esc(searchLabel)}</button>`;
+                container.innerHTML = `
+                    <div class="empty-state empty-state--fresh">
+                        <div class="empty-state-text" data-i18n="dashboard.emptyFresh">${esc(freshText)}</div>
+                        <div class="empty-state-actions">
+                            <button class="empty-state-action-btn empty-state-action-btn--primary" id="empty-state-new-bookmark-fresh" type="button">${esc(addLabel)}</button>
+                            ${searchFreshHtml}
+                        </div>
+                        <p class="empty-state-hint">${esc(addHint)}</p>
+                        <div class="empty-state-action">
+                            <a class="btn btn-secondary" href="/config#pages" data-i18n="dashboard.emptyStateSetupPages">Set up pages in config</a>
+                            <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
+                        </div>
+                    </div>
+                `;
+                container.querySelector('#empty-state-new-bookmark-fresh')?.addEventListener('click', () => {
+                    d.openEmptyStateAdd();
+                });
+                container.querySelector('#empty-state-search-fresh')?.addEventListener('click', () => {
+                    d.searchComponent?.openSearchInterface();
+                });
+            }
+            if (d.language && typeof d.language.applyTranslations === 'function') {
+                d.language.applyTranslations();
+            }
+            d.updateSearchComponent();
+            return;
+        }
+
+        const columnBlocks = [];
+
+        // Render smart collections first for quick access to derived sets.
+        const smartCollections = d.getSmartCollections(d.getSmartCollectionSourceBookmarks());
+        smartCollections.forEach((collection) => {
+            if (!Array.isArray(collection.bookmarks) || collection.bookmarks.length === 0) {
+                return;
+            }
+            const collectionBookmarks = d._sortSmartCollectionBookmarks(collection);
+            const collectionElement = this.createCategoryElement({
+                id: collection.id,
+                name: collection.name,
+                icon: collection.icon,
+                isSmartCollection: true,
+                customCollection: collection.customCollection || null,
+            }, collectionBookmarks);
+            columnBlocks.push(collectionElement);
+        });
+
+        // Render categories (bookmark.category is normalized to string keys in groupBookmarksByCategory)
+        d.categories.forEach(category => {
+            const id = String(category.id);
+            const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
+            if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0) return;
+            const categoryElement = this.createCategoryElement(category, categoryBookmarks);
+            columnBlocks.push(categoryElement);
+        });
+
+        // Handle bookmarks without category
+        const uncategorizedBookmarks = groupedBookmarks[''] || [];
+        if (uncategorizedBookmarks.length > 0) {
+            const _unc = d.language.t('dashboard.uncategorized');
+            const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
+            const categoryElement = this.createCategoryElement(uncategorizedCategory, this.sortBookmarks(uncategorizedBookmarks));
+            columnBlocks.push(categoryElement);
+        }
+
+        const knownCategoryIds = new Set(d.categories.map((c) => String(c.id)));
+        const orphanLabelBase = (() => {
+            const raw = d.language.t('dashboard.unknownCategory');
+            return raw && raw !== 'dashboard.unknownCategory' ? raw : 'Unknown category';
+        })();
+        Object.keys(groupedBookmarks).forEach((key) => {
+            const id = String(key);
+            if (id === '' || knownCategoryIds.has(id)) {
+                return;
+            }
+            const orphanBookmarks = groupedBookmarks[id];
+            if (!Array.isArray(orphanBookmarks) || orphanBookmarks.length === 0) {
+                return;
+            }
+            const orphanCategory = {
+                id,
+                name: `${orphanLabelBase} (${id})`,
+                icon: '⚠'
+            };
+            columnBlocks.push(this.createCategoryElement(orphanCategory, this.sortBookmarks(orphanBookmarks)));
+        });
+
+        const gridLayout = this.syncDashboardGridLayout();
+        this._distributeDashboardColumnBlocks(container, columnBlocks, { animate, gridLayout });
+
+        if (animate) {
+            requestAnimationFrame(() => {
+                container.classList.add('page-transition');
+                setTimeout(() => container.classList.remove('page-transition'), ANIM.PAGE_TRANSITION);
+            });
+        }
+
+        // Enable realtime drag-and-drop sorting within each category
+        this.initializeCategoryReorder();
+        // this.initializeDashboardCategoryReorder();
+
+        d.updateSearchComponent();
+        d.syncBookmarkGridA11y();
+        d.keyboardNavigation?.scheduleUpdate?.();
+        
+        // Initialize or update status monitoring after rendering
+        if (d.statusMonitor) {
+            // Check if this is the first time initializing or just updating bookmarks
+            if (d.statusMonitorInitialized) {
+                // Just update bookmarks without clearing cache
+                d.statusMonitor.updateBookmarks(d.bookmarks);
+            } else {
+                // First time initialization
+                d.statusMonitor.init(d.bookmarks);
+                d.statusMonitorInitialized = true;
+            }
+        }
+    }
+
+
+    groupBookmarksByCategory() {
+        const d = this.dash;
+        const grouped = {};
+        
+        d.bookmarks.forEach(bookmark => {
+            const categoryId = String(bookmark.category ?? '').trim();
+            if (!grouped[categoryId]) {
+                grouped[categoryId] = [];
+            }
+            grouped[categoryId].push(bookmark);
+        });
+
+        // Bookmarks are kept in the order they appear in the JSON file
+        // No sorting applied - respects the order from data/bookmarks-X.json
+
+        return grouped;
+    }
+
+
+    sortBookmarks(bookmarks) {
+        const d = this.dash;
+        const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])];
+        const method = d.settings.sortMethod || 'order';
+        const pinned = sorted
+            .filter((bookmark) => Boolean(bookmark?.pinned))
+            .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }));
+        const regular = sorted.filter((bookmark) => !bookmark?.pinned);
+
+        if (method === 'az') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }))
+            ];
+        }
+
+        if (method === 'recent') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (b?.lastOpened || 0) - (a?.lastOpened || 0))
+            ];
+        }
+
+        if (method === 'custom') {
+            return [...pinned, ...regular];
+        }
+
+        return [...pinned, ...regular];
+    }
+
+
+    initializeCategoryReorder() {
+        const d = this.dash;
+        this.destroyCategoryReorderInstances();
+
+        if (typeof DragReorder === 'undefined') {
+            return;
+        }
+
+        const categoryLists = this._getCategoryLists();
+        categoryLists.forEach((listElement) => {
+            if (listElement.getAttribute('data-smart-collection') === 'true') {
+                return;
+            }
+            const categoryId = listElement.getAttribute('data-category-id') || '';
+
+            const reorderInstance = new DragReorder({
+                container: listElement,
+                itemSelector: '.bookmark-link',
+                handleSelector: '.bookmark-reorder-handle',
+                /* 0 here: longPressMs blocked immediate native drag when whole row was handle; with narrow strip only, require instant drag. */
+                longPressMs: 0,
+                delegateItemDragOver: true,
+                onReorder: () => {
+                    this.syncBookmarksFromDom();
+                }
+            });
+
+            d.categoryReorderInstances.push(reorderInstance);
+        });
+        this.ensureBookmarkDragOverRelay();
+    }
+
+    /**
+     * HTML5 dragover does not bubble from bookmark rows across category headers / column gaps.
+     * Single document-level relay uses elementFromPoint so drops into other columns work.
+     */
+
+    ensureBookmarkDragOverRelay() {
+        const d = this.dash;
+        if (d._bookmarkDragRelayHandler) {
+            return;
+        }
+        d._bookmarkDragRelayHandler = (e) => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            if (!dragged || !e.dataTransfer) {
+                return;
+            }
+            if (!dragged.classList || !dragged.classList.contains('bookmark-link')) {
+                return;
+            }
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (!el) {
+                return;
+            }
+            const targetList = el.closest('.bookmarks-list[data-category-id]');
+            if (!targetList || targetList.getAttribute('data-smart-collection') === 'true') {
+                return;
+            }
+            if (!window.__dragReorderState.placeholder) {
+                const ph = document.createElement('div');
+                ph.className = 'bookmark-drop-placeholder';
+                ph.setAttribute('aria-hidden', 'true');
+                window.__dragReorderState.placeholder = ph;
+            }
+            const placeholder = window.__dragReorderState.placeholder;
+            const targetItem = el.closest('.bookmark-link.reorder-item');
+            if (targetItem && targetItem !== dragged) {
+                targetItem.parentNode.insertBefore(placeholder, targetItem);
+                const sameParent = dragged.parentNode === targetItem.parentNode;
+                if (sameParent) {
+                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
+                }
+            } else if (!targetItem) {
+                if (dragged.parentNode !== targetList) {
+                    targetList.appendChild(dragged);
+                }
+                targetList.appendChild(placeholder);
+            }
+        };
+        document.addEventListener('dragover', d._bookmarkDragRelayHandler, { capture: true, passive: false });
+    }
+
+
+    initializeDashboardCategoryReorder() {
+        const d = this.dash;
+        this.destroyDashboardCategoryReorderInstances();
+        if (typeof DragReorder === 'undefined') return;
+
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+
+        const isPacked = grid.classList.contains('packed-columns');
+        const onReorder = () => {
+            // Small delay so the DOM is fully settled after touch/mouse drag ends
+            requestAnimationFrame(() => this.syncCategoriesFromDom());
+        };
+
+        if (isPacked) {
+            grid.querySelectorAll('.dashboard-column').forEach((col) => {
+                d.dashboardCategoryReorderInstances.push(new DragReorder({
+                    container: col,
+                    itemSelector: '.category:not([data-smart-collection="true"])',
+                    itemClass: 'category-reorder-item',
+                    handleSelector: '.category-reorder-handle',
+                    longPressMs: 0,
+                    delegateItemDragOver: false,
+                    touchContainerSelector: '.dashboard-column',
+                    onReorder
+                }));
+            });
+        } else {
+            d.dashboardCategoryReorderInstances.push(new DragReorder({
+                container: grid,
+                itemSelector: '.category:not([data-smart-collection="true"])',
+                itemClass: 'category-reorder-item',
+                handleSelector: '.category-reorder-handle',
+                longPressMs: 0,
+                delegateItemDragOver: false,
+                touchContainerSelector: '#dashboard-layout',
+                onReorder
+            }));
+        }
+    }
+
+
+    ensureCategoryDragOverRelay() {
+        const d = this.dash;
+        if (d._categoryDragRelayHandler) return;
+
+        // Accept the drop and immediately sync+save — DOM is correct at this moment.
+        d._categoryDropHandler = (e) => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            if (!dragged || !dragged.classList.contains('category')) return;
+            e.preventDefault();
+            this.syncCategoriesFromDom();
+        };
+        document.addEventListener('drop', d._categoryDropHandler, { capture: true });
+
+        d._categoryDragRelayHandler = (e) => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            if (!dragged) return;
+            if (!dragged.classList || !dragged.classList.contains('category')) return;
+            if (!e.dataTransfer) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (!el) return;
+            const targetColumn = el.closest('.dashboard-column');
+            if (!targetColumn) return;
+            const targetItem = el.closest('.category.category-reorder-item');
+            if (!window.__dragReorderState.placeholder) {
+                const ph = document.createElement('div');
+                ph.className = 'bookmark-drop-placeholder';
+                ph.setAttribute('aria-hidden', 'true');
+                window.__dragReorderState.placeholder = ph;
+            }
+            const placeholder = window.__dragReorderState.placeholder;
+            if (targetItem && targetItem !== dragged) {
+                targetItem.parentNode.insertBefore(placeholder, targetItem);
+                if (dragged.parentNode === targetItem.parentNode) {
+                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
+                }
+            } else if (!targetItem && dragged.parentNode !== targetColumn) {
+                targetColumn.appendChild(dragged);
+                targetColumn.appendChild(placeholder);
+            }
+        };
+        document.addEventListener('dragover', d._categoryDragRelayHandler, { capture: true, passive: false });
+    }
+
+
+    destroyCategoryReorderInstances() {
+        const d = this.dash;
+        if (d._bookmarkDragRelayHandler) {
+            document.removeEventListener('dragover', d._bookmarkDragRelayHandler, { capture: true, passive: false });
+            d._bookmarkDragRelayHandler = null;
+        }
+        if (!Array.isArray(d.categoryReorderInstances)) {
+            d.categoryReorderInstances = [];
+            return;
+        }
+
+        d.categoryReorderInstances.forEach((instance) => {
+            if (instance && typeof instance.destroy === 'function') {
+                instance.destroy();
+            }
+        });
+        d.categoryReorderInstances = [];
+    }
+
+
+    destroyDashboardCategoryReorderInstances() {
+        const d = this.dash;
+        if (d._categoryDragRelayHandler) {
+            document.removeEventListener('dragover', d._categoryDragRelayHandler, { capture: true, passive: false });
+            d._categoryDragRelayHandler = null;
+        }
+        if (d._categoryDropHandler) {
+            document.removeEventListener('drop', d._categoryDropHandler, { capture: true });
+            d._categoryDropHandler = null;
+        }
+        (d.dashboardCategoryReorderInstances || []).forEach((i) => {
+            if (i && typeof i.destroy === 'function') i.destroy();
+        });
+        d.dashboardCategoryReorderInstances = [];
+    }
+
+
+    _getCategoryLists() {
+        const d = this.dash;
+        if (!d._categoryListsCache) {
+            d._categoryListsCache = Array.from(document.querySelectorAll('.bookmarks-list[data-category-id]'));
+        }
+        return d._categoryListsCache;
+    }
+
+
+    syncBookmarksFromDom() {
+        const d = this.dash;
+        const previousBookmarks = d.bookmarks.map((bookmark) => ({ ...bookmark }));
+        const nextBookmarks = [];
+        const movedElements = [];
+        let bookmarkCursor = 0;
+
+        const categoryLists = this._getCategoryLists();
+        categoryLists.forEach((listElement) => {
+            if (listElement.getAttribute('data-smart-collection') === 'true') {
+                return;
+            }
+            const categoryId = listElement.getAttribute('data-category-id') || '';
+            const listBookmarks = listElement.querySelectorAll('.bookmark-link[data-bookmark-index]');
+
+            listBookmarks.forEach((bookmarkElement) => {
+                const oldBookmarkIndex = parseInt(bookmarkElement.getAttribute('data-bookmark-index'), 10);
+                if (Number.isNaN(oldBookmarkIndex) || !previousBookmarks[oldBookmarkIndex]) {
+                    return;
+                }
+
+                const bookmark = previousBookmarks[oldBookmarkIndex];
+                const movedAcrossCategories = (bookmark.category || '') !== categoryId;
+                nextBookmarks.push({ ...bookmark, category: categoryId });
+                bookmarkElement.setAttribute('data-bookmark-index', String(bookmarkCursor));
+                bookmarkElement.setAttribute('data-category-id', categoryId);
+                if (movedAcrossCategories) {
+                    movedElements.push(bookmarkElement);
+                }
+                bookmarkCursor += 1;
+            });
+        });
+
+        if (nextBookmarks.length === 0 || nextBookmarks.length !== previousBookmarks.length) {
+            this.renderDashboard();
+            return;
+        }
+
+        if (!d.pendingReorderSnapshot) {
+            d.pendingReorderSnapshot = previousBookmarks.map((bookmark) => ({ ...bookmark }));
+        }
+
+        d.bookmarks = nextBookmarks;
+        movedElements.forEach((element) => {
+            element.classList.add('bookmark-move-in');
+            setTimeout(() => element.classList.remove('bookmark-move-in'), ANIM.BOOKMARK_MOVE_IN);
+        });
+        d.updateSearchComponent();
+        if (d.statusMonitor) {
+            d.statusMonitor.updateBookmarks(d.bookmarks);
+        }
+        this.scheduleBookmarkOrderSave();
+    }
+
+
+    syncCategoriesFromDom() {
+        const d = this.dash;
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+        const els = grid.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])');
+        const newIds = Array.from(els).map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+
+        if (!newIds.length) return;
+
+        const byId = new Map(d.categories.map((c) => [String(c.id), c]));
+        const renderedSet = new Set(newIds);
+
+        // Categories not rendered (empty) — preserve them appended after rendered ones
+        const unrendered = d.categories.filter((c) => !renderedSet.has(String(c.id)));
+        const newCategories = [
+            ...newIds.map((id) => byId.get(id)).filter(Boolean),
+            ...unrendered
+        ];
+
+        d.categories = newCategories;
+        this.scheduleCategoryOrderSave();
+    }
+
+
+    scheduleCategoryOrderSave() {
+        const d = this.dash;
+        if (d._pendingCategorySave) clearTimeout(d._pendingCategorySave);
+        d._pendingCategorySave = setTimeout(() => {
+            d._pendingCategorySave = null;
+            const pageId = Number(d.currentPageId);
+            const payload = (d.categories || []).map((category) => ({ ...category }));
+            void this.saveCategoryOrder({ pageId, payload });
+        }, 1000);
+    }
+
+
+    async saveCategoryOrder(options = {}) {
+        const d = this.dash;
+        const pageId = Number(options.pageId ?? d.currentPageId);
+        if (!Number.isFinite(pageId)) {
+            return;
+        }
+
+        const sourceCategories = Array.isArray(options.payload) ? options.payload : d.categories;
+        const payload = (sourceCategories || []).map((category) => ({ ...category, originalId: category.id }));
+
+        const saveTask = (async () => {
+            try {
+                const res = await dashFetch(`/api/categories?page=${pageId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Save failed');
+            } catch (err) {
+                d.showErrorNotification(`${err.message || 'Failed to save category order.'} Please try again.`);
+                throw err;
+            }
+        })();
+
+        d._categoryOrderSaveInFlight = saveTask;
+        try {
+            await saveTask;
+        } catch (_err) {
+            // Notification shown in saveTask.
+        } finally {
+            if (d._categoryOrderSaveInFlight === saveTask) {
+                d._categoryOrderSaveInFlight = null;
+            }
+        }
+    }
+
+
+    _startCategoryRename(titleEl, nameSpan, category) {
+        const d = this.dash;
+        if (titleEl.querySelector('.category-rename-input')) return;
+
+        const originalName = category.name;
+        titleEl.classList.add('category-title--renaming');
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'category-rename-input';
+        input.value = originalName;
+        input.setAttribute('aria-label', d.formatDashboardLabel('renameCategoryAria', {}, 'Rename category'));
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        let done = false;
+
+        const commit = async () => {
+            if (done) return;
+            done = true;
+            titleEl.classList.remove('category-title--renaming');
+            const newName = input.value.trim();
+            input.replaceWith(nameSpan);
+            if (!newName || newName === originalName) {
+                nameSpan.textContent = originalName.toLowerCase();
+                return;
+            }
+            category.name = newName;
+            nameSpan.textContent = newName.toLowerCase();
+            // Orphan categories (bookmarks referencing a non-existent category ID) are not
+            // in d.categories, so the save would skip them. Add the category first.
+            if (!d.categories.some(c => String(c.id) === String(category.id))) {
+                d.categories.push({ id: category.id, name: newName });
+            }
+            await this.saveCategoryOrder();
+        };
+
+        const cancel = () => {
+            if (done) return;
+            done = true;
+            titleEl.classList.remove('category-title--renaming');
+            input.replaceWith(nameSpan);
+            nameSpan.textContent = originalName.toLowerCase();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        });
+        input.addEventListener('blur', commit);
+    }
+
+
+    scheduleBookmarkOrderSave(options = {}) {
+        const d = this.dash;
+        if (d.pendingReorderSave) {
+            clearTimeout(d.pendingReorderSave);
+            d.pendingReorderSave = null;
+        }
+
+        const successMessage = typeof options.successMessage === 'string' && options.successMessage.trim()
+            ? options.successMessage.trim()
+            : d.formatDashboardLabel('bookmarkOrderSaved', {}, 'Bookmark order saved.');
+
+        d.pendingReorderSave = setTimeout(() => {
+            d.pendingReorderSave = null;
+            void d.saveBookmarkOrder({
+                successMessage,
+                showReorderSavedToast: true
+            });
+        }, 1000);
+    }
+
+
+    async flushPendingBookmarkSave(options = {}) {
+        const d = this.dash;
+        if (d.pendingReorderSave) {
+            clearTimeout(d.pendingReorderSave);
+            d.pendingReorderSave = null;
+        }
+        if (d.pendingReorderSnapshot) {
+            await d.saveBookmarkOrder({
+                successMessage: options.successMessage,
+                showReorderSavedToast: options.showReorderSavedToast ?? false
+            });
+            return;
+        }
+        if (d._bookmarkOrderSaveInFlight) {
+            await d._bookmarkOrderSaveInFlight;
+        }
+    }
+
+
+    async flushPendingCategorySave() {
+        const d = this.dash;
+        if (d._pendingCategorySave) {
+            clearTimeout(d._pendingCategorySave);
+            d._pendingCategorySave = null;
+            const pageId = Number(d.currentPageId);
+            const payload = (d.categories || []).map((category) => ({ ...category }));
+            await this.saveCategoryOrder({ pageId, payload });
+            return;
+        }
+        if (d._categoryOrderSaveInFlight) {
+            await d._categoryOrderSaveInFlight;
+        }
+    }
+
+
+    undoPendingReorder() {
+        const d = this.dash;
+        if (!d.pendingReorderSnapshot) {
+            return;
+        }
+
+        if (d.pendingReorderSave) {
+            clearTimeout(d.pendingReorderSave);
+            d.pendingReorderSave = null;
+        }
+
+        d.bookmarks = [...d.pendingReorderSnapshot];
+        d.pendingReorderSnapshot = null;
+        this.renderDashboard();
+    }
+
+
+    createCategoryElement(category, bookmarks) {
+        const d = this.dash;
+        const animate = d._renderAnimationsEnabled === true;
+        const categoryDiv = document.createElement('div');
+        const isTagFilterChunk = category.tagFilterChunk === true;
+        categoryDiv.className = isTagFilterChunk ? 'category tag-filter-chunk' : 'category';
+        if (animate) {
+            categoryDiv.classList.add('animate-enter');
+        }
+        categoryDiv.setAttribute('data-category-id', category.id || '');
+        categoryDiv.setAttribute('role', 'rowgroup');
+        const isSmartCollection = category.isSmartCollection === true;
+        if (isSmartCollection) {
+            categoryDiv.setAttribute('data-smart-collection', 'true');
+        }
+        if (isTagFilterChunk) {
+            categoryDiv.setAttribute('data-tag-filter-chunk', 'true');
+        }
+        const collapsedKey = isSmartCollection
+            ? `smart:${category.id}`
+            : `${d.currentPageId}:${category.id}`;
+        let isCollapsed;
+        if (isTagFilterChunk) {
+            isCollapsed = false;
+        } else if (d.settings.alwaysCollapseCategories) {
+            isCollapsed = true;
+        } else if (collapsedKey in d.collapsedCategories) {
+            isCollapsed = d.collapsedCategories[collapsedKey];
+        } else if (!isSmartCollection && category.id in d.collapsedCategories) {
+            // Migrate legacy bare-key entry to page-scoped key on first render
+            isCollapsed = d.collapsedCategories[category.id];
+            d.collapsedCategories[collapsedKey] = isCollapsed;
+            delete d.collapsedCategories[category.id];
+            d.saveCollapsedStates();
+        } else {
+            isCollapsed = false;
+        }
+        categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'true' : 'false');
+
+        if (!isTagFilterChunk) {
+        // Category title
+        const titleElement = document.createElement('h2');
+        titleElement.className = isSmartCollection ? 'category-title smart-collection-title' : 'category-title';
+        const titleDomId = `category-title-${String(category.id || 'uncategorized').replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+        titleElement.id = titleDomId;
+        categoryDiv.setAttribute('aria-labelledby', titleDomId);
+        titleElement.setAttribute('role', 'rowheader');
+        titleElement.tabIndex = 0;
+        titleElement.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+        const categoryIcon = (category.icon || '').trim();
+        titleElement.innerHTML = '';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'category-title-name';
+        nameSpan.textContent = category.name.toLowerCase();
+        nameSpan.title = category.name;
+
+        if (this.isUploadedCategoryIcon(categoryIcon)) {
+            const iconImage = document.createElement('img');
+            iconImage.src = `/data/icons/${categoryIcon}`;
+            iconImage.alt = '';
+            iconImage.className = 'bookmark-icon';
+            titleElement.appendChild(iconImage);
+            try {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
+                const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
+                if (entry.enabled) {
+                    iconImage.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`);
+                    iconImage.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
+                }
+            } catch (e) {
+                // ignore
+            }
+            titleElement.appendChild(document.createTextNode(' '));
+        } else {
+            const textIcon = categoryIcon || '▣';
+            titleElement.appendChild(document.createTextNode(`${textIcon} `));
+        }
+        titleElement.appendChild(nameSpan);
+
+        const chevron = document.createElement('span');
+        chevron.className = 'category-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        titleElement.appendChild(chevron);
+
+        if (isSmartCollection) {
+            const whyHint = d.getSmartCollectionWhyHint(category.id, category);
+            if (whyHint) {
+                const whyBtn = document.createElement('button');
+                whyBtn.type = 'button';
+                whyBtn.className = 'smart-collection-why-btn';
+                whyBtn.textContent = 'ℹ';
+                whyBtn.setAttribute('data-tooltip', whyHint);
+                whyBtn.setAttribute(
+                    'aria-label',
+                    d.language?.t?.('dashboard.smartWhyAria') || 'Why am I seeing this collection?'
+                );
+                whyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                titleElement.appendChild(whyBtn);
+            }
+        }
+
+        const setCategoryCollapsed = (collapsed) => {
+            categoryDiv.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+            titleElement.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            d.collapsedCategories[collapsedKey] = collapsed;
+            d.saveCollapsedStates();
+        };
+
+        titleElement.addEventListener('click', () => {
+            setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
+        });
+        titleElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
+                if (!titleElement.classList.contains('category-title--renaming')) {
+                    window.DashboardFeaturePromos?.tryShowDeferred?.('categoryCollapse', titleElement);
+                }
+            }
+        });
+
+        if (!isSmartCollection) {
+            titleElement.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._startCategoryRename(titleElement, nameSpan, category);
+            });
+        }
+
+        categoryDiv.appendChild(titleElement);
+        }
+
+        // Bookmarks list
+        const bookmarksList = document.createElement('div');
+        bookmarksList.className = 'bookmarks-list';
+        bookmarksList.setAttribute('data-category-id', category.id || '');
+        bookmarksList.setAttribute('data-bookmarks-list', 'true');
+        bookmarksList.setAttribute('role', 'presentation');
+        if (d.settings.showStatus && d.settings.showPing) {
+            bookmarksList.setAttribute('data-show-ping', 'true');
+        }
+        if (isSmartCollection) {
+            bookmarksList.setAttribute('data-smart-collection', 'true');
+        }
+
+        bookmarks.forEach((bookmark, index) => {
+            const bookmarkElement = d.createBookmarkElement(bookmark, category.id || '', true);
+            if (animate) {
+                bookmarkElement.classList.add('animate-enter');
+                bookmarkElement.style.setProperty('--item-index', String(index));
+                const bookmarkEnterDelay = (index * ANIM.BOOKMARK_STAGGER_STEP) + ANIM.BOOKMARK_ENTER_BASE;
+                setTimeout(() => bookmarkElement.classList.remove('animate-enter'), bookmarkEnterDelay);
+            }
+            bookmarksList.appendChild(bookmarkElement);
+        });
+
+        if (bookmarks.length === 0) {
+            const t = (key, fallback) => { const v = d.language?.t?.(key); return (v && v !== key) ? v : (fallback ?? key); };
+            if (isSmartCollection) {
+                const emptyMessages = {
+                    '__smart_today__':     t('dashboard.smartEmptyToday',    'No bookmarks scheduled for today'),
+                    '__smart_recent__':    t('dashboard.smartEmptyRecent',   'No bookmarks opened recently'),
+                    '__smart_stale__':     t('dashboard.smartEmptyStale',    'No stale bookmarks'),
+                    '__smart_most_used__': t('dashboard.smartEmptyMostUsed', 'No bookmarks opened yet'),
+                };
+                const msg = emptyMessages[category.id] || t('dashboard.smartEmptyGeneric', 'No bookmarks');
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'smart-collection-empty';
+                emptyEl.textContent = msg;
+                bookmarksList.appendChild(emptyEl);
+            } else if (!isTagFilterChunk) {
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'empty-state--category';
+                const textSpan = document.createElement('span');
+                textSpan.className = 'empty-state--category-text';
+                textSpan.textContent = t('dashboard.emptyCategoryText', 'no bookmarks');
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'empty-state--category-btn';
+                addBtn.textContent = t('dashboard.emptyStateAddAction', '+ bookmark');
+                emptyEl.appendChild(textSpan);
+                emptyEl.appendChild(addBtn);
+                addBtn.addEventListener('click', () => {
+                    window.dashboardInstance?.quickAddWidget?.open();
+                });
+                bookmarksList.appendChild(emptyEl);
+            }
+        }
+
+        const categoryBody = document.createElement('div');
+        categoryBody.className = 'category-body';
+        categoryBody.appendChild(bookmarksList);
+        categoryDiv.appendChild(categoryBody);
+        return categoryDiv;
+    }
+
+
+    isUploadedCategoryIcon(iconValue) {
+        const d = this.dash;
+        return typeof iconValue === 'string' && /\.[a-z0-9]+$/i.test(iconValue);
+    }
+
+}
+
+window.DashboardRenderCore = DashboardRenderCore;

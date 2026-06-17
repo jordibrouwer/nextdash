@@ -37,7 +37,7 @@ body.loading .colors-main > :not([data-skeleton-root]) {
         color-mix(in srgb, var(--text-secondary, #888) 12%, transparent) 100%
     );
     background-size: 200% 100%;
-    animation: skeleton-shimmer 1.2s ease-in-out infinite;
+    animation: skeleton-shimmer 0.75s ease-in-out infinite;
     border-radius: 2px;
 }
 

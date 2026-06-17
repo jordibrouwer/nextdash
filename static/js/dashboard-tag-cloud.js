@@ -520,6 +520,8 @@
                 });
             });
             this.syncToggleState();
+            window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+            window.FocusTrapUtils?.syncDashboardInert?.();
             window.dashboardInstance?.language?.applyTranslations?.();
             this.focusInitialChip();
         },
@@ -560,6 +562,7 @@
                 this._kbdFocusZone = 'chip';
                 this.clearBtn?.classList.remove('is-keyboard-focused');
                 this.syncToggleState();
+                window.FocusTrapUtils?.syncDashboardInert?.();
                 if (focusBookmarks) {
                     this.restoreBookmarkFocus();
                 } else if (document.activeElement?.closest?.('#tag-cloud-modal')) {

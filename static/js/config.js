@@ -19,6 +19,7 @@ class ConfigManager {
         this.faviconPrefetch = new ConfigFaviconPrefetch(this.language.t.bind(this.language));
         this.backup = new ConfigBackup(this.language.t.bind(this.language), this.faviconPrefetch);
         this.settings = new ConfigSettings(this.language);
+        this.toursRuntime = new ConfigToursRuntime(this);
         this.stats = null;
 
         // Data
@@ -532,48 +533,31 @@ class ConfigManager {
     }
 
     hasSeenConfigGeneralTour() {
-        if (this.settingsData?.configGeneralTourCompleted === true) return true;
-        try {
-            return localStorage.getItem(window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1') === '1';
-        } catch {
-            return false;
-        }
+        return this.toursRuntime.hasSeenTour({
+            settingsFlag: 'configGeneralTourCompleted',
+            storageKeyFallback: 'nextdash:config-general-tour-v1',
+            tourGlobal: 'ConfigGeneralTour',
+        });
     }
 
     syncConfigGeneralTourSeenFromServer() {
-        const key = window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1';
-        try {
-            if (this.settingsData?.configGeneralTourCompleted === true) {
-                localStorage.setItem(key, '1');
-            } else {
-                localStorage.removeItem(key);
-            }
-        } catch {
-            // ignore
-        }
+        this.toursRuntime.syncSeenFromServer({
+            settingsFlag: 'configGeneralTourCompleted',
+            storageKeyFallback: 'nextdash:config-general-tour-v1',
+            tourGlobal: 'ConfigGeneralTour',
+        });
     }
 
     async markConfigGeneralTourCompleted() {
-        this.settingsData.configGeneralTourCompleted = true;
-        try {
-            localStorage.setItem(
-                window.ConfigGeneralTour?.STORAGE_KEY || 'nextdash:config-general-tour-v1',
-                '1'
-            );
-        } catch {
-            // ignore
-        }
-        if (this.settings?.saveSettingsToServer) {
-            await this.settings.saveSettingsToServer(this.settingsData);
-        }
+        await this.toursRuntime.markTourCompleted({
+            settingsFlag: 'configGeneralTourCompleted',
+            storageKeyFallback: 'nextdash:config-general-tour-v1',
+            tourGlobal: 'ConfigGeneralTour',
+        });
     }
 
     cancelConfigGeneralTourSchedule() {
-        this._configGeneralTourScheduleId = (this._configGeneralTourScheduleId || 0) + 1;
-        if (this._configGeneralTourScheduleTimer) {
-            clearTimeout(this._configGeneralTourScheduleTimer);
-            this._configGeneralTourScheduleTimer = null;
-        }
+        this.toursRuntime.cancelSchedule('configGeneralTour');
     }
 
     scheduleConfigGeneralTour() {
@@ -583,21 +567,16 @@ class ConfigManager {
         if (this._isConfigTabTourBusy('general')) return;
         if (document.body?.classList.contains('loading')) return;
 
-        this.cancelConfigGeneralTourSchedule();
-        const runId = this._configGeneralTourScheduleId;
-        this._configGeneralTourScheduleTimer = setTimeout(() => {
-            this._configGeneralTourScheduleTimer = null;
-            if (runId !== this._configGeneralTourScheduleId) return;
-            if (
-                this.hasSeenConfigGeneralTour() ||
-                this._configGeneralTourActive ||
-                this._configGeneralTourStarting ||
-                this._isConfigTabTourBusy('general')
-            ) {
-                return;
-            }
-            if (!this.isConfigGeneralTabActive()) return;
-            void this.maybeStartConfigGeneralTour().then((result) => {
+        this.toursRuntime.scheduleTour('configGeneralTour', {
+            shouldRun: () => (
+                !this.hasSeenConfigGeneralTour() &&
+                !this._configGeneralTourActive &&
+                !this._configGeneralTourStarting &&
+                !this._isConfigTabTourBusy('general') &&
+                this.isConfigGeneralTabActive()
+            ),
+            onRun: () => this.maybeStartConfigGeneralTour(),
+            afterRun: (result) => {
                 if (result?.ok !== true) return;
                 window.setTimeout(() => {
                     const card = document.querySelector('.config-general-tour-card');
@@ -609,16 +588,12 @@ class ConfigManager {
                         window.ConfigGeneralTour?.teardownStaleDom?.();
                     }
                 }, 2500);
-            });
-        }, 550);
+            },
+        });
     }
 
     isConfigGeneralTabActive() {
-        if (this.ui?._currentTab === 'general') return true;
-        const activeTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
-        if (activeTab === 'general') return true;
-        const hash = (window.location.hash || '').replace(/^#/, '');
-        return hash.startsWith('general');
+        return this.toursRuntime.isConfigTabActive('general');
     }
 
     configGeneralTourFailureMessage(reason) {

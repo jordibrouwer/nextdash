@@ -5,7 +5,9 @@
     'use strict';
 
     const STORAGE_UNTIL = 'nextdash-tips-promo-until-v1';
+    const STORAGE_TIPS_NOT_BEFORE = 'nextdash-tips-not-before-v1';
     const PROMO_MS = 7 * 24 * 60 * 60 * 1000;
+    const ONBOARDING_TIPS_DELAY_MS = 60 * 1000;
 
     function readUntil() {
         try {
@@ -25,9 +27,42 @@
         } catch { /* ignore */ }
     }
 
+    function readTipsNotBefore() {
+        try {
+            return Number(localStorage.getItem(STORAGE_TIPS_NOT_BEFORE) || 0);
+        } catch {
+            return 0;
+        }
+    }
+
+    function writeTipsNotBefore(ts) {
+        try {
+            if (ts > 0) {
+                localStorage.setItem(STORAGE_TIPS_NOT_BEFORE, String(ts));
+            } else {
+                localStorage.removeItem(STORAGE_TIPS_NOT_BEFORE);
+            }
+        } catch { /* ignore */ }
+    }
+
     window.TipsPolicy = {
         startPromoPeriod() {
             writeUntil(Date.now() + PROMO_MS);
+        },
+
+        /** Wait 1 minute after onboarding finish/skip before showing rotating tips. */
+        markOnboardingEnded() {
+            writeTipsNotBefore(Date.now() + ONBOARDING_TIPS_DELAY_MS);
+        },
+
+        getTipsStartDelayMs() {
+            const notBefore = readTipsNotBefore();
+            if (!notBefore) return 0;
+            return Math.max(0, notBefore - Date.now());
+        },
+
+        clearTipsStartDelay() {
+            writeTipsNotBefore(0);
         },
 
         clearPromoPeriod() {

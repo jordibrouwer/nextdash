@@ -43,6 +43,7 @@
     let shownPromoKind = null;
     let promoShowTimer = null;
     let promoShowToken = 0;
+    let pendingPromoRequest = null;
     let suppressUnderlyingClicksUntil = 0;
     let boundReposition = null;
 
@@ -114,6 +115,10 @@
         ));
     }
 
+    function isSearchPanelOpen() {
+        return document.getElementById('shortcut-search')?.classList.contains('show') === true;
+    }
+
     function isPromoDeferred() {
         if (document.body.classList.contains('loading')) return true;
         if (global.DashboardTagCloud?.modalOpen) return true;
@@ -121,8 +126,12 @@
         const overlay = document.getElementById('app-modal');
         if (overlay?.classList.contains('show')) return true;
         if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
-        if (global.DashboardGridKeyboardPromo?.isPromoOpen?.()) return true;
-        if (global.DashboardSmartCollectionPromo?.isPromoOpen?.()) return true;
+        const searchOpen = isSearchPanelOpen();
+        if (!searchOpen) {
+            if (global.DashboardGridKeyboardPromo?.isPromoOpen?.()) return true;
+            if (global.DashboardGJumpPromo?.isPromoOpen?.()) return true;
+            if (global.DashboardSmartCollectionPromo?.isPromoOpen?.()) return true;
+        }
         if (global.DashboardFeaturePromos?.isAnyOpen?.()) return true;
         const isVisibleTourCard = (el) => {
             if (!(el instanceof HTMLElement)) return false;
@@ -132,6 +141,12 @@
         };
         return [...document.querySelectorAll('[class$="-tour-card"], .onboarding-card, .feature-tour-card')]
             .some(isVisibleTourCard);
+    }
+
+    function dismissCompetingDiscoverabilityPromos() {
+        global.DashboardGridKeyboardPromo?.dismissPopover?.();
+        global.DashboardGJumpPromo?.dismissPopover?.();
+        global.DashboardSmartCollectionPromo?.dismissPopover?.();
     }
 
     function getSearchContainer() {
@@ -321,6 +336,8 @@
         if (promoKind === 'filters') {
             if (!hasSearchFilterPrefix(query)) return;
         } else if (getPromoKind(query) !== promoKind) {
+            const liveQuery = global.dashboardInstance?.searchComponent?.currentQuery ?? query;
+            scheduleShow(PROMO_RETRY_DELAY_MS, { query: liveQuery, kind: promoKind });
             return;
         }
 
@@ -329,6 +346,7 @@
         addPromoBadge(container, promoKind);
 
         shownPromoKind = promoKind;
+        pendingPromoRequest = null;
         promoEl = buildPromoElement(promoKind);
         document.body.appendChild(promoEl);
         bindReposition();
@@ -346,18 +364,36 @@
     function scheduleShow(delayMs = PROMO_SHOW_DELAY_MS, { query = '', kind } = {}) {
         const promoKind = kind || getPromoKind(query);
         if (!promoKind || isPromoSuppressed(promoKind) || !isDesktopDiscoverability()) return;
+        pendingPromoRequest = { query, kind: promoKind };
         clearTimeout(promoShowTimer);
         const token = promoShowToken;
         promoShowTimer = setTimeout(() => showPromoNow(token, { query, kind: promoKind }), delayMs);
     }
 
+    function flushPendingPromoIfNeeded() {
+        if (!pendingPromoRequest || !isSearchPanelOpen()) {
+            return;
+        }
+        const { query, kind } = pendingPromoRequest;
+        if (!kind || isPromoSuppressed(kind)) {
+            pendingPromoRequest = null;
+            return;
+        }
+        if (promoEl?.isConnected) {
+            return;
+        }
+        scheduleShow(PROMO_SHOW_DELAY_MS, { query, kind });
+    }
+
     function onSearchOpened({ query = '' } = {}) {
+        dismissCompetingDiscoverabilityPromos();
         const kind = getPromoKind(query);
         if (!kind || isPromoSuppressed(kind) || !isDesktopDiscoverability()) return;
         scheduleShow(PROMO_SHOW_DELAY_MS, { query, kind });
     }
 
     function onSearchModeChanged({ query = '' } = {}) {
+        dismissCompetingDiscoverabilityPromos();
         const kind = getPromoKind(query);
         cancelScheduledShow();
         removePromoFromDom();
@@ -368,6 +404,32 @@
     function onSearchClosed() {
         cancelScheduledShow();
         removePromoFromDom();
+        pendingPromoRequest = null;
+    }
+
+    if (!global.__dashboardSearchPromoBlockerBound) {
+        global.__dashboardSearchPromoBlockerBound = true;
+        const observer = new MutationObserver(() => {
+            if (!pendingPromoRequest || promoEl?.isConnected) {
+                return;
+            }
+            if (!isSearchPanelOpen() || isPromoDeferred()) {
+                return;
+            }
+            flushPendingPromoIfNeeded();
+        });
+        const startObserver = () => {
+            const modal = document.getElementById('app-modal');
+            if (modal) {
+                observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+            }
+            observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: false });
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+        } else {
+            startObserver();
+        }
     }
 
     function onSearchQueryStarted(query = '') {
@@ -409,6 +471,8 @@
         isPromoSuppressed,
         shouldBlockUnderlyingClick,
         dismissPromo: confirmPromo,
+        dismissCompetingDiscoverabilityPromos,
+        flushPendingPromoIfNeeded,
         clearPromoSeen(kind) {
             cancelScheduledShow();
             removePromoFromDom();

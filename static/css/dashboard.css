@@ -1554,8 +1554,8 @@ body[data-density-mode="dense"] .dashboard-grid {
 .category.animate-enter {
     opacity: 0;
     transform: translateY(8px);
-    animation: categoryEnter 220ms ease-out forwards;
-    animation-delay: calc(200ms + var(--stagger-index, 0) * 10ms);
+    animation: categoryEnter 140ms ease-out forwards;
+    animation-delay: calc(80ms + var(--stagger-index, 0) * 6ms);
 }
 
 @keyframes categoryEnter {
@@ -1851,8 +1851,8 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
 .bookmark-link.animate-enter {
     opacity: 0;
     transform: translateY(6px);
-    animation: bookmarkEnter 200ms ease-out forwards;
-    animation-delay: calc(var(--item-index, 0) * 16ms);
+    animation: bookmarkEnter 130ms ease-out forwards;
+    animation-delay: calc(var(--item-index, 0) * 10ms);
 }
 
 /* Safety: status updates should never re-hide rows, even if animate-enter lingers. */

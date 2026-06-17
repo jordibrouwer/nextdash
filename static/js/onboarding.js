@@ -843,7 +843,8 @@ class Onboarding {
 
     finish() {
         this.collectCurrentStepInputs();
-        Object.assign(this.settings, {
+
+        const settingsPatch = {
             language: this.localSettings.language,
             theme: this.localSettings.theme,
             openInNewTab: this.localSettings.openInNewTab,
@@ -857,29 +858,46 @@ class Onboarding {
             showSmartTodayCollection: this.localSettings.showSmartTodayCollection,
             showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection,
             layoutVersion: this.localSettings.layoutVersion || 'classic',
-        });
+        };
+        const bookmarkSelection = { ...(this.localSettings.statusMonitorSelection || {}) };
+        const shouldApplyBookmarks = this.onApplyBookmarks && this.statusMonitorBookmarks.length > 0;
 
-        if (this.onApplySettings) {
-            this.onApplySettings(this.settings);
-        }
-
-        if (this.onApplyBookmarks && this.statusMonitorBookmarks.length > 0) {
-            const selection = this.localSettings.statusMonitorSelection || {};
-            Promise.resolve(this.onApplyBookmarks(selection, {
-                scope: this.usesAllPagesStatusMonitor ? 'all' : 'page',
-            })).catch(() => {});
-        }
+        // Close the tour first so Skip/Finish never leaves the UI locked if callbacks throw.
+        this.teardownUi();
 
         try {
-            localStorage.setItem(this.storageSeenKey, 'true');
-            localStorage.setItem(this.storageVersionKey, String(this.version));
+            if (this.onPersist && !this.persisted) {
+                window.TipsPolicy?.markOnboardingEnded?.();
+            }
+
+            Object.assign(this.settings, settingsPatch);
+
+            if (this.onApplySettings) {
+                this.onApplySettings(this.settings);
+            }
+
+            if (shouldApplyBookmarks) {
+                Promise.resolve(this.onApplyBookmarks(bookmarkSelection, {
+                    scope: this.usesAllPagesStatusMonitor ? 'all' : 'page',
+                })).catch(() => {});
+            }
+
+            try {
+                localStorage.setItem(this.storageSeenKey, 'true');
+                localStorage.setItem(this.storageVersionKey, String(this.version));
+            } catch (error) {
+                // Ignore storage errors; onboarding can still close normally.
+            }
+            if (this.onPersist && !this.persisted) {
+                this.persisted = true;
+                Promise.resolve(this.onPersist()).catch(() => {});
+            }
         } catch (error) {
-            // Ignore storage errors; onboarding can still close normally.
+            console.error('Onboarding finish failed:', error);
         }
-        if (this.onPersist && !this.persisted) {
-            this.persisted = true;
-            Promise.resolve(this.onPersist()).catch(() => {});
-        }
+    }
+
+    teardownUi() {
         if (this.highlightedElement) {
             this.highlightedElement.classList.remove('onboarding-highlight');
             this.highlightedElement = null;
@@ -896,6 +914,7 @@ class Onboarding {
             document.removeEventListener('keydown', this.keyHandler);
             this.keyHandler = null;
         }
+        window.GuidedFlowGuard?.sync?.();
     }
 }
 

@@ -23,6 +23,8 @@ go.work.sum
 
 # Node dev dependencies (Playwright debug scripts)
 node_modules/
+test-results/
+playwright-report/
 
 # Local / runtime data
 data/

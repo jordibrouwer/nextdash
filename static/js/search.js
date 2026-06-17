@@ -152,6 +152,11 @@ class SearchComponent {
                 }
             }
 
+            // Don't start shortcut search with shift-modified letters (Shift+M/D, etc.)
+            if (!this.searchActive && e.shiftKey && e.key.length === 1 && /[a-z]/i.test(e.key)) {
+                return;
+            }
+
             // Don't trigger shortcuts if any modifier key is pressed
             // This allows browser shortcuts like Ctrl+W, Ctrl+R, Ctrl+Q, etc.
             if (e.ctrlKey || e.altKey || e.metaKey) {
@@ -301,6 +306,12 @@ class SearchComponent {
         if (window.DashboardTagCloud?.modalOpen) {
             return true;
         }
+        if (document.getElementById('page-overview-overlay')) {
+            return true;
+        }
+        if (document.getElementById('omnibox-overlay')) {
+            return true;
+        }
         return false;
     }
 
@@ -316,6 +327,11 @@ class SearchComponent {
         }
 
         if (!this.searchActive && this.shouldDeferToDashboardOverlay()) {
+            return;
+        }
+
+        // Dashboard grid shortcuts use shift-modified letters; never open shortcut search for them.
+        if (!this.searchActive && e.shiftKey && key.length === 1 && /^[A-Z]$/.test(key)) {
             return;
         }
 
@@ -363,6 +379,23 @@ class SearchComponent {
         }
 
         if (key === 'TAB' && this.searchActive) {
+            const root = document.querySelector('#shortcut-search .search-container');
+            if (root) {
+                const active = document.activeElement;
+                if (!(active instanceof Element) || !root.contains(active)) {
+                    e.preventDefault();
+                    const focusable = window.FocusTrapUtils?.getFocusableElements?.(root) || [];
+                    if (focusable.length > 0) {
+                        focusable[0].focus({ preventScroll: true });
+                    } else {
+                        this.focusSearchPanel();
+                    }
+                    return;
+                }
+                if (window.FocusTrapUtils?.trapTabKey(e, root)) {
+                    return;
+                }
+            }
             e.preventDefault();
             this.navigateMatches(e.shiftKey ? -1 : 1);
             return;
@@ -1031,10 +1064,38 @@ class SearchComponent {
         }));
     }
 
+    _syncDashboardInert() {
+        window.FocusTrapUtils?.syncDashboardInert?.();
+    }
+
+    focusSearchPanel() {
+        if (!this.searchActive) {
+            return;
+        }
+        if (window.MobileExperience?.isMobileLayout?.()) {
+            const mobileInput = document.getElementById('search-input-mobile');
+            if (mobileInput) {
+                mobileInput.focus({ preventScroll: true });
+            }
+            return;
+        }
+        const selected = this.matchElements[this.selectedMatchIndex];
+        if (selected && typeof selected.focus === 'function') {
+            selected.focus({ preventScroll: true });
+            return;
+        }
+        const modeTab = document.querySelector('#shortcut-search .search-mode-tab.active')
+            || document.querySelector('#shortcut-search .search-mode-tab');
+        if (modeTab && typeof modeTab.focus === 'function') {
+            modeTab.focus({ preventScroll: true });
+        }
+    }
+
     showSearch() {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
             this._lastPromoMode = undefined;
+            window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
@@ -1047,6 +1108,8 @@ class SearchComponent {
             // Auto-scroll to the right to keep the cursor position visible
             queryElement.scrollLeft = queryElement.scrollWidth;
             searchElement.classList.add('show');
+            window.DashboardSearchPromo?.dismissCompetingDiscoverabilityPromos?.();
+            this._syncDashboardInert();
             
             // Prevent body scroll only if not already prevented
             if (document.body.style.overflow !== 'hidden') {
@@ -1071,6 +1134,7 @@ class SearchComponent {
             }
 
             requestAnimationFrame(() => {
+                this.focusSearchPanel();
                 window.DashboardSearchPromo?.onSearchOpened?.({ query: this.currentQuery });
             });
         }
@@ -1087,10 +1151,11 @@ class SearchComponent {
         this.resetQuery();
         const searchElement = document.getElementById('shortcut-search');
         const mobileInput = document.getElementById('search-input-mobile');
-        
+
         if (searchElement) {
             searchElement.classList.remove('show');
         }
+        this._syncDashboardInert();
 
         window.DashboardSearchPromo?.onSearchClosed?.();
         
@@ -1525,6 +1590,9 @@ class SearchComponent {
         // Batch append to DOM
         matchesContainer.appendChild(fragment);
         this.updateSelectionHighlight();
+        if (this.searchActive) {
+            requestAnimationFrame(() => this.focusSearchPanel());
+        }
     }
 
     navigateMatches(direction) {

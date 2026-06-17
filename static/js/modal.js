@@ -139,29 +139,13 @@ class Modal {
         document.addEventListener('keydown', this.focusTrapHandler);
     }
 
+    _setBackgroundInert() {
+        window.FocusTrapUtils?.syncDashboardInert?.();
+    }
+
     handleTabKey(e) {
-        const focusableElements = this.modal.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        
-        if (focusableElements.length === 0) return;
-        
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-        const activeElement = document.activeElement;
-        
-        if (e.shiftKey) {
-            // Shift+Tab
-            if (activeElement === firstElement) {
-                e.preventDefault();
-                lastElement.focus();
-            }
-        } else {
-            // Tab
-            if (activeElement === lastElement) {
-                e.preventDefault();
-                firstElement.focus();
-            }
+        if (window.FocusTrapUtils?.trapTabKey(e, this.modalPanel || this.modal)) {
+            return;
         }
     }
 
@@ -273,6 +257,7 @@ class Modal {
 
         this.modal.classList.add('show');
         this.modal.setAttribute('aria-hidden', 'false');
+        this._setBackgroundInert();
         
         // Store the element that triggered the modal so we can return focus
         this.previouslyFocusedElement = document.activeElement;
@@ -302,7 +287,12 @@ class Modal {
                     return;
                 }
             }
-            confirmButton.focus();
+            const panel = this.modalPanel || this.modal;
+            const focusable = window.FocusTrapUtils?.getFocusableElements?.(panel) || [];
+            const target = focusable[0] || confirmButton;
+            if (target && typeof target.focus === 'function') {
+                target.focus({ preventScroll: true });
+            }
         }, 100);
     }
 
@@ -316,6 +306,7 @@ class Modal {
         if (this.modal) {
             this.modal.classList.remove('show');
             this.modal.setAttribute('aria-hidden', 'true');
+            this._setBackgroundInert();
             if (this.activeModalClasses.length > 0) {
                 this.modalPanel.classList.remove(...this.activeModalClasses);
             }

@@ -546,6 +546,7 @@ class KeyboardNavigation {
         if (e.shiftKey && key === 'M' && this.currentIndex >= 0) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            e.stopPropagation();
             this.openMovePopoverForCurrent();
             return;
         }
@@ -554,6 +555,7 @@ class KeyboardNavigation {
         if (e.shiftKey && key === 'D' && this.currentIndex >= 0) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            e.stopPropagation();
             this.openDeletePopoverForCurrent();
             return;
         }
@@ -660,9 +662,14 @@ class KeyboardNavigation {
                 break;
 
             case ';':
+                if (!this._gridNavActive()) {
+                    break;
+                }
                 if (this.dashboard && typeof this.dashboard.tryOpenInlineBookmarkEdit === 'function') {
                     if (this.dashboard.tryOpenInlineBookmarkEdit()) {
                         e.preventDefault();
+                        e.stopImmediatePropagation();
+                        e.stopPropagation();
                     }
                 }
                 break;
@@ -1206,7 +1213,8 @@ class KeyboardNavigation {
         }
     }
 
-    clearSelection() {
+    clearSelection(options = {}) {
+        const restoreFocus = options.restoreFocus !== false;
         const hadSelection = this.currentIndex >= 0;
         this.restoreKbdSelection();
         this.navigableElements.forEach(element => {
@@ -1219,7 +1227,7 @@ class KeyboardNavigation {
         this.syncRovingTabStops({ focus: false });
         this.syncGridActiveDescendant();
 
-        if (hadSelection) {
+        if (hadSelection && restoreFocus) {
             const firstLink = this.navigableElements[0]?.querySelector?.('a.bookmark-open');
             if (firstLink && typeof firstLink.focus === 'function') {
                 firstLink.focus({ preventScroll: true });
