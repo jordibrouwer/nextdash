@@ -491,6 +491,7 @@
         if (!confirmed) return;
 
         let deleted = 0;
+        let failed = 0;
         for (const key of keys) {
             const issue = findIssueBySelectionKey(key);
             if (!issue) continue;
@@ -501,10 +502,24 @@
                     body: JSON.stringify({ pageId: issue.pageId, index: issue.index })
                 });
                 if (response.ok) deleted += 1;
-            } catch (e) { /* continue */ }
+                else failed += 1;
+            } catch (e) {
+                failed += 1;
+                console.warn('Health bulk delete failed for bookmark', issue.pageId, issue.index, e);
+            }
         }
         healthState.selected.clear();
-        showBulkStatus(t('health.bulkDeleted', 'Deleted {count} bookmark(s).', { count: deleted }));
+        reportBulkOutcome({
+            success: deleted,
+            total: keys.length,
+            failed,
+            successKey: 'health.bulkDeleted',
+            successFallback: 'Deleted {count} bookmark(s).',
+            partialKey: 'health.bulkDeletePartial',
+            partialFallback: 'Deleted {success} of {total}; {failed} failed.',
+            failedKey: 'health.bulkDeleteFailed',
+            failedFallback: 'Could not delete selected bookmarks.'
+        });
         await loadReport();
         render();
     }
@@ -513,6 +528,7 @@
         const keys = [...healthState.selected];
         if (!keys.length) return;
         let updated = 0;
+        let failed = 0;
         for (const key of keys) {
             const issue = findIssueBySelectionKey(key);
             if (!issue?.url) continue;
@@ -520,11 +536,20 @@
                 const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
                 if (typeof fetchIcon !== 'function') break;
                 const iconPath = await fetchIcon(issue.url);
-                if (!iconPath) continue;
+                if (!iconPath) {
+                    failed += 1;
+                    continue;
+                }
                 const res = await fetch(`/api/bookmarks?page=${issue.pageId}`);
-                if (!res.ok) continue;
+                if (!res.ok) {
+                    failed += 1;
+                    continue;
+                }
                 const bookmarks = await res.json();
-                if (!Array.isArray(bookmarks) || !bookmarks[issue.index]) continue;
+                if (!Array.isArray(bookmarks) || !bookmarks[issue.index]) {
+                    failed += 1;
+                    continue;
+                }
                 bookmarks[issue.index].icon = iconPath;
                 const saveRes = await apiFetch(`/api/bookmarks?page=${issue.pageId}`, {
                     method: 'POST',
@@ -532,9 +557,23 @@
                     body: JSON.stringify(bookmarks)
                 });
                 if (saveRes.ok) updated += 1;
-            } catch (e) { /* continue */ }
+                else failed += 1;
+            } catch (e) {
+                failed += 1;
+                console.warn('Health bulk favicon refresh failed for bookmark', issue?.pageId, issue?.index, e);
+            }
         }
-        showBulkStatus(t('health.bulkFaviconsDone', 'Updated {count} favicon(s).', { count: updated }));
+        reportBulkOutcome({
+            success: updated,
+            total: keys.length,
+            failed,
+            successKey: 'health.bulkFaviconsDone',
+            successFallback: 'Updated {count} favicon(s).',
+            partialKey: 'health.bulkFaviconsPartial',
+            partialFallback: 'Updated {success} of {total}; {failed} failed.',
+            failedKey: 'health.bulkFaviconsFailed',
+            failedFallback: 'Could not refresh favicons for the selection.'
+        });
         await loadReport();
         render();
     }
@@ -1185,6 +1224,18 @@
         }
     }
 
+    function reportBulkOutcome({ success, total, failed = Math.max(0, total - success), successKey, successFallback, partialKey, partialFallback, failedKey, failedFallback }) {
+        if (failed > 0 && success > 0) {
+            showBulkStatus(t(partialKey, partialFallback, { success, total, failed }));
+            return;
+        }
+        if (failed > 0 || success === 0 && total > 0) {
+            showBulkStatus(t(failedKey, failedFallback));
+            return;
+        }
+        showBulkStatus(t(successKey, successFallback, { count: success }));
+    }
+
     function showMergeDuplicatesFlow() {
         const groups = getFilteredDuplicateGroups(healthState.report);
         if (!groups.length) {
@@ -1359,7 +1410,8 @@
                 body: JSON.stringify({ pageId, index, status, error })
             });
         } catch (e) {
-            // Avoid breaking UI when status persistence fails.
+            console.warn('Health status persistence failed', pageId, index, e);
+            showBulkStatus(t('health.statusPersistFailed', 'Could not save status to disk.'));
         }
     }
 

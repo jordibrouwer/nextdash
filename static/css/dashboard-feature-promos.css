@@ -139,7 +139,28 @@
 .dashboard-feature-promo-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 0.55rem;
     margin-top: 0.55rem;
+}
+
+.dashboard-feature-promo-link {
+    margin-right: auto;
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.82);
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.dashboard-feature-promo-link:hover,
+.dashboard-feature-promo-link:focus-visible {
+    text-decoration: underline;
+    outline: none;
+}
+
+.dashboard-feature-promo-link.hidden {
+    display: none;
 }
 
 .dashboard-feature-promo-close {

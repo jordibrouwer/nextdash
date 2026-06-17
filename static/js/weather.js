@@ -72,6 +72,7 @@ class WeatherService {
     }
 
     async fetchWeather(settings, options = {}) {
+        this.lastFetchError = null;
         const useCache = options.useCache !== false;
         if (useCache) {
             const cached = this.getCachedWeather(settings);
@@ -83,14 +84,24 @@ class WeatherService {
         const locationData = settings?.weatherSource === 'browser'
             ? await this.resolveFromBrowser()
             : await this.resolveFromManualLocation(settings?.weatherLocation);
-        if (!locationData) return null;
+        if (!locationData) {
+            if (!this.lastFetchError) {
+                this.lastFetchError = settings?.weatherSource === 'browser'
+                    ? 'geolocation_failed'
+                    : 'manual_location_missing';
+            }
+            return null;
+        }
 
         const weatherData = await this.fetchCurrentWeather(
             locationData.latitude,
             locationData.longitude,
             settings?.weatherUnit
         );
-        if (!weatherData) return null;
+        if (!weatherData) {
+            this.lastFetchError = 'weather_fetch_failed';
+            return null;
+        }
 
         const result = {
             locationName: locationData.locationName,
@@ -143,7 +154,12 @@ class WeatherService {
 
     async resolveFromBrowser() {
         const coords = await this.getBrowserCoordinates();
-        if (!coords) return null;
+        if (!coords) {
+            if (!this.lastFetchError) {
+                this.lastFetchError = this.lastGeolocationError || 'geolocation_failed';
+            }
+            return null;
+        }
         const locationName = await this.reverseGeocode(coords.latitude, coords.longitude);
         return {
             latitude: coords.latitude,
@@ -155,17 +171,28 @@ class WeatherService {
     getBrowserCoordinates() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) {
+                this.lastGeolocationError = 'geolocation_unavailable';
                 resolve(null);
                 return;
             }
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    this.lastGeolocationError = null;
                     resolve({
                         latitude: Number(position.coords.latitude),
                         longitude: Number(position.coords.longitude)
                     });
                 },
-                () => resolve(null),
+                (error) => {
+                    if (error?.code === 1) {
+                        this.lastGeolocationError = 'geolocation_denied';
+                    } else if (error?.code === 3) {
+                        this.lastGeolocationError = 'geolocation_timeout';
+                    } else {
+                        this.lastGeolocationError = 'geolocation_unavailable';
+                    }
+                    resolve(null);
+                },
                 { enableHighAccuracy: false, timeout: 5000, maximumAge: 10 * 60 * 1000 }
             );
         });

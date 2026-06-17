@@ -172,6 +172,7 @@ class Dashboard {
         this.weatherRefreshTimer = null;
         this.dateTimeRefreshTimer = null;
         this.weatherData = null;
+        this.weatherLastError = null;
         this.inlineEditingBookmarkIndex = null;
         this.onboardingStartedInSession = false;
         this._postOnboardingPromptsTimer = null;
@@ -10073,8 +10074,21 @@ class Dashboard {
             this.weatherData = await this.weatherService.fetchWeather(this.settings, {
                 useCache: !forceRefresh
             });
+            this.weatherLastError = this.weatherService.lastFetchError || null;
         } catch (error) {
             this.weatherData = null;
+            this.weatherLastError = 'weather_fetch_failed';
+        }
+        if (
+            !this.weatherData
+            && this.weatherLastError
+            && String(this.weatherLastError).startsWith('geolocation_')
+            && this.settings.weatherSource === 'browser'
+        ) {
+            const anchor = document.getElementById('date-element');
+            if (anchor) {
+                window.DashboardFeaturePromos?.tryShowDeferred?.('weatherGeolocation', anchor);
+            }
         }
         this.renderDateWeatherLine();
     }

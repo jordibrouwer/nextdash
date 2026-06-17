@@ -241,7 +241,7 @@
             const title = String(bookmark.previewTitle || bookmark.name || '').trim()
                 || this.t('config.bookmarkPreviewUntitled', 'Untitled');
             const desc = String(bookmark.previewDesc || '').trim();
-            const image = String(bookmark.previewImage || '').trim();
+            const image = global.BookmarkUrlUtils?.safeHttpResourceUrl?.(bookmark.previewImage) || '';
             let domain = '';
             try { domain = new URL(global.BookmarkUrlUtils?.ensureHttpUrl(bookmark.url) || bookmark.url || '').hostname; } catch { domain = ''; }
 

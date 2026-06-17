@@ -11,13 +11,25 @@
         return `https://${trimmed}`;
     }
 
+    function canonicalURLHost(u) {
+        let host = u.hostname.toLowerCase();
+        const port = u.port;
+        if (!port) {
+            return host;
+        }
+        if (host.includes(':')) {
+            return `[${host}]:${port}`;
+        }
+        return `${host}:${port}`;
+    }
+
     /** Same rules as server canonicalBookmarkURLKey (handlers.go). */
     function canonicalBookmarkURLKey(raw) {
         const s = String(raw || '').trim();
         try {
             const u = new URL(ensureHttpUrl(s));
             const scheme = u.protocol.replace(/:$/, '').toLowerCase();
-            const host = u.host.toLowerCase();
+            const host = canonicalURLHost(u);
             let path = u.pathname;
             if (path === '/') {
                 path = '';
@@ -62,11 +74,73 @@
         }
     }
 
+    /** Normalized http(s) URL for img/src and CSS url(); rejects javascript:, data:, etc. */
+    function safeHttpResourceUrl(raw) {
+        const trimmed = String(raw || '').trim();
+        if (!trimmed || !isHttpUrl(trimmed)) {
+            return '';
+        }
+        try {
+            return new URL(ensureHttpUrl(trimmed)).href;
+        } catch {
+            return '';
+        }
+    }
+
+    /** Safe value for CSS custom properties that wrap url("..."). */
+    function safeCssImageUrl(raw) {
+        const href = safeHttpResourceUrl(raw);
+        if (!href) {
+            return '';
+        }
+        return `url("${href.replace(/"/g, '%22')}")`;
+    }
+
+    function isPrivateOrLocalHost(hostname) {
+        const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+        if (!host || host === 'localhost') return true;
+        if (host.endsWith('.local')) return true;
+        if (host === '::1') return true;
+        if (/^127\./.test(host)) return true;
+        if (/^10\./.test(host)) return true;
+        if (/^192\.168\./.test(host)) return true;
+        const match = /^172\.(\d+)\./.exec(host);
+        if (match) {
+            const second = Number(match[1]);
+            if (second >= 16 && second <= 31) return true;
+        }
+        return false;
+    }
+
+    function requiresAllowLocalBookmarks(raw) {
+        try {
+            const u = new URL(ensureHttpUrl(raw));
+            if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+            return isPrivateOrLocalHost(u.hostname);
+        } catch {
+            return false;
+        }
+    }
+
+    /** Re-enable allowLocalBookmarks when stored settings block existing private-network bookmarks. */
+    function healAllowLocalBookmarksSetting(settings, bookmarks) {
+        if (!settings || settings.allowLocalBookmarks !== false) return false;
+        const list = Array.isArray(bookmarks) ? bookmarks : [];
+        const needsAllow = list.some((bm) => requiresAllowLocalBookmarks(bm?.url));
+        if (!needsAllow) return false;
+        settings.allowLocalBookmarks = true;
+        return true;
+    }
+
     global.BookmarkUrlUtils = {
         ensureHttpUrl,
         canonicalBookmarkURLKey,
         deriveFaviconFromBookmarkUrl,
         extractDomainFromUrl,
         isHttpUrl,
+        safeHttpResourceUrl,
+        safeCssImageUrl,
+        requiresAllowLocalBookmarks,
+        healAllowLocalBookmarksSetting,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

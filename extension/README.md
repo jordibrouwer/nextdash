@@ -44,6 +44,14 @@ To modify the extension:
 - Edit `popup.css` for styling (uses CSS variables for theming)
 - Edit `popup.js` for functionality
 
+### Shared bookmark-form modules
+
+`extension/bookmark-form/` is a copy of `static/js/bookmark-form/`. Edit the **static** files as the source of truth, then sync into the extension:
+
+```sh
+./scripts/sync-extension-bookmark-form.sh
+```
+
 Make sure to reload the extension in `chrome://extensions/` after changes.
 
 ## Requirements

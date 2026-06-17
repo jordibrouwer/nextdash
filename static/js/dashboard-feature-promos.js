@@ -61,6 +61,17 @@
             bodyFallback: 'Quick week view from the header date · add a calendar link in config for an <kbd>Open calendar</kbd> shortcut · <kbd>Esc</kbd> or click outside to close',
             dismissKey: 'datePopoverPromoDismiss',
         },
+        weatherGeolocation: {
+            storageKey: 'nextdash:dashboard-weather-geolocation-promo-confirmed-v1',
+            titleKey: 'weatherGeolocationPromoTitle',
+            titleFallback: 'Weather location blocked',
+            bodyKey: 'weatherGeolocationPromoBody',
+            bodyFallback: 'Browser location is off or denied. Allow location for this site via the lock icon in the address bar, or switch to a manual city in <a href="/config#general">Config → General → Date &amp; weather</a>.',
+            dismissKey: 'weatherGeolocationPromoDismiss',
+            linkKey: 'weatherGeolocationPromoLink',
+            linkFallback: 'Open weather settings →',
+            linkHref: '/config#general',
+        },
         categoryCollapse: {
             storageKey: 'nextdash:dashboard-category-collapse-promo-confirmed-v1',
             titleKey: 'categoryCollapsePromoTitle',
@@ -292,11 +303,18 @@
                 <p class="dashboard-feature-promo-title"></p>
                 <div class="dashboard-feature-promo-text"></div>
                 <div class="dashboard-feature-promo-actions">
+                    <a class="dashboard-feature-promo-link hidden" href="#" target="_self" rel="noopener"></a>
                     <button type="button" class="dashboard-feature-promo-close"></button>
                 </div>
             </div>`;
         wrap.querySelector('.dashboard-feature-promo-title').textContent = title;
         wrap.querySelector('.dashboard-feature-promo-text').innerHTML = body;
+        const linkEl = wrap.querySelector('.dashboard-feature-promo-link');
+        if (linkEl && def.linkHref) {
+            linkEl.href = def.linkHref;
+            linkEl.textContent = t(def.linkKey, def.linkFallback || 'Learn more →');
+            linkEl.classList.remove('hidden');
+        }
         wrap.querySelector('.dashboard-feature-promo-close').textContent = closeLabel;
         attachPromoButtonHandlers(wrap);
         return wrap;
@@ -375,6 +393,11 @@
         }
         return anchorEl?.closest?.('#date-popover')
             || document.getElementById('date-popover');
+    }
+
+    function getDateElementRect() {
+        const el = document.getElementById('date-element');
+        return el?.getBoundingClientRect() || null;
     }
 
     function getDatePopoverRect() {
@@ -596,6 +619,16 @@
             return;
         }
 
+        if (openKind === 'weatherGeolocation') {
+            const rect = getDateElementRect();
+            if (!rect) {
+                dismissOpen();
+                return;
+            }
+            applyBesidePlacement(rect);
+            return;
+        }
+
         if (openKind === 'cheatsheet') {
             const rect = getCheatsheetModalRect();
             if (!rect) {
@@ -634,6 +667,10 @@
         }
         if (kind === 'previewCard') {
             return global.dashboardInstance?.settings?.showLinkPreviewCards === true;
+        }
+        if (kind === 'weatherGeolocation') {
+            const settings = global.dashboardInstance?.settings;
+            return settings?.showWeatherWithDate === true && settings?.weatherSource === 'browser';
         }
         return true;
     }

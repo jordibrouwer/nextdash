@@ -1,5 +1,8 @@
 {
   "private": true,
+  "scripts": {
+    "sync:extension-bookmark-form": "./scripts/sync-extension-bookmark-form.sh"
+  },
   "devDependencies": {
     "playwright": "^1.60.0"
   }

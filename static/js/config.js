@@ -3706,6 +3706,44 @@ class ConfigManager {
             });
         }
 
+        const resetWeatherGeolocationPromoBtn = document.getElementById('reset-weather-geolocation-promo-btn');
+        if (resetWeatherGeolocationPromoBtn) {
+            resetWeatherGeolocationPromoBtn.addEventListener('click', () => {
+                if (window.MobileExperience?.isMobileLayout?.()) {
+                    this.ui.showNotification(
+                        this.language.t('config.resetWeatherGeolocationPromoMobile')
+                            || 'Weather location promo is hidden on mobile — use a wider window.',
+                        'warning'
+                    );
+                    return;
+                }
+                if (this.settingsData.showWeatherWithDate !== true || this.settingsData.weatherSource !== 'browser') {
+                    this.ui.showNotification(
+                        this.language.t('config.resetWeatherGeolocationPromoNeedsBrowser')
+                            || 'Enable weather and choose browser location in General first.',
+                        'warning'
+                    );
+                }
+                window.DashboardFeaturePromos?.clearPromoSeen?.('weatherGeolocation');
+                let message;
+                const dash = window.dashboardInstance;
+                if (dash) {
+                    const anchor = document.getElementById('date-element');
+                    const shown = anchor
+                        && window.DashboardFeaturePromos?.tryShow?.('weatherGeolocation', anchor);
+                    if (!shown) {
+                        void dash.refreshWeather?.(true);
+                    }
+                    message = this.language.t('config.resetWeatherGeolocationPromoSuccessShown')
+                        || 'Weather location promo reset — check the dashboard header (block location if needed).';
+                } else {
+                    message = this.language.t('config.resetWeatherGeolocationPromoSuccessOpenDashboard')
+                        || 'Weather location promo reset — open the dashboard with browser location enabled and deny geolocation if needed.';
+                }
+                this.ui.showNotification(message, 'success');
+            });
+        }
+
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 
         this.settings.attachSettingResetButtons(this.settingsData, () => this.markDirty());
