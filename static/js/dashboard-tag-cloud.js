@@ -452,6 +452,7 @@
 
             const eligible = this.isEligible();
             this.wrap.classList.toggle('is-eligible', eligible);
+            this.toggle?.classList.toggle('is-eligible', eligible);
             document.body.setAttribute(
                 'data-show-tag-cloud-button',
                 this.isFeatureAllowedInSettings() ? 'true' : 'false'
@@ -464,6 +465,7 @@
             }
 
             this.syncToggleState();
+            window.dashboardInstance?.syncTagCloudButtonPlacement?.();
         },
 
         syncToggleState() {
@@ -579,11 +581,18 @@
             }, 180);
         },
 
-        getModalMaxHeight(rect, margin, vh, anchor = 'above') {
+        getModalMaxHeight(rect, margin, vh, anchor = 'above', { sideRail = false } = {}) {
             const spaceAlongAnchor = anchor === 'below'
                 ? Math.max(120, vh - rect.bottom - margin * 2)
                 : Math.max(120, rect.top - margin * 2);
             let maxH = Math.min(vh * 0.88, spaceAlongAnchor);
+
+            if (sideRail) {
+                const spaceBelow = Math.max(120, vh - rect.top - margin);
+                const spaceAbove = Math.max(120, rect.top - margin);
+                maxH = Math.min(vh * 0.88, Math.max(spaceBelow, spaceAbove));
+                return Math.round(maxH);
+            }
 
             const layout = document.getElementById('dashboard-layout');
             if (layout) {
@@ -599,20 +608,28 @@
             return Math.round(maxH);
         },
 
+        measureModalNaturalHeight() {
+            const header = this.modal?.querySelector('.tag-cloud-modal-header');
+            const footer = this.modal?.querySelector('.tag-cloud-modal-footer');
+            const headerH = header?.offsetHeight || 0;
+            const footerH = footer?.hidden ? 0 : (footer?.offsetHeight || 0);
+            return headerH + (this.body?.scrollHeight || 0) + footerH;
+        },
+
         syncModalSize(maxHeight) {
             if (!this.modal || !this.body) return;
 
             this.modal.style.height = 'auto';
             this.modal.style.maxHeight = 'none';
-            this.body.style.maxHeight = '';
+            this.body.style.maxHeight = 'none';
             this.body.classList.remove('is-scrollable');
 
-            const naturalH = this.modal.offsetHeight;
+            const naturalH = this.measureModalNaturalHeight();
             const cap = Math.max(120, maxHeight);
             this.modal.style.maxHeight = `${cap}px`;
             this.modal.style.setProperty('--tag-cloud-modal-max-height', `${cap}px`);
 
-            if (naturalH <= cap) {
+            if (naturalH <= cap + 1) {
                 this.modal.style.height = 'auto';
                 return;
             }
@@ -628,6 +645,48 @@
             this.body.classList.add('is-scrollable');
         },
 
+        positionModalSideRail(rect, margin, vw, vh, maxW) {
+            let left = rect.right + margin;
+            if (left + maxW > vw - margin) {
+                left = Math.max(margin, vw - margin - maxW);
+            }
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.transformOrigin = 'top left';
+
+            const spaceBelow = Math.max(120, vh - rect.top - margin);
+            const spaceAbove = Math.max(120, rect.top - margin);
+
+            this.syncModalSize(spaceBelow);
+            const naturalH = this.measureModalNaturalHeight();
+
+            let top;
+            if (naturalH <= spaceBelow + 1) {
+                this.syncModalSize(spaceBelow);
+                top = rect.top;
+            } else if (naturalH <= spaceAbove + 1) {
+                this.syncModalSize(spaceAbove);
+                top = rect.top - this.modal.offsetHeight - margin;
+            } else if (spaceBelow >= spaceAbove) {
+                this.syncModalSize(spaceBelow);
+                top = rect.top;
+            } else {
+                this.syncModalSize(spaceAbove);
+                top = margin;
+            }
+
+            top = Math.max(margin, top);
+            const placedH = this.modal.offsetHeight || naturalH;
+            if (top + placedH > vh - margin) {
+                top = Math.max(margin, vh - margin - placedH);
+                this.syncModalSize(vh - top - margin);
+            }
+
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
+            window.DashboardFeaturePromos?.reposition?.();
+        },
+
         positionModal() {
             if (!this.modal || !this.toggle) return;
             const rect = this.toggle.getBoundingClientRect();
@@ -640,6 +699,12 @@
             const maxW = Math.min(Math.max(idealW, 300), Math.min(680, vw - margin * 2));
             this.modal.style.width = `${Math.round(maxW)}px`;
             this.modal.style.maxWidth = `${Math.round(maxW)}px`;
+
+            const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+            if (isSideRail) {
+                this.positionModalSideRail(rect, margin, vw, vh, maxW);
+                return;
+            }
 
             const dockRight = document.body.getAttribute('data-button-position') === 'bottom-left';
             let left = dockRight ? rect.right - maxW : rect.left;

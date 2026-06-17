@@ -2872,8 +2872,12 @@ body.no-animations .bookmarks-list.reorder-container::after {
     animation: bookmarkCopyFlash 500ms ease-out forwards;
 }
 
-body.no-animations .bookmark-link.bookmark-copy-flash::after {
+    body.no-animations .bookmark-link.bookmark-copy-flash::after {
     animation: none;
+}
+
+body.no-animations .bookmark-link.bookmark-flash::after {
+    animation: none !important;
 }
 
 /* Launcher scale-pulse on open */
@@ -3279,7 +3283,15 @@ body.no-animations .bookmark-move-out {
     .health-link a { animation: none !important; }
     .bookmark-link.bookmark-deep-link-focus { animation: none !important; }
     .bookmark-link.bookmark-copy-flash::after { animation: none !important; }
+    .bookmark-link.bookmark-flash::after { animation: none !important; }
     .layout-launcher .bookmark-link.bookmark-pulse { animation: none !important; }
+    /* Promo balloons (entrance + float) */
+    .dashboard-feature-promo-balloon,
+    .dashboard-g-jump-promo-balloon,
+    .dashboard-grid-kbd-promo-balloon,
+    .dashboard-smart-collection-promo-balloon,
+    .dashboard-search-promo-balloon,
+    .dashboard-search-promo-badge { animation: none !important; }
     /* Date popover entrance */
     .date-popover { animation: none !important; }
 }

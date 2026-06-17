@@ -13,6 +13,11 @@ body[data-show-tag-cloud-button="true"] .dashboard-tag-cloud-wrap.is-eligible {
     display: block;
 }
 
+body[data-show-tag-cloud-button="false"] #tag-cloud-toggle-btn,
+#tag-cloud-toggle-btn:not(.is-eligible) {
+    display: none !important;
+}
+
 /* / FAB — fixed like launcher / what's new; same palette as toolbar buttons */
 .tag-cloud-toggle-btn.search-button {
     position: fixed;
@@ -361,4 +366,8 @@ body[data-button-position="bottom-right"] .tag-cloud-toggle-btn.search-button {
 
 body[data-button-position="bottom-right"] .tag-cloud-modal {
     transform-origin: bottom left;
+}
+
+body[data-button-position="side-left"] .tag-cloud-modal {
+    transform-origin: top left;
 }

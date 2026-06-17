@@ -965,6 +965,14 @@ class Dashboard {
         window.AppNotification.show(message, type, opts);
     }
 
+    showGroupedNotification(key, count, buildMessage, type = 'success', options = {}) {
+        if (!window.AppNotification?.showGrouped) {
+            this.showNotification(buildMessage(count), type, options);
+            return;
+        }
+        window.AppNotification.showGrouped(key, buildMessage, { count, type, options });
+    }
+
     showErrorNotification(message, options = {}) {
         if (options.reload && window.AppNotification?.showErrorWithReload) {
             window.AppNotification.showErrorWithReload(message, options);
@@ -1789,8 +1797,26 @@ class Dashboard {
         });
     }
 
+    syncTagCloudButtonPlacement() {
+        const toggle = document.getElementById('tag-cloud-toggle-btn');
+        const wrap = document.getElementById('dashboard-tag-cloud-wrap');
+        const recentBtn = document.getElementById('recent-bookmarks-button');
+        if (!toggle || !wrap) return;
+
+        const isSideRail = (this.settings?.buttonBarPosition || document.body.getAttribute('data-button-position')) === 'side-left';
+        if (isSideRail && recentBtn?.parentElement) {
+            if (toggle.parentElement !== recentBtn.parentElement || toggle.previousElementSibling !== recentBtn) {
+                recentBtn.insertAdjacentElement('afterend', toggle);
+            }
+            return;
+        }
+
+        if (toggle.parentElement !== wrap) {
+            wrap.insertBefore(toggle, wrap.firstChild);
+        }
+    }
+
     setupDOM() {
-        // Control date visibility and set up if visible
         this.updateDateVisibility();
 
         document.body.setAttribute('data-show-title', this.settings.showTitle);
@@ -1809,6 +1835,8 @@ class Dashboard {
             this.settings.showTagCloudButton === true ? 'true' : 'false'
         );
         document.body.setAttribute('data-button-position', this.settings.buttonBarPosition || 'bottom');
+
+        this.syncTagCloudButtonPlacement();
 
         document.body.setAttribute('data-show-shortcuts', this.settings.showShortcuts !== false);
         document.body.setAttribute('data-show-pin-icon', this.settings.showPinIcon === true ? 'true' : 'false');
@@ -2483,18 +2511,31 @@ class Dashboard {
         }
 
         if (notify) {
-            const message = affectedCount > 1
-                ? this.formatDashboardLabel(
-                    'tagFilterMovedToCategory',
-                    { count: affectedCount, name: catName },
-                    `Moved ${affectedCount} bookmark(s) to "${catName}"`
-                )
-                : this.formatDashboardLabel(
-                    'movedToCategory',
-                    { name: catName },
-                    `Moved to "${catName}"`
+            const groupKey = `move-category:${categoryId}`;
+            const duration = 2500;
+            if (affectedCount > 1) {
+                this.showGroupedNotification(
+                    groupKey,
+                    affectedCount,
+                    (n) => this.formatDashboardLabel(
+                        'tagFilterMovedToCategory',
+                        { count: n, name: catName },
+                        `Moved ${n} bookmark(s) to "${catName}"`
+                    ),
+                    'success',
+                    { duration }
                 );
-            this.showNotification(message, 'success', { duration: 2500 });
+            } else {
+                this.showNotification(
+                    this.formatDashboardLabel(
+                        'movedToCategory',
+                        { name: catName },
+                        `Moved to "${catName}"`
+                    ),
+                    'success',
+                    { duration }
+                );
+            }
         }
 
         return true;
@@ -2545,8 +2586,10 @@ class Dashboard {
 
         try {
             await this.saveBookmarkOrder();
-            this.showNotification(
-                this.formatDashboardLabel('tagFilterDeleted', { count }, `Deleted ${count} bookmark(s)`),
+            this.showGroupedNotification(
+                'tag-filter-delete',
+                count,
+                (n) => this.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
                 'success'
             );
         } catch (_error) {
@@ -2615,11 +2658,14 @@ class Dashboard {
 
             const targetPage = (this.pages || []).find((page) => Number(page.id) === targetId);
             const targetName = targetPage?.name || String(targetId);
-            this.showNotification(
-                this.formatDashboardLabel(
+            const movedCount = toMove.length;
+            this.showGroupedNotification(
+                `move-page:${targetId}`,
+                movedCount,
+                (n) => this.formatDashboardLabel(
                     'tagFilterMovedToPage',
-                    { count: toMove.length, name: targetName },
-                    `Moved ${toMove.length} bookmark(s) to "${targetName}"`
+                    { count: n, name: targetName },
+                    `Moved ${n} bookmark(s) to "${targetName}"`
                 ),
                 'success',
                 { duration: 2500 }
@@ -3185,6 +3231,7 @@ class Dashboard {
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
+            { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
             { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] }
         ];
 
@@ -4515,7 +4562,8 @@ class Dashboard {
             items,
         });
 
-        return [
+        const isSideRail = this.settings?.buttonBarPosition === 'side-left';
+        const sections = [
             section('sectionNavigation', 'Navigation', [
                 item('1–9', 'navPageTab', 'Switch to page tab'),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
@@ -4526,10 +4574,22 @@ class Dashboard {
                 item('Ctrl + Home / End', 'navGridHomeEnd', 'First / last bookmark on the page'),
                 item('Page Up / Page Down', 'navPageScroll', 'Jump one screen up / down through bookmarks'),
                 item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
-                item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category'),
+                item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category or smart collection'),
+                item('G + P', 'navGotoPinned', 'Jump to first pinned bookmark on the page'),
                 item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
                 item('Esc', 'navEscClear', 'Clear selection / close overlay; undo unsaved drag reorder'),
             ]),
+        ];
+
+        if (isSideRail) {
+            sections.push(section('sectionLayout', 'Layout (side rail)', [
+                item('Tab', 'layoutSideRailFocus', 'Toolbar is first in tab order — then page header, then bookmark grid'),
+                item('← / →', 'layoutPageTabScroll', 'Scroll page tabs horizontally when many pages'),
+                item(':buttonbar bottom', 'layoutSideRailButtonbar', 'Return button bar to bottom — :buttonbar bottom-left / bottom-right also work'),
+            ]));
+        }
+
+        sections.push(
             section('sectionBookmarks', 'Bookmarks', [
                 item('&', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
                 item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
@@ -4586,7 +4646,7 @@ class Dashboard {
                 item(':favicons on/off', 'caFavicons', 'Toggle bookmark icons'),
                 item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
                 item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
-                item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right'),
+                item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left'),
                 item(':sort <method>', 'caSort', 'Change sort order — order / az / recent / custom'),
             ]),
             section('sectionOther', 'Other', [
@@ -4600,7 +4660,8 @@ class Dashboard {
                 item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
                 item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Quick actions on config (new page, bookmark, …)'),
             ]),
-        ];
+        );
+        return sections;
     }
 
     setupBookmarkTracking() {

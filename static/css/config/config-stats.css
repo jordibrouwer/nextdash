@@ -424,6 +424,12 @@
     margin: 0 0.2rem;
 }
 
+.stats-activity-wow {
+    margin: 0 0 0.75rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
 .stats-sparkline-wrap {
     position: relative;
     width: 100%;

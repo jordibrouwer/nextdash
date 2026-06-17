@@ -373,3 +373,27 @@ body {
         align-items: flex-start;
     }
 }
+
+.pwa-install-panel {
+    margin-top: 0.35rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: color-mix(in srgb, var(--background-secondary) 85%, transparent);
+}
+
+.pwa-install-panel .config-advanced-action-actions {
+    margin-top: 0.5rem;
+}
+
+.pwa-install-steps {
+    margin-top: 0.5rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.pwa-install-steps ol {
+    margin: 0.35rem 0 0 1.1rem;
+    padding: 0;
+}

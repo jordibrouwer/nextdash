@@ -3660,6 +3660,27 @@ class ConfigManager {
             });
         }
 
+        const resetAllDashboardPromosBtn = document.getElementById('reset-all-dashboard-promos-btn');
+        if (resetAllDashboardPromosBtn) {
+            resetAllDashboardPromosBtn.addEventListener('click', () => {
+                if (window.MobileExperience?.isMobileLayout?.()) {
+                    this.ui.showNotification(
+                        this.language.t('config.resetAllDashboardPromosMobile')
+                            || 'Dashboard promos are hidden on mobile — use a wider window.',
+                        'warning'
+                    );
+                    return;
+                }
+                const count = window.DashboardPromoRegistry?.clearAll?.() || 0;
+                const message = window.dashboardInstance
+                    ? (this.language.t('config.resetAllDashboardPromosSuccess')
+                        || `Reset ${count} dashboard promo group(s) — they will replay on the dashboard.`)
+                    : (this.language.t('config.resetAllDashboardPromosSuccessOpenDashboard')
+                        || 'Dashboard promos reset — open the dashboard to replay them.');
+                this.ui.showNotification(message, 'success');
+            });
+        }
+
         const resetGJumpPromoBtn = document.getElementById('reset-g-jump-promo-btn');
         if (resetGJumpPromoBtn) {
             resetGJumpPromoBtn.addEventListener('click', () => {
@@ -3743,6 +3764,8 @@ class ConfigManager {
                 this.ui.showNotification(message, 'success');
             });
         }
+
+        window.ConfigPwaInstall?.bind?.(document.getElementById('pwa-install-panel'));
 
         this.settings.updateStatusOptionsVisibility(this.settingsData.showStatus);
 

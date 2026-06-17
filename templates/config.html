@@ -1009,6 +1009,13 @@
                                     <button type="button" id="hypr-mode-info-btn" class="info-button" data-i18n-aria="config.hyprModeInfoTitle">ℹ</button>
                                 </label>
                             </div>
+                            <div class="checkbox-tree-item pwa-install-panel" id="pwa-install-panel">
+                                <p class="config-advanced-action-text" id="pwa-install-status" data-i18n="config.pwaInstallHint">Install nextDash for launcher-style access (pairs well with HyprMode).</p>
+                                <div class="config-advanced-action-actions">
+                                    <button type="button" id="pwa-install-trigger-btn" class="btn btn-secondary btn-small" hidden data-i18n="config.pwaInstallButton">Add to home screen</button>
+                                </div>
+                                <div id="pwa-install-steps" class="pwa-install-steps" data-fallback="<ol><li>Open the dashboard in your browser.</li><li>Use the browser menu → <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li>Enable HyprMode above for launcher behaviour.</li></ol>"></div>
+                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="device-specific-checkbox">
@@ -1113,7 +1120,13 @@
                                             </div>
                                         </div>
                                         <div class="config-advanced-action-row">
-                                            <p class="config-advanced-action-text" data-i18n="config.resetGJumpPromoHint">Show the G+jump discoverability promo again on the dashboard (first G then 1–9 or GG).</p>
+                                            <p class="config-advanced-action-text" data-i18n="config.resetAllDashboardPromosHint">Reset every dashboard discoverability promo (search, G+jump, feature tips). Reopen the dashboard to replay them.</p>
+                                            <div class="config-advanced-action-actions">
+                                                <button type="button" id="reset-all-dashboard-promos-btn" class="btn btn-secondary btn-small" data-i18n="config.resetAllDashboardPromosButton">Reset all dashboard promos</button>
+                                            </div>
+                                        </div>
+                                        <div class="config-advanced-action-row">
+                                            <p class="config-advanced-action-text" data-i18n="config.resetGJumpPromoHint">Show the G+jump discoverability promo again on the dashboard (first G then 1–9, G+P, or GG).</p>
                                             <div class="config-advanced-action-actions">
                                                 <button type="button" id="reset-g-jump-promo-btn" class="btn btn-secondary btn-small" data-i18n="config.resetGJumpPromoButton">Reset G+jump promo</button>
                                             </div>
@@ -1763,6 +1776,7 @@
                             <span class="stats-activity-sep">·</span>
                             <span class="stats-muted" data-i18n="config.statsActivityActive">Active bookmarks:</span> <strong id="stats-activity-active">—</strong>
                         </div>
+                        <p id="stats-activity-wow" class="stats-activity-wow" hidden></p>
                         <div id="stats-sparkline" class="stats-sparkline-wrap"></div>
                         <p class="stats-sparkline-hint" data-i18n="config.statsSparklineHint">Bookmarks last opened per bucket within the selected period.</p>
                     </section>
@@ -2323,7 +2337,7 @@
     <script src="/static/js/hypr-mode.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
-    <script src="/static/js/app-notification.js"></script>
+    <script src="/static/js/app-notification.js?v=toast-grouped-1"></script>
     <script src="/static/js/config/config-ui.js"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/config/config-storage.js"></script>
@@ -2362,7 +2376,9 @@
     <script src="/static/js/config/config-custom-themes.js"></script>
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-preview-v2"></script>
-    <script src="/static/js/config/config-stats.js?v=stats-filter-1"></script>
+    <script src="/static/js/dashboard-promo-registry.js?v=promo-registry-1"></script>
+    <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
+    <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
     <script src="/static/js/config/config-keyboard.js"></script>
     <script src="/static/js/config/config-tags.js"></script>
     <script src="/static/js/search-commands/search-commands-new.js"></script>
@@ -2374,7 +2390,7 @@
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
     <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
-    <script src="/static/js/config.js?v=weather-promo-reset-1"></script>
+    <script src="/static/js/config.js?v=pwa-promo-registry-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

@@ -524,7 +524,16 @@ class KeyboardNavigation {
             }
         }
 
-        // G + 1–9: jump to nth category
+        // G + P: jump to first pinned bookmark on the page
+        if (this._gPressed && (key === 'p' || key === 'P')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._clearGState();
+            this.jumpToPinned();
+            return;
+        }
+
+        // G + 1–9: jump to nth category (includes smart collections)
         if (this._gPressed && key >= '1' && key <= '9') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -704,6 +713,25 @@ class KeyboardNavigation {
 
     isGChordActive() {
         return this._gPressed === true;
+    }
+
+    jumpToPinned() {
+        this.updateNavigableElements();
+        const pinnedRow = this.navigableElements.find((row) => {
+            const idx = parseInt(row.getAttribute('data-bookmark-index'), 10);
+            if (!Number.isFinite(idx) || idx < 0) return false;
+            const bookmark = this.dashboard?.bookmarks?.[idx];
+            return Boolean(bookmark?.pinned);
+        });
+        if (!pinnedRow) return;
+
+        const idx = this.navigableElements.indexOf(pinnedRow);
+        if (idx === -1) return;
+
+        this.currentIndex = idx;
+        this.highlightCurrentElement({ keyboardNav: true });
+        this._syncGridKeyboardPromoAnchor();
+        window.DashboardGJumpPromo?.onFirstCategoryJump?.(pinnedRow.closest('.category'));
     }
 
     jumpToCategory(n) {

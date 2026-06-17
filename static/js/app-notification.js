@@ -11,8 +11,10 @@ const AppNotification = {
     _timeout: null,
     _queue: [],
     _busy: false,
+    _groupBuckets: new Map(),
     _QUEUE_MAX: 3,
     _GAP_MS: 260, // slightly longer than the 0.24s CSS fade-out
+    _GROUP_WINDOW_MS: 700,
 
     ensureHost() {
         let host = document.getElementById('app-notification');
@@ -64,6 +66,51 @@ const AppNotification = {
         const lang = document.documentElement.getAttribute('data-lang') || 'en';
         const fallbacks = { en: 'Reload page', nl: 'Pagina herladen', de: 'Seite neu laden', fr: 'Recharger la page' };
         return fallbacks[lang] || fallbacks.en;
+    },
+
+    /**
+     * Coalesce rapid bulk-action toasts into one message (e.g. "3 bookmarks moved").
+     * @param {string} key - Group id; same key within the window merges counts.
+     * @param {(count: number) => string} buildMessage
+     */
+    showGrouped(key, buildMessage, { count = 1, type = 'success', options = {}, windowMs } = {}) {
+        if (!key || typeof buildMessage !== 'function') {
+            this.show(typeof buildMessage === 'string' ? buildMessage : '', type, options);
+            return;
+        }
+        const windowDuration = Number.isFinite(Number(windowMs))
+            ? Number(windowMs)
+            : this._GROUP_WINDOW_MS;
+        const existing = this._groupBuckets.get(key);
+        if (existing) {
+            existing.total += Math.max(1, Number(count) || 1);
+            clearTimeout(existing.timer);
+            existing.timer = setTimeout(() => this._flushGrouped(key), windowDuration);
+            if (this._busy) {
+                const host = document.getElementById('app-notification');
+                const messageEl = this._messageEl(host);
+                if (messageEl) {
+                    messageEl.textContent = buildMessage(existing.total);
+                }
+            }
+            return;
+        }
+        const bucket = {
+            total: Math.max(1, Number(count) || 1),
+            buildMessage,
+            type,
+            options,
+            timer: setTimeout(() => this._flushGrouped(key), windowDuration),
+        };
+        this._groupBuckets.set(key, bucket);
+    },
+
+    _flushGrouped(key) {
+        const bucket = this._groupBuckets.get(key);
+        if (!bucket) return;
+        this._groupBuckets.delete(key);
+        clearTimeout(bucket.timer);
+        this.show(bucket.buildMessage(bucket.total), bucket.type, bucket.options);
     },
 
     show(message, type = 'success', options = {}) {
@@ -155,6 +202,8 @@ const AppNotification = {
 
     // Explicit dismiss: clears the queue and hides immediately.
     hide() {
+        this._groupBuckets.forEach((bucket) => clearTimeout(bucket.timer));
+        this._groupBuckets.clear();
         this._queue = [];
         this._advance();
     },

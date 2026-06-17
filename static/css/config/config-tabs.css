@@ -113,3 +113,13 @@
         transform: translateY(0);
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .tab-content {
+        animation: none !important;
+    }
+}
+
+body.no-animations .tab-content {
+    animation: none !important;
+}

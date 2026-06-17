@@ -27,8 +27,8 @@ body[data-button-position="side-left"] .button-container {
     justify-content: flex-start;
     align-items: stretch;
 
-    /* bottom room for ★ + ! + / fixed elements */
-    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 3 + 0.3rem);
+    /* bottom room for ! + ★ fixed elements */
+    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 2 + 0.3rem);
     gap: 0;
 
     background: var(--rail-bg);
@@ -60,6 +60,7 @@ body[data-button-position="side-left"] #search-button           { order: 2; marg
 body[data-button-position="side-left"] #finders-button          { order: 3; }
 body[data-button-position="side-left"] #commands-button         { order: 4; }
 body[data-button-position="side-left"] #recent-bookmarks-button { order: 5; }
+body[data-button-position="side-left"] #tag-cloud-toggle-btn { order: 6; }
 
 /* cheatsheet: fixed directly above the what's new button */
 body[data-button-position="side-left"] #help-button {
@@ -134,26 +135,24 @@ body[data-button-position="side-left"] .search-button[data-tooltip]::after {
     white-space: nowrap;
 }
 
-/* ── Tag cloud button: above cheatsheet (which is above what's new) ──────────── */
-body[data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
-    position: fixed;
-    left: 0;
-    bottom: calc(var(--corner-fab-height, 2.75rem) * 2);
+/* ── Tag cloud: in rail flow directly under recents ─────────────────────────── */
+body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+    position: static;
     width: var(--rail-width);
     height: var(--corner-fab-height, 2.75rem);
     padding: 0;
+    margin: 0;
     justify-content: center;
     border-radius: 0;
+    border: none;
     border-top: 1px solid var(--rail-sep-color);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
     background: transparent;
     transform: none;
-    z-index: 1004;
+    z-index: auto;
+    pointer-events: auto;
 }
 
-body[data-button-position="side-left"] .tag-cloud-toggle-btn[data-tooltip]::after {
+body[data-button-position="side-left"] #tag-cloud-toggle-btn[data-tooltip]::after {
     bottom: auto;
     top: 50%;
     left: calc(100% + 8px);
@@ -162,8 +161,9 @@ body[data-button-position="side-left"] .tag-cloud-toggle-btn[data-tooltip]::afte
     white-space: nowrap;
 }
 
-body[data-button-position="side-left"] .tag-cloud-toggle-btn:hover {
+body[data-button-position="side-left"] #tag-cloud-toggle-btn:hover {
     transform: translateX(2px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
 /* ── What's new button: anchor to rail bottom ────────────────────────────────── */
@@ -347,9 +347,23 @@ body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-b
     body[data-button-position="side-left"] #finders-button,
     body[data-button-position="side-left"] #commands-button,
     body[data-button-position="side-left"] #recent-bookmarks-button,
+    body[data-button-position="side-left"] #tag-cloud-toggle-btn,
     body[data-button-position="side-left"] #help-button {
         order: unset;
         margin-top: 0;
+    }
+
+    /* tag cloud: back into toolbar flow on mobile */
+    body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        width: auto;
+        padding: 0.62rem 0.82rem;
+        margin: 0;
+        transform: none;
+        border-top: none;
     }
 
     /* cheatsheet: back into normal flow on mobile */
@@ -411,6 +425,12 @@ body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-b
         padding: 0.62rem 0.82rem;
         margin: 0;
         transform: none;
+    }
+
+    body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+        position: static;
+        right: auto;
+        bottom: auto;
     }
 
     body[data-button-position="side-left"] .whats-new-btn {

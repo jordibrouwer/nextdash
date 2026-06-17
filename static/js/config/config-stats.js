@@ -547,6 +547,48 @@ class ConfigStats {
 
     // ── Activity sparkline ─────────────────────────────────────────────────
 
+    renderActivityWeekCompare(bookmarks, days) {
+        const el = document.getElementById('stats-activity-wow');
+        if (!el) return;
+        if (Number(days) !== 7) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+
+        const now = Date.now();
+        const weekMs = 7 * 86400000;
+        const thisWeekStart = now - weekMs;
+        const lastWeekStart = now - 2 * weekMs;
+        let thisWeek = 0;
+        let lastWeek = 0;
+
+        bookmarks.forEach((b) => {
+            const lo = Number(b?.lastOpened || 0);
+            if (!lo) return;
+            if (lo >= thisWeekStart) {
+                thisWeek += 1;
+            } else if (lo >= lastWeekStart) {
+                lastWeek += 1;
+            }
+        });
+
+        let deltaText = '—';
+        if (lastWeek > 0) {
+            const pct = Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
+            const sign = pct > 0 ? '+' : '';
+            deltaText = `${sign}${pct}%`;
+        } else if (thisWeek > 0) {
+            deltaText = this.t('config.statsWeekCompareNew');
+        }
+
+        el.hidden = false;
+        el.textContent = this.t('config.statsWeekCompare')
+            .replace('{thisWeek}', String(thisWeek))
+            .replace('{lastWeek}', String(lastWeek))
+            .replace('{delta}', deltaText);
+    }
+
     renderActivity(bookmarks, days, locale) {
         const now = Date.now();
 
@@ -588,6 +630,7 @@ class ConfigStats {
         this.updateActivityOpensLabel(days);
         this.setText('stats-activity-total',  String(totalInPeriod));
         this.setText('stats-activity-active', String(active));
+        this.renderActivityWeekCompare(bookmarks, days);
 
         // Render SVG bar chart
         const wrap = document.getElementById('stats-sparkline');
