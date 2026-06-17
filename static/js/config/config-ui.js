@@ -23,6 +23,14 @@ class ConfigUI {
 
     _restoreGeneralHash() {
         try {
+            const layerKey = 'nextdash-config-general-layer';
+            const storedLayer = localStorage.getItem(layerKey);
+            const hasLayerPreference = storedLayer === 'essentials'
+                || storedLayer === 'advanced'
+                || storedLayer === 'all';
+            if (!hasLayerPreference) {
+                return '#general';
+            }
             const saved = sessionStorage.getItem(CONFIG_GENERAL_HASH_KEY);
             if (saved && /^#general(\/|$)/.test(saved)) return saved;
         } catch { /* ignore */ }

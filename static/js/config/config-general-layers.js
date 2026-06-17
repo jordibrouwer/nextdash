@@ -468,7 +468,7 @@ class ConfigGeneralLayers {
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 const layer = btn.getAttribute('data-general-layer');
-                this.applyLayer(layer, { updateHash: true });
+                this.applyLayer(layer, { updateHash: true, persist: true });
             });
         });
 
@@ -476,7 +476,7 @@ class ConfigGeneralLayers {
         if (showAllLink) {
             showAllLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.applyLayer('all', { updateHash: true });
+                this.applyLayer('all', { updateHash: true, persist: true });
             });
         }
 
@@ -551,12 +551,31 @@ class ConfigGeneralLayers {
         });
     }
 
+    hasLayerPreference() {
+        try {
+            const v = localStorage.getItem(this.storageKey);
+            return v === 'essentials' || v === 'advanced' || v === 'all';
+        } catch {
+            return false;
+        }
+    }
+
     getStoredLayer() {
+        if (!this.hasLayerPreference()) {
+            return 'essentials';
+        }
         try {
             const v = localStorage.getItem(this.storageKey);
             if (v === 'essentials' || v === 'advanced' || v === 'all') return v;
         } catch { /* ignore */ }
         return 'essentials';
+    }
+
+    persistLayerPreference(layer) {
+        const normalized = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
+        try {
+            localStorage.setItem(this.storageKey, normalized);
+        } catch { /* ignore */ }
     }
 
     isMobileGeneralLocked() {
@@ -627,7 +646,7 @@ class ConfigGeneralLayers {
         }, 120);
     }
 
-    applyLayer(layer, { updateHash = true, scrollPanel = null } = {}) {
+    applyLayer(layer, { updateHash = true, scrollPanel = null, persist = false } = {}) {
         if (!this.root) {
             this.root = document.querySelector('.general-layout');
             this.toolbar = this.toolbar || document.getElementById('general-layer-toolbar');
@@ -645,9 +664,9 @@ class ConfigGeneralLayers {
 
         const prevLayer = this.layer;
         this.layer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
-        try {
-            localStorage.setItem(this.storageKey, this.layer);
-        } catch { /* ignore */ }
+        if (persist) {
+            this.persistLayerPreference(this.layer);
+        }
 
         const tabWrap = document.querySelector('[data-tab-content="general"] > div');
         if (tabWrap) {
@@ -763,6 +782,16 @@ class ConfigGeneralLayers {
             return;
         }
 
+        if (!this.hasLayerPreference()) {
+            if (panel) {
+                this.applyLayer('essentials', { updateHash: true });
+                this.scrollToPanel(panel, { switchLayer: false });
+            } else {
+                this.applyLayer('essentials', { updateHash: true });
+            }
+            return;
+        }
+
         if (layer !== null) {
             this.applyLayer(layer, { updateHash: false, scrollPanel: panel });
         } else if (panel) {
@@ -789,7 +818,7 @@ class ConfigGeneralLayers {
             return;
         }
 
-        if (switchLayer) {
+        if (switchLayer && this.hasLayerPreference()) {
             const tier = card.dataset.configTier || 'advanced';
             if (this.layer !== 'all' && tier !== this.layer) {
                 this.applyLayer(tier, { updateHash: false, scrollPanel: panelId });
@@ -885,7 +914,7 @@ class ConfigGeneralLayers {
                     this.scrollToPanel(panel, { switchLayer: false });
                     return;
                 }
-                this.applyLayer('advanced', { updateHash: true, scrollPanel: panel });
+                this.applyLayer('advanced', { updateHash: true, scrollPanel: panel, persist: true });
                 const msg = this.t('generalLayerJumpToast', 'Switched to Advanced');
                 window.configManager?.ui?.showNotification?.(msg, 'info');
             });
@@ -961,7 +990,7 @@ class ConfigGeneralLayers {
                 btn?.click();
             }
         }
-        this.applyLayer(layer, { updateHash: true, scrollPanel: panelId });
+        this.applyLayer(layer, { updateHash: true, scrollPanel: panelId, persist: true });
     }
 }
 
