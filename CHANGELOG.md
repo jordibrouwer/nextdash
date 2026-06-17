@@ -53,7 +53,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.22 — June 2026
 
-**Side rail navigation** — optional 44 px vertical icon strip; tag cloud under recents with dynamic modal sizing; grouped bulk toasts; `G+P` pinned jump; stats week-over-week; PWA install helper; promo registry reset; settings-default fixes; health bulk feedback; weather geolocation promo; extension bookmark-form sync; reduced-motion coverage; side-rail i18n.
+**Side rail navigation** — optional 44 px vertical icon strip; tag cloud under recents with dynamic modal sizing; grouped bulk toasts; `G+P` pinned jump; stats week-over-week; PWA install helper; promo registry reset; settings-default fixes; health bulk feedback; weather geolocation promo; extension bookmark-form sync; reduced-motion coverage; side-rail i18n; quick-move/delete keyboard focus fix.
 
 ### Side rail navigation
 
@@ -71,6 +71,7 @@ _No unreleased changes at this time._
 - **new** **`G + P` jump to pinned** — after `G`, press `P` to select the first pinned bookmark on the page. `G + 1`–`9` still jumps to the nth category or smart collection.
 - **new** **Cheat sheet — side rail** — when `buttonBarPosition` is `side-left`, the keyboard cheat sheet adds a *Layout (side rail)* section (tab order, page-tab scroll, `:buttonbar`).
 - **fix** **`prefers-reduced-motion`** — bookmark open flash, promo balloons, and config tab fade-in respect reduced motion and *Reduce animations* in settings.
+- **fix** **Quick move/delete keyboard focus** — `Shift+M` and `Shift+D` popovers now receive keyboard focus and pause grid navigation; `↑`/`↓` and `Enter` work in the popover instead of moving bookmarks on the dashboard.
 
 ### Config, stats & PWA
 
@@ -90,7 +91,7 @@ _No unreleased changes at this time._
 
 - **fix** **Help & manual** — README, MANUAL, and whats-new updated for side-rail tag cloud, `G + P`, grouped toasts, stats week-over-week, PWA install helper, and promo registry.
 - **fix** **Side-rail i18n** — button-bar position, tooltips, and cheat-sheet layout strings in EN / NL / DE / FR.
-- **fix** **Cache-bust** — `whats-new-v86`; `layout-side-rail.css?v=side-rail-tag-cloud-1`; `dashboard-tag-cloud.js?v=rail-tag-cloud-2`; `app-notification.js?v=toast-grouped-1`; `dashboard-promo-registry.js`; `config-pwa-install.js`; `feature-promos-14`; `health-feedback-1`; `settings-parity-1` on config settings.
+- **fix** **Cache-bust** — `whats-new-v87`; `dashboard.js?v=move-delete-focus-1`; `layout-side-rail.css?v=side-rail-tag-cloud-1`; `dashboard-tag-cloud.js?v=rail-tag-cloud-2`; `app-notification.js?v=toast-grouped-1`; `dashboard-promo-registry.js`; `config-pwa-install.js`; `feature-promos-14`; `health-feedback-1`; `settings-parity-1` on config settings.
 
 ---
 

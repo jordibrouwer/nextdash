@@ -54,6 +54,10 @@
         {
           "badge": "fix",
           "text": "<strong><code>prefers-reduced-motion</code></strong> — additional coverage for bookmark open flash, promo balloons, and config tab fade-in; honours <em>Reduce animations</em> in settings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quick move/delete keyboard focus</strong> — <code>Shift+M</code> and <code>Shift+D</code> popovers now receive keyboard focus and pause grid navigation; <code>↑</code>/<code>↓</code> and <code>Enter</code> work in the popover instead of moving bookmarks on the dashboard."
         }
       ]
     },
@@ -112,7 +116,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v86</code>; <code>layout-side-rail.css?v=side-rail-tag-cloud-1</code>; <code>dashboard-tag-cloud.js?v=rail-tag-cloud-2</code>; <code>app-notification.js?v=toast-grouped-1</code>; <code>dashboard-promo-registry.js</code>; <code>config-pwa-install.js</code>; <code>feature-promos-14</code>; <code>health-feedback-1</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v87</code>; <code>dashboard.js?v=move-delete-focus-1</code>; <code>layout-side-rail.css?v=side-rail-tag-cloud-1</code>; <code>dashboard-tag-cloud.js?v=rail-tag-cloud-2</code>; <code>app-notification.js?v=toast-grouped-1</code>; <code>dashboard-promo-registry.js</code>; <code>config-pwa-install.js</code>; <code>feature-promos-14</code>; <code>health-feedback-1</code>."
         }
       ]
     }

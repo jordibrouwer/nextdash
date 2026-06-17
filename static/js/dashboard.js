@@ -2723,6 +2723,26 @@ class Dashboard {
         };
     }
 
+    _focusActionPopoverItem(items, idx, { syncAriaSelected = false } = {}) {
+        items.forEach((el, i) => {
+            el.classList.toggle('is-focused', i === idx);
+            el.tabIndex = i === idx ? 0 : -1;
+            if (syncAriaSelected) {
+                el.setAttribute('aria-selected', String(i === idx));
+            }
+        });
+        const target = items[idx];
+        target?.scrollIntoView({ block: 'nearest' });
+        target?.focus({ preventScroll: true });
+    }
+
+    _restoreActionPopoverFocus(previousFocus, anchorEl) {
+        const restoreTarget = (previousFocus && previousFocus.isConnected)
+            ? previousFocus
+            : anchorEl;
+        restoreTarget?.focus?.({ preventScroll: true });
+    }
+
     showTagFilterBulkMovePopover(anchorEl) {
         this._closeActionPopovers();
 
@@ -2828,15 +2848,15 @@ class Dashboard {
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);
 
+        const previousFocus = document.activeElement;
         let focusedIdx = items.findIndex((item) => item.classList.contains('is-current'));
         if (focusedIdx < 0) {
             focusedIdx = 0;
         }
 
         const setFocus = (idx) => {
-            items.forEach((el, i) => el.classList.toggle('is-focused', i === idx));
+            this._focusActionPopoverItem(items, idx);
             focusedIdx = idx;
-            items[idx]?.scrollIntoView({ block: 'nearest' });
         };
         setFocus(focusedIdx);
 
@@ -2846,6 +2866,7 @@ class Dashboard {
             if (pop.parentNode) {
                 pop.remove();
             }
+            this._restoreActionPopoverFocus(previousFocus, anchorEl);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -4077,6 +4098,8 @@ class Dashboard {
         if (document.getElementById('omnibox-overlay')) return true;
         if (document.getElementById('page-overview-overlay')) return true;
         if (document.getElementById('date-popover')) return true;
+        if (document.getElementById('move-popover')) return true;
+        if (document.getElementById('delete-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
         const blockingSelectors = [
             '.onboarding-overlay',
@@ -9745,13 +9768,13 @@ class Dashboard {
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);
 
+        const previousFocus = document.activeElement;
         let focusedIdx = items.findIndex(i => i.classList.contains('is-current'));
         if (focusedIdx < 0) focusedIdx = 0;
 
         const setFocus = (idx) => {
-            items.forEach((el, i) => el.classList.toggle('is-focused', i === idx));
+            this._focusActionPopoverItem(items, idx);
             focusedIdx = idx;
-            items[idx]?.scrollIntoView({ block: 'nearest' });
         };
         setFocus(focusedIdx);
 
@@ -9764,6 +9787,7 @@ class Dashboard {
             if (window.DashboardFeaturePromos?.isPromoOpen?.('quickMove')) {
                 window.DashboardFeaturePromos.dismissOpen();
             }
+            this._restoreActionPopoverFocus(previousFocus, anchorEl);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -9811,6 +9835,7 @@ class Dashboard {
             document.addEventListener('click', onOutside);
         }, 0);
         window.DashboardFeaturePromos?.tryShow?.('quickMove', pop);
+        requestAnimationFrame(() => setFocus(focusedIdx));
     }
 
     showDeletePopover(anchorEl, bookmark, bookmarkIndex) {
@@ -9882,14 +9907,11 @@ class Dashboard {
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);
 
+        const previousFocus = document.activeElement;
         let focusedIdx = 0;
         const setFocus = (idx) => {
-            items.forEach((el, i) => {
-                el.classList.toggle('is-focused', i === idx);
-                el.setAttribute('aria-selected', String(i === idx));
-            });
+            this._focusActionPopoverItem(items, idx, { syncAriaSelected: true });
             focusedIdx = idx;
-            items[idx]?.scrollIntoView({ block: 'nearest' });
         };
         setFocus(focusedIdx);
 
@@ -9902,6 +9924,7 @@ class Dashboard {
             if (window.DashboardFeaturePromos?.isPromoOpen?.('quickDelete')) {
                 window.DashboardFeaturePromos.dismissOpen();
             }
+            this._restoreActionPopoverFocus(previousFocus, anchorEl);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -9950,6 +9973,7 @@ class Dashboard {
             document.addEventListener('click', onOutside);
         }, 0);
         window.DashboardFeaturePromos?.tryShow?.('quickDelete', pop);
+        requestAnimationFrame(() => setFocus(focusedIdx));
     }
 
     _quickMoveToCategory(bookmark, categoryId) {
