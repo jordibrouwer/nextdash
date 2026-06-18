@@ -64,6 +64,222 @@ test.describe('dashboard search filters', () => {
         ))).toBe(true);
     });
 
+    test('status:checked filter lists monitored bookmarks', async ({ page }) => {
+        await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const response = await fetch(`/api/bookmarks?page=${pageId}`);
+            const bookmarks = await response.json();
+            if (!bookmarks.length) return;
+            bookmarks[0] = { ...bookmarks[0], checkStatus: true };
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookmarks),
+            });
+            await dash.loadPageBookmarks(pageId);
+        });
+
+        await page.keyboard.press('>');
+        await page.keyboard.type('status:checked', { delay: 15 });
+
+        await expect.poll(async () => page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            const matches = sc?.searchMatches?.filter((m) => m.type === 'bookmark') || [];
+            return matches.length > 0 && matches.every((m) => m.bookmark?.checkStatus === true);
+        })).toBe(true);
+    });
+
+    test('expanding Filters then choosing status shows one Filters group', async ({ page }) => {
+        await page.keyboard.press('>');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+
+        await page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            sc?.toggleEmptyStateGroup('filters');
+            sc?.updateSearch();
+        });
+
+        await page.locator('.search-match.filter-completion-entry').filter({ hasText: /status/i }).first().click();
+
+        await expect.poll(async () => page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            const headers = sc?.searchMatches?.filter((m) => (
+                m.type === 'command-group-header'
+                && m.label?.toLowerCase().includes('filter')
+            )) || [];
+            return headers.length;
+        })).toBe(1);
+    });
+
+    test('filter prefix shows a single Filters group', async ({ page }) => {
+        await page.keyboard.press('>');
+        await page.keyboard.type('status:', { delay: 15 });
+
+        await expect.poll(async () => page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            const headers = sc?.searchMatches?.filter((m) => (
+                m.type === 'command-group-header'
+                && m.label?.toLowerCase().includes('filter')
+            )) || [];
+            return headers.length;
+        })).toBe(1);
+    });
+
+    test('status hint completion shows status value autocomplete', async ({ page }) => {
+        await page.keyboard.press('>');
+        await page.evaluate(() => {
+            window.dashboardInstance.searchComponent.currentQuery = 'status: ';
+            window.dashboardInstance.searchComponent.updateSearch();
+        });
+
+        await expect.poll(async () => page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            return sc?.searchMatches?.some((m) => (
+                m.type === 'filter-completion'
+                && String(m.completion || '').toLowerCase().includes('status:online')
+            )) ?? false;
+        })).toBe(true);
+    });
+
+    test('page: shows page value autocomplete', async ({ page }) => {
+        await page.keyboard.press('>');
+        await page.evaluate(() => {
+            window.dashboardInstance.searchComponent.currentQuery = 'page: ';
+            window.dashboardInstance.searchComponent.updateSearch();
+        });
+
+        await expect.poll(async () => page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            return sc?.searchMatches?.some((m) => (
+                m.type === 'filter-completion'
+                && String(m.completion || '').toLowerCase().includes('page:current')
+            )) ?? false;
+        })).toBe(true);
+    });
+
+    test('tag filter lists bookmarks when tag exists', async ({ page }) => {
+        const tag = await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const base = Date.now();
+            const response = await fetch(`/api/bookmarks?page=${pageId}`);
+            const bookmarks = await response.json();
+            const targetTag = `e2e-tag-${base}`;
+            const target = {
+                name: 'Tag filter e2e',
+                url: `https://example.com/tag-filter-${base}`,
+                shortcut: '',
+                category: 'other',
+                tags: [targetTag],
+                openCount: 0,
+                createdAt: base,
+            };
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([...bookmarks, target]),
+            });
+            await dash.loadPageBookmarks(pageId);
+            dash.updateSearchComponent();
+            return targetTag;
+        });
+
+        await page.keyboard.press('>');
+        await page.keyboard.type(`tag:${tag}`, { delay: 15 });
+
+        await expect.poll(async () => page.evaluate((expectedTag) => {
+            const sc = window.dashboardInstance?.searchComponent;
+            return sc?.searchMatches?.some((m) => (
+                m.type === 'bookmark'
+                && (m.bookmark?.tags || []).some((t) => String(t).toLowerCase() === expectedTag.toLowerCase())
+            )) ?? false;
+        }, tag)).toBe(true);
+    });
+
+    test('tag: shows tag autocomplete suggestions', async ({ page }) => {
+        const tag = await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const base = Date.now();
+            const response = await fetch(`/api/bookmarks?page=${pageId}`);
+            const bookmarks = await response.json();
+            const targetTag = `e2e-auto-${base}`;
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([
+                    ...bookmarks,
+                    {
+                        name: 'Tag autocomplete e2e',
+                        url: `https://example.com/tag-auto-${base}`,
+                        shortcut: '',
+                        category: 'other',
+                        tags: [targetTag],
+                        openCount: 0,
+                        createdAt: base,
+                    },
+                ]),
+            });
+            await dash.loadPageBookmarks(pageId);
+            dash.updateSearchComponent();
+            return targetTag;
+        });
+
+        await page.keyboard.press('>');
+        await page.evaluate((targetTag) => {
+            const sc = window.dashboardInstance.searchComponent;
+            sc.currentQuery = 'tag: ';
+            sc.updateSearch();
+        }, tag);
+
+        await expect.poll(async () => page.evaluate((targetTag) => {
+            const sc = window.dashboardInstance?.searchComponent;
+            return sc?.searchMatches?.some((m) => (
+                m.type === 'filter-completion'
+                && String(m.completion || '').toLowerCase().includes(`tag:${targetTag.toLowerCase()}`)
+            )) ?? false;
+        }, tag)).toBe(true);
+    });
+
+    test('status:online uses persisted reachability not only live cache', async ({ page }) => {
+        const seeded = await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const base = Date.now();
+            const response = await fetch(`/api/bookmarks?page=${pageId}`);
+            const bookmarks = await response.json();
+            const target = {
+                name: 'Status filter online e2e',
+                url: `https://example.com/status-filter-online-${base}`,
+                shortcut: '',
+                category: 'other',
+                checkStatus: true,
+                lastChecked: base,
+                lastError: '',
+                openCount: 0,
+                createdAt: base,
+            };
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([...bookmarks, target]),
+            });
+            await dash.loadPageBookmarks(pageId);
+            return target.url;
+        });
+
+        await page.keyboard.press('>');
+        await page.keyboard.type('status:online', { delay: 15 });
+
+        await expect.poll(async () => page.evaluate((url) => {
+            const sc = window.dashboardInstance?.searchComponent;
+            return sc?.searchMatches?.some((m) => (
+                m.type === 'bookmark' && m.bookmark?.url === url
+            )) ?? false;
+        }, seeded)).toBe(true);
+    });
+
     test('typing category name suggests category filter', async ({ page }) => {
         const category = await page.evaluate(() => {
             const bm = window.dashboardInstance?.bookmarks?.find((b) => String(b.category || '').trim());

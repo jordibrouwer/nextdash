@@ -1,5 +1,9 @@
 // Search Component JavaScript
 class SearchComponent {
+    static STATUS_FILTER_VALUES = new Set([
+        'online', 'offline', 'broken', 'ok', 'pinned', 'unpinned', 'checked', 'unchecked',
+    ]);
+
     constructor(bookmarksForSearch, currentBookmarks, allBookmarks, settings = {}, language = null, finders = [], pages = []) {
         this.bookmarks = bookmarksForSearch;
         this.currentBookmarks = currentBookmarks;
@@ -649,7 +653,8 @@ class SearchComponent {
             if (id != null) seen.add(id);
             pool.push(bookmark);
         };
-        [this.allBookmarks, this.currentBookmarks, this.bookmarks].forEach((list) => {
+        // Prefer current-page copies first so status fields (checkStatus, lastChecked) stay fresh.
+        [this.currentBookmarks, this.bookmarks, this.allBookmarks].forEach((list) => {
             if (Array.isArray(list)) list.forEach(add);
         });
         return pool;
@@ -685,6 +690,70 @@ class SearchComponent {
             filters,
             query: remaining.join(' ').trim()
         };
+    }
+
+    _getActiveFilters(filters) {
+        const active = { ...filters };
+        if (active.status && !SearchComponent.STATUS_FILTER_VALUES.has(String(active.status).toLowerCase())) {
+            active.status = '';
+        }
+        if (active.page) {
+            const pageValue = String(active.page).toLowerCase();
+            if (pageValue !== 'current' && pageValue !== 'all' && !/^\d+$/.test(pageValue)) {
+                active.page = '';
+            }
+        }
+        return active;
+    }
+
+    _hasActiveFilters(filters) {
+        return Object.values(this._getActiveFilters(filters)).some((value) => Boolean(value));
+    }
+
+    _getCurrentFilterToken(rawQuery) {
+        const parts = String(rawQuery || '').split(/\s+/).filter(Boolean);
+        return (parts[parts.length - 1] || '').toLowerCase();
+    }
+
+    _isIncompleteFilterQuery(rawQuery) {
+        const token = this._getCurrentFilterToken(rawQuery);
+        if (!token) {
+            return false;
+        }
+        if (!token.includes(':')) {
+            return ['category', 'status', 'page', 'tag'].some((prefix) => (
+                prefix.startsWith(token) || token.startsWith(prefix)
+            ));
+        }
+        return /^(category|status|page|tag):/.test(token);
+    }
+
+    _isCompleteFilterQuery(raw) {
+        const text = String(raw || '').trim();
+        if (!text) return false;
+
+        const parsed = this.parseSearchFilters(text);
+        if (parsed.query.length > 0) return false;
+        if (!Object.values(parsed.filters).some((value) => Boolean(value))) return false;
+
+        const parts = text.split(/\s+/).filter(Boolean);
+        return parts.every((part) => {
+            const lower = part.toLowerCase();
+            if (lower.startsWith('status:')) {
+                return SearchComponent.STATUS_FILTER_VALUES.has(lower.slice(7));
+            }
+            if (lower.startsWith('category:')) {
+                return lower.length > 'category:'.length;
+            }
+            if (lower.startsWith('tag:')) {
+                return lower.length > 'tag:'.length;
+            }
+            if (lower.startsWith('page:')) {
+                const pageValue = lower.slice(5);
+                return pageValue === 'current' || pageValue === 'all' || /^\d+$/.test(pageValue);
+            }
+            return false;
+        });
     }
 
     dashboardLabel(key, fallback, vars = {}) {
@@ -744,7 +813,7 @@ class SearchComponent {
         const t = (key, fallback, vars = {}) => this.dashboardLabel(key, fallback, vars);
 
         const query = String(rawQuery || '');
-        const parts = query.split(/\s+/);
+        const parts = query.split(/\s+/).filter(Boolean);
         const currentToken = (parts[parts.length - 1] || '').toLowerCase();
         const basePrefix = parts.slice(0, -1).join(' ').trim();
         const prefixWithSpace = basePrefix ? `${basePrefix} ` : '';
@@ -758,11 +827,11 @@ class SearchComponent {
             if (!categoryMap.has(key)) categoryMap.set(key, raw);
         });
         const categories = [...categoryMap.keys()].sort();
-        const pageIds = Array.from(new Set(
-            pool
-                .map((bookmark) => Number(bookmark?.pageId || bookmark?.pageID || 0))
-                .filter((id) => Number.isFinite(id) && id > 0)
-        )).sort((a, b) => a - b);
+        const pageIds = Array.from(new Set([
+            ...pool.map((bookmark) => Number(bookmark?.pageId || bookmark?.pageID || 0)),
+            ...(this.pages || []).map((page) => Number(page?.id || 0)),
+            Number(this.currentPageId || 0),
+        ])).filter((id) => Number.isFinite(id) && id > 0).sort((a, b) => a - b);
 
         const toCompletion = (token, description) => ({
             shortcut: '↳',
@@ -891,8 +960,27 @@ class SearchComponent {
         return [];
     }
 
+    _resolveBookmarkForFilters(bookmark) {
+        const url = String(bookmark?.url || '').trim();
+        if (!url) {
+            return bookmark;
+        }
+        const fromCurrent = this.currentBookmarks?.find((candidate) => candidate?.url === url);
+        if (fromCurrent) {
+            return fromCurrent;
+        }
+        const fromSearch = this.bookmarks?.find((candidate) => candidate?.url === url);
+        if (fromSearch) {
+            return fromSearch;
+        }
+        const dash = window.dashboardInstance;
+        const fromDash = dash?.bookmarks?.find((candidate) => candidate?.url === url);
+        return fromDash || bookmark;
+    }
+
     matchesAdvancedFilters(bookmark, filters) {
         if (!bookmark) return false;
+        bookmark = this._resolveBookmarkForFilters(bookmark);
 
         if (filters.category) {
             const category = String(bookmark.category || '').toLowerCase();
@@ -903,28 +991,24 @@ class SearchComponent {
 
         if (filters.status) {
             const normalized = filters.status.toLowerCase();
-            const hasStatus = bookmark.checkStatus === true;
-            const isPinned = bookmark.pinned === true;
-            const isBroken = Boolean(bookmark.lastError && String(bookmark.lastError).trim());
-            const statusCache = window.dashboardInstance?.statusMonitor?.statusCache;
-            const statusKey = typeof statusCacheKey === 'function'
-                ? statusCacheKey(bookmark.url)
-                : (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function'
-                    ? BookmarkUrlUtils.canonicalBookmarkURLKey(bookmark.url || '')
-                    : String(bookmark.url || ''));
-            const cachedStatus = statusCache instanceof Map
-                ? statusCache.get(statusKey)?.status
-                : '';
-            const normalizedCachedStatus = String(cachedStatus || '').toLowerCase();
+            if (SearchComponent.STATUS_FILTER_VALUES.has(normalized)) {
+                const hasStatus = bookmark.checkStatus === true;
+                const isPinned = bookmark.pinned === true;
+                const isBroken = Boolean(String(bookmark.lastError || '').trim());
+                const monitor = window.dashboardInstance?.statusMonitor;
+                const reachability = typeof monitor?.getBookmarkReachability === 'function'
+                    ? monitor.getBookmarkReachability(bookmark)
+                    : null;
 
-            if (normalized === 'checked' && !hasStatus) return false;
-            if (normalized === 'unchecked' && hasStatus) return false;
-            if (normalized === 'pinned' && !isPinned) return false;
-            if (normalized === 'unpinned' && isPinned) return false;
-            if (normalized === 'broken' && !isBroken) return false;
-            if (normalized === 'ok' && isBroken) return false;
-            if (normalized === 'online' && normalizedCachedStatus !== 'online') return false;
-            if (normalized === 'offline' && normalizedCachedStatus !== 'offline') return false;
+                if (normalized === 'checked' && !hasStatus) return false;
+                if (normalized === 'unchecked' && hasStatus) return false;
+                if (normalized === 'pinned' && !isPinned) return false;
+                if (normalized === 'unpinned' && isPinned) return false;
+                if (normalized === 'broken' && !isBroken) return false;
+                if (normalized === 'ok' && !(hasStatus && !isBroken && reachability === 'online')) return false;
+                if (normalized === 'online' && reachability !== 'online') return false;
+                if (normalized === 'offline' && reachability !== 'offline') return false;
+            }
         }
 
         if (filters.tag) {
@@ -935,13 +1019,14 @@ class SearchComponent {
         }
 
         if (filters.page && filters.page !== 'all' && filters.page !== 'global') {
+            const pageValue = String(filters.page).toLowerCase();
             const bookmarkPageId = Number(bookmark.pageId || bookmark.pageID || this.currentPageId || 0);
-            if (filters.page === 'current') {
+            if (pageValue === 'current') {
                 if (bookmarkPageId && bookmarkPageId !== Number(this.currentPageId || 0)) {
                     return false;
                 }
-            } else if (/^\d+$/.test(filters.page)) {
-                if (bookmarkPageId !== Number(filters.page)) {
+            } else if (/^\d+$/.test(pageValue)) {
+                if (bookmarkPageId !== Number(pageValue)) {
                     return false;
                 }
             }
@@ -1004,30 +1089,22 @@ class SearchComponent {
             const isShortcutMode = (this.currentQuery.startsWith('/') && this.interleaveMode) || (!this.currentQuery.startsWith('/') && !this.interleaveMode);
             const parsed = this.parseSearchFilters(query);
             const searchQuery = parsed.query;
-            const filters = parsed.filters;
-            const hasFilters = Object.values(filters).some((value) => Boolean(value));
-            
-            const filterAutocompleteMatches = this.getFilterAutocompleteMatches(query);
-            if (searchQuery.length === 0 && !hasFilters && filterAutocompleteMatches.length > 0 && query.length > 0) {
-                // Query is a bare filter token being typed (e.g. "status:", "status:on") —
-                // show its completions with a group header, consistent with the empty state.
-                // Reuse the same toggle state as the 'filters' empty-state group (defaultOpen=true)
-                const filtersIsExpanded = !this.emptyStateExpandedGroups.has('filters');
-                this.searchMatches = [
-                    {
-                        type: 'command-group-header',
-                        groupId: 'empty_filters',
-                        label: this.dashboardLabel('filtersGroupLabel', 'Filters'),
-                        count: filterAutocompleteMatches.length,
-                        expanded: filtersIsExpanded,
-                        _emptyStateGroup: 'filters'
-                    },
-                    ...(filtersIsExpanded ? filterAutocompleteMatches : [])
-                ];
-            } else if (searchQuery.length === 0 && !hasFilters) {
+            const filters = this._getActiveFilters(parsed.filters);
+            const hasActiveFilters = this._hasActiveFilters(parsed.filters);
+            const filterAutocompleteMatches = this._isCompleteFilterQuery(query)
+                ? []
+                : this.getFilterAutocompleteMatches(query);
+            const isBareFilterTokenQuery = searchQuery.length === 0
+                && !hasActiveFilters
+                && query.length > 0
+                && (filterAutocompleteMatches.length > 0 || this._isIncompleteFilterQuery(query));
+
+            if (isBareFilterTokenQuery) {
+                this.searchMatches = [];
+            } else if (searchQuery.length === 0 && !hasActiveFilters && query.length === 0) {
                 this.searchMatches = this.getEmptyStateMatches();
-            } else if (searchQuery.length === 0 && hasFilters) {
-                this.searchMatches = this.currentBookmarks
+            } else if (searchQuery.length === 0 && hasActiveFilters) {
+                this.searchMatches = this._collectFilterBookmarkPool()
                     .filter((bookmark) => this.matchesAdvancedFilters(bookmark, filters))
                     .map((bookmark) => ({
                         shortcut: bookmark.shortcut || 'FILTER',
@@ -1134,16 +1211,21 @@ class SearchComponent {
 
         if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
             const raw = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
-            const filterAutocompleteMatches = this.getFilterAutocompleteMatches(raw);
+            const filterAutocompleteMatches = this._isCompleteFilterQuery(raw)
+                ? []
+                : this.getFilterAutocompleteMatches(raw);
             if (filterAutocompleteMatches.length > 0) {
-                const filtersIsExpanded = !this.emptyStateExpandedGroups.has('inline_filters');
+                const currentToken = this._getCurrentFilterToken(raw);
+                const filtersIsExpanded = currentToken.includes(':')
+                    ? true
+                    : !this.emptyStateExpandedGroups.has('filters');
                 const filterHeader = {
                     type: 'command-group-header',
                     groupId: 'inline_filters',
                     label: this.dashboardLabel('filtersGroupLabel', 'Filters'),
                     count: filterAutocompleteMatches.length,
                     expanded: filtersIsExpanded,
-                    _emptyStateGroup: 'inline_filters'
+                    _emptyStateGroup: 'filters'
                 };
                 const seen = new Set();
                 const dedupedFilters = filterAutocompleteMatches.filter((match) => {

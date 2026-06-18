@@ -348,16 +348,6 @@
         const moreLabel = t('health.moreActions', 'More actions');
         const pingLabel = t('health.retestRow', 'Re-check status');
         const faviconLabel = t('health.refreshFavicon', 'favicon');
-        const fixLabel = t('health.autoHealOneClick', '1-click fix');
-
-        const primaryFix = healable
-            ? labeledButton(
-                'btn btn-small btn-primary health-btn-with-icon',
-                ` data-heal-fix-page="${escapeHtml(issue.pageId)}" data-heal-fix-index="${escapeHtml(issue.index)}"`,
-                'fix',
-                fixLabel
-            )
-            : '';
 
         const healMenuItems = healable ? `
                 <p class="health-actions-menu-label" role="presentation">${escapeHtml(t('health.menuRepair', 'Repair'))}</p>
@@ -378,7 +368,6 @@
                         openLabel
                     )}
                     ${renderOpenInDashboardAction(issue)}
-                    ${primaryFix}
                 </div>
                 <span class="health-actions-divider" aria-hidden="true"></span>
                 <div class="health-row-actions-secondary">
@@ -871,6 +860,30 @@
     let pageFilterSyncing = false;
     let sortSelectSyncing = false;
     let loadReportInFlight = null;
+    let renderDepth = 0;
+    let renderScheduled = false;
+    let renderLoopGuard = 0;
+
+    function beginSelectSync(kind) {
+        if (kind === 'page') pageFilterSyncing = true;
+        if (kind === 'sort') sortSelectSyncing = true;
+    }
+
+    function endSelectSync(kind) {
+        window.setTimeout(() => {
+            if (kind === 'page') pageFilterSyncing = false;
+            if (kind === 'sort') sortSelectSyncing = false;
+        }, 0);
+    }
+
+    function scheduleRender() {
+        if (renderScheduled) return;
+        renderScheduled = true;
+        window.requestAnimationFrame(() => {
+            renderScheduled = false;
+            render();
+        });
+    }
 
     async function handlePingClick(button) {
         const url = button.getAttribute('data-ping-url');
@@ -1063,14 +1076,6 @@
                 }
                 return;
             }
-            if (button.hasAttribute('data-heal-fix-page')) {
-                const pageId = Number(button.getAttribute('data-heal-fix-page'));
-                const index = Number(button.getAttribute('data-heal-fix-index'));
-                if (Number.isFinite(pageId) && Number.isFinite(index)) {
-                    await handleOneClickFix(button, pageId, index);
-                }
-                return;
-            }
             if (button.hasAttribute('data-delete-page')) {
                 const pageId = Number(button.getAttribute('data-delete-page'));
                 const index = Number(button.getAttribute('data-delete-index'));
@@ -1112,9 +1117,11 @@
         const sortSelect = document.getElementById('health-sort-select');
         sortSelect?.addEventListener('change', () => {
             if (sortSelectSyncing) return;
-            healthState.sort = sortSelect.value;
+            const nextSort = sortSelect.value;
+            if (nextSort === healthState.sort) return;
+            healthState.sort = nextSort;
             saveState();
-            render();
+            scheduleRender();
         });
 
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
@@ -1438,7 +1445,6 @@
                 index,
                 newUrl: payload.newUrl || '',
                 refreshTitle: payload.refreshTitle === true,
-                oneClick: payload.oneClick === true,
                 suggestedTitle: payload.suggestedTitle || ''
             })
         });
@@ -1485,19 +1491,6 @@
             showBulkStatus(t('health.autoHealTitleApplied', 'Title refreshed.'));
             await loadReport();
             render();
-        } catch (error) {
-            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-        } finally {
-            setButtonBusy(button, false);
-        }
-    }
-
-    async function handleOneClickFix(button, pageId, index) {
-        setButtonBusy(button, true);
-        try {
-            await applyAutoHeal(pageId, index, { oneClick: true });
-            showBulkStatus(t('health.autoHealDone', 'Auto-heal applied.'));
-            await refreshHealthView();
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
@@ -1584,76 +1577,113 @@
 
         const options = getPageFilterOptions(report);
         const signature = options.map(([id, name]) => `${id}:${name}`).join('|');
-        if (select.dataset.optionsSig !== signature) {
-            const allLabel = escapeHtml(t('health.filterPageAll', 'All pages'));
-            select.innerHTML = `<option value="all">${allLabel}</option>`
-                + options.map(([id, name]) => `<option value="${escapeHtml(String(id))}">${escapeHtml(name)}</option>`).join('');
-            select.dataset.optionsSig = signature;
-        }
-
-        const current = String(healthState.pageId);
-        const nextValue = (current === 'all' || options.some(([id]) => String(id) === current))
-            ? current
+        const previousPageId = String(healthState.pageId);
+        const nextValue = (previousPageId === 'all' || options.some(([id]) => String(id) === previousPageId))
+            ? previousPageId
             : 'all';
-        if (nextValue !== current) {
-            healthState.pageId = 'all';
-            saveState();
+
+        const needsRebuild = select.dataset.optionsSig !== signature;
+        const needsValueSync = select.value !== nextValue;
+        if (!needsRebuild && !needsValueSync) {
+            if (nextValue !== previousPageId) {
+                healthState.pageId = nextValue;
+                saveState();
+            }
+            return;
         }
 
-        pageFilterSyncing = true;
+        beginSelectSync('page');
         try {
-            if (select.value !== nextValue) {
+            if (needsRebuild) {
+                const allLabel = t('health.filterPageAll', 'All pages');
+                select.replaceChildren();
+                const allOption = document.createElement('option');
+                allOption.value = 'all';
+                allOption.textContent = allLabel;
+                select.appendChild(allOption);
+                options.forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = String(id);
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+                select.dataset.optionsSig = signature;
+            }
+
+            if (needsValueSync) {
                 select.value = nextValue;
             }
         } finally {
-            pageFilterSyncing = false;
+            endSelectSync('page');
+        }
+
+        if (nextValue !== previousPageId) {
+            healthState.pageId = nextValue;
+            saveState();
         }
     }
 
     function render() {
+        if (renderDepth > 0) {
+            return;
+        }
+        renderLoopGuard += 1;
+        if (renderLoopGuard > 40) {
+            console.warn('Health render loop detected; skipping render');
+            return;
+        }
+        window.requestAnimationFrame(() => {
+            renderLoopGuard = 0;
+        });
+
         const report = healthState.report;
         if (!report) return;
 
-        const summaryEl = document.getElementById('health-summary');
-        const pillsEl = document.getElementById('health-filter-pills');
-        const issuesEl = document.getElementById('health-issues');
-        const duplicatesEl = document.getElementById('health-duplicates');
+        renderDepth += 1;
+        try {
+            const summaryEl = document.getElementById('health-summary');
+            const pillsEl = document.getElementById('health-filter-pills');
+            const issuesEl = document.getElementById('health-issues');
+            const duplicatesEl = document.getElementById('health-duplicates');
 
-        if (summaryEl) summaryEl.innerHTML = renderSummary(report);
-        if (pillsEl) {
-            pillsEl.innerHTML = renderFilterPills(report);
-            if (!pillsEl.getAttribute('role')) {
-                pillsEl.setAttribute('role', 'group');
-                pillsEl.setAttribute('aria-label', t('health.filterGroupLabel', 'Filter by issue type'));
+            if (summaryEl) summaryEl.innerHTML = renderSummary(report);
+            if (pillsEl) {
+                pillsEl.innerHTML = renderFilterPills(report);
+                if (!pillsEl.getAttribute('role')) {
+                    pillsEl.setAttribute('role', 'group');
+                    pillsEl.setAttribute('aria-label', t('health.filterGroupLabel', 'Filter by issue type'));
+                }
             }
-        }
-        syncPageFilterSelect(report);
-        if (issuesEl) issuesEl.innerHTML = renderIssues(report);
-        if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
+            syncPageFilterSelect(report);
+            if (issuesEl) issuesEl.innerHTML = renderIssues(report);
+            if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
 
-        const dupPanel = document.querySelector('.health-duplicates-panel');
-        if (dupPanel) {
-            dupPanel.hidden = !shouldShowDuplicatesPanel(report);
-        }
-
-        const mergeBtn = document.getElementById('merge-duplicates-btn');
-        if (mergeBtn) {
-            mergeBtn.disabled = !getFilteredDuplicateGroups(report).length;
-        }
-
-        const sortSelect = document.getElementById('health-sort-select');
-        if (sortSelect && sortSelect.value !== healthState.sort) {
-            sortSelectSyncing = true;
-            try {
-                sortSelect.value = healthState.sort;
-            } finally {
-                sortSelectSyncing = false;
+            const dupPanel = document.querySelector('.health-duplicates-panel');
+            if (dupPanel) {
+                dupPanel.hidden = !shouldShowDuplicatesPanel(report);
             }
-        }
 
-        syncFilterClearButton();
-        pruneSelection();
-        syncSelectionToolbar();
+            const mergeBtn = document.getElementById('merge-duplicates-btn');
+            if (mergeBtn) {
+                mergeBtn.disabled = !getFilteredDuplicateGroups(report).length;
+            }
+
+            const sortSelect = document.getElementById('health-sort-select');
+            if (sortSelect && sortSelect.value !== healthState.sort) {
+                beginSelectSync('sort');
+                try {
+                    sortSelect.value = healthState.sort;
+                } finally {
+                    endSelectSync('sort');
+                }
+            }
+
+            syncFilterClearButton();
+            pruneSelection();
+            syncSelectionToolbar();
+        } finally {
+            renderDepth -= 1;
+        }
     }
 
     async function loadReport() {
@@ -1725,16 +1755,18 @@
         const pageFilter = document.getElementById('health-page-filter');
         pageFilter?.addEventListener('change', () => {
             if (pageFilterSyncing) return;
-            healthState.pageId = pageFilter.value || 'all';
+            const nextPageId = pageFilter.value || 'all';
+            if (nextPageId === healthState.pageId) return;
+            healthState.pageId = nextPageId;
             saveState();
-            render();
+            scheduleRender();
         });
 
         searchInput?.addEventListener('input', () => {
             healthState.query = searchInput.value.trim();
             saveState();
             syncFilterClearButton();
-            render();
+            scheduleRender();
         });
 
         document.getElementById('health-search-clear')?.addEventListener('click', () => {
@@ -1743,7 +1775,7 @@
             healthState.query = '';
             saveState();
             syncFilterClearButton();
-            render();
+            scheduleRender();
             searchInput.focus();
         });
 

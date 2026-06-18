@@ -597,6 +597,38 @@ class StatusMonitor {
         return this.statusCache.get(statusCacheKey(normalizedUrl));
     }
 
+    /**
+     * Reachability for search filters: online | offline | null (not monitored or not checked yet).
+     */
+    getBookmarkReachability(bookmark) {
+        const url = String(bookmark?.url || '').trim();
+        if (!url) {
+            return null;
+        }
+
+        const dash = window.dashboardInstance;
+        const fresh = dash?.bookmarks?.find((candidate) => candidate?.url === url)
+            || dash?.allBookmarks?.find((candidate) => candidate?.url === url)
+            || bookmark;
+
+        if (!fresh?.checkStatus) {
+            return null;
+        }
+
+        const cachedStatus = String(this.getCachedStatus(url)?.status || '').toLowerCase();
+        if (cachedStatus === 'online' || cachedStatus === 'offline') {
+            return cachedStatus;
+        }
+        const error = String(fresh.lastError || '').trim();
+        if (error) {
+            return 'offline';
+        }
+        if (Number(fresh.lastChecked || 0) > 0) {
+            return 'online';
+        }
+        return null;
+    }
+
     clearCache() {
         this.statusCache.clear();
     }
