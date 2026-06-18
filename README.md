@@ -112,7 +112,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `?` — finders (e.g. `?g query` to search Google)
 - `*` — recent bookmarks panel
 - `! or F1` — keyboard cheat sheet (filterable with a type-to-search input; blocked while page overview `,` is open)
-- `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar
+- `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar; autocomplete suggests values after each prefix (single **Filters** group)
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
 - `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)
 - `:note` — edit the note of the focused bookmark
@@ -168,13 +168,15 @@ In-app help: Config → Help tab → *General settings* (same content, translate
 
 ### Search filters
 
-Type these directly in the search bar (`>` mode, or after opening search):
+Type these directly in the search bar (`>` mode, or after opening search). Expand **Filters** in the empty state or start typing a prefix for autocomplete:
 
 - `category:` — filter by category name
 - `status:online` / `status:offline` / `status:broken` / `status:ok`
 - `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
 - `page:current` / `page:all` / `page:2`
 - `tag:name` — filter by tag
+
+Partial values (e.g. `status:on`) keep showing suggestions until the filter is complete. `status:online` uses persisted reachability on monitored bookmarks, not only the live status cache.
 
 ### Organisation
 
@@ -217,8 +219,8 @@ Dynamic bookmark groups that appear automatically:
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
-- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete with partial-failure toasts, row favicons, keyboard navigation (`j`/`k`, `Enter` → Config editor, `O` → open URL), structured localized issue reasons, default `broken` filter on first visit, URL state sync; **Classic / Modern / Glass** layout parity with dashboard/config (preset, density, backgrounds, opacity, row-action chip styling); **1-click fix** applies redirect + title refresh in one step without freezing the page
-- Health view with dead-link detection; suggests archive/redirect/title fixes with one-click apply
+- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete with partial-failure toasts, row favicons, keyboard navigation (`j`/`k`, `Enter` → Config editor, `O` → open URL), structured localized issue reasons, default `broken` filter on first visit, URL state sync; **Classic / Modern / Glass** layout parity with dashboard/config (preset, density, backgrounds, opacity, row-action chip styling); per-row repair via overflow menu (**detect redirect**, **refresh title**, **archive**)
+- Health view with dead-link detection; suggests archive/redirect/title fixes from the row overflow menu
 - Health badge on the dashboard header: text pill (e.g. `3 broken`) with red/yellow styling; bulk open broken links asks for confirmation with a per-batch limit
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to query parameters
 - Favicon display and refresh from the health view (per row or bulk selection)

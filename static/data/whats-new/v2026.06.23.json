@@ -42,6 +42,18 @@
         {
           "badge": "fix",
           "text": "<strong>Filters in search mode</strong> — <code>category:</code>, <code>tag:</code>, <code>page:</code>, and <code>status:</code> work in <code>&gt;</code> search with autocomplete chips. A lone <code>:</code> still opens command mode; with text already in the bar, <code>:</code> inserts filter syntax instead of switching modes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Filter autocomplete</strong> — <code>status:</code>, <code>tag:</code>, and <code>page:</code> show value suggestions after you pick a filter hint (including when the query ends with a space after the colon). Only one expandable <strong>Filters</strong> group appears — no duplicate headers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Partial filter typing</strong> — while you type values such as <code>status:on</code> or <code>page:cu</code>, autocomplete stays visible instead of applying a half-finished filter or flooding the list with shortcuts."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>status:</code> filters</strong> — online/offline/checked filters use fresh bookmark data from the current page and persisted reachability (<code>lastChecked</code>, status cache), not stale copies from the global pool."
         }
       ]
     },
@@ -50,11 +62,15 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>One-click auto-heal</strong> — health beta <strong>1-click fix</strong> applies redirect detection and title refresh in one server round-trip instead of suggest-then-apply calls that could freeze the page."
+          "text": "<strong>Health render loop</strong> — page filter and sort dropdowns no longer retrigger infinite re-renders when options are rebuilt; deferred select sync, <code>scheduleRender()</code>, and a render-depth guard keep the view responsive."
         },
         {
           "badge": "fix",
-          "text": "<strong>Health controls</strong> — page filter and sort dropdowns no longer retrigger infinite re-renders when options are rebuilt; report loading deduplicates in-flight fetches."
+          "text": "<strong>1-click fix removed</strong> — the primary <strong>1-click fix</strong> button is removed from health beta. Use the overflow menu (<strong>detect redirect</strong>, <strong>refresh title</strong>, <strong>archive</strong>) for repair actions instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Report loading</strong> — health report fetches deduplicate while a reload is already in flight."
         }
       ]
     },
@@ -101,7 +117,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, command palette, search filters, recent modal tab caps, and post-onboarding layout nudge."
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, and post-onboarding layout nudge."
         },
         {
           "badge": "fix",
@@ -109,11 +125,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, search/command fixes, health one-click heal, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>focus-trap-utils.js</code>, <code>search.js</code>, <code>health.js</code>, <code>dashboard-bookmark-rows.js</code>, <code>dashboard-recent.js</code>, <code>dashboard-promos.js</code>, <code>dashboard-setup.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>search.js</code> (<code>search-status-filter-fix-3</code>), <code>health.js</code> (<code>health-no-oneclick-1</code>), <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

@@ -441,7 +441,7 @@ Three input modes share one overlay; switch with keys or footer chips.
 - First use of `>`, `:`, or `?` may show a one-time **Got it** balloon beside the search field (desktop).  
 - Empty state: recent queries and saved searches as chips; **`←`/`→`** select a chip, **`Enter`** applies it; filter hints and finders below.  
 - **Colon behaviour** — a lone **`:`** from the dashboard opens command mode. With search already open and text in the bar, **`:`** inserts filter syntax (`category:`, `tag:`, …) instead of switching modes.  
-- **Filters** (type or pick from autocomplete):
+- **Filters** (type or pick from autocomplete — one expandable **Filters** group in the panel):
 
 | Filter | Example |
 |--------|---------|
@@ -449,6 +449,8 @@ Three input modes share one overlay; switch with keys or footer chips.
 | `tag:` | `tag:work` |
 | `page:` | `page:2`, `page:all`, `page:current` |
 | `status:` | `status:online`, `status:broken`, `status:pinned`, … |
+
+While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
@@ -724,7 +726,7 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete (partial failures reported in a summary toast) |
 | **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
 | **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
-| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete); **1-click fix** applies redirect detection and title refresh in one step |
+| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (detect redirect, refresh title, archive, delete) |
 | **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
 | **Layout parity** | Uses the same **Classic / Modern / Glass** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips; glass blur on glass layout) |

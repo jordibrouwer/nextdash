@@ -54,7 +54,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.23 — June 2026
 
-**Overlay focus, search & health fixes, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; command palette `Enter` and search filters in `>` mode; health beta one-click auto-heal no longer freezes the page; onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
+**Overlay focus, search filters & health polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; command palette `Enter` and reliable `status:` / `tag:` / `page:` filter autocomplete in `>` mode; health beta page-filter render loop fixed and **1-click fix** removed (overflow repair actions remain); onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
 
 ### Keyboard focus & overlays
 
@@ -69,12 +69,16 @@ _No unreleased changes at this time._
 
 - **fix** **Command palette Enter** — `Enter` / `Space` on highlighted command rows runs the command after autocomplete; removed `justCompleted` guard that dropped the next confirmation (e.g. `:button` groups).
 - **fix** **Filters in search mode** — `category:`, `tag:`, `page:`, and `status:` work in `>` search with autocomplete chips; lone `:` opens command mode, but with text already in the bar `:` inserts filter syntax instead of switching modes.
+- **fix** **Filter autocomplete** — `status:`, `tag:`, and `page:` show value suggestions after filter hints (including when a trailing space follows the colon); only one expandable **Filters** group in the search panel.
+- **fix** **Partial filter typing** — incomplete values such as `status:on` or `page:cu` keep showing autocomplete instead of applying a broken filter or listing all shortcuts.
+- **fix** **`status:` reachability** — online/offline/checked filters resolve bookmark fields from the current page copy and persisted `lastChecked` / status cache, not stale `allBookmarks` pool entries.
 - **fix** **Shortcut map while searching** — building the shortcuts map no longer closes search; pending bookmark-open timers are cleared on `pagehide`.
 
 ### Health
 
-- **fix** **One-click auto-heal** — health beta **1-click fix** uses one `POST` with `oneClick` (redirect detect + title refresh on the server) instead of suggest-then-apply round-trips that could hang the UI.
-- **fix** **Health render loop** — page-filter and sort `<select>` sync no longer retrigger infinite `render()` when options are rebuilt; `loadReport()` deduplicates in-flight fetches.
+- **fix** **Health render loop** — page-filter and sort `<select>` sync uses deferred sync flags, `scheduleRender()`, and a render-depth guard so rebuilding options no longer retriggers infinite `render()`.
+- **fix** **1-click fix removed** — the primary **1-click fix** toolbar button is removed from health beta (it was unreliable); use the overflow menu **detect redirect**, **refresh title**, or **archive** instead.
+- **fix** **Report loading** — `loadReport()` deduplicates in-flight fetches.
 
 ### Onboarding, tips & discoverability
 
@@ -92,10 +96,10 @@ _No unreleased changes at this time._
 
 ### Developer & docs
 
-- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts, onboarding, search promos, command palette, search filters, recent modal tab caps, and post-onboarding layout nudge.
+- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts, onboarding, search promos, command palette, search filters (`status:`/`tag:`/`page:` autocomplete, duplicate filter groups), recent modal tab caps, and post-onboarding layout nudge.
 - **fix** **Timer teardown** — `teardownDashboardTimers()` on `pagehide` clears tip rotation, backup tip, post-onboarding, and pending bookmark-open timers.
-- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and whats-new updated for this release.
-- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `dashboard-inert-sync-4`, `popover-inert-1`, `search-filter-autocomplete-1`, `health-oneclick-fix-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and whats-new updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, and grid-shortcut fixes.
+- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `dashboard-inert-sync-4`, `popover-inert-1`, `search-status-filter-fix-3`, `health-no-oneclick-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
 
 ---
 
