@@ -33,7 +33,7 @@ class DashboardPromos {
 
     shouldShowLayoutNudgePrompt() {
         const d = this.dash;
-        return window.LayoutVersionNudge?.shouldOffer?.(this) === true;
+        return window.LayoutVersionNudge?.shouldOffer?.(d) === true;
     }
 
 
@@ -164,7 +164,7 @@ class DashboardPromos {
 
     shouldShowPreviewCardSpotlightPrompt() {
         const d = this.dash;
-        return window.PreviewCardSpotlight?.shouldOffer?.(this) === true;
+        return window.PreviewCardSpotlight?.shouldOffer?.(d) === true;
     }
 
 
@@ -173,7 +173,7 @@ class DashboardPromos {
         if (!this.shouldShowPreviewCardSpotlightPrompt()) return false;
         if (!this.canShowPostOnboardingPrompts()) return false;
 
-        const spotlight = window.PreviewCardSpotlight?.create?.(this, {
+        const spotlight = window.PreviewCardSpotlight?.create?.(d, {
             onDismiss: () => {
                 if (d.previewCardSpotlight === spotlight) {
                     d.previewCardSpotlight = null;
@@ -186,7 +186,7 @@ class DashboardPromos {
         if (!spotlight) return false;
 
         const started = spotlight.show(1400, {
-            canShow: () => window.PreviewCardSpotlight?.canShowNow?.(this) === true,
+            canShow: () => window.PreviewCardSpotlight?.canShowNow?.(d) === true,
         });
         if (!started) return false;
         d.previewCardSpotlight = spotlight;
@@ -227,7 +227,7 @@ class DashboardPromos {
         if (!this.shouldShowLayoutNudgePrompt()) return false;
         if (!this.canShowPostOnboardingPrompts()) return false;
 
-        const spotlight = window.LayoutVersionNudge.create(this);
+        const spotlight = window.LayoutVersionNudge.create(d);
         if (!spotlight) return false;
 
         const onDismiss = typeof options.onDismiss === 'function' ? options.onDismiss : null;
@@ -405,7 +405,7 @@ class DashboardPromos {
         const d = this.dash;
         if (window.MobileExperience?.shouldSkipHeavyUi?.()) return;
         if (typeof window.ConfigBookmarksTour?.maybeStartDashboardPhase !== 'function') return;
-        d._configBookmarksTour = window.ConfigBookmarksTour.maybeStartDashboardPhase(this);
+        d._configBookmarksTour = window.ConfigBookmarksTour.maybeStartDashboardPhase(d);
     }
 
 

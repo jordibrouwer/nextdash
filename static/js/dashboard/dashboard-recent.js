@@ -27,7 +27,7 @@ class DashboardRecent {
         const list = (bookmarks || []).filter((b) => b && String(b.url || '').trim());
         if (list.length === 0) return [];
 
-        const cap = Dashboard.OPEN_TABS_CAP;
+        const cap = DashboardBookmarkRows.OPEN_TABS_CAP;
         const n = list.length;
         if (n <= cap) {
             return [{
@@ -131,11 +131,11 @@ class DashboardRecent {
         const contentEl = document.getElementById('modal-text') || panel.querySelector('.modal-body');
         if (!contentEl) return;
 
-        const recentBookmarks = this.getRecentBookmarks(d.bookmarks, Dashboard.RECENT_MODAL_DISPLAY_LIMIT);
+        const recentBookmarks = this.getRecentBookmarks(d.bookmarks, DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT);
         const openInNewTab = d.settings.openInNewTab;
         const noRecentText = d.language.t('dashboard.noRecentBookmarks') || 'No recent bookmarks yet.';
-        const shownWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, Dashboard.RECENT_MODAL_DISPLAY_LIMIT);
-        const lastWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, Dashboard.OPEN_LAST_DEFAULT);
+        const shownWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT);
+        const lastWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, DashboardBookmarkRows.OPEN_LAST_DEFAULT);
 
         const openPlans = [
             ...this.buildOpenTabsPlans(shownWithUrls, { all: 'recentOpenShown', first: 'recentOpenShownFirst' }),
@@ -153,7 +153,7 @@ class DashboardRecent {
                             </button>
                         `).join('')}
                     </div>
-                    <p class="recent-bookmarks-open-hint">${d.escapeHtml(d.formatDashboardLabel('recentOpenCommandHint', { n: Dashboard.OPEN_LAST_DEFAULT }, `:open last ${Dashboard.OPEN_LAST_DEFAULT} in command mode`))}</p>
+                    <p class="recent-bookmarks-open-hint">${d.escapeHtml(d.formatDashboardLabel('recentOpenCommandHint', { n: DashboardBookmarkRows.OPEN_LAST_DEFAULT }, `:open last ${DashboardBookmarkRows.OPEN_LAST_DEFAULT} in command mode`))}</p>
                 </div>`
             : '';
 

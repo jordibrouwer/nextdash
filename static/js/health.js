@@ -868,6 +868,9 @@
     }
 
     let healthListenersBound = false;
+    let pageFilterSyncing = false;
+    let sortSelectSyncing = false;
+    let loadReportInFlight = null;
 
     async function handlePingClick(button) {
         const url = button.getAttribute('data-ping-url');
@@ -1108,6 +1111,7 @@
 
         const sortSelect = document.getElementById('health-sort-select');
         sortSelect?.addEventListener('change', () => {
+            if (sortSelectSyncing) return;
             healthState.sort = sortSelect.value;
             saveState();
             render();
@@ -1433,7 +1437,9 @@
                 pageId,
                 index,
                 newUrl: payload.newUrl || '',
-                refreshTitle: payload.refreshTitle === true
+                refreshTitle: payload.refreshTitle === true,
+                oneClick: payload.oneClick === true,
+                suggestedTitle: payload.suggestedTitle || ''
             })
         });
         if (!response.ok) {
@@ -1489,14 +1495,9 @@
     async function handleOneClickFix(button, pageId, index) {
         setButtonBusy(button, true);
         try {
-            const suggestion = await fetchAutoHealSuggestion(pageId, index);
-            await applyAutoHeal(pageId, index, {
-                newUrl: suggestion.redirectUrl || '',
-                refreshTitle: true
-            });
+            await applyAutoHeal(pageId, index, { oneClick: true });
             showBulkStatus(t('health.autoHealDone', 'Auto-heal applied.'));
-            await loadReport();
-            render();
+            await refreshHealthView();
         } catch (error) {
             showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
         } finally {
@@ -1582,17 +1583,30 @@
         if (!select) return;
 
         const options = getPageFilterOptions(report);
-        const allLabel = escapeHtml(t('health.filterPageAll', 'All pages'));
-        select.innerHTML = `<option value="all">${allLabel}</option>`
-            + options.map(([id, name]) => `<option value="${escapeHtml(String(id))}">${escapeHtml(name)}</option>`).join('');
+        const signature = options.map(([id, name]) => `${id}:${name}`).join('|');
+        if (select.dataset.optionsSig !== signature) {
+            const allLabel = escapeHtml(t('health.filterPageAll', 'All pages'));
+            select.innerHTML = `<option value="all">${allLabel}</option>`
+                + options.map(([id, name]) => `<option value="${escapeHtml(String(id))}">${escapeHtml(name)}</option>`).join('');
+            select.dataset.optionsSig = signature;
+        }
 
         const current = String(healthState.pageId);
-        if (current === 'all' || options.some(([id]) => String(id) === current)) {
-            select.value = current;
-        } else {
+        const nextValue = (current === 'all' || options.some(([id]) => String(id) === current))
+            ? current
+            : 'all';
+        if (nextValue !== current) {
             healthState.pageId = 'all';
-            select.value = 'all';
             saveState();
+        }
+
+        pageFilterSyncing = true;
+        try {
+            if (select.value !== nextValue) {
+                select.value = nextValue;
+            }
+        } finally {
+            pageFilterSyncing = false;
         }
     }
 
@@ -1629,7 +1643,12 @@
 
         const sortSelect = document.getElementById('health-sort-select');
         if (sortSelect && sortSelect.value !== healthState.sort) {
-            sortSelect.value = healthState.sort;
+            sortSelectSyncing = true;
+            try {
+                sortSelect.value = healthState.sort;
+            } finally {
+                sortSelectSyncing = false;
+            }
         }
 
         syncFilterClearButton();
@@ -1638,11 +1657,26 @@
     }
 
     async function loadReport() {
-        const response = await fetch('/api/bookmark-health');
-        if (!response.ok) {
-            throw new Error(`Failed to load health report: ${response.status}`);
+        if (loadReportInFlight) {
+            return loadReportInFlight;
         }
-        healthState.report = await response.json();
+        loadReportInFlight = (async () => {
+            try {
+                const response = await fetch('/api/bookmark-health');
+                if (!response.ok) {
+                    throw new Error(`Failed to load health report: ${response.status}`);
+                }
+                healthState.report = await response.json();
+            } finally {
+                loadReportInFlight = null;
+            }
+        })();
+        return loadReportInFlight;
+    }
+
+    async function refreshHealthView() {
+        await loadReport();
+        render();
     }
 
     function applyHealthControlTitles() {
@@ -1690,6 +1724,7 @@
 
         const pageFilter = document.getElementById('health-page-filter');
         pageFilter?.addEventListener('change', () => {
+            if (pageFilterSyncing) return;
             healthState.pageId = pageFilter.value || 'all';
             saveState();
             render();

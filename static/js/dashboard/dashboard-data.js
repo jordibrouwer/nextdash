@@ -436,7 +436,7 @@ class DashboardData {
             d.bookmarks = bookmarks;
             d.categories = categories.map(cat => ({ ...cat, name: d.language.t(cat.name) || cat.name }));
             d.currentPageId = targetPageId;
-            d.initializeButtonTipsRotation();
+            d.refreshButtonTipsOnPageChange?.();
 
             // Update URL hash
             const pageIndex = d.pages.findIndex(p => Number(p.id) === targetPageId);

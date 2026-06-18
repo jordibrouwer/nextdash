@@ -512,6 +512,54 @@ class DashboardSetup {
     }
 
 
+    /** Refresh context tips after page change without resetting rotation timers or onboarding delay. */
+    refreshButtonTipsOnPageChange() {
+        const d = this.dash;
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
+            return;
+        }
+        if (d.tipRotationDelayTimer) {
+            return;
+        }
+        if (!d.tipRotationTimer || !d.shouldShowRotatingTipsNow()) {
+            return;
+        }
+        const hintEl = document.getElementById('button-hint-text');
+        if (!hintEl) {
+            return;
+        }
+        const contextTips = this.getInlineContextTipsForCurrentPage();
+        if (contextTips.length > 0) {
+            d.setTipHtml(hintEl, contextTips[d.contextTipRotationIndex % contextTips.length]);
+        }
+    }
+
+
+    teardownDashboardTimers() {
+        const d = this.dash;
+        if (d.tipRotationTimer) {
+            clearTimeout(d.tipRotationTimer);
+            d.tipRotationTimer = null;
+        }
+        if (d.tipRotationDelayTimer) {
+            clearTimeout(d.tipRotationDelayTimer);
+            d.tipRotationDelayTimer = null;
+        }
+        if (d.backupTipTimer) {
+            clearTimeout(d.backupTipTimer);
+            d.backupTipTimer = null;
+        }
+        if (d._postOnboardingPromptsTimer) {
+            clearTimeout(d._postOnboardingPromptsTimer);
+            d._postOnboardingPromptsTimer = null;
+        }
+        if (d.searchComponent?._openBookmarkTimer) {
+            clearTimeout(d.searchComponent._openBookmarkTimer);
+            d.searchComponent._openBookmarkTimer = null;
+        }
+    }
+
+
     scheduleBackupTip() {
         const d = this.dash;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {

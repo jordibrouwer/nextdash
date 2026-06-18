@@ -2273,10 +2273,12 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		PageID       int    `json:"pageId"`
-		Index        int    `json:"index"`
-		NewURL       string `json:"newUrl"`
-		RefreshTitle bool   `json:"refreshTitle"`
+		PageID         int    `json:"pageId"`
+		Index          int    `json:"index"`
+		NewURL         string `json:"newUrl"`
+		RefreshTitle   bool   `json:"refreshTitle"`
+		OneClick       bool   `json:"oneClick"`
+		SuggestedTitle string `json:"suggestedTitle"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -2295,18 +2297,28 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	refreshTitle := req.RefreshTitle || req.OneClick
 	appliedURL := false
 	appliedTitle := false
 	var result Bookmark
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
+		if req.OneClick && updatedURL == "" {
+			updatedURL = strings.TrimSpace(h.detectRedirectURL(strings.TrimSpace(bookmark.URL)))
+		}
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			if err := h.validateBookmarkURL(updatedURL); err != nil {
+				return err
+			}
 			bookmark.URL = updatedURL
 			appliedURL = true
 		}
 
-		if req.RefreshTitle {
+		if refreshTitle {
 			targetURL := strings.TrimSpace(bookmark.URL)
-			title := h.fetchPageTitleSafe(targetURL)
+			title := strings.TrimSpace(req.SuggestedTitle)
+			if title == "" {
+				title = h.fetchPageTitleSafe(targetURL)
+			}
 			if title != "" {
 				bookmark.PreviewTitle = title
 				// Keep user-defined names unless empty; fallback to fetched title.

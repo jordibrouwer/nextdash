@@ -115,6 +115,7 @@ class Dashboard {
             if (event.persisted) {
                 return;
             }
+            this.teardownDashboardTimers();
             this.keyboardNavigation?.cleanup?.();
             this.swipeNavigation?.cleanup?.();
             window.DashboardTagCloud?.destroy?.();
@@ -752,6 +753,14 @@ class Dashboard {
 
     initializeButtonTipsRotation() {
         return this.setup.initializeButtonTipsRotation(...arguments);
+    }
+
+    refreshButtonTipsOnPageChange() {
+        return this.setup.refreshButtonTipsOnPageChange(...arguments);
+    }
+
+    teardownDashboardTimers() {
+        return this.setup.teardownDashboardTimers(...arguments);
     }
 
     scheduleBackupTip() {

@@ -75,12 +75,28 @@
         return document.getElementById('omnibox-overlay') != null;
     }
 
+    function isMoveOrDeletePopoverOpen() {
+        return document.getElementById('move-popover') != null
+            || document.getElementById('delete-popover') != null;
+    }
+
+    function isDatePopoverOpen() {
+        return document.getElementById('date-popover') != null;
+    }
+
+    function isInlineEditActive() {
+        return document.body.classList.contains('bookmark-inline-edit-active');
+    }
+
     function shouldTrapDashboardBackground() {
         return document.getElementById('shortcut-search')?.classList.contains('show') === true
             || document.getElementById('app-modal')?.classList.contains('show') === true
             || isPageOverviewOpen()
             || isOmniboxOpen()
-            || isTagCloudModalOpen();
+            || isTagCloudModalOpen()
+            || isMoveOrDeletePopoverOpen()
+            || isDatePopoverOpen()
+            || isInlineEditActive();
     }
 
     function applyDashboardInert(active) {

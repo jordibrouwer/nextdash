@@ -964,6 +964,8 @@ class DashboardBookmarkRows {
 
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
         const previousFocus = document.activeElement;
         let focusedIdx = items.findIndex(i => i.classList.contains('is-current'));
@@ -995,6 +997,7 @@ class DashboardBookmarkRows {
             if (d._movePopoverCleanup === close) {
                 d._movePopoverCleanup = null;
             }
+            window.FocusTrapUtils?.syncDashboardInert?.();
         };
         unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         d._movePopoverCleanup = close;
@@ -1105,6 +1108,8 @@ class DashboardBookmarkRows {
 
         document.body.appendChild(pop);
         this._positionActionPopoverBeside(pop, anchorEl);
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
         const previousFocus = document.activeElement;
         let focusedIdx = 0;
@@ -1134,6 +1139,7 @@ class DashboardBookmarkRows {
             if (d._deletePopoverCleanup === close) {
                 d._deletePopoverCleanup = null;
             }
+            window.FocusTrapUtils?.syncDashboardInert?.();
         };
         unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
         d._deletePopoverCleanup = close;

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.23 — June 2026](#v20260623--june-2026)
 - [v2026.06.22 — June 2026](#v20260622--june-2026)
 - [v2026.06.21 — June 2026](#v20260621--june-2026)
 - [v2026.06.20 — June 2026](#v20260620--june-2026)
@@ -48,6 +49,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.23 — June 2026
+
+**Overlay focus, onboarding polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, and omnibox; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; onboarding finish/skip teardown; one-minute delay before rotating tips; search promos on first keypress; faster bootstrap animations; Config → General opens Essentials until the user picks a layer; dashboard split into modules with Playwright smoke tests.
+
+### Keyboard focus & overlays
+
+- **fix** **Search & modal focus** — `>`, `*`, and `!` move focus into the search panel or app modal; `Tab` stays trapped inside the open overlay instead of escaping to the bookmark grid.
+- **fix** **Tag cloud, page overview & omnibox** — same focus trap and dashboard `inert` for `/`, `,`, and `&`; mouse clicks on the grid are blocked while any overlay is open and restored after close.
+- **fix** **Inert sync** — `FocusTrapUtils.syncDashboardInert()` reads open overlays from the DOM (search `.show`, app modal `.show`, tag cloud `!hidden`, page overview / omnibox in DOM) instead of a ref-count that could stick after closing search.
+- **fix** **Grid shortcuts restored** — `KeyboardNavigation` receives the dashboard instance again (not `DashboardSetup`); `;`, `Shift+M`, and `Shift+D` work with a keyboard-selected row; search ignores shift-modified letters for grid shortcuts.
+- **fix** **Escape with promos** — feature-promo `Esc` no longer stops propagation, so page overview and omnibox still close when a **Got it** balloon is open.
+
+### Onboarding, tips & discoverability
+
+- **fix** **Onboarding finish & skip** — `finish()` tears down UI before persist; `dashboard-promos.js` uses `this.dash` for promo helpers so step 9/9 and skip at 1/9 do not leave `guided-flow-locked` or a hung card.
+- **new** **Rotating tips delay** — `TipsPolicy.markOnboardingEnded()` waits one minute after onboarding finish/skip before `initializeButtonTipsRotation()` shows footer tips (`nextdash-tips-not-before-v1`).
+- **fix** **Search discoverability promos** — grid promo no longer defers search-mode promos when the search panel is open; competing promos dismiss; `MutationObserver` retry for blocked first `>`, `:`, `?`.
+- **fix** **Faster first paint** — skeleton shimmer ~0.75s; shorter `categoryEnter` / `bookmarkEnter` and reduced dashboard bootstrap animation constants.
+
+### Config → General
+
+- **new** **Essentials on first visit** — without a stored layer preference, `config#general` always opens **Essentials**; layer is persisted only on explicit user actions (layer buttons, **Advanced settings →**, settings-search `goToLayer`).
+
+### Developer & docs
+
+- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright `tests/*.spec.js`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and whats-new updated for this release.
+- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `dashboard-inert-sync-3`, `overlay-inert-3`, `tag-cloud-inert-1`, `omnibox-shortcut-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
 
 ---
 

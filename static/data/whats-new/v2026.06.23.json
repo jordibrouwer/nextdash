@@ -1,0 +1,79 @@
+{
+  "tag": "v2026.06.23",
+  "date": "June 2026",
+  "releasedAt": "2026-06-17",
+  "sections": [
+    {
+      "title": "Keyboard focus &amp; overlays",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Search &amp; modal focus</strong> — shortcuts <code>&gt;</code>, <code>*</code>, and <code>!</code> move keyboard focus into the search panel or app modal (cheat sheet / recent bookmarks) instead of leaving it on the bookmark grid. <code>Tab</code> stays trapped inside the open overlay."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag cloud, page overview &amp; omnibox</strong> — the same focus and background-<code>inert</code> treatment now applies to the tag word cloud (<code>/</code>), page overview (<code>,</code>), and quick-add omnibox (<code>&amp;</code>). The dashboard grid is not clickable behind an open overlay; closing any overlay restores mouse and keyboard access."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inert sync</strong> — dashboard <code>inert</code> follows open overlays from the DOM (search, app modal, tag cloud, page overview, omnibox) instead of a fragile ref-count, so repeated open/close cycles no longer leave the grid stuck non-interactive."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Grid shortcuts restored</strong> — <code>;</code> (inline edit), <code>Shift+M</code> (quick move), and <code>Shift+D</code> (quick delete) work again while keyboard-navigating bookmarks; search no longer swallows shift-modified letter keys meant for the grid."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape with promos</strong> — dismissing a one-time <em>Got it</em> balloon no longer blocks <code>Esc</code> from closing page overview or omnibox underneath."
+        }
+      ]
+    },
+    {
+      "title": "Onboarding, tips &amp; discoverability",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Onboarding finish &amp; skip</strong> — completing step 9/9 or skipping at step 1 reliably tears down the wizard (no stuck <code>guided-flow-locked</code> overlay) and persists settings without hanging."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rotating tips delay</strong> — footer shortcut tips above the action buttons wait <strong>one minute</strong> after you finish or skip first-run onboarding before they start, so post-setup prompts and What's new are not competing for attention."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search discoverability promos</strong> — one-time <em>Got it</em> balloons for <code>&gt;</code>, <code>:</code>, and <code>?</code> show on the first keypress even when the grid-navigation promo is still eligible; promos no longer block each other while search is open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster first paint</strong> — skeleton shimmer and category/bookmark enter animations are shorter on dashboard bootstrap so the grid feels ready sooner."
+        }
+      ]
+    },
+    {
+      "title": "Config → General",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Essentials on first visit</strong> — the first time you open <strong>Config → General</strong>, the <em>Essentials</em> layer is selected automatically. After you explicitly pick Essentials, Advanced, or Show all (including <em>Advanced settings →</em> jumps and settings-search navigation), that choice is remembered for later visits."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, onboarding, and search promos."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>focus-trap-utils.js</code>, <code>dashboard-setup.js</code>, <code>tips-policy.js</code>, <code>config-general-layers.js?v=general-layer-default-1</code>, and related dashboard module bundles."
+        }
+      ]
+    }
+  ]
+}

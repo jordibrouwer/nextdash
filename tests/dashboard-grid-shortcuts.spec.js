@@ -70,4 +70,18 @@ test.describe('dashboard grid shortcuts', () => {
         await expect(page.locator('#move-popover')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
+
+    test('dashboard stays inert while move popover open', async ({ page }) => {
+        await page.keyboard.press('Shift+M');
+        await expect(page.locator('#move-popover')).toBeVisible({ timeout: 3000 });
+        await expect.poll(async () => page.evaluate(() => (
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === true
+        ))).toBe(true);
+
+        await page.evaluate(() => window.dashboardInstance?._movePopoverCleanup?.());
+        await expect(page.locator('#move-popover')).toHaveCount(0, { timeout: 3000 });
+        await expect.poll(async () => page.evaluate(() => (
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
+        ))).toBe(true);
+    });
 });

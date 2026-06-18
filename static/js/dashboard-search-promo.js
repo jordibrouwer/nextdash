@@ -473,6 +473,7 @@
         dismissPromo: confirmPromo,
         dismissCompetingDiscoverabilityPromos,
         flushPendingPromoIfNeeded,
+        isPromoDeferred,
         clearPromoSeen(kind) {
             cancelScheduledShow();
             removePromoFromDom();

@@ -17,15 +17,14 @@ class SearchComponent {
         this.selectedChipIndex = 0;
         this.matchElements = []; // Store references to DOM elements for selection highlighting
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
-        this.justCompleted = false; // Flag to prevent accidental execution after completion
         this.emptyStateExpandedGroups = new Set(); // Tracks expanded groups in empty search state
-        this.pendingConfirmation = false; // Flag to prevent accidental confirmation execution
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
         this.recentCommands = this.loadRecentCommands();
         this.savedSearches = this.loadSavedSearches();
         this.lastNonCommandQuery = '';
         this._debounceTimer = null;
+        this._openBookmarkTimer = null;
 
         this.commandsComponent = new window.SearchCommandsComponent(this.language, this.currentBookmarks, this.allBookmarks, (newQuery) => {
             this.currentQuery = newQuery;
@@ -89,19 +88,17 @@ class SearchComponent {
     }
 
     buildShortcutsMap() {
-        if (this.searchActive) {
-            this.closeSearch();
-        }
-
-        // Clear existing shortcuts
         this.shortcuts.clear();
 
-        // Build shortcuts map
         this.bookmarks.forEach(bookmark => {
             if (bookmark.shortcut && bookmark.shortcut.trim()) {
                 this.shortcuts.set(bookmark.shortcut.toLowerCase(), bookmark);
             }
         });
+
+        if (this.searchActive) {
+            this.renderSearchMatches();
+        }
     }
 
     setupEventListeners() {
@@ -110,14 +107,17 @@ class SearchComponent {
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
                 const raw = e.target.value;
-                // In command mode preserve original case for URLs; otherwise uppercase
                 const inCommandMode = this.currentQuery.startsWith(':');
-                const value = inCommandMode ? raw : raw.toUpperCase();
+                const inFinderMode = this.currentQuery.startsWith('?');
+                const inGlobalMode = this.currentQuery.startsWith('@');
+                const value = inCommandMode
+                    ? raw
+                    : (inFinderMode || inGlobalMode ? raw.toUpperCase() : raw);
                 if (value.length > this.currentQuery.length) {
                     // Character added
                     const newChar = value[value.length - 1];
-                    const allowed = inCommandMode
-                        ? /^[\x20-\x7E]$/.test(newChar)  // any printable ASCII in command mode
+                    const allowed = inCommandMode || (!inFinderMode && !inGlobalMode)
+                        ? /^[\x20-\x7E]$/.test(newChar)
                         : /^[A-Z0-9: \?/#\.\-_]$/.test(newChar);
                     if (allowed) {
                         this.addToQuery(newChar);
@@ -312,6 +312,12 @@ class SearchComponent {
         if (document.getElementById('omnibox-overlay')) {
             return true;
         }
+        if (document.getElementById('move-popover') || document.getElementById('delete-popover')) {
+            return true;
+        }
+        if (document.getElementById('date-popover')) {
+            return true;
+        }
         return false;
     }
 
@@ -360,8 +366,9 @@ class SearchComponent {
             }
         }
         
-        if (key === 'ENTER' && this.searchActive) {
+        if (key === 'ENTER' && (this.searchActive || this.currentQuery.length > 0)) {
             e.preventDefault();
+            this._flushSearchUpdate();
             this.selectCurrentMatch();
             return;
         }
@@ -414,9 +421,13 @@ class SearchComponent {
             return;
         }
 
-        // Handle colon key to start commands
+        // Handle colon key — command launcher, or filter token in normal search (category:work)
         if (key === ':') {
             e.preventDefault();
+            if (this.searchActive && this._isNormalSearchMode() && this.currentQuery.length > 0) {
+                this.addToQuery(':');
+                return;
+            }
             window.dashboardInstance?.markInlineTipUsed?.('command_open');
             const keyNav = window.dashboardInstance?.keyboardNavigation;
             const selected = keyNav && typeof keyNav.getSelectedBookmark === 'function'
@@ -481,8 +492,13 @@ class SearchComponent {
             return;
         }
 
-        // Handle space key for commands, finders, and global search
-        if (key === ' ' && (this.currentQuery.startsWith(':') || this.currentQuery.startsWith('?') || this.currentQuery.startsWith('@'))) {
+        // Handle space key for commands, finders, global search, and normal-search filters
+        if (key === ' ' && (
+            this.currentQuery.startsWith(':')
+            || this.currentQuery.startsWith('?')
+            || this.currentQuery.startsWith('@')
+            || (this.searchActive && this._isNormalSearchMode())
+        )) {
             e.preventDefault();
             this.addToQuery(' ');
             return;
@@ -501,6 +517,15 @@ class SearchComponent {
             e.preventDefault();
             this.addToQuery(e.key);
             return;
+        }
+
+        // Normal search: allow filter syntax (category:work) alongside shortcuts
+        if (this.searchActive && this._isNormalSearchMode()) {
+            if (e.key.length === 1 && /^[\x20-\x7E]$/.test(e.key)) {
+                e.preventDefault();
+                this.addToQuery(e.key);
+                return;
+            }
         }
 
         // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
@@ -578,6 +603,56 @@ class SearchComponent {
             this._debounceTimer = null;
             this.updateSearch();
         }, 50);
+    }
+
+    _flushSearchUpdate() {
+        if (!this._debounceTimer) {
+            return;
+        }
+        clearTimeout(this._debounceTimer);
+        this._debounceTimer = null;
+        this.updateSearch();
+    }
+
+    _activateMatchAt(index) {
+        if (index < 0 || index >= this.selectableMatches.length) {
+            return;
+        }
+        this.selectedMatchIndex = index;
+        this.selectCurrentMatch();
+    }
+
+    _bindMatchKeyboardActivate(element, index) {
+        element.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            this._activateMatchAt(index);
+        });
+    }
+
+    _isNormalSearchMode() {
+        return !this.currentQuery.startsWith(':')
+            && !this.currentQuery.startsWith('?')
+            && !this.currentQuery.startsWith('@');
+    }
+
+    _collectFilterBookmarkPool() {
+        const pool = [];
+        const seen = new Set();
+        const add = (bookmark) => {
+            if (!bookmark) return;
+            const id = bookmark.id ?? bookmark.url;
+            if (id != null && seen.has(id)) return;
+            if (id != null) seen.add(id);
+            pool.push(bookmark);
+        };
+        [this.allBookmarks, this.currentBookmarks, this.bookmarks].forEach((list) => {
+            if (Array.isArray(list)) list.forEach(add);
+        });
+        return pool;
     }
 
     parseSearchFilters(query) {
@@ -674,13 +749,17 @@ class SearchComponent {
         const basePrefix = parts.slice(0, -1).join(' ').trim();
         const prefixWithSpace = basePrefix ? `${basePrefix} ` : '';
 
-        const categories = Array.from(new Set(
-            (this.allBookmarks || [])
-                .map((bookmark) => String(bookmark?.category || '').trim().toLowerCase())
-                .filter(Boolean)
-        )).sort();
+        const pool = this._collectFilterBookmarkPool();
+        const categoryMap = new Map();
+        pool.forEach((bookmark) => {
+            const raw = String(bookmark?.category || '').trim();
+            if (!raw) return;
+            const key = raw.toLowerCase();
+            if (!categoryMap.has(key)) categoryMap.set(key, raw);
+        });
+        const categories = [...categoryMap.keys()].sort();
         const pageIds = Array.from(new Set(
-            (this.allBookmarks || [])
+            pool
                 .map((bookmark) => Number(bookmark?.pageId || bookmark?.pageID || 0))
                 .filter((id) => Number.isFinite(id) && id > 0)
         )).sort((a, b) => a - b);
@@ -693,27 +772,75 @@ class SearchComponent {
         });
 
         const allTags = Array.from(new Set(
-            (this.allBookmarks || []).flatMap(bm => (bm.tags || []).map(t => t.toLowerCase()))
+            pool.flatMap((bm) => (bm.tags || []).map((tag) => String(tag).toLowerCase()))
         )).sort();
 
+        const filterTypeHints = () => ([
+            toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
+            toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')),
+            toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')),
+            toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)'))
+        ]);
+
         if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page' || currentToken === 'tag') {
-            return [
-                toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
-                toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')),
-                toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')),
-                toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)'))
-            ];
+            return filterTypeHints();
+        }
+
+        if (!currentToken.includes(':')) {
+            const partialHints = [];
+            if ('category'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')));
+            }
+            if ('status'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')));
+            }
+            if ('page'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')));
+            }
+            if ('tag'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')));
+            }
+            if (partialHints.length > 0) {
+                return partialHints;
+            }
+
+            if (currentToken.length >= 2) {
+                const categoryHits = categories
+                    .filter((category) => category.startsWith(currentToken))
+                    .slice(0, 8)
+                    .map((category) => toCompletion(
+                        `category:${category}`,
+                        t('filterCompletionCategory', 'Category: {value}', { value: categoryMap.get(category) || category })
+                    ));
+                if (categoryHits.length > 0) {
+                    return categoryHits;
+                }
+
+                const tagHits = allTags
+                    .filter((tag) => tag.startsWith(currentToken))
+                    .slice(0, 8)
+                    .map((tag) => toCompletion(
+                        `tag:${tag}`,
+                        t('filterCompletionTag', 'Tag: {value}', { value: tag })
+                    ));
+                if (tagHits.length > 0) {
+                    return tagHits;
+                }
+            }
+
+            return [];
         }
 
         if (currentToken.startsWith('category:')) {
             const value = currentToken.slice('category:'.length);
-            return categories
-                .filter((category) => category.startsWith(value))
-                .slice(0, 8)
-                .map((category) => toCompletion(
-                    `category:${category}`,
-                    t('filterCompletionCategory', 'Category: {value}', { value: category })
-                ));
+            const hits = categories
+                .filter((category) => !value || category.startsWith(value))
+                .slice(0, 12);
+            if (hits.length === 0) return [];
+            return hits.map((category) => toCompletion(
+                `category:${category}`,
+                t('filterCompletionCategory', 'Category: {value}', { value: categoryMap.get(category) || category })
+            ));
         }
 
         if (currentToken.startsWith('status:')) {
@@ -900,7 +1027,7 @@ class SearchComponent {
             } else if (searchQuery.length === 0 && !hasFilters) {
                 this.searchMatches = this.getEmptyStateMatches();
             } else if (searchQuery.length === 0 && hasFilters) {
-                this.searchMatches = this.bookmarks
+                this.searchMatches = this.currentBookmarks
                     .filter((bookmark) => this.matchesAdvancedFilters(bookmark, filters))
                     .map((bookmark) => ({
                         shortcut: bookmark.shortcut || 'FILTER',
@@ -1254,7 +1381,6 @@ class SearchComponent {
         this.selectedChipIndex = 0;
         this.matchElements = []; // Clear element references
         this.selectableMatches = [];
-        this.justCompleted = false; // Reset flag
         this._lastPromoMode = undefined;
     }
 
@@ -1412,6 +1538,7 @@ class SearchComponent {
                     }
                     this.updateSearch();
                 });
+                this._bindMatchKeyboardActivate(headerEl, mySelectableIndex);
                 fragment.appendChild(headerEl);
                 this.matchElements.push(headerEl);
                 this.selectableMatches.push(match);
@@ -1463,6 +1590,7 @@ class SearchComponent {
                 });
                 fragment.appendChild(chipRow);
                 chipRow.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+                this._bindMatchKeyboardActivate(chipRow, mySelectableIndex);
                 this.matchElements.push(chipRow);
                 this.selectableMatches.push(match);
                 return;
@@ -1543,7 +1671,6 @@ class SearchComponent {
                     this.updateSearch();
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
-                    this.justCompleted = true; // Prevent immediate execution
                 } else if (match.type === 'finder') {
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
@@ -1553,7 +1680,6 @@ class SearchComponent {
                     this.updateSearch();
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
-                    this.justCompleted = true; // Prevent immediate execution
                 } else if (match.type === 'fuzzy' || match.type === 'global-search') {
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
@@ -1573,7 +1699,6 @@ class SearchComponent {
                     this.updateSearch();
                     this.selectedMatchIndex = 0;
                     this.updateSelectionHighlight();
-                    this.justCompleted = true;
                 } else if (match.type === 'whats-new') {
                     this.closeSearch();
                     window.openWhatsNewModal?.({ force: true });
@@ -1581,7 +1706,8 @@ class SearchComponent {
                     this.openBookmark(match.bookmark);
                 }
             });
-            
+            this._bindMatchKeyboardActivate(matchElement, mySelectableIndex);
+
             fragment.appendChild(matchElement);
             this.matchElements.push(matchElement);
             this.selectableMatches.push(match);
@@ -1621,17 +1747,6 @@ class SearchComponent {
     }
 
     selectCurrentMatch() {
-        if (this.justCompleted) {
-            this.justCompleted = false;
-            return;
-        }
-
-        // Prevent accidental execution of confirmation options
-        if (this.pendingConfirmation) {
-            this.pendingConfirmation = false;
-            return;
-        }
-        
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (selectedMatch.type === 'command-group-header') {
@@ -1658,7 +1773,6 @@ class SearchComponent {
                 this.updateSearch();
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
-                this.justCompleted = true; // Prevent immediate execution
             } else if (selectedMatch.type === 'finder') {
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
@@ -1668,7 +1782,6 @@ class SearchComponent {
                 this.updateSearch();
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
-                this.justCompleted = true; // Prevent immediate execution
             } else if (selectedMatch.type === 'fuzzy') {
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
@@ -1688,7 +1801,6 @@ class SearchComponent {
                 this.updateSearch();
                 this.selectedMatchIndex = 0;
                 this.updateSelectionHighlight();
-                this.justCompleted = true;
             } else if (selectedMatch.type === 'whats-new') {
                 this.closeSearch();
                 window.openWhatsNewModal?.({ force: true });
@@ -1709,9 +1821,15 @@ class SearchComponent {
         if (this.searchActive) {
             this.closeSearch();
         }
-        
+
+        if (this._openBookmarkTimer) {
+            clearTimeout(this._openBookmarkTimer);
+            this._openBookmarkTimer = null;
+        }
+
         // Small delay to ensure search is closed before opening bookmark
-        setTimeout(() => {
+        this._openBookmarkTimer = setTimeout(() => {
+            this._openBookmarkTimer = null;
             // Check if HyprMode is enabled
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 window.hyprMode.handleBookmarkClick(bookmark.url);
@@ -1871,8 +1989,6 @@ class SearchComponent {
             this.commandsComponent.resetState();
             this.updateSearch();
             this.selectedMatchIndex = 0;
-            this.pendingConfirmation = false;
-            this.justCompleted = true;
             this.updateSelectionHighlight();
         }
     }

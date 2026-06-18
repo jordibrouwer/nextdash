@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.22**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.23**.
 
 ---
 
@@ -92,6 +92,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
 
+**Blocking overlays** — While search (`>`), the cheat sheet (`!` / `F1`), recent bookmarks (`*`), tag cloud (`/`), page overview (`,`), quick-add omnibox (`&`), or an app modal is open, keyboard focus stays inside that overlay (`Tab` cycles within it) and the bookmark grid behind it is `inert` (not clickable). Closing the overlay restores mouse and keyboard access to the grid.
+
 **Bookmarks**
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
 - `&` — quick-add omnibox: type `name | url | shortcut` in one line
@@ -146,11 +148,11 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
-Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout.
+Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
 #### Config → General (for self-hosters)
 
-**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. Sticky section links jump and highlight as you scroll; in **Advanced** and **All**, the layer toolbar and nav stay pinned. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all** and an *Advanced sections* divider in the nav. Hash links (`#general/advanced/…`) restore layer and open collapsed panels. Save row and main tab bar use a solid background so scrolling content does not show through.
+**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. **First visit** always opens **Essentials**; your Essentials / Advanced / **Show all** choice is remembered only after you pick a layer explicitly (toolbar buttons, **Advanced settings →** links, or settings-search navigation). Sticky section links jump and highlight as you scroll; in **Advanced** and **All**, the layer toolbar and nav stay pinned. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all** and an *Advanced sections* divider in the nav. Hash links (`#general/advanced/…`) restore layer and open collapsed panels once a preference exists. Save row and main tab bar use a solid background so scrolling content does not show through.
 
 **Phone vs tablet** — Only phones (≤768px width) limit config to **General** + **Help** with language, theme, and layout panels. Portrait tablets and wider touch layouts keep the full config, Essentials/Advanced layers, and guided tours.
 
