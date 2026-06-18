@@ -54,22 +54,37 @@ _No unreleased changes at this time._
 
 ## v2026.06.23 — June 2026
 
-**Overlay focus, onboarding polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, and omnibox; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; onboarding finish/skip teardown; one-minute delay before rotating tips; search promos on first keypress; faster bootstrap animations; Config → General opens Essentials until the user picks a layer; dashboard split into modules with Playwright smoke tests.
+**Overlay focus, search & health fixes, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; command palette `Enter` and search filters in `>` mode; health beta one-click auto-heal no longer freezes the page; onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
 
 ### Keyboard focus & overlays
 
 - **fix** **Search & modal focus** — `>`, `*`, and `!` move focus into the search panel or app modal; `Tab` stays trapped inside the open overlay instead of escaping to the bookmark grid.
 - **fix** **Tag cloud, page overview & omnibox** — same focus trap and dashboard `inert` for `/`, `,`, and `&`; mouse clicks on the grid are blocked while any overlay is open and restored after close.
-- **fix** **Inert sync** — `FocusTrapUtils.syncDashboardInert()` reads open overlays from the DOM (search `.show`, app modal `.show`, tag cloud `!hidden`, page overview / omnibox in DOM) instead of a ref-count that could stick after closing search.
-- **fix** **Grid shortcuts restored** — `KeyboardNavigation` receives the dashboard instance again (not `DashboardSetup`); `;`, `Shift+M`, and `Shift+D` work with a keyboard-selected row; search ignores shift-modified letters for grid shortcuts.
+- **fix** **Move/delete popover inert** — `Shift+M` / `Shift+D`, the category date popover, and inline edit sync dashboard `inert` and pause grid selection while open (same as other overlays).
+- **fix** **Inert sync** — `FocusTrapUtils.syncDashboardInert()` reads open overlays from the DOM (search `.show`, app modal `.show`, tag cloud `!hidden`, page overview / omnibox / move-delete popovers, inline edit) instead of a ref-count that could stick after closing search.
+- **fix** **Grid shortcuts restored** — `KeyboardNavigation` receives the dashboard instance again (not `DashboardSetup`); `;`, `Shift+M`, and `Shift+D` work with a keyboard-selected row; search ignores shift-modified letters for grid shortcuts and defers while move/delete/date popovers or inline edit are open.
 - **fix** **Escape with promos** — feature-promo `Esc` no longer stops propagation, so page overview and omnibox still close when a **Got it** balloon is open.
+
+### Search & commands
+
+- **fix** **Command palette Enter** — `Enter` / `Space` on highlighted command rows runs the command after autocomplete; removed `justCompleted` guard that dropped the next confirmation (e.g. `:button` groups).
+- **fix** **Filters in search mode** — `category:`, `tag:`, `page:`, and `status:` work in `>` search with autocomplete chips; lone `:` opens command mode, but with text already in the bar `:` inserts filter syntax instead of switching modes.
+- **fix** **Shortcut map while searching** — building the shortcuts map no longer closes search; pending bookmark-open timers are cleared on `pagehide`.
+
+### Health
+
+- **fix** **One-click auto-heal** — health beta **1-click fix** uses one `POST` with `oneClick` (redirect detect + title refresh on the server) instead of suggest-then-apply round-trips that could hang the UI.
+- **fix** **Health render loop** — page-filter and sort `<select>` sync no longer retrigger infinite `render()` when options are rebuilt; `loadReport()` deduplicates in-flight fetches.
 
 ### Onboarding, tips & discoverability
 
 - **fix** **Onboarding finish & skip** — `finish()` tears down UI before persist; `dashboard-promos.js` uses `this.dash` for promo helpers so step 9/9 and skip at 1/9 do not leave `guided-flow-locked` or a hung card.
+- **fix** **Post-onboarding spotlights** — layout-versions nudge, preview-card spotlight, and config bookmarks tour receive the dashboard instance again (`this.dash`), so classic-layout nudge and related spotlights can show after onboarding when the defer key is cleared.
 - **new** **Rotating tips delay** — `TipsPolicy.markOnboardingEnded()` waits one minute after onboarding finish/skip before `initializeButtonTipsRotation()` shows footer tips (`nextdash-tips-not-before-v1`).
+- **fix** **Context tips on page change** — `refreshButtonTipsOnPageChange()` updates footer tips when switching pages without resetting the one-minute onboarding delay or rotation timers.
 - **fix** **Search discoverability promos** — grid promo no longer defers search-mode promos when the search panel is open; competing promos dismiss; `MutationObserver` retry for blocked first `>`, `:`, `?`.
 - **fix** **Faster first paint** — skeleton shimmer ~0.75s; shorter `categoryEnter` / `bookmarkEnter` and reduced dashboard bootstrap animation constants.
+- **fix** **Recent modal tab caps** — recent bookmarks modal reads `OPEN_TABS_CAP` and display limits from `DashboardBookmarkRows` after the module split (15-tab safe cap for open-all plans).
 
 ### Config → General
 
@@ -77,9 +92,10 @@ _No unreleased changes at this time._
 
 ### Developer & docs
 
-- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright `tests/*.spec.js`.
+- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts, onboarding, search promos, command palette, search filters, recent modal tab caps, and post-onboarding layout nudge.
+- **fix** **Timer teardown** — `teardownDashboardTimers()` on `pagehide` clears tip rotation, backup tip, post-onboarding, and pending bookmark-open timers.
 - **fix** **Help & manual** — README, MANUAL, CHANGELOG, and whats-new updated for this release.
-- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `dashboard-inert-sync-3`, `overlay-inert-3`, `tag-cloud-inert-1`, `omnibox-shortcut-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
+- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `dashboard-inert-sync-4`, `popover-inert-1`, `search-filter-autocomplete-1`, `health-oneclick-fix-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
 
 ---
 

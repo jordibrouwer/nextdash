@@ -16,15 +16,45 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Inert sync</strong> — dashboard <code>inert</code> follows open overlays from the DOM (search, app modal, tag cloud, page overview, omnibox) instead of a fragile ref-count, so repeated open/close cycles no longer leave the grid stuck non-interactive."
+          "text": "<strong>Move/delete popover inert</strong> — <code>Shift+M</code> / <code>Shift+D</code>, the category date popover, and inline edit now sync dashboard <code>inert</code> and pause grid selection while open, matching search and modals."
         },
         {
           "badge": "fix",
-          "text": "<strong>Grid shortcuts restored</strong> — <code>;</code> (inline edit), <code>Shift+M</code> (quick move), and <code>Shift+D</code> (quick delete) work again while keyboard-navigating bookmarks; search no longer swallows shift-modified letter keys meant for the grid."
+          "text": "<strong>Inert sync</strong> — dashboard <code>inert</code> follows open overlays from the DOM (search, app modal, tag cloud, page overview, omnibox, move/delete popovers, inline edit) instead of a fragile ref-count, so repeated open/close cycles no longer leave the grid stuck non-interactive."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Grid shortcuts restored</strong> — <code>;</code> (inline edit), <code>Shift+M</code> (quick move), and <code>Shift+D</code> (quick delete) work again while keyboard-navigating bookmarks; search no longer swallows shift-modified letter keys meant for the grid or reopens while those popovers are active."
         },
         {
           "badge": "fix",
           "text": "<strong>Escape with promos</strong> — dismissing a one-time <em>Got it</em> balloon no longer blocks <code>Esc</code> from closing page overview or omnibox underneath."
+        }
+      ]
+    },
+    {
+      "title": "Search &amp; commands",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Command palette Enter</strong> — <code>Enter</code> / <code>Space</code> on a highlighted command row runs it again after autocomplete (e.g. <code>:button</code> groups); a stale guard no longer swallows the next confirmation."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Filters in search mode</strong> — <code>category:</code>, <code>tag:</code>, <code>page:</code>, and <code>status:</code> work in <code>&gt;</code> search with autocomplete chips. A lone <code>:</code> still opens command mode; with text already in the bar, <code>:</code> inserts filter syntax instead of switching modes."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>One-click auto-heal</strong> — health beta <strong>1-click fix</strong> applies redirect detection and title refresh in one server round-trip instead of suggest-then-apply calls that could freeze the page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health controls</strong> — page filter and sort dropdowns no longer retrigger infinite re-renders when options are rebuilt; report loading deduplicates in-flight fetches."
         }
       ]
     },
@@ -34,6 +64,10 @@
         {
           "badge": "fix",
           "text": "<strong>Onboarding finish &amp; skip</strong> — completing step 9/9 or skipping at step 1 reliably tears down the wizard (no stuck <code>guided-flow-locked</code> overlay) and persists settings without hanging."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Post-onboarding spotlights</strong> — layout-versions nudge, preview-card spotlight, and config bookmarks tour receive the dashboard instance again, so classic-layout nudge and related hints can show after onboarding when eligible."
         },
         {
           "badge": "new",
@@ -46,6 +80,10 @@
         {
           "badge": "fix",
           "text": "<strong>Faster first paint</strong> — skeleton shimmer and category/bookmark enter animations are shorter on dashboard bootstrap so the grid feels ready sooner."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Recent modal tab caps</strong> — recent bookmarks modal and <code>:open last</code> plans read the 15-tab safe cap from <code>DashboardBookmarkRows</code> again after the module split."
         }
       ]
     },
@@ -63,15 +101,19 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, onboarding, and search promos."
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, command palette, search filters, recent modal tab caps, and post-onboarding layout nudge."
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
+          "text": "<strong>Timer teardown</strong> — <code>pagehide</code> clears tip rotation, backup tip, post-onboarding, and pending bookmark-open timers so background tabs do not keep firing after navigation."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>focus-trap-utils.js</code>, <code>dashboard-setup.js</code>, <code>tips-policy.js</code>, <code>config-general-layers.js?v=general-layer-default-1</code>, and related dashboard module bundles."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, search/command fixes, health one-click heal, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>focus-trap-utils.js</code>, <code>search.js</code>, <code>health.js</code>, <code>dashboard-bookmark-rows.js</code>, <code>dashboard-recent.js</code>, <code>dashboard-promos.js</code>, <code>dashboard-setup.js</code>, and related dashboard module bundles."
         }
       ]
     }

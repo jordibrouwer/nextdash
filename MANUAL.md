@@ -414,7 +414,9 @@ While any of these are open, the bookmark grid behind them is **inert** (not cli
 | Tag word cloud | `/` (desktop, when enabled) |
 | Page overview | `,` |
 | Quick-add omnibox | `&` |
-| App modal | e.g. new bookmark `+`, confirmations |
+| Quick move / quick delete | `Shift+M` / `Shift+D` |
+| Inline edit | `;` |
+| App modal | e.g. new bookmark `+`, confirmations, recent bookmarks `*` |
 
 **Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. Grid shortcuts **`;`**, **`Shift+M`**, and **`Shift+D`** work on the keyboard-selected row when no overlay is open.
 
@@ -438,6 +440,7 @@ Three input modes share one overlay; switch with keys or footer chips.
 - On desktop, the highlighted match receives keyboard focus (not only a visual highlight). Opening search moves focus into the panel; closing search restores focus to the opener and clears grid `inert`.  
 - First use of `>`, `:`, or `?` may show a one-time **Got it** balloon beside the search field (desktop).  
 - Empty state: recent queries and saved searches as chips; **`←`/`→`** select a chip, **`Enter`** applies it; filter hints and finders below.  
+- **Colon behaviour** — a lone **`:`** from the dashboard opens command mode. With search already open and text in the bar, **`:`** inserts filter syntax (`category:`, `tag:`, …) instead of switching modes.  
 - **Filters** (type or pick from autocomplete):
 
 | Filter | Example |
@@ -472,6 +475,8 @@ When tag cloud does not take precedence: ranked matching on name, URL domain, ta
 Search **all pages**; each result shows which page it belongs to.
 
 ### 10.5 Commands (`:`) — selected examples
+
+Use **`Enter`** or **`Space`** on a highlighted row to run it (including after autocomplete expands a group such as `:button`).
 
 | Command | Description |
 |---------|-------------|
@@ -719,7 +724,7 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete (partial failures reported in a summary toast) |
 | **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
 | **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
-| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete) |
+| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (auto-heal, delete); **1-click fix** applies redirect detection and title refresh in one step |
 | **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
 | **Layout parity** | Uses the same **Classic / Modern / Glass** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips; glass blur on glass layout) |
