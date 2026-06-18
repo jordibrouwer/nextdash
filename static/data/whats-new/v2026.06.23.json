@@ -28,6 +28,10 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>G shortcuts vs G+jump</strong> — a quick tap on <code>G</code> opens bookmark shortcuts that start with <code>G</code> (e.g. <code>g</code>, <code>ga</code>, <code>g1</code>). Hold <code>G</code> (~300&nbsp;ms) or press <code>G</code> then a digit / <code>P</code> / a second <code>G</code> for category jump, pinned jump, or <code>GG</code> as before."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>Escape with promos</strong> — dismissing a one-time <em>Got it</em> balloon no longer blocks <code>Esc</code> from closing page overview or omnibox underneath."
         }
       ]
@@ -117,7 +121,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts, command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, and post-onboarding layout nudge."
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts (including <code>G</code> tap vs hold), command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, and post-onboarding layout nudge."
         },
         {
           "badge": "fix",
@@ -125,11 +129,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, and this release note updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, and grid-shortcut fixes."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and <code>G</code> hold-vs-tap bookmark shortcuts."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>search.js</code> (<code>search-status-filter-fix-3</code>), <code>health.js</code> (<code>health-no-oneclick-1</code>), <code>focus-trap-utils.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>), <code>health.js</code> (<code>health-no-oneclick-1</code>), <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

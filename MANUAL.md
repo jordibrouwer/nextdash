@@ -339,13 +339,13 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 ### Keyboard
 
-- Start grid navigation with **Tab**, a click on a bookmark, **`G` then `1–9`** / **`GG`**, or the **first arrow key**; then use **plain arrow keys** to move the selection (`Shift+←/→` changes pages only).  
+- Start grid navigation with **Tab**, a click on a bookmark, **hold `G` then `1–9`** / **`GG`**, or the **first arrow key**; then use **plain arrow keys** to move the selection (`Shift+←/→` changes pages only).  
 - After switching pages with **1–9**, the **first visible bookmark** on the new page is selected automatically.  
 - **Collapsed categories** and **launcher tiles dimmed by search** are skipped by keyboard navigation.  
 - **Category headers** are keyboard-focusable: **Enter** or **Space** toggles collapse (`aria-expanded` updates).  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
-- If the bookmark has a **shortcut** letter and you are not in an input, press that key to open.
+- If the bookmark has a **shortcut** letter and you are not in an input, press that key to open. For shortcuts starting with **`G`**, use a **quick tap** (press and release); **hold `G`** (~300 ms) or **`G` then a digit / `P` / second `G`** activates category jump instead.
 
 ### Hyprland / special setups
 
@@ -379,9 +379,10 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
-| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark |
+| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark (also: hold `G` ~300 ms, then digit) |
 | `G` then `P` | Jump to first pinned bookmark on the page |
-| `GG` | Jump to very first bookmark |
+| `GG` | Jump to very first bookmark (second `G` while chord pending) |
+| Quick tap `G` | Open bookmark shortcuts starting with `G` (`g`, `ga`, `g1`, …) — not category jump |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Enter` / `Space` | Open selected |
 | `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder |
@@ -451,6 +452,8 @@ Three input modes share one overlay; switch with keys or footer chips.
 | `status:` | `status:online`, `status:broken`, `status:pinned`, … |
 
 While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
+
+**Bookmark shortcuts starting with `G`** — a quick tap on `G` opens the shortcut search bar (`g`, `ga`, `g1`, …). Hold `G` (~300 ms) or press `G` then a digit / `P` / second `G` activates category jump instead (see §9.2).
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
@@ -655,7 +658,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (`G` then `1`–`9`, `G+P`, or `GG`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` or `G` then `1`–`9`, `G+P`, or `GG`; quick tap `G` opens shortcuts starting with `G`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
