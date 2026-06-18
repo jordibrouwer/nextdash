@@ -54,7 +54,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.23 — June 2026
 
-**Overlay focus, search filters & health polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; bookmark shortcuts starting with `G` via quick tap while hold or `G`+digit keeps category jump; command palette `Enter` and reliable `status:` / `tag:` / `page:` filter autocomplete in `>` mode; health beta page-filter render loop fixed and **1-click fix** removed (overflow repair actions remain); onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
+**Overlay focus, search filters & health polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; bookmark shortcuts starting with `G` via quick tap while hold or `G`+digit keeps category jump; command palette `Enter` and reliable `status:` / `tag:` / `page:` filter autocomplete in `>` mode; health beta hardened with `health-runtime.js` (coalesced renders, action lock, timed fetches), reliable **detect redirect**, and ping in the row overflow menu; health page-filter render loop fixed and **1-click fix** removed (overflow repair actions remain); onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
 
 ### Keyboard focus & overlays
 
@@ -77,6 +77,9 @@ _No unreleased changes at this time._
 
 ### Health
 
+- **fix** **Health action runtime** — new `health-runtime.js` coalesces renders (`requestAnimationFrame`), blocks concurrent row actions, applies 15s fetch timeouts, and defers filter state saves during render bursts so **detect redirect**, title refresh, delete, and favicon refresh no longer freeze or crash the page.
+- **fix** **Detect redirect** — `GET /api/health/auto-heal-suggest?redirectOnly=1` skips the title fetch (~8s faster); the confirm dialog shows the proposed URL; timeouts and API errors surface in the bulk status bar instead of leaving the UI unresponsive.
+- **new** **Ping in overflow menu** — **Re-check status** also appears under **Status** in the row **More actions** (⋯) menu, alongside the toolbar ping button.
 - **fix** **Health render loop** — page-filter and sort `<select>` sync uses deferred sync flags, `scheduleRender()`, and a render-depth guard so rebuilding options no longer retriggers infinite `render()`.
 - **fix** **1-click fix removed** — the primary **1-click fix** toolbar button is removed from health beta (it was unreliable); use the overflow menu **detect redirect**, **refresh title**, or **archive** instead.
 - **fix** **Report loading** — `loadReport()` deduplicates in-flight fetches.
@@ -97,10 +100,10 @@ _No unreleased changes at this time._
 
 ### Developer & docs
 
-- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts (including `G` tap vs hold), onboarding, search promos, command palette, search filters (`status:`/`tag:`/`page:` autocomplete, duplicate filter groups), recent modal tab caps, and post-onboarding layout nudge.
+- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts (including `G` tap vs hold), command palette, search filters (`status:`/`tag:`/`page:` autocomplete, duplicate filter groups), recent modal tab caps, post-onboarding layout nudge, and health redirect detect (`tests/health-redirect.spec.js`).
 - **fix** **Timer teardown** — `teardownDashboardTimers()` on `pagehide` clears tip rotation, backup tip, post-onboarding, and pending bookmark-open timers.
-- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and `G` hold-vs-tap bookmark shortcuts.
-- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `g-shortcut-hold-1` on `keyboard-navigation.js` and `search.js`; `dashboard-inert-sync-4`, `popover-inert-1`, `search-status-filter-fix-3`, `health-no-oneclick-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and `G` hold-vs-tap bookmark shortcuts.
+- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `g-shortcut-hold-1` on `keyboard-navigation.js` and `search.js`; `health-runtime-1` on `health-runtime.js`, `health.js`, and `health.css`; `dashboard-inert-sync-4`, `popover-inert-1`, `search-status-filter-fix-3`, `health-no-oneclick-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
 
 ---
 

@@ -66,6 +66,18 @@
       "items": [
         {
           "badge": "fix",
+          "text": "<strong>Health action runtime</strong> — a new <code>health-runtime.js</code> layer coalesces re-renders, blocks concurrent row actions, and applies fetch timeouts so <strong>detect redirect</strong>, title refresh, delete, and favicon refresh no longer freeze or crash the page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Detect redirect</strong> — redirect detection uses a faster <code>redirectOnly=1</code> suggest call (skips title fetch), shows the proposed URL in the confirm dialog, and surfaces timeouts in the status bar instead of leaving the UI unresponsive."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ping in overflow menu</strong> — <strong>Re-check status</strong> also appears under <strong>Status</strong> in the row <strong>More actions</strong> (⋯) menu, next to the toolbar ping button."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>Health render loop</strong> — page filter and sort dropdowns no longer retrigger infinite re-renders when options are rebuilt; deferred select sync, <code>scheduleRender()</code>, and a render-depth guard keep the view responsive."
         },
         {
@@ -121,7 +133,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts (including <code>G</code> tap vs hold), command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, and post-onboarding layout nudge."
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts (including <code>G</code> tap vs hold), command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, post-onboarding layout nudge, and health redirect detect."
         },
         {
           "badge": "fix",
@@ -129,11 +141,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health render-loop fix, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and <code>G</code> hold-vs-tap bookmark shortcuts."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and <code>G</code> hold-vs-tap bookmark shortcuts."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>), <code>health.js</code> (<code>health-no-oneclick-1</code>), <code>focus-trap-utils.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

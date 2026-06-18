@@ -729,7 +729,9 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Multi-select** | Checkboxes per row; **All visible**, **Clear**, bulk favicon refresh, bulk delete (partial failures reported in a summary toast) |
 | **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
 | **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
-| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (detect redirect, refresh title, archive, delete) |
+| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, delete) |
+| **Action runtime** | `health-runtime.js` coalesces re-renders, blocks concurrent row actions, and times out slow API calls so detect redirect and other repairs do not freeze the page |
+| **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
 | **Layout parity** | Uses the same **Classic / Modern / Glass** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips; glass blur on glass layout) |
