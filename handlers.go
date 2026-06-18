@@ -2243,13 +2243,19 @@ func (h *Handlers) AutoHealSuggest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	redirectOnlyRaw := strings.TrimSpace(r.URL.Query().Get("redirectOnly"))
+	redirectOnly := redirectOnlyRaw == "1" || strings.EqualFold(redirectOnlyRaw, "true")
+
 	redirectURL := h.detectRedirectURL(currentURL)
-	suggestedTitle := h.fetchPageTitleSafe(func() string {
-		if redirectURL != "" {
-			return redirectURL
-		}
-		return currentURL
-	}())
+	suggestedTitle := ""
+	if !redirectOnly {
+		suggestedTitle = h.fetchPageTitleSafe(func() string {
+			if redirectURL != "" {
+				return redirectURL
+			}
+			return currentURL
+		}())
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{

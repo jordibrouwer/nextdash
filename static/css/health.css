@@ -820,6 +820,16 @@ body {
     display: none !important;
 }
 
+body.health-action-busy #health-main {
+    cursor: progress;
+}
+
+body.health-action-busy #health-main .health-row-actions button,
+body.health-action-busy #health-main .health-bulk-toolbar button,
+body.health-action-busy #health-header .btn {
+    pointer-events: none;
+}
+
 @media (max-width: 980px) {
     .health-summary {
         grid-template-columns: repeat(9, minmax(4.5rem, 1fr));

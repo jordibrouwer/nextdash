@@ -358,6 +358,11 @@
                 <button type="button" class="health-actions-menu-item" role="menuitem" data-heal-archive-url="${escapeHtml(issue.url)}">${escapeHtml(t('health.autoHealArchive', 'archive'))}</button>
             `;
 
+        const statusMenuItems = issue.url ? `
+                            <p class="health-actions-menu-label" role="presentation">${escapeHtml(t('health.menuStatus', 'Status'))}</p>
+                            <button type="button" class="health-actions-menu-item" role="menuitem" data-ping-url="${escapeHtml(issue.url)}" data-ping-page="${escapeHtml(issue.pageId)}" data-ping-index="${escapeHtml(issue.index)}">${escapeHtml(pingLabel)}</button>
+            ` : '';
+
         return `
             <div class="health-row-actions" role="group" aria-label="${escapeHtml(t('health.rowActionsLabel', 'Bookmark actions'))}">
                 <div class="health-row-actions-primary">
@@ -391,6 +396,7 @@
                             moreLabel
                         )}
                         <div class="health-actions-menu" role="menu" hidden data-menu-for="${escapeHtml(key)}">
+                            ${statusMenuItems}
                             ${healMenuItems}
                             <p class="health-actions-menu-label health-actions-menu-label-danger" role="presentation">${escapeHtml(t('health.menuDanger', 'Remove'))}</p>
                             <button type="button" class="health-actions-menu-item health-actions-menu-item-danger" role="menuitem" data-delete-page="${escapeHtml(issue.pageId)}" data-delete-index="${escapeHtml(issue.index)}" data-delete-name="${escapeHtml(issue.name || issue.url)}">${escapeHtml(t('health.delete', 'delete'))}</button>
@@ -509,8 +515,7 @@
             failedKey: 'health.bulkDeleteFailed',
             failedFallback: 'Could not delete selected bookmarks.'
         });
-        await loadReport();
-        render();
+        await reloadReport();
     }
 
     async function bulkRefreshFaviconsSelected() {
@@ -563,8 +568,7 @@
             failedKey: 'health.bulkFaviconsFailed',
             failedFallback: 'Could not refresh favicons for the selection.'
         });
-        await loadReport();
-        render();
+        await reloadReport();
     }
 
     function fmtDate(value) {
@@ -857,32 +861,84 @@
     }
 
     let healthListenersBound = false;
-    let pageFilterSyncing = false;
-    let sortSelectSyncing = false;
-    let loadReportInFlight = null;
-    let renderDepth = 0;
-    let renderScheduled = false;
-    let renderLoopGuard = 0;
+    let healthRuntime = null;
+
+    function ensureHealthRuntime() {
+        if (healthRuntime) return healthRuntime;
+        healthRuntime = window.HealthRuntime.create({
+            getReport: () => healthState.report,
+            setReport: (report) => {
+                healthState.report = report;
+            },
+            fetchReport: async () => {
+                const response = await fetch('/api/bookmark-health');
+                if (!response.ok) {
+                    throw new Error(`Failed to load health report: ${response.status}`);
+                }
+                return response.json();
+            },
+            onRender: () => renderView(),
+            onBusyChange: (busy) => {
+                document.body.classList.toggle('health-action-busy', busy);
+                const main = document.getElementById('health-main');
+                if (main) {
+                    main.setAttribute('aria-busy', busy ? 'true' : 'false');
+                }
+            },
+            onStatus: (message) => {
+                if (message) showBulkStatus(message);
+            }
+        });
+        healthRuntime.setSaveStateHandler(saveState);
+        return healthRuntime;
+    }
 
     function beginSelectSync(kind) {
-        if (kind === 'page') pageFilterSyncing = true;
-        if (kind === 'sort') sortSelectSyncing = true;
+        ensureHealthRuntime().beginSelectSync(kind);
     }
 
     function endSelectSync(kind) {
-        window.setTimeout(() => {
-            if (kind === 'page') pageFilterSyncing = false;
-            if (kind === 'sort') sortSelectSyncing = false;
-        }, 0);
+        ensureHealthRuntime().endSelectSync(kind);
     }
 
     function scheduleRender() {
-        if (renderScheduled) return;
-        renderScheduled = true;
-        window.requestAnimationFrame(() => {
-            renderScheduled = false;
-            render();
-        });
+        ensureHealthRuntime().scheduleRender();
+    }
+
+    function render() {
+        ensureHealthRuntime().renderNow();
+    }
+
+    async function loadReport() {
+        return ensureHealthRuntime().loadReport();
+    }
+
+    async function reloadReport() {
+        return ensureHealthRuntime().reloadReport();
+    }
+
+    function healthFetch(url, init = {}, timeoutMs) {
+        return ensureHealthRuntime().apiFetchTimed(apiFetch, url, init, timeoutMs);
+    }
+
+    function formatHealthError(error) {
+        if (!error) return t('health.errorUnreachable', 'Unreachable');
+        if (error.name === 'AbortError') {
+            return t('health.errorTimeout', 'Request timeout');
+        }
+        return error.message || String(error);
+    }
+
+    async function runHealthAction(actionId, fn, options = {}) {
+        const outcome = await ensureHealthRuntime().runAction(actionId, fn, options);
+        if (!outcome.ok && outcome.reason === 'busy') {
+            showBulkStatus(t('health.actionBusy', 'Another health action is still running.'));
+            return null;
+        }
+        if (!outcome.ok && outcome.error) {
+            throw outcome.error;
+        }
+        return outcome.result;
     }
 
     async function handlePingClick(button) {
@@ -906,8 +962,7 @@
             await cacheScanResult(url, status, pingMs, errorDetail);
             if (Number.isFinite(pageId) && Number.isFinite(index)) {
                 await persistIssueStatus(pageId, index, status, status === 'online' ? '' : errorDetail);
-                await loadReport();
-                render();
+                await reloadReport();
             }
         } catch (error) {
             const failDetail = error.message || t('health.errorPingFailed', 'ping failed');
@@ -915,8 +970,7 @@
             await cacheScanResult(url, 'error', 0, failDetail);
             if (Number.isFinite(pageId) && Number.isFinite(index)) {
                 await persistIssueStatus(pageId, index, 'offline', failDetail);
-                await loadReport();
-                render();
+                await reloadReport();
             }
         } finally {
             setButtonBusy(button, false);
@@ -1116,7 +1170,7 @@
 
         const sortSelect = document.getElementById('health-sort-select');
         sortSelect?.addEventListener('change', () => {
-            if (sortSelectSyncing) return;
+            if (ensureHealthRuntime().isSelectSyncing('sort')) return;
             const nextSort = sortSelect.value;
             if (nextSort === healthState.sort) return;
             healthState.sort = nextSort;
@@ -1139,8 +1193,7 @@
                     const result = await response.json();
                     showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
                     btn.textContent = t('health.reloading', 'reloading...');
-                    await loadReport();
-                    render();
+                    await reloadReport();
                 } else {
                     showBulkStatus(t('health.retestFailed', 'Failed to retest all bookmarks'));
                 }
@@ -1374,8 +1427,7 @@
                 showBulkStatus(t('health.mergedDuplicates', 'Merged {count} duplicates', { count: result.count || 0 }));
                 // Reload report
                 setTimeout(async () => {
-                    await loadReport();
-                    render();
+                    await reloadReport();
                 }, 500);
             } else {
                 showBulkStatus(t('health.mergeFailed', 'Failed to merge duplicates'));
@@ -1426,18 +1478,20 @@
         }
     }
 
-    async function fetchAutoHealSuggestion(pageId, index) {
-        const response = await apiFetch(
-            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}`
+    async function fetchAutoHealSuggestion(pageId, index, { redirectOnly = false } = {}) {
+        const redirectParam = redirectOnly ? '&redirectOnly=1' : '';
+        const response = await healthFetch(
+            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}${redirectParam}`
         );
         if (!response.ok) {
-            throw new Error('Failed to fetch auto-heal suggestions');
+            const message = await response.text();
+            throw new Error(message || 'Failed to fetch auto-heal suggestions');
         }
         return response.json();
     }
 
     async function applyAutoHeal(pageId, index, payload = {}) {
-        const response = await apiFetch('/api/health/auto-heal-apply', {
+        const response = await healthFetch('/api/health/auto-heal-apply', {
             method: 'POST',
             headers: writeJsonHeaders(),
             body: JSON.stringify({
@@ -1456,49 +1510,67 @@
     }
 
     async function handleRedirectDetect(button, pageId, index) {
-        setButtonBusy(button, true);
+        closeAllActionMenus();
         try {
-            const suggestion = await fetchAutoHealSuggestion(pageId, index);
-            if (!suggestion.redirectUrl) {
-                showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
-                return;
-            }
-            const applyNow = await confirmDialog({
-                title: t('health.autoHealRedirect', 'detect redirect'),
-                message: t('health.autoHealRedirectConfirm', 'Redirect found. Apply URL fix now?'),
-                confirmText: t('health.confirm', 'Confirm'),
-                cancelText: t('health.cancel', 'Cancel')
+            await runHealthAction('redirect-detect', async () => {
+                setButtonBusy(button, true);
+                try {
+                    const suggestion = await fetchAutoHealSuggestion(pageId, index, { redirectOnly: true });
+                    const redirectUrl = String(suggestion?.redirectUrl || '').trim();
+                    if (!redirectUrl) {
+                        showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
+                        return;
+                    }
+                    const applyNow = await confirmDialog({
+                        title: t('health.autoHealRedirect', 'detect redirect'),
+                        message: t(
+                            'health.autoHealRedirectConfirm',
+                            'Redirect found. Apply URL fix now?\n\n{url}',
+                            { url: redirectUrl }
+                        ),
+                        confirmText: t('health.confirm', 'Confirm'),
+                        cancelText: t('health.cancel', 'Cancel')
+                    });
+                    if (!applyNow) {
+                        showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: redirectUrl }));
+                        return;
+                    }
+                    await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
+                    showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
+                    await reloadReport();
+                } finally {
+                    setButtonBusy(button, false);
+                }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
             });
-            if (!applyNow) {
-                showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: suggestion.redirectUrl }));
-                return;
-            }
-            await applyAutoHeal(pageId, index, { newUrl: suggestion.redirectUrl, refreshTitle: false });
-            showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
-            await loadReport();
-            render();
         } catch (error) {
-            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-        } finally {
-            setButtonBusy(button, false);
+            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
         }
     }
 
     async function handleTitleRefresh(button, pageId, index) {
-        setButtonBusy(button, true);
+        closeAllActionMenus();
         try {
-            await applyAutoHeal(pageId, index, { refreshTitle: true });
-            showBulkStatus(t('health.autoHealTitleApplied', 'Title refreshed.'));
-            await loadReport();
-            render();
+            await runHealthAction('title-refresh', async () => {
+                setButtonBusy(button, true);
+                try {
+                    await applyAutoHeal(pageId, index, { refreshTitle: true });
+                    showBulkStatus(t('health.autoHealTitleApplied', 'Title refreshed.'));
+                    await reloadReport();
+                } finally {
+                    setButtonBusy(button, false);
+                }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
+            });
         } catch (error) {
-            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-        } finally {
-            setButtonBusy(button, false);
+            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
         }
     }
 
     async function handleDeleteIssue(button, pageId, index, bookmarkName) {
+        closeAllActionMenus();
         const confirmed = await confirmDialog({
             title: t('health.delete', 'delete'),
             message: t('health.deleteConfirm', 'Delete "{name}" from dashboard?', { name: bookmarkName || 'bookmark' }),
@@ -1508,59 +1580,70 @@
         });
         if (!confirmed) return;
 
-        setButtonBusy(button, true);
         try {
-            const response = await apiFetch('/api/health/delete-bookmark', {
-                method: 'POST',
-                headers: writeJsonHeaders(),
-                body: JSON.stringify({ pageId, index })
+            await runHealthAction('delete-issue', async () => {
+                setButtonBusy(button, true);
+                try {
+                    const response = await healthFetch('/api/health/delete-bookmark', {
+                        method: 'POST',
+                        headers: writeJsonHeaders(),
+                        body: JSON.stringify({ pageId, index })
+                    });
+                    if (!response.ok) {
+                        throw new Error(await response.text());
+                    }
+                    showBulkStatus(t('health.deleted', 'Bookmark deleted.'));
+                    await reloadReport();
+                } finally {
+                    setButtonBusy(button, false);
+                }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
             });
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-            showBulkStatus(t('health.deleted', 'Bookmark deleted.'));
-            await loadReport();
-            render();
         } catch (error) {
-            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-        } finally {
-            setButtonBusy(button, false);
+            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
         }
     }
 
     async function handleFaviconRefresh(button, url, pageId, index) {
-        setButtonBusy(button, true);
+        closeAllActionMenus();
         try {
-            const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
-            if (typeof fetchIcon !== 'function') {
-                throw new Error('Favicon service not available');
-            }
+            await runHealthAction('favicon-refresh', async () => {
+                setButtonBusy(button, true);
+                try {
+                    const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+                    if (typeof fetchIcon !== 'function') {
+                        throw new Error('Favicon service not available');
+                    }
 
-            const iconPath = await fetchIcon(url);
-            if (!iconPath) {
-                showBulkStatus(t('health.faviconNotFound', 'No favicon found for this URL.'));
-                return;
-            }
+                    const iconPath = await fetchIcon(url);
+                    if (!iconPath) {
+                        showBulkStatus(t('health.faviconNotFound', 'No favicon found for this URL.'));
+                        return;
+                    }
 
-            const res = await fetch(`/api/bookmarks?page=${pageId}`);
-            if (!res.ok) throw new Error('Failed to load bookmarks');
-            const bookmarks = await res.json();
-            if (!Array.isArray(bookmarks) || !bookmarks[index]) throw new Error('Bookmark not found');
-            bookmarks[index].icon = iconPath;
-            const saveRes = await apiFetch(`/api/bookmarks?page=${pageId}`, {
-                method: 'POST',
-                headers: writeJsonHeaders(),
-                body: JSON.stringify(bookmarks)
+                    const res = await fetch(`/api/bookmarks?page=${pageId}`);
+                    if (!res.ok) throw new Error('Failed to load bookmarks');
+                    const bookmarks = await res.json();
+                    if (!Array.isArray(bookmarks) || !bookmarks[index]) throw new Error('Bookmark not found');
+                    bookmarks[index].icon = iconPath;
+                    const saveRes = await healthFetch(`/api/bookmarks?page=${pageId}`, {
+                        method: 'POST',
+                        headers: writeJsonHeaders(),
+                        body: JSON.stringify(bookmarks)
+                    });
+                    if (!saveRes.ok) throw new Error('Failed to save bookmark');
+
+                    showBulkStatus(t('health.faviconRefreshed', 'Favicon updated.'));
+                    await reloadReport();
+                } finally {
+                    setButtonBusy(button, false);
+                }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
             });
-            if (!saveRes.ok) throw new Error('Failed to save bookmark');
-
-            showBulkStatus(t('health.faviconRefreshed', 'Favicon updated.'));
-            await loadReport();
-            render();
         } catch (error) {
-            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-        } finally {
-            setButtonBusy(button, false);
+            showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
         }
     }
 
@@ -1587,7 +1670,7 @@
         if (!needsRebuild && !needsValueSync) {
             if (nextValue !== previousPageId) {
                 healthState.pageId = nextValue;
-                saveState();
+                ensureHealthRuntime().scheduleSaveState();
             }
             return;
         }
@@ -1619,94 +1702,58 @@
 
         if (nextValue !== previousPageId) {
             healthState.pageId = nextValue;
-            saveState();
+            ensureHealthRuntime().scheduleSaveState();
         }
     }
 
-    function render() {
-        if (renderDepth > 0) {
-            return;
-        }
-        renderLoopGuard += 1;
-        if (renderLoopGuard > 40) {
-            console.warn('Health render loop detected; skipping render');
-            return;
-        }
-        window.requestAnimationFrame(() => {
-            renderLoopGuard = 0;
-        });
-
+    function renderView() {
         const report = healthState.report;
         if (!report) return;
 
-        renderDepth += 1;
-        try {
-            const summaryEl = document.getElementById('health-summary');
-            const pillsEl = document.getElementById('health-filter-pills');
-            const issuesEl = document.getElementById('health-issues');
-            const duplicatesEl = document.getElementById('health-duplicates');
+        const summaryEl = document.getElementById('health-summary');
+        const pillsEl = document.getElementById('health-filter-pills');
+        const issuesEl = document.getElementById('health-issues');
+        const duplicatesEl = document.getElementById('health-duplicates');
 
-            if (summaryEl) summaryEl.innerHTML = renderSummary(report);
-            if (pillsEl) {
-                pillsEl.innerHTML = renderFilterPills(report);
-                if (!pillsEl.getAttribute('role')) {
-                    pillsEl.setAttribute('role', 'group');
-                    pillsEl.setAttribute('aria-label', t('health.filterGroupLabel', 'Filter by issue type'));
-                }
+        if (summaryEl) summaryEl.innerHTML = renderSummary(report);
+        if (pillsEl) {
+            pillsEl.innerHTML = renderFilterPills(report);
+            if (!pillsEl.getAttribute('role')) {
+                pillsEl.setAttribute('role', 'group');
+                pillsEl.setAttribute('aria-label', t('health.filterGroupLabel', 'Filter by issue type'));
             }
-            syncPageFilterSelect(report);
-            if (issuesEl) issuesEl.innerHTML = renderIssues(report);
-            if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
-
-            const dupPanel = document.querySelector('.health-duplicates-panel');
-            if (dupPanel) {
-                dupPanel.hidden = !shouldShowDuplicatesPanel(report);
-            }
-
-            const mergeBtn = document.getElementById('merge-duplicates-btn');
-            if (mergeBtn) {
-                mergeBtn.disabled = !getFilteredDuplicateGroups(report).length;
-            }
-
-            const sortSelect = document.getElementById('health-sort-select');
-            if (sortSelect && sortSelect.value !== healthState.sort) {
-                beginSelectSync('sort');
-                try {
-                    sortSelect.value = healthState.sort;
-                } finally {
-                    endSelectSync('sort');
-                }
-            }
-
-            syncFilterClearButton();
-            pruneSelection();
-            syncSelectionToolbar();
-        } finally {
-            renderDepth -= 1;
         }
-    }
+        syncPageFilterSelect(report);
+        if (issuesEl) issuesEl.innerHTML = renderIssues(report);
+        if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
 
-    async function loadReport() {
-        if (loadReportInFlight) {
-            return loadReportInFlight;
+        const dupPanel = document.querySelector('.health-duplicates-panel');
+        if (dupPanel) {
+            dupPanel.hidden = !shouldShowDuplicatesPanel(report);
         }
-        loadReportInFlight = (async () => {
+
+        const mergeBtn = document.getElementById('merge-duplicates-btn');
+        if (mergeBtn) {
+            mergeBtn.disabled = !getFilteredDuplicateGroups(report).length;
+        }
+
+        const sortSelect = document.getElementById('health-sort-select');
+        if (sortSelect && sortSelect.value !== healthState.sort) {
+            beginSelectSync('sort');
             try {
-                const response = await fetch('/api/bookmark-health');
-                if (!response.ok) {
-                    throw new Error(`Failed to load health report: ${response.status}`);
-                }
-                healthState.report = await response.json();
+                sortSelect.value = healthState.sort;
             } finally {
-                loadReportInFlight = null;
+                endSelectSync('sort');
             }
-        })();
-        return loadReportInFlight;
+        }
+
+        syncFilterClearButton();
+        pruneSelection();
+        syncSelectionToolbar();
     }
 
     async function refreshHealthView() {
-        await loadReport();
-        render();
+        await reloadReport();
     }
 
     function applyHealthControlTitles() {
@@ -1754,7 +1801,7 @@
 
         const pageFilter = document.getElementById('health-page-filter');
         pageFilter?.addEventListener('change', () => {
-            if (pageFilterSyncing) return;
+            if (ensureHealthRuntime().isSelectSyncing('page')) return;
             const nextPageId = pageFilter.value || 'all';
             if (nextPageId === healthState.pageId) return;
             healthState.pageId = nextPageId;
@@ -1783,10 +1830,9 @@
             refreshButton.disabled = true;
             refreshButton.textContent = t('health.refreshing', 'refreshing...');
             try {
-                await loadReport();
-                render();
+                await reloadReport();
             } catch (error) {
-                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
+                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
             } finally {
                 refreshButton.disabled = false;
                 refreshButton.textContent = t('health.refresh', 'refresh');
@@ -1795,6 +1841,7 @@
 
         setupHealthEventListeners();
 
+        ensureHealthRuntime();
         await loadReport();
         render();
 
