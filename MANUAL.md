@@ -393,6 +393,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Use **
 |------|--------|
 | `;` | Inline-edit selected row (page switches confirm before discarding unsaved edits) |
 | `Shift + M` | Move to… (category or another page); popover receives focus — use arrows and `Enter` inside it |
+| `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |
 | `Shift + D` | Quick-delete selected row (popover receives focus; undo in toast) |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
@@ -415,11 +416,11 @@ While any of these are open, the bookmark grid behind them is **inert** (not cli
 | Tag word cloud | `/` (desktop, when enabled) |
 | Page overview | `,` |
 | Quick-add omnibox | `&` |
-| Quick move / quick delete | `Shift+M` / `Shift+D` |
+| Quick move / quick tag / quick delete | `Shift+M` / `Shift+T` / `Shift+D` |
 | Inline edit | `;` |
 | App modal | e.g. new bookmark `+`, confirmations, recent bookmarks `*` |
 
-**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. Grid shortcuts **`;`**, **`Shift+M`**, and **`Shift+D`** work on the keyboard-selected row when no overlay is open.
+**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. Grid shortcuts **`;`**, **`Shift+M`**, **`Shift+T`**, and **`Shift+D`** work on the keyboard-selected row when no overlay is open.
 
 ---
 
@@ -674,7 +675,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start. **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` or `G` then `1`–`9`, `G+P`, or `GG`; quick tap `G` opens shortcuts starting with `G`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start (they also refresh on page change without resetting that delay). **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` or `G` then `1`–`9`, `G+P`, or `GG`; quick tap `G` opens shortcuts starting with `G`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -1153,7 +1154,7 @@ Verify server URL, CORS/network, and that nextDash is running. Check browser con
 ```
 > search    : commands    ? finders    & quick-add    + new modal
 1-9 pages   , overview    * recent     ! cheat sheet
-arrows nav  Enter open    ; edit       Shift+M move  Shift+D delete
+arrows nav  Enter open    ; edit       Shift+M move  Shift+T tag  Shift+D delete
 ```
 
 ### Config (desktop)

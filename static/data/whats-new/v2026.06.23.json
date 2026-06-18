@@ -16,7 +16,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Move/delete popover inert</strong> — <code>Shift+M</code> / <code>Shift+D</code>, the category date popover, and inline edit now sync dashboard <code>inert</code> and pause grid selection while open, matching search and modals."
+          "text": "<strong>Move/delete/tag popover inert</strong> — <code>Shift+M</code> / <code>Shift+D</code> / <code>Shift+T</code>, the category date popover, and inline edit now sync dashboard <code>inert</code> and pause grid selection while open, matching search and modals."
         },
         {
           "badge": "fix",
@@ -24,7 +24,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Grid shortcuts restored</strong> — <code>;</code> (inline edit), <code>Shift+M</code> (quick move), and <code>Shift+D</code> (quick delete) work again while keyboard-navigating bookmarks; search no longer swallows shift-modified letter keys meant for the grid or reopens while those popovers are active."
+          "text": "<strong>Grid shortcuts restored</strong> — <code>;</code> (inline edit), <code>Shift+M</code> (quick move), <code>Shift+D</code> (quick delete), and <code>Shift+T</code> (quick tag) work again while keyboard-navigating bookmarks; search no longer swallows shift-modified letter keys meant for the grid or reopens while those popovers are active."
         },
         {
           "badge": "fix",
@@ -33,6 +33,18 @@
         {
           "badge": "fix",
           "text": "<strong>Escape with promos</strong> — dismissing a one-time <em>Got it</em> balloon no longer blocks <code>Esc</code> from closing page overview or omnibox underneath."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Quick-tag popover (<code>Shift+T</code>)</strong> — beside the keyboard-selected bookmark; ranked tags with <code>✓</code> on tags already applied. <code>↑</code>/<code>↓</code> navigate; <code>Enter</code>/<code>Space</code> toggle a tag and advance to the next for batch tagging. Dashboard stays <code>inert</code> while the popover is open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag popover focus</strong> — keyboard focus lands on the tag list (<code>aria-activedescendant</code>); grid arrows are blocked; <code>Shift+T</code> is detected reliably via <code>KeyT</code> in capture phase."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Quick-tag discoverability</strong> — first <code>Shift+T</code> may show a one-time <em>Got it</em> balloon beside the tag popover; reset from <strong>Tours &amp; onboarding</strong>."
         }
       ]
     },
@@ -123,6 +135,10 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>Context tips on page change</strong> — footer tips refresh when you switch pages without resetting the one-minute onboarding delay or rotation timers."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>Search discoverability promos</strong> — one-time <em>Got it</em> balloons for <code>&gt;</code>, <code>:</code>, and <code>?</code> show on the first keypress even when the grid-navigation promo is still eligible; promos no longer block each other while search is open."
         },
         {
@@ -149,7 +165,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts (including <code>G</code> tap vs hold), command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, post-onboarding layout nudge, and health redirect detect."
+          "text": "<strong>Dashboard module split</strong> — <code>dashboard.js</code> is now a thin orchestrator over focused modules under <code>static/js/dashboard/</code> (data, render, toolbar, promos, UI helpers, …) with Playwright smoke tests for overlays, grid shortcuts (including <code>G</code> tap vs hold and <code>Shift+T</code> tag popover), command palette, search filters (<code>status:</code>/<code>tag:</code>/<code>page:</code> autocomplete), recent modal tab caps, post-onboarding layout nudge, and health redirect detect."
         },
         {
           "badge": "fix",
@@ -157,11 +173,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, <code>G</code> hold-vs-tap bookmark shortcuts, and command palette expansion (live feedback, 10 groups, 50+ commands)."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, <code>G</code> hold-vs-tap bookmark shortcuts, command palette expansion (live feedback, 10 groups, 50+ commands), and quick-tag popover (<code>Shift+T</code>)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>, <code>cmd-palette-live-5</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>, <code>cmd-palette-live-5</code>, <code>shift-t-tag-3</code>); <code>dashboard-bookmark-rows.js</code> (<code>tag-popover-2</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

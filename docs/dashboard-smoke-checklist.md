@@ -36,6 +36,7 @@ Run after every dashboard refactor PR. No behavior change expected unless noted.
 - [ ] Search `>`, commands `:`, finders `?` open and close
 - [ ] Recent `*`, cheat sheet `!` / `F1`
 - [ ] `Shift+M` move popover: focus in popover, `↑`/`↓`, `Enter`, `Escape`
+- [ ] `Shift+T` tag popover: focus in `#tag-popover`, `↑`/`↓`, `Enter`/`Space` toggles and advances, dashboard `inert`
 - [ ] `Shift+D` delete popover: same keyboard flow
 
 ## Side rail (if enabled)

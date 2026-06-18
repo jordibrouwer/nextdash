@@ -93,7 +93,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
 
-**Blocking overlays** — While search (`>`), the cheat sheet (`!` / `F1`), recent bookmarks (`*`), tag cloud (`/`), page overview (`,`), quick-add omnibox (`&`), quick-move/delete popovers (`Shift+M` / `Shift+D`), inline edit (`;`), or an app modal is open, keyboard focus stays inside that overlay (`Tab` cycles within it) and the bookmark grid behind it is `inert` (not clickable). Closing the overlay restores mouse and keyboard access to the grid.
+**Blocking overlays** — While search (`>`), the cheat sheet (`!` / `F1`), recent bookmarks (`*`), tag cloud (`/`), page overview (`,`), quick-add omnibox (`&`), quick-move/delete/tag popovers (`Shift+M` / `Shift+D` / `Shift+T`), inline edit (`;`), or an app modal is open, keyboard focus stays inside that overlay (`Tab` cycles within it) and the bookmark grid behind it is `inert` (not clickable). Closing the overlay restores mouse and keyboard access to the grid.
 
 **Bookmarks**
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
@@ -102,6 +102,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled (blocked while inline edit or the tag word cloud is open)
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
+- `Shift + T` — *Quick tag* popover beside the focused bookmark: `↑`/`↓` navigate ranked tags; `Enter`/`Space` toggle a tag and advance to the next; `✓` shows tags already on the bookmark
+- `Shift + D` — quick-delete popover with undo in the toast
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
 - `[` — toggle the hover preview card on the focused bookmark
 - `Delete` — delete the focused bookmark
@@ -160,7 +162,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
 
-**Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
+**Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 

@@ -207,7 +207,7 @@ class DashboardUiHelpers {
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page'),
                 item('Shift + D', 'bmQuickDelete', 'Quick-delete focused bookmark — confirm in popover'),
-                item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — toggle tags on/off; ✓ shows tags already on the bookmark'),
+                item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags already on the bookmark'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
