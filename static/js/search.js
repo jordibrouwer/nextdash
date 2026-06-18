@@ -156,8 +156,17 @@ class SearchComponent {
                 }
             }
 
-            // Don't start shortcut search with shift-modified letters (Shift+M/D, etc.)
+            // Don't start shortcut search with shift-modified letters (Shift+M/D/T, etc.)
             if (!this.searchActive && e.shiftKey && e.key.length === 1 && /[a-z]/i.test(e.key)) {
+                return;
+            }
+
+            // Physical key codes — belt-and-suspenders for shift-modified action shortcuts
+            if (
+                !this.searchActive
+                && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+                && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT')
+            ) {
                 return;
             }
 
@@ -316,7 +325,7 @@ class SearchComponent {
         if (document.getElementById('omnibox-overlay')) {
             return true;
         }
-        if (document.getElementById('move-popover') || document.getElementById('delete-popover')) {
+        if (document.getElementById('move-popover') || document.getElementById('delete-popover') || document.getElementById('tag-popover')) {
             return true;
         }
         if (document.getElementById('date-popover')) {
@@ -341,7 +350,12 @@ class SearchComponent {
         }
 
         // Dashboard grid shortcuts use shift-modified letters; never open shortcut search for them.
-        if (!this.searchActive && e.shiftKey && key.length === 1 && /^[A-Z]$/.test(key)) {
+        if (
+            !this.searchActive
+            && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+            && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT'
+                || (key.length === 1 && /^[A-Z]$/.test(key)))
+        ) {
             return;
         }
 

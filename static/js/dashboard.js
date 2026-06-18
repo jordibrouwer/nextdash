@@ -1434,6 +1434,10 @@ class Dashboard {
         return this.bookmarkRows.showDeletePopover(...arguments);
     }
 
+    showTagPopover(anchorEl, bookmark, bookmarkIndex) {
+        return this.bookmarkRows.showTagPopover(...arguments);
+    }
+
     _quickMoveToCategory(bookmark, categoryId) {
         return this.bookmarkRows._quickMoveToCategory(...arguments);
     }

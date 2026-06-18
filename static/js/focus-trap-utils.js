@@ -77,7 +77,8 @@
 
     function isMoveOrDeletePopoverOpen() {
         return document.getElementById('move-popover') != null
-            || document.getElementById('delete-popover') != null;
+            || document.getElementById('delete-popover') != null
+            || document.getElementById('tag-popover') != null;
     }
 
     function isDatePopoverOpen() {

@@ -66,6 +66,15 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Action popovers manage their own keyboard — never let the grid intercept arrows/Enter
+            if (
+                document.getElementById('tag-popover')
+                || document.getElementById('move-popover')
+                || document.getElementById('delete-popover')
+            ) {
+                return;
+            }
+
             if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
                 return;
             }
@@ -81,6 +90,31 @@ class KeyboardNavigation {
                 e.stopImmediatePropagation();
                 this.copyUrlForCurrent();
                 return;
+            }
+
+            // Shift+M / Shift+D / Shift+T — quick action popovers (use e.code for layout reliability)
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (e.code === 'KeyM') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.openMovePopoverForCurrent();
+                    return;
+                }
+                if (e.code === 'KeyD') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.openDeletePopoverForCurrent();
+                    return;
+                }
+                if (e.code === 'KeyT') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.openTagPopoverForCurrent();
+                    return;
+                }
             }
 
             // WAI-ARIA grid: Ctrl/Cmd+Home / Ctrl/Cmd+End — first / last bookmark
@@ -624,24 +658,6 @@ class KeyboardNavigation {
             e.stopImmediatePropagation();
             this._clearGState();
             this.jumpToCategory(parseInt(key, 10));
-            return;
-        }
-
-        // Shift+M: open quick-move popover
-        if (e.shiftKey && key === 'M' && this.currentIndex >= 0) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            e.stopPropagation();
-            this.openMovePopoverForCurrent();
-            return;
-        }
-
-        // Shift+D: open quick-delete popover
-        if (e.shiftKey && key === 'D' && this.currentIndex >= 0) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            e.stopPropagation();
-            this.openDeletePopoverForCurrent();
             return;
         }
 
@@ -1344,26 +1360,55 @@ class KeyboardNavigation {
     }
 
     // Public methods
+    _resolveActionPopoverRow() {
+        if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
+            return this.navigableElements[this.currentIndex];
+        }
+        const active = document.activeElement;
+        const row = active?.closest?.('.bookmark-link:not(.bookmark-inline-editing)');
+        if (!row) {
+            return null;
+        }
+        this.updateNavigableElements();
+        const idx = this.navigableElements.indexOf(row);
+        if (idx >= 0) {
+            this.currentIndex = idx;
+            this.highlightCurrentElement({ focus: false });
+        }
+        return idx >= 0 ? row : null;
+    }
+
     openMovePopoverForCurrent() {
-        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const row = this._resolveActionPopoverRow();
+        if (!row) return;
         const dash = this.dashboard;
         if (!dash || typeof dash.showMovePopover !== 'function') return;
-        const row = this.navigableElements[this.currentIndex];
         const bookmark = this.getSelectedBookmark();
-        if (!bookmark || !row) return;
+        if (!bookmark) return;
         const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
         dash.showMovePopover(row, bookmark, bookmarkIndex);
     }
 
     openDeletePopoverForCurrent() {
-        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) return;
+        const row = this._resolveActionPopoverRow();
+        if (!row) return;
         const dash = this.dashboard;
         if (!dash || typeof dash.showDeletePopover !== 'function') return;
-        const row = this.navigableElements[this.currentIndex];
         const bookmark = this.getSelectedBookmark();
-        if (!bookmark || !row) return;
+        if (!bookmark) return;
         const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
         dash.showDeletePopover(row, bookmark, bookmarkIndex);
+    }
+
+    openTagPopoverForCurrent() {
+        const row = this._resolveActionPopoverRow();
+        if (!row) return;
+        const dash = this.dashboard;
+        if (!dash || typeof dash.showTagPopover !== 'function') return;
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) return;
+        const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+        dash.showTagPopover(row, bookmark, bookmarkIndex);
     }
 
     enable() {

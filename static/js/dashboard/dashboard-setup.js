@@ -416,6 +416,7 @@ class DashboardSetup {
             ['tipEditSemicolon', 'Tip: <code>;</code> edit bookmark (highlighted row or focused link)'],
             ['tipQuickDelete', 'Tip: <code>Shift+D</code> quick-delete — confirm in the popover; undo in the toast'],
             ['tipQuickMove', 'Tip: <code>Shift+M</code> quick-move — choose category or page in the popover'],
+            ['tipQuickTag', 'Tip: <code>Shift+T</code> quick-tag — toggle tags on the selected bookmark; ✓ shows tags already applied'],
             ['tipCheatsheetCtrlSlash', 'Tip: <code>F1</code> cheatsheet'],
             ['tipPreviewBracket', 'Tip: <code>[</code> preview card on keyboard-selected bookmark'],
             ['tipCopyUrlCtrlC', 'Tip: <code>Ctrl+C</code> copy URL of keyboard-selected bookmark'],

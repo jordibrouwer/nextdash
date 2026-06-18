@@ -871,6 +871,7 @@ class DashboardBookmarkRows {
             return;
         }
         this._closeDeletePopover();
+        this._closeTagPopover();
 
         const t = (key, fallback) => {
             const val = d.language?.t ? d.language.t(key) : null;
@@ -1039,6 +1040,269 @@ class DashboardBookmarkRows {
     }
 
 
+    showTagPopover(anchorEl, bookmark, bookmarkIndex) {
+        const d = this.dash;
+        if (d._tagPopoverCleanup) {
+            d._tagPopoverCleanup();
+            d._tagPopoverCleanup = null;
+            return;
+        }
+        this._closeMovePopover();
+        this._closeDeletePopover();
+
+        const bookmarkRef = this.resolveBookmarkReference(bookmark);
+        if (!bookmarkRef?.bookmark || !anchorEl) {
+            return;
+        }
+
+        const t = (key, fallback) => {
+            const val = d.language?.t ? d.language.t(key) : null;
+            return (val && val !== key) ? val : fallback;
+        };
+
+        const pop = document.createElement('div');
+        pop.id = 'tag-popover';
+        pop.className = 'move-popover tag-popover';
+        pop.setAttribute('role', 'listbox');
+        pop.setAttribute('tabindex', '-1');
+        pop.setAttribute('aria-activedescendant', '');
+        pop.setAttribute('aria-label', t('dashboard.tagPopoverTitle', 'Tags…'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = t('dashboard.tagPopoverTitle', 'Tags…');
+        pop.appendChild(header);
+
+        const bookmarkName = String(bookmarkRef.bookmark.name || bookmarkRef.bookmark.url || '').trim();
+        const nameHint = document.createElement('div');
+        nameHint.className = 'move-popover-current-hint tag-popover-bookmark-name';
+        nameHint.textContent = bookmarkName || '—';
+        pop.appendChild(nameHint);
+
+        const tagsHint = document.createElement('div');
+        tagsHint.className = 'tag-popover-current-tags';
+        pop.appendChild(tagsHint);
+
+        const emptyHint = document.createElement('div');
+        emptyHint.className = 'tag-popover-empty-hint';
+        emptyHint.hidden = true;
+        pop.appendChild(emptyHint);
+
+        const items = [];
+        const tagRows = this._collectRankedTagsForPopover(bookmarkRef.bookmark);
+
+        if (tagRows.length > 0) {
+            const sectionLabel = document.createElement('div');
+            sectionLabel.className = 'move-popover-section-label';
+            sectionLabel.textContent = t('dashboard.tagPopoverAllTagsSection', 'All tags');
+            pop.appendChild(sectionLabel);
+
+            tagRows.forEach(({ tag, count }) => {
+                const item = document.createElement('div');
+                item.className = 'move-popover-item';
+                item.id = `tag-popover-opt-${tag.replace(/[^a-z0-9_-]/g, '-')}`;
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-tag', tag);
+                item.setAttribute('aria-selected', 'false');
+
+                const check = document.createElement('span');
+                check.className = 'move-popover-check';
+                check.textContent = '';
+                item.appendChild(check);
+
+                const label = document.createElement('span');
+                label.className = 'tag-popover-item-label';
+                label.textContent = `#${tag}`;
+                item.appendChild(label);
+
+                if (count > 0) {
+                    const meta = document.createElement('span');
+                    meta.className = 'tag-popover-item-meta';
+                    meta.textContent = count === 1
+                        ? t('dashboard.tagPopoverCountOne', '1 bookmark')
+                        : t('dashboard.tagPopoverCountMany', '{count} bookmarks').replace('{count}', String(count));
+                    item.appendChild(meta);
+                }
+
+                pop.appendChild(item);
+                items.push(item);
+            });
+        } else {
+            emptyHint.hidden = false;
+            emptyHint.textContent = t(
+                'dashboard.tagPopoverLibraryEmpty',
+                'No tags yet — add tags in config → bookmarks'
+            );
+        }
+
+        document.body.appendChild(pop);
+        this._positionActionPopoverBeside(pop, anchorEl);
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+
+        const previousFocus = document.activeElement;
+        let focusedIdx = 0;
+
+        const bookmarkHasTag = (tag) => (bookmarkRef.bookmark.tags || [])
+            .map((raw) => String(raw || '').trim().toLowerCase())
+            .filter(Boolean)
+            .includes(tag);
+
+        const syncTagItemStates = () => {
+            items.forEach((item) => {
+                const tag = item.getAttribute('data-tag') || '';
+                const onBookmark = bookmarkHasTag(tag);
+                item.classList.toggle('is-current', onBookmark);
+                item.setAttribute('aria-selected', String(onBookmark));
+                const check = item.querySelector('.move-popover-check');
+                if (check) {
+                    check.textContent = onBookmark ? '✓' : '';
+                }
+            });
+            this._renderTagPopoverCurrentTags(tagsHint, bookmarkRef.bookmark, t);
+        };
+
+        syncTagItemStates();
+
+        const setFocus = (idx) => {
+            if (!items.length) {
+                pop.removeAttribute('aria-activedescendant');
+                return;
+            }
+            focusedIdx = ((idx % items.length) + items.length) % items.length;
+            const target = items[focusedIdx];
+            items.forEach((el, i) => {
+                el.classList.toggle('is-focused', i === focusedIdx);
+            });
+            pop.setAttribute('aria-activedescendant', target.id);
+            target.scrollIntoView({ block: 'nearest' });
+            pop.focus({ preventScroll: true });
+        };
+
+        const trapPopoverFocus = () => {
+            const active = document.activeElement;
+            if (active instanceof HTMLElement && !pop.contains(active)) {
+                active.blur();
+            }
+            if (items.length > 0) {
+                setFocus(focusedIdx);
+            } else {
+                pop.focus({ preventScroll: true });
+            }
+        };
+
+        if (items.length > 0) {
+            const firstCurrent = items.findIndex((item) => item.classList.contains('is-current'));
+            focusedIdx = firstCurrent >= 0 ? firstCurrent : 0;
+        }
+
+        let onOutside = null;
+        let unbindPosition = null;
+        let toggleInFlight = false;
+
+        const close = () => {
+            if (pop.parentNode) {
+                pop.remove();
+            }
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickTag')) {
+                window.DashboardFeaturePromos.dismissOpen();
+            }
+            pop.removeEventListener('keydown', onKey, true);
+            this._restoreActionPopoverFocus(previousFocus, anchorEl);
+            unbindPosition?.();
+            unbindPosition = null;
+            document.removeEventListener('keydown', onKey, true);
+            if (onOutside) {
+                document.removeEventListener('click', onOutside);
+                onOutside = null;
+            }
+            if (d._tagPopoverCleanup === close) {
+                d._tagPopoverCleanup = null;
+            }
+            window.FocusTrapUtils?.syncDashboardInert?.();
+        };
+        unbindPosition = this._attachActionPopoverPositioning(pop, anchorEl);
+        d._tagPopoverCleanup = close;
+
+        const toggleTag = async (item, { advance = false } = {}) => {
+            const tag = String(item?.getAttribute('data-tag') || '').trim().toLowerCase();
+            if (!tag || toggleInFlight) {
+                return false;
+            }
+            toggleInFlight = true;
+            try {
+                const ok = await this._quickToggleBookmarkTag(bookmarkRef, tag, anchorEl);
+                if (ok) {
+                    syncTagItemStates();
+                    if (advance && items.length > 1) {
+                        setFocus(focusedIdx + 1);
+                    } else {
+                        trapPopoverFocus();
+                    }
+                }
+                return ok;
+            } finally {
+                toggleInFlight = false;
+            }
+        };
+
+        const onKey = (e) => {
+            if (!document.getElementById('tag-popover')) {
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
+                return;
+            }
+            if (!items.length) {
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                setFocus(focusedIdx + 1);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                setFocus(focusedIdx - 1);
+                return;
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (items[focusedIdx]) {
+                    void toggleTag(items[focusedIdx], { advance: true });
+                }
+            }
+        };
+
+        items.forEach((item, idx) => {
+            item.addEventListener('mouseenter', () => setFocus(idx));
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                void toggleTag(item, { advance: false });
+            });
+        });
+
+        pop.addEventListener('keydown', onKey, true);
+        document.addEventListener('keydown', onKey, true);
+        trapPopoverFocus();
+        setTimeout(() => {
+            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+            document.addEventListener('click', onOutside);
+        }, 0);
+        window.DashboardFeaturePromos?.tryShow?.('quickTag', pop);
+        requestAnimationFrame(() => {
+            trapPopoverFocus();
+            requestAnimationFrame(() => trapPopoverFocus());
+        });
+    }
+
+
     showDeletePopover(anchorEl, bookmark, bookmarkIndex) {
         const d = this.dash;
         if (d._deletePopoverCleanup) {
@@ -1047,6 +1311,7 @@ class DashboardBookmarkRows {
             return;
         }
         this._closeMovePopover();
+        this._closeTagPopover();
 
         const bookmarkRef = typeof this.resolveBookmarkReference === 'function'
             ? this.resolveBookmarkReference(bookmark)
@@ -1192,6 +1457,105 @@ class DashboardBookmarkRows {
     }
 
 
+    _quickToggleBookmarkTag(bookmarkRef, tagName, anchorEl) {
+        const d = this.dash;
+        const tag = String(tagName || '').trim().toLowerCase();
+        if (!tag || !bookmarkRef?.bookmark) {
+            return false;
+        }
+
+        const bookmark = bookmarkRef.bookmark;
+        const tags = (Array.isArray(bookmark.tags) ? bookmark.tags : [])
+            .map((raw) => String(raw || '').trim().toLowerCase())
+            .filter(Boolean);
+        const idx = tags.indexOf(tag);
+        const newTags = idx >= 0 ? tags.filter((t) => t !== tag) : [...tags, tag];
+        bookmark.tags = newTags;
+        if (bookmarkRef.original) {
+            bookmarkRef.original.tags = [...newTags];
+        }
+
+        d.syncEditedBookmarkAcrossCollections(bookmarkRef, String(bookmark.url || '').trim());
+
+        if (anchorEl instanceof HTMLElement) {
+            if (newTags.length) {
+                anchorEl.setAttribute('data-bookmark-tags', newTags.join(','));
+            } else {
+                anchorEl.removeAttribute('data-bookmark-tags');
+            }
+        }
+
+        const pageId = Number(bookmarkRef.pageId || d.currentPageId);
+        const persist = (async () => {
+            if (bookmarkRef.scope === 'current') {
+                await d.saveBookmarkOrder({ pageId });
+                return true;
+            }
+            const inlineEdit = d.inlineEdit;
+            if (inlineEdit?.saveRemoteBookmarkEdit) {
+                return inlineEdit.saveRemoteBookmarkEdit(bookmarkRef, {
+                    ...bookmark,
+                    tags: newTags,
+                });
+            }
+            return false;
+        })();
+
+        return persist.catch(() => false);
+    }
+
+
+    _collectRankedTagsForPopover(bookmark) {
+        const d = this.dash;
+        const counts = new Map();
+        const pool = Array.isArray(d.allBookmarks) && d.allBookmarks.length
+            ? d.allBookmarks
+            : (d.bookmarks || []);
+        for (const entry of pool) {
+            for (const raw of entry?.tags || []) {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (!tag) continue;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            }
+        }
+        for (const raw of bookmark?.tags || []) {
+            const tag = String(raw || '').trim().toLowerCase();
+            if (!tag) continue;
+            if (!counts.has(tag)) {
+                counts.set(tag, 0);
+            }
+        }
+        return [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([tag, count]) => ({ tag, count }));
+    }
+
+
+    _renderTagPopoverCurrentTags(container, bookmark, t) {
+        const tags = (Array.isArray(bookmark?.tags) ? bookmark.tags : [])
+            .map((raw) => String(raw || '').trim().toLowerCase())
+            .filter(Boolean);
+        container.replaceChildren();
+        const label = document.createElement('span');
+        label.className = 'tag-popover-current-tags-label';
+        label.textContent = t('dashboard.tagPopoverCurrentTags', 'On this bookmark:');
+        container.appendChild(label);
+        if (!tags.length) {
+            const none = document.createElement('span');
+            none.className = 'tag-popover-current-tags-none';
+            none.textContent = t('dashboard.tagPopoverNoTags', 'none');
+            container.appendChild(none);
+            return;
+        }
+        tags.forEach((tag) => {
+            const chip = document.createElement('span');
+            chip.className = 'bookmark-tag-chip tag-popover-current-chip';
+            chip.textContent = `#${tag}`;
+            container.appendChild(chip);
+        });
+    }
+
+
     _closeMovePopover() {
         const d = this.dash;
         if (d._movePopoverCleanup) {
@@ -1210,10 +1574,20 @@ class DashboardBookmarkRows {
     }
 
 
+    _closeTagPopover() {
+        const d = this.dash;
+        if (d._tagPopoverCleanup) {
+            d._tagPopoverCleanup();
+            d._tagPopoverCleanup = null;
+        }
+    }
+
+
     _closeActionPopovers() {
         const d = this.dash;
         this._closeMovePopover();
         this._closeDeletePopover();
+        this._closeTagPopover();
     }
 
 

@@ -273,9 +273,79 @@ body {
 
 .move-popover-divider {
     height: 1px;
+    margin: 0.35rem 0.5rem;
     background: var(--border-primary);
-    margin: 0.35rem 0.85rem;
-    opacity: 0.65;
+}
+
+/* ─── Tag popover (Shift+T) ─────────────────────────────────── */
+.tag-popover {
+    min-width: 13rem;
+    max-width: min(18rem, calc(100vw - 1rem));
+    outline: none;
+}
+
+.tag-popover:focus {
+    outline: none;
+}
+
+.tag-popover .move-popover-item {
+    outline: none;
+}
+
+.tag-popover-bookmark-name {
+    padding-bottom: 0.35rem;
+}
+
+.tag-popover-current-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.4rem;
+    padding: 0 0.85rem 0.65rem;
+}
+
+.tag-popover-current-tags-label {
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    margin-right: 0.15rem;
+}
+
+.tag-popover-current-tags-none {
+    font-size: calc(var(--font-size-controls) * 0.88);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-style: italic;
+}
+
+.tag-popover-current-chip {
+    font-size: calc(var(--font-size-controls) * 0.78);
+    padding: 0.12rem 0.45rem;
+}
+
+.tag-popover-empty-hint {
+    padding: 0.15rem 0.85rem 0.65rem;
+    font-size: calc(var(--font-size-controls) * 0.86);
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.tag-popover-item-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag-popover-item-meta {
+    flex: 0 0 auto;
+    font-size: calc(var(--font-size-controls) * 0.72);
+    color: var(--text-tertiary, var(--text-secondary));
+    margin-left: auto;
+    padding-left: 0.35rem;
+}
+
+.move-popover-item.is-current .tag-popover-item-meta {
+    color: var(--text-secondary);
 }
 
 .date-weather-line {

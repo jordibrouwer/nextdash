@@ -96,6 +96,14 @@
             bodyFallback: '<kbd>Shift+D</kbd> opens this menu · <kbd>↑</kbd>/<kbd>↓</kbd> choose · <kbd>Enter</kbd> delete · undo in the toast',
             dismissKey: 'quickDeletePromoDismiss',
         },
+        quickTag: {
+            storageKey: 'nextdash:dashboard-quick-tag-promo-confirmed-v1',
+            titleKey: 'quickTagPromoTitle',
+            titleFallback: 'Quick tags',
+            bodyKey: 'quickTagPromoBody',
+            bodyFallback: '<kbd>Shift+T</kbd> opens this menu · <kbd>↑</kbd>/<kbd>↓</kbd> choose · <kbd>Enter</kbd> or <kbd>Space</kbd> toggle and move to next · <kbd>✓</kbd> shows tags on this bookmark',
+            dismissKey: 'quickTagPromoDismiss',
+        },
         pageOverview: {
             storageKey: 'nextdash:dashboard-page-overview-promo-confirmed-v1',
             titleKey: 'pageOverviewPromoTitle',
@@ -166,6 +174,7 @@
         if (document.body.classList.contains('bookmark-inline-edit-active') && pendingKind !== 'inlineEdit') return true;
         if (document.getElementById('move-popover') && pendingKind !== 'quickMove') return true;
         if (document.getElementById('delete-popover') && pendingKind !== 'quickDelete') return true;
+        if (document.getElementById('tag-popover') && pendingKind !== 'quickTag') return true;
         if (document.body.classList.contains('preview-card-active') && pendingKind !== 'previewCard') return true;
         if (document.getElementById('omnibox-overlay') && pendingKind !== 'quickAddOmnibox') return true;
         if (document.getElementById('date-popover') && pendingKind !== 'datePopover') return true;
