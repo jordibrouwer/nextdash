@@ -44,39 +44,47 @@ class SearchCommandTheme {
         }
     }
 
+    getCurrentThemeId() {
+        const dash = window.dashboardInstance;
+        return document.body.getAttribute('data-theme')
+            || dash?.settings?.theme
+            || 'dark';
+    }
+
+    _buildThemeRow(themeId) {
+        const displayName = this.getThemeDisplayName(themeId);
+        const current = this.getCurrentThemeId();
+        const name = themeId === current ? `${displayName} ✓` : displayName;
+        return {
+            name,
+            shortcut: ':theme',
+            stateId: `theme:${themeId}`,
+            action: () => {
+                this.applyTheme(themeId);
+                if (window.dashboardInstance?.settings) {
+                    window.dashboardInstance.settings.theme = themeId;
+                }
+                return { stateId: `theme:${themeId}` };
+            },
+            type: 'command'
+        };
+    }
+
     handle(args) {
         // If args has one empty string, treat as no args
         const effectiveArgs = (args.length === 1 && args[0] === '') ? [] : args;
 
         if (effectiveArgs.length === 0) {
-            // Show all themes
-            return this.themes.map(themeId => {
-                const displayName = this.getThemeDisplayName(themeId);
-                return {
-                    name: displayName,
-                    shortcut: `:theme`,
-                    action: () => this.applyTheme(themeId),
-                    type: 'command'
-                };
-            });
-        } else {
-            // Show matching themes
-            const themeQuery = effectiveArgs.join(' ').toLowerCase();
-            const matchingThemes = this.themes.filter(themeId => {
-                const displayName = this.getThemeDisplayName(themeId);
-                return displayName.toLowerCase().startsWith(themeQuery);
-            });
-
-            return matchingThemes.map(themeId => {
-                const displayName = this.getThemeDisplayName(themeId);
-                return {
-                    name: displayName,
-                    shortcut: `:theme`,
-                    action: () => this.applyTheme(themeId),
-                    type: 'command'
-                };
-            });
+            return this.themes.map((themeId) => this._buildThemeRow(themeId));
         }
+
+        const themeQuery = effectiveArgs.join(' ').toLowerCase();
+        const matchingThemes = this.themes.filter((themeId) => {
+            const displayName = this.getThemeDisplayName(themeId);
+            return displayName.toLowerCase().startsWith(themeQuery);
+        });
+
+        return matchingThemes.map((themeId) => this._buildThemeRow(themeId));
     }
 
     /**

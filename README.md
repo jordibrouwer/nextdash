@@ -109,29 +109,44 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 **Search & commands**
 - `>` — open search; empty state shows recent queries and saved searches as chips; `←`/`→` select a chip, `Enter` applies it
 - `/` — fuzzy search; ranked by prefix → word-boundary → substring; also matches URL domain, tags, and note text
-- `:` — command palette (lone `:` from the dashboard); in an open `>` search with text already typed, `:` inserts filter syntax (`category:`, `tag:`, …) instead of switching modes
+- `:` — command palette (lone `:` from the dashboard); **10 collapsible groups** at `:` list bookmark, navigation, layout, display, and system commands — click a header to expand; toggles refresh in place with `(on)`/`(off)` or `✓` after `Enter` (no toasts). In an open `>` search with text already typed, `:` inserts filter syntax (`category:`, `tag:`, …) instead of switching modes
 - `?` — finders (e.g. `?g query` to search Google)
 - `*` — recent bookmarks panel
 - `! or F1` — keyboard cheat sheet (filterable with a type-to-search input; blocked while page overview `,` is open)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar; autocomplete suggests values after each prefix (single **Filters** group)
-- `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`)
+- `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`); `:goto config` / `stats` / `health` for quick navigation
 - `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)
+- `:add` — quick-add omnibox (same as `&`)
 - `:note` — edit the note of the focused bookmark
+- `:move` / `:edit` / `:copy` — move, inline edit, or copy URL of the keyboard-selected bookmark
 - `:pin` / `:unpin` — toggle pin on the keyboard-selected bookmark
 - `:tag` — list tags; `:tag <name>` or `:tag:<name>` browse bookmarks by tag in the command palette only (dashboard unchanged); `:tag +name` / `:tag -name` add or remove on the keyboard-selected bookmark
+- `:category` / `:cat` — jump to a category or smart collection by number or name
+- `:filter <tag>` / `:filter clear` — apply or clear dashboard tag filter (OR logic, same as tag cloud)
 - `/` (desktop, tag cloud on) — open tag word cloud on dashboard; filters tiles by tag (Escape or Clear clears)
 - `:open all` — open all bookmarks on the current page in new tabs
+- `:open pinned` — open pinned bookmarks on the current page
+- `:open tag <name>` / `:open category <name>` — open bookmarks matching tag or category on the current page
 - `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
+- `:page` — switch page by name or number (palette stays open, `✓` on current)
+- `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
+- `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — `order` / `az` / `recent` / `custom`
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
 - `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
+- `:health [filter]` — open health page — `broken`, `duplicate`, `stale`, `refresh`, …; `:health page [n]` filters by page
+- `:dark` / `:title` / `:lang` / `:animations` / `:status` / `:opacity` — display and theme toggles
+- `:collections` — toggle smart collections (today, recent, stale, most used)
+- `:backup` / `:export` — open config backups or download a ZIP backup
+- `:metadata` — health missing previews or config bookmarks
+- `:tour` / `:promo` — start feature tour or reset discoverability promos
 - `:layout <preset>` — `default` / `compact` / `cards` / `masonry` / `list` / `launcher` …
 - `:theme <name>` — switch colour theme
 - `:density <mode>` — `comfortable` / `compact` / `dense`
 - `:columns <n>` — set column count (1–6)
 - `@` — global search across all pages at once; each result shows the page name as context
-- `:find <text>` — hide tiles whose name or URL don't match; clear with `:find`
+- `:find <text>` — hide tiles whose name or URL don't match; `:find clear` removes the filter
 - `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left`
 - `:save` / `:saved` — save current query / show saved searches
 

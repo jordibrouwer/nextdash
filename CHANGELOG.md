@@ -54,7 +54,7 @@ _No unreleased changes at this time._
 
 ## v2026.06.23 — June 2026
 
-**Overlay focus, search filters & health polish, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; bookmark shortcuts starting with `G` via quick tap while hold or `G`+digit keeps category jump; command palette `Enter` and reliable `status:` / `tag:` / `page:` filter autocomplete in `>` mode; health beta hardened with `health-runtime.js` (coalesced renders, action lock, timed fetches), reliable **detect redirect**, and ping in the row overflow menu; health page-filter render loop fixed and **1-click fix** removed (overflow repair actions remain); onboarding finish/skip teardown and post-onboarding spotlights; one-minute delay before rotating tips; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
+**Overlay focus, search filters & health polish, command palette expansion, General layer default** — keyboard focus and `inert` for search, modals, tag cloud, page overview, omnibox, and move/delete popovers; grid shortcuts `;` / `Shift+M` / `Shift+D` restored; bookmark shortcuts starting with `G` via quick tap while hold or `G`+digit keeps category jump; command palette `Enter`, live in-palette feedback (toggles stay open, labels refresh), **10 collapsible command groups**, and **50+ `:` commands** including bookmark actions (`:move`, `:edit`, `:copy`), navigation (`:page`, `:recent`, `:config`, …), display toggles (`:dark`, `:lang`, `:collections`, …), and tools (`:export`, `:filter`, `:tour`, `:promo`); reliable `status:` / `tag:` / `page:` filter autocomplete in `>` mode; health beta hardened with `health-runtime.js`; Config → General opens Essentials until the user picks a layer; dashboard module split with expanded Playwright coverage.
 
 ### Keyboard focus & overlays
 
@@ -74,6 +74,12 @@ _No unreleased changes at this time._
 - **fix** **Partial filter typing** — incomplete values such as `status:on` or `page:cu` keep showing autocomplete instead of applying a broken filter or listing all shortcuts.
 - **fix** **`status:` reachability** — online/offline/checked filters resolve bookmark fields from the current page copy and persisted `lastChecked` / status cache, not stale `allBookmarks` pool entries.
 - **fix** **Shortcut map while searching** — building the shortcuts map no longer closes search; pending bookmark-open timers are cleared on `pagehide`.
+- **new** **Live command palette** — after `Enter`, toggle/view commands keep the palette open; rows refresh with `(on)`/`(off)`, `✓`, or a brief flash instead of closing or showing toasts.
+- **new** **10 command groups** — lone `:` lists collapsible groups (add & remove, edit, open & inspect, search & sort, navigation, layout & theme, display & chrome, smart collections, tag filter, system & help); click a header to expand completions.
+- **new** **Bookmark commands** — `:move`, `:edit`, `:copy` (keyboard-selected or context bookmark when `:` was pressed); `:category` / `:cat` jump to category; `:open pinned`, `:open tag <name>`, `:open category <name>`.
+- **new** **Navigation & overlay commands** — `:page`, `:recent` (`*`), `:overview` (`,`), `:cheat` / `:help`, `:whatsnew`, `:add` (`&`), `:config [section]`, `:reload`.
+- **new** **Display & collection commands** — `:dark`, `:title`, `:lang`, `:animations`, `:status`, `:opacity`, `:collections [id] [on|off]`; `:buttons health` / `tagcloud`.
+- **new** **Tool commands** — `:backup`, `:export` (ZIP download), `:metadata`, `:tour`, `:promo`, `:filter` (dashboard tag filter), `:find clear`, `:goto config` / `stats` / `health`, `:health page [n]`.
 
 ### Health
 
@@ -100,10 +106,10 @@ _No unreleased changes at this time._
 
 ### Developer & docs
 
-- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts (including `G` tap vs hold), command palette, search filters (`status:`/`tag:`/`page:` autocomplete, duplicate filter groups), recent modal tab caps, post-onboarding layout nudge, and health redirect detect (`tests/health-redirect.spec.js`).
+- **new** **Dashboard module split** — `static/js/dashboard/*.js` modules (data, render-core, setup, promos, ui-helpers, …); `dashboard.js` orchestrator; `docs/dashboard-refactor.md`; Playwright smoke tests for overlays, grid shortcuts (including `G` tap vs hold), command palette (live feedback, 10 groups, `:dark`, `:collections`, `:filter`, `:page`), search filters (`status:`/`tag:`/`page:` autocomplete, duplicate filter groups), recent modal tab caps, post-onboarding layout nudge, and health redirect detect (`tests/health-redirect.spec.js`).
 - **fix** **Timer teardown** — `teardownDashboardTimers()` on `pagehide` clears tip rotation, backup tip, post-onboarding, and pending bookmark-open timers.
-- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and `G` hold-vs-tap bookmark shortcuts.
-- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `g-shortcut-hold-1` on `keyboard-navigation.js` and `search.js`; `health-runtime-1` on `health-runtime.js`, `health.js`, and `health.css`; `dashboard-inert-sync-4`, `popover-inert-1`, `search-status-filter-fix-3`, `health-no-oneclick-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, `G` hold-vs-tap bookmark shortcuts, and command palette expansion (live feedback, regrouped commands, batches 1–5).
+- **fix** **Cache-bust** — `whats-new-v88` (`2026.06-dashboard-release-v69`); `g-shortcut-hold-1` on `keyboard-navigation.js` and `search.js` (`cmd-palette-live-5`); `health-runtime-1` on `health-runtime.js`, `health.js`, and `health.css`; `dashboard-inert-sync-4`, `popover-inert-1`, `search-status-filter-fix-3`, `health-no-oneclick-1`, `tips-teardown-1`, `recent-constants-1`, `promos-dash-ref-1`, `overlay-inert-3`, `tag-cloud-inert-1`, `tips-onboarding-delay-1`, `general-layer-default-1`, `feature-promos-15`.
 
 ---
 

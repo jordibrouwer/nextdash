@@ -30,39 +30,50 @@ class SearchCommandColumns {
         };
     }
 
+    getCurrentColumns() {
+        const dash = window.dashboardInstance;
+        if (dash?.settings?.columnsPerRow) {
+            return String(dash.settings.columnsPerRow);
+        }
+        const grid = document.getElementById('dashboard-layout');
+        const match = grid?.className?.match(/columns-(\d)/);
+        return match ? match[1] : '3';
+    }
+
+    _buildColumnRow(column) {
+        const displayName = this.columnDisplayNames[column] || `${column} Columns`;
+        const current = this.getCurrentColumns();
+        const name = column === current ? `${displayName} ✓` : displayName;
+        return {
+            name,
+            shortcut: ':columns',
+            stateId: `columns:${column}`,
+            action: () => {
+                this.applyColumns(column);
+                if (window.dashboardInstance?.settings) {
+                    window.dashboardInstance.settings.columnsPerRow = parseInt(column, 10);
+                }
+                return { stateId: `columns:${column}` };
+            },
+            type: 'command'
+        };
+    }
+
     handle(args) {
         // If args has one empty string, treat as no args
         const effectiveArgs = (args.length === 1 && args[0] === '') ? [] : args;
 
         if (effectiveArgs.length === 0) {
-            // Show all column options
-            return this.columnMap.map(column => {
-                const displayName = this.columnDisplayNames[column] || `${column} Columns`;
-                return {
-                    name: displayName,
-                    shortcut: `:columns`,
-                    action: () => this.applyColumns(column),
-                    type: 'command'
-                };
-            });
-        } else {
-            // Show matching column options
-            const columnQuery = effectiveArgs.join(' ').toLowerCase();
-            const matchingColumns = this.columnMap.filter(column => {
-                const displayName = this.columnDisplayNames[column] || `${column} Columns`;
-                return displayName.toLowerCase().startsWith(columnQuery) || column.startsWith(columnQuery);
-            });
-
-            return matchingColumns.map(column => {
-                const displayName = this.columnDisplayNames[column] || `${column} Columns`;
-                return {
-                    name: displayName,
-                    shortcut: `:columns`,
-                    action: () => this.applyColumns(column),
-                    type: 'command'
-                };
-            });
+            return this.columnMap.map((column) => this._buildColumnRow(column));
         }
+
+        const columnQuery = effectiveArgs.join(' ').toLowerCase();
+        const matchingColumns = this.columnMap.filter((column) => {
+            const displayName = this.columnDisplayNames[column] || `${column} Columns`;
+            return displayName.toLowerCase().startsWith(columnQuery) || column.startsWith(columnQuery);
+        });
+
+        return matchingColumns.map((column) => this._buildColumnRow(column));
     }
 
     /**

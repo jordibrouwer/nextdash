@@ -58,6 +58,22 @@
         {
           "badge": "fix",
           "text": "<strong><code>status:</code> filters</strong> — online/offline/checked filters use fresh bookmark data from the current page and persisted reachability (<code>lastChecked</code>, status cache), not stale copies from the global pool."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Live command palette</strong> — after <code>Enter</code>, toggle and view commands keep the palette open; labels refresh with <code>(on)</code>/<code>(off)</code>, <code>✓</code>, or a brief flash — no toast spam."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>10 command groups</strong> — lone <code>:</code> shows collapsible groups (add &amp; remove, edit, open &amp; inspect, search, navigation, layout, display, smart collections, tag filter, system). Click a header to expand completions."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Bookmark &amp; navigation commands</strong> — <code>:move</code>, <code>:edit</code>, <code>:copy</code>, <code>:category</code>, <code>:page</code>, <code>:open pinned</code>/<code>tag</code>/<code>category</code>; <code>:recent</code> (<code>*</code>), <code>:overview</code> (<code>,</code>), <code>:cheat</code>, <code>:add</code> (<code>&amp;</code>), <code>:config</code>, <code>:reload</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Display, tools &amp; filters</strong> — <code>:dark</code>, <code>:title</code>, <code>:lang</code>, <code>:animations</code>, <code>:status</code>, <code>:opacity</code>, <code>:collections</code>; <code>:backup</code>, <code>:export</code>, <code>:metadata</code>, <code>:tour</code>, <code>:promo</code>, <code>:filter</code>; <code>:find clear</code>, <code>:goto config</code>/<code>stats</code>/<code>health</code>, <code>:health page</code>."
         }
       ]
     },
@@ -141,11 +157,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, and <code>G</code> hold-vs-tap bookmark shortcuts."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, <code>G</code> hold-vs-tap bookmark shortcuts, and command palette expansion (live feedback, 10 groups, 50+ commands)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>, <code>cmd-palette-live-5</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

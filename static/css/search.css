@@ -215,6 +215,20 @@
     content: none;
 }
 
+.search-match.command-entry.command-just-applied {
+    animation: command-palette-flash 0.55s ease;
+}
+
+@keyframes command-palette-flash {
+    0%, 100% {
+        background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    }
+    45% {
+        background: color-mix(in srgb, var(--accent-success) 28%, transparent);
+        border-left-color: var(--accent-success);
+    }
+}
+
 .search-match-shortcut {
     font-weight: var(--font-weight-bold);
     margin-right: 1rem;

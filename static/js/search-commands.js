@@ -25,20 +25,65 @@ class SearchCommandsComponent {
         // Command groups (order matters — shown collapsed by default)
         this.commandGroups = [
             {
-                id: 'bookmarks',
-                label: 'Bookmarks',
-                commands: ['new', 'remove', 'note', 'pin', 'tag', 'save', 'saved', 'history', 'sort', 'open', 'stale', 'duplicates', 'goto', 'find']
+                id: 'bookmark-create',
+                label: 'Bookmarks — add & remove',
+                labelKey: 'commands.groupBookmarkCreate',
+                commands: ['new', 'add', 'remove'],
             },
             {
-                id: 'view',
-                label: 'View',
-                commands: ['theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'packed', 'preview', 'favicons', 'buttonbar']
+                id: 'bookmark-edit',
+                label: 'Bookmarks — edit',
+                labelKey: 'commands.groupBookmarkEdit',
+                commands: ['note', 'pin', 'move', 'edit', 'copy', 'tag'],
             },
             {
-                id: 'dashboard',
-                label: 'Dashboard',
-                commands: ['buttons', 'tips', 'health']
-            }
+                id: 'bookmark-browse',
+                label: 'Bookmarks — open & inspect',
+                labelKey: 'commands.groupBookmarkBrowse',
+                commands: ['open', 'goto', 'find', 'stale', 'duplicates'],
+            },
+            {
+                id: 'search',
+                label: 'Search & sort',
+                labelKey: 'commands.groupSearch',
+                commands: ['save', 'saved', 'history', 'sort'],
+            },
+            {
+                id: 'navigation',
+                label: 'Navigation',
+                labelKey: 'commands.groupNavigation',
+                commands: ['page', 'category', 'recent', 'overview'],
+            },
+            {
+                id: 'layout',
+                label: 'Layout & theme',
+                labelKey: 'commands.groupLayout',
+                commands: ['theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed'],
+            },
+            {
+                id: 'display',
+                label: 'Display & chrome',
+                labelKey: 'commands.groupDisplay',
+                commands: ['preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'tips', 'buttons'],
+            },
+            {
+                id: 'collections',
+                label: 'Smart collections',
+                labelKey: 'commands.groupCollections',
+                commands: ['collections'],
+            },
+            {
+                id: 'filter-tag',
+                label: 'Tag filter',
+                labelKey: 'commands.groupFilter',
+                commands: ['filter'],
+            },
+            {
+                id: 'system',
+                label: 'System & help',
+                labelKey: 'commands.groupSystem',
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tour', 'promo'],
+            },
         ];
         // Track which groups are expanded (none by default)
         this.expandedGroups = new Set();
@@ -73,10 +118,35 @@ class SearchCommandsComponent {
             'note': this.handleNoteCommand.bind(this),
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
+            'move': this.handleMoveCommand.bind(this),
+            'edit': this.handleEditCommand.bind(this),
+            'copy': this.handleCopyCommand.bind(this),
+            'page': this.handlePageCommand.bind(this),
+            'recent': this.handleRecentCommand.bind(this),
+            'overview': this.handleOverviewCommand.bind(this),
+            'cheat': this.handleCheatCommand.bind(this),
+            'whatsnew': this.handleWhatsNewCommand.bind(this),
+            'add': this.handleAddCommand.bind(this),
+            'config': this.handleConfigCommand.bind(this),
+            'reload': this.handleReloadCommand.bind(this),
             'tag': this.handleTagCommand.bind(this),
+            'category': this.handleCategoryCommand.bind(this),
             'open': this.handleOpenCommand.bind(this),
             'find': this.handleFindCommand.bind(this),
-            'health': this.handleHealthCommand.bind(this)
+            'health': this.handleHealthCommand.bind(this),
+            'dark': this.handleDarkCommand.bind(this),
+            'title': this.handleTitleCommand.bind(this),
+            'lang': this.handleLangCommand.bind(this),
+            'animations': this.handleAnimationsCommand.bind(this),
+            'status': this.handleStatusCommand.bind(this),
+            'collections': this.handleCollectionsCommand.bind(this),
+            'opacity': this.handleOpacityCommand.bind(this),
+            'backup': this.handleBackupCommand.bind(this),
+            'metadata': this.handleMetadataCommand.bind(this),
+            'tour': this.handleTourCommand.bind(this),
+            'promo': this.handlePromoCommand.bind(this),
+            'filter': this.handleFilterCommand.bind(this),
+            'export': this.handleExportCommand.bind(this),
         };
 
         // Current page bookmarks and all bookmarks
@@ -124,11 +194,251 @@ class SearchCommandsComponent {
      * Reset internal state (confirmation mode, etc.)
      */
     resetState() {
+        this.resetTransientState();
+        this.expandedGroups.clear();
+        this.contextBookmark = null;
+    }
+
+    resetTransientState() {
         if (this.removeCommandHandler) {
             this.removeCommandHandler.resetState();
         }
-        this.expandedGroups.clear();
-        this.contextBookmark = null;
+    }
+
+    _stateOnOff(enabled) {
+        return enabled
+            ? this._t('commands.stateOn', 'on')
+            : this._t('commands.stateOff', 'off');
+    }
+
+    _markCurrent(label, isCurrent) {
+        return isCurrent ? `${label} ✓` : label;
+    }
+
+    _paletteRefresh(stateId, options = {}) {
+        return {
+            stateId,
+            navigate: options.navigate === true,
+            refresh: options.refresh !== false,
+        };
+    }
+
+    _closeCommandPalette() {
+        window.dashboardInstance?.searchComponent?.closeSearch?.();
+    }
+
+    _runOverlayAction(fn) {
+        this._closeCommandPalette();
+        fn();
+        return { refresh: false };
+    }
+
+    _CONFIG_SECTIONS = [
+        { id: 'general', labelKey: 'commands.configGeneral', fallback: 'General settings' },
+        { id: 'colors', labelKey: 'commands.configColors', fallback: 'Theme & colors' },
+        { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages' },
+        { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories' },
+        { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags' },
+        { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
+        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
+        { id: 'collections', labelKey: 'commands.configCollections', fallback: 'Collections' },
+        { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups' },
+        { id: 'stats', labelKey: 'commands.configStats', fallback: 'Stats' },
+        { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help & about' },
+    ];
+
+    _LANG_OPTIONS = [
+        { id: 'en', labelKey: 'commands.langEn', fallback: 'English' },
+        { id: 'nl', labelKey: 'commands.langNl', fallback: 'Nederlands' },
+        { id: 'de', labelKey: 'commands.langDe', fallback: 'Deutsch' },
+        { id: 'fr', labelKey: 'commands.langFr', fallback: 'Français' },
+    ];
+
+    _OPACITY_PRESETS = [0.65, 0.75, 0.85, 0.95, 1];
+
+    _SMART_COLLECTIONS = [
+        { id: 'today', settingKey: 'showSmartTodayCollection', labelKey: 'commands.collectionToday', fallback: 'Start today', defaultOn: true },
+        { id: 'recent', settingKey: 'showSmartRecentCollection', labelKey: 'commands.collectionRecent', fallback: 'Recently opened', defaultOn: false },
+        { id: 'stale', settingKey: 'showSmartStaleCollection', labelKey: 'commands.collectionStale', fallback: 'Stale bookmarks', defaultOn: false },
+        { id: 'mostused', settingKey: 'showSmartMostUsedCollection', labelKey: 'commands.collectionMostUsed', fallback: 'Most used', defaultOn: false },
+    ];
+
+    _isSettingEnabled(settings, key, defaultOn = true) {
+        const value = settings?.[key];
+        if (typeof value === 'undefined') return defaultOn;
+        return value !== false && value !== 0;
+    }
+
+    _smartCollectionEnabled(settings, entry) {
+        const value = settings?.[entry.settingKey];
+        if (typeof value === 'undefined') return entry.defaultOn;
+        return value === true;
+    }
+
+    async _applyLanguage(dashboard, lang) {
+        dashboard.settings.language = lang;
+        if (dashboard.language?.init) {
+            await dashboard.language.init(lang);
+        }
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
+        if (typeof dashboard.updateSearchComponent === 'function') {
+            dashboard.updateSearchComponent();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(`lang:${lang}`);
+    }
+
+    setAutoDarkMode(dashboard, enabled) {
+        dashboard.settings.autoDarkMode = enabled;
+        if (typeof dashboard.applyVisualSettings === 'function') {
+            dashboard.applyVisualSettings();
+        }
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(enabled ? 'dark:on' : 'dark:off');
+    }
+
+    setTitleVisibility(dashboard, enabled) {
+        dashboard.settings.showTitle = enabled;
+        if (dashboard.visual?.updateTitleVisibility) {
+            dashboard.visual.updateTitleVisibility();
+        } else {
+            document.body.setAttribute('data-show-title', enabled !== false);
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(enabled ? 'title:on' : 'title:off');
+    }
+
+    setAnimationsEnabled(dashboard, enabled) {
+        dashboard.settings.animationsEnabled = enabled;
+        if (typeof dashboard.applyVisualSettings === 'function') {
+            dashboard.applyVisualSettings();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(enabled ? 'animations:on' : 'animations:off');
+    }
+
+    setStatusVisibility(dashboard, enabled) {
+        dashboard.settings.showStatus = enabled;
+        if (typeof dashboard.updateStatusMonitor === 'function') {
+            dashboard.updateStatusMonitor();
+        }
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(enabled ? 'status:on' : 'status:off');
+    }
+
+    setBackgroundOpacity(dashboard, opacity) {
+        const value = Math.min(1, Math.max(0.65, Number(opacity) || 1));
+        dashboard.settings.backgroundOpacity = value;
+        if (typeof dashboard.applyVisualSettings === 'function') {
+            dashboard.applyVisualSettings();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(`opacity:${value}`);
+    }
+
+    setSmartCollectionVisibility(dashboard, entry, enabled) {
+        dashboard.settings[entry.settingKey] = enabled;
+        if (typeof dashboard.setupDOM === 'function') {
+            dashboard.setupDOM();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(`collections:${entry.id}`);
+    }
+
+    async _downloadBackup() {
+        const dashboard = window.dashboardInstance;
+        try {
+            const response = await fetch('/api/backup', {
+                method: 'GET',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
+            if (!response.ok) {
+                throw new Error(`Backup failed: ${response.status}`);
+            }
+            const now = new Date();
+            const timestamp = now.toISOString().replace('T', '_').replace(/\..+/, '').replace(/:/g, '-');
+            const filename = `nextDash-backup-${timestamp}.zip`;
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.style.display = 'none';
+            anchor.href = url;
+            anchor.download = filename;
+            document.body.appendChild(anchor);
+            anchor.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(anchor);
+            try {
+                localStorage.setItem('nextdash-last-backup', now.toISOString());
+            } catch { /* ignore */ }
+            dashboard?.showNotification?.(
+                this._t('commands.exportDone', 'Backup downloaded'),
+                'success'
+            );
+            return { refresh: false };
+        } catch (error) {
+            console.error('Backup export failed:', error);
+            dashboard?.showNotification?.(
+                this._t('commands.exportFailed', 'Backup download failed'),
+                'error'
+            );
+            return false;
+        }
+    }
+
+    _buildOnOffRows({ prefix, shortcut, enabled, apply }) {
+        const rows = [];
+        rows.push({
+            name: `on (${enabled ? 'current' : this._stateOnOff(false)})`,
+            shortcut,
+            stateId: `${prefix}:on`,
+            type: 'command',
+            action: () => apply(true),
+        });
+        rows.push({
+            name: `off (${enabled ? this._stateOnOff(true) : 'current'})`,
+            shortcut,
+            stateId: `${prefix}:off`,
+            type: 'command',
+            action: () => apply(false),
+        });
+        return rows;
+    }
+
+    _buildButtonRow(name, settingKey, dashboard, explicitState = null) {
+        const enabled = dashboard.settings[settingKey] !== false;
+        return {
+            name: `${name} (${this._stateOnOff(enabled)})`,
+            shortcut: ':BUTTONS',
+            stateId: `buttons:${name}`,
+            type: 'command',
+            action: () => {
+                const target = explicitState !== null ? explicitState : !enabled;
+                return this.setButtonVisibility(dashboard, settingKey, target, name);
+            },
+        };
     }
 
     /**
@@ -157,6 +467,12 @@ class SearchCommandsComponent {
         if (potentialCommand === 'duplicate') potentialCommand = 'duplicates';
         if (potentialCommand === 'previews') potentialCommand = 'preview';
         if (potentialCommand === 'unpin') potentialCommand = 'pin';
+        if (potentialCommand === 'help') potentialCommand = 'cheat';
+        if (potentialCommand === 'whats-new') potentialCommand = 'whatsnew';
+        if (potentialCommand === 'cat') potentialCommand = 'category';
+        if (potentialCommand === 'language') potentialCommand = 'lang';
+        if (potentialCommand === 'animation') potentialCommand = 'animations';
+        if (potentialCommand === 'collection') potentialCommand = 'collections';
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
         const tagShorthand = potentialCommand.match(/^tag:(.+)$/i);
@@ -200,7 +516,7 @@ class SearchCommandsComponent {
      */
     getAvailableCommands() {
         // Commands that act on a specific bookmark and benefit from a pre-filled name
-        const bookmarkContextCmds = new Set(['remove', 'note']);
+        const bookmarkContextCmds = new Set(['remove', 'note', 'move', 'edit', 'copy']);
         const ctxName = this.contextBookmark ? this.contextBookmark.name : null;
 
         const result = [];
@@ -209,7 +525,7 @@ class SearchCommandsComponent {
             result.push({
                 type: 'command-group-header',
                 groupId: group.id,
-                label: group.label,
+                label: this._t(group.labelKey, group.label),
                 count: group.commands.length,
                 expanded: isExpanded
             });
@@ -247,6 +563,405 @@ class SearchCommandsComponent {
         return this.noteCommandHandler.handle(args, this.currentBookmarks, this.allBookmarks);
     }
 
+    _noBookmarkSelectionRow(shortcut) {
+        return [{
+            name: this._t('commands.tagNoSelection', 'No bookmark selected — navigate to one first'),
+            shortcut,
+            type: 'command',
+            action: () => ({ refresh: false }),
+        }];
+    }
+
+    _resolveBookmarkActionTarget() {
+        const dash = window.dashboardInstance;
+        const kn = dash?.keyboardNavigation;
+        if (kn && kn.currentIndex >= 0 && kn.currentIndex < kn.navigableElements.length) {
+            const row = kn.navigableElements[kn.currentIndex];
+            const bookmark = typeof kn.getSelectedBookmark === 'function' ? kn.getSelectedBookmark() : null;
+            if (row && bookmark) {
+                const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+                return {
+                    row,
+                    bookmark,
+                    bookmarkIndex: Number.isFinite(bookmarkIndex) ? bookmarkIndex : -1,
+                };
+            }
+        }
+
+        const ctx = this.contextBookmark;
+        const url = String(ctx?.url || '').trim();
+        if (!ctx || !url || !dash) {
+            return null;
+        }
+
+        const rows = document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]');
+        for (const row of rows) {
+            const rowUrl = String(row.getAttribute('data-bookmark-url') || '').trim();
+            if (!rowUrl) continue;
+            const sameUrl = rowUrl === url;
+            const sameName = !ctx.name || String(ctx.name) === String(
+                (dash.bookmarks || []).find((b) => String(b.url || '').trim() === rowUrl)?.name || ''
+            );
+            if (!sameUrl) continue;
+            const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+            const bookmark = Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0
+                ? (dash.bookmarks || [])[bookmarkIndex]
+                : ctx;
+            return {
+                row,
+                bookmark: bookmark || ctx,
+                bookmarkIndex: Number.isFinite(bookmarkIndex) ? bookmarkIndex : -1,
+            };
+        }
+
+        return { row: null, bookmark: ctx, bookmarkIndex: -1 };
+    }
+
+    _ensureKeyboardSelectionForRow(row) {
+        const kn = window.dashboardInstance?.keyboardNavigation;
+        if (!kn || !row) return;
+        if (typeof kn.updateNavigableElements === 'function') {
+            kn.updateNavigableElements();
+        }
+        const idx = kn.navigableElements.indexOf(row);
+        if (idx < 0) return;
+        kn.currentIndex = idx;
+        if (typeof kn.highlightCurrentElement === 'function') {
+            kn.highlightCurrentElement();
+        }
+    }
+
+    _copyUrlToClipboard(url, row) {
+        const trimmed = String(url || '').trim();
+        if (!trimmed) return false;
+
+        const flashRow = () => {
+            if (!row) return;
+            row.classList.remove('bookmark-copy-flash');
+            void row.offsetWidth;
+            row.classList.add('bookmark-copy-flash');
+            row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+        };
+
+        const done = () => {
+            flashRow();
+            const dash = window.dashboardInstance;
+            if (dash?.showNotification) {
+                const raw = this.language?.t?.('dashboard.urlCopied');
+                const msg = raw && raw !== 'dashboard.urlCopied' ? raw : 'URL copied';
+                dash.showNotification(msg, 'success', { duration: 2000 });
+            }
+        };
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(trimmed).then(done).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = trimmed;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch { /* ignore */ }
+                document.body.removeChild(ta);
+                done();
+            });
+            return true;
+        }
+
+        const ta = document.createElement('textarea');
+        ta.value = trimmed;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch { /* ignore */ }
+        document.body.removeChild(ta);
+        done();
+        return true;
+    }
+
+    handleMoveCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        const target = this._resolveBookmarkActionTarget();
+        if (!target?.bookmark) {
+            return this._noBookmarkSelectionRow(':MOVE');
+        }
+
+        const name = target.bookmark.name || target.bookmark.url || '';
+        return [{
+            name: this._t('commands.moveLabel', 'Move "{name}"…').replace('{name}', name),
+            shortcut: ':MOVE',
+            stateId: 'move',
+            type: 'command',
+            action: () => {
+                if (target.row) {
+                    this._ensureKeyboardSelectionForRow(target.row);
+                    if (typeof dash.showMovePopover === 'function') {
+                        dash.showMovePopover(target.row, target.bookmark, target.bookmarkIndex);
+                    } else {
+                        dash.keyboardNavigation?.openMovePopoverForCurrent?.();
+                    }
+                } else {
+                    dash.keyboardNavigation?.openMovePopoverForCurrent?.();
+                }
+                return { refresh: false };
+            },
+        }];
+    }
+
+    handleEditCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        const target = this._resolveBookmarkActionTarget();
+        if (!target?.bookmark) {
+            return this._noBookmarkSelectionRow(':EDIT');
+        }
+
+        const name = target.bookmark.name || target.bookmark.url || '';
+        return [{
+            name: this._t('commands.editLabel', 'Edit "{name}"').replace('{name}', name),
+            shortcut: ':EDIT',
+            stateId: 'edit',
+            type: 'command',
+            action: () => {
+                if (target.row) {
+                    this._ensureKeyboardSelectionForRow(target.row);
+                }
+                const opened = typeof dash.tryOpenInlineBookmarkEdit === 'function'
+                    && dash.tryOpenInlineBookmarkEdit();
+                if (!opened) {
+                    return false;
+                }
+                return { refresh: false };
+            },
+        }];
+    }
+
+    handleCopyCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        const target = this._resolveBookmarkActionTarget();
+        if (!target?.bookmark) {
+            return this._noBookmarkSelectionRow(':COPY');
+        }
+
+        const name = target.bookmark.name || target.bookmark.url || '';
+        const url = String(target.bookmark.url || '').trim();
+        return [{
+            name: this._t('commands.copyLabel', 'Copy URL — {name}').replace('{name}', name),
+            shortcut: ':COPY',
+            stateId: 'copy',
+            type: 'command',
+            action: () => {
+                if (this._copyUrlToClipboard(url, target.row)) {
+                    return { refresh: false };
+                }
+                return false;
+            },
+        }];
+    }
+
+    handlePageCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash?.pages?.length) {
+            return [];
+        }
+
+        const query = args.join(' ').trim();
+        if (!query) {
+            return dash.pages.map((page, index) => {
+                const label = page.name || `Page ${index + 1}`;
+                const isCurrent = dash.samePageId(page.id, dash.currentPageId);
+                return {
+                    name: this._markCurrent(label, isCurrent),
+                    shortcut: ':PAGE',
+                    stateId: `page:${page.id}`,
+                    meta: String(index + 1),
+                    type: 'command',
+                    action: () => this._switchPage(dash, page.id),
+                };
+            });
+        }
+
+        const parsed = parseInt(query, 10);
+        if (Number.isFinite(parsed) && parsed >= 1 && parsed <= dash.pages.length && String(parsed) === query) {
+            const page = dash.pages[parsed - 1];
+            return [{
+                name: page.name || `Page ${parsed}`,
+                shortcut: ':PAGE',
+                stateId: `page:${page.id}`,
+                type: 'command',
+                action: () => this._switchPage(dash, page.id),
+            }];
+        }
+
+        const q = query.toLowerCase();
+        const matches = dash.pages.filter((page) => {
+            const name = String(page.name || '').toLowerCase();
+            return name.includes(q) || String(page.id) === query;
+        });
+
+        if (matches.length === 0) {
+            return [];
+        }
+
+        return matches.map((page) => {
+            const isCurrent = dash.samePageId(page.id, dash.currentPageId);
+            return {
+                name: this._markCurrent(page.name || `Page ${page.id}`, isCurrent),
+                shortcut: ':PAGE',
+                stateId: `page:${page.id}`,
+                type: 'command',
+                action: () => this._switchPage(dash, page.id),
+            };
+        });
+    }
+
+    async _switchPage(dashboard, pageId) {
+        if (dashboard.samePageId(pageId, dashboard.currentPageId)) {
+            return this._paletteRefresh(`page:${pageId}`);
+        }
+        try {
+            await dashboard.requestPageNavigation(pageId);
+        } catch {
+            return false;
+        }
+        return this._paletteRefresh(`page:${pageId}`);
+    }
+
+    handleRecentCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        return [{
+            name: this._t('commands.recentLabel', 'Open recent bookmarks'),
+            shortcut: ':RECENT',
+            type: 'command',
+            action: () => this._runOverlayAction(() => dash.toggleRecentBookmarksModal()),
+        }];
+    }
+
+    handleOverviewCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash?.pages?.length) {
+            return [];
+        }
+
+        return [{
+            name: this._t('commands.overviewLabel', 'Page overview'),
+            shortcut: ':OVERVIEW',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                return dash.showPageOverlay().then(() => ({ refresh: false }));
+            },
+        }];
+    }
+
+    handleCheatCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        return [{
+            name: this._t('commands.cheatLabel', 'Keyboard cheat sheet'),
+            shortcut: ':CHEAT',
+            type: 'command',
+            action: () => this._runOverlayAction(() => dash.showKeyboardCheatSheet()),
+        }];
+    }
+
+    handleWhatsNewCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.whatsNewLabel', "What's new"),
+            shortcut: ':WHATSNEW',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                window.openWhatsNewModal?.({ force: true });
+            }),
+        }];
+    }
+
+    handleAddCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        return [{
+            name: this._t('commands.addLabel', 'Quick-add bookmark line'),
+            shortcut: ':ADD',
+            type: 'command',
+            action: () => this._runOverlayAction(() => dash.showOmnibox()),
+        }];
+    }
+
+    handleReloadCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.reloadLabel', 'Reload dashboard'),
+            shortcut: ':RELOAD',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                window.location.reload();
+                return { navigate: true };
+            },
+        }];
+    }
+
+    handleConfigCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        const query = args.join(' ').trim().toLowerCase();
+        const sectionRow = (section) => ({
+            name: this._t(section.labelKey, section.fallback),
+            shortcut: ':CONFIG',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                window.location.href = `/config#${section.id}`;
+                return { navigate: true };
+            },
+        });
+
+        if (!query) {
+            return [
+                {
+                    name: this._t('commands.configOpen', 'Open config'),
+                    shortcut: ':CONFIG',
+                    type: 'command',
+                    action: () => {
+                        this._closeCommandPalette();
+                        window.location.href = '/config';
+                        return { navigate: true };
+                    },
+                },
+                ...this._CONFIG_SECTIONS.map((section) => ({
+                    name: this._t(section.labelKey, section.fallback),
+                    shortcut: ':CONFIG',
+                    completion: `:config ${section.id} `,
+                    type: 'command-completion',
+                })),
+            ];
+        }
+
+        const exact = this._CONFIG_SECTIONS.find((section) => section.id === query);
+        if (exact) {
+            return [sectionRow(exact)];
+        }
+
+        const matches = this._CONFIG_SECTIONS.filter((section) => (
+            section.id.startsWith(query) || section.id.includes(query)
+        ));
+        if (matches.length === 0) {
+            return [];
+        }
+
+        return matches.map((section) => sectionRow(section));
+    }
+
     // ─── :pin / :unpin ────────────────────────────────────────────────────────
 
     handlePinCommand(args, fullQuery) {
@@ -272,17 +987,14 @@ class SearchCommandsComponent {
             : this._t('commands.unpinLabel', 'Unpin "{name}"').replace('{name}', name);
 
         return [{
-            name: label,
+            name: `${label} (${this._stateOnOff(currentlyPinned)})`,
             shortcut: isUnpin ? ':UNPIN' : ':PIN',
+            stateId: 'pin',
             type: 'command',
             action: () => {
                 ctx.pinned = willPin;
                 this._persistBookmarkField(ctx, { pinned: willPin });
-                const toast = willPin
-                    ? this._t('commands.pinnedToast', 'Pinned "{name}".').replace('{name}', name)
-                    : this._t('commands.unpinnedToast', 'Unpinned "{name}".').replace('{name}', name);
-                dashboard.showNotification(toast, 'success');
-                return true;
+                return this._paletteRefresh('pin');
             }
         }];
     }
@@ -440,17 +1152,12 @@ class SearchCommandsComponent {
         return [{
             name: label,
             shortcut: ':TAG',
+            stateId: `tag:${tagName}`,
             type: 'command',
             action: () => {
                 ctx.tags = newTags;
                 this._persistBookmarkField(ctx, { tags: newTags });
-                dashboard.showNotification(
-                    remove
-                        ? this._t('commands.tagRemovedToast', 'Tag "#{tag}" removed.').replace('{tag}', tagName)
-                        : this._t('commands.tagAddedToast', 'Tag "#{tag}" added.').replace('{tag}', tagName),
-                    'success'
-                );
-                return true;
+                return this._paletteRefresh(`tag:${tagName}`);
             },
         }];
     }
@@ -536,6 +1243,90 @@ class SearchCommandsComponent {
         return rows;
     }
 
+    _getVisiblePageCategories() {
+        const categories = [];
+        document.querySelectorAll('.category[data-category-id]').forEach((el) => {
+            if (el.getAttribute('data-collapsed') === 'true') {
+                return;
+            }
+            const id = el.getAttribute('data-category-id') || '';
+            const titleEl = el.querySelector('.category-title-name');
+            const name = titleEl?.getAttribute('title')
+                || titleEl?.textContent?.trim()
+                || id;
+            categories.push({
+                id,
+                name,
+                index: categories.length + 1,
+            });
+        });
+        return categories;
+    }
+
+    _jumpToCategoryIndex(dashboard, index) {
+        dashboard?.keyboardNavigation?.jumpToCategory?.(index);
+        this._closeCommandPalette();
+        return { refresh: false };
+    }
+
+    handleCategoryCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const query = args.join(' ').trim();
+        const categories = this._getVisiblePageCategories();
+
+        if (categories.length === 0) {
+            return [{
+                name: this._t('commands.categoryEmpty', 'No categories on this page'),
+                shortcut: ':CATEGORY',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+
+        if (!query) {
+            return categories.map((category) => ({
+                name: category.name,
+                shortcut: ':CATEGORY',
+                meta: String(category.index),
+                completion: `:category ${category.name} `,
+                type: 'command-completion',
+            }));
+        }
+
+        const parsed = parseInt(query, 10);
+        if (Number.isFinite(parsed) && parsed >= 1 && parsed <= categories.length && String(parsed) === query) {
+            const category = categories[parsed - 1];
+            return [{
+                name: category.name,
+                shortcut: ':CATEGORY',
+                meta: String(parsed),
+                type: 'command',
+                action: () => this._jumpToCategoryIndex(dashboard, parsed),
+            }];
+        }
+
+        const q = query.toLowerCase();
+        const matches = categories.filter((category) => {
+            const name = String(category.name || '').toLowerCase();
+            const id = String(category.id || '').toLowerCase();
+            return name.includes(q) || id.includes(q);
+        });
+
+        if (matches.length === 0) {
+            return [];
+        }
+
+        return matches.map((category) => ({
+            name: category.name,
+            shortcut: ':CATEGORY',
+            meta: String(category.index),
+            type: 'command',
+            action: () => this._jumpToCategoryIndex(dashboard, category.index),
+        }));
+    }
+
     // ─── :open ────────────────────────────────────────────────────────────────
 
     static OPEN_TABS_CAP = 15;
@@ -548,7 +1339,7 @@ class SearchCommandsComponent {
                 const url = String(b?.url || '').trim();
                 if (url) window.open(url, '_blank');
             });
-            return true;
+            return { refresh: false };
         };
     }
 
@@ -627,6 +1418,122 @@ class SearchCommandsComponent {
         });
     }
 
+    _openPinnedRows(dashboard) {
+        const bookmarks = (dashboard.bookmarks || []).filter(
+            (b) => b && b.pinned && String(b.url || '').trim()
+        );
+        if (bookmarks.length === 0) {
+            return [{
+                name: this._t('commands.openPinnedEmpty', 'No pinned bookmarks on this page'),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+        return this._buildOpenTabRows(bookmarks, {
+            all: (n) => `Open ${n} pinned bookmark${n !== 1 ? 's' : ''} (${n} new tab${n !== 1 ? 's' : ''})`,
+            first: (cap, total) => `Open first ${cap} of ${total} pinned (${cap} new tabs)`,
+        });
+    }
+
+    _openTagNameCompletionRows() {
+        return this._getTagNameCompletionRows('').map((row) => ({
+            ...row,
+            shortcut: ':OPEN',
+            completion: row.completion.replace(':tag ', ':open tag '),
+        }));
+    }
+
+    _bookmarksWithTagOnPage(dashboard, tagQuery) {
+        const q = this._normalizeTagQuery(tagQuery);
+        if (!q) return [];
+        return (dashboard.bookmarks || []).filter((bookmark) => (
+            bookmark
+            && String(bookmark.url || '').trim()
+            && (bookmark.tags || []).some((tag) => String(tag).toLowerCase() === q)
+        ));
+    }
+
+    _openTagRows(dashboard, tagQuery) {
+        const tagName = this._normalizeTagQuery(tagQuery);
+        if (!tagName) {
+            return this._openTagNameCompletionRows();
+        }
+
+        const bookmarks = this._bookmarksWithTagOnPage(dashboard, tagName);
+        if (bookmarks.length === 0) {
+            return [{
+                name: this._t('commands.openTagEmpty', 'No bookmarks with tag “{tag}” on this page')
+                    .replace('{tag}', tagName),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+
+        return this._buildOpenTabRows(bookmarks, {
+            all: (n) => `Open ${n} bookmark${n !== 1 ? 's' : ''} with #${tagName} (${n} new tab${n !== 1 ? 's' : ''})`,
+            first: (cap, total) => `Open first ${cap} of ${total} with #${tagName} (${cap} new tabs)`,
+        });
+    }
+
+    _bookmarksInCategoryOnPage(dashboard, categoryQuery) {
+        const q = String(categoryQuery || '').trim().toLowerCase();
+        if (!q) return [];
+        return (dashboard.bookmarks || []).filter((bookmark) => {
+            if (!bookmark || !String(bookmark.url || '').trim()) return false;
+            const category = String(bookmark.category || '').trim().toLowerCase();
+            return category === q || category.includes(q);
+        });
+    }
+
+    _openCategoryCompletionRows(dashboard) {
+        return this._getVisiblePageCategories().map((category) => ({
+            name: category.name,
+            shortcut: ':OPEN',
+            completion: `:open category ${category.name} `,
+            type: 'command-completion',
+            meta: String(category.index),
+        }));
+    }
+
+    _openCategoryRows(dashboard, categoryQuery) {
+        const query = String(categoryQuery || '').trim();
+        if (!query) {
+            return this._openCategoryCompletionRows(dashboard);
+        }
+
+        const categories = this._getVisiblePageCategories();
+        const exactCategory = categories.find((category) => (
+            String(category.name || '').toLowerCase() === query.toLowerCase()
+            || String(category.id || '').toLowerCase() === query.toLowerCase()
+        ));
+        const categoryName = exactCategory?.name || query;
+        const bookmarks = exactCategory
+            ? (dashboard.bookmarks || []).filter((bookmark) => (
+                bookmark
+                && String(bookmark.url || '').trim()
+                && String(bookmark.category || '').trim().toLowerCase()
+                    === String(exactCategory.name || '').trim().toLowerCase()
+            ))
+            : this._bookmarksInCategoryOnPage(dashboard, query);
+
+        if (bookmarks.length === 0) {
+            return [{
+                name: this._t('commands.openCategoryEmpty', 'No bookmarks in “{name}” on this page')
+                    .replace('{name}', categoryName),
+                shortcut: ':OPEN',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+
+        return this._buildOpenTabRows(bookmarks, {
+            all: (n) => `Open ${n} in “${categoryName}” (${n} new tab${n !== 1 ? 's' : ''})`,
+            first: (cap, total) => `Open first ${cap} of ${total} in “${categoryName}” (${cap} new tabs)`,
+        });
+    }
+
     handleOpenCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
@@ -635,9 +1542,25 @@ class SearchCommandsComponent {
         if (!scope) {
             return [
                 { name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open tag ', type: 'command-completion' },
+                { name: '', shortcut: ':OPEN', completion: ':open category ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open last ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open last 5 ', type: 'command-completion' },
             ];
+        }
+
+        if (scope === 'tag') {
+            return this._openTagRows(dashboard, args.slice(1).join(' ').trim());
+        }
+
+        if (scope === 'category' || scope === 'cat') {
+            return this._openCategoryRows(dashboard, args.slice(1).join(' ').trim());
+        }
+
+        if (scope === 'pinned' || scope === 'pin') {
+            if (args[1]) return [];
+            return this._openPinnedRows(dashboard);
         }
 
         if (scope === 'all') {
@@ -659,6 +1582,15 @@ class SearchCommandsComponent {
 
         if ('all'.startsWith(scope) && scope !== 'all') {
             return [{ name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' }];
+        }
+        if ('pinned'.startsWith(scope) && scope !== 'pinned') {
+            return [{ name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' }];
+        }
+        if ('tag'.startsWith(scope) && scope !== 'tag') {
+            return [{ name: '', shortcut: ':OPEN', completion: ':open tag ', type: 'command-completion' }];
+        }
+        if (('category'.startsWith(scope) && scope !== 'category') || ('cat'.startsWith(scope) && scope !== 'cat')) {
+            return [{ name: '', shortcut: ':OPEN', completion: ':open category ', type: 'command-completion' }];
         }
         if ('last'.startsWith(scope) && scope !== 'last') {
             return [
@@ -771,13 +1703,11 @@ class SearchCommandsComponent {
             return [{
                 name: this.language?.t('dashboard.searchHistoryClear') || 'Clear search history',
                 shortcut: ':HISTORY',
+                stateId: 'history:clear',
                 action: () => {
                     searchComponent.searchHistory = [];
                     searchComponent.saveSearchHistory();
-                    if (typeof searchComponent.updateSearch === 'function') {
-                        searchComponent.updateSearch();
-                    }
-                    return true;
+                    return { stateId: 'history:clear' };
                 },
                 type: 'command',
             }];
@@ -809,19 +1739,34 @@ class SearchCommandsComponent {
         }
 
         const validMethods = ['order', 'az', 'recent', 'custom'];
+        const current = dashboard.settings.sortMethod || 'order';
+
         if (!method) {
             return validMethods.map((sortMethod) => ({
-                name: sortMethod,
+                name: this._markCurrent(sortMethod, sortMethod === current),
                 shortcut: ':SORT',
+                stateId: `sort:${sortMethod}`,
                 completion: `:sort ${sortMethod} `,
-                type: 'command-completion'
+                type: 'command',
+                action: () => this.applySort(dashboard, sortMethod),
             }));
         }
 
-        if (!validMethods.includes(method)) {
+        const matches = validMethods.filter((entry) => entry.startsWith(method));
+        if (matches.length === 0) {
             return [];
         }
 
+        return matches.map((sortMethod) => ({
+            name: this._markCurrent(sortMethod, sortMethod === current),
+            shortcut: ':SORT',
+            stateId: `sort:${sortMethod}`,
+            type: 'command',
+            action: () => this.applySort(dashboard, sortMethod),
+        }));
+    }
+
+    applySort(dashboard, method) {
         dashboard.settings.sortMethod = method;
         if (typeof dashboard.renderDashboard === 'function') {
             dashboard.renderDashboard();
@@ -829,8 +1774,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-
-        return [{ name: `Sorting set to ${method}`, shortcut: ':SORT', action: () => false, type: 'command' }];
+        return this._paletteRefresh(`sort:${method}`);
     }
 
     handleLayoutVersionCommand(args) {
@@ -844,25 +1788,28 @@ class SearchCommandsComponent {
             ? window.LayoutVersionUtils.getLayoutVersions()
             : ['classic', 'modern', 'glass'];
 
+        const currentVersion = window.LayoutVersionUtils
+            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
+            : (dashboard.settings.layoutVersion || 'classic');
+
         if (!versionQuery) {
             return versions.map((version) => ({
-                name: version,
+                name: this._markCurrent(version, version === currentVersion),
                 shortcut: ':LAYOUTVERSION',
+                stateId: `layoutversion:${version}`,
                 action: () => this.applyLayoutVersion(dashboard, version),
                 type: 'command'
             }));
         }
 
         if (versionQuery === 'toggle') {
-            const current = window.LayoutVersionUtils
-                ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
-                : 'classic';
             const order = ['classic', 'modern', 'glass'];
-            const index = order.indexOf(current);
+            const index = order.indexOf(currentVersion);
             const next = order[(index + 1) % order.length];
             return [{
                 name: `Toggle to ${next}`,
                 shortcut: ':LAYOUTVERSION',
+                stateId: `layoutversion:${next}`,
                 action: () => this.applyLayoutVersion(dashboard, next),
                 type: 'command'
             }];
@@ -872,8 +1819,9 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((version) => ({
-            name: version,
+            name: this._markCurrent(version, version === currentVersion),
             shortcut: ':LAYOUTVERSION',
+            stateId: `layoutversion:${version}`,
             action: () => this.applyLayoutVersion(dashboard, version),
             type: 'command'
         }));
@@ -887,10 +1835,12 @@ class SearchCommandsComponent {
         }
 
         const presets = window.LayoutUtils ? window.LayoutUtils.getLayoutPresets() : ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets'];
+        const currentPreset = dashboard.settings.layoutPreset || 'default';
         if (!layout) {
             return presets.map((preset) => ({
-                name: preset,
+                name: this._markCurrent(preset, preset === currentPreset),
                 shortcut: ':LAYOUT',
+                stateId: `layout:${preset}`,
                 action: () => this.applyLayoutPreset(dashboard, preset),
                 type: 'command'
             }));
@@ -900,8 +1850,9 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((preset) => ({
-            name: preset,
+            name: this._markCurrent(preset, preset === currentPreset),
             shortcut: ':LAYOUT',
+            stateId: `layout:${preset}`,
             action: () => this.applyLayoutPreset(dashboard, preset),
             type: 'command'
         }));
@@ -915,10 +1866,12 @@ class SearchCommandsComponent {
         }
 
         const densityModes = ['comfortable', 'compact', 'dense', 'auto'];
+        const currentDensity = dashboard.settings.densityMode || 'compact';
         if (!density) {
             return densityModes.map((mode) => ({
-                name: mode,
+                name: this._markCurrent(mode, mode === currentDensity),
                 shortcut: ':DENSITY',
+                stateId: `density:${mode}`,
                 action: () => this.applyDensityMode(dashboard, mode),
                 type: 'command'
             }));
@@ -928,8 +1881,9 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((mode) => ({
-            name: mode,
+            name: this._markCurrent(mode, mode === currentDensity),
             shortcut: ':DENSITY',
+            stateId: `density:${mode}`,
             action: () => this.applyDensityMode(dashboard, mode),
             type: 'command'
         }));
@@ -952,8 +1906,9 @@ class SearchCommandsComponent {
 
         if (!arg) {
             return positions.map(p => ({
-                name: p.label + (p.value === current ? ' ✓' : ''),
+                name: this._markCurrent(p.label, p.value === current),
                 shortcut: ':BUTTONBAR',
+                stateId: `buttonbar:${p.value}`,
                 action: () => this.applyButtonBarPosition(dashboard, p.value),
                 type: 'command'
             }));
@@ -963,8 +1918,9 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map(p => ({
-            name: p.label + (p.value === current ? ' ✓' : ''),
+            name: this._markCurrent(p.label, p.value === current),
             shortcut: ':BUTTONBAR',
+            stateId: `buttonbar:${p.value}`,
             action: () => this.applyButtonBarPosition(dashboard, p.value),
             type: 'command'
         }));
@@ -980,22 +1936,21 @@ class SearchCommandsComponent {
             recent: 'showRecentButton',
             finders: 'showFindersButton',
             cheatsheet: 'showCheatSheetButton',
-            search: 'showSearchButton'
+            search: 'showSearchButton',
+            health: 'showHealthDashboard',
+            tagcloud: 'showTagCloudButton',
         };
 
-        const buttonName = (args[0] || '').toLowerCase();
+        const buttonAliases = {
+            'tag-cloud': 'tagcloud',
+            tags: 'tagcloud',
+        };
+
+        const buttonName = buttonAliases[(args[0] || '').toLowerCase()] || (args[0] || '').toLowerCase();
         const stateArg = (args[1] || '').toLowerCase();
 
         if (!buttonName) {
-            return Object.keys(buttons).map((name) => {
-                const enabled = dashboard.settings[buttons[name]] !== false;
-                return {
-                    name: `${name} (${enabled ? 'on' : 'off'})`,
-                    shortcut: ':BUTTONS',
-                    action: () => this.toggleButtonVisibility(dashboard, buttons[name]),
-                    type: 'command'
-                };
-            });
+            return Object.keys(buttons).map((name) => this._buildButtonRow(name, buttons[name], dashboard));
         }
 
         const matchingButtons = Object.keys(buttons).filter((name) => name.startsWith(buttonName));
@@ -1003,21 +1958,7 @@ class SearchCommandsComponent {
 
         const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
 
-        return matchingButtons.map((name) => {
-            const settingKey = buttons[name];
-            const enabled = dashboard.settings[settingKey] !== false;
-            return {
-                name: `${name} (${enabled ? 'on' : 'off'})`,
-                shortcut: ':BUTTONS',
-                action: () => {
-                    if (explicitState === null) {
-                        return this.toggleButtonVisibility(dashboard, settingKey);
-                    }
-                    return this.setButtonVisibility(dashboard, settingKey, explicitState);
-                },
-                type: 'command'
-            };
-        });
+        return matchingButtons.map((name) => this._buildButtonRow(name, buttons[name], dashboard, explicitState));
     }
 
     handleTipsCommand(args, fullQuery) {
@@ -1027,41 +1968,33 @@ class SearchCommandsComponent {
         }
 
         const stateArg = (args[0] || '').toLowerCase();
-        const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
         const enabled = dashboard.settings.showTips !== false;
+        const apply = (value) => this.setTipsVisibility(dashboard, value);
 
-        const actions = [];
-        if (!stateArg || 'on'.startsWith(stateArg)) {
-            actions.push({
+        if (!stateArg) {
+            return this._buildOnOffRows({ prefix: 'tips', shortcut: ':TIPS', enabled, apply });
+        }
+
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
                 name: `on (${enabled ? 'current' : 'off'})`,
                 shortcut: ':TIPS',
-                action: () => this.setTipsVisibility(dashboard, true),
-                type: 'command'
-            });
+                stateId: 'tips:on',
+                type: 'command',
+                action: () => apply(true),
+            }];
         }
-        if (!stateArg || 'off'.startsWith(stateArg)) {
-            actions.push({
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
                 name: `off (${enabled ? 'on' : 'current'})`,
                 shortcut: ':TIPS',
-                action: () => this.setTipsVisibility(dashboard, false),
-                type: 'command'
-            });
+                stateId: 'tips:off',
+                type: 'command',
+                action: () => apply(false),
+            }];
         }
 
-        if (actions.length > 0) {
-            return actions;
-        }
-
-        if (explicitState === null) {
-            return [];
-        }
-
-        return [{
-            name: explicitState ? 'Tips enabled' : 'Tips disabled',
-            shortcut: ':TIPS',
-            action: () => this.setTipsVisibility(dashboard, explicitState),
-            type: 'command'
-        }];
+        return [];
     }
 
     handleFaviconCommand(args, fullQuery) {
@@ -1071,38 +2004,33 @@ class SearchCommandsComponent {
         }
 
         const stateArg = (args[0] || '').toLowerCase();
-        const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
         const enabled = dashboard.settings.showIcons !== false;
+        const apply = (value) => this.setFaviconVisibility(dashboard, value);
 
-        const actions = [];
-        if (!stateArg || 'on'.startsWith(stateArg)) {
-            actions.push({
+        if (!stateArg) {
+            return this._buildOnOffRows({ prefix: 'favicons', shortcut: ':FAVICONS', enabled, apply });
+        }
+
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
                 name: `on (${enabled ? 'current' : 'off'})`,
                 shortcut: ':FAVICONS',
-                action: () => this.setFaviconVisibility(dashboard, true),
-                type: 'command'
-            });
+                stateId: 'favicons:on',
+                type: 'command',
+                action: () => apply(true),
+            }];
         }
-        if (!stateArg || 'off'.startsWith(stateArg)) {
-            actions.push({
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
                 name: `off (${enabled ? 'on' : 'current'})`,
                 shortcut: ':FAVICONS',
-                action: () => this.setFaviconVisibility(dashboard, false),
-                type: 'command'
-            });
+                stateId: 'favicons:off',
+                type: 'command',
+                action: () => apply(false),
+            }];
         }
-        if (actions.length > 0) {
-            return actions;
-        }
-        if (explicitState === null) {
-            return [];
-        }
-        return [{
-            name: explicitState ? 'Favicons enabled' : 'Favicons disabled',
-            shortcut: ':FAVICONS',
-            action: () => this.setFaviconVisibility(dashboard, explicitState),
-            type: 'command'
-        }];
+
+        return [];
     }
 
     handlePreviewCardsCommand(args, fullQuery) {
@@ -1112,38 +2040,33 @@ class SearchCommandsComponent {
         }
 
         const stateArg = (args[0] || '').toLowerCase();
-        const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
         const enabled = dashboard.settings.showLinkPreviewCards === true;
+        const apply = (value) => this.setPreviewCardsVisibility(dashboard, value);
 
-        const actions = [];
-        if (!stateArg || 'on'.startsWith(stateArg)) {
-            actions.push({
+        if (!stateArg) {
+            return this._buildOnOffRows({ prefix: 'preview', shortcut: ':PREVIEW', enabled, apply });
+        }
+
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
                 name: `on (${enabled ? 'current' : 'off'})`,
                 shortcut: ':PREVIEW',
-                action: () => this.setPreviewCardsVisibility(dashboard, true),
-                type: 'command'
-            });
+                stateId: 'preview:on',
+                type: 'command',
+                action: () => apply(true),
+            }];
         }
-        if (!stateArg || 'off'.startsWith(stateArg)) {
-            actions.push({
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
                 name: `off (${enabled ? 'on' : 'current'})`,
                 shortcut: ':PREVIEW',
-                action: () => this.setPreviewCardsVisibility(dashboard, false),
-                type: 'command'
-            });
+                stateId: 'preview:off',
+                type: 'command',
+                action: () => apply(false),
+            }];
         }
-        if (actions.length > 0) {
-            return actions;
-        }
-        if (explicitState === null) {
-            return [];
-        }
-        return [{
-            name: explicitState ? 'Preview cards enabled' : 'Preview cards disabled',
-            shortcut: ':PREVIEW',
-            action: () => this.setPreviewCardsVisibility(dashboard, explicitState),
-            type: 'command'
-        }];
+
+        return [];
     }
 
     handlePackedColumnsCommand(args, fullQuery) {
@@ -1153,41 +2076,33 @@ class SearchCommandsComponent {
         }
 
         const stateArg = (args[0] || '').toLowerCase();
-        const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
         const enabled = dashboard.settings.packedColumns === true;
+        const apply = (value) => this.setPackedColumnsVisibility(dashboard, value);
 
-        const actions = [];
-        if (!stateArg || 'on'.startsWith(stateArg)) {
-            actions.push({
+        if (!stateArg) {
+            return this._buildOnOffRows({ prefix: 'packed', shortcut: ':PACKED', enabled, apply });
+        }
+
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
                 name: `on (${enabled ? 'current' : 'off'})`,
                 shortcut: ':PACKED',
-                action: () => this.setPackedColumnsVisibility(dashboard, true),
-                type: 'command'
-            });
+                stateId: 'packed:on',
+                type: 'command',
+                action: () => apply(true),
+            }];
         }
-        if (!stateArg || 'off'.startsWith(stateArg)) {
-            actions.push({
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
                 name: `off (${enabled ? 'on' : 'current'})`,
                 shortcut: ':PACKED',
-                action: () => this.setPackedColumnsVisibility(dashboard, false),
-                type: 'command'
-            });
+                stateId: 'packed:off',
+                type: 'command',
+                action: () => apply(false),
+            }];
         }
 
-        if (actions.length > 0) {
-            return actions;
-        }
-
-        if (explicitState === null) {
-            return [];
-        }
-
-        return [{
-            name: explicitState ? 'Tight column stack on' : 'Tight column stack off',
-            shortcut: ':PACKED',
-            action: () => this.setPackedColumnsVisibility(dashboard, explicitState),
-            type: 'command'
-        }];
+        return [];
     }
 
     applyLayoutVersion(dashboard, version) {
@@ -1209,7 +2124,10 @@ class SearchCommandsComponent {
                 dashboard.saveSettings();
             }
         }
-        return false;
+        const applied = window.LayoutVersionUtils
+            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
+            : (dashboard.settings.layoutVersion || 'classic');
+        return this._paletteRefresh(`layoutversion:${applied}`);
     }
 
     applyLayoutPreset(dashboard, preset) {
@@ -1227,7 +2145,7 @@ class SearchCommandsComponent {
                 dashboard.saveSettings();
             }
         }
-        return false;
+        return this._paletteRefresh(`layout:${dashboard.settings.layoutPreset || preset}`);
     }
 
     applyDensityMode(dashboard, mode) {
@@ -1241,27 +2159,28 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
 
-        return false;
+        return this._paletteRefresh(`density:${densityMode}`);
     }
 
     applyButtonBarPosition(dashboard, position) {
         const valid = ['bottom', 'bottom-left', 'bottom-right', 'side-left'];
-        dashboard.settings.buttonBarPosition = valid.includes(position) ? position : 'bottom';
+        const applied = valid.includes(position) ? position : 'bottom';
+        dashboard.settings.buttonBarPosition = applied;
         if (typeof dashboard.setupDOM === 'function') {
             dashboard.setupDOM();
         }
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        return false;
+        return this._paletteRefresh(`buttonbar:${applied}`);
     }
 
-    toggleButtonVisibility(dashboard, settingKey) {
+    toggleButtonVisibility(dashboard, settingKey, buttonId) {
         const nextValue = dashboard.settings[settingKey] === false;
-        return this.setButtonVisibility(dashboard, settingKey, nextValue);
+        return this.setButtonVisibility(dashboard, settingKey, nextValue, buttonId);
     }
 
-    setButtonVisibility(dashboard, settingKey, enabled) {
+    setButtonVisibility(dashboard, settingKey, enabled, buttonId = settingKey) {
         dashboard.settings[settingKey] = enabled;
         if (typeof dashboard.setupDOM === 'function') {
             dashboard.setupDOM();
@@ -1269,7 +2188,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        return false;
+        return this._paletteRefresh(`buttons:${buttonId}`);
     }
 
     setTipsVisibility(dashboard, enabled) {
@@ -1284,7 +2203,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        return false;
+        return this._paletteRefresh(enabled ? 'tips:on' : 'tips:off');
     }
 
     setFaviconVisibility(dashboard, enabled) {
@@ -1298,10 +2217,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        if (typeof dashboard.showNotification === 'function') {
-            dashboard.showNotification(enabled ? 'Favicons on.' : 'Favicons off.', 'success');
-        }
-        return false;
+        return this._paletteRefresh(enabled ? 'favicons:on' : 'favicons:off');
     }
 
     setPreviewCardsVisibility(dashboard, enabled) {
@@ -1318,10 +2234,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        if (typeof dashboard.showNotification === 'function') {
-            dashboard.showNotification(enabled ? 'Preview cards on.' : 'Preview cards off.', 'success');
-        }
-        return false;
+        return this._paletteRefresh(enabled ? 'preview:on' : 'preview:off');
     }
 
     setPackedColumnsVisibility(dashboard, enabled) {
@@ -1335,14 +2248,7 @@ class SearchCommandsComponent {
         if (typeof dashboard.saveSettings === 'function') {
             dashboard.saveSettings();
         }
-        if (typeof dashboard.showNotification === 'function') {
-            const _on = this.language ? this.language.t('config.packedColumnsSavedOn') : null;
-            const _off = this.language ? this.language.t('config.packedColumnsSavedOff') : null;
-            const onMsg = (_on && _on !== 'config.packedColumnsSavedOn') ? _on : 'Tight columns on — saved.';
-            const offMsg = (_off && _off !== 'config.packedColumnsSavedOff') ? _off : 'Tight columns off — saved.';
-            dashboard.showNotification(enabled ? onMsg : offMsg, 'success');
-        }
-        return false;
+        return this._paletteRefresh(enabled ? 'packed:on' : 'packed:off');
     }
 
     handleGotoCommand(args, fullQuery) {
@@ -1351,6 +2257,71 @@ class SearchCommandsComponent {
             return [];
         }
         const scope = (args[0] || '').toLowerCase();
+
+        if (scope === 'config') {
+            const section = (args[1] || '').toLowerCase();
+            if (!section) {
+                return [
+                    {
+                        name: this._t('commands.gotoConfig', 'Open config'),
+                        shortcut: ':GOTO',
+                        type: 'command',
+                        action: () => {
+                            this._closeCommandPalette();
+                            window.location.href = '/config';
+                            return { navigate: true };
+                        },
+                    },
+                    ...this._CONFIG_SECTIONS.map((entry) => ({
+                        name: this._t(entry.labelKey, entry.fallback),
+                        shortcut: ':GOTO',
+                        completion: `:goto config ${entry.id} `,
+                        type: 'command-completion',
+                    })),
+                ];
+            }
+            const exact = this._CONFIG_SECTIONS.find((entry) => entry.id === section);
+            const matches = exact
+                ? [exact]
+                : this._CONFIG_SECTIONS.filter((entry) => entry.id.startsWith(section) || entry.id.includes(section));
+            if (matches.length === 0) return [];
+            return matches.map((entry) => ({
+                name: this._t(entry.labelKey, entry.fallback),
+                shortcut: ':GOTO',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = `/config#${entry.id}`;
+                    return { navigate: true };
+                },
+            }));
+        }
+
+        if (scope === 'stats') {
+            return [{
+                name: this._t('commands.gotoStats', 'Open config — stats'),
+                shortcut: ':GOTO',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = '/config#stats';
+                    return { navigate: true };
+                },
+            }];
+        }
+
+        if (scope === 'health') {
+            return [{
+                name: this._t('commands.gotoHealth', 'Open health page'),
+                shortcut: ':GOTO',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = '/health';
+                    return { navigate: true };
+                },
+            }];
+        }
 
         // Direct URL/domain navigation: :goto <url-or-domain>
         const rawTarget = args.join(' ').trim();
@@ -1367,10 +2338,10 @@ class SearchCommandsComponent {
                     action: () => {
                         if (openInNewTab) {
                             window.open(href, '_blank', 'noopener,noreferrer');
-                        } else {
-                            window.location.href = href;
+                            return { refresh: false };
                         }
-                        return true;
+                        window.location.href = href;
+                        return { navigate: true };
                     }
                 }];
             }
@@ -1385,7 +2356,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         dashboard.showNotification('Nothing to open.', 'info');
-                        return true;
+                        return { refresh: false };
                     }
                 }];
             }
@@ -1396,7 +2367,7 @@ class SearchCommandsComponent {
                 action: () => {
                     const pick = withUrl[Math.floor(Math.random() * withUrl.length)];
                     dashboard.searchComponent.openBookmark(pick);
-                    return true;
+                    return { refresh: false };
                 }
             }];
         }
@@ -1410,7 +2381,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         dashboard.showNotification('Nothing to open.', 'info');
-                        return true;
+                        return { refresh: false };
                     }
                 }];
             }
@@ -1422,11 +2393,11 @@ class SearchCommandsComponent {
                     const pool = (dashboard.bookmarks || []).filter((b) => b && String(b.url || '').trim());
                     if (pool.length === 0) {
                         dashboard.showNotification('No bookmarks on this page.', 'info');
-                        return true;
+                        return { refresh: false };
                     }
                     const pick = pool[Math.floor(Math.random() * pool.length)];
                     dashboard.searchComponent.openBookmark(pick);
-                    return true;
+                    return { refresh: false };
                 }
             }];
             if (anyAll) {
@@ -1437,7 +2408,21 @@ class SearchCommandsComponent {
                     type: 'command-completion'
                 });
             }
+            rows.push(
+                { name: '', shortcut: ':GOTO', completion: ':goto config ', type: 'command-completion' },
+                { name: '', shortcut: ':GOTO', completion: ':goto stats ', type: 'command-completion' },
+                { name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' },
+            );
             return rows;
+        }
+        if ('config'.startsWith(scope) && scope !== 'config') {
+            return [{ name: '', shortcut: ':GOTO', completion: ':goto config ', type: 'command-completion' }];
+        }
+        if ('stats'.startsWith(scope) && scope !== 'stats') {
+            return [{ name: '', shortcut: ':GOTO', completion: ':goto stats ', type: 'command-completion' }];
+        }
+        if ('health'.startsWith(scope) && scope !== 'health') {
+            return [{ name: '', shortcut: ':GOTO', completion: ':goto health ', type: 'command-completion' }];
         }
         if ('all'.startsWith(scope)) {
             return [{
@@ -1479,7 +2464,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = this.buildHealthPageUrl({ filter: 'stale' });
-                    return true;
+                    return { navigate: true };
                 }
             });
         }
@@ -1524,7 +2509,7 @@ class SearchCommandsComponent {
                     if (typeof dashboard.scrollToStaleCollection === 'function') {
                         dashboard.scrollToStaleCollection();
                     }
-                    return true;
+                    return { refresh: false };
                 }
             },
             {
@@ -1565,6 +2550,59 @@ class SearchCommandsComponent {
         return qs ? `/health?${qs}` : '/health';
     }
 
+    _handleHealthPageCommand(dashboard, pageArgs) {
+        const pages = dashboard?.pages || [];
+        const pageQuery = (pageArgs[0] || '').trim();
+
+        if (!pageQuery) {
+            if (pages.length === 0) return [];
+            return pages.map((page, index) => ({
+                name: page.name || `Page ${index + 1}`,
+                shortcut: ':HEALTH',
+                meta: String(index + 1),
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = this.buildHealthPageUrl({ page: page.id });
+                    return { navigate: true };
+                },
+            }));
+        }
+
+        const parsed = parseInt(pageQuery, 10);
+        if (Number.isFinite(parsed) && parsed >= 1 && parsed <= pages.length && String(parsed) === pageQuery) {
+            const page = pages[parsed - 1];
+            return [{
+                name: page.name || `Page ${parsed}`,
+                shortcut: ':HEALTH',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = this.buildHealthPageUrl({ page: page.id });
+                    return { navigate: true };
+                },
+            }];
+        }
+
+        const q = pageQuery.toLowerCase();
+        const matches = pages.filter((page) => {
+            const name = String(page.name || '').toLowerCase();
+            return name.includes(q) || String(page.id) === pageQuery;
+        });
+        if (matches.length === 0) return [];
+
+        return matches.map((page) => ({
+            name: page.name || `Page ${page.id}`,
+            shortcut: ':HEALTH',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                window.location.href = this.buildHealthPageUrl({ page: page.id });
+                return { navigate: true };
+            },
+        }));
+    }
+
     handleHealthCommand(args, fullQuery) {
         const filters = [
             { id: 'broken', label: 'broken bookmarks' },
@@ -1579,6 +2617,18 @@ class SearchCommandsComponent {
         ];
         const sub = (args[0] || '').toLowerCase().trim();
 
+        if (sub === 'page' || 'page'.startsWith(sub) && sub !== 'page' && sub.length > 0) {
+            if (sub === 'page') {
+                return this._handleHealthPageCommand(dashboard, args.slice(1));
+            }
+            return [{
+                name: '',
+                shortcut: ':HEALTH',
+                completion: ':health page ',
+                type: 'command-completion',
+            }];
+        }
+
         if (sub === 'refresh' || sub === 'retest') {
             return [{
                 name: 'Open health and re-scan all bookmarks',
@@ -1586,7 +2636,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = this.buildHealthPageUrl({ refresh: true });
-                    return true;
+                    return { navigate: true };
                 }
             }];
         }
@@ -1598,7 +2648,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = this.buildHealthPageUrl();
-                    return true;
+                    return { navigate: true };
                 }
             }];
             filters.forEach(({ id, label }) => {
@@ -1609,7 +2659,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         window.location.href = this.buildHealthPageUrl({ filter: id });
-                        return true;
+                        return { navigate: true };
                     }
                 });
             });
@@ -1617,6 +2667,12 @@ class SearchCommandsComponent {
                 name: '',
                 shortcut: ':HEALTH',
                 completion: ':health broken ',
+                type: 'command-completion'
+            });
+            rows.push({
+                name: '',
+                shortcut: ':HEALTH',
+                completion: ':health page ',
                 type: 'command-completion'
             });
             return rows;
@@ -1630,7 +2686,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = this.buildHealthPageUrl({ filter: exact.id });
-                    return true;
+                    return { navigate: true };
                 }
             }];
         }
@@ -1644,7 +2700,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = this.buildHealthPageUrl({ filter: entry.id });
-                    return true;
+                    return { navigate: true };
                 }
             }));
         }
@@ -1672,7 +2728,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     window.location.href = '/config#bookmarks';
-                    return true;
+                    return { navigate: true };
                 }
             }];
         }
@@ -1684,7 +2740,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     this.runDuplicateScan(dashboard);
-                    return true;
+                    return { refresh: false };
                 }
             }];
         }
@@ -1720,7 +2776,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         this.runDuplicateScan(dashboard);
-                        return true;
+                        return { refresh: false };
                     }
                 },
                 {
@@ -1738,7 +2794,7 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => {
                 this.runDuplicateScan(dashboard);
-                return true;
+                return { refresh: false };
             }
         }];
     }
@@ -1803,6 +2859,429 @@ class SearchCommandsComponent {
         return this.removeCommandHandler.handle(args, fullQuery);
     }
 
+    handleDarkCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.autoDarkMode === true;
+        const apply = (value) => this.setAutoDarkMode(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':DARK', prefix: 'dark', enabled, apply });
+    }
+
+    handleTitleCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.showTitle !== false;
+        const apply = (value) => this.setTitleVisibility(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':TITLE', prefix: 'title', enabled, apply });
+    }
+
+    handleAnimationsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.animationsEnabled !== false;
+        const apply = (value) => this.setAnimationsEnabled(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':ANIMATIONS', prefix: 'animations', enabled, apply });
+    }
+
+    handleStatusCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.showStatus !== false;
+        const apply = (value) => this.setStatusVisibility(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':STATUS', prefix: 'status', enabled, apply });
+    }
+
+    _handleSimpleToggle(args, { shortcut, prefix, enabled, apply }) {
+        const stateArg = (args[0] || '').toLowerCase();
+        if (!stateArg) {
+            return this._buildOnOffRows({ prefix, shortcut, enabled, apply });
+        }
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
+                name: `on (${enabled ? 'current' : this._stateOnOff(false)})`,
+                shortcut,
+                stateId: `${prefix}:on`,
+                type: 'command',
+                action: () => apply(true),
+            }];
+        }
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
+                name: `off (${enabled ? this._stateOnOff(true) : 'current'})`,
+                shortcut,
+                stateId: `${prefix}:off`,
+                type: 'command',
+                action: () => apply(false),
+            }];
+        }
+        return [];
+    }
+
+    handleLangCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const query = (args[0] || '').toLowerCase();
+        const current = String(dashboard.settings.language || 'en').toLowerCase();
+
+        if (!query) {
+            return this._LANG_OPTIONS.map((entry) => ({
+                name: this._markCurrent(this._t(entry.labelKey, entry.fallback), entry.id === current),
+                shortcut: ':LANG',
+                stateId: `lang:${entry.id}`,
+                completion: `:lang ${entry.id} `,
+                type: 'command',
+                action: () => this._applyLanguage(dashboard, entry.id),
+            }));
+        }
+
+        const exact = this._LANG_OPTIONS.find((entry) => entry.id === query);
+        if (exact) {
+            return [{
+                name: this._t(exact.labelKey, exact.fallback),
+                shortcut: ':LANG',
+                stateId: `lang:${exact.id}`,
+                type: 'command',
+                action: () => this._applyLanguage(dashboard, exact.id),
+            }];
+        }
+
+        const matches = this._LANG_OPTIONS.filter((entry) => entry.id.startsWith(query));
+        if (matches.length === 0) return [];
+
+        return matches.map((entry) => ({
+            name: this._markCurrent(this._t(entry.labelKey, entry.fallback), entry.id === current),
+            shortcut: ':LANG',
+            stateId: `lang:${entry.id}`,
+            type: 'command',
+            action: () => this._applyLanguage(dashboard, entry.id),
+        }));
+    }
+
+    handleOpacityCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const query = (args[0] || '').toLowerCase();
+        const current = Number(dashboard.settings.backgroundOpacity ?? 1);
+
+        if (!query) {
+            return this._OPACITY_PRESETS.map((value) => {
+                const label = `${Math.round(value * 100)}%`;
+                return {
+                    name: this._markCurrent(label, Math.abs(value - current) < 0.001),
+                    shortcut: ':OPACITY',
+                    stateId: `opacity:${value}`,
+                    completion: `:opacity ${Math.round(value * 100)} `,
+                    type: 'command',
+                    action: () => this.setBackgroundOpacity(dashboard, value),
+                };
+            });
+        }
+
+        const parsed = parseInt(query.replace('%', ''), 10);
+        if (Number.isFinite(parsed) && parsed >= 65 && parsed <= 100) {
+            const value = parsed / 100;
+            return [{
+                name: `${parsed}%`,
+                shortcut: ':OPACITY',
+                stateId: `opacity:${value}`,
+                type: 'command',
+                action: () => this.setBackgroundOpacity(dashboard, value),
+            }];
+        }
+
+        return [];
+    }
+
+    handleCollectionsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const collectionId = (args[0] || '').toLowerCase();
+        const stateArg = (args[1] || '').toLowerCase();
+
+        if (!collectionId) {
+            return this._SMART_COLLECTIONS.map((entry) => {
+                const enabled = this._smartCollectionEnabled(dashboard.settings, entry);
+                const label = this._t(entry.labelKey, entry.fallback);
+                return {
+                    name: `${label} (${this._stateOnOff(enabled)})`,
+                    shortcut: ':COLLECTIONS',
+                    stateId: `collections:${entry.id}`,
+                    type: 'command',
+                    action: () => this.setSmartCollectionVisibility(dashboard, entry, !enabled),
+                };
+            });
+        }
+
+        const entry = this._SMART_COLLECTIONS.find((item) => (
+            item.id === collectionId || item.id.startsWith(collectionId)
+        ));
+        if (!entry) return [];
+
+        const enabled = this._smartCollectionEnabled(dashboard.settings, entry);
+        const label = this._t(entry.labelKey, entry.fallback);
+
+        if (!stateArg) {
+            return this._buildOnOffRows({
+                prefix: `collections:${entry.id}`,
+                shortcut: ':COLLECTIONS',
+                enabled,
+                apply: (value) => this.setSmartCollectionVisibility(dashboard, entry, value),
+            }).map((row) => ({
+                ...row,
+                name: `${label} — ${row.name}`,
+            }));
+        }
+
+        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
+            return [{
+                name: `${label} — on (${enabled ? 'current' : 'off'})`,
+                shortcut: ':COLLECTIONS',
+                stateId: `collections:${entry.id}:on`,
+                type: 'command',
+                action: () => this.setSmartCollectionVisibility(dashboard, entry, true),
+            }];
+        }
+        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
+            return [{
+                name: `${label} — off (${enabled ? 'on' : 'current'})`,
+                shortcut: ':COLLECTIONS',
+                stateId: `collections:${entry.id}:off`,
+                type: 'command',
+                action: () => this.setSmartCollectionVisibility(dashboard, entry, false),
+            }];
+        }
+
+        return [];
+    }
+
+    handleBackupCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.backupLabel', 'Open config — backups'),
+            shortcut: ':BACKUP',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                window.location.href = '/config#backups';
+                return { navigate: true };
+            },
+        }];
+    }
+
+    handleMetadataCommand(args) {
+        const sub = (args[0] || '').toLowerCase();
+
+        if (!sub) {
+            return [
+                {
+                    name: this._t('commands.metadataHealth', 'Open health — missing previews'),
+                    shortcut: ':METADATA',
+                    type: 'command',
+                    action: () => {
+                        this._closeCommandPalette();
+                        window.location.href = this.buildHealthPageUrl({ filter: 'missing-preview' });
+                        return { navigate: true };
+                    },
+                },
+                {
+                    name: this._t('commands.metadataConfig', 'Open config — bookmarks'),
+                    shortcut: ':METADATA',
+                    type: 'command',
+                    action: () => {
+                        this._closeCommandPalette();
+                        window.location.href = '/config#bookmarks';
+                        return { navigate: true };
+                    },
+                },
+                {
+                    name: '',
+                    shortcut: ':METADATA',
+                    completion: ':metadata health ',
+                    type: 'command-completion',
+                },
+            ];
+        }
+
+        if (sub === 'health' || 'health'.startsWith(sub)) {
+            if (sub !== 'health') {
+                return [{ name: '', shortcut: ':METADATA', completion: ':metadata health ', type: 'command-completion' }];
+            }
+            return [{
+                name: this._t('commands.metadataHealth', 'Open health — missing previews'),
+                shortcut: ':METADATA',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = this.buildHealthPageUrl({ filter: 'missing-preview' });
+                    return { navigate: true };
+                },
+            }];
+        }
+
+        if (sub === 'config' || 'config'.startsWith(sub)) {
+            if (sub !== 'config') {
+                return [{ name: '', shortcut: ':METADATA', completion: ':metadata config ', type: 'command-completion' }];
+            }
+            return [{
+                name: this._t('commands.metadataConfig', 'Open config — bookmarks'),
+                shortcut: ':METADATA',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    window.location.href = '/config#bookmarks';
+                    return { navigate: true };
+                },
+            }];
+        }
+
+        return [];
+    }
+
+    handleTourCommand() {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        return [{
+            name: this._t('commands.tourStart', 'Start feature tour'),
+            shortcut: ':TOUR',
+            type: 'command',
+            action: () => this._runOverlayAction(() => dashboard.startFeatureTour?.()),
+        }];
+    }
+
+    handlePromoCommand(args) {
+        const registry = window.DashboardPromoRegistry;
+        const entries = registry?.entries || [];
+        const sub = (args[0] || '').toLowerCase();
+
+        if (!sub) {
+            const rows = entries.map((entry) => ({
+                name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', entry.id),
+                shortcut: ':PROMO',
+                stateId: `promo:${entry.id}`,
+                completion: `:promo ${entry.id} `,
+                type: 'command',
+                action: () => {
+                    registry?.clearById?.(entry.id);
+                    return { stateId: `promo:${entry.id}` };
+                },
+            }));
+            rows.push({
+                name: this._t('commands.promoResetAll', 'Reset all promos'),
+                shortcut: ':PROMO',
+                stateId: 'promo:all',
+                type: 'command',
+                action: () => {
+                    registry?.clearAll?.();
+                    return { stateId: 'promo:all' };
+                },
+            });
+            return rows;
+        }
+
+        if (sub === 'all') {
+            return [{
+                name: this._t('commands.promoResetAll', 'Reset all promos'),
+                shortcut: ':PROMO',
+                type: 'command',
+                action: () => {
+                    registry?.clearAll?.();
+                    return { stateId: 'promo:all' };
+                },
+            }];
+        }
+
+        const match = entries.find((entry) => entry.id === sub || entry.id.startsWith(sub));
+        if (!match) return [];
+
+        return [{
+            name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', match.id),
+            shortcut: ':PROMO',
+            type: 'command',
+            action: () => {
+                registry?.clearById?.(match.id);
+                return { stateId: `promo:${match.id}` };
+            },
+        }];
+    }
+
+    handleFilterCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const query = args.join(' ').trim();
+        const active = dashboard.normalizeTagFilters?.(dashboard._tagFilters) || dashboard._tagFilters || [];
+
+        if (!query) {
+            const rows = [];
+            if (active.length > 0) {
+                rows.push({
+                    name: this._t('commands.filterClearActive', 'Clear tag filter — {tags}')
+                        .replace('{tags}', active.map((tag) => `#${tag}`).join(', ')),
+                    shortcut: ':FILTER',
+                    stateId: 'filter:clear',
+                    type: 'command',
+                    action: () => {
+                        this._closeCommandPalette();
+                        dashboard.clearTagFilter?.();
+                        return { refresh: false };
+                    },
+                });
+            }
+            rows.push({
+                name: this._t('commands.filterClear', 'Clear tag filter'),
+                shortcut: ':FILTER',
+                completion: ':filter clear ',
+                type: 'command-completion',
+            });
+            rows.push(...this._getTagNameCompletionRows('').map((row) => ({
+                ...row,
+                shortcut: ':FILTER',
+                completion: row.completion.replace(':tag ', ':filter '),
+            })));
+            return rows;
+        }
+
+        if (query.toLowerCase() === 'clear') {
+            return [{
+                name: this._t('commands.filterClear', 'Clear tag filter'),
+                shortcut: ':FILTER',
+                stateId: 'filter:clear',
+                type: 'command',
+                action: () => {
+                    this._closeCommandPalette();
+                    dashboard.clearTagFilter?.();
+                    return { refresh: false };
+                },
+            }];
+        }
+
+        const tag = this._normalizeTagQuery(query);
+        if (!tag) return [];
+
+        return [{
+            name: this._t('commands.filterApply', 'Filter by #{tag}').replace('{tag}', tag),
+            shortcut: ':FILTER',
+            stateId: `filter:${tag}`,
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                return dashboard.setTagFilters?.([tag]).then(() => ({ refresh: false }));
+            },
+        }];
+    }
+
+    handleExportCommand() {
+        return [{
+            name: this._t('commands.exportLabel', 'Download backup (.zip)'),
+            shortcut: ':EXPORT',
+            type: 'command',
+            action: () => this._downloadBackup(),
+        }];
+    }
+
     /**
      * Handle the :find command
      * Filters bookmark tiles on the current page live; Escape clears the filter.
@@ -1812,22 +3291,58 @@ class SearchCommandsComponent {
     handleFindCommand(args) {
         const query = args.join(' ').trim();
         const t = (key, fb) => this.language ? (this.language.t(key) || fb) : fb;
+        const dashboard = window.dashboardInstance;
+        const activeFilter = String(dashboard?._findFilter || '').trim();
 
         if (!query) {
-            return [{
+            const rows = [{
                 name: t('dashboard.findCommandHint', 'Type text to highlight matching bookmarks on this page'),
                 shortcut: ':FIND',
                 type: 'command-completion',
                 completion: ':find '
+            }];
+            if (activeFilter) {
+                rows.unshift({
+                    name: t('commands.findClearActive', 'Clear find filter — “{query}”').replace('{query}', activeFilter),
+                    shortcut: ':FIND',
+                    stateId: 'find:clear',
+                    type: 'command',
+                    action: () => {
+                        document.dispatchEvent(new CustomEvent('nextdash:find', { detail: { query: '' } }));
+                        return { stateId: 'find:clear' };
+                    },
+                });
+            }
+            rows.push({
+                name: t('commands.findClear', 'Clear find filter'),
+                shortcut: ':FIND',
+                stateId: 'find:clear',
+                type: 'command-completion',
+                completion: ':find clear ',
+            });
+            return rows;
+        }
+
+        if (query.toLowerCase() === 'clear') {
+            return [{
+                name: t('commands.findClear', 'Clear find filter'),
+                shortcut: ':FIND',
+                stateId: 'find:clear',
+                type: 'command',
+                action: () => {
+                    document.dispatchEvent(new CustomEvent('nextdash:find', { detail: { query: '' } }));
+                    return { stateId: 'find:clear' };
+                },
             }];
         }
 
         return [{
             name: `"${query}"`,
             shortcut: ':FIND',
+            stateId: 'find',
             action: () => {
                 document.dispatchEvent(new CustomEvent('nextdash:find', { detail: { query } }));
-                return false;
+                return { stateId: 'find' };
             },
             type: 'command'
         }];

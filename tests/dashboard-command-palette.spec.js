@@ -74,4 +74,141 @@ test.describe('dashboard command palette', () => {
             window.dashboardInstance?.settings?.showTips === false
         ))).toBe(true);
     });
+
+    test(':buttons cheatsheet stays open and label updates after toggle', async ({ page }) => {
+        await page.keyboard.press(':');
+        await page.keyboard.type('buttons cheatsheet', { delay: 20 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+
+        const row = page.locator('.search-match.command-entry').first();
+        const before = await row.innerText();
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toBeVisible();
+        await expect.poll(async () => row.innerText()).not.toBe(before);
+    });
+
+    test(':page switches page and keeps palette open', async ({ page }) => {
+        const pageCount = await page.evaluate(() => window.dashboardInstance?.pages?.length || 0);
+        test.skip(pageCount < 2, 'needs at least two pages');
+
+        const targetName = await page.evaluate(() => {
+            const dash = window.dashboardInstance;
+            const other = dash.pages.find((p) => !dash.samePageId(p.id, dash.currentPageId));
+            return other?.name || '';
+        });
+        test.skip(!targetName, 'no alternate page');
+
+        await page.keyboard.press(':');
+        await page.keyboard.type(`page ${targetName}`, { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toBeVisible();
+        await expect.poll(async () => page.evaluate((name) => {
+            const dash = window.dashboardInstance;
+            const current = dash.pages.find((p) => dash.samePageId(p.id, dash.currentPageId));
+            return current?.name === name;
+        }, targetName)).toBe(true);
+    });
+
+    test(':cheat closes palette and opens cheat sheet', async ({ page }) => {
+        await page.keyboard.press(':');
+        await page.keyboard.type('cheat', { delay: 20 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 3000 });
+    });
+
+    test(':overview closes palette and opens page overview', async ({ page }) => {
+        const pageCount = await page.evaluate(() => window.dashboardInstance?.pages?.length || 0);
+        test.skip(pageCount < 1, 'needs at least one page');
+
+        await page.keyboard.press(':');
+        await page.keyboard.type('overview', { delay: 20 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect(page.locator('#page-overview-overlay')).toBeVisible({ timeout: 5000 });
+    });
+
+    test(':find clear removes find-hidden tiles', async ({ page }) => {
+        await page.keyboard.press(':');
+        await page.keyboard.type('find test-filter-xyz', { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await page.waitForFunction(() => (
+            document.querySelectorAll('#dashboard-layout .bookmark-link.find-hidden').length > 0
+        ), null, { timeout: 3000 });
+
+        await page.keyboard.press('Escape');
+        await page.keyboard.press(':');
+        await page.keyboard.type('find clear', { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await expect.poll(async () => page.evaluate(() => (
+            document.querySelectorAll('#dashboard-layout .bookmark-link.find-hidden').length
+        ))).toBe(0);
+    });
+
+    test(':category jumps to first category', async ({ page }) => {
+        const categoryCount = await page.evaluate(() => (
+            document.querySelectorAll('.category[data-category-id]:not([data-collapsed="true"])').length
+        ));
+        test.skip(categoryCount < 1, 'needs at least one expanded category');
+
+        await page.keyboard.press(':');
+        await page.keyboard.type('category 1', { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.currentIndex >= 0
+        ))).toBe(true);
+    });
+
+    test(':buttons health toggles health link visibility', async ({ page }) => {
+        const visibleBefore = await page.locator('.health-link').count();
+
+        await page.keyboard.press(':');
+        await page.keyboard.type('buttons health', { delay: 15 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('Enter');
+
+        await expect.poll(async () => page.locator('.health-link').count()).not.toBe(visibleBefore);
+    });
+
+    test('lone colon shows reorganized command groups', async ({ page }) => {
+        await page.keyboard.press(':');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('.search-command-group-header')).toHaveCount(10);
+    });
+
+    test(':dark toggles auto dark mode', async ({ page }) => {
+        const before = await page.evaluate(() => window.dashboardInstance?.settings?.autoDarkMode === true);
+
+        await page.keyboard.press(':');
+        await page.keyboard.type(before ? 'dark off' : 'dark on', { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.settings?.autoDarkMode === true
+        ))).toBe(!before);
+    });
+
+    test(':collections toggles start today collection', async ({ page }) => {
+        const before = await page.evaluate(() => (
+            window.dashboardInstance?.settings?.showSmartTodayCollection !== false
+        ));
+
+        await page.keyboard.press(':');
+        await page.keyboard.type(before ? 'collections today off' : 'collections today on', { delay: 15 });
+        await page.keyboard.press('Enter');
+
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.settings?.showSmartTodayCollection !== false
+        ))).toBe(!before);
+    });
 });

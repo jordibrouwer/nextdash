@@ -32,39 +32,56 @@ class SearchCommandFontSize {
         };
     }
 
+    getCurrentFontSize() {
+        const dash = window.dashboardInstance;
+        if (dash?.settings?.fontSize) {
+            return dash.settings.fontSize;
+        }
+        if (window.ThemeLoader?.getFontSize) {
+            return window.ThemeLoader.getFontSize();
+        }
+        for (const size of this.fontSizeMap) {
+            if (document.body.classList.contains(`font-size-${size}`)) {
+                return size;
+            }
+        }
+        return 'm';
+    }
+
+    _buildFontSizeRow(size) {
+        const displayName = this.fontSizeDisplayNames[size] || size.toUpperCase();
+        const current = this.getCurrentFontSize();
+        const name = size === current ? `${displayName} ✓` : displayName;
+        return {
+            name,
+            shortcut: ':fontsize',
+            stateId: `fontsize:${size}`,
+            action: () => {
+                this.applyFontSize(size);
+                if (window.dashboardInstance?.settings) {
+                    window.dashboardInstance.settings.fontSize = size;
+                }
+                return { stateId: `fontsize:${size}` };
+            },
+            type: 'command'
+        };
+    }
+
     handle(args) {
         // If args has one empty string, treat as no args
         const effectiveArgs = (args.length === 1 && args[0] === '') ? [] : args;
 
         if (effectiveArgs.length === 0) {
-            // Show all font sizes
-            return this.fontSizeMap.map(size => {
-                const displayName = this.fontSizeDisplayNames[size] || size.toUpperCase();
-                return {
-                    name: displayName,
-                    shortcut: `:fontsize`,
-                    action: () => this.applyFontSize(size),
-                    type: 'command'
-                };
-            });
-        } else {
-            // Show matching font sizes
-            const sizeQuery = effectiveArgs.join(' ').toLowerCase();
-            const matchingSizes = this.fontSizeMap.filter(size => {
-                const displayName = this.fontSizeDisplayNames[size] || size.toUpperCase();
-                return displayName.toLowerCase().startsWith(sizeQuery) || size.startsWith(sizeQuery);
-            });
-
-            return matchingSizes.map(size => {
-                const displayName = this.fontSizeDisplayNames[size] || size.toUpperCase();
-                return {
-                    name: displayName,
-                    shortcut: `:fontsize`,
-                    action: () => this.applyFontSize(size),
-                    type: 'command'
-                };
-            });
+            return this.fontSizeMap.map((size) => this._buildFontSizeRow(size));
         }
+
+        const sizeQuery = effectiveArgs.join(' ').toLowerCase();
+        const matchingSizes = this.fontSizeMap.filter((size) => {
+            const displayName = this.fontSizeDisplayNames[size] || size.toUpperCase();
+            return displayName.toLowerCase().startsWith(sizeQuery) || size.startsWith(sizeQuery);
+        });
+
+        return matchingSizes.map((size) => this._buildFontSizeRow(size));
     }
 
     /**

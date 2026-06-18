@@ -481,24 +481,40 @@ Search **all pages**; each result shows which page it belongs to.
 
 ### 10.5 Commands (`:`) — selected examples
 
+Type lone **`:`** to open the palette. **Ten collapsible groups** list commands (add & remove, edit, open & inspect, search, navigation, layout, display, smart collections, tag filter, system) — click a group header to expand completions. After **`Enter`**, toggle and view commands **keep the palette open**; rows refresh with `(on)`/`(off)`, `✓`, or a brief flash instead of closing or showing toasts.
+
 Use **`Enter`** or **`Space`** on a highlighted row to run it (including after autocomplete expands a group such as `:button`).
 
 | Command | Description |
 |---------|-------------|
-| `:new` | New-bookmark modal |
+| `:new` / `:add` | New-bookmark modal / quick-add omnibox (`&`) |
 | `:note` | Edit note on selected bookmark |
+| `:move` / `:edit` / `:copy` | Move, inline-edit, or copy URL of keyboard-selected bookmark |
 | `:pin` / `:unpin` | Toggle pin |
 | `:tag` | List tags; browse by tag in palette (`:tag work`, `:tag:work`) without changing dashboard |
 | `:tag +name` / `:tag -name` | Add/remove tag on keyboard-selected bookmark |
+| `:category` / `:cat` | Jump to category or smart collection by number or name |
+| `:filter <tag>` / `:filter clear` | Apply or clear dashboard tag filter (OR, same as tag cloud) |
 | `:remove` | Delete selected |
 | `:sort order\|az\|recent\|custom` | Sort mode |
-| `:open all` | Open all on page (safe batch cap) |
+| `:open all` / `:open pinned` | Open all or pinned bookmarks on page (safe batch cap) |
+| `:open tag <name>` / `:open category <name>` | Open bookmarks matching tag or category on current page |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
+| `:page` | Switch page by name or number (palette stays open, `✓` on current) |
+| `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload |
+| `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
 | `:stale [days]` | List stale bookmarks |
 | `:health [filter]` | Open health page — `broken`, `duplicate`, `stale`, `refresh`, … |
+| `:health page [n]` | Health filtered to a specific page |
 | `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
-| `:find <text>` | Hide non-matching tiles on page |
+| `:find <text>` / `:find clear` | Hide non-matching tiles on page / clear filter |
 | `:goto <url>` | Navigate to URL or domain |
+| `:goto config` / `stats` / `health` | Quick navigation to config, stats, or health |
+| `:dark` / `:title` / `:lang` / `:animations` / `:status` / `:opacity` | Display and theme toggles |
+| `:collections` | Toggle smart collections (today, recent, stale, most used) |
+| `:backup` / `:export` | Open config backups or download ZIP backup |
+| `:metadata` | Health missing previews or config bookmarks |
+| `:tour` / `:promo` | Start feature tour or reset discoverability promos |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
 | `:layoutversion` | List classic / modern / glass |
 | `:layoutversion modern` / `classic` / `glass` / `toggle` | Switch layout version (`toggle` cycles classic → modern → glass) |
@@ -523,7 +539,7 @@ Configure finders in **config → finders** (desktop):
 
 ### 10.7 In-page filter (`:find`)
 
-Temporarily hides bookmark tiles that do not match. Run `:find` alone to clear.
+Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or run `:find` alone).
 
 ---
 

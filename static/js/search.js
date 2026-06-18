@@ -2067,19 +2067,67 @@ class SearchComponent {
     }
 
     invokeCommand(match) {
+        const queryBefore = this.currentQuery;
         const result = match.action();
-        if (result !== false) {
-            this.recordRecentCommand(this.currentQuery);
+        if (result && typeof result.then === 'function') {
+            result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved));
+            return;
         }
-        // Keep command palette open so multiple commands can be chained.
-        // If command action redirects away, this block naturally becomes irrelevant.
-        if (this.searchActive) {
-            this.currentQuery = ':';
-            this.commandsComponent.resetState();
-            this.updateSearch();
-            this.selectedMatchIndex = 0;
-            this.updateSelectionHighlight();
+        this._finishCommandInvoke(queryBefore, match, result);
+    }
+
+    _finishCommandInvoke(queryBefore, match, result) {
+        if (result === false) {
+            return;
         }
+
+        this.recordRecentCommand(queryBefore);
+
+        if (!this.searchActive || !this.currentQuery.startsWith(':')) {
+            return;
+        }
+
+        if (result && typeof result === 'object' && result.navigate) {
+            return;
+        }
+        if (result && typeof result === 'object' && result.refresh === false) {
+            return;
+        }
+
+        const stateId = (result && typeof result === 'object' && result.stateId)
+            || match.stateId
+            || null;
+        this.refreshCommandPaletteInPlace(stateId);
+    }
+
+    /** Re-render : command rows in place so toggles show updated on/off or ✓ markers. */
+    refreshCommandPaletteInPlace(stateId) {
+        if (!this.searchActive || !this.currentQuery.startsWith(':')) {
+            return;
+        }
+
+        this.updateSearch();
+
+        if (stateId) {
+            const idx = this.selectableMatches.findIndex((entry) => entry.stateId === stateId);
+            if (idx >= 0) {
+                this.selectedMatchIndex = idx;
+            }
+        }
+
+        this.updateSelectionHighlight();
+        this._flashCommandMatch(this.selectedMatchIndex);
+    }
+
+    _flashCommandMatch(index) {
+        const el = this.matchElements[index];
+        if (!el || !el.classList.contains('command-entry')) {
+            return;
+        }
+        el.classList.remove('command-just-applied');
+        void el.offsetWidth;
+        el.classList.add('command-just-applied');
+        el.addEventListener('animationend', () => el.classList.remove('command-just-applied'), { once: true });
     }
 
     toggleEmptyStateGroup(groupId) {
