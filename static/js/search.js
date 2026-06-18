@@ -345,11 +345,6 @@ class SearchComponent {
             return;
         }
 
-        // G / GG category navigation — never open shortcut search
-        if (!this.searchActive && key === 'G') {
-            return;
-        }
-
         if (!this.searchActive && key >= '1' && key <= '9' && window.dashboardInstance?.keyboardNavigation?.isGChordActive?.()) {
             return;
         }
@@ -551,6 +546,18 @@ class SearchComponent {
 
         e.preventDefault();
         this.addToQuery(key);
+    }
+
+    addShortcutLetter(letter) {
+        const key = String(letter || '').toUpperCase();
+        if (!/^[A-Z]$/.test(key)) {
+            return false;
+        }
+        if (this.shouldDeferToDashboardOverlay()) {
+            return false;
+        }
+        this.addToQuery(key);
+        return true;
     }
 
     addToQuery(key) {

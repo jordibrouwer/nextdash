@@ -84,4 +84,36 @@ test.describe('dashboard grid shortcuts', () => {
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
         ))).toBe(true);
     });
+
+    test('quick tap G opens shortcut search for g bookmarks', async ({ page }) => {
+        await page.keyboard.press('g');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.searchComponent?.currentQuery || ''
+        ))).toBe('G');
+    });
+
+    test('G then digit without hold feeds shortcut query, not category jump', async ({ page }) => {
+        await page.keyboard.press('g');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('1');
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.searchComponent?.currentQuery || ''
+        ))).toBe('G1');
+    });
+
+    test('held G then digit jumps category without opening search', async ({ page }) => {
+        const categoryCount = await page.locator('.category').count();
+        test.skip(categoryCount < 1, 'needs at least one category');
+
+        await page.keyboard.down('g');
+        await page.waitForTimeout(350);
+        await page.keyboard.press('1');
+        await page.keyboard.up('g');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+        ))).toBeGreaterThanOrEqual(0);
+    });
 });

@@ -1,4 +1,6 @@
 // Keyboard Navigation Component for Dashboard
+const G_CHORD_HOLD_MS = 300;
+
 class KeyboardNavigation {
     constructor(dashboard) {
         this.dashboard = dashboard;
@@ -7,8 +9,11 @@ class KeyboardNavigation {
         this.isEnabled = true;
         this.observer = null; // Store observer for cleanup
         this._gPressed = false;
+        this._gAwaitingRelease = false;
+        this._gHoldTimer = null;
         this._gTimeout = null;
         this._keydownHandler = null;
+        this._keyupHandler = null;
         this._focusInHandler = null;
         this._focusInLayout = null;
         this._pointerOverLayout = null;
@@ -109,6 +114,67 @@ class KeyboardNavigation {
             this.handleKeyPress(e);
         };
         document.addEventListener('keydown', this._keydownHandler, true);
+
+        this._keyupHandler = (e) => {
+            if (!this.isEnabled) {
+                return;
+            }
+
+            if (document.body.classList.contains('bookmark-inline-edit-active')) {
+                return;
+            }
+
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            if (e.target.isContentEditable) {
+                return;
+            }
+
+            if (document.querySelector('.modal-overlay.show')) {
+                return;
+            }
+
+            if (window.DashboardTagCloud?.modalOpen) {
+                return;
+            }
+
+            if (document.getElementById('page-overview-overlay')) {
+                return;
+            }
+
+            if (document.getElementById('omnibox-overlay')) {
+                return;
+            }
+
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
+                return;
+            }
+
+            if (this.dashboard.searchComponent && this.dashboard.searchComponent.isActive()) {
+                return;
+            }
+
+            const key = e.key;
+            if (key !== 'g' && key !== 'G') {
+                return;
+            }
+
+            if (!this._gAwaitingRelease) {
+                return;
+            }
+
+            this._cancelGHoldTimer();
+            this._gAwaitingRelease = false;
+
+            if (!this._gPressed) {
+                const search = this.dashboard?.searchComponent;
+                if (search && typeof search.addShortcutLetter === 'function') {
+                    search.addShortcutLetter('G');
+                }
+            }
+        };
+        document.addEventListener('keyup', this._keyupHandler, true);
 
         // Update navigable elements when dashboard changes
         this.observer = new MutationObserver(() => {
@@ -284,6 +350,10 @@ class KeyboardNavigation {
         if (this._keydownHandler) {
             document.removeEventListener('keydown', this._keydownHandler, true);
             this._keydownHandler = null;
+        }
+        if (this._keyupHandler) {
+            document.removeEventListener('keyup', this._keyupHandler, true);
+            this._keyupHandler = null;
         }
         if (this._focusInLayout && this._focusInHandler) {
             this._focusInLayout.removeEventListener('focusin', this._focusInHandler);
@@ -524,6 +594,21 @@ class KeyboardNavigation {
             }
         }
 
+        const isGChordFollowUp = (key >= '1' && key <= '9') || key === 'p' || key === 'P';
+        if (this._gAwaitingRelease && isGChordFollowUp) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._activateGChordMode();
+            if (key === 'p' || key === 'P') {
+                this._clearGState();
+                this.jumpToPinned();
+                return;
+            }
+            this._clearGState();
+            this.jumpToCategory(parseInt(key, 10));
+            return;
+        }
+
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {
             e.preventDefault();
@@ -689,29 +774,52 @@ class KeyboardNavigation {
 
             case 'g':
             case 'G':
-                if (this._gPressed) {
-                    // GG: jump to first bookmark
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    this._clearGState();
-                    this.currentIndex = 0;
-                    this.highlightCurrentElement({ keyboardNav: true });
-                    this._syncGridKeyboardPromoAnchor();
-                    if (this.navigableElements[0]) {
-                        window.DashboardGJumpPromo?.onFirstGgJump?.(this.navigableElements[0]);
-                    }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (e.repeat) {
+                    break;
+                }
+                if (this._gPressed || this._gAwaitingRelease) {
+                    this._performGgJump();
                 } else {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    this._gPressed = true;
-                    this._gTimeout = setTimeout(() => this._clearGState(), 1000);
+                    this._gAwaitingRelease = true;
+                    this._gHoldTimer = setTimeout(() => this._activateGChordMode(), G_CHORD_HOLD_MS);
                 }
                 break;
         }
     }
 
+    _cancelGHoldTimer() {
+        if (this._gHoldTimer) {
+            clearTimeout(this._gHoldTimer);
+            this._gHoldTimer = null;
+        }
+    }
+
+    _activateGChordMode() {
+        this._cancelGHoldTimer();
+        this._gAwaitingRelease = false;
+        this._gPressed = true;
+        if (this._gTimeout) {
+            clearTimeout(this._gTimeout);
+        }
+        this._gTimeout = setTimeout(() => this._clearGState(), 1000);
+    }
+
+    _performGgJump() {
+        this._clearGState();
+        this.currentIndex = 0;
+        this.highlightCurrentElement({ keyboardNav: true });
+        this._syncGridKeyboardPromoAnchor();
+        if (this.navigableElements[0]) {
+            window.DashboardGJumpPromo?.onFirstGgJump?.(this.navigableElements[0]);
+        }
+    }
+
     _clearGState() {
         this._gPressed = false;
+        this._gAwaitingRelease = false;
+        this._cancelGHoldTimer();
         if (this._gTimeout) {
             clearTimeout(this._gTimeout);
             this._gTimeout = null;
