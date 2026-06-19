@@ -165,6 +165,15 @@
       ]
     },
     {
+      "title": "Config → Keyboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard tab reference</strong> — <code>config#keyboard</code> lists fixed defaults (add bookmark, <strong>Quick actions</strong> <code>Shift+M</code> / <code>Shift+T</code> / <code>Shift+D</code>, <strong>Grid navigation</strong> chords) plus rebindable search and navigation keys. Search default corrected to <code>&gt;</code> (was <code>/</code>); adds <code>,</code> page overview, <code>@</code> global search, and <code>/</code> tag cloud. Localized labels (EN/NL/DE/FR)."
+        }
+      ]
+    },
+    {
       "title": "Developer &amp; docs",
       "items": [
         {
@@ -177,11 +186,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, <code>G</code> hold-vs-tap bookmark shortcuts, command palette expansion (live feedback, 10 groups, 50+ commands), quick-tag popover (<code>Shift+T</code>), and action popover selection restore."
+          "text": "<strong>Help &amp; manual</strong> — README, MANUAL, CHANGELOG, config help, and this release note updated for overlay focus, search filter autocomplete, health runtime and detect redirect hardening, ping in health overflow menu, removal of health 1-click fix, onboarding/tips timing, General layer defaults, grid-shortcut fixes, <code>G</code> hold-vs-tap bookmark shortcuts, command palette expansion (live feedback, 10 groups, 50+ commands), quick-tag popover (<code>Shift+T</code>), action popover selection restore, and Config → Keyboard shortcut reference."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>, <code>cmd-palette-live-5</code>, <code>shift-t-tag-4</code>); <code>dashboard-bookmark-rows.js</code> (<code>tag-popover-3</code>); <code>dashboard-ui-helpers.js</code> (<code>action-popover-select-1</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v88</code> (<code>2026.06-dashboard-release-v69</code>); <code>keyboard-navigation.js</code> / <code>search.js</code> (<code>g-shortcut-hold-1</code>, <code>cmd-palette-live-5</code>, <code>shift-t-tag-4</code>); <code>dashboard-bookmark-rows.js</code> (<code>tag-popover-3</code>); <code>dashboard-ui-helpers.js</code> (<code>action-popover-select-1</code>); <code>config-keyboard.js</code> (<code>keyboard-2</code>); <code>health-runtime.js</code> / <code>health.js</code> / <code>health.css</code> (<code>health-runtime-1</code> / <code>health-runtime-2</code>); <code>focus-trap-utils.js</code>, and related dashboard module bundles."
         }
       ]
     }

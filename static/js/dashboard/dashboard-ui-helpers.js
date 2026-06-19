@@ -293,6 +293,7 @@ class DashboardUiHelpers {
                 item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
                 item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
                 item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Quick actions on config (new page, bookmark, …)'),
+                item('config → keyboard', 'otConfigKeyboard', 'Customize rebindable dashboard shortcuts — fixed quick actions and grid chords listed too'),
             ]),
         );
         return sections;
