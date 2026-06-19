@@ -987,7 +987,7 @@ class DashboardBookmarkRows {
             if (window.DashboardFeaturePromos?.isPromoOpen?.('quickMove')) {
                 window.DashboardFeaturePromos.dismissOpen();
             }
-            this._restoreActionPopoverFocus(previousFocus, anchorEl);
+            this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -1208,7 +1208,7 @@ class DashboardBookmarkRows {
                 window.DashboardFeaturePromos.dismissOpen();
             }
             pop.removeEventListener('keydown', onKey, true);
-            this._restoreActionPopoverFocus(previousFocus, anchorEl);
+            this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -1393,7 +1393,7 @@ class DashboardBookmarkRows {
             if (window.DashboardFeaturePromos?.isPromoOpen?.('quickDelete')) {
                 window.DashboardFeaturePromos.dismissOpen();
             }
-            this._restoreActionPopoverFocus(previousFocus, anchorEl);
+            this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
@@ -1637,8 +1637,25 @@ class DashboardBookmarkRows {
     }
 
 
-    _restoreActionPopoverFocus(previousFocus, anchorEl) {
+    _restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex = -1) {
         const d = this.dash;
+        const kn = d.keyboardNavigation || window.dashboardInstance?.keyboardNavigation;
+
+        let row = anchorEl?.classList?.contains?.('bookmark-link')
+            ? anchorEl
+            : anchorEl?.closest?.('.bookmark-link:not(.bookmark-inline-editing)');
+        if (!row?.isConnected && Number.isFinite(bookmarkIndex) && bookmarkIndex >= 0) {
+            row = document.querySelector(`.bookmark-link[data-bookmark-index="${bookmarkIndex}"]`);
+        }
+        if (!row?.isConnected && anchorEl?.dataset?.bookmarkUrl) {
+            const url = anchorEl.dataset.bookmarkUrl;
+            row = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(url)}"]`);
+        }
+
+        if (kn && typeof kn.selectBookmarkRow === 'function' && kn.selectBookmarkRow(row, { focus: true })) {
+            return;
+        }
+
         const restoreTarget = (previousFocus && previousFocus.isConnected)
             ? previousFocus
             : anchorEl;

@@ -55,6 +55,34 @@ test.describe('dashboard grid shortcuts', () => {
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
+    test('closing action popovers restores keyboard selection on same bookmark', async ({ page }) => {
+        const count = await page.locator('.bookmark-link:not(.recent-bookmark-link)').count();
+        test.skip(count < 2, 'needs at least two bookmarks');
+
+        await page.keyboard.press('ArrowDown');
+        const idxBefore = await page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+        ));
+        expect(idxBefore).toBeGreaterThan(0);
+
+        for (const { key, cleanup } of [
+            { key: 'Shift+T', cleanup: '_tagPopoverCleanup' },
+            { key: 'Shift+M', cleanup: '_movePopoverCleanup' },
+            { key: 'Shift+D', cleanup: '_deletePopoverCleanup' },
+        ]) {
+            await page.keyboard.press(key);
+            await expect(page.locator('#tag-popover, #move-popover, #delete-popover').first()).toBeVisible({ timeout: 3000 });
+            await page.evaluate((fn) => window.dashboardInstance?.[fn]?.(), cleanup);
+            await expect(page.locator('#tag-popover, #move-popover, #delete-popover')).toHaveCount(0, { timeout: 3000 });
+            await expect.poll(async () => page.evaluate(() => (
+                window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+            ))).toBe(idxBefore);
+            await expect.poll(async () => page.evaluate(() => (
+                document.querySelectorAll('.bookmark-link.keyboard-selected').length
+            ))).toBe(1);
+        }
+    });
+
     test('Shift+T opens tag popover without opening search', async ({ page }) => {
         await page.keyboard.press('Shift+T');
         await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });

@@ -1359,6 +1359,25 @@ class KeyboardNavigation {
         }
     }
 
+    /** Restore keyboard grid selection to a bookmark row (e.g. after closing action popovers). */
+    selectBookmarkRow(row, options = {}) {
+        if (!row) {
+            return false;
+        }
+        this.updateNavigableElements();
+        const idx = this.navigableElements.indexOf(row);
+        if (idx < 0) {
+            return false;
+        }
+        this.currentIndex = idx;
+        this.highlightCurrentElement({
+            focus: options.focus !== false,
+            keyboardNav: false,
+        });
+        this._syncGridKeyboardPromoAnchor();
+        return true;
+    }
+
     // Public methods
     _resolveActionPopoverRow() {
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
