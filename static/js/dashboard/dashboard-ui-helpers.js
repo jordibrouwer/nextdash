@@ -221,7 +221,7 @@ class DashboardUiHelpers {
                     ? [item('/', 'smTagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search')]
                     : []),
                 item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
-                item(':', 'smCommandPalette', 'Command palette — 10 collapsible groups at lone : ; toggles stay open after Enter with (on)/(off) or ✓'),
+                item(':', 'smCommandPalette', 'Command palette — 5 collapsible groups at lone : ; recent commands at top; toggles stay open after Enter'),
                 item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
                 item('*', 'smRecentPanel', 'Recent bookmarks panel'),
                 item('mode chips', 'smModeChips', 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly'),
@@ -232,6 +232,7 @@ class DashboardUiHelpers {
                 item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Ctrl+Shift+A) or quick-add omnibox (&)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':move / :edit / :copy', 'cbMoveEditCopy', 'Move, inline-edit, or copy URL of the keyboard-selected bookmark'),
+                item(':quicktag (:qt)', 'cbQuicktag', 'Open quick-tag popover on the keyboard-selected bookmark (same as Shift+T)'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
                 item(':tag', 'cbTagList', 'List all tags in the command palette (dashboard layout unchanged)'),
                 item(':tag <name>', 'cbTagBrowse', 'Browse bookmarks by tag in the palette — :tag work or :tag:work'),

@@ -129,6 +129,7 @@
             "smFieldFilters": "Filter resultaten op veld rechtstreeks in de zoekbalk",
             "cbNew": "Open nieuwe-bladwijzer-venster (zelfde als + / Ctrl+Shift+A)",
             "cbNote": "Bewerk notitie op bladwijzer met focus",
+            "cbQuicktag": "Open quick-tag-popover op geselecteerde bladwijzer (zelfde als Shift+T)",
             "cbPin": "Vastzetten aan/uit op bladwijzer met focus",
             "cbTagList": "Toon alle tags in de commandopalette (dashboardlayout ongewijzigd)",
             "cbTagBrowse": "Blader bladwijzers per tag in de palette — :tag werk of :tag:werk",

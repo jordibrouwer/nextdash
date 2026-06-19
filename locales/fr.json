@@ -112,6 +112,7 @@
             "smFieldFilters": "Filtrer les résultats par champ directement dans la barre de recherche",
             "cbNew": "Ouvrir la fenêtre nouveau favori (comme + / Ctrl+Shift+A)",
             "cbNote": "Modifier la note du favori focalisé",
+            "cbQuicktag": "Ouvrir le popover quick-tag sur le favori sélectionné (comme Shift+T)",
             "cbPin": "Épingler / désépingler le favori focalisé",
             "cbTagList": "Lister tous les tags dans la palette de commandes (tableau de bord inchangé)",
             "cbTagBrowse": "Parcourir les favoris par tag dans la palette — :tag travail ou :tag:travail",

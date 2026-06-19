@@ -112,6 +112,7 @@
             "smFieldFilters": "Ergebnisse direkt in der Suchleiste nach Feld filtern",
             "cbNew": "Neues-Lesezeichen-Fenster öffnen (wie + / Ctrl+Shift+A)",
             "cbNote": "Notiz am fokussierten Lesezeichen bearbeiten",
+            "cbQuicktag": "Quick-Tag-Popover für ausgewähltes Lesezeichen öffnen (wie Shift+T)",
             "cbPin": "Anheften am fokussierten Lesezeichen umschalten",
             "cbTagList": "Alle Tags in der Befehlsleiste auflisten (Dashboard-Layout unverändert)",
             "cbTagBrowse": "Lesezeichen nach Tag in der Palette — :tag arbeit oder :tag:arbeit",

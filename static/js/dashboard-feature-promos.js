@@ -274,7 +274,19 @@
             if (!closeBtn) return;
 
             if (event.key === 'Escape') {
+                const kind = openKind;
                 confirmOpen();
+                if (kind === 'inlineEdit' && document.body.classList.contains('bookmark-inline-edit-active')) {
+                    const dash = window.dashboardInstance;
+                    const inline = dash?.inlineEdit;
+                    const ctx = dash?._inlineEditContext;
+                    if (inline && ctx?.row && ctx?.bookmarkRef) {
+                        void (async () => {
+                            if (!(await inline.confirmDiscardInlineEdit?.())) return;
+                            inline.cancelBookmarkInlineEdit(ctx.row, ctx.bookmarkRef);
+                        })();
+                    }
+                }
                 return;
             }
 
@@ -724,7 +736,9 @@
         }
         const positionAfterLayout = () => {
             positionPromo();
-            promoEl?.querySelector('.dashboard-feature-promo-close')?.focus({ preventScroll: true });
+            if (kind !== 'inlineEdit') {
+                promoEl?.querySelector('.dashboard-feature-promo-close')?.focus({ preventScroll: true });
+            }
         };
         if (kind === 'tagCloud' || kind === 'pageOverview' || kind === 'inlineEdit'
             || kind === 'tagFilterBulk' || kind === 'recentBookmarks'

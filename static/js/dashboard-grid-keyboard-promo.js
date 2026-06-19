@@ -136,6 +136,9 @@
         if (boundPromoKeydown) return;
         boundPromoKeydown = (event) => {
             if (!isPromoOpen()) return;
+            if (document.body.classList.contains('bookmark-inline-edit-active')) {
+                return;
+            }
 
             const closeBtn = promoEl?.querySelector('.dashboard-grid-kbd-promo-close');
             if (!closeBtn) return;
