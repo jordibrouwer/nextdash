@@ -2,6 +2,7 @@
   "private": true,
   "scripts": {
     "sync:extension-bookmark-form": "./scripts/sync-extension-bookmark-form.sh",
+    "validate:json": "bash scripts/validate-json.sh",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

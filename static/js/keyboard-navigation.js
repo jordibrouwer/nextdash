@@ -812,14 +812,37 @@ class KeyboardNavigation {
         }
     }
 
+    _getGJumpPromoAnchor() {
+        this.updateNavigableElements();
+        if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex]) {
+            return this.navigableElements[this.currentIndex];
+        }
+        if (this.navigableElements[0]) {
+            return this.navigableElements[0];
+        }
+        const category = document.querySelector('.category[data-category-id]');
+        if (!category) {
+            return null;
+        }
+        return category.querySelector('.bookmark-link[data-bookmark-index]') || category;
+    }
+
+    _armGChordTimeout(ms) {
+        if (this._gTimeout) {
+            clearTimeout(this._gTimeout);
+        }
+        this._gTimeout = setTimeout(() => this._clearGState(), ms);
+    }
+
     _activateGChordMode() {
         this._cancelGHoldTimer();
         this._gAwaitingRelease = false;
         this._gPressed = true;
-        if (this._gTimeout) {
-            clearTimeout(this._gTimeout);
-        }
-        this._gTimeout = setTimeout(() => this._clearGState(), 1000);
+        const anchor = this._getGJumpPromoAnchor();
+        const promoShown = anchor
+            && window.DashboardGJumpPromo?.onFirstChordHold?.(anchor) === true;
+        // Longer window while the first-time hint is visible so the user can press a digit.
+        this._armGChordTimeout(promoShown ? 10000 : 3000);
     }
 
     _performGgJump() {

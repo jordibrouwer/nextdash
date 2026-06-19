@@ -145,13 +145,16 @@
 
     function applyBodyFlag() {
         const phone = isPhoneLayout();
-        const on = isMobileLayout();
+        const touch = isMobileLayout();
         document.body.dataset.phoneLayout = phone ? 'true' : 'false';
-        document.body.dataset.mobileLayout = on ? 'true' : 'false';
-        document.body.dataset.mobileHidePreviews = on ? 'true' : 'false';
-        document.documentElement.classList.toggle('mobile-layout-active', on);
+        // Dashboard chrome (footer, header) — phone width only; tablets keep desktop toolbar.
+        document.body.dataset.mobileLayout = phone ? 'true' : 'false';
+        document.body.dataset.touchLayout = touch ? 'true' : 'false';
+        document.body.dataset.mobileHidePreviews = touch ? 'true' : 'false';
+        document.documentElement.classList.toggle('mobile-layout-active', phone);
         document.documentElement.classList.toggle('phone-layout-active', phone);
-        return on;
+        document.documentElement.classList.toggle('touch-layout-active', touch);
+        return phone;
     }
 
     function applyConfigTabGuard() {

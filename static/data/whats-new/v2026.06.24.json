@@ -1,0 +1,101 @@
+{
+  "tag": "v2026.06.24",
+  "date": "June 2026",
+  "releasedAt": "2026-06-24",
+  "sections": [
+    {
+      "title": "Keyboard focus &amp; overlays",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inert observer</strong> — a <code>MutationObserver</code> on the dashboard body re-syncs <code>inert</code> when overlays open or close (search, modals, tag cloud, page overview, omnibox, move/delete/tag popovers, inline edit) so the grid is not left stuck non-interactive after rapid open/close cycles."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit inert</strong> — entering or leaving <code>;</code> inline edit calls <code>syncDashboardInert()</code> immediately so the bookmark grid stays blocked while you edit."
+        }
+      ]
+    },
+    {
+      "title": "G jump &amp; discoverability",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>G+jump promo on hold</strong> — holding <code>G</code> (~300&nbsp;ms) shows the first-time <em>Got it</em> balloon beside the grid (not only after a completed <code>G</code>+digit or <code>GG</code> jump). Reset from <strong>Tours &amp; onboarding</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Deferred promo retry</strong> — when What's new, grid keyboard promo, or another overlay blocks the balloon, the G+jump hint retries for up to ~30&nbsp;s instead of being skipped forever."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Longer chord window</strong> — while the G+jump promo is visible, the category-jump chord stays armed for ~10&nbsp;s (3&nbsp;s otherwise) so you can read the hint and press a digit."
+        }
+      ]
+    },
+    {
+      "title": "Search &amp; commands",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Five command groups</strong> — lone <code>:</code> lists <strong>Bookmarks</strong>, <strong>Search &amp; navigate</strong>, <strong>Look &amp; layout</strong>, <strong>Smart collections</strong>, and <strong>Settings &amp; tools</strong> (clearer overview than ten nested headers)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Recent commands</strong> — your last used <code>:</code> commands appear at the top of the palette when you open lone <code>:</code> (up to five entries)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><code>:quicktag</code> / <code>:qt</code></strong> — opens the quick-tag popover (<code>Shift+T</code>) on the keyboard-selected bookmark from command mode."
+        }
+      ]
+    },
+    {
+      "title": "Config → Keyboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Rebind conflict check</strong> — choosing a key already used by another rebindable shortcut, a fixed cheat-sheet default, or a reserved grid chord shows a localized warning before save."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Preset export / import</strong> — toolbar buttons download or upload your rebindable keyboard preset as JSON (fixed defaults stay documented on the cheat sheet)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search</strong> — <code>Ctrl+Shift+K</code> / <code>Cmd+Shift+K</code> now indexes fixed keyboard sections (add bookmark, quick actions, grid navigation) and every key label on each row."
+        }
+      ]
+    },
+    {
+      "title": "Mobile &amp; tablet",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Phone-only dashboard footer</strong> — the reduced footer (<em>Search</em> + <em>+ Bookmark</em>) applies only at ≤768&nbsp;px width. Portrait tablets and wider touch layouts keep the full desktop toolbar (Commands, Finders, Recent, Help, tag cloud)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Touch vs phone flags</strong> — <code>data-touch-layout</code> still drives hover previews and discoverability skips on coarse touch; <code>data-mobile-layout</code> is phone-width only for dashboard chrome."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>GitHub Actions CI</strong> — pushes and pull requests run locale/whats-new JSON validation (<code>npm run validate:json</code>) and Playwright end-to-end tests."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Playwright coverage</strong> — tests for keyboard preset export/import and conflicts, inline-edit inert sync, command palette five groups / recent commands / <code>:quicktag</code>, and G-hold promo."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docs</strong> — README, MANUAL, CHANGELOG, config help, and whats-new updated for v2026.06.24."
+        }
+      ]
+    }
+  ]
+}

@@ -10,6 +10,9 @@
     let suppressUnderlyingClicksUntil = 0;
     let boundReposition = null;
     let boundPromoKeydown = null;
+    let pendingChordHoldAnchor = null;
+    let deferredRetryTimer = null;
+    let deferredRetryStartedAt = 0;
 
     function readConfirmedFromStorage() {
         try {
@@ -157,7 +160,7 @@
         const title = t('gJumpPromoTitle', 'Jump with G');
         const body = t(
             'gJumpPromoBody',
-            '<kbd>G</kbd> then <kbd>1</kbd>–<kbd>9</kbd> jumps to a category or smart collection · <kbd>G</kbd><kbd>G</kbd> jumps to the first bookmark'
+            'Hold <kbd>G</kbd> (~300&nbsp;ms) — then <kbd>1</kbd>–<kbd>9</kbd> jumps to a category or smart collection · quick tap <kbd>G</kbd> opens shortcuts starting with G · <kbd>G</kbd><kbd>G</kbd> jumps to the first bookmark'
         );
         const closeLabel = t('gJumpPromoDismiss', 'Got it');
 
@@ -236,11 +239,45 @@
         window.addEventListener('resize', boundReposition);
     }
 
-    function showPromoForAnchor(element) {
-        if (!canOfferPromo() || isPromoDeferred() || !(element instanceof HTMLElement)) {
+    function clearDeferredChordHoldRetry() {
+        pendingChordHoldAnchor = null;
+        if (deferredRetryTimer) {
+            clearInterval(deferredRetryTimer);
+            deferredRetryTimer = null;
+        }
+        deferredRetryStartedAt = 0;
+    }
+
+    function scheduleDeferredChordHoldRetry() {
+        if (!pendingChordHoldAnchor || deferredRetryTimer) {
             return;
         }
-        if (isPromoOpen()) return;
+        deferredRetryStartedAt = Date.now();
+        deferredRetryTimer = setInterval(() => {
+            if (!pendingChordHoldAnchor) {
+                clearDeferredChordHoldRetry();
+                return;
+            }
+            if (Date.now() - deferredRetryStartedAt > 30000) {
+                clearDeferredChordHoldRetry();
+                return;
+            }
+            if (isPromoDeferred()) {
+                return;
+            }
+            const anchor = pendingChordHoldAnchor;
+            clearDeferredChordHoldRetry();
+            showPromoForAnchor(anchor);
+        }, 400);
+    }
+
+    function showPromoForAnchor(element) {
+        if (!canOfferPromo() || isPromoDeferred() || !(element instanceof HTMLElement)) {
+            return false;
+        }
+        if (isPromoOpen()) {
+            return true;
+        }
 
         removePromoFromDom();
         anchorEl = element;
@@ -252,23 +289,39 @@
             positionPromo();
             focusCloseButton();
         });
+        return true;
     }
 
     function onFirstCategoryJump(categoryEl) {
         if (!categoryEl || categoryEl.getAttribute('data-smart-collection') === 'true') {
-            return;
+            return false;
         }
         const anchor = categoryEl.querySelector('.bookmark-link[data-bookmark-index]') || categoryEl;
-        showPromoForAnchor(anchor);
+        return showPromoForAnchor(anchor);
     }
 
     function onFirstGgJump(bookmarkEl) {
-        showPromoForAnchor(bookmarkEl);
+        return showPromoForAnchor(bookmarkEl);
+    }
+
+    /** First time chord mode activates (hold G ~300 ms) — hint before G+digit / GG. */
+    function onFirstChordHold(anchorEl) {
+        if (!(anchorEl instanceof HTMLElement)) {
+            return false;
+        }
+        if (isPromoDeferred()) {
+            pendingChordHoldAnchor = anchorEl;
+            scheduleDeferredChordHoldRetry();
+            return false;
+        }
+        clearDeferredChordHoldRetry();
+        return showPromoForAnchor(anchorEl);
     }
 
     global.DashboardGJumpPromo = {
         onFirstCategoryJump,
         onFirstGgJump,
+        onFirstChordHold,
         isPromoOpen,
         confirmPromo,
         dismissPopover,
@@ -278,6 +331,7 @@
         dismissPromo: confirmPromo,
         clearPromoSeen() {
             removePromoFromDom();
+            clearDeferredChordHoldRetry();
             try {
                 localStorage.removeItem(PROMO_CONFIRMED_KEY);
             } catch { /* ignore */ }

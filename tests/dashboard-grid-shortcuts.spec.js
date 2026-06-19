@@ -20,6 +20,11 @@ async function dismissBlockingOverlays(page) {
         await searchPromo.locator('button').first().click();
         await expect(searchPromo).toHaveCount(0, { timeout: 3000 });
     }
+    const gridPromoClose = page.locator('.dashboard-grid-kbd-promo-close');
+    if (await gridPromoClose.count()) {
+        await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
+        await expect(page.locator('.dashboard-grid-kbd-promo')).toHaveCount(0, { timeout: 3000 });
+    }
 }
 
 async function closeSearch(page) {
@@ -212,5 +217,19 @@ test.describe('dashboard grid shortcuts', () => {
         await expect.poll(async () => page.evaluate(() => (
             window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
         ))).toBeGreaterThanOrEqual(0);
+    });
+
+    test('held G shows first-time g-jump promo balloon', async ({ page }) => {
+        await page.evaluate(() => {
+            localStorage.removeItem('nextdash:dashboard-g-jump-promo-confirmed-v1');
+        });
+        await dismissBlockingOverlays(page);
+
+        await page.keyboard.down('g');
+        await page.waitForTimeout(350);
+        await expect(page.locator('.dashboard-g-jump-promo')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.up('g');
+        await page.evaluate(() => window.DashboardGJumpPromo?.confirmPromo?.());
+        await expect(page.locator('.dashboard-g-jump-promo')).toHaveCount(0, { timeout: 3000 });
     });
 });

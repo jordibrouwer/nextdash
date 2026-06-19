@@ -888,6 +888,7 @@ class DashboardInlineEdit {
         const d = this.dash;
         document.body.classList.add('bookmark-inline-edit-active');
         d.keyboardNavigation?.disable?.();
+        window.FocusTrapUtils?.syncDashboardInert?.();
     }
 
 
@@ -895,6 +896,7 @@ class DashboardInlineEdit {
         const d = this.dash;
         document.body.classList.remove('bookmark-inline-edit-active');
         d.keyboardNavigation?.enable?.();
+        window.FocusTrapUtils?.syncDashboardInert?.();
     }
 
 

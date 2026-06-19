@@ -180,10 +180,20 @@ test.describe('dashboard command palette', () => {
         await expect.poll(async () => page.locator('.health-link').count()).not.toBe(visibleBefore);
     });
 
-    test('lone colon shows reorganized command groups', async ({ page }) => {
+    test('lone colon shows five command groups', async ({ page }) => {
         await page.keyboard.press(':');
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
-        await expect(page.locator('.search-command-group-header')).toHaveCount(10);
+        await expect(page.locator('.search-command-group-header')).toHaveCount(5);
+    });
+
+    test(':quicktag opens tag popover on selected bookmark', async ({ page }) => {
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press(':');
+        await page.keyboard.type('quicktag', { delay: 20 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
+        await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
     });
 
     test(':dark toggles auto dark mode', async ({ page }) => {

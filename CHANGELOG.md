@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.24 — June 2026](#v20260624--june-2026)
 - [v2026.06.23 — June 2026](#v20260623--june-2026)
 - [v2026.06.22 — June 2026](#v20260622--june-2026)
 - [v2026.06.21 — June 2026](#v20260621--june-2026)
@@ -49,6 +50,47 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.24 — June 2026
+
+**Command palette polish, G-jump promo on hold, keyboard preset tools, phone-only dashboard footer** — command palette regrouped to **5** clearer groups with **recent commands** at lone `:` and `:quicktag` / `:qt`; hold `G` (~300 ms) shows first-time jump hint with deferred retry when overlays block it; dashboard `inert` auto-syncs via `MutationObserver` and inline-edit enter/leave; phone-only reduced footer (tablets keep desktop toolbar); Config → Keyboard rebind conflict check, preset export/import, fixed sections in settings search; GitHub Actions CI with JSON validation and Playwright.
+
+### Keyboard focus & overlays
+
+- **fix** **Inert observer** — `FocusTrapUtils.initDashboardInertObserver()` watches overlay DOM (search `.show`, app modal, tag cloud `hidden`, page overview / omnibox / move-delete-tag popovers, inline-edit body class) and calls `scheduleSyncDashboardInert()` so rapid open/close cycles do not leave the grid stuck `inert`.
+- **fix** **Inline edit inert** — `dashboard-inline-edit.js` calls `FocusTrapUtils.syncDashboardInert()` when inline edit starts and ends.
+
+### G jump & discoverability
+
+- **new** **G+jump promo on hold** — `KeyboardNavigation._activateGChordMode()` calls `DashboardGJumpPromo.onFirstChordHold()` when chord mode arms (~300 ms hold); balloon explains `G`+digit / `G+P` / `GG` before you complete a jump.
+- **fix** **Deferred promo retry** — `dashboard-g-jump-promo.js` retries for up to ~30 s when `isPromoDeferred()` (What's new, grid keyboard promo, tours, search open, etc.) instead of skipping the first-time hint.
+- **fix** **Longer chord window** — `_armGChordTimeout()` uses 10 s while the G+jump promo is open, 3 s otherwise.
+
+### Search & commands
+
+- **fix** **Five command groups** — `search-commands.js` lists **Bookmarks**, **Search & navigate**, **Look & layout**, **Smart collections**, and **Settings & tools** (replacing ten nested headers for a clearer lone `:` overview).
+- **new** **Recent commands** — lone `:` prepends a **Recent commands** header with up to five entries from `SearchComponent.recentCommands` (`getRecentCommands` hook on `commandsComponent`).
+- **new** **`:quicktag` / `:qt`** — opens the quick-tag popover (`Shift+T`) on the keyboard-selected bookmark from command mode.
+
+### Config → Keyboard
+
+- **new** **Rebind conflict check** — `findKeyConflict()` warns when a new binding clashes with another custom binding, a default rebindable key, or a fixed cheat-sheet shortcut before save.
+- **new** **Preset export / import** — toolbar downloads/uploads rebindable keys as JSON (`keyboardExportPreset` / `keyboardImportPreset`); fixed defaults remain documented on the cheat sheet.
+- **fix** **Settings search** — `config-settings-search.js` `indexKeyboardTab()` indexes fixed sections (add bookmark, quick actions, grid navigation) and every key label per row.
+
+### Mobile & tablet
+
+- **fix** **Phone-only dashboard footer** — `mobile-experience.js` sets `data-mobile-layout` only at ≤768 px; portrait tablets and coarse touch above phone width keep the full desktop footer (`data-touch-layout` still drives previews and discoverability skips).
+- **fix** **Config tab guard** — reduced config tabs apply on phone width only (`isPhoneLayout()`), not all touch layouts.
+
+### Developer & docs
+
+- **new** **GitHub Actions CI** — `.github/workflows/ci.yml` runs `scripts/validate-json.sh` (`npm run validate:json`) and `npm run test:e2e` (Playwright + Go server) on push and pull request.
+- **new** **Playwright coverage** — `tests/config-keyboard.spec.js`, `tests/dashboard-inline-edit.spec.js`; expanded `dashboard-command-palette.spec.js` (five groups, `:quicktag`, recent commands) and `dashboard-grid-shortcuts.spec.js` (G-hold promo).
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for v2026.06.24.
+- **fix** **Cache-bust** — `whats-new-v89` (`2026.06-dashboard-release-v70`); `dashboard-inert-sync-5`, `g-chord-promo-1`, `g-jump-promo-3`, `cmd-groups-5`, `cmd-palette-recent-6`, `keyboard-3`, `phone-layout-2`, `inline-edit-inert-1`, `search-index-keyboard-1`.
 
 ---
 

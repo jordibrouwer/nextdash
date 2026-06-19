@@ -117,9 +117,68 @@
         applyDashboardInert(shouldTrapDashboardBackground());
     }
 
+    let inertSyncScheduled = false;
+
+    function scheduleSyncDashboardInert() {
+        if (inertSyncScheduled) {
+            return;
+        }
+        inertSyncScheduled = true;
+        requestAnimationFrame(() => {
+            inertSyncScheduled = false;
+            syncDashboardInert();
+        });
+    }
+
+    function initDashboardInertObserver() {
+        if (typeof MutationObserver === 'undefined' || !document.body) {
+            return;
+        }
+        const observer = new MutationObserver((mutations) => {
+            const relevant = mutations.some((mutation) => {
+                if (mutation.type === 'attributes') {
+                    const id = mutation.target.id || '';
+                    const cls = mutation.target.classList;
+                    return id === 'shortcut-search' || id === 'app-modal' || id === 'tag-cloud-modal'
+                        || id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
+                        || id === 'date-popover' || id === 'page-overview-overlay' || id === 'omnibox-overlay'
+                        || (mutation.attributeName === 'class' && mutation.target === document.body);
+                }
+                if (mutation.type === 'childList') {
+                    return Array.from(mutation.addedNodes).concat(Array.from(mutation.removedNodes)).some((node) => {
+                        if (node.nodeType !== Node.ELEMENT_NODE) {
+                            return false;
+                        }
+                        const el = /** @type {Element} */ (node);
+                        const id = el.id || '';
+                        return id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
+                            || id === 'date-popover' || id === 'page-overview-overlay' || id === 'omnibox-overlay'
+                            || el.id === 'shortcut-search' || el.id === 'app-modal';
+                    });
+                }
+                return false;
+            });
+            if (relevant) {
+                scheduleSyncDashboardInert();
+            }
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'hidden'],
+        });
+    }
+
     /** @deprecated Use syncDashboardInert — trapped arg ignored; DOM is source of truth. */
     function setDashboardInert() {
         syncDashboardInert();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDashboardInertObserver);
+    } else {
+        initDashboardInertObserver();
     }
 
     window.FocusTrapUtils = {
@@ -128,6 +187,7 @@
         focusIfConnected,
         setDashboardInert,
         syncDashboardInert,
+        scheduleSyncDashboardInert,
         shouldTrapDashboardBackground,
     };
 })();

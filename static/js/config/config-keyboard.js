@@ -200,7 +200,7 @@ class ConfigKeyboard {
                 titleKey: 'config.keyboardSectionGridNav',
                 titleFallback: 'Grid navigation',
                 noteKey: 'config.keyboardFixedNoteGridNav',
-                noteFallback: 'Chord shortcuts and keys used while keyboard-navigating the bookmark grid. Not rebindable here yet.',
+                noteFallback: 'Quick tap G opens bookmark shortcuts starting with G; hold G (~300 ms) or press G then a digit / P / second G for category jump. Not rebindable here yet.',
                 bindings: [
                     {
                         keys: ['G + 1–9'],
@@ -270,6 +270,145 @@ class ConfigKeyboard {
         return this.label(categoryKey, fallback);
     }
 
+    getFixedKeySet() {
+        const keys = new Set();
+        this.getFixedBindingGroups().forEach((group) => {
+            group.bindings.forEach((binding) => {
+                (binding.keys || []).forEach((key) => {
+                    const normalized = String(key || '').trim();
+                    if (normalized) {
+                        keys.add(normalized);
+                    }
+                });
+            });
+        });
+        return keys;
+    }
+
+    findKeyConflict(bindingId, key) {
+        const normalized = String(key || '').trim();
+        if (!normalized) {
+            return null;
+        }
+
+        const customConflict = Object.entries(this.customBindings).find(
+            ([id, bound]) => id !== bindingId && bound === normalized,
+        );
+        if (customConflict) {
+            const desc = this.bindingDescription(this.defaultBindings[customConflict[0]] || {});
+            return this.label('config.keyboardConflictCustom', 'Key already bound to "{name}". Choose another.')
+                .replace('{name}', desc || customConflict[0]);
+        }
+
+        const defaultConflict = Object.entries(this.defaultBindings).find(
+            ([id, binding]) => id !== bindingId && binding.key === normalized,
+        );
+        if (defaultConflict) {
+            return this.label('config.keyboardConflictDefault', 'Key is the default for "{name}". Choose another.')
+                .replace('{name}', this.bindingDescription(defaultConflict[1]));
+        }
+
+        if (this.getFixedKeySet().has(normalized)) {
+            return this.label(
+                'config.keyboardConflictFixed',
+                'Key is reserved for a fixed dashboard shortcut (cheat sheet). Choose another.',
+            );
+        }
+
+        return null;
+    }
+
+    exportPreset() {
+        const payload = {
+            version: 1,
+            type: 'nextdash-keyboard-preset',
+            customKeyBindings: { ...this.customBindings },
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'nextdash-keyboard-preset.json';
+        anchor.click();
+        URL.revokeObjectURL(url);
+    }
+
+    importPresetFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(String(reader.result || ''));
+                    const bindings = parsed?.customKeyBindings && typeof parsed.customKeyBindings === 'object'
+                        ? parsed.customKeyBindings
+                        : parsed;
+                    if (!bindings || typeof bindings !== 'object') {
+                        reject(new Error('invalid'));
+                        return;
+                    }
+                    const next = {};
+                    Object.entries(bindings).forEach(([id, boundKey]) => {
+                        if (!this.defaultBindings[id] || typeof boundKey !== 'string') {
+                            return;
+                        }
+                        const conflict = this.findKeyConflict(id, boundKey);
+                        if (!conflict) {
+                            next[id] = boundKey;
+                        }
+                    });
+                    this.customBindings = next;
+                    if (this.lastManager) {
+                        this.refresh(this.lastManager);
+                    }
+                    this.markDirty();
+                    resolve(Object.keys(next).length);
+                } catch {
+                    reject(new Error('invalid'));
+                }
+            };
+            reader.onerror = () => reject(new Error('read'));
+            reader.readAsText(file);
+        });
+    }
+
+    renderPresetToolbar(container, manager) {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'keyboard-preset-toolbar';
+
+        const exportBtn = document.createElement('button');
+        exportBtn.type = 'button';
+        exportBtn.className = 'btn btn-secondary btn-small';
+        exportBtn.textContent = this.label('config.keyboardExportPreset', 'Export keyboard preset');
+        exportBtn.addEventListener('click', () => this.exportPreset());
+
+        const importLabel = document.createElement('label');
+        importLabel.className = 'btn btn-secondary btn-small keyboard-import-label';
+        importLabel.textContent = this.label('config.keyboardImportPreset', 'Import keyboard preset');
+
+        const importInput = document.createElement('input');
+        importInput.type = 'file';
+        importInput.accept = 'application/json,.json';
+        importInput.hidden = true;
+        importInput.addEventListener('change', async () => {
+            const file = importInput.files?.[0];
+            importInput.value = '';
+            if (!file) {
+                return;
+            }
+            try {
+                await this.importPresetFile(file);
+                window.ConfigSettingsSearch?.refreshIndex?.();
+            } catch {
+                alert(this.label('config.keyboardImportInvalid', 'Could not import keyboard preset — invalid file.'));
+            }
+        });
+        importLabel.appendChild(importInput);
+
+        toolbar.appendChild(exportBtn);
+        toolbar.appendChild(importLabel);
+        container.appendChild(toolbar);
+    }
+
     refresh(manager) {
         this.lastManager = manager;
         this.customBindings = { ...manager.settingsData?.customKeyBindings } || {};
@@ -278,6 +417,8 @@ class ConfigKeyboard {
         if (!container) return;
 
         container.innerHTML = '';
+
+        this.renderPresetToolbar(container, manager);
 
         this.getFixedBindingGroups().forEach((group) => {
             this.renderFixedSection(container, group);
@@ -397,6 +538,7 @@ class ConfigKeyboard {
         group.bindings.forEach((binding) => {
             const row = document.createElement('div');
             row.className = 'keyboard-binding-row keyboard-binding-row--fixed';
+            row.dataset.settingsSearchTitle = this.label(binding.descriptionKey, binding.descriptionFallback);
 
             const descDiv = document.createElement('div');
             descDiv.className = 'binding-description';
@@ -463,6 +605,11 @@ class ConfigKeyboard {
             }
 
             const existing = Object.entries(this.customBindings).find(([, v]) => v === key);
+            const conflict = this.findKeyConflict(bindingId, key);
+            if (conflict) {
+                alert(conflict);
+                return;
+            }
             if (existing) {
                 alert(this.label('config.keyboardAlreadyBound', 'Key already bound to another shortcut. Please choose another.'));
                 return;

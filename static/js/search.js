@@ -34,6 +34,7 @@ class SearchComponent {
             this.currentQuery = newQuery;
             this.updateSearch();
         });
+        this.commandsComponent.getRecentCommands = () => this.recentCommands;
 
         this.findersComponent = new window.SearchFindersComponent(this.language, [], this.settings);
 

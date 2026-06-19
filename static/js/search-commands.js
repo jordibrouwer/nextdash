@@ -22,49 +22,31 @@ class SearchCommandsComponent {
         // Initialize :note command handler
         this.noteCommandHandler = new SearchCommandNote(language);
 
-        // Command groups (order matters — shown collapsed by default)
+        // Command groups (order matters — shown collapsed by default, max 5 for overview)
         this.commandGroups = [
             {
-                id: 'bookmark-create',
-                label: 'Bookmarks — add & remove',
-                labelKey: 'commands.groupBookmarkCreate',
-                commands: ['new', 'add', 'remove'],
+                id: 'bookmarks',
+                label: 'Bookmarks',
+                labelKey: 'commands.groupBookmarks',
+                commands: [
+                    'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'quicktag', 'tag',
+                    'open', 'goto', 'find', 'stale', 'duplicates',
+                ],
             },
             {
-                id: 'bookmark-edit',
-                label: 'Bookmarks — edit',
-                labelKey: 'commands.groupBookmarkEdit',
-                commands: ['note', 'pin', 'move', 'edit', 'copy', 'tag'],
+                id: 'navigate-search',
+                label: 'Search & navigate',
+                labelKey: 'commands.groupNavigateSearch',
+                commands: ['save', 'saved', 'history', 'sort', 'page', 'category', 'recent', 'overview', 'filter'],
             },
             {
-                id: 'bookmark-browse',
-                label: 'Bookmarks — open & inspect',
-                labelKey: 'commands.groupBookmarkBrowse',
-                commands: ['open', 'goto', 'find', 'stale', 'duplicates'],
-            },
-            {
-                id: 'search',
-                label: 'Search & sort',
-                labelKey: 'commands.groupSearch',
-                commands: ['save', 'saved', 'history', 'sort'],
-            },
-            {
-                id: 'navigation',
-                label: 'Navigation',
-                labelKey: 'commands.groupNavigation',
-                commands: ['page', 'category', 'recent', 'overview'],
-            },
-            {
-                id: 'layout',
-                label: 'Layout & theme',
-                labelKey: 'commands.groupLayout',
-                commands: ['theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed'],
-            },
-            {
-                id: 'display',
-                label: 'Display & chrome',
-                labelKey: 'commands.groupDisplay',
-                commands: ['preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'tips', 'buttons'],
+                id: 'look-and-feel',
+                label: 'Look & layout',
+                labelKey: 'commands.groupLookAndFeel',
+                commands: [
+                    'theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed',
+                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'tips', 'buttons',
+                ],
             },
             {
                 id: 'collections',
@@ -73,15 +55,9 @@ class SearchCommandsComponent {
                 commands: ['collections'],
             },
             {
-                id: 'filter-tag',
-                label: 'Tag filter',
-                labelKey: 'commands.groupFilter',
-                commands: ['filter'],
-            },
-            {
-                id: 'system',
-                label: 'System & help',
-                labelKey: 'commands.groupSystem',
+                id: 'settings-tools',
+                label: 'Settings & tools',
+                labelKey: 'commands.groupSettingsTools',
                 commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tour', 'promo'],
             },
         ];
@@ -119,6 +95,7 @@ class SearchCommandsComponent {
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
             'move': this.handleMoveCommand.bind(this),
+            'quicktag': this.handleQuickTagCommand.bind(this),
             'edit': this.handleEditCommand.bind(this),
             'copy': this.handleCopyCommand.bind(this),
             'page': this.handlePageCommand.bind(this),
@@ -473,6 +450,7 @@ class SearchCommandsComponent {
         if (potentialCommand === 'language') potentialCommand = 'lang';
         if (potentialCommand === 'animation') potentialCommand = 'animations';
         if (potentialCommand === 'collection') potentialCommand = 'collections';
+        if (potentialCommand === 'qt') potentialCommand = 'quicktag';
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
         const tagShorthand = potentialCommand.match(/^tag:(.+)$/i);
@@ -516,10 +494,27 @@ class SearchCommandsComponent {
      */
     getAvailableCommands() {
         // Commands that act on a specific bookmark and benefit from a pre-filled name
-        const bookmarkContextCmds = new Set(['remove', 'note', 'move', 'edit', 'copy']);
+        const bookmarkContextCmds = new Set(['remove', 'note', 'move', 'edit', 'copy', 'quicktag']);
         const ctxName = this.contextBookmark ? this.contextBookmark.name : null;
 
         const result = [];
+        const recent = typeof this.getRecentCommands === 'function' ? this.getRecentCommands() : [];
+        const recentSlice = recent.slice(0, 5);
+        if (recentSlice.length > 0) {
+            result.push({
+                type: 'command-group-header',
+                groupId: 'palette_recent',
+                label: this._t('commands.paletteRecentCommands', 'Recent commands'),
+                count: recentSlice.length,
+                expanded: true,
+            });
+            result.push({
+                type: 'command-chips',
+                queries: recentSlice,
+                _chipCount: recentSlice.length,
+            });
+        }
+
         for (const group of this.commandGroups) {
             const isExpanded = this.expandedGroups.has(group.id);
             result.push({
@@ -705,6 +700,37 @@ class SearchCommandsComponent {
                     }
                 } else {
                     dash.keyboardNavigation?.openMovePopoverForCurrent?.();
+                }
+                return { refresh: false };
+            },
+        }];
+    }
+
+    handleQuickTagCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (!dash) return [];
+
+        const target = this._resolveBookmarkActionTarget();
+        if (!target?.bookmark) {
+            return this._noBookmarkSelectionRow(':QUICKTAG');
+        }
+
+        const name = target.bookmark.name || target.bookmark.url || '';
+        return [{
+            name: this._t('commands.quicktagLabel', 'Quick-tag "{name}"… (Shift+T)').replace('{name}', name),
+            shortcut: ':QUICKTAG',
+            stateId: 'quicktag',
+            type: 'command',
+            action: () => {
+                if (target.row) {
+                    this._ensureKeyboardSelectionForRow(target.row);
+                    if (typeof dash.showTagPopover === 'function') {
+                        dash.showTagPopover(target.row, target.bookmark, target.bookmarkIndex);
+                    } else {
+                        dash.keyboardNavigation?.openTagPopoverForCurrent?.();
+                    }
+                } else {
+                    dash.keyboardNavigation?.openTagPopoverForCurrent?.();
                 }
                 return { refresh: false };
             },

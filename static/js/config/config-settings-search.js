@@ -459,12 +459,39 @@
             targetEl: document.querySelector('[data-tab-content="keyboard"]'),
         });
 
+        const keyboard = window.configManager?.keyboard;
+        if (keyboard && typeof keyboard.getFixedBindingGroups === 'function') {
+            keyboard.getFixedBindingGroups().forEach((group) => {
+                const sectionTitle = group.titleFallback || group.titleKey || '';
+                addEntry(entries, seen, {
+                    tab: 'keyboard',
+                    tabLabel,
+                    title: sectionTitle,
+                    subtitle: `${tabLabel} › ${t('keyboardFixedSection', 'fixed shortcuts')}`,
+                    targetEl: document.querySelector('[data-tab-content="keyboard"]'),
+                    extra: sectionTitle,
+                });
+                group.bindings.forEach((binding) => {
+                    const title = binding.descriptionFallback || binding.description || '';
+                    const keys = (binding.keys || []).join(' ');
+                    addEntry(entries, seen, {
+                        tab: 'keyboard',
+                        tabLabel,
+                        title,
+                        subtitle: keys ? `${tabLabel} › ${keys}` : tabLabel,
+                        targetEl: document.querySelector('[data-tab-content="keyboard"]'),
+                        extra: keys,
+                    });
+                });
+            });
+        }
+
         document.querySelectorAll('#keyboard-bindings-container .keyboard-binding-row').forEach((row) => {
             const desc = row.querySelector('.binding-description');
-            const keyEl = row.querySelector('.binding-key');
-            const title = textOf(desc);
+            const keyEls = row.querySelectorAll('.binding-key');
+            const title = row.dataset.settingsSearchTitle || textOf(desc);
             if (!title) return;
-            const keyLabel = textOf(keyEl);
+            const keyLabel = Array.from(keyEls).map((el) => textOf(el)).filter(Boolean).join(' / ');
             addEntry(entries, seen, {
                 tab: 'keyboard',
                 tabLabel,
