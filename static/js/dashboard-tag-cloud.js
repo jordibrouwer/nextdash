@@ -476,15 +476,9 @@
             this.toggle.setAttribute('aria-expanded', this.modalOpen ? 'true' : 'false');
             document.body.setAttribute('data-tag-cloud-modal-open', this.modalOpen ? 'true' : 'false');
             document.body.setAttribute('data-tag-filter-active', filtered ? 'true' : 'false');
-
-            if (filtered) {
-                const tagsLabel = this.formatActiveTagsLabel();
-                const tip = t('dashboard.tagFilterActiveTooltip', 'Filtering: {tags}').replace('{tags}', tagsLabel);
-                this.toggle.setAttribute('data-tooltip', tip);
-            } else {
-                const defaultTip = t('dashboard.tagCloudToggleTooltip', '/ tags');
-                this.toggle.setAttribute('data-tooltip', defaultTip);
-            }
+            // Active filters are shown in the tag-filter banner; avoid a second "Filtering:" chip on the FAB.
+            this.toggle.removeAttribute('data-tooltip');
+            this.toggle.removeAttribute('title');
         },
 
         onToggleClick() {
@@ -648,6 +642,37 @@
             this.body.classList.add('is-scrollable');
         },
 
+        positionModalForActiveTagFilter(toggleRect, margin, vw, vh, maxW) {
+            const banner = document.getElementById('tag-filter-banner');
+            if (!banner || !window.dashboardInstance?.hasActiveTagFilters?.()) {
+                return false;
+            }
+            const bannerRect = banner.getBoundingClientRect();
+            if (bannerRect.height < 1 || toggleRect.height < 1) {
+                return false;
+            }
+
+            let left = toggleRect.left;
+            if (left + maxW > vw - margin) {
+                left = Math.max(margin, vw - margin - maxW);
+            }
+
+            const top = bannerRect.bottom + margin;
+            const maxModalH = Math.max(
+                140,
+                Math.min(vh - top - margin, toggleRect.top - top - margin)
+            );
+            this.syncModalSize(maxModalH);
+
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
+            this.modal.style.transformOrigin = 'top left';
+            window.DashboardFeaturePromos?.reposition?.();
+            return true;
+        },
+
         positionModalSideRail(rect, margin, vw, vh, maxW) {
             let left = rect.right + margin;
             if (left + maxW > vw - margin) {
@@ -702,6 +727,10 @@
             const maxW = Math.min(Math.max(idealW, 300), Math.min(680, vw - margin * 2));
             this.modal.style.width = `${Math.round(maxW)}px`;
             this.modal.style.maxWidth = `${Math.round(maxW)}px`;
+
+            if (this.positionModalForActiveTagFilter(rect, margin, vw, vh, maxW)) {
+                return;
+            }
 
             const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
             if (isSideRail) {

@@ -533,6 +533,46 @@
         };
     }
 
+    function applyBelowPlacement(anchorRect) {
+        if (!promoEl || !anchorRect || (anchorRect.width < 1 && anchorRect.height < 1)) {
+            return false;
+        }
+
+        promoEl.style.visibility = 'hidden';
+        promoEl.style.display = 'block';
+        promoEl.style.right = 'auto';
+        promoEl.style.bottom = 'auto';
+
+        const { width: initialWidth, height } = measurePromoBalloon();
+        const gap = 10;
+        const pad = global.DashboardPromoPlacement.VIEWPORT_PAD;
+        const width = Math.min(initialWidth, Math.max(160, global.innerWidth - (pad * 2)));
+        let left = anchorRect.left + (anchorRect.width / 2) - (width / 2);
+        left = Math.max(pad, Math.min(left, global.innerWidth - width - pad));
+
+        promoEl.style.width = `${Math.round(width)}px`;
+        promoEl.style.maxWidth = `${Math.round(width)}px`;
+        promoEl.classList.remove(
+            'dashboard-feature-promo--above',
+            'dashboard-feature-promo--below-anchor',
+            'dashboard-feature-promo--beside-right',
+            'dashboard-feature-promo--beside-left'
+        );
+
+        let top = anchorRect.bottom + gap;
+        if (top + height > global.innerHeight - pad) {
+            top = Math.max(pad, anchorRect.top - gap - height);
+            promoEl.classList.add('dashboard-feature-promo--above');
+        } else {
+            promoEl.classList.add('dashboard-feature-promo--below-anchor');
+        }
+
+        promoEl.style.left = `${Math.round(left)}px`;
+        promoEl.style.top = `${Math.round(top)}px`;
+        promoEl.style.visibility = 'visible';
+        return true;
+    }
+
     function applyBesidePlacement(anchorRect) {
         if (!promoEl || !anchorRect || (anchorRect.width < 1 && anchorRect.height < 1)) {
             return false;
@@ -600,7 +640,7 @@
                 dismissOpen();
                 return;
             }
-            applyBesidePlacement(rect);
+            applyBelowPlacement(rect);
             return;
         }
 
@@ -680,7 +720,8 @@
             return false;
         }
         if (kind === 'tagCloud') {
-            return global.DashboardTagCloud?.isEligible?.() === true;
+            return global.DashboardTagCloud?.isEligible?.() === true
+                && !global.dashboardInstance?.hasActiveTagFilters?.();
         }
         if (kind === 'tagFilterBulk') {
             return readConfirmed('tagCloud');
@@ -736,7 +777,7 @@
         }
         const positionAfterLayout = () => {
             positionPromo();
-            if (kind !== 'inlineEdit') {
+            if (kind !== 'inlineEdit' && kind !== 'tagFilterBulk') {
                 promoEl?.querySelector('.dashboard-feature-promo-close')?.focus({ preventScroll: true });
             }
         };

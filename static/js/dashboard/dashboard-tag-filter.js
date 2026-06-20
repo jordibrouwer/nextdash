@@ -242,6 +242,10 @@ class DashboardTagFilter {
         this.updateTagFilterIndicator();
         d.syncBookmarkGridA11y();
         d.keyboardNavigation?.scheduleUpdate?.();
+        window.FocusTrapUtils?.scheduleSyncDashboardInert?.();
+        if (window.DashboardTagCloud?.modalOpen) {
+            window.DashboardTagCloud.positionModal?.();
+        }
         if (d.statusMonitor) {
             if (d.statusMonitorInitialized) {
                 d.statusMonitor.updateBookmarks(matched);

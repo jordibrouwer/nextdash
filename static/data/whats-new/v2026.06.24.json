@@ -13,6 +13,35 @@
         {
           "badge": "fix",
           "text": "<strong>Inline edit inert</strong> — entering or leaving <code>;</code> inline edit calls <code>syncDashboardInert()</code> immediately so the bookmark grid stays blocked while you edit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Esc during inline edit</strong> — the grid keyboard promo no longer swallows <code>Esc</code> while inline edit is open; dismissing the inline-edit promo cancels the form."
+        }
+      ]
+    },
+    {
+      "title": "Tag filter &amp; tag cloud",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bulk toolbar stays clickable</strong> — with a tag filter active, <strong>Open all</strong>, <strong>Copy links</strong>, <strong>Move</strong>, and <strong>Delete</strong> work even while the <code>/</code> tag cloud modal is open (selective <code>inert</code> on the bookmark list only)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Vertical filtered list</strong> — matching bookmarks stack in a vertical grid in tag-filter view (all layout presets, including launcher) — no ghost clicks on hidden tiles or horizontal bunching."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shortcut vs open count</strong> — open-count badges stay hidden in tag-filter view so they no longer overlap shortcut codes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag cloud placement</strong> — with an active filter, the cloud anchors left below the filter banner / <code>/</code> FAB (not centered over bookmarks). The <code>/</code> FAB chip label replaces the redundant <em>Filtering:</em> tooltip."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag-filter bulk promo</strong> — first-time <em>Got it</em> balloon sits below the bulk toolbar; tag cloud promo is skipped when you already have an active filter."
         }
       ]
     },
@@ -47,6 +76,10 @@
         {
           "badge": "new",
           "text": "<strong><code>:quicktag</code> / <code>:qt</code></strong> — opens the quick-tag popover (<code>Shift+T</code>) on the keyboard-selected bookmark from command mode."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet <code>:quicktag</code></strong> — keyboard cheat sheet (<code>!</code> / <code>F1</code>) lists <code>:quicktag</code> / <code>:qt</code> with a localized label."
         }
       ]
     },
@@ -89,7 +122,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Playwright coverage</strong> — tests for keyboard preset export/import and conflicts, inline-edit inert sync, command palette five groups / recent commands / <code>:quicktag</code>, and G-hold promo."
+          "text": "<strong>Playwright coverage</strong> — tests for keyboard preset export/import and conflicts, inline-edit inert sync and <code>Esc</code> cancel, command palette five groups / recent commands / <code>:quicktag</code>, G-hold promo, and tag-filter view (toolbar with cloud open, vertical list, modal placement)."
         },
         {
           "badge": "fix",

@@ -53,6 +53,13 @@
 
 .dashboard-feature-promo--tagFilterBulk {
     z-index: 2100;
+    width: auto;
+    max-width: min(22rem, calc(100vw - 1.5rem));
+    pointer-events: none;
+}
+
+.dashboard-feature-promo--tagFilterBulk .dashboard-feature-promo-balloon {
+    pointer-events: auto;
 }
 
 .dashboard-feature-promo--recentBookmarks {

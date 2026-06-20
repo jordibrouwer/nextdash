@@ -101,6 +101,10 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
     pointer-events: auto;
 }
 
+body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
+    pointer-events: none;
+}
+
 /* Anchored modal — matches dashboard button surfaces */
 .tag-cloud-modal {
     position: fixed;

@@ -643,6 +643,127 @@ body {
     max-width: 100%;
 }
 
+/* Tag filter always uses vertical bookmark rows (overrides launcher tiles on parent grid) */
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
+    display: grid;
+    grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
+    row-gap: 0.5rem;
+    flex-direction: unset;
+    flex-wrap: unset;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > * {
+    grid-column: 1 / -1;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+    align-items: center;
+    padding: 0.5rem var(--bookmark-row-end-pad, 2px) 0.5rem 0;
+    min-height: 1.9rem;
+    white-space: nowrap;
+    border-radius: 0;
+    gap: unset;
+    flex-direction: unset;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover {
+    transform: none;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before {
+    content: none;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle {
+    display: block !important;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut {
+    display: block !important;
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+    justify-self: end;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
+    grid-template-columns:
+        var(--bookmark-lead-col, minmax(1.25rem, max-content))
+        minmax(0, 1fr)
+        var(--bookmark-status-col, 3.35em)
+        max-content;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
+    grid-column: 4;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count {
+    display: none !important;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
+    display: inline-flex !important;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead {
+    display: inline-flex;
+    justify-content: flex-start;
+    align-items: center;
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 1.15em;
+    width: auto;
+    min-width: 1.15em;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot {
+    width: auto;
+    height: auto;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon {
+    width: 1.15em;
+    height: 1.15em;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+    flex: unset;
+    overflow: hidden;
+}
+
+#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text {
+    font-size: var(--bookmark-font-size, 1rem);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
+    line-height: inherit;
+}
+
 .empty-state--tag-filter {
     padding: 1.5rem 0.5rem;
     color: var(--text-tertiary);

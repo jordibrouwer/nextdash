@@ -134,10 +134,9 @@ class DashboardRenderCore {
             cls === 'dashboard-grid'
             || cls === 'packed-columns'
             || cls.startsWith('columns-')
-            || cls.startsWith('layout-')
             || cls.startsWith('density-')
         );
-        target.className = `tag-filter-view-body ${layoutClasses.join(' ')}`.trim();
+        target.className = `tag-filter-view-body ${layoutClasses.join(' ')} layout-default`.trim();
         target.setAttribute('role', 'grid');
         target.setAttribute(
             'aria-label',

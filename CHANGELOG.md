@@ -55,12 +55,23 @@ _No unreleased changes at this time._
 
 ## v2026.06.24 — June 2026
 
-**Command palette polish, G-jump promo on hold, keyboard preset tools, phone-only dashboard footer** — command palette regrouped to **5** clearer groups with **recent commands** at lone `:` and `:quicktag` / `:qt`; hold `G` (~300 ms) shows first-time jump hint with deferred retry when overlays block it; dashboard `inert` auto-syncs via `MutationObserver` and inline-edit enter/leave; phone-only reduced footer (tablets keep desktop toolbar); Config → Keyboard rebind conflict check, preset export/import, fixed sections in settings search; GitHub Actions CI with JSON validation and Playwright.
+**Command palette polish, G-jump promo on hold, keyboard preset tools, tag-filter view fixes, phone-only dashboard footer** — command palette regrouped to **5** clearer groups with **recent commands** at lone `:` and `:quicktag` / `:qt`; hold `G` (~300 ms) shows first-time jump hint with deferred retry when overlays block it; dashboard `inert` auto-syncs via `MutationObserver` and inline-edit enter/leave; tag-filter bulk toolbar stays clickable with tag cloud open; filtered bookmarks stack vertically (all layouts); tag cloud anchors beside `/` FAB when filtering; phone-only reduced footer (tablets keep desktop toolbar); Config → Keyboard rebind conflict check, preset export/import, fixed sections in settings search; GitHub Actions CI with JSON validation and Playwright.
 
 ### Keyboard focus & overlays
 
 - **fix** **Inert observer** — `FocusTrapUtils.initDashboardInertObserver()` watches overlay DOM (search `.show`, app modal, tag cloud `hidden`, page overview / omnibox / move-delete-tag popovers, inline-edit body class) and calls `scheduleSyncDashboardInert()` so rapid open/close cycles do not leave the grid stuck `inert`.
 - **fix** **Inline edit inert** — `dashboard-inline-edit.js` calls `FocusTrapUtils.syncDashboardInert()` when inline edit starts and ends.
+- **fix** **Esc during inline edit** — grid keyboard promo no longer swallows `Esc` while inline edit is open; dismissing the inline-edit promo cascades into form cancel.
+
+### Tag filter & tag cloud
+
+- **fix** **Selective inert during tag filter** — when a tag filter is active, only `.tag-filter-view-body` is `inert` (not the full `#dashboard-layout`), so bulk toolbar buttons (**Open all**, **Copy links**, **Move**, **Delete**) stay clickable while the tag cloud modal is open.
+- **fix** **Tag cloud backdrop pass-through** — tag cloud backdrop uses `pointer-events: none` when `data-tag-filter-active="true"` so clicks reach the bulk toolbar.
+- **fix** **Vertical bookmark list in tag-filter view** — filtered bookmarks render in a vertical grid list (all layout presets, including launcher) instead of copying launcher tile columns that caused ghost clicks and horizontal bunching.
+- **fix** **Open count vs shortcut** — open-count badge stays hidden in tag-filter view so it no longer overlaps shortcut codes.
+- **fix** **Tag cloud placement with active filter** — modal anchors left below the filter banner / `/` FAB (height capped above FAB) instead of centering over bookmarks.
+- **fix** **`/` FAB tooltip** — redundant **Filtering:** tooltip removed; chip label on the FAB is enough.
+- **fix** **Tag-filter bulk promo** — one-time **Got it** balloon places below the bulk toolbar (not beside); tag cloud discoverability promo is skipped when a filter is already active.
 
 ### G jump & discoverability
 
@@ -73,6 +84,7 @@ _No unreleased changes at this time._
 - **fix** **Five command groups** — `search-commands.js` lists **Bookmarks**, **Search & navigate**, **Look & layout**, **Smart collections**, and **Settings & tools** (replacing ten nested headers for a clearer lone `:` overview).
 - **new** **Recent commands** — lone `:` prepends a **Recent commands** header with up to five entries from `SearchComponent.recentCommands` (`getRecentCommands` hook on `commandsComponent`).
 - **new** **`:quicktag` / `:qt`** — opens the quick-tag popover (`Shift+T`) on the keyboard-selected bookmark from command mode.
+- **fix** **Cheat sheet `:quicktag`** — keyboard cheat sheet (`!` / `F1`) documents `:quicktag` / `:qt` with localized label.
 
 ### Config → Keyboard
 
@@ -88,9 +100,9 @@ _No unreleased changes at this time._
 ### Developer & docs
 
 - **new** **GitHub Actions CI** — `.github/workflows/ci.yml` runs `scripts/validate-json.sh` (`npm run validate:json`) and `npm run test:e2e` (Playwright + Go server) on push and pull request.
-- **new** **Playwright coverage** — `tests/config-keyboard.spec.js`, `tests/dashboard-inline-edit.spec.js`; expanded `dashboard-command-palette.spec.js` (five groups, `:quicktag`, recent commands) and `dashboard-grid-shortcuts.spec.js` (G-hold promo).
+- **new** **Playwright coverage** — `tests/config-keyboard.spec.js`, `tests/dashboard-inline-edit.spec.js`; expanded `dashboard-command-palette.spec.js` (five groups, `:quicktag`, recent commands) and `dashboard-grid-shortcuts.spec.js` (G-hold promo); `tests/dashboard-tag-filter-view.spec.js` (bulk toolbar with cloud open, DOM row count, shortcut/open-count overlap, modal placement, vertical stack).
 - **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help, and whats-new updated for v2026.06.24.
-- **fix** **Cache-bust** — `whats-new-v89` (`2026.06-dashboard-release-v70`); `dashboard-inert-sync-5`, `g-chord-promo-1`, `g-jump-promo-3`, `cmd-groups-5`, `cmd-palette-recent-6`, `keyboard-3`, `phone-layout-2`, `inline-edit-inert-1`, `search-index-keyboard-1`.
+- **fix** **Cache-bust** — `whats-new-v90` (`2026.06-dashboard-release-v70`); `tag-filter-fix-6` on `dashboard-tag-cloud.js`, `tag-filter-fix-5` on `dashboard-feature-promos.js`, `tag-filter-fix-4` on `dashboard.css`, `tag-filter-fix-2` on `dashboard-render-core.js`, `tag-filter-fix-1` on `focus-trap-utils.js`, `dashboard-tag-filter.js`, `dashboard-tag-cloud.css`, `dashboard-feature-promos.css`; prior `dashboard-inert-sync-5`, `g-chord-promo-1`, `g-jump-promo-3`, `cmd-groups-5`, `cmd-palette-recent-6`, `keyboard-3`, `phone-layout-2`, `inline-edit-inert-1`, `search-index-keyboard-1`.
 
 ---
 
