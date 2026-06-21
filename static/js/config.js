@@ -24,6 +24,8 @@ class ConfigManager {
         this.tabTours.installPublicMethods();
         this.persistence = new ConfigPersistence(this);
         this.persistence.installPublicMethods();
+        this.tabs = new ConfigTabs(this);
+        this.tabs.installPublicMethods();
         this.stats = null;
 
         // Data
@@ -369,170 +371,6 @@ class ConfigManager {
         } catch {
             // ignore
         }
-    }
-
-    async syncCategoriesTabToCurrentPage() {
-        const pageId = this.getLastCategoriesPageId();
-        if (Number(this.currentCategoriesPageId) !== pageId) {
-            const flushed = await this.flushCategoriesPageBeforeSwitch();
-            if (!flushed) {
-                this.syncCategoriesPageSelectorUI(this.currentCategoriesPageId);
-                return;
-            }
-        }
-        this.currentCategoriesPageId = pageId;
-        this.syncCategoriesPageSelectorUI(pageId);
-        await this.loadPageCategories(pageId);
-    }
-
-    async onConfigCategoriesTabOpened() {
-        await this.syncCategoriesTabToCurrentPage();
-        if (this.hasSeenConfigCategoriesTour()) return;
-        this.dismissOtherConfigTabTours('categories');
-        this.scheduleConfigCategoriesTour();
-    }
-
-    async reloadTagsTabData() {
-        try {
-            await this.bookmarkStore.loadAll();
-        } catch (error) {
-            console.warn('Could not reload bookmarks for tags view', error);
-        }
-        try {
-            this.tags?.refresh(this);
-        } catch (error) {
-            console.warn('Could not refresh tags tab', error);
-        }
-    }
-
-    async onConfigTagsTabOpened() {
-        await this.reloadTagsTabData();
-        if (this.hasSeenConfigTagsTour()) return;
-        if (this._configTagsTourActive || this._configTagsTourStarting) {
-            return;
-        }
-        this.dismissOtherConfigTabTours('tags');
-        this.scheduleConfigTagsTour();
-    }
-
-    cancelPendingFindersTabReload() {
-        this._findersTabLoadSeq = (this._findersTabLoadSeq || 0) + 1;
-    }
-
-    async reloadFindersTabData(options = {}) {
-        const seq = ++this._findersTabLoadSeq;
-        const force = options.force === true;
-
-        if (!force && this.savedSnapshot) {
-            const currentFinders = JSON.stringify(this.findersData || []);
-            const savedFinders = JSON.stringify(this.savedSnapshot.findersData || []);
-            if (currentFinders !== savedFinders) {
-                this.finders?.refresh(this);
-                return;
-            }
-        }
-
-        try {
-            const loaded = await this.data.loadFinders();
-            if (seq !== this._findersTabLoadSeq) {
-                return;
-            }
-            this.findersData = window.ConfigFinders?.normalizeFinders
-                ? window.ConfigFinders.normalizeFinders(loaded, this.generateId.bind(this))
-                : loaded;
-        } catch (error) {
-            if (seq !== this._findersTabLoadSeq) {
-                return;
-            }
-            console.warn('Could not reload finders', error);
-        }
-        if (seq !== this._findersTabLoadSeq) {
-            return;
-        }
-        this.finders?.refresh(this);
-    }
-
-    async onConfigFindersTabOpened() {
-        await this.reloadFindersTabData();
-        if (this.hasSeenConfigFindersTour()) return;
-        if (this._configFindersTourActive || this._configFindersTourStarting) {
-            return;
-        }
-        this.dismissOtherConfigTabTours('finders');
-        this.scheduleConfigFindersTour();
-    }
-
-    onConfigPagesTabOpened() {
-        if (this.hasSeenConfigPagesTour()) return Promise.resolve();
-        if (this._configPagesTourActive || this._configPagesTourStarting) {
-            this.renderPagesTab();
-            return Promise.resolve();
-        }
-        this.dismissOtherConfigTabTours('pages');
-        const schedule = () => this.scheduleConfigPagesTour();
-        this.renderPagesTab();
-        schedule();
-        return Promise.resolve();
-    }
-
-    onConfigCollectionsTabOpened() {
-        if (this.hasSeenConfigCollectionsTour()) return Promise.resolve();
-        if (this._configCollectionsTourActive || this._configCollectionsTourStarting) {
-            return Promise.resolve();
-        }
-        this.dismissOtherConfigTabTours('collections');
-        const schedule = () => this.scheduleConfigCollectionsTour();
-        if (this.collections?.refresh) {
-            try {
-                this.collections.refresh(this);
-            } catch {
-                // ignore
-            }
-        }
-        schedule();
-        return Promise.resolve();
-    }
-
-    onConfigColorsTabOpened() {
-        if (this.hasSeenConfigThemeTour()) return Promise.resolve();
-        this.dismissOtherConfigTabTours('theme');
-        const schedule = () => this.scheduleConfigThemeTour();
-        if (typeof this.ensureColorsEditor === 'function') {
-            return this.ensureColorsEditor().finally(schedule);
-        }
-        schedule();
-        return Promise.resolve();
-    }
-
-    async ensureColorsEditor() {
-        if (!document.getElementById('theme-colors-editor')) return;
-        if (!this.colorsEditor) {
-            this.colorsEditor = new ColorsEditor({
-                root: document.getElementById('theme-colors-editor'),
-                language: this.language,
-                settings: this.settingsData,
-                onDirtyChange: (dirty) => this.setColorsDirtyState(dirty),
-            });
-        }
-        await this.colorsEditor.init();
-    }
-
-    async removeCustomTheme(themeId) {
-        return this.colorsEditor?.removeCustomTheme(themeId);
-    }
-
-    async guardColorsTabLeave(targetTab) {
-        if (this._configThemeTourActive || this._configThemeTourStarting) {
-            return true;
-        }
-        if (this.ui._currentTab !== 'colors' || targetTab === 'colors') {
-            if (targetTab === 'colors') await this.ensureColorsEditor();
-            return true;
-        }
-        if (!this.colorsEditor?.isDirty()) return true;
-        const ok = await this.colorsEditor.confirmLeave();
-        if (ok && targetTab === 'colors') await this.ensureColorsEditor();
-        return ok;
     }
 
     async loadData() {
@@ -921,40 +759,6 @@ class ConfigManager {
      * to the old page while the change handler is still applying the new value.
      * @returns {Promise<boolean>} false when validation/save failed (caller should abort switch)
      */
-    async flushCategoriesPageBeforeSwitch() {
-        clearTimeout(this._categoryReorderPersistTimer);
-        const pageId = Number(this.currentCategoriesPageId);
-        if (!this.categoriesListHydrated || !Number.isFinite(pageId) || pageId < 1) {
-            return true;
-        }
-
-        const fromDom = this.getCategoriesFromDOM();
-        if (!fromDom) {
-            return true;
-        }
-
-        const validationError = this.validateCategoriesData(fromDom);
-        if (validationError) {
-            this.ui.showNotification(validationError, 'error');
-            return false;
-        }
-
-        try {
-            this.categoriesData = fromDom;
-            await this.withRetry(() => this.data.saveCategoriesByPage(fromDom, pageId));
-            this.signalDashboardReload('category-page-switch');
-            this.syncSnapshotAfterStructurePersist();
-            return true;
-        } catch (error) {
-            console.error('Error flushing categories before page switch:', error);
-            this.ui.showNotification(
-                this.language.t('config.dashboardSyncFailed'),
-                'error'
-            );
-            return false;
-        }
-    }
-
     handleCategoriesReordered(newCategories) {
         this.categoriesData = newCategories;
         this.categories.syncCategoryIndices?.();
