@@ -122,38 +122,9 @@ class DashboardConfigSync {
 
 
     async reconcilePendingConfigSyncAfterLoad() {
-        const d = this.dash;
-        const structurePending = this.readPendingConfigSync(d.pendingStructureSyncKey);
-        const settingsPending = this.readPendingConfigSync(d.pendingSettingsSyncKey);
-        const structureTs = structurePending?.timestamp || 0;
-        const settingsTs = settingsPending?.timestamp || 0;
-
-        if (structureTs > d.lastAppliedStructureSyncAt) {
-            try {
-                await this.refreshAfterConfigStructureUpdate(structurePending || {});
-                d.lastAppliedStructureSyncAt = structureTs;
-                try { sessionStorage.removeItem(d.pendingStructureSyncKey); } catch { /* ignore */ }
-                if (settingsTs > 0) {
-                    d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, settingsTs);
-                    try { sessionStorage.removeItem(d.pendingSettingsSyncKey); } catch { /* ignore */ }
-                }
-            } catch {
-                // Pending keys stay for maybeRefreshAfterConfigReturn / visibility retry.
-            }
-            return;
-        }
-
-        if (settingsTs > d.lastAppliedSettingsSyncAt) {
-            try {
-                await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
-                d.lastAppliedSettingsSyncAt = settingsTs;
-                try { sessionStorage.removeItem(d.pendingSettingsSyncKey); } catch { /* ignore */ }
-            } catch {
-                // Pending key stays for retry.
-            }
-            return;
-        }
-
+        // Bootstrap loadData() in init() already fetched current API state. Consuming
+        // pending markers here avoids a redundant re-fetch + double renderDashboard()
+        // flash (empty columns) on every full reload after config edits.
         this.markPendingConfigSyncAsAppliedAfterLoad();
     }
 
@@ -221,15 +192,19 @@ class DashboardConfigSync {
             }
         }
         try {
-            await d.loadData();
-            await d.withRetry(() => d.loadPageBookmarks(d.currentPageId, { rethrow: true }), 2, 220);
+            await d.loadData({ skipPageBookmarks: true });
+            await d.withRetry(
+                () => d.loadPageBookmarks(d.currentPageId, { rethrow: true, skipRender: true }),
+                2,
+                220
+            );
             if (d.needsCrossPageBookmarks()) {
                 await d.withRetry(() => d.loadAllBookmarks({ rethrow: true }), 2, 220);
             } else {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
-            d.renderDashboard();
+            d.renderDashboard({ animate: false });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
@@ -254,7 +229,7 @@ class DashboardConfigSync {
             }
         }
         try {
-            await d.loadData();
+            await d.loadData({ skipPageBookmarks: true });
             if (d.settings.language && d.settings.language !== d.language.currentLanguage) {
                 await d.language.loadTranslations(d.settings.language);
             }
@@ -262,14 +237,18 @@ class DashboardConfigSync {
             d.initializeAutoDarkMode();
             d.setupDOM();
             d.updateStatusMonitor();
-            await d.withRetry(() => d.loadPageBookmarks(d.currentPageId, { rethrow: true }), 2, 220);
+            await d.withRetry(
+                () => d.loadPageBookmarks(d.currentPageId, { rethrow: true, skipRender: true }),
+                2,
+                220
+            );
             if (d.needsCrossPageBookmarks()) {
                 await d.withRetry(() => d.loadAllBookmarks({ rethrow: true }), 2, 220);
             } else {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
-            d.renderDashboard();
+            d.renderDashboard({ animate: false });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();

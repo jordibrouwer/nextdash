@@ -129,8 +129,9 @@ class DashboardData {
         throw lastError;
     }
 
-    async loadData() {
+    async loadData(options = {}) {
         const d = this.dash;
+        const { skipPageBookmarks = false } = options;
         try {
             const [pagesRes, settingsRes, findersRes] = await Promise.all([
                 fetch('/api/pages'),
@@ -329,24 +330,26 @@ class DashboardData {
             }
             d.currentPageId = initialPageId;
             
-            // Load bookmarks and categories for initial page
-            await this.loadPageBookmarks(d.currentPageId);
+            if (!skipPageBookmarks) {
+                // Load bookmarks and categories for initial page
+                await this.loadPageBookmarks(d.currentPageId);
 
-            if (this.needsCrossPageBookmarksAtStartup()) {
-                await this.loadAllBookmarks();
-            } else {
-                d.allBookmarks = [];
-                if (this.shouldDeferCrossPageBookmarksLoad()) {
-                    void this.deferredLoadAllBookmarks();
+                if (this.needsCrossPageBookmarksAtStartup()) {
+                    await this.loadAllBookmarks();
+                } else {
+                    d.allBookmarks = [];
+                    if (this.shouldDeferCrossPageBookmarksLoad()) {
+                        void this.deferredLoadAllBookmarks();
+                    }
                 }
-            }
 
-            if (this.needsCrossPageBookmarksAtStartup()
-                && window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(d.settings, d.allBookmarks)) {
-                this.saveSettings().catch(() => {});
-            }
+                if (this.needsCrossPageBookmarksAtStartup()
+                    && window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(d.settings, d.allBookmarks)) {
+                    this.saveSettings().catch(() => {});
+                }
 
-            await d.consumeDashboardDeepLink();
+                await d.consumeDashboardDeepLink();
+            }
         } catch (error) {
             const msg = d.language?.t?.('dashboard.loadFailed')
                 || 'Failed to load dashboard. Please reload the page.';
@@ -388,7 +391,7 @@ class DashboardData {
 
     async loadPageBookmarks(pageId, options = {}) {
         const d = this.dash;
-        const { rethrow = false, skipInlineEditConfirm = false } = options;
+        const { rethrow = false, skipInlineEditConfirm = false, skipRender = false } = options;
         const targetPageId = Number(pageId);
         if (!Number.isFinite(targetPageId)) {
             if (rethrow) {
@@ -457,14 +460,16 @@ class DashboardData {
             // Update search component and render (skip during init before search is wired)
             if (d.searchComponent) {
                 d.updateSearchComponent();
-                window.scrollTo({ top: 0, behavior: 'instant' });
-                d.renderDashboard({ animate: true });
+                if (!skipRender) {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    d.renderDashboard({ animate: true });
 
-                if (d.keyboardNavigation) {
-                    if (d.keyboardNavigation.isNavigating()) {
-                        d.keyboardNavigation.resetToFirst();
-                    } else {
-                        d.keyboardNavigation.clearSelection();
+                    if (d.keyboardNavigation) {
+                        if (d.keyboardNavigation.isNavigating()) {
+                            d.keyboardNavigation.resetToFirst();
+                        } else {
+                            d.keyboardNavigation.clearSelection();
+                        }
                     }
                 }
             }

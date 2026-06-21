@@ -22,6 +22,8 @@ class ConfigManager {
         this.toursRuntime = new ConfigToursRuntime(this);
         this.tabTours = new ConfigTabTours(this);
         this.tabTours.installPublicMethods();
+        this.persistence = new ConfigPersistence(this);
+        this.persistence.installPublicMethods();
         this.stats = null;
 
         // Data
@@ -491,36 +493,6 @@ class ConfigManager {
         return Promise.resolve();
     }
 
-    async persistTagsChanges(options = {}) {
-        if (window.ConfigTags?.normalizeTagList) {
-            for (const bm of this.bookmarkStore.getAll()) {
-                bm.tags = window.ConfigTags.normalizeTagList(bm.tags);
-            }
-        }
-        try {
-            await this.saveAllBookmarkPages();
-            this.signalDashboardReload(options.eventType || 'tags-updated');
-            this.savedSnapshot = this.captureUndoSnapshot();
-            this.setDirtyState(false);
-            this.refreshBookmarksList();
-            this.collections?.refresh?.(this);
-            this.tags?.refresh?.(this);
-            if (!options.silent) {
-                this.showSyncToast(
-                    this.language.t('config.dashboardSyncComplete'),
-                    'success'
-                );
-            }
-        } catch (error) {
-            console.error('Error persisting tag changes:', error);
-            this.showSyncToast(
-                this.language.t('config.dashboardSyncFailed'),
-                'error'
-            );
-            throw error;
-        }
-    }
-
     onConfigColorsTabOpened() {
         if (this.hasSeenConfigThemeTour()) return Promise.resolve();
         this.dismissOtherConfigTabTours('theme');
@@ -561,10 +533,6 @@ class ConfigManager {
         const ok = await this.colorsEditor.confirmLeave();
         if (ok && targetTab === 'colors') await this.ensureColorsEditor();
         return ok;
-    }
-
-    hasUnsavedColorChanges() {
-        return Boolean(this.colorsEditor?.isDirty());
     }
 
     async loadData() {
@@ -783,10 +751,6 @@ class ConfigManager {
             this.bookmarkStore.setPage(pageId, bookmarks);
         }
         await this.bookmarkStore.persistPage(pageId, (fn) => this.withRetry(fn));
-    }
-
-    async saveAllBookmarkPages() {
-        await this.bookmarkStore.persistAllPages((fn) => this.withRetry(fn));
     }
 
     async loadPageBookmarks(pageId) {
@@ -1031,43 +995,6 @@ class ConfigManager {
             shortcuts.set(shortcut, i);
         }
         return null;
-    }
-
-    async persistFindersChanges(options = {}) {
-        this.findersData = window.ConfigFinders?.normalizeFinders
-            ? window.ConfigFinders.normalizeFinders(this.findersData, this.generateId.bind(this))
-            : this.findersData;
-        const validationError = this.validateFindersData();
-        if (validationError) {
-            this.ui.showNotification(validationError, 'error');
-            throw new Error(validationError);
-        }
-        const seq = (this._findersPersistSeq = (this._findersPersistSeq || 0) + 1);
-        try {
-            await this.data.saveFinders(this.findersData);
-            if (seq !== this._findersPersistSeq) return;
-            this.signalDashboardReload?.(options.eventType || 'finders-updated');
-            this.savedSnapshot = this.captureUndoSnapshot();
-            this.recomputeDirtyState();
-            if (options.skipUiRefresh !== true) {
-                this.finders?.refresh(this);
-            }
-            if (!options.silent) {
-                this.showSyncToast(
-                    this.language.t('config.dashboardSyncComplete'),
-                    'success'
-                );
-            }
-        } catch (error) {
-            console.error('Error persisting finders:', error);
-            if (!options.silent) {
-                this.showSyncToast(
-                    this.language.t('config.dashboardSyncFailed'),
-                    'error'
-                );
-            }
-            throw error;
-        }
     }
 
     moveFinderById(finderId, direction) {
@@ -2501,31 +2428,6 @@ class ConfigManager {
         });
     }
 
-    async confirmLeaveWithUnsavedChanges() {
-        if (!this.isDirty) return true;
-        if (!window.AppModal) {
-            return window.confirm(this.language.t('config.unsavedChangesLeaveConfirm'));
-        }
-
-        const saveAndLeave = await window.AppModal.confirm({
-            title: this.language.t('config.unsavedChangesTitle'),
-            message: this.language.t('config.unsavedChangesSavePrompt'),
-            confirmText: this.language.t('config.unsavedChangesSaveAndLeave'),
-            cancelText: this.language.t('config.unsavedChangesMoreOptions')
-        });
-        if (saveAndLeave) {
-            await this.saveChanges();
-            return !this.isDirty;
-        }
-
-        return window.AppModal.danger({
-            title: this.language.t('config.unsavedChangesLeaveTitle'),
-            message: this.language.t('config.unsavedChangesLeaveMessage'),
-            confirmText: this.language.t('config.unsavedChangesLeaveWithoutSaving'),
-            cancelText: this.language.t('config.unsavedChangesStayHere')
-        });
-    }
-
     setupStructureAutoSyncListeners() {
         const pagesList = document.getElementById('pages-list');
         if (pagesList) {
@@ -2629,52 +2531,6 @@ class ConfigManager {
         throw lastError;
     }
 
-    signalDashboardReload(eventType = 'structure-updated') {
-        try {
-            const payload = {
-                type: eventType,
-                sourceTabId: this.tabId,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(this.structureSyncEventKey, JSON.stringify(payload));
-            sessionStorage.setItem('nextdash:pending-dashboard-structure-sync', JSON.stringify(payload));
-        } catch (error) {
-            // Keep config functional even if storage access is blocked.
-        }
-    }
-
-    signalDashboardSettingsUpdated(eventType = 'settings-updated') {
-        try {
-            const payload = {
-                type: eventType,
-                sourceTabId: this.tabId,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(this.settingsSyncEventKey, JSON.stringify(payload));
-            sessionStorage.setItem('nextdash:pending-dashboard-settings-sync', JSON.stringify(payload));
-        } catch (error) {
-            // Keep config functional even if storage access is blocked.
-        }
-    }
-
-    showSyncToast(message, type = 'success') {
-        if (this.settingsData?.showSyncToasts === false) {
-            return;
-        }
-        const now = Date.now();
-        if (now - this.lastSyncToastAt < 2000) {
-            return;
-        }
-        this.lastSyncToastAt = now;
-        this.ui.showNotification(message, type);
-    }
-
-    syncSnapshotAfterStructurePersist() {
-        this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData || []));
-        this.savedSnapshot = this.captureUndoSnapshot();
-        this.setDirtyState(false);
-    }
-
     handlePagesReordered(newPages) {
         this.pagesData = newPages;
         this.pages.syncPageIndices?.();
@@ -2684,109 +2540,6 @@ class ConfigManager {
         this._pageReorderPersistTimer = setTimeout(() => {
             void this.persistPagesStructureAndRefresh('page-reordered');
         }, 600);
-    }
-
-    async persistPagesStructureAndRefresh(eventType = 'page-updated') {
-        try {
-            await this.withRetry(() => this.data.savePages(this.pagesData));
-            await this.refreshStructureDependentUI();
-            this.signalDashboardReload(eventType);
-            this.syncSnapshotAfterStructurePersist();
-            this.showSyncToast(
-                this.language.t('config.dashboardSyncComplete'),
-                'success'
-            );
-        } catch (error) {
-            console.error('Error persisting page structure:', error);
-            this.showSyncToast(
-                this.language.t('config.dashboardSyncFailed'),
-                'error'
-            );
-        }
-    }
-
-    validateCategoriesData(categories) {
-        if (!Array.isArray(categories)) return this.language.t('config.categoryNameMustBeUnique');
-        const seen = new Set();
-        for (const category of categories) {
-            const name = String(category?.name || '').trim().toLowerCase();
-            if (!name || seen.has(name)) {
-                return this.language.t('config.categoryNameMustBeUnique');
-            }
-            seen.add(name);
-        }
-        return null;
-    }
-
-    async persistCategoriesStructureAndRefresh(options = {}) {
-        if (!this.currentCategoriesPageId) {
-            return;
-        }
-
-        try {
-            const categoriesForSelectedPage = this.getCategoriesFromDOM();
-            if (categoriesForSelectedPage && categoriesForSelectedPage.length >= 0) {
-                const validationError = this.validateCategoriesData(categoriesForSelectedPage);
-                if (validationError) {
-                    this.ui.showNotification(validationError, 'error');
-                    await this.loadPageCategories(this.currentCategoriesPageId);
-                    return;
-                }
-                this.categoriesData = categoriesForSelectedPage;
-                await this.withRetry(() => this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId));
-            }
-
-            if (options.persistBookmarks === true) {
-                const renameMap = options.categoryRenameMap || null;
-                const bookmarksSavePageId = this.getResolvedBookmarksPageId();
-                if (Number(bookmarksSavePageId) === Number(this.currentCategoriesPageId)) {
-                    if (renameMap && renameMap.oldId && renameMap.newId && renameMap.oldId !== renameMap.newId) {
-                        this.reassignBookmarkCategoryIds(renameMap.oldId, renameMap.newId);
-                    }
-                    await this.saveBookmarksPage(bookmarksSavePageId, this.bookmarksData);
-                } else {
-                    const pageBookmarks = await this.withRetry(() => this.data.loadBookmarksByPage(this.currentCategoriesPageId));
-                    let changed = false;
-                    const categoryIdSet = new Set(this.categoriesData.map((category) => category.id));
-                    const nextBookmarks = pageBookmarks.map((bookmark) => {
-                        if (renameMap && bookmark.category === renameMap.oldId) {
-                            changed = true;
-                            return { ...bookmark, category: renameMap.newId };
-                        }
-                        if (bookmark.category && !categoryIdSet.has(bookmark.category)) {
-                            changed = true;
-                            return { ...bookmark, category: '' };
-                        }
-                        return bookmark;
-                    });
-                    if (changed) {
-                        await this.saveBookmarksPage(this.currentCategoriesPageId, nextBookmarks);
-                    }
-                }
-            }
-
-            const categoriesPageId = Number(this.currentCategoriesPageId);
-            await this.refreshCategoriesDependentUI();
-            this.currentCategoriesPageId = categoriesPageId;
-            this.saveLastCategoriesPageId(categoriesPageId);
-            this.syncCategoriesPageSelectorUI(categoriesPageId);
-            this.signalDashboardReload(options.eventType || 'category-updated');
-            this.syncSnapshotAfterStructurePersist();
-            if (!options.silent) {
-                this.showSyncToast(
-                    this.language.t('config.dashboardSyncComplete'),
-                    'success'
-                );
-            }
-        } catch (error) {
-            console.error('Error persisting category structure:', error);
-            if (!options.silent) {
-                this.showSyncToast(
-                    this.language.t('config.dashboardSyncFailed'),
-                    'error'
-                );
-            }
-        }
     }
 
     async refreshCategoriesDependentUI() {
@@ -2841,379 +2594,6 @@ class ConfigManager {
         const hintFallback = saving ? 'Saving theme…' : 'Preview — click Save to keep';
         const hint = this.language?.t(hintKey);
         badge.textContent = hint && hint !== hintKey ? hint : hintFallback;
-    }
-
-    async autosaveLayoutSettings() {
-        if (!this.settings?.updateFromUI || this._layoutAutosaveInFlight) return false;
-        this._layoutAutosaveInFlight = true;
-        this.suppressDirtyTracking = true;
-        let ok = false;
-        try {
-            this.settings.updateFromUI(this.settingsData);
-            if (this.deviceSpecific) {
-                this.storage.saveDeviceSettings(this.settingsData);
-                ok = true;
-            } else if (this.settings?.saveSettingsToServer) {
-                ok = await this.settings.saveSettingsToServer(this.settingsData);
-            }
-            if (ok) {
-                this.onSettingsAutosaved();
-                this.signalDashboardSettingsUpdated('settings-autosave');
-            } else if (this.ui?.showNotification) {
-                this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
-            }
-        } catch (error) {
-            console.error('Layout settings autosave failed:', error);
-            if (this.ui?.showNotification) {
-                this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
-            }
-        } finally {
-            this.suppressDirtyTracking = false;
-            this._layoutAutosaveInFlight = false;
-        }
-        return ok;
-    }
-
-    async autosaveThemeSelection(theme) {
-        if (theme) {
-            this.settingsData.theme = theme;
-        }
-        const token = ++this._themeAutosaveToken;
-        this.updateThemePreviewBadge({ saving: true });
-
-        this.suppressDirtyTracking = true;
-        this.settings.updateFromUI(this.settingsData);
-
-        let ok = false;
-        try {
-            if (this.deviceSpecific) {
-                this.storage.saveDeviceSettings(this.settingsData);
-                ok = true;
-            } else {
-                ok = await this.settings.saveSettingsToServer(this.settingsData);
-            }
-        } catch {
-            ok = false;
-        }
-        this.suppressDirtyTracking = false;
-
-        if (token !== this._themeAutosaveToken) return;
-
-        if (ok) {
-            this._persistedTheme = String(this.settingsData.theme || '');
-            this.updateThemePreviewBadge();
-            this.onSettingsAutosaved();
-            const msg = this.language?.t('config.themeSaved');
-            const text = msg && msg !== 'config.themeSaved' ? msg : 'Theme saved';
-            if (window.AppNotification?.show) {
-                window.AppNotification.show(text, 'success', { durationMs: 3000 });
-            } else {
-                this.ui.showNotification(text, 'success', { duration: 3000 });
-            }
-            this.signalDashboardSettingsUpdated('settings-autosave');
-            return;
-        }
-
-        this.updateThemePreviewBadge();
-        const errMsg = this.language?.t('config.themeSaveFailed');
-        const errText = errMsg && errMsg !== 'config.themeSaveFailed'
-            ? errMsg
-            : 'Could not save theme — use Save to try again';
-        if (window.AppNotification?.show) {
-            window.AppNotification.show(errText, 'error', { durationMs: 5000 });
-        } else {
-            this.ui.showNotification(errText, 'error', { duration: 5000 });
-        }
-    }
-
-    snapshotsEqual(a, b) {
-        if (!a || !b) return false;
-        return JSON.stringify(a) === JSON.stringify(b);
-    }
-
-    syncSavedSettingsSnapshot() {
-        if (!this.savedSnapshot) {
-            this.savedSnapshot = this.captureUndoSnapshot();
-            return;
-        }
-        this.savedSnapshot.settingsData = JSON.parse(JSON.stringify(this.settingsData || {}));
-    }
-
-    recomputeDirtyState() {
-        if (!this.savedSnapshot) {
-            this.setDirtyState(false);
-            return;
-        }
-        const current = this.captureUndoSnapshot();
-        this.setDirtyState(!this.snapshotsEqual(current, this.savedSnapshot));
-    }
-
-    scheduleDirtyRecompute() {
-        clearTimeout(this._dirtyRecomputeTimer);
-        this._dirtyRecomputeTimer = setTimeout(() => this.recomputeDirtyState(), 150);
-    }
-
-    onSettingsAutosaved() {
-        this.syncSavedSettingsSnapshot();
-        this.recomputeDirtyState();
-        if (!this.isDirty) {
-            this.flashSavedIndicator();
-        }
-    }
-
-    getPendingChangeScope() {
-        if (!this.savedSnapshot) {
-            return { settingsOnly: false, hasStructuralChanges: true, hasSettingsChanges: true };
-        }
-        const current = this.captureUndoSnapshot();
-        const saved = this.savedSnapshot;
-        const hasSettingsChanges = JSON.stringify(current.settingsData) !== JSON.stringify(saved.settingsData);
-        const structuralKeys = ['bookmarksData', 'categoriesData', 'findersData', 'pagesData'];
-        const hasStructuralChanges = structuralKeys.some(
-            (key) => JSON.stringify(current[key]) !== JSON.stringify(saved[key])
-        );
-        return {
-            hasSettingsChanges,
-            hasStructuralChanges,
-            settingsOnly: hasSettingsChanges && !hasStructuralChanges,
-        };
-    }
-
-    setupDirtyTracking() {
-        const root = document.querySelector('.config-main');
-        if (!root) {
-            return;
-        }
-        const mark = () => {
-            this.scheduleDirtyRecompute();
-            this.validateBookmarkConflicts({ showToast: false });
-        };
-        const shouldIgnoreTarget = (target) => {
-            if (!target || !target.id) return false;
-            return target.id === 'page-selector' || target.id === 'categories-page-selector' || target.id === 'bookmarks-category-filter' || target.id === 'packed-columns-checkbox' || target.id === 'bookmarks-search' || target.id === 'theme-select';
-        };
-        root.addEventListener('input', (event) => {
-            if (this.suppressDirtyTracking) return;
-            if (event.target && event.target.closest('#app-notification')) return;
-            if (shouldIgnoreTarget(event.target)) return;
-            mark();
-        });
-        root.addEventListener('change', (event) => {
-            if (this.suppressDirtyTracking) return;
-            if (event.target && event.target.closest('#app-notification')) return;
-            if (shouldIgnoreTarget(event.target)) return;
-            mark();
-        });
-        window.addEventListener('beforeunload', (event) => {
-            if (this.isNavigatingAway) return;
-            if (!this.isDirty && !this.hasUnsavedColorChanges()) return;
-            event.preventDefault();
-            event.returnValue = '';
-        });
-        this.setDirtyState(false);
-    }
-
-    flashSavedIndicator() {
-        if (this.isDirty) return;
-        const saveStatus = document.getElementById('save-status-indicator');
-        if (!saveStatus) return;
-        saveStatus.textContent = this.language?.t('config.allSaved') || 'All saved ✓';
-        saveStatus.classList.remove('is-hidden', 'is-unsaved');
-        saveStatus.classList.add('is-saved-flash');
-        clearTimeout(this._savedFlashTimer);
-        this._savedFlashTimer = setTimeout(() => {
-            saveStatus.classList.remove('is-saved-flash');
-            if (this.isDirty) {
-                saveStatus.classList.add('is-hidden');
-            } else {
-                saveStatus.textContent = this.language?.t('config.savedShort') || 'Saved';
-            }
-        }, 1500);
-    }
-
-    setupAutosaveLowRiskFields() {
-        const selector = [
-            '#show-tips-checkbox',
-            '#show-config-button-checkbox',
-            '#show-health-dashboard-checkbox',
-            '#show-recent-button-checkbox',
-            '#animations-enabled-checkbox',
-            '#include-finders-in-search-checkbox',
-            '#interleave-mode-checkbox',
-            '#global-shortcuts-checkbox',
-            '#show-sync-toasts-checkbox'
-        ].join(', ');
-        let debounceTimer = null;
-        document.querySelectorAll(selector).forEach((el) => {
-            el.addEventListener('change', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(async () => {
-                    if (!this.settings?.updateFromUI) return;
-                    this.suppressDirtyTracking = true;
-                    this.settings.updateFromUI(this.settingsData);
-                    let ok = false;
-                    if (this.deviceSpecific) {
-                        this.storage.saveDeviceSettings(this.settingsData);
-                        ok = true;
-                    } else {
-                        ok = await this.settings.saveSettingsToServer(this.settingsData);
-                    }
-                    this.suppressDirtyTracking = false;
-                    if (ok) {
-                        this.onSettingsAutosaved();
-                        this.signalDashboardSettingsUpdated('settings-autosave');
-                    }
-                }, 450);
-            });
-        });
-    }
-
-    setupStickySaveBar() {
-        const sticky = document.getElementById('config-save-sticky');
-        const saveSticky = document.getElementById('save-btn-sticky');
-        const discardSticky = document.getElementById('discard-sticky-btn');
-        saveSticky?.addEventListener('click', () => this.saveChanges());
-        discardSticky?.addEventListener('click', () => this.discardChanges());
-        if (!sticky) return;
-        const onScroll = () => {
-            sticky.classList.toggle('is-scroll-active', window.scrollY > 100 && this.isDirty);
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        this._stickySaveScrollHandler = onScroll;
-        onScroll();
-    }
-
-    setColorsDirtyState(isDirty) {
-        this.colorsDirty = isDirty === true;
-        document.body.classList.toggle('colors-is-dirty', this.colorsDirty);
-        const colorsTab = document.querySelector('.tab-button[data-tab="colors"]');
-        colorsTab?.classList.toggle('tab-has-unsaved', this.colorsDirty);
-    }
-
-    getSaveButtons() {
-        return [
-            document.getElementById('save-btn'),
-            document.getElementById('save-btn-sticky'),
-        ].filter(Boolean);
-    }
-
-    setDirtyState(isDirty) {
-        this.isDirty = isDirty === true;
-        const saveButtons = this.getSaveButtons();
-        const badge = document.getElementById('unsaved-indicator');
-        const saveStatus = document.getElementById('save-status-indicator');
-        const undoTopBtn = document.getElementById('undo-top-btn');
-        const discardTopBtn = document.getElementById('discard-top-btn');
-        saveButtons.forEach((saveBtn) => {
-            saveBtn.classList.toggle('has-unsaved', this.isDirty);
-        });
-        if (badge) {
-            badge.classList.toggle('is-visible', this.isDirty);
-        }
-        if (saveStatus) {
-            saveStatus.textContent = this.language?.t('config.savedShort') || 'Saved';
-            saveStatus.classList.toggle('is-unsaved', this.isDirty);
-            saveStatus.classList.toggle('is-hidden', this.isDirty);
-        }
-        if (undoTopBtn) {
-            undoTopBtn.disabled = !this.undoSnapshot;
-            undoTopBtn.classList.toggle('is-visible', !!this.undoSnapshot);
-        }
-        if (discardTopBtn) {
-            discardTopBtn.disabled = !this.isDirty;
-            discardTopBtn.classList.toggle('is-visible', this.isDirty);
-        }
-        document.body.classList.toggle('config-is-dirty', this.isDirty);
-        if (this._stickySaveScrollHandler) {
-            this._stickySaveScrollHandler();
-        }
-    }
-
-    markDirty() {
-        this.setDirtyState(true);
-        this.scheduleDirtyRecompute();
-    }
-
-    clearDirty() {
-        this.setDirtyState(false);
-    }
-
-    captureUndoSnapshot() {
-        const allBookmarkPages = {};
-        if (this.bookmarkStore?._byPage) {
-            for (const [pageId, list] of this.bookmarkStore._byPage) {
-                allBookmarkPages[pageId] = JSON.parse(JSON.stringify(list || []));
-            }
-        }
-        return {
-            bookmarksData: JSON.parse(JSON.stringify(this.bookmarksData || [])),
-            allBookmarkPages,
-            categoriesData: JSON.parse(JSON.stringify(this.categoriesData || [])),
-            findersData: JSON.parse(JSON.stringify(this.findersData || [])),
-            settingsData: JSON.parse(JSON.stringify(this.settingsData || {})),
-            pagesData: JSON.parse(JSON.stringify(this.pagesData || [])),
-            currentPageId: this.currentPageId,
-            currentCategoriesPageId: this.currentCategoriesPageId,
-            currentBookmarksCategoryFilter: this.currentBookmarksCategoryFilter
-        };
-    }
-
-    restoreUndoSnapshot(snapshot) {
-        if (!snapshot) return;
-        this.suppressDirtyTracking = true;
-        if (snapshot.allBookmarkPages && Object.keys(snapshot.allBookmarkPages).length > 0 && this.bookmarkStore?._byPage) {
-            for (const [pageId, list] of Object.entries(snapshot.allBookmarkPages)) {
-                this.bookmarkStore.setPage(Number(pageId), list);
-            }
-        } else {
-            this.bookmarksData = snapshot.bookmarksData;
-        }
-        this.categoriesData = snapshot.categoriesData;
-        this.findersData = snapshot.findersData;
-        this.settingsData = snapshot.settingsData;
-        this.pagesData = snapshot.pagesData;
-        this.currentPageId = snapshot.currentPageId;
-        this.currentCategoriesPageId = snapshot.currentCategoriesPageId;
-        this.currentBookmarksCategoryFilter = snapshot.currentBookmarksCategoryFilter || '__all__';
-        this.renderConfig();
-        this.initReordering();
-        this.refreshBookmarksFilterOptions();
-        this.refreshBookmarksList();
-        this.suppressDirtyTracking = false;
-        this.markDirty();
-    }
-
-    showUndoNotification(message, snapshot = null, options = {}) {
-        const activeSnapshot = snapshot || this.captureUndoSnapshot();
-        if (!activeSnapshot) return;
-        this.undoSnapshot = activeSnapshot;
-        this.setDirtyState(this.isDirty);
-        this.ui.showNotification(message, 'warning', {
-            actionLabel: this.language.t('config.undoShort') || 'Undo',
-            durationMs: 8000,
-            onAction: () => {
-                void (async () => {
-                    this.restoreUndoSnapshot(this.undoSnapshot);
-                    this.undoSnapshot = null;
-                    if (options.persistTags && this.persistTagsChanges) {
-                        try {
-                            await this.persistTagsChanges({ silent: true });
-                        } catch {
-                            // restoreUndoSnapshot already marked dirty for manual save
-                        }
-                    }
-                    if (options.persistFinders && this.persistFindersChanges) {
-                        try {
-                            await this.persistFindersChanges({ silent: true });
-                        } catch {
-                            // restoreUndoSnapshot already marked dirty for manual save
-                        }
-                    }
-                    this.setDirtyState(this.isDirty);
-                    this.ui.showNotification(this.language.t('config.undone') || 'Undone.', 'success');
-                })();
-            }
-        });
     }
 
     setupGeneralCardCollapsible() {
@@ -3438,22 +2818,6 @@ class ConfigManager {
         } catch (error) {
             // Keep config functional even if counters fail.
         }
-    }
-
-    async discardChanges() {
-        if (!this.isDirty) {
-            return;
-        }
-        const confirmed = await window.AppModal.danger({
-            title: 'Discard unsaved changes',
-            message: 'Revert all unsaved changes from this session?',
-            confirmText: 'Discard',
-            cancelText: 'Cancel'
-        });
-        if (!confirmed) {
-            return;
-        }
-        window.location.reload();
     }
 
     setupCascadingCheckboxes() {
@@ -4883,118 +4247,6 @@ class ConfigManager {
         };
     }
 
-    async saveChanges() {
-        const conflicts = this.validateBookmarkConflicts({ showToast: true });
-        if (conflicts.hasConflicts) {
-            return;
-        }
-        const finderValidationError = this.validateFindersData();
-        if (finderValidationError) {
-            this.ui.showNotification(finderValidationError, 'error');
-            return;
-        }
-        this.findersData = window.ConfigFinders?.normalizeFinders
-            ? window.ConfigFinders.normalizeFinders(this.findersData, this.generateId.bind(this))
-            : this.findersData;
-        const changeScope = this.getPendingChangeScope();
-        const showSaveToasts = changeScope.hasStructuralChanges || !changeScope.settingsOnly;
-        const saveStatus = document.getElementById('save-status-indicator');
-        if (saveStatus) {
-            saveStatus.textContent = this.language?.t('config.savingChanges') || 'Saving changes...';
-            saveStatus.classList.remove('is-unsaved');
-        }
-        if (showSaveToasts) {
-            this.ui.showNotification(this.language.t('config.savingChanges'), 'info');
-        }
-
-        try {
-            this.settings.updateFromUI(this.settingsData);
-
-            const saveBookmarksPageId = this.getResolvedBookmarksPageId();
-            this.currentPageId = saveBookmarksPageId;
-
-            if (Number.isFinite(saveBookmarksPageId) && saveBookmarksPageId >= 1) {
-                this.settingsData.currentPage = saveBookmarksPageId;
-            }
-
-            const duplicateUrls = this.findDuplicateBookmarkUrls(this.bookmarksData);
-
-            // Merge keyboard custom bindings into settings before persisting settings.
-            if (this.keyboard && typeof this.keyboard.getSaveData === 'function') {
-                const keyboardData = this.keyboard.getSaveData();
-                this.settingsData.customKeyBindings = keyboardData.customKeyBindings;
-            }
-
-            // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
-            if (this.deviceSpecific) {
-                this.storage.saveDeviceSettings(this.settingsData);
-            } else {
-                await this.data.saveSettings(this.settingsData);
-                this.storage.clearDeviceSettings();
-            }
-
-            await this.saveAllBookmarkPages();
-            await this.data.saveFinders(this.findersData);
-
-            if (this.currentCategoriesPageId) {
-                const categoriesForSelectedPage = await this.resolveCategoriesForSave(this.currentCategoriesPageId);
-                if (categoriesForSelectedPage !== null) {
-                    await this.data.saveCategoriesByPage(categoriesForSelectedPage, this.currentCategoriesPageId);
-                }
-            }
-
-            await this.data.savePages(this.pagesData);
-
-            this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
-            this.refreshPageDropdowns();
-            this.signalDashboardSettingsUpdated('settings-saved');
-            const saveFeedback = this.buildConfigSaveFeedback(duplicateUrls, changeScope);
-            if (saveFeedback) {
-                this.ui.showNotification(saveFeedback.message, saveFeedback.type, saveFeedback.options);
-            }
-            this.clearDirty();
-            this.flashSavedIndicator();
-            this.undoSnapshot = null;
-            this.savedSnapshot = this.captureUndoSnapshot();
-            this._persistedTheme = String(this.settingsData.theme || '');
-            this.updateThemePreviewBadge();
-            this.setDirtyState(false);
-            if (typeof this._persistGeneralPanelState === 'function') {
-                this._persistGeneralPanelState();
-            }
-            this.refreshSmartCollectionCounters();
-            try {
-                await this.bookmarkStore.loadAll();
-            } catch (error) {
-                // keep previous store state
-            }
-            this.settings?.refreshStatusEssentialsSummary?.(this.settingsData, this.allBookmarksData);
-            if (this.stats && this.isConfigStatsTabActive()) {
-                this.stats.refresh(this);
-            }
-        } catch (error) {
-            console.error('Error saving configuration:', error);
-            if (saveStatus) {
-                saveStatus.textContent = 'Save failed';
-                saveStatus.classList.add('is-unsaved');
-            }
-            const message = String(error?.message || '');
-            if (message.toLowerCase().includes('duplicate shortcut')) {
-                this.ui.showNotification(message, 'error');
-            } else if (message.toLowerCase().includes('url host is not allowed')) {
-                this.ui.showNotification(
-                    this.language.t('config.bookmarkUrlHostNotAllowed')
-                        || 'A bookmark uses a local or private URL. Enable Allow local bookmarks in General → Advanced, or change the URL.',
-                    'error'
-                );
-            } else if (message.startsWith('Failed to save ')) {
-                this.ui.showNotification(message, 'error');
-            } else {
-                this.ui.showNotification(this.language.t('config.errorSavingConfig'), 'error');
-            }
-        }
-    }
-
     warnDuplicateUrl(url) {
         const normalized = (url || '').trim().toLowerCase();
         if (!normalized) return;
@@ -5361,20 +4613,6 @@ class ConfigManager {
             this._pagesRepairedOnLoad = false;
         } catch (error) {
             console.warn('Failed to reload pages after repair:', error);
-        }
-    }
-
-    async persistRepairedPagesIfNeeded() {
-        if (!this._pagesRepairedOnLoad) {
-            return;
-        }
-        try {
-            await this.withRetry(() => this.data.savePages(this.pagesData));
-            this.originalPagesData = JSON.parse(JSON.stringify(this.pagesData));
-            this.signalDashboardReload('pages-repaired');
-            // Keep flag until reloadPagesFromServerIfNeeded confirms sync
-        } catch (error) {
-            console.warn('Auto-persist of default page structure failed:', error);
         }
     }
 

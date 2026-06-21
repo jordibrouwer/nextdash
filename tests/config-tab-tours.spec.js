@@ -43,6 +43,7 @@ async function resetAndForceStartTour(page, tourId) {
 
     return page.evaluate(async ({ tourGlobal, settingsFlag, storageKey, maybeStart, ensureTab, activeKey, startingKey }) => {
         const cm = window.configManager;
+        cm.dismissOtherConfigTabTours?.();
         const Tour = window[tourGlobal];
         Tour?.teardownStaleDom?.();
         cm[activeKey] = false;
@@ -85,7 +86,9 @@ test.describe('config tab tours (phase 1 registry)', () => {
         await page.waitForSelector('.config-general-tour-card', { state: 'visible', timeout: 10_000 });
         await expect.poll(() => page.evaluate(() => document.body.classList.contains('config-general-tour-ready'))).toBe(true);
 
-        await page.locator('.config-general-tour-next').click();
+        await page.evaluate(() => {
+            document.querySelector('.config-general-tour-card .config-general-tour-next')?.click();
+        });
         await expect.poll(async () => page.evaluate(() => Boolean(document.querySelector('.config-general-tour-highlight')))).toBe(true);
 
         const dimming = await page.evaluate(() => {
