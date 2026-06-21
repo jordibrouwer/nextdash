@@ -303,9 +303,9 @@ body[data-layout-version="modern"] .tags-list {
 }
 
 body[data-layout-version="modern"] .tags-cloud {
-    padding: 1.35rem 1.5rem;
-    min-height: clamp(14rem, 42vh, 28rem);
-    overflow: visible;
+    padding: 0.85rem 0.75rem;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 body[data-layout-version="modern"] .tags-list-header {
