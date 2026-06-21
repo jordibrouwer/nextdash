@@ -270,3 +270,118 @@ class ConfigCustomThemes {
 }
 
 window.ConfigCustomThemes = ConfigCustomThemes;
+
+/**
+ * Theme UI glue — preview badge and icon styling controls.
+ */
+class ConfigThemesController {
+    constructor(config) {
+        this.config = config;
+    }
+
+    get c() {
+        return this.config;
+    }
+
+    initThemeIconStylingControls() {
+        const enableCheckbox = document.getElementById('theme-iconstyling-enable');
+        const controls = document.getElementById('theme-iconstyling-controls');
+        const styleSelect = document.getElementById('theme-iconstyling-style');
+        const intensityRange = document.getElementById('theme-iconstyling-intensity');
+        const preview = document.getElementById('theme-iconstyling-preview');
+        if (!enableCheckbox || !controls || !styleSelect || !intensityRange || !preview) return;
+        if (enableCheckbox.dataset.themeIconBound === '1') return;
+        enableCheckbox.dataset.themeIconBound = '1';
+    
+        const getTheme = () => this.c.settingsData.theme || document.documentElement.getAttribute('data-theme') || 'default';
+        const getEntry = (theme) => (this.c.settingsData.themeIconStyling && this.c.settingsData.themeIconStyling[theme])
+            || { enabled: false, style: 'muted', intensity: 0.5 };
+    
+        const applyEntry = (partial) => {
+            const theme = getTheme();
+            this.c.settingsData.themeIconStyling = this.c.settingsData.themeIconStyling || {};
+            this.c.settingsData.themeIconStyling[theme] = { ...getEntry(theme), ...partial };
+            this.c.markDirty();
+            this.c.scheduleDirtyRecompute();
+            this.c.updateThemeIconStylingPreview(theme);
+        };
+    
+        const theme = getTheme();
+        const entry = getEntry(theme);
+        enableCheckbox.checked = !!entry.enabled;
+        styleSelect.value = entry.style || 'muted';
+        intensityRange.value = String(entry.intensity || 0.5);
+        controls.hidden = !enableCheckbox.checked;
+        this.c.updateThemeIconStylingPreview(theme);
+    
+        enableCheckbox.addEventListener('change', (e) => {
+            const enabled = !!e.target.checked;
+            controls.hidden = !enabled;
+            applyEntry({ enabled });
+        });
+    
+        styleSelect.addEventListener('change', (e) => {
+            applyEntry({ style: e.target.value });
+        });
+    
+        intensityRange.addEventListener('input', (e) => {
+            applyEntry({ intensity: parseFloat(e.target.value) || 0.5 });
+        });
+    
+        intensityRange.addEventListener('change', (e) => {
+            applyEntry({ intensity: parseFloat(e.target.value) || 0.5 });
+        });
+    }
+
+    syncResetPanelGuard() {
+        const resetCard = document.querySelector('[data-general-panel="reset"]');
+        const resetBtn = document.getElementById('reset-btn');
+        if (!resetCard || !resetBtn) return;
+        resetBtn.disabled = resetCard.classList.contains('is-collapsed');
+    }
+
+    updateThemeIconStylingPreview(theme) {
+        const preview = document.getElementById('theme-iconstyling-preview');
+        const styleSelect = document.getElementById('theme-iconstyling-style');
+        const intensityRange = document.getElementById('theme-iconstyling-intensity');
+        if (!preview || !styleSelect || !intensityRange) return;
+        const entry = (this.c.settingsData.themeIconStyling && this.c.settingsData.themeIconStyling[theme]) || { enabled: false, style: 'muted', intensity: 0.5 };
+        const elems = Array.from(preview.querySelectorAll('.preview-icon'));
+        elems.forEach((el) => {
+            el.classList.remove('icon-themed', 'icon-themed--muted', 'icon-themed--tinted', 'icon-themed--overlay');
+        });
+        if (entry.enabled) {
+            elems.forEach((el) => el.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`));
+            preview.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
+        } else {
+            preview.style.removeProperty('--icon-theme-intensity');
+        }
+    }
+
+    updateThemePreviewBadge(options = {}) {
+        const badge = document.getElementById('theme-preview-badge');
+        if (!badge) return;
+        const current = String(this.c.settingsData?.theme || '');
+        const persisted = String(this.c._persistedTheme || '');
+        const pending = current !== persisted;
+        const saving = options.saving === true;
+    
+        badge.hidden = !pending && !saving;
+        badge.classList.toggle('is-visible', pending || saving);
+        badge.classList.toggle('is-saving', saving);
+    
+        const hintKey = saving ? 'config.themePreviewSaving' : 'config.themePreviewSaveHint';
+        const hintFallback = saving ? 'Saving theme…' : 'Preview — click Save to keep';
+        const hint = this.c.language?.t(hintKey);
+        badge.textContent = hint && hint !== hintKey ? hint : hintFallback;
+    }
+
+    installPublicMethods() {
+        const c = this.config;
+        for (const name of ['initThemeIconStylingControls', 'syncResetPanelGuard', 'updateThemeIconStylingPreview', 'updateThemePreviewBadge']) {
+            c[name] = (...args) => this[name](...args);
+        }
+    }
+}
+
+window.ConfigThemesController = ConfigThemesController;

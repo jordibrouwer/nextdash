@@ -477,3 +477,153 @@ class ConfigFinders {
 }
 
 window.ConfigFinders = ConfigFinders;
+
+/**
+ * Finders orchestration — add/remove, reorder, validation.
+ */
+class ConfigFindersController {
+    constructor(config) {
+        this.config = config;
+    }
+
+    get c() {
+        return this.config;
+    }
+
+    handleFindersReordered(newFinders) {
+        this.c.findersData = newFinders;
+        this.c.finders.syncFinderIndices?.();
+        this.c.markDirty();
+        clearTimeout(this.c._finderReorderPersistTimer);
+        this.c._finderReorderPersistTimer = setTimeout(() => {
+            void this.c.persistFindersChanges({ silent: true, eventType: 'finder-reordered' });
+        }, 600);
+    }
+
+    scheduleFinderValidationRefresh() {
+        clearTimeout(this.c._finderValidationTimer);
+        this.c._finderValidationTimer = setTimeout(() => {
+            this.c.finders?.updateFieldWarnings?.(this);
+        }, 150);
+    }
+
+    validateFindersData(finders = this.c.findersData) {
+        const list = Array.isArray(finders) ? finders : [];
+        const shortcuts = new Map();
+        for (let i = 0; i < list.length; i += 1) {
+            const shortcut = String(list[i]?.shortcut || '').trim().toUpperCase();
+            if (!shortcut) continue;
+            if (shortcuts.has(shortcut)) {
+                return this.c.language.t('config.finderDuplicateShortcutSaveError')
+                    || 'Two or more finders share the same shortcut. Each shortcut must be unique.';
+            }
+            shortcuts.set(shortcut, i);
+        }
+        return null;
+    }
+
+    moveFinderById(finderId, direction) {
+        const index = this.c.findersData.findIndex((f) => f.id === finderId);
+        if (index < 0) return;
+        const swap = direction === 'up' ? index - 1 : index + 1;
+        if (swap < 0 || swap >= this.c.findersData.length) return;
+        const order = [...this.c.findersData];
+        [order[index], order[swap]] = [order[swap], order[index]];
+        this.c.findersData = order;
+        this.c.finders.refresh(this);
+        const focusEl = document.querySelector(`.finder-item[data-finder-id="${finderId}"]`);
+        focusEl?.focus?.();
+        this.c.handleFindersReordered(this.c.findersData);
+    }
+
+    async addFinder() {
+        try {
+            if (!this.c.finders || typeof this.c.finders.add !== 'function') {
+                this.c.ui.showNotification(
+                    this.c.language.t('config.findersModuleUnavailable') || 'Finders could not load. Refresh the page and try again.',
+                    'error'
+                );
+                return;
+            }
+    
+            this.c.cancelPendingFindersTabReload();
+            if (!Array.isArray(this.c.findersData)) {
+                this.c.findersData = [];
+            } else if (!Object.isExtensible(this.c.findersData)) {
+                this.c.findersData = [...this.c.findersData];
+            }
+    
+            this.c.finders.clearFilter?.();
+    
+            const newFinder = this.c.finders.add(this.c.findersData, this.c.generateId.bind(this.c));
+            if (!newFinder) {
+                this.c.ui.showNotification(
+                    this.c.language.t('config.finderAddFailed') || 'Could not add finder. Refresh the page and try again.',
+                    'error'
+                );
+                return;
+            }
+    
+            this.c.finders.refresh(this);
+            this.c.markDirty();
+    
+            requestAnimationFrame(() => {
+                document.querySelector(`.finder-item[data-finder-id="${newFinder.id}"] input[data-field="name"]`)?.focus?.();
+                document.querySelector(`.finder-item[data-finder-id="${newFinder.id}"]`)?.scrollIntoView?.({ block: 'nearest' });
+            });
+    
+            try {
+                await this.c.persistFindersChanges({
+                    silent: true,
+                    eventType: 'finder-added',
+                    skipUiRefresh: true
+                });
+            } catch (error) {
+                console.warn('Finder added in UI; background save failed:', error);
+            }
+        } catch (error) {
+            console.error('addFinder failed:', error);
+            this.c.ui.showNotification(
+                this.c.language.t('config.finderAddFailed') || 'Could not add finder. Refresh the page and try again.',
+                'error'
+            );
+        }
+    }
+
+    async removeFinder(index) {
+        const finder = this.c.findersData[index];
+        if (!finder?.id) return;
+        await this.c.removeFinderById(finder.id);
+    }
+
+    async removeFinderById(finderId) {
+        const undoSnapshot = this.c.captureUndoSnapshot();
+        const removed = await this.c.finders.removeById(this.c.findersData, finderId);
+        if (!removed) return;
+    
+        try {
+            await this.c.persistFindersChanges({ silent: true, eventType: 'finder-removed' });
+            this.c.showUndoNotification(
+                this.c.language.t('config.finderRemoved') || 'Finder removed.',
+                undoSnapshot,
+                { persistFinders: true }
+            );
+        } catch (error) {
+            this.c.restoreUndoSnapshot(undoSnapshot);
+            this.c.undoSnapshot = null;
+            this.c.ui.showNotification(
+                this.c.language.t('config.finderRemoveFailed') || 'Failed to remove finder. Changes reverted.',
+                'error'
+            );
+        }
+    }
+
+    installPublicMethods() {
+        const c = this.config;
+        for (const name of ['handleFindersReordered', 'scheduleFinderValidationRefresh', 'validateFindersData', 'moveFinderById', 'addFinder', 'removeFinder', 'removeFinderById']) {
+            c[name] = (...args) => this[name](...args);
+        }
+    }
+}
+
+window.ConfigFindersController = ConfigFindersController;

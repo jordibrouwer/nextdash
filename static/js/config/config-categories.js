@@ -258,3 +258,636 @@ class ConfigCategories {
 }
 
 window.ConfigCategories = ConfigCategories;
+
+/**
+ * Categories orchestration — load, merge, remove, reorder, session prefs.
+ */
+class ConfigCategoriesController {
+    constructor(config) {
+        this.config = config;
+    }
+
+    get c() {
+        return this.config;
+    }
+
+    _lastCategoryFilterStorageKey(pageId) {
+        return `nextdash:config:last-category-filter:${Number(pageId) || 1}`;
+    }
+
+    _lastUsedCategoryStorageKey(pageId) {
+        return `nextdash:config:last-used-category:${Number(pageId) || 1}`;
+    }
+
+    _lastCategoriesPageStorageKey() {
+        return 'nextdash:config:last-categories-page';
+    }
+
+    getDefaultCategoriesPageId() {
+        const visible = this.c.getVisiblePages();
+        return visible.length > 0 ? Number(visible[0].id) : 1;
+    }
+
+    getLastCategoriesPageId() {
+        try {
+            const parsed = Number(sessionStorage.getItem(this.c._lastCategoriesPageStorageKey()));
+            if (Number.isFinite(parsed) && parsed >= 1) {
+                const visible = this.c.getVisiblePages();
+                if (visible.some((page) => Number(page.id) === parsed)) {
+                    return parsed;
+                }
+            }
+        } catch {
+            // ignore
+        }
+        return this.c.getDefaultCategoriesPageId();
+    }
+
+    saveLastCategoriesPageId(pageId) {
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid < 1) return;
+        try {
+            sessionStorage.setItem(this.c._lastCategoriesPageStorageKey(), String(pid));
+        } catch {
+            // ignore
+        }
+    }
+
+    getLastCategoryFilterForPage(pageId) {
+        try {
+            return sessionStorage.getItem(this.c._lastCategoryFilterStorageKey(pageId)) || '__all__';
+        } catch {
+            return '__all__';
+        }
+    }
+
+    saveLastCategoryFilterForPage(pageId, value) {
+        try {
+            sessionStorage.setItem(this.c._lastCategoryFilterStorageKey(pageId), String(value || '__all__'));
+        } catch {
+            // ignore
+        }
+    }
+
+    getLastUsedCategoryIdForPage(pageId) {
+        try {
+            return sessionStorage.getItem(this.c._lastUsedCategoryStorageKey(pageId)) || '';
+        } catch {
+            return '';
+        }
+    }
+
+    saveLastUsedCategoryIdForPage(pageId, categoryId) {
+        const id = String(categoryId || '').trim();
+        if (!id) return;
+        try {
+            sessionStorage.setItem(this.c._lastUsedCategoryStorageKey(pageId), id);
+        } catch {
+            // ignore
+        }
+    }
+
+    async loadPageCategories(pageId) {
+        try {
+            this.c.currentCategoriesPageId = parseInt(pageId, 10);
+            this.c.categoriesData = (await this.c.data.loadCategoriesByPage(pageId)).map(cat => ({ ...cat }));
+    
+            const bookmarksForPage = Number(pageId) === Number(this.c.currentPageId)
+                ? this.c.bookmarksData
+                : await this.c.data.loadBookmarksByPage(pageId);
+    
+            if (this.c.categoriesData.length === 0 && this.c.bookmarksReferenceCategories(bookmarksForPage)) {
+                this.c.categoriesData = this.c.rebuildCategoriesFromBookmarkRefs(bookmarksForPage);
+                if (this.c.categoriesData.length > 0) {
+                    try {
+                        await this.c.data.saveCategoriesByPage(this.c.categoriesData, this.c.currentCategoriesPageId);
+                        this.c.ui.showNotification(
+                            this.c.language.t('config.categoriesRecovered') || 'Recovered missing categories from bookmark references.',
+                            'success'
+                        );
+                    } catch (recoverErr) {
+                        console.error('Failed to persist recovered categories:', recoverErr);
+                    }
+                }
+            }
+    
+            const categoryIdMap = this.c.ensureStableCategoryIds(this.c.categoriesData);
+            if (categoryIdMap.size > 0) {
+                this.c.reassignBookmarkCategoriesFromMap(categoryIdMap, bookmarksForPage);
+                if (Number(pageId) === Number(this.c.currentPageId)) {
+                    this.c.bookmarksData = bookmarksForPage;
+                }
+            }
+    
+            this.c.rebuildCategoryBookmarkCounts(bookmarksForPage);
+            this.c.renderCategoriesList();
+            this.c.categoriesListHydrated = true;
+        } catch (error) {
+            this.c.ui.showErrorWithReload(this.c.language.t('config.errorLoadingCategories'));
+        }
+    }
+
+    rebuildCategoryBookmarkCounts(bookmarks) {
+        this.c._categoryBookmarkCounts = {};
+        (bookmarks || []).forEach((bookmark) => {
+            const cat = String(bookmark?.category || '').trim();
+            if (cat) {
+                this.c._categoryBookmarkCounts[cat] = (this.c._categoryBookmarkCounts[cat] || 0) + 1;
+            }
+        });
+    }
+
+    getCategoryBookmarkCount(categoryId) {
+        return this.c._categoryBookmarkCounts?.[categoryId] || 0;
+    }
+
+    renderCategoriesList() {
+        this.c.categories.render(
+            this.c.categoriesData,
+            this.c.generateId.bind(this.c),
+            (id) => this.c.getCategoryBookmarkCount(id)
+        );
+        this.c.categories.initReorder(
+            this.c.categoriesData,
+            (newCategories) => this.c.handleCategoriesReordered(newCategories)
+        );
+    }
+
+    async getBookmarksForCategoriesPage(pageId = this.c.currentCategoriesPageId) {
+        const pid = Number(pageId);
+        if (Number(this.c.currentPageId) === pid) {
+            return this.c.bookmarksData;
+        }
+        return this.c.withRetry(() => this.c.data.loadBookmarksByPage(pid));
+    }
+
+    async getBookmarksInCategory(categoryId, pageId = this.c.currentCategoriesPageId) {
+        const bookmarks = await this.c.getBookmarksForCategoriesPage(pageId);
+        return (bookmarks || []).filter((bookmark) => bookmark.category === categoryId);
+    }
+
+    async updateBookmarksOnCategoriesPage(updater) {
+        const pageId = Number(this.c.currentCategoriesPageId);
+        if (!Number.isFinite(pageId) || pageId < 1) return;
+    
+        if (Number(this.c.currentPageId) === pageId) {
+            const next = updater([...this.c.bookmarksData]);
+            this.c.bookmarksData = Array.isArray(next) ? next : this.c.bookmarksData;
+            return;
+        }
+    
+        const bookmarks = await this.c.getBookmarksForCategoriesPage(pageId);
+        const next = updater([...(bookmarks || [])]);
+        if (Array.isArray(next)) {
+            await this.c.saveBookmarksPage(pageId, next);
+        }
+    }
+
+    handleCategoriesReordered(newCategories) {
+        this.c.categoriesData = newCategories;
+        this.c.categories.syncCategoryIndices?.();
+        this.c.markDirty();
+        clearTimeout(this.c._categoryReorderPersistTimer);
+        this.c._categoryReorderPersistTimer = setTimeout(() => {
+            void this.c.persistCategoriesStructureAndRefresh({ eventType: 'category-reordered' });
+        }, 600);
+    }
+
+    moveCategoryById(categoryId, direction) {
+        const index = this.c.categoriesData.findIndex((c) => c.id === categoryId);
+        if (index < 0) return;
+        const swap = direction === 'up' ? index - 1 : index + 1;
+        if (swap < 0 || swap >= this.c.categoriesData.length) return;
+        const order = [...this.c.categoriesData];
+        [order[index], order[swap]] = [order[swap], order[index]];
+        this.c.categoriesData = order;
+        this.c.renderCategoriesList();
+        this.c.handleCategoriesReordered(this.c.categoriesData);
+        const focusEl = document.querySelector(`.category-item[data-category-id="${categoryId}"]`);
+        focusEl?.focus?.();
+    }
+
+    async addCategory() {
+        if (!this.c.categoriesData) this.c.categoriesData = [];
+    
+        const categoriesPageId = Number(this.c.currentCategoriesPageId) || this.c.getDefaultCategoriesPageId();
+    
+        const newCategory = this.c.categories.add(
+            this.c.categoriesData,
+            this.c.generateId.bind(this.c),
+            () => this.c.generateStableCategoryId()
+        );
+        if (!newCategory) return;
+    
+        this.c.renderCategoriesList();
+        await this.c.persistCategoriesStructureAndRefresh({ eventType: 'category-added' });
+        this.c.currentCategoriesPageId = categoriesPageId;
+        this.c.saveLastCategoriesPageId(categoriesPageId);
+        this.c.syncCategoriesPageSelectorUI(categoriesPageId);
+        this.c.saveLastUsedCategoryIdForPage(categoriesPageId, newCategory.id);
+        this.c.renderStructureWorkspace();
+    
+        requestAnimationFrame(() => {
+            const row = document.querySelector(`.category-item[data-category-id="${newCategory.id}"]`);
+            const nameInput = row?.querySelector('input[data-field="name"]');
+            nameInput?.focus?.();
+            nameInput?.select?.();
+            row?.scrollIntoView?.({ block: 'nearest' });
+        });
+    }
+
+    async removeCategory(index) {
+        const category = this.c.categoriesData[index];
+        if (!category) return;
+        await this.c.removeCategoryById(category.id);
+    }
+
+    async removeCategoryById(categoryId) {
+        const category = this.c.categoriesData.find((c) => c.id === categoryId);
+        if (!category) return;
+    
+        const impactedBookmarks = await this.c.getBookmarksInCategory(category.id);
+        let deleteMode = 'uncategorize';
+        let moveTargetId = '';
+        if (impactedBookmarks.length > 0) {
+            const flow = await this.c.resolveCategoryDeleteFlow(category, impactedBookmarks.length);
+            if (!flow || flow.action === 'cancel') {
+                return;
+            }
+            deleteMode = flow.action;
+            moveTargetId = flow.targetCategoryId || '';
+        }
+    
+        const index = this.c.categoriesData.findIndex((c) => c.id === categoryId);
+        if (index < 0) return;
+    
+        const undoSnapshot = this.c.captureUndoSnapshot();
+        const removed = await this.c.categories.remove(this.c.categoriesData, index, {
+            message: this.c.language.t('config.removeCategoryMessage')
+        });
+        if (!removed) return;
+    
+        await this.c.updateBookmarksOnCategoriesPage((bookmarks) => {
+            if (deleteMode === 'move' && moveTargetId) {
+                return bookmarks.map((bookmark) => (
+                    bookmark.category === category.id
+                        ? { ...bookmark, category: moveTargetId }
+                        : bookmark
+                ));
+            }
+            if (deleteMode === 'delete') {
+                return bookmarks.filter((bookmark) => bookmark.category !== category.id);
+            }
+            return bookmarks.map((bookmark) => (
+                bookmark.category === category.id
+                    ? { ...bookmark, category: '' }
+                    : bookmark
+            ));
+        });
+    
+        this.c.rebuildCategoryBookmarkCounts(await this.c.getBookmarksForCategoriesPage());
+        this.c.renderCategoriesList();
+        this.c.showUndoNotification(
+            this.c.language.t('config.categoryRemoved'),
+            undoSnapshot
+        );
+        await this.c.persistCategoriesStructureAndRefresh({ persistBookmarks: true, eventType: 'category-removed' });
+        this.c.renderStructureWorkspace();
+    }
+
+    async resolveCategoryDeleteFlow(category, impactedCount) {
+        const alternativeCategories = this.c.categoriesData.filter((item) => item.id !== category.id);
+        if (alternativeCategories.length === 0) {
+            const confirmed = await window.AppModal.confirm({
+                title: this.c.language.t('config.deleteCategoryTitleShort') || 'Delete category',
+                message: (this.c.language.t('config.deleteCategoryImpact') || '{count} bookmarks to uncategorized.').replace('{count}', String(impactedCount)),
+                confirmText: this.c.language.t('config.continue') || 'Continue',
+                cancelText: this.c.language.t('config.cancel')
+            });
+            return confirmed ? { action: 'uncategorize' } : { action: 'cancel' };
+        }
+    
+        const optionsHtml = this.c._categorySelectOptionsHtml(alternativeCategories);
+        const html = `
+            <p>${(this.c.language.t('config.categoryDeleteInUse') || '{count} bookmarks in').replace('{count}', String(impactedCount))} <strong>${this.c._escHtml(category.name)}</strong>.</p>
+            <p>${this.c.language.t('config.categoryDeleteChoose') || 'Choose action before delete:'}</p>
+            <select id="category-delete-target-select" class="page-selector" style="max-width:100%;">
+                ${optionsHtml}
+            </select>
+            <div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-small" onclick="window.tempCategoryDeleteAction('move')">${this.c.language.t('config.moveToSelected') || 'Move selected'}</button>
+                <button class="btn btn-secondary btn-small" onclick="window.tempCategoryDeleteAction('uncategorize')">${this.c.language.t('config.setUncategorized') || 'Set uncategorized'}</button>
+                <button class="btn btn-danger btn-small" onclick="window.tempCategoryDeleteAction('delete')">${this.c.language.t('config.deleteBookmarksToo') || 'Delete bookmarks'}</button>
+            </div>
+        `;
+    
+        return new Promise((resolve) => {
+            window.tempCategoryDeleteAction = (action) => {
+                const selectEl = document.getElementById('category-delete-target-select');
+                const targetCategoryId = selectEl ? selectEl.value : '';
+                delete window.tempCategoryDeleteAction;
+                window.AppModal.hide();
+                resolve({ action, targetCategoryId });
+            };
+            window.AppModal.show({
+                title: this.c.language.t('config.deleteCategoryTitleShort') || 'Delete category',
+                htmlMessage: html,
+                confirmText: this.c.language.t('config.cancel'),
+                showCancel: false,
+                onConfirm: () => {
+                    delete window.tempCategoryDeleteAction;
+                    resolve({ action: 'cancel' });
+                }
+            });
+        });
+    }
+
+    async mergeCategory(index) {
+        const sourceCategory = this.c.categoriesData[index];
+        if (!sourceCategory) return;
+        await this.c.mergeCategoryById(sourceCategory.id);
+    }
+
+    async mergeCategoryById(sourceCategoryId) {
+        const sourceCategory = this.c.categoriesData.find((c) => c.id === sourceCategoryId);
+        if (!sourceCategory) return;
+    
+        const targetCategories = this.c.categoriesData.filter((item) => item.id !== sourceCategory.id);
+        if (targetCategories.length === 0) {
+            this.c.ui.showNotification(this.c.language.t('config.mergeNeedSecondCategory') || 'Need second category.', 'info');
+            return;
+        }
+    
+        const sourceCount = this.c.getCategoryBookmarkCount(sourceCategory.id);
+        const optionsHtml = this.c._categorySelectOptionsHtml(targetCategories);
+        const impactLine = sourceCount > 0
+            ? `<p>${(this.c.language.t('config.mergeCategoryImpact') || '{count} bookmarks will move.').replace('{count}', String(sourceCount))}</p>`
+            : '';
+        const html = `
+            <p>${this.c.language.t('config.mergeIntoLabel') || 'Merge into'} <strong>${this.c._escHtml(sourceCategory.name)}</strong>:</p>
+            ${impactLine}
+            <select id="merge-category-target-select" class="page-selector" style="max-width:100%;">
+                ${optionsHtml}
+            </select>
+        `;
+        const confirmed = await window.AppModal.confirm({
+            title: this.c.language.t('config.mergeCategoryTitleShort') || 'Merge category',
+            htmlMessage: html,
+            confirmText: this.c.language.t('config.merge') || 'Merge',
+            cancelText: this.c.language.t('config.cancel')
+        });
+        if (!confirmed) return;
+    
+        const targetSelect = document.getElementById('merge-category-target-select');
+        const targetId = targetSelect ? targetSelect.value : '';
+        if (!targetId) return;
+    
+        const targetCategory = this.c.categoriesData.find((item) => item.id === targetId);
+        if (!targetCategory) return;
+    
+        const index = this.c.categoriesData.findIndex((c) => c.id === sourceCategoryId);
+        if (index < 0) return;
+    
+        const undoSnapshot = this.c.captureUndoSnapshot();
+        await this.c.updateBookmarksOnCategoriesPage((bookmarks) =>
+            bookmarks.map((bookmark) => (
+                bookmark.category === sourceCategory.id
+                    ? { ...bookmark, category: targetId }
+                    : bookmark
+            ))
+        );
+    
+        this.c.categoriesData.splice(index, 1);
+        this.c.rebuildCategoryBookmarkCounts(await this.c.getBookmarksForCategoriesPage());
+        this.c.renderCategoriesList();
+        const mergedText = (this.c.language.t('config.categoryMergedInto') || 'Merged into {name}.').replace('{name}', targetCategory.name);
+        this.c.showUndoNotification(mergedText, undoSnapshot);
+        await this.c.persistCategoriesStructureAndRefresh({ persistBookmarks: true, eventType: 'category-merged' });
+        this.c.renderStructureWorkspace();
+    }
+
+    applyCategoryRenameWithConflictGuard(category, rawName, previousId) {
+        const nextName = String(rawName || '').trim();
+        const originalName = category.name || '';
+        const currentId = category.id || '';
+        const oldId = previousId || category.originalId || currentId;
+        const normalizedNextName = nextName.toLowerCase();
+        const hasDuplicate = this.c.categoriesData.some((item) => {
+            if (item === category) return false;
+            return String(item.name || '').trim().toLowerCase() === normalizedNextName;
+        });
+    
+        if (!nextName || hasDuplicate) {
+            const fallbackName = originalName || oldId || this.c.language.t('config.newCategoryPrefix');
+            category.name = fallbackName;
+            category.id = oldId;
+            category.originalId = oldId;
+            this.c.renderCategoriesList();
+            this.c.ui.showNotification(
+                this.c.language.t('config.categoryNameMustBeUnique'),
+                'error'
+            );
+            return false;
+        }
+    
+        category.name = nextName;
+        category.id = oldId;
+        category.originalId = oldId;
+        return { oldId, newId: oldId };
+    }
+
+    reassignBookmarkCategoryIds(oldId, nextId) {
+        if (!oldId || !nextId || oldId === nextId) {
+            return;
+        }
+        this.c.bookmarksData.forEach((bookmark) => {
+            if (bookmark.category === oldId) {
+                bookmark.category = nextId;
+            }
+        });
+    }
+
+    syncCategoriesPageSelectorUI(pageId) {
+        const sel = document.getElementById('categories-page-selector');
+        if (!sel || !sel.options?.length) {
+            return;
+        }
+        const want = String(Number(pageId));
+        for (let i = 0; i < sel.options.length; i++) {
+            if (String(sel.options[i].value) === want) {
+                sel.selectedIndex = i;
+                sel.__customSelectInstance?.refresh?.();
+                return;
+            }
+        }
+    }
+
+    getCategoriesFromDOM() {
+        const categoriesList = document.getElementById('categories-list');
+        if (!categoriesList) return null;
+    
+        const categoryItems = categoriesList.querySelectorAll('.category-item');
+        const categories = [];
+    
+        categoryItems.forEach((item) => {
+            const category = item._categoryRef;
+            if (category) categories.push(category);
+        });
+    
+        return categories;
+    }
+
+    bookmarksReferenceCategories(bookmarks) {
+        if (!Array.isArray(bookmarks)) return false;
+        return bookmarks.some((bookmark) => String(bookmark?.category || '').trim() !== '');
+    }
+
+    rebuildCategoriesFromBookmarkRefs(bookmarks) {
+        if (!Array.isArray(bookmarks)) return [];
+        const ids = [];
+        const seen = new Set();
+        bookmarks.forEach((bookmark) => {
+            const id = String(bookmark?.category || '').trim();
+            if (!id || seen.has(id)) return;
+            seen.add(id);
+            ids.push(id);
+        });
+        return ids.map((id) => ({
+            id,
+            originalId: id,
+            name: this.c.formatRecoveredCategoryName(id),
+            icon: ''
+        }));
+    }
+
+    formatRecoveredCategoryName(categoryId) {
+        const slug = String(categoryId || '').trim();
+        if (!slug) return 'Category';
+        if (slug.startsWith('cat_')) {
+            return slug.slice(4).replace(/_/g, ' ') || slug;
+        }
+        return slug.replace(/-/g, ' ').replace(/_/g, ' ');
+    }
+
+    async getBookmarksForPage(pageId) {
+        const pid = parseInt(pageId, 10);
+        if (Number(pid) === Number(this.c.currentPageId)) {
+            return this.c.bookmarksData;
+        }
+        return this.c.data.loadBookmarksByPage(pid);
+    }
+
+    async resolveCategoriesForSave(pageId) {
+        const pid = parseInt(pageId, 10);
+        if (!Number.isFinite(pid) || pid < 1) return null;
+    
+        const fromDom = this.c.getCategoriesFromDOM();
+        const domMatchesPage = Number(this.c.currentCategoriesPageId) === pid;
+        let categories = null;
+    
+        if (domMatchesPage && Array.isArray(fromDom) && fromDom.length > 0) {
+            categories = fromDom.map((cat) => ({ ...cat }));
+        } else if (domMatchesPage && Array.isArray(this.c.categoriesData) && this.c.categoriesData.length > 0) {
+            categories = this.c.categoriesData.map((cat) => ({ ...cat }));
+        } else if (domMatchesPage && this.c.categoriesListHydrated && Array.isArray(fromDom) && fromDom.length === 0) {
+            categories = [];
+        } else {
+            return null;
+        }
+    
+        if (categories.length === 0) {
+            const bookmarks = await this.c.getBookmarksForPage(pid);
+            if (this.c.bookmarksReferenceCategories(bookmarks)) {
+                return null;
+            }
+        }
+    
+        return categories;
+    }
+
+    generateStableCategoryId() {
+        return `cat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+    }
+
+    ensureStableCategoryIds(categories) {
+        const idMap = new Map();
+        if (!Array.isArray(categories)) {
+            return idMap;
+        }
+        const usedIds = new Set();
+        categories.forEach((category, index) => {
+            if (!category) return;
+            const previousId = String(category.id || '').trim();
+            let stableId = previousId;
+            if (!stableId || usedIds.has(stableId)) {
+                stableId = this.c.generateStableCategoryId();
+                while (usedIds.has(stableId)) {
+                    stableId = this.c.generateStableCategoryId();
+                }
+            }
+            usedIds.add(stableId);
+            category.id = stableId;
+            category.originalId = stableId;
+    
+            if (previousId && previousId !== stableId) {
+                idMap.set(previousId, stableId);
+            }
+            if (!previousId) {
+                const legacySlug = this.c.generateId(category.name || `category-${index + 1}`);
+                if (legacySlug && legacySlug !== stableId && !idMap.has(legacySlug)) {
+                    idMap.set(legacySlug, stableId);
+                }
+            }
+        });
+        return idMap;
+    }
+
+    reassignBookmarkCategoriesFromMap(idMap, bookmarks) {
+        if (!(idMap instanceof Map) || idMap.size === 0 || !Array.isArray(bookmarks)) {
+            return;
+        }
+        bookmarks.forEach((bookmark) => {
+            const currentCategory = String(bookmark?.category || '').trim();
+            if (currentCategory && idMap.has(currentCategory)) {
+                bookmark.category = idMap.get(currentCategory);
+            }
+        });
+    }
+
+    async refreshCategoriesDependentUI() {
+        const categoriesPageId = this.c.resolvePageId(
+            this.c.currentCategoriesPageId,
+            this.c.getVisiblePages()
+        );
+        this.c.currentCategoriesPageId = categoriesPageId;
+    
+        await this.c.loadPageCategories(categoriesPageId);
+        this.c.syncCategoriesPageSelectorUI(categoriesPageId);
+    
+        if (Number(this.c.currentPageId) === categoriesPageId) {
+            this.c.bookmarksPageCategories = this.c.categoriesData.map((cat) => ({ ...cat }));
+            this.c.refreshBookmarksFilterOptions();
+        }
+    
+        this.c.renderStructureWorkspace();
+    }
+
+    _escHtml(str) {
+        return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    _categorySelectOptionsHtml(categories) {
+        return categories
+            .map((item) => `<option value="${this.c._escHtml(item.id)}">${this.c._escHtml(item.name)}</option>`)
+            .join('');
+    }
+
+    installPublicMethods() {
+        const c = this.config;
+        for (const name of ['_lastCategoryFilterStorageKey', '_lastUsedCategoryStorageKey', '_lastCategoriesPageStorageKey', 'getDefaultCategoriesPageId', 'getLastCategoriesPageId', 'saveLastCategoriesPageId', 'getLastCategoryFilterForPage', 'saveLastCategoryFilterForPage', 'getLastUsedCategoryIdForPage', 'saveLastUsedCategoryIdForPage', 'loadPageCategories', 'rebuildCategoryBookmarkCounts', 'getCategoryBookmarkCount', 'renderCategoriesList', 'getBookmarksForCategoriesPage', 'getBookmarksInCategory', 'updateBookmarksOnCategoriesPage', 'handleCategoriesReordered', 'moveCategoryById', 'addCategory', 'removeCategory', 'removeCategoryById', 'resolveCategoryDeleteFlow', 'mergeCategory', 'mergeCategoryById', 'applyCategoryRenameWithConflictGuard', 'reassignBookmarkCategoryIds', 'syncCategoriesPageSelectorUI', 'getCategoriesFromDOM', 'bookmarksReferenceCategories', 'rebuildCategoriesFromBookmarkRefs', 'formatRecoveredCategoryName', 'getBookmarksForPage', 'resolveCategoriesForSave', 'generateStableCategoryId', 'ensureStableCategoryIds', 'reassignBookmarkCategoriesFromMap', 'refreshCategoriesDependentUI', '_escHtml', '_categorySelectOptionsHtml']) {
+            c[name] = (...args) => this[name](...args);
+        }
+    }
+}
+
+window.ConfigCategoriesController = ConfigCategoriesController;
