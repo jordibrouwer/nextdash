@@ -65,6 +65,12 @@ _No unreleased changes at this time._
 - **fix** **Natural scrolling** — removed fixed viewport height and inner list scrollbar; the full tag list scrolls with the config page like Collections and Pages.
 - **fix** **Page width** — cloud and list respect the config container width (`max-width: 100%`); long tag names truncate with ellipsis instead of overflowing horizontally.
 
+### Search & tag filters
+
+- **fix** **Filter autocomplete ordering** — category and tag value hits appear before generic keyword hints when typing partial tokens (e.g. `cat` suggests real categories before the `category:` hint).
+- **new** **Top 20 tag suggestions** — empty `tag:` shows the 20 most-used tags sorted by bookmark count; type any part of a tag name to find tags outside that list.
+- **fix** **Bare tag hints** — typing a tag name without `tag:` uses the same usage-ranked suggestions as the `tag:` filter command.
+
 ### Config architecture
 
 - **fix** **Modular config.js** — extracted `ConfigTabTours`, `ConfigPersistence`, `ConfigTabs`, domain controllers (`ConfigPages`, `ConfigCategories`, `ConfigFinders`, `ConfigThemes`), and `ConfigSetup` into `static/js/config/`; orchestrator reduced from ~7&nbsp;150 to ~1&nbsp;610 lines.
@@ -72,9 +78,11 @@ _No unreleased changes at this time._
 
 ### Developer & docs
 
-- **new** **Config Playwright tests** — `tests/config-tab-tours.spec.js`, `config-persistence.spec.js`, `config-tabs.spec.js`, `config-domain-glue.spec.js`, `config-setup.spec.js`, `config-keyboard.spec.js` (20 tests).
+- **new** **Config Playwright tests** — `tests/config-tab-tours.spec.js`, `config-persistence.spec.js`, `config-tabs.spec.js`, `config-domain-glue.spec.js`, `config-setup.spec.js`, `config-keyboard.spec.js`, `config-tags-tab.spec.js` (tags tab UI: cloud, list, sort, filter, drill-down).
+- **fix** **Playwright hardening** — opt-in server reuse (`PLAYWRIGHT_REUSE_SERVER`) with `/api/pages` health check in global setup; retries (1 local / 2 CI), single worker, trace on retry; `npm run test:e2e:reuse` script.
+- **fix** **E2E stabilisations** — serial promo, overlay, command palette, grid-shortcuts, and inert specs; whats-new/promo dismiss helpers; explicit command-match selection for flaky palette tests.
 - **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), and whats-new updated for v2026.06.25.
-- **fix** **Cache-bust** — `whats-new-v91` (`2026.06-dashboard-release-v71`); `tags-flow-3` on `config-tags.css`, `tags-wordcloud-1` on `config-tags.js`.
+- **fix** **Cache-bust** — `whats-new-v92` (same `2026.06-dashboard-release-v71`); `search-top-tags-1` on `search.js`; prior `whats-new-v91`, `tags-flow-3`, `tags-wordcloud-1`.
 
 ---
 

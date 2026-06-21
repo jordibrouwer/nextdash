@@ -25,6 +25,23 @@
       ]
     },
     {
+      "title": "Search &amp; tag filters",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Smarter filter autocomplete</strong> — when you type a category or tag name in search, matching filter values appear before generic keyword hints (e.g. <code>cat</code> suggests real categories before the <code>category:</code> hint)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Top 20 tag suggestions</strong> — empty <code>tag:</code> lists the 20 most-used tags (by bookmark count); type any part of a tag name to find the rest."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bare tag hints</strong> — typing a tag name without <code>tag:</code> uses the same usage-ranked suggestions as the filter command."
+        }
+      ]
+    },
+    {
       "title": "Config architecture",
       "items": [
         {
@@ -42,7 +59,11 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Config Playwright tests</strong> — coverage for tab tours, persistence, tab lifecycle, domain glue, setup wiring, and keyboard tab (20 tests)."
+          "text": "<strong>Config Playwright tests</strong> — coverage for tab tours, persistence, tab lifecycle, domain glue, setup wiring, keyboard tab, and tags tab UI (cloud, list, sort, filter, drill-down)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Playwright hardening</strong> — opt-in dev-server reuse with <code>/api/pages</code> health check, retries, single worker, and serial promo/overlay/command specs for stable CI; <code>npm run test:e2e:reuse</code> when a local server is already running."
         },
         {
           "badge": "fix",
