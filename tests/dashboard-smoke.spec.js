@@ -20,12 +20,12 @@ test.describe('dashboard smoke', () => {
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         const pageCount = await page.evaluate(() => window.dashboardInstance?.pages?.length || 0);
         test.skip(pageCount < 2, 'needs at least two pages');
-        await page.evaluate(() => {
-            window.dashboardInstance.requestPageNavigation(window.dashboardInstance.pages[1].id);
-        });
-        await page.waitForTimeout(500);
-        const current = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
         const expected = await page.evaluate(() => Number(window.dashboardInstance.pages[1].id));
-        expect(current).toBe(expected);
+        await page.evaluate(async (targetId) => {
+            await window.dashboardInstance.requestPageNavigation(targetId);
+        }, expected);
+        await expect.poll(async () => page.evaluate(() => (
+            Number(window.dashboardInstance.currentPageId)
+        ))).toBe(expected);
     });
 });

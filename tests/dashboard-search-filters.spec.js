@@ -22,8 +22,22 @@ async function dismissBlockingOverlays(page) {
     }
 }
 
+async function markWhatsNewSeen(page) {
+    await page.addInitScript(() => {
+        try {
+            const release = '2026.06-dashboard-release-v71';
+            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+        } catch {
+            // ignore
+        }
+    });
+}
+
 test.describe('dashboard search filters', () => {
     test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -100,6 +114,7 @@ test.describe('dashboard search filters', () => {
             sc?.updateSearch();
         });
 
+        await dismissBlockingOverlays(page);
         await page.locator('.search-match.filter-completion-entry').filter({ hasText: /status/i }).first().click();
 
         await expect.poll(async () => page.evaluate(() => {

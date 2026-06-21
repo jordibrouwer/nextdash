@@ -878,6 +878,28 @@ class SearchComponent {
         }
 
         if (!currentToken.includes(':')) {
+            const valueHits = [];
+
+            if (currentToken.length >= 2) {
+                const categoryHits = categories
+                    .filter((category) => category.startsWith(currentToken))
+                    .slice(0, 8)
+                    .map((category) => toCompletion(
+                        `category:${category}`,
+                        t('filterCompletionCategory', 'Category: {value}', { value: categoryMap.get(category) || category })
+                    ));
+                valueHits.push(...categoryHits);
+
+                const tagHits = allTags
+                    .filter((tag) => tag.startsWith(currentToken))
+                    .slice(0, 8)
+                    .map((tag) => toCompletion(
+                        `tag:${tag}`,
+                        t('filterCompletionTag', 'Tag: {value}', { value: tag })
+                    ));
+                valueHits.push(...tagHits);
+            }
+
             const partialHints = [];
             if ('category'.startsWith(currentToken) && currentToken.length >= 2) {
                 partialHints.push(toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')));
@@ -891,32 +913,10 @@ class SearchComponent {
             if ('tag'.startsWith(currentToken) && currentToken.length >= 2) {
                 partialHints.push(toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')));
             }
-            if (partialHints.length > 0) {
-                return partialHints;
-            }
 
-            if (currentToken.length >= 2) {
-                const categoryHits = categories
-                    .filter((category) => category.startsWith(currentToken))
-                    .slice(0, 8)
-                    .map((category) => toCompletion(
-                        `category:${category}`,
-                        t('filterCompletionCategory', 'Category: {value}', { value: categoryMap.get(category) || category })
-                    ));
-                if (categoryHits.length > 0) {
-                    return categoryHits;
-                }
-
-                const tagHits = allTags
-                    .filter((tag) => tag.startsWith(currentToken))
-                    .slice(0, 8)
-                    .map((tag) => toCompletion(
-                        `tag:${tag}`,
-                        t('filterCompletionTag', 'Tag: {value}', { value: tag })
-                    ));
-                if (tagHits.length > 0) {
-                    return tagHits;
-                }
+            const combined = [...valueHits, ...partialHints];
+            if (combined.length > 0) {
+                return combined;
             }
 
             return [];
