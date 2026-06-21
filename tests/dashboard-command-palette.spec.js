@@ -22,8 +22,22 @@ async function dismissBlockingOverlays(page) {
     }
 }
 
+async function markWhatsNewSeen(page) {
+    await page.addInitScript(() => {
+        try {
+            const release = '2026.06-dashboard-release-v71';
+            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+        } catch {
+            // ignore
+        }
+    });
+}
+
 test.describe('dashboard command palette', () => {
     test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -188,11 +202,14 @@ test.describe('dashboard command palette', () => {
 
     test(':quicktag opens tag popover on selected bookmark', async ({ page }) => {
         await page.keyboard.press('ArrowDown');
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+        ))).toBeGreaterThanOrEqual(0);
         await page.keyboard.press(':');
         await page.keyboard.type('quicktag', { delay: 20 });
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Enter');
-        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 5000 });
         await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
     });
 

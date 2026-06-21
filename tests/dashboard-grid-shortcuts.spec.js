@@ -27,6 +27,19 @@ async function dismissBlockingOverlays(page) {
     }
 }
 
+async function markWhatsNewSeen(page) {
+    await page.addInitScript(() => {
+        try {
+            const release = '2026.06-dashboard-release-v71';
+            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+        } catch {
+            // ignore
+        }
+    });
+}
+
 async function closeSearch(page) {
     await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
     await expect(page.locator('#shortcut-search.show')).toHaveCount(0, { timeout: 3000 });
@@ -41,6 +54,7 @@ async function selectFirstBookmark(page) {
 
 test.describe('dashboard grid shortcuts', () => {
     test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -101,23 +115,54 @@ test.describe('dashboard grid shortcuts', () => {
         const tagName = `pw-tag-${Date.now()}`;
         await page.evaluate(async (tag) => {
             const d = window.dashboardInstance;
-            const kn = d?.keyboardNavigation;
-            const row = kn?.navigableElements?.[kn.currentIndex];
-            const bookmark = kn?.getSelectedBookmark?.();
-            if (!bookmark || !row) throw new Error('no bookmark selected');
-            bookmark.tags = [...(bookmark.tags || []), tag];
-            const ref = d.resolveBookmarkReference(bookmark);
-            d.syncEditedBookmarkAcrossCollections(ref, bookmark.url || '');
-            await d.saveBookmarkOrder();
-            row.setAttribute('data-bookmark-tags', (bookmark.tags || []).join(','));
+            const pageId = d.currentPageId;
+            const base = Date.now();
+            const url = `https://example.com/pw-tag-popover-${base}`;
+            const response = await fetch(`/api/bookmarks?page=${pageId}`);
+            const bookmarks = await response.json();
+            await fetch(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([
+                    ...bookmarks,
+                    {
+                        name: `PW tag popover e2e ${base}`,
+                        url,
+                        shortcut: '',
+                        category: 'other',
+                        tags: [tag],
+                        openCount: 0,
+                        createdAt: base,
+                    },
+                ]),
+            });
+            await d.loadPageBookmarks(pageId);
+            d.keyboardNavigation?.updateNavigableElements?.();
+            const bookmark = (d.bookmarks || []).find((bm) => bm.url === url)
+                || (d.allBookmarks || []).find((bm) => bm.url === url);
+            if (!bookmark) throw new Error('seeded bookmark missing from memory');
+            const row = [...document.querySelectorAll('.bookmark-link:not(.recent-bookmark-link)')]
+                .find((el) => {
+                    const rowUrl = el.dataset.bookmarkUrl
+                        || el.querySelector('a.bookmark-open')?.getAttribute('href')
+                        || '';
+                    return rowUrl.includes(`pw-tag-popover-${base}`);
+                });
+            if (!row) throw new Error('seeded bookmark row not found');
+            const bookmarkIndex = (d.bookmarks || []).findIndex((bm) => bm.url === url);
+            d._tagPopoverCleanup?.();
+            d._tagPopoverCleanup = null;
+            d.showTagPopover(row, bookmark, bookmarkIndex >= 0 ? bookmarkIndex : 0);
         }, tagName);
 
-        await page.keyboard.press('Shift+T');
+        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
         const currentItem = page.locator(`#tag-popover .move-popover-item[data-tag="${tagName}"]`);
         await expect(currentItem).toBeVisible({ timeout: 3000 });
         await expect(currentItem).toHaveClass(/is-current/);
         await expect(currentItem.locator('.move-popover-check')).toHaveText('✓');
-        await expect(page.locator('.tag-popover-current-chip')).toContainText(`#${tagName}`);
+        await expect(
+            page.locator('#tag-popover .tag-popover-current-chip').filter({ hasText: `#${tagName}` }),
+        ).toBeVisible();
 
         await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
     });

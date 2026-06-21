@@ -3,6 +3,7 @@ class SearchComponent {
     static STATUS_FILTER_VALUES = new Set([
         'online', 'offline', 'broken', 'ok', 'pinned', 'unpinned', 'checked', 'unchecked',
     ]);
+    static TOP_TAG_FILTER_SUGGESTIONS = 20;
 
     constructor(bookmarksForSearch, currentBookmarks, allBookmarks, settings = {}, language = null, finders = [], pages = []) {
         this.bookmarks = bookmarksForSearch;
@@ -682,6 +683,33 @@ class SearchComponent {
         return pool;
     }
 
+    _buildTagUsageCounts(pool) {
+        const counts = new Map();
+        pool.forEach((bookmark) => {
+            for (const raw of bookmark?.tags || []) {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (!tag) continue;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            }
+        });
+        return counts;
+    }
+
+    /** Tags for tag: filter — top N by usage when no prefix; prefix matches any tag by name. */
+    _getTagFilterSuggestions(pool, { prefix = '', limit = null } = {}) {
+        const counts = this._buildTagUsageCounts(pool);
+        const normalizedPrefix = String(prefix || '').toLowerCase();
+        let tags = [...counts.keys()];
+        if (normalizedPrefix) {
+            tags = tags.filter((tag) => tag.startsWith(normalizedPrefix));
+        }
+        tags.sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
+        if (limit != null) {
+            tags = tags.slice(0, limit);
+        }
+        return tags;
+    }
+
     parseSearchFilters(query) {
         const filters = {
             category: '',
@@ -970,13 +998,17 @@ class SearchComponent {
 
         if (currentToken.startsWith('tag:')) {
             const value = currentToken.slice('tag:'.length);
-            return allTags
-                .filter((tag) => tag.startsWith(value))
-                .slice(0, 8)
-                .map((tag) => toCompletion(
-                    `tag:${tag}`,
-                    t('filterCompletionTag', 'Tag: {value}', { value: tag })
-                ));
+            const hits = this._getTagFilterSuggestions(pool, {
+                prefix: value,
+                limit: value
+                    ? 12
+                    : SearchComponent.TOP_TAG_FILTER_SUGGESTIONS,
+            });
+            if (hits.length === 0) return [];
+            return hits.map((tag) => toCompletion(
+                `tag:${tag}`,
+                t('filterCompletionTag', 'Tag: {value}', { value: tag })
+            ));
         }
 
         return [];

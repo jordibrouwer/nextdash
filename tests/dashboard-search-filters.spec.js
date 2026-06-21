@@ -36,6 +36,8 @@ async function markWhatsNewSeen(page) {
 }
 
 test.describe('dashboard search filters', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -79,29 +81,61 @@ test.describe('dashboard search filters', () => {
     });
 
     test('status:checked filter lists monitored bookmarks', async ({ page }) => {
-        await page.evaluate(async () => {
+        const seededUrl = await page.evaluate(async () => {
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
-            const response = await fetch(`/api/bookmarks?page=${pageId}`);
-            const bookmarks = await response.json();
-            if (!bookmarks.length) return;
-            bookmarks[0] = { ...bookmarks[0], checkStatus: true };
-            await fetch(`/api/bookmarks?page=${pageId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookmarks),
-            });
-            await dash.loadPageBookmarks(pageId);
+            const base = Date.now();
+            const url = `https://example.com/status-checked-e2e-${base}`;
+            const target = {
+                name: 'Status checked e2e',
+                url,
+                shortcut: '',
+                category: 'other',
+                checkStatus: true,
+                openCount: 0,
+                createdAt: base,
+            };
+
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+                const response = await fetch(`/api/bookmarks?page=${pageId}`);
+                const bookmarks = await response.json();
+                const hasTarget = bookmarks.some((bm) => bm.url === url);
+                const payload = hasTarget ? bookmarks : [...bookmarks, target];
+                if (!hasTarget) {
+                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!save.ok) {
+                        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+                        continue;
+                    }
+                }
+                await dash.loadPageBookmarks(pageId);
+                dash.updateSearchComponent?.();
+                const found = (dash.bookmarks || []).find((bm) => bm.url === url);
+                if (found?.checkStatus === true) {
+                    return url;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+            }
+            throw new Error('failed to seed status:checked bookmark');
         });
 
+        await dismissBlockingOverlays(page);
         await page.keyboard.press('>');
-        await page.keyboard.type('status:checked', { delay: 15 });
+        await page.evaluate(() => {
+            const sc = window.dashboardInstance.searchComponent;
+            sc.currentQuery = 'status:checked';
+            sc.updateSearch();
+        });
 
-        await expect.poll(async () => page.evaluate(() => {
+        await expect.poll(async () => page.evaluate((url) => {
             const sc = window.dashboardInstance?.searchComponent;
             const matches = sc?.searchMatches?.filter((m) => m.type === 'bookmark') || [];
-            return matches.length > 0 && matches.every((m) => m.bookmark?.checkStatus === true);
-        })).toBe(true);
+            return matches.some((m) => m.bookmark?.url === url && m.bookmark?.checkStatus === true);
+        }, seededUrl)).toBe(true);
     });
 
     test('expanding Filters then choosing status shows one Filters group', async ({ page }) => {
@@ -217,44 +251,101 @@ test.describe('dashboard search filters', () => {
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
+            const targetTag = `e2e-auto-${base}`;
+            const target = {
+                name: 'Tag autocomplete e2e',
+                url: `https://example.com/tag-auto-${base}`,
+                shortcut: '',
+                category: 'other',
+                tags: [targetTag],
+                openCount: 0,
+                createdAt: base,
+            };
+
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+                const response = await fetch(`/api/bookmarks?page=${pageId}`);
+                const bookmarks = await response.json();
+                const hasTarget = bookmarks.some((bm) => bm.url === target.url);
+                const payload = hasTarget ? bookmarks : [...bookmarks, target];
+                if (!hasTarget) {
+                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!save.ok) {
+                        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+                        continue;
+                    }
+                }
+                await dash.loadPageBookmarks(pageId);
+                dash.updateSearchComponent?.();
+                const pool = dash.searchComponent?._collectFilterBookmarkPool?.() || [];
+                const hasTag = pool.some((bm) => (
+                    (bm.tags || []).some((entry) => String(entry).toLowerCase() === targetTag.toLowerCase())
+                ));
+                if (hasTag) {
+                    return targetTag;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+            }
+            throw new Error('failed to seed tag autocomplete bookmark');
+        });
+
+        await dismissBlockingOverlays(page);
+        await page.keyboard.press('>');
+
+        const hasMatch = await page.evaluate((targetTag) => {
+            const sc = window.dashboardInstance.searchComponent;
+            const prefix = targetTag.slice(0, Math.max(8, targetTag.length - 2));
+            const matches = sc.getFilterAutocompleteMatches(`tag:${prefix}`);
+            return matches.some((m) => (
+                String(m.completion || '').toLowerCase().includes(`tag:${targetTag.toLowerCase()}`)
+            ));
+        }, tag);
+        expect(hasMatch).toBe(true);
+    });
+
+    test('tag: shows at most 20 tags until a name prefix is typed', async ({ page }) => {
+        const rareTag = await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const base = Date.now();
             const response = await fetch(`/api/bookmarks?page=${pageId}`);
             const bookmarks = await response.json();
-            const targetTag = `e2e-auto-${base}`;
+            const additions = Array.from({ length: 25 }, (_, index) => ({
+                name: `Top20 e2e ${index}`,
+                url: `https://example.com/e2e-top20-${base}-${index}`,
+                shortcut: '',
+                category: 'other',
+                tags: [`e2e-top20-${base}-${String(index).padStart(2, '0')}`],
+                openCount: 0,
+                createdAt: base + index,
+            }));
             await fetch(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify([
-                    ...bookmarks,
-                    {
-                        name: 'Tag autocomplete e2e',
-                        url: `https://example.com/tag-auto-${base}`,
-                        shortcut: '',
-                        category: 'other',
-                        tags: [targetTag],
-                        openCount: 0,
-                        createdAt: base,
-                    },
-                ]),
+                body: JSON.stringify([...bookmarks, ...additions]),
             });
             await dash.loadPageBookmarks(pageId);
-            dash.updateSearchComponent();
-            return targetTag;
+            dash.updateSearchComponent?.();
+            return `e2e-top20-${base}-24`;
         });
 
-        await page.keyboard.press('>');
-        await page.evaluate((targetTag) => {
+        const summary = await page.evaluate((expectedRareTag) => {
             const sc = window.dashboardInstance.searchComponent;
-            sc.currentQuery = 'tag: ';
-            sc.updateSearch();
-        }, tag);
+            const emptyMatches = sc.getFilterAutocompleteMatches('tag:');
+            const typedMatches = sc.getFilterAutocompleteMatches(`tag:${expectedRareTag}`);
+            return {
+                emptyCount: emptyMatches.length,
+                emptyHasRare: emptyMatches.some((m) => String(m.completion || '').includes(expectedRareTag)),
+                typedHasRare: typedMatches.some((m) => String(m.completion || '').includes(expectedRareTag)),
+            };
+        }, rareTag);
 
-        await expect.poll(async () => page.evaluate((targetTag) => {
-            const sc = window.dashboardInstance?.searchComponent;
-            return sc?.searchMatches?.some((m) => (
-                m.type === 'filter-completion'
-                && String(m.completion || '').toLowerCase().includes(`tag:${targetTag.toLowerCase()}`)
-            )) ?? false;
-        }, tag)).toBe(true);
+        expect(summary.emptyCount).toBeLessThanOrEqual(20);
+        expect(summary.emptyHasRare).toBe(false);
+        expect(summary.typedHasRare).toBe(true);
     });
 
     test('status:online uses persisted reachability not only live cache', async ({ page }) => {

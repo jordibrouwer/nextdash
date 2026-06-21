@@ -10,6 +10,8 @@ async function waitForConfigReady(page) {
 }
 
 test.describe('config persistence (phase 2)', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
     });
@@ -19,11 +21,16 @@ test.describe('config persistence (phase 2)', () => {
 
         await expect.poll(() => page.evaluate(() => window.configManager.isDirty)).toBe(false);
 
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
             const cm = window.configManager;
-            const snap = cm.captureUndoSnapshot();
-            cm.settingsData.showTitle = !snap.settingsData.showTitle;
+            const savedColumns = Number(cm.savedSnapshot?.settingsData?.columnsPerRow);
+            let next = Number(cm.settingsData.columnsPerRow) || 3;
+            do {
+                next = next >= 6 ? 2 : next + 1;
+            } while (Number.isFinite(savedColumns) && next === savedColumns);
+            cm.settingsData.columnsPerRow = next;
             cm.scheduleDirtyRecompute();
+            await new Promise((resolve) => setTimeout(resolve, 250));
         });
 
         await expect.poll(() => page.evaluate(() => window.configManager.isDirty), { timeout: 5_000 }).toBe(true);
