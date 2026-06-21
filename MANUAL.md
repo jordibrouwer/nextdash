@@ -599,8 +599,9 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - **Dashboard tag cloud (desktop):** `/` or / FAB — toggle one or more tags while the modal stays open; **OR match** (bookmarks with any selected tag); per-tag filter chips in the header; **Escape** on the dashboard clears all filters.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
 - **config → tags** (desktop): global tag management across all pages.  
-  - **Tag cloud:** size reflects usage; click a chip to scroll to that tag in the list.  
-  - **List:** each row shows bookmark count; click the label or count to expand a drill-down with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
+  - **Word cloud:** dashboard-style popularity scaling — larger tags mean more bookmarks; tier colours and light animations; click a chip to scroll to that tag in the list.  
+  - **List:** column headers (Tag / Usage / Actions), usage bar per row, sorted by bookmark count; scrolls with the config page (no inner scroll panel).  
+  - Expand a row for bookmarks with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
   - **Rename** merges into an existing tag when the new name already exists (with confirmation).  
   - **Search** opens Bookmarks with `tag:name` in the filter.  
   - **Filter** narrows the cloud and list; **✕** or **Escape** clears it; empty filter shows a short hint in the list.  

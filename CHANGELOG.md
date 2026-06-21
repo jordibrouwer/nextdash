@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.25 — June 2026](#v20260625--june-2026)
 - [v2026.06.24 — June 2026](#v20260624--june-2026)
 - [v2026.06.23 — June 2026](#v20260623--june-2026)
 - [v2026.06.22 — June 2026](#v20260622--june-2026)
@@ -50,6 +51,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.25 — June 2026
+
+**Config tags tab redesign & modular config.js** — popularity-scaled word cloud on **config → tags** (dashboard-style tiers and animations), structured list with usage bars sorted by bookmark count, natural page scroll without inner panels; `config.js` split into dedicated modules (tours, persistence, tabs, domain controllers, setup); Playwright coverage for config modules.
+
+### Config → Tags
+
+- **new** **Popularity word cloud** — tags tab cloud uses the same scaling model as the dashboard `/` modal: popular tags render larger with tier colours, light enter/drift animations, and per-tag rotation; click a chip to scroll to the matching list row.
+- **new** **Structured tag list** — column headers (Tag / Usage / Actions), per-row usage bar, and list sorted by bookmark count so heavily used tags appear first.
+- **fix** **Natural scrolling** — removed fixed viewport height and inner list scrollbar; the full tag list scrolls with the config page like Collections and Pages.
+- **fix** **Page width** — cloud and list respect the config container width (`max-width: 100%`); long tag names truncate with ellipsis instead of overflowing horizontally.
+
+### Config architecture
+
+- **fix** **Modular config.js** — extracted `ConfigTabTours`, `ConfigPersistence`, `ConfigTabs`, domain controllers (`ConfigPages`, `ConfigCategories`, `ConfigFinders`, `ConfigThemes`), and `ConfigSetup` into `static/js/config/`; orchestrator reduced from ~7&nbsp;150 to ~1&nbsp;610 lines.
+- **fix** **Dashboard reload flicker** — persistence module signals structure sync without a full dashboard flash when config settings change.
+
+### Developer & docs
+
+- **new** **Config Playwright tests** — `tests/config-tab-tours.spec.js`, `config-persistence.spec.js`, `config-tabs.spec.js`, `config-domain-glue.spec.js`, `config-setup.spec.js`, `config-keyboard.spec.js` (20 tests).
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), and whats-new updated for v2026.06.25.
+- **fix** **Cache-bust** — `whats-new-v91` (`2026.06-dashboard-release-v71`); `tags-flow-3` on `config-tags.css`, `tags-wordcloud-1` on `config-tags.js`.
 
 ---
 

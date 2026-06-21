@@ -1,0 +1,54 @@
+{
+  "tag": "v2026.06.25",
+  "date": "June 2026",
+  "releasedAt": "2026-06-25",
+  "sections": [
+    {
+      "title": "Config → Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Popularity word cloud</strong> — the tags tab cloud matches the dashboard <code>/</code> style: larger tags mean more bookmarks, tier colours, light enter/drift animations, and a slight rotation per tag. Click a chip to scroll to that tag in the list."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Structured tag list</strong> — column headers (Tag / Usage / Actions), a usage bar per row, and tags sorted by bookmark count so popular tags stand out at the top."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Natural scrolling</strong> — the tag list grows with your tags and scrolls with the config page instead of a fixed inner panel and scrollbar."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page width</strong> — cloud and list stay within the same width as other config tabs (Pages, Collections); long tag names truncate with an ellipsis."
+        }
+      ]
+    },
+    {
+      "title": "Config architecture",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Modular config.js</strong> — tab tours, persistence, tab lifecycle, domain controllers (pages, categories, finders, themes), and setup/event wiring moved into dedicated <code>static/js/config/</code> modules; <code>config.js</code> is now a thin orchestrator (~1&nbsp;600 lines)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Dashboard reload flicker</strong> — config persistence signals structure sync without a full dashboard flash when settings change."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config Playwright tests</strong> — coverage for tab tours, persistence, tab lifecycle, domain glue, setup wiring, and keyboard tab (20 tests)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docs</strong> — README, MANUAL, CHANGELOG, config help, and whats-new updated for v2026.06.25."
+        }
+      ]
+    }
+  ]
+}
