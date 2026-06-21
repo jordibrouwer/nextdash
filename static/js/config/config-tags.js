@@ -12,11 +12,6 @@ class ConfigTags {
         this._renamingTag = null;
     }
 
-    static normalizeTagName(raw) {
-        const t = String(raw || '').trim().toLowerCase();
-        return t;
-    }
-
     static normalizeTagList(raw) {
         if (typeof raw === 'string') {
             return raw
@@ -35,6 +30,46 @@ class ConfigTags {
             out.push(normalized);
         });
         return out;
+    }
+
+    static normalizeTagName(raw) {
+        return String(raw || '').trim().toLowerCase();
+    }
+
+    static hashRotate(tag) {
+        let h = 0;
+        const s = String(tag || '');
+        for (let i = 0; i < s.length; i += 1) {
+            h = (h * 31 + s.charCodeAt(i)) | 0;
+        }
+        return ((h % 9) - 4) * 0.55;
+    }
+
+    /** 0–1 scale with boosted contrast — smaller tags shrink more when spread is wide. */
+    static scaleForCount(count, minCount, maxCount) {
+        if (maxCount <= 0) return 0.5;
+        if (maxCount === minCount) return 1;
+        const ratio = (count - minCount) / (maxCount - minCount);
+        const spread = maxCount / Math.max(1, minCount);
+        const power = spread > 8 ? 0.5 : 0.68;
+        const floor = spread > 8 ? 0.08 : spread > 3 ? 0.16 : 0.24;
+        return floor + (1 - floor) * Math.pow(Math.max(0, Math.min(1, ratio)), power);
+    }
+
+    static tierClassForScale(scale) {
+        if (scale >= 0.82) return 'tag-cloud-word--tier-xl';
+        if (scale >= 0.62) return 'tag-cloud-word--tier-lg';
+        if (scale >= 0.42) return 'tag-cloud-word--tier-md';
+        if (scale >= 0.22) return 'tag-cloud-word--tier-sm';
+        return 'tag-cloud-word--tier-xs';
+    }
+
+    static listTierClassForScale(scale) {
+        if (scale >= 0.82) return 'tag-item--tier-xl';
+        if (scale >= 0.62) return 'tag-item--tier-lg';
+        if (scale >= 0.42) return 'tag-item--tier-md';
+        if (scale >= 0.22) return 'tag-item--tier-sm';
+        return 'tag-item--tier-xs';
     }
 
     refresh(manager) {
@@ -114,6 +149,7 @@ class ConfigTags {
         const container = document.getElementById('tags-list');
         const emptyState = document.getElementById('tags-empty-state');
         const tagsBody = document.getElementById('tags-body');
+        const listPanel = document.getElementById('tags-list-panel');
         if (!container) return;
 
         const tagMap = this._buildTagMap(manager);
@@ -124,6 +160,10 @@ class ConfigTags {
             .filter(([tag]) => this._tagMatchesFilter(tag));
         entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 
+        const counts = entries.map(([, bms]) => bms.length);
+        const maxCount = counts.length ? Math.max(...counts) : 1;
+        const minCount = counts.length ? Math.min(...counts) : maxCount;
+
         container.innerHTML = '';
 
         const hasAnyTags = tagMap.size > 0;
@@ -132,10 +172,12 @@ class ConfigTags {
         if (!hasAnyTags) {
             if (emptyState) emptyState.hidden = false;
             if (tagsBody) tagsBody.hidden = true;
+            if (listPanel) listPanel.hidden = true;
             return;
         }
         if (emptyState) emptyState.hidden = true;
         if (tagsBody) tagsBody.hidden = false;
+        if (listPanel) listPanel.hidden = false;
 
         if (!hasFiltered) {
             if (this._filterQuery) {
@@ -149,13 +191,15 @@ class ConfigTags {
         }
 
         entries.forEach(([tag, bookmarks]) => {
-            container.appendChild(this._createTagRow(tag, bookmarks, manager));
+            const scale = ConfigTags.scaleForCount(bookmarks.length, minCount, maxCount);
+            container.appendChild(this._createTagRow(tag, bookmarks, manager, scale));
         });
     }
 
     _renderCloud(tagMap, manager) {
         const cloud = document.getElementById('tags-cloud');
         if (!cloud) return;
+        cloud.classList.remove('tags-cloud--live');
         cloud.innerHTML = '';
         cloud.setAttribute('role', 'list');
 
@@ -168,22 +212,35 @@ class ConfigTags {
         }
         cloud.hidden = false;
 
-        const max = Math.max(...entries.map(([, bms]) => bms.length));
-        const min = Math.min(...entries.map(([, bms]) => bms.length));
-        entries.sort((a, b) => a[0].localeCompare(b[0]));
+        const maxCount = Math.max(...entries.map(([, bms]) => bms.length));
+        const minCount = Math.min(...entries.map(([, bms]) => bms.length));
+        entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 
-        for (const [tag, bookmarks] of entries) {
+        entries.forEach(([tag, bookmarks], index) => {
+            const scale = ConfigTags.scaleForCount(bookmarks.length, minCount, maxCount);
             const chip = document.createElement('button');
             chip.type = 'button';
-            chip.className = 'tag-cloud-chip';
+            chip.className = `tag-cloud-word ${ConfigTags.tierClassForScale(scale)}`;
             chip.setAttribute('role', 'listitem');
-            chip.textContent = `# ${tag}`;
+            chip.style.setProperty('--tag-scale', scale.toFixed(3));
+            chip.style.setProperty('--tag-rotate', `${ConfigTags.hashRotate(tag).toFixed(2)}deg`);
+            chip.style.setProperty('--tag-index', String(index));
+
+            const hashEl = document.createElement('span');
+            hashEl.className = 'tag-cloud-word-hash';
+            hashEl.textContent = '#';
+            hashEl.setAttribute('aria-hidden', 'true');
+
+            const labelEl = document.createElement('span');
+            labelEl.className = 'tag-cloud-word-label';
+            labelEl.textContent = tag;
+
+            chip.append(hashEl, labelEl);
+
             const countTpl = this.t('config.tagBookmarkCount') || '{count} bookmarks';
             const countLabel = countTpl.replace('{count}', String(bookmarks.length));
-            chip.title = countLabel;
+            chip.title = `#${tag} — ${countLabel}`;
             chip.setAttribute('aria-label', `${tag}. ${countLabel}`);
-            const ratio = max === min ? 0.5 : (bookmarks.length - min) / (max - min);
-            chip.style.setProperty('--tag-scale', ratio.toFixed(2));
             chip.addEventListener('click', () => {
                 const item = document.querySelector(`.tag-item[data-tag="${CSS.escape(tag)}"]`);
                 if (item) {
@@ -196,15 +253,20 @@ class ConfigTags {
                 }
             });
             cloud.appendChild(chip);
-        }
+        });
+
+        requestAnimationFrame(() => {
+            cloud.classList.add('tags-cloud--live');
+        });
     }
 
-    _createTagRow(tag, bookmarks, manager) {
+    _createTagRow(tag, bookmarks, manager, scale = 0.5) {
         const li = document.createElement('li');
-        li.className = 'tag-item js-item is-idle';
+        li.className = `tag-item js-item is-idle ${ConfigTags.listTierClassForScale(scale)}`;
         li.setAttribute('role', 'listitem');
         li.dataset.tag = tag;
         li.tabIndex = 0;
+        li.style.setProperty('--tag-popularity', scale.toFixed(3));
 
         const row = document.createElement('div');
         row.className = 'tag-item-row';
@@ -214,10 +276,22 @@ class ConfigTags {
         label.type = 'button';
         label.className = 'tag-item-label';
         label.id = labelId;
-        label.textContent = `# ${tag}`;
-        label.title = this.t('config.tagShowBookmarks') || 'Show bookmarks';
+        label.textContent = tag;
+        label.title = `# ${tag}`;
         label.addEventListener('click', () => this._toggleDrillDown(li, tag, bookmarks));
         row.appendChild(label);
+
+        const meta = document.createElement('div');
+        meta.className = 'tag-item-meta';
+
+        const popularity = document.createElement('div');
+        popularity.className = 'tag-popularity';
+        popularity.setAttribute('aria-hidden', 'true');
+        const popularityBar = document.createElement('span');
+        popularityBar.className = 'tag-popularity-bar';
+        popularityBar.style.setProperty('--tag-fill', `${Math.round(scale * 100)}%`);
+        popularity.appendChild(popularityBar);
+        meta.appendChild(popularity);
 
         const count = document.createElement('button');
         count.type = 'button';
@@ -226,21 +300,25 @@ class ConfigTags {
         count.textContent = countTpl.replace('{count}', String(bookmarks.length));
         count.title = this.t('config.tagShowBookmarks') || 'Show bookmarks';
         count.addEventListener('click', () => this._toggleDrillDown(li, tag, bookmarks));
-        row.appendChild(count);
+        meta.appendChild(count);
+        row.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'tag-item-actions';
 
         const searchBtn = document.createElement('button');
         searchBtn.type = 'button';
         searchBtn.className = 'btn btn-secondary btn-small';
         searchBtn.textContent = this.t('config.tagSearch') || 'Search';
         searchBtn.addEventListener('click', () => this._searchTag(tag));
-        row.appendChild(searchBtn);
+        actions.appendChild(searchBtn);
 
         const renameBtn = document.createElement('button');
         renameBtn.type = 'button';
         renameBtn.className = 'btn btn-secondary btn-small tag-rename-btn';
         renameBtn.textContent = this.t('config.rename') || 'Rename';
         renameBtn.addEventListener('click', () => this._startRename(li, tag, bookmarks, manager));
-        row.appendChild(renameBtn);
+        actions.appendChild(renameBtn);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
@@ -248,7 +326,9 @@ class ConfigTags {
         deleteBtn.textContent = '×';
         deleteBtn.setAttribute('aria-label', (this.t('config.tagDeleteAria') || 'Delete tag {name}').replace('{name}', tag));
         deleteBtn.addEventListener('click', () => this._deleteTag(tag, manager));
-        row.appendChild(deleteBtn);
+        actions.appendChild(deleteBtn);
+
+        row.appendChild(actions);
 
         li.appendChild(row);
 

@@ -250,15 +250,13 @@ body[data-layout-version="modern"] .tags-tab {
 }
 
 body[data-layout-version="modern"] .tags-tab {
-    min-height: calc(100vh - 180px);
-    height: calc(100vh - 180px);
+    min-height: 300px;
+    height: auto;
 }
 
 body[data-layout-version="modern"] .tags-body {
     display: flex;
     flex-direction: column;
-    flex: 1 1 0;
-    min-height: 0;
     gap: var(--config-tab-gap);
 }
 
@@ -269,7 +267,7 @@ body[data-layout-version="modern"] :is(
     .simple-list,
     .collections-list,
     .tags-cloud,
-    .tags-list
+    .tags-list-panel
 ) {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
@@ -292,16 +290,27 @@ body[data-layout-version="modern"] .collections-list {
     padding: 0;
 }
 
+body[data-layout-version="modern"] .tags-list-panel {
+    overflow: visible;
+}
+
 body[data-layout-version="modern"] .tags-list {
-    overflow-x: hidden;
-    overflow-y: auto;
-    flex: 1 1 0;
-    min-height: 0;
-    padding: 0;
+    overflow: visible;
+    padding: 0 0 1.5rem;
+    border: none;
+    background: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .tags-cloud {
-    padding: 0.85rem 1rem;
+    padding: 1.35rem 1.5rem;
+    min-height: clamp(14rem, 42vh, 28rem);
+    overflow: visible;
+}
+
+body[data-layout-version="modern"] .tags-list-header {
+    background: color-mix(in srgb, var(--layout-surface-inset) 55%, var(--layout-surface));
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
 }
 
 body[data-layout-version="modern"] .simple-tab-intro,
@@ -708,12 +717,9 @@ body[data-layout-version="modern"] .binding-edit-btn.listening {
     color: var(--accent-warning);
 }
 
-body[data-layout-version="modern"] .tag-cloud-chip {
-    border-radius: var(--layout-radius-pill);
-}
-
-body[data-layout-version="modern"] .tag-cloud-chip:hover {
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
+body[data-layout-version="modern"] .tag-cloud-word:hover .tag-cloud-word-hash,
+body[data-layout-version="modern"] .tag-cloud-word:hover .tag-cloud-word-label {
+    text-shadow: 0 0 14px color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
 body[data-layout-version="modern"] .collections-edit-header {

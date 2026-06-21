@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-phase2-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-3">
-    <link rel="stylesheet" href="/static/css/config/config-tags.css">
+    <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-flow-2">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-simple-list-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css">
     <link rel="stylesheet" href="/static/css/config/config-backups.css">
@@ -1230,8 +1230,15 @@
                     </div>
                 </div>
                 <div id="tags-body" class="tags-body">
-                    <div id="tags-cloud" class="tags-cloud" role="list" hidden></div>
-                    <ul id="tags-list" class="tags-list" role="list"></ul>
+                    <div id="tags-cloud" class="tags-cloud tags-cloud-wordcloud" role="list" hidden aria-label="Tag cloud"></div>
+                    <div id="tags-list-panel" class="tags-list-panel">
+                        <div class="tags-list-header" aria-hidden="true">
+                            <span class="tags-list-header-label" data-i18n="config.tagsListColTag">Tag</span>
+                            <span class="tags-list-header-count" data-i18n="config.tagsListColUsage">Usage</span>
+                            <span class="tags-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
+                        </div>
+                        <ul id="tags-list" class="tags-list" role="list"></ul>
+                    </div>
                 </div>
                 <div id="tags-empty-state" class="tags-empty-state" hidden>
                     <p data-i18n="config.tagsListEmptyHint">No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
@@ -2386,7 +2393,7 @@
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
     <script src="/static/js/config/config-keyboard.js?v=keyboard-3"></script>
-    <script src="/static/js/config/config-tags.js"></script>
+    <script src="/static/js/config/config-tags.js?v=tags-wordcloud-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js"></script>
     <script src="/static/js/config/config-quick-add.js"></script>
     <!-- Main config orchestrator -->
