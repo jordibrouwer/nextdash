@@ -890,10 +890,6 @@ class SearchComponent {
             type: 'filter-completion'
         });
 
-        const allTags = Array.from(new Set(
-            pool.flatMap((bm) => (bm.tags || []).map((tag) => String(tag).toLowerCase()))
-        )).sort();
-
         const filterTypeHints = () => ([
             toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
             toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')),
@@ -918,13 +914,13 @@ class SearchComponent {
                     ));
                 valueHits.push(...categoryHits);
 
-                const tagHits = allTags
-                    .filter((tag) => tag.startsWith(currentToken))
-                    .slice(0, 8)
-                    .map((tag) => toCompletion(
-                        `tag:${tag}`,
-                        t('filterCompletionTag', 'Tag: {value}', { value: tag })
-                    ));
+                const tagHits = this._getTagFilterSuggestions(pool, {
+                    prefix: currentToken,
+                    limit: 12,
+                }).map((tag) => toCompletion(
+                    `tag:${tag}`,
+                    t('filterCompletionTag', 'Tag: {value}', { value: tag })
+                ));
                 valueHits.push(...tagHits);
             }
 

@@ -386,6 +386,63 @@ test.describe('dashboard search filters', () => {
         }, seeded)).toBe(true);
     });
 
+    test('typing tag name without colon suggests tag filter by usage', async ({ page }) => {
+        const tag = await page.evaluate(async () => {
+            const dash = window.dashboardInstance;
+            const pageId = dash.currentPageId;
+            const base = Date.now();
+            const targetTag = `e2e-bare-${base}`;
+            const target = {
+                name: 'Bare tag hint e2e',
+                url: `https://example.com/bare-tag-${base}`,
+                shortcut: '',
+                category: 'other',
+                tags: [targetTag],
+                openCount: 0,
+                createdAt: base,
+            };
+
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+                const response = await fetch(`/api/bookmarks?page=${pageId}`);
+                const bookmarks = await response.json();
+                const hasTarget = bookmarks.some((bm) => bm.url === target.url);
+                const payload = hasTarget ? bookmarks : [...bookmarks, target];
+                if (!hasTarget) {
+                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!save.ok) {
+                        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+                        continue;
+                    }
+                }
+                await dash.loadPageBookmarks(pageId);
+                dash.updateSearchComponent?.();
+                const pool = dash.searchComponent?._collectFilterBookmarkPool?.() || [];
+                const hasTag = pool.some((bm) => (
+                    (bm.tags || []).some((entry) => String(entry).toLowerCase() === targetTag.toLowerCase())
+                ));
+                if (hasTag) {
+                    return targetTag;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+            }
+            throw new Error('failed to seed bare tag hint bookmark');
+        });
+
+        const prefix = tag.slice(0, Math.max(8, tag.length - 2));
+        const hasMatch = await page.evaluate(({ targetTag, targetPrefix }) => {
+            const sc = window.dashboardInstance.searchComponent;
+            const matches = sc.getFilterAutocompleteMatches(targetPrefix);
+            return matches.some((m) => (
+                String(m.completion || '').toLowerCase().includes(`tag:${targetTag.toLowerCase()}`)
+            ));
+        }, { targetTag: tag, targetPrefix: prefix });
+        expect(hasMatch).toBe(true);
+    });
+
     test('typing category name suggests category filter', async ({ page }) => {
         const category = await page.evaluate(() => {
             const bm = window.dashboardInstance?.bookmarks?.find((b) => String(b.category || '').trim());
