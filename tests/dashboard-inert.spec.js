@@ -9,6 +9,20 @@ async function dismissOnboardingIfPresent(page) {
     }
 }
 
+async function markWhatsNewSeen(page) {
+    await page.addInitScript(() => {
+        try {
+            const release = '2026.06-dashboard-release-v71';
+            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
+            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+            localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
+        } catch {
+            // ignore
+        }
+    });
+}
+
 async function dismissWhatsNewIfPresent(page) {
     const modal = page.locator('#app-modal.show');
     if (await modal.count()) {
@@ -30,7 +44,10 @@ async function expectDashboardNotInert(page) {
 }
 
 test.describe('dashboard inert after overlays', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -63,9 +80,14 @@ test.describe('dashboard inert after overlays', () => {
     test('dashboard is clickable after closing cheat sheet modal', async ({ page }) => {
         await page.keyboard.press('!');
         const modal = page.locator('#app-modal.show');
-        await expect(modal).toBeVisible({ timeout: 3000 });
-        await modal.locator('.modal-button').first().click();
-        await expect(modal).toHaveCount(0, { timeout: 3000 });
+        await expect(modal).toBeVisible({ timeout: 5000 });
+        await page.evaluate(() => {
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('cheatsheet')) {
+                window.DashboardFeaturePromos.dismissOpen?.();
+            }
+        });
+        await page.keyboard.press('Escape');
+        await expect(modal).toHaveCount(0, { timeout: 5000 });
         await expectDashboardNotInert(page);
         await page.locator('#dashboard-layout .bookmark-link a.bookmark-open').first().click({ timeout: 5000 });
     });

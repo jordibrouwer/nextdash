@@ -53,6 +53,8 @@ async function selectFirstBookmark(page) {
 }
 
 test.describe('dashboard grid shortcuts', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -190,16 +192,17 @@ test.describe('dashboard grid shortcuts', () => {
 
     test('dashboard stays inert while tag popover open', async ({ page }) => {
         await page.keyboard.press('Shift+T');
-        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 5000 });
         await expect.poll(async () => page.evaluate(() => (
-            document.getElementById('dashboard-layout')?.hasAttribute('inert') === true
-        ))).toBe(true);
+            document.getElementById('tag-popover')
+            && document.getElementById('dashboard-layout')?.hasAttribute('inert') === true
+        )), { timeout: 10_000 }).toBe(true);
 
         await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
         await expect(page.locator('#tag-popover')).toHaveCount(0, { timeout: 3000 });
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
-        ))).toBe(true);
+        )), { timeout: 10_000 }).toBe(true);
     });
 
     test('semicolon opens inline edit for selected bookmark', async ({ page }) => {

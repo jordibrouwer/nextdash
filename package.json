@@ -3,7 +3,8 @@
   "scripts": {
     "sync:extension-bookmark-form": "./scripts/sync-extension-bookmark-form.sh",
     "validate:json": "bash scripts/validate-json.sh",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:reuse": "PLAYWRIGHT_REUSE_SERVER=true playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

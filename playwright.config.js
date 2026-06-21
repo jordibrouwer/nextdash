@@ -1,20 +1,32 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080';
+const isCI = Boolean(process.env.CI);
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === 'true';
+
 module.exports = defineConfig({
     testDir: 'tests',
     timeout: 30_000,
-    workers: 3,
+    fullyParallel: true,
+    forbidOnly: isCI,
+    retries: isCI ? 2 : 1,
+    workers: 1,
+    reporter: isCI ? [['github'], ['line']] : 'line',
+    globalSetup: require.resolve('./tests/playwright-global-setup.js'),
     use: {
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080',
+        baseURL,
         headless: true,
+        trace: 'on-first-retry',
     },
     webServer: process.env.PLAYWRIGHT_SKIP_SERVER
         ? undefined
         : {
             command: 'go run .',
-            url: 'http://localhost:8080',
-            reuseExistingServer: true,
+            url: `${baseURL.replace(/\/$/, '')}/api/pages`,
+            reuseExistingServer,
             timeout: 120_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
         },
 });

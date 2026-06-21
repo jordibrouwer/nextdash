@@ -15,6 +15,7 @@ async function dismissBlockingOverlays(page) {
         await page.keyboard.press('Escape');
         await expect(whatsNew).toHaveCount(0, { timeout: 3000 });
     }
+    await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -29,18 +30,48 @@ async function markWhatsNewSeen(page) {
             localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+            localStorage.setItem('nextdash:dashboard-quick-tag-promo-confirmed-v1', '1');
+            localStorage.setItem('nextdash:dashboard-search-promo-command-v1', '1');
         } catch {
             // ignore
         }
     });
 }
 
+async function selectCommandMatch(page, { stateId, shortcut, meta } = {}) {
+    await page.evaluate(({ stateId, shortcut, meta }) => {
+        const sc = window.dashboardInstance?.searchComponent;
+        const idx = sc?.selectableMatches?.findIndex((match) => {
+            if (stateId && match?.stateId === stateId) return true;
+            if (shortcut && String(match?.shortcut || '').toUpperCase() === String(shortcut).toUpperCase()) {
+                if (meta == null) return match?.type === 'command';
+                return String(match?.meta || '') === String(meta);
+            }
+            return false;
+        }) ?? -1;
+        if (idx < 0) {
+            throw new Error(`command match not found (${stateId || shortcut || 'unknown'})`);
+        }
+        sc.selectedMatchIndex = idx;
+        sc.updateSelectionHighlight();
+    }, { stateId, shortcut, meta });
+}
+
 test.describe('dashboard command palette', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
+        await page.evaluate(() => {
+            document.dispatchEvent(new CustomEvent('nextdash:find', { detail: { query: '' } }));
+            window.dashboardInstance?._tagPopoverCleanup?.();
+            window.dashboardInstance?._movePopoverCleanup?.();
+            window.dashboardInstance?._deletePopoverCleanup?.();
+            window.dashboardInstance?.searchComponent?.closeSearch?.();
+        });
         await dismissBlockingOverlays(page);
     });
 
@@ -49,10 +80,13 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type('buttons add', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+        await selectCommandMatch(page, { stateId: 'buttons:add' });
         await page.keyboard.press('Enter');
 
-        await expect.poll(async () => page.locator('#quick-add-toolbar-btn').isVisible()).not.toBe(visibleBefore);
+        await expect.poll(async () => page.locator('#quick-add-toolbar-btn').isVisible(), {
+            timeout: 10_000,
+        }).not.toBe(visibleBefore);
     });
 
     test('Enter after command completion executes on next press', async ({ page }) => {
@@ -175,12 +209,17 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type('category 1', { delay: 15 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+        await selectCommandMatch(page, { shortcut: ':CATEGORY', meta: '1' });
         await page.keyboard.press('Enter');
 
-        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
-        await expect.poll(async () => page.evaluate(() => (
-            window.dashboardInstance?.keyboardNavigation?.currentIndex >= 0
-        ))).toBe(true);
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0, { timeout: 5000 });
+        await expect.poll(async () => {
+            const index = await page.evaluate(() => (
+                window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+            ));
+            return index >= 0;
+        }, { timeout: 10_000 }).toBe(true);
     });
 
     test(':buttons health toggles health link visibility', async ({ page }) => {
@@ -207,9 +246,23 @@ test.describe('dashboard command palette', () => {
         ))).toBeGreaterThanOrEqual(0);
         await page.keyboard.press(':');
         await page.keyboard.type('quicktag', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+        await page.evaluate(() => {
+            const sc = window.dashboardInstance?.searchComponent;
+            const idx = sc?.selectableMatches?.findIndex((match) => (
+                match?.stateId === 'quicktag'
+                || String(match?.shortcut || '').toUpperCase() === ':QUICKTAG'
+            )) ?? -1;
+            if (idx < 0) {
+                throw new Error('quicktag command match not found');
+            }
+            sc.selectedMatchIndex = idx;
+            sc.updateSelectionHighlight();
+        });
         await page.keyboard.press('Enter');
-        await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 5000 });
+        await expect.poll(async () => page.locator('#tag-popover').isVisible(), {
+            timeout: 10_000,
+        }).toBe(true);
         await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
     });
 

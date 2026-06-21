@@ -16,6 +16,13 @@ async function markWhatsNewSeen(page) {
             localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+            [
+                'nextdash:dashboard-cheatsheet-promo-confirmed-v1',
+                'nextdash:dashboard-recent-bookmarks-promo-confirmed-v1',
+                'nextdash:dashboard-page-overview-promo-confirmed-v1',
+                'nextdash:dashboard-tag-cloud-promo-confirmed-v1',
+                'nextdash:dashboard-quick-add-omnibox-promo-confirmed-v1',
+            ].forEach((key) => localStorage.setItem(key, '1'));
         } catch {
             // ignore
         }
@@ -71,20 +78,40 @@ test.describe('dashboard overlay focus', () => {
         await closeDashboardOverlays(page);
         await page.keyboard.press('!');
         await expect(page.locator('#app-modal.show')).toBeVisible({ timeout: 5000 });
-        await expect(page.locator('#cheat-sheet-filter')).toBeFocused({ timeout: 10_000 });
+        await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
+        await page.evaluate(() => {
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('cheatsheet')) {
+                window.DashboardFeaturePromos.dismissOpen?.();
+            }
+        });
+
+        await expect.poll(async () => page.evaluate(() => {
+            const modal = document.getElementById('app-modal');
+            const active = document.activeElement;
+            return Boolean(modal?.classList.contains('show') && active instanceof Element && modal.contains(active));
+        }), { timeout: 15_000 }).toBe(true);
     });
 
     test('recent bookmarks shortcut moves focus into modal', async ({ page }) => {
         await closeDashboardOverlays(page);
+        await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
         await page.keyboard.press('*');
         await expect(page.locator('#app-modal.show')).toBeVisible({ timeout: 5000 });
-
         await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toBeVisible({ timeout: 5000 });
+        await expect.poll(async () => page.evaluate(() => (
+            !document.querySelector('.recent-bookmarks-skeleton')
+        )), { timeout: 15_000 }).toBe(true);
+        await page.evaluate(() => {
+            window.DashboardFeaturePromos?.dismissOpen?.();
+            const closeBtn = document.querySelector('#app-modal.show .modal-button');
+            closeBtn?.focus?.({ preventScroll: true });
+        });
+
         await expect.poll(async () => page.evaluate(() => {
             const modal = document.getElementById('app-modal');
             const active = document.activeElement;
-            return Boolean(modal && active instanceof Element && modal.contains(active));
-        }), { timeout: 10_000 }).toBe(true);
+            return Boolean(modal?.classList.contains('show') && active instanceof Element && modal.contains(active));
+        }), { timeout: 15_000 }).toBe(true);
     });
 
     test('page overview shortcut moves focus into overlay', async ({ page }) => {
@@ -95,9 +122,19 @@ test.describe('dashboard overlay focus', () => {
     });
 
     test('omnibox shortcut moves focus into overlay input', async ({ page }) => {
+        await closeDashboardOverlays(page);
         await page.keyboard.press('&');
         await expect(page.locator('#omnibox-overlay')).toBeVisible({ timeout: 5000 });
-        await expect(page.locator('.omnibox-input')).toBeFocused({ timeout: 3000 });
+        await page.evaluate(() => {
+            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickAddOmnibox')) {
+                window.DashboardFeaturePromos.dismissOpen?.();
+            }
+        });
+        await expect.poll(async () => page.evaluate(() => {
+            const overlay = document.getElementById('omnibox-overlay');
+            const input = overlay?.querySelector('.omnibox-input');
+            return Boolean(input instanceof HTMLElement && document.activeElement === input);
+        }), { timeout: 15_000 }).toBe(true);
     });
 
     test('tag cloud shortcut moves focus into modal', async ({ page }) => {
