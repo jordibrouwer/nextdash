@@ -1,12 +1,19 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
+async function waitForConfigKeyboardTab(page) {
+    await page.goto('/config#general');
+    await page.waitForFunction(() => typeof window.configManager?.keyboard?.refresh === 'function');
+    await page.waitForSelector('.general-layout', { timeout: 20_000 });
+    await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
+    await page.waitForSelector('[data-tab-content="keyboard"].active', { timeout: 10_000 });
+    await page.waitForSelector('#keyboard-bindings-container .keyboard-section--fixed', { timeout: 15_000 });
+}
+
 test.describe('config keyboard tab', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/config#keyboard');
-        await page.waitForFunction(() => typeof window.configManager?.ui?.switchToTab === 'function');
-        await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
-        await page.waitForSelector('#keyboard-bindings-container .keyboard-section--fixed', { timeout: 15_000 });
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigKeyboardTab(page);
     });
 
     test('lists fixed sections and rebindable shortcuts', async ({ page }) => {
