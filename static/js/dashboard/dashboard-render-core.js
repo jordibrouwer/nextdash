@@ -148,6 +148,80 @@ class DashboardRenderCore {
      * Tag filter: one equal-width dashboard column per chunk (10 bookmarks), not round-robin.
      */
 
+    /**
+     * Planned category/smart-collection blocks for the main grid (no DOM).
+     * @returns {{ category: object, bookmarks: object[] }[]}
+     */
+    buildCategoryColumnBlocks() {
+        const d = this.dash;
+        const groupedBookmarks = this.groupBookmarksByCategory();
+        const columnBlocks = [];
+
+        const smartCollections = d.getSmartCollections(d.getSmartCollectionSourceBookmarks());
+        smartCollections.forEach((collection) => {
+            if (!Array.isArray(collection.bookmarks) || collection.bookmarks.length === 0) {
+                return;
+            }
+            const collectionBookmarks = d._sortSmartCollectionBookmarks(collection);
+            columnBlocks.push({
+                category: {
+                    id: collection.id,
+                    name: collection.name,
+                    icon: collection.icon,
+                    isSmartCollection: true,
+                    customCollection: collection.customCollection || null,
+                },
+                bookmarks: collectionBookmarks,
+            });
+        });
+
+        d.categories.forEach((category) => {
+            const id = String(category.id);
+            const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
+            if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0) {
+                return;
+            }
+            columnBlocks.push({ category, bookmarks: categoryBookmarks });
+        });
+
+        const uncategorizedBookmarks = groupedBookmarks[''] || [];
+        if (uncategorizedBookmarks.length > 0) {
+            const _unc = d.language.t('dashboard.uncategorized');
+            const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
+            columnBlocks.push({
+                category: uncategorizedCategory,
+                bookmarks: this.sortBookmarks(uncategorizedBookmarks),
+            });
+        }
+
+        const knownCategoryIds = new Set(d.categories.map((c) => String(c.id)));
+        const orphanLabelBase = (() => {
+            const raw = d.language.t('dashboard.unknownCategory');
+            return raw && raw !== 'dashboard.unknownCategory' ? raw : 'Unknown category';
+        })();
+        Object.keys(groupedBookmarks).forEach((key) => {
+            const id = String(key);
+            if (id === '' || knownCategoryIds.has(id)) {
+                return;
+            }
+            const orphanBookmarks = groupedBookmarks[id];
+            if (!Array.isArray(orphanBookmarks) || orphanBookmarks.length === 0) {
+                return;
+            }
+            columnBlocks.push({
+                category: {
+                    id,
+                    name: `${orphanLabelBase} (${id})`,
+                    icon: '⚠',
+                },
+                bookmarks: this.sortBookmarks(orphanBookmarks),
+            });
+        });
+
+        return columnBlocks;
+    }
+
+
     renderDashboard(options = {}) {
         const d = this.dash;
         if (d.isInlineEditActive() && d.hasInlineEditUnsavedChanges()) {
@@ -155,6 +229,13 @@ class DashboardRenderCore {
         }
         if (options.incremental === 'status') {
             d.statusMonitor?.refreshAllStatuses?.();
+            return;
+        }
+        if (
+            options.incremental !== false
+            && options.animate !== true
+            && d.renderIncremental?.tryRender?.(options)
+        ) {
             return;
         }
         const animate = options && options.animate === true;
@@ -172,9 +253,6 @@ class DashboardRenderCore {
 
         d.updateTagFilterIndicator();
 
-        // Group bookmarks by category
-        const groupedBookmarks = this.groupBookmarksByCategory();
-        
         // Clear container
         container.innerHTML = '';
         d._categoryListsCache = null;
@@ -262,64 +340,9 @@ class DashboardRenderCore {
             return;
         }
 
-        const columnBlocks = [];
-
-        // Render smart collections first for quick access to derived sets.
-        const smartCollections = d.getSmartCollections(d.getSmartCollectionSourceBookmarks());
-        smartCollections.forEach((collection) => {
-            if (!Array.isArray(collection.bookmarks) || collection.bookmarks.length === 0) {
-                return;
-            }
-            const collectionBookmarks = d._sortSmartCollectionBookmarks(collection);
-            const collectionElement = this.createCategoryElement({
-                id: collection.id,
-                name: collection.name,
-                icon: collection.icon,
-                isSmartCollection: true,
-                customCollection: collection.customCollection || null,
-            }, collectionBookmarks);
-            columnBlocks.push(collectionElement);
-        });
-
-        // Render categories (bookmark.category is normalized to string keys in groupBookmarksByCategory)
-        d.categories.forEach(category => {
-            const id = String(category.id);
-            const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
-            if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0) return;
-            const categoryElement = this.createCategoryElement(category, categoryBookmarks);
-            columnBlocks.push(categoryElement);
-        });
-
-        // Handle bookmarks without category
-        const uncategorizedBookmarks = groupedBookmarks[''] || [];
-        if (uncategorizedBookmarks.length > 0) {
-            const _unc = d.language.t('dashboard.uncategorized');
-            const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
-            const categoryElement = this.createCategoryElement(uncategorizedCategory, this.sortBookmarks(uncategorizedBookmarks));
-            columnBlocks.push(categoryElement);
-        }
-
-        const knownCategoryIds = new Set(d.categories.map((c) => String(c.id)));
-        const orphanLabelBase = (() => {
-            const raw = d.language.t('dashboard.unknownCategory');
-            return raw && raw !== 'dashboard.unknownCategory' ? raw : 'Unknown category';
-        })();
-        Object.keys(groupedBookmarks).forEach((key) => {
-            const id = String(key);
-            if (id === '' || knownCategoryIds.has(id)) {
-                return;
-            }
-            const orphanBookmarks = groupedBookmarks[id];
-            if (!Array.isArray(orphanBookmarks) || orphanBookmarks.length === 0) {
-                return;
-            }
-            const orphanCategory = {
-                id,
-                name: `${orphanLabelBase} (${id})`,
-                icon: '⚠'
-            };
-            columnBlocks.push(this.createCategoryElement(orphanCategory, this.sortBookmarks(orphanBookmarks)));
-        });
+        const columnBlocks = this.buildCategoryColumnBlocks().map((block) => (
+            this.createCategoryElement(block.category, block.bookmarks)
+        ));
 
         const gridLayout = this.syncDashboardGridLayout();
         this._distributeDashboardColumnBlocks(container, columnBlocks, { animate, gridLayout });
@@ -738,6 +761,7 @@ class DashboardRenderCore {
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error('Save failed');
+                d.data?.updatePageDataCache?.(pageId, { categories: payload });
             } catch (err) {
                 d.showErrorNotification(`${err.message || 'Failed to save category order.'} Please try again.`);
                 throw err;

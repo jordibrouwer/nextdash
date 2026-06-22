@@ -94,6 +94,7 @@ class DashboardPersistence {
             if (!response.ok) {
                 throw new Error('Failed to save bookmark preview metadata');
             }
+            d.data?.updatePageDataCache?.(Number(d.currentPageId), { bookmarks: d.bookmarks });
         } catch (error) {
             console.error('Failed to save bookmark preview metadata:', error);
         }
@@ -160,6 +161,7 @@ class DashboardPersistence {
                     d.pendingReorderSave = null;
                     d.pendingReorderSnapshot = null;
                 }
+                d.data?.updatePageDataCache?.(pageId, { bookmarks: payload });
 
                 if (options.showReorderSavedToast && options.successMessage) {
                     d.showNotification(options.successMessage, 'success', { duration: 2000 });

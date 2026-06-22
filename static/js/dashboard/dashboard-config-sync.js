@@ -192,6 +192,7 @@ class DashboardConfigSync {
             }
         }
         try {
+            d.data?.invalidatePageDataCache?.();
             await d.loadData({ skipPageBookmarks: true });
             await d.withRetry(
                 () => d.loadPageBookmarks(d.currentPageId, { rethrow: true, skipRender: true }),
@@ -229,6 +230,7 @@ class DashboardConfigSync {
             }
         }
         try {
+            d.data?.invalidatePageDataCache?.();
             await d.loadData({ skipPageBookmarks: true });
             if (d.settings.language && d.settings.language !== d.language.currentLanguage) {
                 await d.language.loadTranslations(d.settings.language);
@@ -248,7 +250,7 @@ class DashboardConfigSync {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
-            d.renderDashboard({ animate: false });
+            d.renderDashboard({ animate: false, incremental: 'settings' });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();

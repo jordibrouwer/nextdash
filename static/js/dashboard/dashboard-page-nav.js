@@ -103,6 +103,11 @@ class DashboardPageNav {
                 activeBtn = pageBtn;
             }
             this._renderPageTabContent(pageBtn, page, index);
+            const prefetchPage = () => {
+                d.data?.prefetchPageData?.(page.id);
+            };
+            pageBtn.addEventListener('mouseenter', prefetchPage, { passive: true });
+            pageBtn.addEventListener('focus', prefetchPage, { passive: true });
             pageBtn.addEventListener('click', async () => {
                 const switched = await this.requestPageNavigation(page.id);
                 if (!switched) {

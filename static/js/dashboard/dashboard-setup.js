@@ -346,11 +346,13 @@ class DashboardSetup {
 
             const pageId = detail.pageId != null ? String(detail.pageId) : null;
             if (pageId && pageId !== String(d.currentPageId)) {
+                d.data?.invalidatePageDataCache?.(Number(pageId));
                 if (d.needsCrossPageBookmarks()) {
                     await d.loadAllBookmarks();
                 }
             } else if (pageId) {
-                await d.loadPageBookmarks(d.currentPageId);
+                d.data?.invalidatePageDataCache?.(Number(d.currentPageId));
+                await d.loadPageBookmarks(d.currentPageId, { forceFetch: true, animate: false });
             } else {
                 await d.loadAllBookmarks();
             }

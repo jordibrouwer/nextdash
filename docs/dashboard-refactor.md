@@ -17,6 +17,7 @@ Pattern: **Config-style composition** — `this.data = new DashboardData(this)` 
 | `dashboard-smart-collections.js` | Done | Smart collection eval + partial refresh |
 | `dashboard-bookmark-rows.js` | Done | Row DOM, reparent moves, popovers |
 | `dashboard-render-core.js` | Done | `renderDashboard`, grid layout, incremental status |
+| `dashboard-render-incremental.js` | Done | In-place category/bookmark patches |
 | `dashboard-notifications.js` | Done | Toasts and notify helpers |
 | `dashboard-visual.js` | Done | Theme and visibility chrome |
 | `dashboard-date-weather.js` | Done | Date/time and weather line |
@@ -37,6 +38,8 @@ Pattern: **Config-style composition** — `this.data = new DashboardData(this)` 
 | Single bookmark move | `reparentBookmarkRowsInDom` skips full render when possible |
 | Tag-filter exit | `unmountTagFilterView` before main grid rebuild |
 | Smart collections | Partial refresh in `refreshSmartCollectionSections` |
+| Config/settings sync | `renderDashboard({ incremental: 'settings' })` refreshes rows in place |
+| Bookmark data patch | `DashboardRenderIncremental` patches category lists when structure matches |
 
 ## PR checklist
 

@@ -332,7 +332,7 @@ class DashboardData {
             
             if (!skipPageBookmarks) {
                 // Load bookmarks and categories for initial page
-                await this.loadPageBookmarks(d.currentPageId);
+                await this.loadPageBookmarks(d.currentPageId, { animate: true });
 
                 if (this.needsCrossPageBookmarksAtStartup()) {
                     await this.loadAllBookmarks();
@@ -389,9 +389,152 @@ class DashboardData {
         return loadId === d._pageBookmarksLoadId;
     }
 
+    clonePageBookmarks(bookmarks) {
+        return (Array.isArray(bookmarks) ? bookmarks : []).map((bookmark) => ({ ...bookmark }));
+    }
+
+    clonePageCategories(categories) {
+        const d = this.dash;
+        return (Array.isArray(categories) ? categories : []).map((cat) => ({
+            ...cat,
+            name: d.language.t(cat.name) || cat.name,
+        }));
+    }
+
+    getCachedPageData(pageId) {
+        const d = this.dash;
+        const entry = d._pageDataCache?.get(Number(pageId));
+        if (!entry) {
+            return null;
+        }
+        return {
+            bookmarks: this.clonePageBookmarks(entry.bookmarks),
+            categories: entry.categories.map((cat) => ({ ...cat })),
+        };
+    }
+
+    setPageDataCache(pageId, bookmarks, categories) {
+        const d = this.dash;
+        if (!d._pageDataCache) {
+            d._pageDataCache = new Map();
+        }
+        d._pageDataCache.set(Number(pageId), {
+            bookmarks: this.clonePageBookmarks(bookmarks),
+            categories: (Array.isArray(categories) ? categories : []).map((cat) => ({ ...cat, name: cat.name })),
+            cachedAt: Date.now(),
+        });
+    }
+
+    updatePageDataCache(pageId, partial = {}) {
+        const d = this.dash;
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || !d._pageDataCache?.has(pid)) {
+            return;
+        }
+        const entry = d._pageDataCache.get(pid);
+        if (Array.isArray(partial.bookmarks)) {
+            entry.bookmarks = this.clonePageBookmarks(partial.bookmarks);
+        }
+        if (Array.isArray(partial.categories)) {
+            entry.categories = partial.categories.map((cat) => ({ ...cat }));
+        }
+        entry.cachedAt = Date.now();
+    }
+
+    invalidatePageDataCache(pageId = null) {
+        const d = this.dash;
+        if (!d._pageDataCache) {
+            return;
+        }
+        if (pageId == null) {
+            d._pageDataCache.clear();
+            return;
+        }
+        d._pageDataCache.delete(Number(pageId));
+    }
+
+    async prefetchPageData(pageId) {
+        const d = this.dash;
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid === Number(d.currentPageId)) {
+            return;
+        }
+        if (d._pageDataCache?.has(pid) || d._pagePrefetchInFlight?.has(pid)) {
+            return;
+        }
+        d._pagePrefetchInFlight.add(pid);
+        try {
+            const [bookmarksRes, categoriesRes] = await Promise.all([
+                fetch(`/api/bookmarks?page=${pid}`),
+                fetch(`/api/categories?page=${pid}`),
+            ]);
+            if (!bookmarksRes.ok || !categoriesRes.ok) {
+                return;
+            }
+            const bookmarks = await bookmarksRes.json();
+            const categories = await categoriesRes.json();
+            this.setPageDataCache(pid, bookmarks, categories);
+        } catch {
+            // Best-effort prefetch.
+        } finally {
+            d._pagePrefetchInFlight.delete(pid);
+        }
+    }
+
+    _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
+        const d = this.dash;
+        const { skipRender = false, animate = false } = options;
+
+        d.bookmarks = bookmarks;
+        d.categories = this.clonePageCategories(categories);
+        d.currentPageId = targetPageId;
+        d.refreshButtonTipsOnPageChange?.();
+
+        const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
+        if (pageIndex !== -1) {
+            window.location.hash = `#${pageIndex + 1}`;
+        }
+
+        const page = d.pages.find((p) => Number(p.id) === targetPageId);
+        if (page) {
+            d.updatePageTitle(page.name);
+        }
+        d.updateMiniStatusLine();
+        d.updateDocumentTitle();
+
+        if (d.searchComponent) {
+            d.updateSearchComponent();
+            if (!skipRender) {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                d.renderDashboard({ animate });
+
+                if (d.keyboardNavigation) {
+                    if (d.keyboardNavigation.isNavigating()) {
+                        d.keyboardNavigation.resetToFirst();
+                    } else {
+                        d.keyboardNavigation.clearSelection();
+                    }
+                }
+            }
+        }
+
+        d.setActivePageNavButton(targetPageId);
+        d._bookmarksReady = true;
+        if (d._pendingRecentModalRefresh && d.isRecentBookmarksModalOpen()) {
+            d._pendingRecentModalRefresh = false;
+            d._fillRecentBookmarksModal();
+        }
+    }
+
     async loadPageBookmarks(pageId, options = {}) {
         const d = this.dash;
-        const { rethrow = false, skipInlineEditConfirm = false, skipRender = false } = options;
+        const {
+            rethrow = false,
+            skipInlineEditConfirm = false,
+            skipRender = false,
+            animate = false,
+            forceFetch = false,
+        } = options;
         const targetPageId = Number(pageId);
         if (!Number.isFinite(targetPageId)) {
             if (rethrow) {
@@ -418,69 +561,34 @@ class DashboardData {
                 return false;
             }
 
-            const [bookmarksRes, categoriesRes] = await Promise.all([
-                fetch(`/api/bookmarks?page=${targetPageId}`),
-                fetch(`/api/categories?page=${targetPageId}`)
-            ]);
+            let bookmarks;
+            let categories;
+            const cached = !forceFetch ? this.getCachedPageData(targetPageId) : null;
+            if (cached) {
+                bookmarks = cached.bookmarks;
+                categories = cached.categories;
+            } else {
+                const [bookmarksRes, categoriesRes] = await Promise.all([
+                    fetch(`/api/bookmarks?page=${targetPageId}`),
+                    fetch(`/api/categories?page=${targetPageId}`),
+                ]);
 
-            if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return false;
-            }
-            if (!bookmarksRes.ok || !categoriesRes.ok) {
-                throw new Error('Failed to load page bookmarks or categories');
-            }
-
-            const bookmarks = await bookmarksRes.json();
-            const categories = await categoriesRes.json();
-            if (!this.isCurrentPageBookmarksLoad(loadId)) {
-                return false;
-            }
-
-            d.bookmarks = bookmarks;
-            d.categories = categories.map(cat => ({ ...cat, name: d.language.t(cat.name) || cat.name }));
-            d.currentPageId = targetPageId;
-            d.refreshButtonTipsOnPageChange?.();
-
-            // Update URL hash
-            const pageIndex = d.pages.findIndex(p => Number(p.id) === targetPageId);
-            if (pageIndex !== -1) {
-                window.location.hash = `#${pageIndex + 1}`;
-            }
-
-            // Update page title
-            const page = d.pages.find(p => Number(p.id) === targetPageId);
-            if (page) {
-                d.updatePageTitle(page.name);
-            }
-            d.updateMiniStatusLine();
-
-            // Update document title with page name if enabled
-            d.updateDocumentTitle();
-
-            // Update search component and render (skip during init before search is wired)
-            if (d.searchComponent) {
-                d.updateSearchComponent();
-                if (!skipRender) {
-                    window.scrollTo({ top: 0, behavior: 'instant' });
-                    d.renderDashboard({ animate: true });
-
-                    if (d.keyboardNavigation) {
-                        if (d.keyboardNavigation.isNavigating()) {
-                            d.keyboardNavigation.resetToFirst();
-                        } else {
-                            d.keyboardNavigation.clearSelection();
-                        }
-                    }
+                if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                    return false;
                 }
+                if (!bookmarksRes.ok || !categoriesRes.ok) {
+                    throw new Error('Failed to load page bookmarks or categories');
+                }
+
+                bookmarks = await bookmarksRes.json();
+                categories = await categoriesRes.json();
+                if (!this.isCurrentPageBookmarksLoad(loadId)) {
+                    return false;
+                }
+                this.setPageDataCache(targetPageId, bookmarks, categories);
             }
 
-            d.setActivePageNavButton(targetPageId);
-
-            d._bookmarksReady = true;
-            if (d._pendingRecentModalRefresh && d.isRecentBookmarksModalOpen()) {
-                d._pendingRecentModalRefresh = false;
-                d._fillRecentBookmarksModal();
-            }
+            this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate });
             return true;
         } catch (error) {
             if (!this.isCurrentPageBookmarksLoad(loadId)) {

@@ -169,6 +169,9 @@ class Dashboard {
         this._configRefreshReady = false;
         this._configReturnRefreshInFlight = false;
         this._pageBookmarksLoadId = 0;
+        /** @type {Map<number, { bookmarks: object[], categories: object[], cachedAt: number }>} */
+        this._pageDataCache = new Map();
+        this._pagePrefetchInFlight = new Set();
         this.language = new ConfigLanguage();
         this.data = new DashboardData(this);
         this.configSync = new DashboardConfigSync(this);
@@ -179,6 +182,7 @@ class Dashboard {
         this.smartCollections = new DashboardSmartCollections(this);
         this.bookmarkRows = new DashboardBookmarkRows(this);
         this.renderCore = new DashboardRenderCore(this);
+        this.renderIncremental = new DashboardRenderIncremental(this);
         this.notifications = new DashboardNotifications(this);
         this.visual = new DashboardVisual(this);
         this.dateWeather = new DashboardDateWeather(this);
