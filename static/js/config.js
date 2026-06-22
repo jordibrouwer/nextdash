@@ -427,23 +427,36 @@ class ConfigManager {
 
     buildConfigSaveFeedback(duplicateUrls = [], scope = {}) {
         const hasDuplicates = Array.isArray(duplicateUrls) && duplicateUrls.length > 0;
-        if (scope.settingsOnly && !hasDuplicates) {
-            return null;
-        }
-        return {
-            message: hasDuplicates
-                ? this._configT(
+        if (hasDuplicates) {
+            return {
+                message: this._configT(
                     'config.configSavedReturnDashboardDuplicates',
                     'Settings saved. Duplicate bookmark URLs detected — return to the dashboard to review.'
-                )
-                : this._configT(
-                    'config.configSavedReturnDashboard',
-                    'Settings saved — return to the dashboard to see changes.'
                 ),
-            type: hasDuplicates ? 'warning' : 'success',
+                type: 'warning',
+                options: {
+                    actionLabel: this._configT('config.goToDashboard', 'Open dashboard'),
+                    durationMs: 8000,
+                    onAction: () => this.goToDashboard(),
+                },
+            };
+        }
+        if (scope.settingsOnly) {
+            return {
+                message: this._configT('config.configSaved', 'Configuration saved successfully!'),
+                type: 'success',
+                options: { durationMs: 2800 },
+            };
+        }
+        return {
+            message: this._configT(
+                'config.configSavedReturnDashboard',
+                'Settings saved — return to the dashboard to see changes.'
+            ),
+            type: 'success',
             options: {
                 actionLabel: this._configT('config.goToDashboard', 'Open dashboard'),
-                durationMs: 10000,
+                durationMs: 6000,
                 onAction: () => this.goToDashboard(),
             },
         };

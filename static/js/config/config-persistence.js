@@ -22,8 +22,8 @@ class ConfigPersistence {
             this.c.savedSnapshot = this.captureUndoSnapshot();
             this.setDirtyState(false);
             this.c.refreshBookmarksList();
-            this.c.collections?.refresh?.(c);
-            this.c.tags?.refresh?.(c);
+            this.c.collections?.refresh?.(this.c);
+            this.c.tags?.refresh?.(this.c);
             if (!options.silent) {
                 this.showSyncToast(
                     this.c.language.t('config.dashboardSyncComplete'),
@@ -44,9 +44,47 @@ class ConfigPersistence {
         await this.c.bookmarkStore.persistAllPages((fn) => this.c.withRetry(fn));
     }
 
+    async saveBookmarkPages(pageIds = []) {
+        const ids = (Array.isArray(pageIds) ? pageIds : [])
+            .map((id) => Number(id))
+            .filter((id) => Number.isFinite(id) && id >= 1);
+        for (const pageId of ids) {
+            await this.c.bookmarkStore.persistPage(pageId, (fn) => this.c.withRetry(fn));
+        }
+    }
+
+    _getChangedBookmarkPageIds(savedPages = {}) {
+        const changed = [];
+        const seen = new Set();
+        if (this.c.bookmarkStore?._byPage) {
+            for (const [pageId, list] of this.c.bookmarkStore._byPage) {
+                const pid = Number(pageId);
+                if (!Number.isFinite(pid) || pid < 1) {
+                    continue;
+                }
+                seen.add(pid);
+                const previous = savedPages[pid] ?? savedPages[String(pid)] ?? [];
+                if (JSON.stringify(list) !== JSON.stringify(previous)) {
+                    changed.push(pid);
+                }
+            }
+        }
+        for (const key of Object.keys(savedPages || {})) {
+            const pid = Number(key);
+            if (!Number.isFinite(pid) || pid < 1 || seen.has(pid)) {
+                continue;
+            }
+            const previous = savedPages[key];
+            if (Array.isArray(previous) && previous.length > 0) {
+                changed.push(pid);
+            }
+        }
+        return changed.sort((a, b) => a - b);
+    }
+
     async persistFindersChanges(options = {}) {
         this.c.findersData = window.ConfigFinders?.normalizeFinders
-            ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(c))
+            ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(this.c))
             : this.c.findersData;
         const validationError = this.c.validateFindersData();
         if (validationError) {
@@ -61,7 +99,7 @@ class ConfigPersistence {
             this.c.savedSnapshot = this.captureUndoSnapshot();
             this.recomputeDirtyState();
             if (options.skipUiRefresh !== true) {
-                this.c.finders?.refresh(c);
+                this.c.finders?.refresh(this.c);
             }
             if (!options.silent) {
                 this.showSyncToast(
@@ -375,19 +413,35 @@ class ConfigPersistence {
 
     getPendingChangeScope() {
         if (!this.c.savedSnapshot) {
-            return { settingsOnly: false, hasStructuralChanges: true, hasSettingsChanges: true };
+            return {
+                settingsOnly: false,
+                hasStructuralChanges: true,
+                hasSettingsChanges: true,
+                changedBookmarkPageIds: null,
+                hasCategoriesChanges: true,
+                hasFindersChanges: true,
+                hasPagesChanges: true,
+            };
         }
-        const current = this.captureUndoSnapshot();
         const saved = this.c.savedSnapshot;
-        const hasSettingsChanges = JSON.stringify(current.settingsData) !== JSON.stringify(saved.settingsData);
-        const structuralKeys = ['bookmarksData', 'categoriesData', 'findersData', 'pagesData'];
-        const hasStructuralChanges = structuralKeys.some(
-            (key) => JSON.stringify(current[key]) !== JSON.stringify(saved[key])
-        );
+        const hasSettingsChanges = JSON.stringify(this.c.settingsData) !== JSON.stringify(saved.settingsData);
+        const changedBookmarkPageIds = this._getChangedBookmarkPageIds(saved.allBookmarkPages || {});
+        const hasBookmarkChanges = changedBookmarkPageIds.length > 0;
+        const hasCategoriesChanges = JSON.stringify(this.c.categoriesData) !== JSON.stringify(saved.categoriesData);
+        const hasFindersChanges = JSON.stringify(this.c.findersData) !== JSON.stringify(saved.findersData);
+        const hasPagesChanges = JSON.stringify(this.c.pagesData) !== JSON.stringify(saved.pagesData);
+        const hasStructuralChanges = hasBookmarkChanges
+            || hasCategoriesChanges
+            || hasFindersChanges
+            || hasPagesChanges;
         return {
             hasSettingsChanges,
             hasStructuralChanges,
             settingsOnly: hasSettingsChanges && !hasStructuralChanges,
+            changedBookmarkPageIds,
+            hasCategoriesChanges,
+            hasFindersChanges,
+            hasPagesChanges,
         };
     }
 
@@ -648,6 +702,49 @@ class ConfigPersistence {
         window.location.reload();
     }
 
+    _completeSaveUi({ changeScope, duplicateUrls }) {
+        const saveFeedback = this.c.buildConfigSaveFeedback(duplicateUrls, changeScope);
+        if (saveFeedback) {
+            this.c.ui.replaceNotification(
+                saveFeedback.message,
+                saveFeedback.type,
+                saveFeedback.options
+            );
+        } else {
+            this.c.ui.hideNotification();
+        }
+        this.clearDirty();
+        this.flashSavedIndicator();
+        this.c.undoSnapshot = null;
+        this.c.savedSnapshot = this.captureUndoSnapshot();
+        this.c._persistedTheme = String(this.c.settingsData.theme || '');
+        this.c.updateThemePreviewBadge();
+        this.setDirtyState(false);
+        if (typeof this.c._persistGeneralPanelState === 'function') {
+            this.c._persistGeneralPanelState();
+        }
+    }
+
+    async _refreshAfterSave(changeScope) {
+        this.c.refreshSmartCollectionCounters();
+        if (!changeScope.hasStructuralChanges) {
+            this.c.settings?.refreshStatusEssentialsSummary?.(this.c.settingsData, this.c.allBookmarksData);
+            if (this.c.stats && this.c.isConfigStatsTabActive()) {
+                this.c.stats.refresh(this.c);
+            }
+            return;
+        }
+        try {
+            await this.c.bookmarkStore.loadAll();
+        } catch (error) {
+            // keep previous store state
+        }
+        this.c.settings?.refreshStatusEssentialsSummary?.(this.c.settingsData, this.c.allBookmarksData);
+        if (this.c.stats && this.c.isConfigStatsTabActive()) {
+            this.c.stats.refresh(this.c);
+        }
+    }
+
     async saveChanges() {
         const conflicts = this.c.validateBookmarkConflicts({ showToast: true });
         if (conflicts.hasConflicts) {
@@ -659,18 +756,15 @@ class ConfigPersistence {
             return;
         }
         this.c.findersData = window.ConfigFinders?.normalizeFinders
-            ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(c))
+            ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(this.c))
             : this.c.findersData;
         const changeScope = this.getPendingChangeScope();
-        const showSaveToasts = changeScope.hasStructuralChanges || !changeScope.settingsOnly;
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
             saveStatus.textContent = this.c.language?.t('config.savingChanges') || 'Saving changes...';
             saveStatus.classList.remove('is-unsaved');
         }
-        if (showSaveToasts) {
-            this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info');
-        }
+        this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
         try {
             this.c.settings.updateFromUI(this.c.settingsData);
@@ -683,6 +777,7 @@ class ConfigPersistence {
             }
 
             const duplicateUrls = this.c.findDuplicateBookmarkUrls(this.c.bookmarksData);
+            const needsFullPersist = !this.c.savedSnapshot;
 
             // Merge keyboard custom bindings into settings before persisting settings.
             if (this.c.keyboard && typeof this.c.keyboard.getSaveData === 'function') {
@@ -691,54 +786,44 @@ class ConfigPersistence {
             }
 
             // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
-            if (this.c.deviceSpecific) {
-                this.c.storage.saveDeviceSettings(this.c.settingsData);
-            } else {
-                await this.c.data.saveSettings(this.c.settingsData);
-                this.c.storage.clearDeviceSettings();
+            if (needsFullPersist || changeScope.hasSettingsChanges) {
+                if (this.c.deviceSpecific) {
+                    this.c.storage.saveDeviceSettings(this.c.settingsData);
+                } else {
+                    await this.c.data.saveSettings(this.c.settingsData);
+                    this.c.storage.clearDeviceSettings();
+                }
             }
 
-            await this.saveAllBookmarkPages();
-            await this.c.data.saveFinders(this.c.findersData);
+            if (needsFullPersist || changeScope.changedBookmarkPageIds === null) {
+                await this.saveAllBookmarkPages();
+            } else if (changeScope.changedBookmarkPageIds.length > 0) {
+                await this.saveBookmarkPages(changeScope.changedBookmarkPageIds);
+            }
 
-            if (this.c.currentCategoriesPageId) {
+            if (needsFullPersist || changeScope.hasFindersChanges) {
+                await this.c.data.saveFinders(this.c.findersData);
+            }
+
+            if ((needsFullPersist || changeScope.hasCategoriesChanges) && this.c.currentCategoriesPageId) {
                 const categoriesForSelectedPage = await this.c.resolveCategoriesForSave(this.c.currentCategoriesPageId);
                 if (categoriesForSelectedPage !== null) {
                     await this.c.data.saveCategoriesByPage(categoriesForSelectedPage, this.c.currentCategoriesPageId);
                 }
             }
 
-            await this.c.data.savePages(this.c.pagesData);
+            if (needsFullPersist || changeScope.hasPagesChanges) {
+                await this.c.data.savePages(this.c.pagesData);
+            }
 
             this.c.originalPagesData = JSON.parse(JSON.stringify(this.c.pagesData));
             this.c.refreshPageDropdowns();
             this.signalDashboardSettingsUpdated('settings-saved');
-            const saveFeedback = this.c.buildConfigSaveFeedback(duplicateUrls, changeScope);
-            if (saveFeedback) {
-                this.c.ui.showNotification(saveFeedback.message, saveFeedback.type, saveFeedback.options);
-            }
-            this.clearDirty();
-            this.flashSavedIndicator();
-            this.c.undoSnapshot = null;
-            this.c.savedSnapshot = this.captureUndoSnapshot();
-            this.c._persistedTheme = String(this.c.settingsData.theme || '');
-            this.c.updateThemePreviewBadge();
-            this.setDirtyState(false);
-            if (typeof this.c._persistGeneralPanelState === 'function') {
-                this.c._persistGeneralPanelState();
-            }
-            this.c.refreshSmartCollectionCounters();
-            try {
-                await this.c.bookmarkStore.loadAll();
-            } catch (error) {
-                // keep previous store state
-            }
-            this.c.settings?.refreshStatusEssentialsSummary?.(this.c.settingsData, this.c.allBookmarksData);
-            if (this.c.stats && this.c.isConfigStatsTabActive()) {
-                this.c.stats.refresh(c);
-            }
+            this._completeSaveUi({ changeScope, duplicateUrls });
+            void this._refreshAfterSave(changeScope);
         } catch (error) {
             console.error('Error saving configuration:', error);
+            this.c.ui.hideNotification();
             if (saveStatus) {
                 saveStatus.textContent = 'Save failed';
                 saveStatus.classList.add('is-unsaved');

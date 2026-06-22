@@ -503,7 +503,7 @@ class ConfigFindersController {
     scheduleFinderValidationRefresh() {
         clearTimeout(this.c._finderValidationTimer);
         this.c._finderValidationTimer = setTimeout(() => {
-            this.c.finders?.updateFieldWarnings?.(this);
+            this.c.finders?.updateFieldWarnings?.(this.c);
         }, 150);
     }
 
@@ -530,7 +530,7 @@ class ConfigFindersController {
         const order = [...this.c.findersData];
         [order[index], order[swap]] = [order[swap], order[index]];
         this.c.findersData = order;
-        this.c.finders.refresh(this);
+        this.c.finders.refresh(this.c);
         const focusEl = document.querySelector(`.finder-item[data-finder-id="${finderId}"]`);
         focusEl?.focus?.();
         this.c.handleFindersReordered(this.c.findersData);
@@ -564,7 +564,7 @@ class ConfigFindersController {
                 return;
             }
     
-            this.c.finders.refresh(this);
+            this.c.finders.refresh(this.c);
             this.c.markDirty();
     
             requestAnimationFrame(() => {

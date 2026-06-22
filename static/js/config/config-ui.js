@@ -432,6 +432,15 @@ class ConfigUI {
         window.AppNotification?.hide();
     }
 
+    replaceNotification(message, type = 'success', options = {}) {
+        if (window.AppNotification?.replace) {
+            window.AppNotification.replace(message, type, options);
+            return;
+        }
+        this.hideNotification();
+        this.showNotification(message, type, options);
+    }
+
     showErrorWithReload(message, options = {}) {
         if (window.AppNotification?.showErrorWithReload) {
             window.AppNotification.showErrorWithReload(message, options);

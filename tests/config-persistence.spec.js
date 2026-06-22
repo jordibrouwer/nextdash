@@ -38,6 +38,77 @@ test.describe('config persistence (phase 2)', () => {
         await expect(page.locator('#save-btn')).toHaveClass(/has-unsaved/);
     });
 
+    test('saveChanges persists a settings edit', async ({ page }) => {
+        await waitForConfigReady(page);
+
+        const before = await page.evaluate(() => window.configManager.settingsData.columnsPerRow);
+        const next = before >= 6 ? 2 : before + 1;
+
+        await page.locator('#columns-input').fill(String(next));
+        await page.locator('#columns-input').dispatchEvent('input');
+        await page.locator('#columns-input').dispatchEvent('change');
+
+        await expect.poll(() => page.evaluate(() => window.configManager.isDirty)).toBe(true);
+
+        const saveError = await page.evaluate(async () => {
+            try {
+                await window.configManager.saveChanges();
+                return null;
+            } catch (error) {
+                return error?.message || String(error);
+            }
+        });
+        expect(saveError).toBeNull();
+
+        await expect.poll(() => page.evaluate(() => window.configManager.isDirty)).toBe(false);
+        await expect.poll(() => page.evaluate(() => window.configManager.settingsData.columnsPerRow)).toBe(next);
+    });
+
+    test('settings-only save skips bookmark API writes', async ({ page }) => {
+        await waitForConfigReady(page);
+
+        const before = await page.evaluate(() => window.configManager.settingsData.columnsPerRow);
+        const next = before >= 6 ? 2 : before + 1;
+
+        await page.locator('#columns-input').fill(String(next));
+        await page.locator('#columns-input').dispatchEvent('input');
+        await page.locator('#columns-input').dispatchEvent('change');
+        await expect.poll(() => page.evaluate(() => window.configManager.isDirty)).toBe(true);
+
+        const stats = await page.evaluate(async (columns) => {
+            let bookmarkPosts = 0;
+            let settingsPosts = 0;
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = (input, init = {}) => {
+                const url = String(input || '');
+                const method = String(init.method || 'GET').toUpperCase();
+                if (url.includes('/api/bookmarks') && method === 'POST') {
+                    bookmarkPosts += 1;
+                }
+                if (url.includes('/api/settings') && method === 'POST') {
+                    settingsPosts += 1;
+                }
+                return originalFetch(input, init);
+            };
+            const started = performance.now();
+            await window.configManager.saveChanges();
+            return {
+                bookmarkPosts,
+                settingsPosts,
+                elapsedMs: performance.now() - started,
+            };
+        }, next);
+
+        expect(stats.bookmarkPosts).toBe(0);
+        expect(stats.settingsPosts).toBe(1);
+        expect(stats.elapsedMs).toBeLessThan(2000);
+
+        await expect.poll(async () => {
+            const text = await page.locator('#app-notification .app-notification-text').textContent();
+            return text || '';
+        }).toMatch(/saved|opgeslagen/i);
+    });
+
     test('captureUndoSnapshot reflects settings edits', async ({ page }) => {
         await waitForConfigReady(page);
 

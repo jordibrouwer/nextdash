@@ -35,6 +35,23 @@ test.describe('config domain glue (phase 4–6 controllers)', () => {
         expect(error).toBeTruthy();
     });
 
+    test('add finder keeps finders list visible', async ({ page }) => {
+        await waitForConfigReady(page);
+        await page.evaluate(() => window.configManager.ui.switchToTab('finders'));
+        await page.waitForSelector('#finders-list', { timeout: 15_000 });
+
+        const beforeCount = await page.locator('#finders-list .finder-item').count();
+
+        await page.evaluate(async () => {
+            await window.configManager.addFinder();
+        });
+
+        await expect.poll(async () => page.locator('#finders-list .finder-item').count())
+            .toBe(beforeCount + 1);
+        await expect(page.locator('#finders-list .finders-list-empty-hint')).toHaveCount(0);
+        await expect(page.locator('#finders-list .finders-filter-empty-hint')).toHaveCount(0);
+    });
+
     test('categories controller tracks last categories page id', async ({ page }) => {
         await waitForConfigReady(page);
         const ok = await page.evaluate(() => {

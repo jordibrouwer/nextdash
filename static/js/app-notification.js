@@ -208,6 +208,18 @@ const AppNotification = {
         this._advance();
     },
 
+    /** Swap the visible toast without queue gap (e.g. saving → saved). */
+    replace(message, type = 'success', options = {}) {
+        if (this._timeout) {
+            clearTimeout(this._timeout);
+            this._timeout = null;
+        }
+        this._groupBuckets.forEach((bucket) => clearTimeout(bucket.timer));
+        this._groupBuckets.clear();
+        this._queue = [];
+        this._showNow(message, type, options);
+    },
+
     showErrorWithReload(message, options = {}) {
         this.show(message, 'error', {
             persist: true,
