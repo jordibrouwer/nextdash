@@ -205,7 +205,7 @@ class DashboardRenderIncremental {
             if (!row && pageIndex >= 0) {
                 row = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
             }
-            const fingerprint = this.bookmarkFingerprint(bookmark);
+            const fingerprint = d.bookmarkRows.bookmarkRenderFingerprint(bookmark);
 
             if (row) {
                 usedRows.add(row);
@@ -214,7 +214,6 @@ class DashboardRenderIncremental {
                     || String(row.getAttribute('data-category-id') ?? '') !== String(category.id ?? '');
                 if (needsRefresh) {
                     d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
-                    row.setAttribute('data-render-fp', fingerprint);
                 }
                 row.setAttribute('data-bookmark-index', String(index));
                 fragment.appendChild(row);
@@ -222,7 +221,6 @@ class DashboardRenderIncremental {
             }
 
             row = d.createBookmarkElement(bookmark, category.id || '', !isSmartCollection);
-            row.setAttribute('data-render-fp', fingerprint);
             row.setAttribute('data-bookmark-index', String(index));
             fragment.appendChild(row);
         });
@@ -248,24 +246,6 @@ class DashboardRenderIncremental {
             emptyEl.appendChild(textSpan);
             list.appendChild(emptyEl);
         }
-    }
-
-    bookmarkFingerprint(bookmark) {
-        if (!bookmark) {
-            return '';
-        }
-        return [
-            bookmark.url || '',
-            bookmark.name || '',
-            bookmark.shortcut || '',
-            bookmark.category || '',
-            bookmark.icon || '',
-            bookmark.pinned ? '1' : '0',
-            bookmark.checkStatus ? '1' : '0',
-            String(bookmark.note || '').trim(),
-            (bookmark.tags || []).join(','),
-            String(bookmark.openCount || 0),
-        ].join('\u0001');
     }
 
     normalizeUrl(url) {

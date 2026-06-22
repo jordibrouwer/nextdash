@@ -6,6 +6,35 @@ test.describe('dashboard incremental DOM', () => {
         await page.setViewportSize({ width: 1280, height: 800 });
     });
 
+    test('full render seeds data-render-fp so noop patch skips row rebuild', async ({ page }) => {
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
+            if (!rows.length) {
+                return { ok: false, reason: 'no-rows' };
+            }
+            const missingFp = rows.filter((row) => !row.getAttribute('data-render-fp'));
+            if (missingFp.length) {
+                return { ok: false, reason: 'missing-fp', missing: missingFp.length };
+            }
+
+            const row = rows[0];
+            const htmlBefore = row.innerHTML;
+            const patched = window.dashboardInstance.renderIncremental.tryRender({});
+            return {
+                ok: true,
+                patched,
+                unchanged: htmlBefore === row.innerHTML,
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.patched).toBe(true);
+        expect(result.unchanged).toBe(true);
+    });
+
     test('patches bookmark rows in place when structure is unchanged', async ({ page }) => {
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });

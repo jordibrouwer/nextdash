@@ -507,6 +507,26 @@ class DashboardBookmarkRows {
             d.attachBookmarkRowLongPress(row, openLink, bookmarkRef, ac.signal);
         }
         this.restoreBookmarkRowStatus(row, bookmark);
+        row.setAttribute('data-render-fp', this.bookmarkRenderFingerprint(bookmark));
+    }
+
+
+    bookmarkRenderFingerprint(bookmark) {
+        if (!bookmark) {
+            return '';
+        }
+        return [
+            bookmark.url || '',
+            bookmark.name || '',
+            bookmark.shortcut || '',
+            bookmark.category || '',
+            bookmark.icon || '',
+            bookmark.pinned ? '1' : '0',
+            bookmark.checkStatus ? '1' : '0',
+            String(bookmark.note || '').trim(),
+            (bookmark.tags || []).join(','),
+            String(bookmark.openCount || 0),
+        ].join('\u0001');
     }
 
 
