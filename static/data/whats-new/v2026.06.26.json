@@ -1,0 +1,93 @@
+{
+  "tag": "v2026.06.26",
+  "date": "June 2026",
+  "releasedAt": "2026-06-26",
+  "sections": [
+    {
+      "title": "Dashboard navigation &amp; performance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Faster page switches</strong> — revisiting a page uses an in-memory cache instead of refetching every bookmark list from the API. Hover or focus a page tab to prefetch its data in the background so the first click often feels instant."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No stagger on navigation</strong> — switching pages no longer replays the bookmark enter animation on every row (that could add ~1&nbsp;s with large libraries). Animations still run on the initial dashboard load when enabled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache stays fresh</strong> — bookmark saves, category order changes, extension updates, and config structure sync invalidate or update the cache for affected pages so you do not see stale data."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard incremental rendering",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>In-place grid patches</strong> — when category structure is unchanged, the dashboard updates bookmark rows and titles in place instead of rebuilding the whole grid. Config settings sync uses this path so toggling icons, shortcuts, or density feels snappier."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Render fingerprints</strong> — each bookmark row stores a <code>data-render-fp</code> fingerprint after full render so the first incremental refresh skips rows that did not change (no unnecessary DOM rebuild)."
+        }
+      ]
+    },
+    {
+      "title": "Config save &amp; persistence",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Save works again</strong> — fixed a regression where clicking <strong>Save</strong> did nothing (<code>ReferenceError</code> in the persistence module). Settings, bookmarks, finders, categories, and pages persist correctly."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Selective persist</strong> — config only writes what changed: a settings-only save sends one <code>/api/settings</code> request instead of re-posting every page of bookmarks, finders, categories, and pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster save feedback</strong> — <strong>Saved</strong> and the success toast appear as soon as the API calls finish; heavy post-save refresh (e.g. reloading all bookmarks for the tags tab) runs in the background."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Save toasts</strong> — every save shows a short <em>Saving…</em> toast that swaps cleanly to <em>Configuration saved</em> (settings) or <em>return to the dashboard</em> (structural changes) via <code>AppNotification.replace()</code>."
+        }
+      ]
+    },
+    {
+      "title": "Config → Finders",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Add finder keeps the list</strong> — <strong>+ Add finder</strong> appends a row to the table instead of clearing it. Fixed <code>refresh()</code> receiving the wrong context so existing finders disappeared until reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reorder &amp; validation</strong> — move-finder and field-warning refresh pass the config manager again so duplicate-shortcut hints stay accurate after add/reorder."
+        }
+      ]
+    },
+    {
+      "title": "Config architecture",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Modular config.js (phase 6)</strong> — bookmarks orchestration, config render/reset, and settings defaults moved into <code>config-bookmarks-controller.js</code>, <code>config-render.js</code>, <code>config-reset.js</code>, and <code>config-settings-defaults.js</code>; <code>config.js</code> is now ~470 lines."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Playwright coverage</strong> — page-cache smoke test, incremental DOM specs (noop patch, settings refresh), config save persistence (settings-only skips bookmark POSTs, toast visible), and add-finder list visibility."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docs</strong> — CHANGELOG, What's new, config help (EN/NL/DE/FR), and MANUAL updated for v2026.06.26; release token <code>2026.06-dashboard-release-v72</code>."
+        }
+      ]
+    }
+  ]
+}

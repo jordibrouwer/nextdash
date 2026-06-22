@@ -133,7 +133,7 @@ A **page** is a separate tab on the dashboard (e.g. `main`, `Work`, `Home lab`).
 - Category list  
 - Optional page emoji and colour dot (double-click the tab to edit)
 
-Switch pages with `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`).
+Switch pages with `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`). Recently visited pages are kept in memory (and prefetched when you hover a tab), so switching back is usually instant without reloading every bookmark from the server.
 
 ### 4.2 Categories
 
@@ -168,7 +168,7 @@ Each bookmark has:
 | Keyboard-first | Split-view bookmark editor, stats, backups |
 | Live layout and themes | Save bar for many settings |
 
-Changes in config often apply to the dashboard after **Save** (some toggles autosave).
+Changes in config often apply to the dashboard after **Save** (some toggles autosave). Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks — and you get a short *Saving…* / *Saved* toast on the right when save completes.
 
 ---
 
@@ -533,6 +533,7 @@ Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https:
 
 Configure finders in **config → finders** (desktop):
 
+- **+ Add finder** — appends a new row at the bottom of the table and focuses the name field; the existing list stays visible (no reload needed).
 - **Filter** — narrow the list by name, shortcut, URL, or tags; **✕** or `Escape` clears.
 - **Reorder** — drag the grip or press **↑** / **↓** on a focused row; order auto-saves after ~600 ms with a localized sync toast.
 - **Usage stats** — each row shows use count and last-used date (refreshed when you open the tab).
@@ -1101,7 +1102,7 @@ If bootstrap data cannot be fetched, you get an error toast with **Reload** and 
 
 ### Config sync from another tab
 
-When you save in config while the dashboard stays open, changes apply live. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
+When you save in config while the dashboard stays open, changes apply live. Settings-only updates refresh dashboard row chrome in place when possible (icons, shortcuts, status badges) without rebuilding the whole grid. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
 
 ### Shortcut does not open bookmark
 

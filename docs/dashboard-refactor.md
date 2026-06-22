@@ -40,6 +40,7 @@ Pattern: **Config-style composition** — `this.data = new DashboardData(this)` 
 | Smart collections | Partial refresh in `refreshSmartCollectionSections` |
 | Config/settings sync | `renderDashboard({ incremental: 'settings' })` refreshes rows in place |
 | Bookmark data patch | `DashboardRenderIncremental` patches category lists when structure matches |
+| Row fingerprints | `data-render-fp` on full render skips noop incremental row rebuilds |
 
 ## PR checklist
 

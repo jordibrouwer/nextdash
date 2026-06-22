@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.26 — June 2026](#v20260626--june-2026)
 - [v2026.06.25 — June 2026](#v20260625--june-2026)
 - [v2026.06.24 — June 2026](#v20260624--june-2026)
 - [v2026.06.23 — June 2026](#v20260623--june-2026)
@@ -51,6 +52,51 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.26 — June 2026
+
+**Dashboard page-cache, incremental DOM, config save fixes, and finders add** — page switches reuse cached per-page data with tab hover prefetch; bookmark grid patches in place when structure is unchanged; config Save repaired and sped up with selective API writes and reliable toasts; **+ Add finder** keeps the list visible; `config.js` modularization phase 6 (~470 lines).
+
+### Dashboard navigation & performance
+
+- **fix** **Per-page data cache** — `_pageDataCache` stores bookmarks and categories per page id; switching back to a recently visited page skips redundant `/api/bookmarks` + `/api/categories` round-trips.
+- **new** **Tab prefetch** — `mouseenter` / `focus` on a page tab starts a best-effort background fetch into the cache before you click.
+- **fix** **No animation on page switch** — `loadPageBookmarks()` defaults to `animate: false`; staggered `animate-enter` runs only on the initial dashboard load (`animate: true`).
+- **fix** **Cache invalidation** — bookmark/category saves, extension bookmark events, config structure sync, and cross-page edits invalidate or update affected cache entries.
+- **new** **Smoke test** — `reuses page cache on second visit` asserts round-trip &lt; 500 ms when cache is warm.
+
+### Dashboard incremental rendering
+
+- **new** **`DashboardRenderIncremental`** — when category structure matches the DOM, `renderDashboard()` patches categories in place instead of `innerHTML = ''` on the full grid.
+- **new** **Settings sync path** — `renderDashboard({ incremental: 'settings' })` refreshes row chrome (icons, shortcuts, ping badges, titles) after config settings changes without a full rebuild.
+- **new** **Packed-column order** — incremental path respects packed dashboard column distribution when matching existing categories.
+- **fix** **`data-render-fp` fingerprints** — `populateBookmarkRowView()` sets a row fingerprint after every full render; incremental patches compare fingerprints and skip unchanged rows on the first noop refresh.
+- **new** **Playwright** — `dashboard-incremental-render.spec.js` (noop patch, structure match, settings refresh).
+
+### Config save & persistence
+
+- **fix** **Save button regression** — `ReferenceError: c is not defined` in `config-persistence.js` (`bind(c)`, `refresh(c)`) blocked all saves; corrected to `this.c` throughout persistence and finders persist.
+- **fix** **Selective persist** — `getPendingChangeScope()` diffs settings, per-page bookmarks (`allBookmarkPages`), categories, finders, and pages; `saveChanges()` only POSTs changed slices (settings-only save = one settings request, zero bookmark POSTs).
+- **fix** **Early UI feedback** — `_completeSaveUi()` shows **Saved** and swaps the toast via `AppNotification.replace()` immediately after API success; `_refreshAfterSave()` defers `bookmarkStore.loadAll()` and stats refresh.
+- **fix** **Save toasts** — always show *Saving…* (persist toast), then a success toast for every save type (short *Configuration saved* for settings-only; *Open dashboard* action for structural changes).
+- **new** **Playwright** — `saveChanges persists a settings edit`, `settings-only save skips bookmark API writes` (+ toast assertion).
+
+### Config → Finders
+
+- **fix** **Add finder list disappear** — `addFinder()` and `moveFinderById()` called `finders.refresh(this)` with the controller instead of `refresh(this.c)`; `findersData` was undefined and the table rendered empty.
+- **fix** **Validation refresh** — `updateFieldWarnings(this.c)` after field edits uses the config manager for duplicate-shortcut sets.
+
+### Config architecture (phase 6)
+
+- **fix** **Further modularization** — extracted `ConfigBookmarksController`, `ConfigRenderController`, `ConfigResetController`, and `ConfigSettingsDefaults`; `config.js` reduced from ~1&nbsp;610 to ~469 lines (orchestrator only).
+- **fix** **Domain glue tests** — `add finder keeps finders list visible` in `config-domain-glue.spec.js`.
+
+### Developer & docs
+
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), and What's new updated for v2026.06.26.
+- **fix** **Cache-bust** — `whats-new-v93` / `2026.06-dashboard-release-v72`; `page-cache-1`, `dash-incremental-1`, `render-fp-1`, `config-persistence-4`, `finders-refresh-fix-1`, `config-save-toast-1`, `toast-replace-1`.
 
 ---
 

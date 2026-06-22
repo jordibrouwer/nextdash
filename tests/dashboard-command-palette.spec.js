@@ -26,7 +26,7 @@ async function dismissBlockingOverlays(page) {
 async function markWhatsNewSeen(page) {
     await page.addInitScript(() => {
         try {
-            const release = '2026.06-dashboard-release-v71';
+            const release = '2026.06-dashboard-release-v72';
             localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-release', release);
             localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
