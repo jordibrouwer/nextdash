@@ -160,7 +160,7 @@ Each bookmark has:
 | **Status check** | Optional ping for online/offline |
 | **Open count / last opened** | Usage tracking |
 
-Pinned still controls ordering, but the dashboard no longer shows separate pin/note badges or General config toggles for them. The row chrome is intentionally quieter now.
+Pinned and notes still exist in your data and in **Config → General** / the bookmark editor, but the dashboard temporarily hides pin/note row UI and related shortcuts while the row makeover is in progress (<code>pinAndNotesEnabled</code> in <code>dashboard-feature-flags.js</code>).
 
 ### 4.4 Config vs dashboard
 

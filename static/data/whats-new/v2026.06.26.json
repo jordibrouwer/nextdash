@@ -29,7 +29,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cleaner bookmark rows</strong> — the dashboard no longer renders separate pin/note badges, and General no longer exposes those two toggles. Pinned bookmarks still sort at the top of their category; the row chrome just stays quieter."
+          "text": "<strong>Pin &amp; notes paused on dashboard</strong> — <code>dashboard-feature-flags.js</code> keeps <code>pinAndNotesEnabled: false</code> until the row makeover ships: no pin/note badges, no pinned-first sort, no pin/note in inline edit or <code>:new</code>, and <code>:pin</code> / <code>:unpin</code> / <code>:note</code> / <code>:open pinned</code>, <code>G+P</code>, and <code>status:pinned</code> filters are hidden or show a short unavailable message. Your data and <strong>Config → General</strong> toggles stay — set the flag to <code>true</code> when the new UI is ready."
         },
         {
           "badge": "fix",

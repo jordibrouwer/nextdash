@@ -25,9 +25,9 @@ class DashboardInlineEdit {
         const url = fields.urlInput.value.trim();
         const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
         const category = fields.catSelect.value;
-        const pinned = fields.pinInput.checked;
+        const pinned = fields.pinInput ? fields.pinInput.checked : Boolean(original.pinned);
         const checkStatus = fields.statusInput.checked;
-        const note = fields.noteInput ? String(fields.noteInput.value || '').trim() : '';
+        const note = fields.noteInput ? String(fields.noteInput.value || '').trim() : String(original.note || '').trim();
         const icon = typeof fields.getPendingIcon === 'function'
             ? String(fields.getPendingIcon() || '').trim()
             : String(original.icon || '').trim();
@@ -46,9 +46,9 @@ class DashboardInlineEdit {
             || url !== String(original.url || '').trim()
             || shortcut !== String(original.shortcut || '').trim().toUpperCase()
             || category !== String(original.category || '')
-            || pinned !== Boolean(original.pinned)
+            || (fields.pinInput && pinned !== Boolean(original.pinned))
             || checkStatus !== Boolean(original.checkStatus)
-            || note !== String(original.note || '').trim()
+            || (fields.noteInput && note !== String(original.note || '').trim())
             || icon !== String(original.icon || '').trim()
             || !tagsEqual
             || targetPageId !== originalPageId;
@@ -425,11 +425,13 @@ class DashboardInlineEdit {
         form.appendChild(iconWrap);
         syncIconState();
 
-        // Note field
-        const noteInput = document.createElement('textarea');
-        noteInput.className = 'bookmark-inline-textarea';
-        noteInput.value = bookmark.note || '';
-        form.appendChild(mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput));
+        let noteInput = null;
+        if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
+            noteInput = document.createElement('textarea');
+            noteInput.className = 'bookmark-inline-textarea';
+            noteInput.value = bookmark.note || '';
+            form.appendChild(mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput));
+        }
 
         const tagsInput = document.createElement('input');
         tagsInput.type = 'text';
@@ -528,18 +530,22 @@ class DashboardInlineEdit {
             void reloadCatSelectForPage(sourcePageId);
         }
 
-        const pinInput = document.createElement('input');
-        pinInput.type = 'checkbox';
-        pinInput.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
-        pinInput.checked = Boolean(bookmark.pinned);
-        const pinWrap = document.createElement('div');
-        pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
-        const pinLabel = document.createElement('label');
-        pinLabel.htmlFor = pinInput.id;
-        pinLabel.textContent = cfg('pinnedShort', 'Pinned');
-        pinWrap.appendChild(pinInput);
-        pinWrap.appendChild(pinLabel);
-        form.appendChild(pinWrap);
+        let pinInput = null;
+        if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
+            const pinField = document.createElement('input');
+            pinField.type = 'checkbox';
+            pinField.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
+            pinField.checked = Boolean(bookmark.pinned);
+            const pinWrap = document.createElement('div');
+            pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
+            const pinLabel = document.createElement('label');
+            pinLabel.htmlFor = pinField.id;
+            pinLabel.textContent = cfg('pinnedShort', 'Pinned');
+            pinWrap.appendChild(pinField);
+            pinWrap.appendChild(pinLabel);
+            form.appendChild(pinWrap);
+            pinInput = pinField;
+        }
 
         const statusInput = document.createElement('input');
         statusInput.type = 'checkbox';
@@ -798,9 +804,9 @@ class DashboardInlineEdit {
             icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : bookmark.icon,
             shortcut,
             category,
-            pinned: fields.pinInput.checked,
+            pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmark.pinned),
             checkStatus: fields.statusInput.checked,
-            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : (bookmark.note || ''),
+            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : String(bookmark.note || '').trim(),
             tags: parsedTags
         };
 

@@ -1099,6 +1099,22 @@ class ConfigSettings {
             });
         }
 
+        const showPinIconCheckbox = document.getElementById('show-pin-icon-checkbox');
+        if (showPinIconCheckbox) {
+            showPinIconCheckbox.checked = settings.showPinIcon === true;
+            showPinIconCheckbox.addEventListener('change', (e) => {
+                settings.showPinIcon = e.target.checked;
+            });
+        }
+
+        const showNoteIconCheckbox = document.getElementById('show-note-icon-checkbox');
+        if (showNoteIconCheckbox) {
+            showNoteIconCheckbox.checked = settings.showNoteIcon !== false;
+            showNoteIconCheckbox.addEventListener('change', (e) => {
+                settings.showNoteIcon = e.target.checked;
+            });
+        }
+
         // Show title checkbox
         const showTitleCheckbox = document.getElementById('show-title-checkbox');
         if (showTitleCheckbox) {
@@ -2037,6 +2053,10 @@ class ConfigSettings {
         }
         const showShortcutsCheckbox = document.getElementById('show-shortcuts-checkbox');
         if (showShortcutsCheckbox) settings.showShortcuts = showShortcutsCheckbox.checked;
+        const showPinIconCheckbox = document.getElementById('show-pin-icon-checkbox');
+        if (showPinIconCheckbox) settings.showPinIcon = showPinIconCheckbox.checked;
+        const showNoteIconCheckbox = document.getElementById('show-note-icon-checkbox');
+        if (showNoteIconCheckbox) settings.showNoteIcon = showNoteIconCheckbox.checked;
         const sortMethodSelectUI = document.getElementById('sort-method-select');
         if (sortMethodSelectUI) settings.sortMethod = sortMethodSelectUI.value;
         const autoDarkModeCheckboxUI = document.getElementById('auto-dark-mode-checkbox');
@@ -2769,6 +2789,8 @@ class ConfigSettings {
         watch('colorize-status-checkbox', 'colorizeStatus');
         watch('skip-fast-ping-checkbox', 'skipFastPing');
         watch('hypr-mode-checkbox', 'hyprMode');
+        watch('show-pin-icon-checkbox', 'showPinIcon');
+        watch('show-note-icon-checkbox', 'showNoteIcon');
         watch('show-tag-collections-checkbox', 'showTagCollections');
         watch('show-smart-today-collection-checkbox', 'showSmartTodayCollection');
         watch('show-smart-recent-collection-checkbox', 'showSmartRecentCollection');
@@ -2824,6 +2846,8 @@ class ConfigSettings {
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
             statusRecheckIntervalMinutes: 5,
+            showPinIcon: false,
+            showNoteIcon: true,
             showShortcuts: true,
             showIcons: true,
             showLinkPreviewCards: false,

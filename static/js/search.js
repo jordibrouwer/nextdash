@@ -960,13 +960,18 @@ class SearchComponent {
 
         if (currentToken.startsWith('status:')) {
             const value = currentToken.slice('status:'.length);
+            const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
             const statusEntries = [
                 ['online', t('filterStatusOnline', 'Reachable bookmarks')],
                 ['offline', t('filterStatusOffline', 'Unreachable bookmarks')],
                 ['broken', t('filterStatusBroken', 'Broken / error response')],
                 ['ok', t('filterStatusOk', 'Online and not broken')],
-                ['pinned', t('filterStatusPinned', 'Pinned bookmarks')],
-                ['unpinned', t('filterStatusUnpinned', 'Not pinned')],
+                ...(pinNotesUiEnabled
+                    ? [
+                        ['pinned', t('filterStatusPinned', 'Pinned bookmarks')],
+                        ['unpinned', t('filterStatusUnpinned', 'Not pinned')],
+                    ]
+                    : []),
                 ['checked', t('filterStatusChecked', 'Status check enabled')],
                 ['unchecked', t('filterStatusUnchecked', 'Status check disabled')],
             ];
@@ -1052,8 +1057,10 @@ class SearchComponent {
 
                 if (normalized === 'checked' && !hasStatus) return false;
                 if (normalized === 'unchecked' && hasStatus) return false;
-                if (normalized === 'pinned' && !isPinned) return false;
-                if (normalized === 'unpinned' && isPinned) return false;
+                if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
+                    if (normalized === 'pinned' && !isPinned) return false;
+                    if (normalized === 'unpinned' && isPinned) return false;
+                }
                 if (normalized === 'broken' && !isBroken) return false;
                 if (normalized === 'ok' && !(hasStatus && !isBroken && reachability === 'online')) return false;
                 if (normalized === 'online' && reachability !== 'online') return false;
@@ -2193,7 +2200,9 @@ class SearchComponent {
         const commandItems = [
             { shortcut: '↳', name: t('emptyStateCommandNew', 'Add via command'), completion: ':new ', type: 'command-completion' },
             { shortcut: '↳', name: t('emptyStateCommandTag', 'Browse by tag'), completion: ':tag ', type: 'command-completion' },
-            { shortcut: '↳', name: t('emptyStateCommandNote', 'Edit note'), completion: ':note ', type: 'command-completion' },
+            ...(typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()
+                ? [{ shortcut: '↳', name: t('emptyStateCommandNote', 'Edit note'), completion: ':note ', type: 'command-completion' }]
+                : []),
         ];
 
         const finderItems = this.settings.includeFindersInSearch

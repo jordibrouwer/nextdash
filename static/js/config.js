@@ -105,6 +105,8 @@ class ConfigManager {
             showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
             showShortcuts: true,
+            showPinIcon: false,
+            showNoteIcon: true,
             sortMethod: 'order',
             layoutPreset: 'default',
             layoutVersion: 'classic',

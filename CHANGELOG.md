@@ -71,7 +71,7 @@ _No unreleased changes at this time._
 
 - **new** **`DashboardRenderIncremental`** — when category structure matches the DOM, `renderDashboard()` patches categories in place instead of `innerHTML = ''` on the full grid.
 - **new** **Settings sync path** — `renderDashboard({ incremental: 'settings' })` refreshes row chrome (icons, shortcuts, ping badges, titles) after config settings changes without a full rebuild.
-- **fix** **Cleaner bookmark rows** — the dashboard no longer renders separate pin/note badges, and the General config no longer exposes those toggles. Pinned bookmarks still sort at the top of their category; the row chrome stays quieter.
+- **fix** **Pin & notes temporarily off on dashboard** — `dashboard-feature-flags.js` sets `pinAndNotesEnabled: false` until the row makeover ships: no pin/note badges on rows, no pinned-first sorting, no pin/note fields in inline edit or `:new`, and `:pin` / `:unpin` / `:note` / `:open pinned`, `G+P`, and `status:pinned` filters are hidden or show a short unavailable message. Bookmark data and **Config → General** toggles stay in place; flip the flag to `true` to restore dashboard pin/note UI.
 - **new** **Packed-column order** — incremental path respects packed dashboard column distribution when matching existing categories.
 - **fix** **`data-render-fp` fingerprints** — `populateBookmarkRowView()` sets a row fingerprint after every full render; incremental patches compare fingerprints and skip unchanged rows on the first noop refresh.
 - **new** **Playwright** — `dashboard-incremental-render.spec.js` (noop patch, structure match, settings refresh).
@@ -97,7 +97,7 @@ _No unreleased changes at this time._
 ### Developer & docs
 
 - **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), and What's new updated for v2026.06.26.
-- **fix** **Cache-bust** — `whats-new-v94` / `2026.06-dashboard-release-v73`; `page-cache-1`, `dash-incremental-1`, `render-fp-1`, `config-persistence-4`, `finders-refresh-fix-1`, `config-save-toast-1`, `toast-replace-1`.
+- **fix** **Cache-bust** — `whats-new-v94` / `2026.06-dashboard-release-v73` (unchanged); `dashboard-feature-flags.js`, `pin-notes-off-1` on dashboard/search scripts; `page-cache-1`, `dash-incremental-1`, `render-fp-1`, `config-persistence-4`, `finders-refresh-fix-1`, `config-save-toast-1`, `toast-replace-1`.
 
 ---
 

@@ -21,6 +21,8 @@ const SETTING_INFO_DEFS = [
     { type: 'labelFor', labelFor: 'calendar-url-input', btnId: 'calendar-url-info-btn', title: 'calendarUrlInfoTitle', message: 'calendarUrlInfoMessage' },
     { type: 'checkbox', targetId: 'show-icons-checkbox', btnId: 'show-icons-info-btn', title: 'showIconsInfoTitle', message: 'showIconsInfoMessage' },
     { type: 'checkbox', targetId: 'show-shortcuts-checkbox', btnId: 'show-shortcuts-info-btn', title: 'showShortcutsInfoTitle', message: 'showShortcutsInfoMessage' },
+    { type: 'checkbox', targetId: 'show-pin-icon-checkbox', btnId: 'show-pin-icon-info-btn', title: 'showPinIconInfoTitle', message: 'showPinIconInfoMessage' },
+    { type: 'checkbox', targetId: 'show-note-icon-checkbox', btnId: 'show-note-icon-info-btn', title: 'showNoteIconInfoTitle', message: 'showNoteIconInfoMessage' },
     { type: 'checkbox', targetId: 'show-link-preview-cards-checkbox', btnId: 'show-link-preview-cards-info-btn', title: 'showLinkPreviewCardsInfoTitle', message: 'showLinkPreviewCardsInfoMessage' },
     { type: 'labelFor', labelFor: 'link-preview-hover-delay-select', btnId: 'link-preview-hover-delay-info-btn', title: 'linkPreviewHoverDelayInfoTitle', message: 'linkPreviewHoverDelayInfoMessage' },
     { type: 'labelFor', labelFor: 'sort-method-select', btnId: 'sort-method-info-btn', title: 'bookmarkSortingInfoTitle', message: 'bookmarkSortingInfoMessage' },

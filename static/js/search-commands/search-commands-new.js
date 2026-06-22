@@ -364,6 +364,11 @@ class SearchCommandNew {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         this.modal = document.getElementById('new-bookmark-modal');
 
+        if (typeof isDashboardPinNotesEnabled === 'function' && !isDashboardPinNotesEnabled()) {
+            document.getElementById('new-bookmark-note')?.closest('.nbm-section')?.remove();
+            document.getElementById('new-bookmark-pinned')?.closest('.nbm-toggle-label')?.remove();
+        }
+
         if (window.BookmarkFormPreview) {
             this.formPreview = new window.BookmarkFormPreview({
                 prefix: 'new-bookmark',
@@ -796,10 +801,14 @@ class SearchCommandNew {
         const bookmark = {
             name: formData.get('name').trim(),
             url: normalizedUrl,
-            note: (formData.get('note') || '').trim(),
+            note: (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled())
+                ? (formData.get('note') || '').trim()
+                : '',
             shortcut: formData.get('shortcut').trim().toUpperCase(),
             category: formData.get('category'),
-            pinned: formData.get('pinned') === 'on',
+            pinned: (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled())
+                ? formData.get('pinned') === 'on'
+                : false,
             checkStatus: formData.get('checkStatus') === 'on',
             tags,
             icon,

@@ -555,6 +555,14 @@ class SearchCommandsComponent {
     }
 
     handleNoteCommand(args, fullQuery) {
+        if (typeof isDashboardPinNotesEnabled === 'function' && !isDashboardPinNotesEnabled()) {
+            return [{
+                name: this._t('commands.pinNotesTemporarilyDisabled', 'Notes are temporarily unavailable on the dashboard'),
+                shortcut: ':NOTE',
+                type: 'command',
+                action: () => true,
+            }];
+        }
         return this.noteCommandHandler.handle(args, this.currentBookmarks, this.allBookmarks);
     }
 
@@ -991,6 +999,14 @@ class SearchCommandsComponent {
     // ─── :pin / :unpin ────────────────────────────────────────────────────────
 
     handlePinCommand(args, fullQuery) {
+        if (typeof isDashboardPinNotesEnabled === 'function' && !isDashboardPinNotesEnabled()) {
+            return [{
+                name: this._t('commands.pinNotesTemporarilyDisabled', 'Pin is temporarily unavailable on the dashboard'),
+                shortcut: ':PIN',
+                type: 'command',
+                action: () => true,
+            }];
+        }
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
         const isUnpin = fullQuery.trimStart().startsWith(':unpin');
@@ -1566,14 +1582,17 @@ class SearchCommandsComponent {
         const scope = (args[0] || '').toLowerCase();
 
         if (!scope) {
-            return [
+            const completions = [
                 { name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' },
-                { name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open tag ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open category ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open last ', type: 'command-completion' },
                 { name: '', shortcut: ':OPEN', completion: ':open last 5 ', type: 'command-completion' },
             ];
+            if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
+                completions.splice(1, 0, { name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' });
+            }
+            return completions;
         }
 
         if (scope === 'tag') {
@@ -1585,6 +1604,14 @@ class SearchCommandsComponent {
         }
 
         if (scope === 'pinned' || scope === 'pin') {
+            if (typeof isDashboardPinNotesEnabled === 'function' && !isDashboardPinNotesEnabled()) {
+                return [{
+                    name: this._t('commands.pinNotesTemporarilyDisabled', 'Pinned open is temporarily unavailable on the dashboard'),
+                    shortcut: ':OPEN',
+                    type: 'command',
+                    action: () => true,
+                }];
+            }
             if (args[1]) return [];
             return this._openPinnedRows(dashboard);
         }
@@ -1610,7 +1637,10 @@ class SearchCommandsComponent {
             return [{ name: '', shortcut: ':OPEN', completion: ':open all ', type: 'command-completion' }];
         }
         if ('pinned'.startsWith(scope) && scope !== 'pinned') {
-            return [{ name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' }];
+            if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
+                return [{ name: '', shortcut: ':OPEN', completion: ':open pinned ', type: 'command-completion' }];
+            }
+            return [];
         }
         if ('tag'.startsWith(scope) && scope !== 'tag') {
             return [{ name: '', shortcut: ':OPEN', completion: ':open tag ', type: 'command-completion' }];

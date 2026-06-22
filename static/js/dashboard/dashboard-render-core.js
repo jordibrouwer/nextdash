@@ -400,10 +400,15 @@ class DashboardRenderCore {
         const d = this.dash;
         const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])];
         const method = d.settings.sortMethod || 'order';
-        const pinned = sorted
-            .filter((bookmark) => Boolean(bookmark?.pinned))
-            .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }));
-        const regular = sorted.filter((bookmark) => !bookmark?.pinned);
+        const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
+        const pinned = pinNotesUiEnabled
+            ? sorted
+                .filter((bookmark) => Boolean(bookmark?.pinned))
+                .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }))
+            : [];
+        const regular = pinNotesUiEnabled
+            ? sorted.filter((bookmark) => !bookmark?.pinned)
+            : sorted;
 
         if (method === 'az') {
             return [
