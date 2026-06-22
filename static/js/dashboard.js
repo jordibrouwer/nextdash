@@ -98,9 +98,7 @@ class Dashboard {
             weatherLocation: '',
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
-            showShortcuts: true,
-            showPinIcon: false,
-            showNoteIcon: true
+            showShortcuts: true
         };
         // Ensure any active preview is removed when navigating away; warn if inline edit is active
         window.addEventListener('beforeunload', (e) => {
@@ -203,20 +201,6 @@ class Dashboard {
         this._postOnboardingPromptsAttempts = 0;
         this._postOnboardingWhatsNewAbortAttempts = 0;
         this.init();
-    }
-    
-    createNoteBadgeSvg() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        svg.innerHTML = `
-            <path d="M7.5 4.75h7l3.75 3.75V19A1.25 1.25 0 0 1 17 20.25H7A1.25 1.25 0 0 1 5.75 19V6A1.25 1.25 0 0 1 7 4.75Z"></path>
-            <path d="M14.5 4.75V8.5h3.75"></path>
-            <path d="M8.75 11h6.5"></path>
-            <path d="M8.75 14h5.25"></path>
-        `;
-        return svg;
     }
 
     areRotatingTipsEnabled() {

@@ -30,8 +30,6 @@ class DashboardSetup {
         d.syncTagCloudButtonPlacement();
 
         document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
-        document.body.setAttribute('data-show-pin-icon', d.settings.showPinIcon === true ? 'true' : 'false');
-        document.body.setAttribute('data-show-note-icon', d.settings.showNoteIcon === false ? 'false' : 'true');
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
         const layoutVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(d.settings.layoutVersion)

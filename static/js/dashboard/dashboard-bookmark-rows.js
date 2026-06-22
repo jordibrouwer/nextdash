@@ -453,21 +453,6 @@ class DashboardBookmarkRows {
         }
         row.appendChild(shortcutSpan);
 
-        const pinBadge = document.createElement('span');
-        pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
-        const showPinIcon = d.settings.showPinIcon === true;
-        if (showPinIcon && bookmark.pinned) {
-            pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
-            pinBadge.title = d.formatDashboardLabel('pinnedBookmarkTitle', {}, 'Pinned');
-            pinBadge.setAttribute('aria-label', d.formatDashboardLabel('pinnedBookmarkAria', {}, 'Pinned bookmark'));
-            pinBadge.setAttribute('role', 'img');
-        } else {
-            pinBadge.textContent = '';
-            pinBadge.classList.add('is-empty');
-            pinBadge.setAttribute('aria-hidden', 'true');
-        }
-        openLink.appendChild(pinBadge);
-
         const openCountBadge = document.createElement('span');
         openCountBadge.className = 'bookmark-open-count';
         const openCount = Number(bookmark.openCount || 0);
@@ -483,23 +468,6 @@ class DashboardBookmarkRows {
             openCountBadge.setAttribute('aria-hidden', 'true');
         }
         row.appendChild(openCountBadge);
-
-        const noteBadge = document.createElement('span');
-        noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
-        const hasNote = bookmark && String(bookmark.note || '').trim();
-        if (hasNote) {
-            const label = d.language?.t('bookmark.hasNote') || 'Has note';
-            const noteText = String(bookmark.note || '').trim();
-            const tooltipText = noteText.length > 200 ? noteText.slice(0, 200) + '…' : noteText;
-            noteBadge.setAttribute('data-note-tooltip', tooltipText);
-            noteBadge.setAttribute('role', 'img');
-            noteBadge.setAttribute('aria-label', label);
-            noteBadge.appendChild(d.createNoteBadgeSvg());
-        } else {
-            noteBadge.classList.add('is-empty');
-            noteBadge.setAttribute('aria-hidden', 'true');
-        }
-        openLink.appendChild(noteBadge);
 
         if (allowInlineEdit && bookmarkRef) {
             const ac = new AbortController();

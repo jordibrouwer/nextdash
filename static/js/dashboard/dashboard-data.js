@@ -234,12 +234,6 @@ class DashboardData {
             if (typeof d.settings.showShortcuts === 'undefined') {
                 d.settings.showShortcuts = true;
             }
-            if (typeof d.settings.showPinIcon === 'undefined') {
-                d.settings.showPinIcon = false;
-            }
-            if (typeof d.settings.showNoteIcon === 'undefined') {
-                d.settings.showNoteIcon = true;
-            }
             if (typeof d.settings.showStatus === 'undefined') {
                 d.settings.showStatus = true;
             }

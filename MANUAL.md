@@ -160,6 +160,8 @@ Each bookmark has:
 | **Status check** | Optional ping for online/offline |
 | **Open count / last opened** | Usage tracking |
 
+Pinned still controls ordering, but the dashboard no longer shows separate pin/note badges or General config toggles for them. The row chrome is intentionally quieter now.
+
 ### 4.4 Config vs dashboard
 
 | Dashboard `/` | Config `/config` |
