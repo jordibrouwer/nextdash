@@ -41,8 +41,7 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--unsaved-dot) 28%, transparent);
 }
 
-.unsaved-badge.is-visible,
-.unsaved-badge:not([hidden]) {
+.unsaved-badge.is-visible {
     display: inline-flex;
 }
 
