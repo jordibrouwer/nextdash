@@ -1,0 +1,29 @@
+{
+  "tag": "v2026.06.27",
+  "date": "June 2026",
+  "releasedAt": "2026-06-27",
+  "sections": [
+    {
+      "title": "Config save &amp; persistence",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>\"unsaved\" badge stuck on</strong> — the header pill could show <em>unsaved</em> right after opening Config, before you touched anything. A CSS selector (<code>.unsaved-badge:not([hidden])</code>) matched almost always and overrode the hidden state. The badge now only appears through the same <code>is-visible</code> class the dirty-tracking logic already toggles, so it matches the real save state."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Go toolchain version</strong> — <code>go.mod</code> now declares <code>go 1.24</code> (was <code>1.21</code>) to match <code>testing.Chdir</code> already used across the test suite. <code>go vet ./...</code> no longer fails with <code>testing.Chdir requires go1.24 or later</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v95</code> data version and <code>2026.06-dashboard-release-v74</code> dashboard release token."
+        }
+      ]
+    }
+  ]
+}

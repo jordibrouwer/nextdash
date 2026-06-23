@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.27 — June 2026](#v20260627--june-2026)
 - [v2026.06.26 — June 2026](#v20260626--june-2026)
 - [v2026.06.25 — June 2026](#v20260625--june-2026)
 - [v2026.06.24 — June 2026](#v20260624--june-2026)
@@ -52,6 +53,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 _No unreleased changes at this time._
+
+---
+
+## v2026.06.27 — June 2026
+
+**Config "unsaved" badge fix & Go 1.24 toolchain** — the header pill no longer shows *unsaved* on a clean page load; `go.mod` now matches the Go version the test suite actually needs.
+
+### Config save & persistence
+
+- **fix** **"unsaved" badge stuck on** — the header pill could read *unsaved* right after opening Config, before any setting was touched. `.unsaved-badge:not([hidden])` in `config-unsaved-state.css` matched almost unconditionally and overrode the default `display: none`, regardless of the real dirty state. The badge now relies solely on the `is-visible` class that `setDirtyState()` already toggles, so it tracks the actual save state.
+
+### Developer & docs
+
+- **fix** **Go toolchain version** — `go.mod` now declares `go 1.24` (was `1.21`) to match `testing.Chdir`, already used throughout the test suite. `go vet ./...` no longer fails with `testing.Chdir requires go1.24 or later`.
+- **fix** **Cache-bust** — `whats-new-v95` data version and `2026.06-dashboard-release-v74` dashboard release token.
 
 ---
 
