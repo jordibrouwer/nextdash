@@ -582,9 +582,9 @@ Use **config → pages** to rename a page on any device.
 
 ### Sorting
 
-- Each category header has **A–Z** and **Recent** toggles; click an active toggle again to return to manual drag order.
+- Each category header has **A–Z** and **Recent** toggles at full visibility (including **Other** and unknown-category blocks); click an active toggle again to return to manual drag order. Sort buttons are keyboard-focusable; **←** / **→** move between them without collapsing the category.
 - Sort is view-only: bookmark order in data is unchanged until you drag (manual mode only).
-- **`:sort`** applies to the category you are focused in (keyboard selection or first category as fallback).
+- **`:sort`** applies to the category you are focused in (keyboard selection or first category as fallback) and shows the category name in the command palette.
 
 ### Collapse
 

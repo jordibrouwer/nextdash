@@ -516,6 +516,8 @@ class DashboardBookmarkRows {
         if (!bookmark) {
             return '';
         }
+        const d = this.dash;
+        const showIcons = d?.settings?.showIcons !== false ? '1' : '0';
         return [
             bookmark.url || '',
             bookmark.name || '',
@@ -527,6 +529,7 @@ class DashboardBookmarkRows {
             String(bookmark.note || '').trim(),
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
+            showIcons,
         ].join('\u0001');
     }
 

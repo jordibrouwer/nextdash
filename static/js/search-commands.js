@@ -192,6 +192,27 @@ class SearchCommandsComponent {
         return isCurrent ? `${label} ✓` : label;
     }
 
+    _sortModeLabel(method) {
+        const key = method === 'az'
+            ? 'commands.sortModeAz'
+            : method === 'recent'
+                ? 'commands.sortModeRecent'
+                : 'commands.sortModeOrder';
+        const fallback = method === 'az' ? 'A–Z' : method === 'recent' ? 'Recent' : 'Manual order';
+        return this._t(key, fallback);
+    }
+
+    _formatSortPaletteLabel(method, categoryLabel) {
+        const modeLabel = this._sortModeLabel(method);
+        if (!categoryLabel) {
+            return modeLabel;
+        }
+        const template = this._t('commands.sortForCategory', '{mode} — {category}');
+        return template
+            .replace('{mode}', modeLabel)
+            .replace('{category}', categoryLabel);
+    }
+
     _paletteRefresh(stateId, options = {}) {
         return {
             stateId,
@@ -1766,6 +1787,7 @@ class SearchCommandsComponent {
         }
 
         const categoryId = window.DashboardCategorySort?.resolveFocusedCategoryId?.(dashboard) ?? '';
+        const categoryLabel = window.DashboardCategorySort?.resolveCategoryDisplayName?.(dashboard, categoryId) || '';
         const current = window.DashboardCategorySort?.getCategorySortMode?.(
             dashboard,
             { id: categoryId }
@@ -1774,7 +1796,10 @@ class SearchCommandsComponent {
 
         if (!method) {
             return validMethods.map((sortMethod) => ({
-                name: this._markCurrent(sortMethod, sortMethod === current),
+                name: this._markCurrent(
+                    this._formatSortPaletteLabel(sortMethod, categoryLabel),
+                    sortMethod === current
+                ),
                 shortcut: ':SORT',
                 stateId: `sort:${sortMethod}`,
                 completion: `:sort ${sortMethod} `,
@@ -1789,7 +1814,10 @@ class SearchCommandsComponent {
         }
 
         return matches.map((sortMethod) => ({
-            name: this._markCurrent(sortMethod, sortMethod === current),
+            name: this._markCurrent(
+                this._formatSortPaletteLabel(sortMethod, categoryLabel),
+                sortMethod === current
+            ),
             shortcut: ':SORT',
             stateId: `sort:${sortMethod}`,
             type: 'command',

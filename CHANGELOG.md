@@ -56,6 +56,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 - **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically across all pages on first load. `:sort` now applies to the focused category.
 - **change** **Pin & note row icons removed** — pin/note toggles are gone from Config → General and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes remain searchable (`:note`, fuzzy search) and editable inline or via commands (`:pin`, `:unpin`, `G` then `P`).
+- **change** **Category sort UX** — A–Z / Recent chips stay at full opacity; sort buttons are keyboard-focusable with arrow navigation; category collapse ignores clicks on sort controls; `:sort` palette rows show the focused category name.
+- **fix** **Orphan & uncategorized sort UI** — virtual category blocks (Other, unknown category) get sort header controls when missing after incremental patches.
+- **fix** **Favicon toggle + incremental render** — `bookmarkRenderFingerprint` includes `showIcons` so toggling favicons refreshes rows without a full forced rebuild.
 
 ---
 

@@ -169,6 +169,7 @@ class DashboardRenderIncremental {
             nameSpan.textContent = nextName;
             nameSpan.title = category.name;
         }
+        window.DashboardCategorySort?.ensureCategorySortControls?.(d, categoryEl, category, d.renderCore);
         window.DashboardCategorySort?.updateCategorySortUi?.(d, categoryEl, category);
     }
 

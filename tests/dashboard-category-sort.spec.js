@@ -34,6 +34,11 @@ test.describe('dashboard per-category sort', () => {
         await category.locator('.category-title').hover();
         await expect(azBtn).toBeVisible();
 
+        const sortOpacity = await category.locator('.category-sort-controls').evaluate((el) => (
+            Number.parseFloat(getComputedStyle(el).opacity)
+        ));
+        expect(sortOpacity).toBeGreaterThanOrEqual(0.95);
+
         const namesBefore = await category.locator('.bookmark-link .bookmark-text').allTextContents();
         expect(namesBefore.length).toBeGreaterThan(1);
 

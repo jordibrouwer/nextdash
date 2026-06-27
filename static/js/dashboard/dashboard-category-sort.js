@@ -152,15 +152,54 @@
         return value && value !== key ? value : fallback;
     }
 
+    function resolveCategoryDisplayName(dash, categoryId) {
+        const id = String(categoryId ?? '');
+        const fromDom = document.querySelector(
+            `.category[data-category-id="${CSS.escape(id)}"]:not([data-smart-collection="true"]) .category-title-name`
+        );
+        if (fromDom) {
+            const labelText = fromDom.title || fromDom.textContent;
+            if (labelText) {
+                return String(labelText).trim();
+            }
+        }
+
+        const persisted = (dash?.categories || []).find((cat) => String(cat.id) === id);
+        if (persisted?.name) {
+            return persisted.name;
+        }
+
+        if (id === '') {
+            const raw = dash?.language?.t?.('dashboard.uncategorized');
+            return raw && raw !== 'dashboard.uncategorized' ? raw : 'Uncategorized';
+        }
+
+        const orphanBase = dash?.language?.t?.('dashboard.unknownCategory');
+        const base = orphanBase && orphanBase !== 'dashboard.unknownCategory'
+            ? orphanBase
+            : 'Unknown category';
+        return `${base} (${id})`;
+    }
+
+    function sortGroupAriaLabel(dash, category) {
+        const categoryName = String(category?.name || resolveCategoryDisplayName(dash, category?.id ?? '')).trim();
+        const groupLabel = label(dash, 'dashboard.categorySortGroupAria', 'Bookmark sort');
+        if (!categoryName) {
+            return groupLabel;
+        }
+        const withCategory = label(dash, 'dashboard.categorySortGroupForAria', 'Bookmark sort for {category}');
+        return withCategory.includes('{category}')
+            ? withCategory.replace('{category}', categoryName)
+            : `${groupLabel} — ${categoryName}`;
+    }
+
     function createSortControls(dash, category, renderCore) {
         const sortMode = getCategorySortMode(dash, category);
+        const categoryName = String(category?.name || resolveCategoryDisplayName(dash, category?.id ?? '')).trim();
         const controls = document.createElement('span');
         controls.className = 'category-sort-controls';
         controls.setAttribute('role', 'group');
-        controls.setAttribute(
-            'aria-label',
-            label(dash, 'dashboard.categorySortGroupAria', 'Bookmark sort')
-        );
+        controls.setAttribute('aria-label', sortGroupAriaLabel(dash, category));
 
         const modes = [
             { mode: 'az', short: 'A–Z', aria: 'dashboard.categorySortAZAria' },
@@ -181,9 +220,10 @@
             if (sortMode === mode) {
                 btn.classList.add('is-active');
             }
+            const modeLabel = label(dash, aria, mode === 'az' ? 'Sort A to Z' : 'Sort by recently used');
             btn.setAttribute(
                 'aria-label',
-                label(dash, aria, mode === 'az' ? 'Sort A to Z' : 'Sort by recently used')
+                categoryName ? `${modeLabel} (${categoryName})` : modeLabel
             );
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -194,7 +234,44 @@
             controls.appendChild(btn);
         });
 
+        controls.addEventListener('keydown', (e) => {
+            const buttons = [...controls.querySelectorAll('.category-sort-btn')];
+            const index = buttons.indexOf(document.activeElement);
+            if (index < 0) {
+                return;
+            }
+            if (e.key === 'ArrowRight' && index < buttons.length - 1) {
+                e.preventDefault();
+                e.stopPropagation();
+                buttons[index + 1].focus();
+            } else if (e.key === 'ArrowLeft' && index > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                buttons[index - 1].focus();
+            }
+        });
+
         return controls;
+    }
+
+    function ensureCategorySortControls(dash, categoryEl, category, renderCore) {
+        if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+            return;
+        }
+        if (categoryEl.querySelector('.category-sort-controls')) {
+            return;
+        }
+        const titleEl = categoryEl.querySelector('.category-title');
+        if (!titleEl || !renderCore) {
+            return;
+        }
+        const chevron = titleEl.querySelector('.category-chevron');
+        const controls = createSortControls(dash, category, renderCore);
+        if (chevron) {
+            titleEl.insertBefore(controls, chevron);
+        } else {
+            titleEl.appendChild(controls);
+        }
     }
 
     function updateCategorySortUi(dash, categoryEl, category) {
@@ -219,8 +296,10 @@
         getCategorySortMode,
         setCategorySortMode,
         resolveFocusedCategoryId,
+        resolveCategoryDisplayName,
         migrateLegacySortAllPages,
         createSortControls,
+        ensureCategorySortControls,
         updateCategorySortUi,
     };
 })();

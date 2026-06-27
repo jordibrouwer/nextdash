@@ -187,7 +187,11 @@ class DashboardRenderCore {
         const uncategorizedBookmarks = groupedBookmarks[''] || [];
         if (uncategorizedBookmarks.length > 0) {
             const _unc = d.language.t('dashboard.uncategorized');
-            const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
+            const uncategorizedCategory = {
+                id: '',
+                name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized',
+                isVirtualCategory: true,
+            };
             columnBlocks.push({
                 category: uncategorizedCategory,
                 bookmarks: this.sortBookmarks(uncategorizedBookmarks, uncategorizedCategory),
@@ -213,6 +217,7 @@ class DashboardRenderCore {
                     id,
                     name: `${orphanLabelBase} (${id})`,
                     icon: '⚠',
+                    isVirtualCategory: true,
                 },
                 bookmarks: this.sortBookmarks(orphanBookmarks, { id }),
             });
@@ -1032,10 +1037,16 @@ class DashboardRenderCore {
             d.saveCollapsedStates();
         };
 
-        titleElement.addEventListener('click', () => {
+        titleElement.addEventListener('click', (e) => {
+            if (e.target.closest('.category-sort-controls')) {
+                return;
+            }
             setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
         });
         titleElement.addEventListener('keydown', (e) => {
+            if (e.target.closest('.category-sort-controls')) {
+                return;
+            }
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');

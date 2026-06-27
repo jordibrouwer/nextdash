@@ -277,7 +277,7 @@ class DashboardUiHelpers {
                 item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
                 item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
                 item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left'),
-                item(':sort <method>', 'caSort', 'Sort focused category — order / az / recent'),
+                item(':sort <method>', 'caSort', 'Sort focused category (shows category name) — order / az / recent'),
                 item(':dark / :title / :lang', 'caDisplayToggles', 'Toggle dark mode, dashboard title visibility, or UI language'),
                 item(':animations / :status / :opacity', 'caDisplayMore', 'Toggle animations, status monitor, or background opacity'),
                 item(':collections', 'caCollections', 'Toggle smart collections (today, recent, stale, most used)'),

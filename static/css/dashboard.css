@@ -1793,25 +1793,8 @@ body[data-density-mode="dense"] .dashboard-grid {
     gap: 0.2em;
     margin-left: 0.35em;
     flex-shrink: 0;
-    opacity: 0.45;
-    pointer-events: auto;
-    transition: opacity 150ms ease;
-}
-
-.category-title:hover .category-sort-controls,
-.category-title:focus-within .category-sort-controls,
-.category-sort-controls:has(.is-active) {
     opacity: 1;
-}
-
-@media (pointer: coarse) {
-    .category-sort-controls {
-        opacity: 0.72;
-    }
-
-    .category-sort-controls:has(.is-active) {
-        opacity: 1;
-    }
+    pointer-events: auto;
 }
 
 .category-sort-btn {
