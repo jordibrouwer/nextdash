@@ -44,6 +44,10 @@ test.describe('dashboard per-category sort', () => {
 
         await azBtn.click();
 
+        await expect(azBtn).toHaveClass(/is-active/);
+        await expect(azBtn).toHaveAttribute('aria-pressed', 'true');
+        await expect(category.locator('.category-sort-btn[data-sort-mode="recent"]')).not.toHaveClass(/is-active/);
+
         await expect(category.locator('.bookmarks-list')).toHaveClass(/bookmarks-list--sort-active/);
         await expect(azBtn).toHaveClass(/is-active/);
 
@@ -69,6 +73,8 @@ test.describe('dashboard per-category sort', () => {
 
         await azBtn.click();
         await expect(azBtn).not.toHaveClass(/is-active/);
+        await expect(azBtn).toHaveAttribute('aria-pressed', 'false');
+        await expect(category.locator('.category-sort-btn[data-sort-mode="recent"]')).not.toHaveClass(/is-active/);
         await expect(category.locator('.bookmarks-list')).not.toHaveClass(/bookmarks-list--sort-active/);
     });
 });

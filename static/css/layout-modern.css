@@ -614,7 +614,7 @@ body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link:i
 
 /* ─── Terminal preset ────────────────────────────────────────────────────── */
 
-body[data-layout-version="modern"] .dashboard-grid.layout-terminal .category-title::before {
+body[data-layout-version="modern"] .dashboard-grid.layout-terminal .category-title-label::before {
     color: color-mix(in srgb, var(--accent-primary) 70%, var(--text-tertiary));
 }
 

@@ -1332,7 +1332,7 @@ body {
     margin-top: 0.4rem;
 }
 
-.dashboard-grid.layout-terminal .category-title::before {
+.dashboard-grid.layout-terminal .category-title-label::before {
     content: '$ ';
 }
 
@@ -1766,21 +1766,48 @@ body[data-density-mode="dense"] .dashboard-grid {
     letter-spacing: 0.05em;
     color: var(--text-tertiary);
     display: flex;
+    flex-wrap: nowrap;
     align-items: baseline;
     min-width: 0;
 }
 
-.category-title::before {
+.category-title-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.category-title-label::before {
     content: '// ';
+}
+
+.category-title-trailing {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: baseline;
     flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .category-title-name {
-    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
+}
+
+.category-title-name--multiline {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.category-title--multiline {
+    align-items: flex-start;
 }
 
 .category-chevron {
@@ -1820,12 +1847,25 @@ body[data-density-mode="dense"] .dashboard-grid {
     background: color-mix(in srgb, var(--hover-bg, currentColor) 35%, transparent);
 }
 
-.category-sort-btn.is-active {
+.category-sort-btn.is-active,
+.category-sort-controls[data-sort-mode="az"] .category-sort-btn[data-sort-mode="az"],
+.category-sort-controls[data-sort-mode="recent"] .category-sort-btn[data-sort-mode="recent"] {
     opacity: 1;
     color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent-color, currentColor) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-color, currentColor) 10%, transparent);
+    font-weight: var(--font-weight-bold);
+    border-color: color-mix(in srgb, var(--accent-color, currentColor) 65%, transparent);
+    background: color-mix(in srgb, var(--accent-color, currentColor) 20%, var(--background-secondary, transparent));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, currentColor) 28%, transparent);
     text-decoration: none;
+}
+
+.category-sort-controls[data-sort-mode="order"] .category-sort-btn.is-active {
+    opacity: 0.9;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-tertiary);
+    border-color: color-mix(in srgb, var(--text-tertiary) 28%, transparent);
+    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
+    box-shadow: none;
 }
 
 .category-sort-btn + .category-sort-btn::before {
@@ -1874,7 +1914,7 @@ body.no-animations .category-body > .bookmarks-list {
     user-select: none;
 }
 
-.category-title--renaming::before {
+.category-title--renaming .category-title-label::before {
     content: none;
 }
 

@@ -362,6 +362,7 @@ class DashboardRenderCore {
 
         // Enable realtime drag-and-drop sorting within each category
         this.initializeCategoryReorder();
+        window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
         // this.initializeDashboardCategoryReorder();
 
         d.updateSearchComponent();
@@ -380,6 +381,9 @@ class DashboardRenderCore {
                 d.statusMonitorInitialized = true;
             }
         }
+
+        window.DashboardCategoryTitleFit?.ensureResizeObserver?.();
+        window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
     }
 
 
@@ -820,6 +824,7 @@ class DashboardRenderCore {
             input.replaceWith(nameSpan);
             if (!newName || newName === originalName) {
                 nameSpan.textContent = originalName.toLowerCase();
+                window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
                 return;
             }
             category.name = newName;
@@ -830,6 +835,7 @@ class DashboardRenderCore {
                 d.categories.push({ id: category.id, name: newName });
             }
             await this.saveCategoryOrder();
+            window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
 
         const cancel = () => {
@@ -838,6 +844,7 @@ class DashboardRenderCore {
             titleEl.classList.remove('category-title--renaming');
             input.replaceWith(nameSpan);
             nameSpan.textContent = originalName.toLowerCase();
+            window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
 
         input.addEventListener('keydown', (e) => {
@@ -933,6 +940,10 @@ class DashboardRenderCore {
         categoryDiv.setAttribute('data-category-id', category.id || '');
         categoryDiv.setAttribute('role', 'rowgroup');
         const isSmartCollection = category.isSmartCollection === true;
+        const initialSortMode = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';
+        if (!isSmartCollection) {
+            categoryDiv.setAttribute('data-bookmark-sort', initialSortMode);
+        }
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
         }
@@ -973,6 +984,12 @@ class DashboardRenderCore {
         const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
+        const labelWrap = document.createElement('span');
+        labelWrap.className = 'category-title-label';
+
+        const trailingWrap = document.createElement('span');
+        trailingWrap.className = 'category-title-trailing';
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'category-title-name';
         nameSpan.textContent = category.name.toLowerCase();
@@ -983,7 +1000,7 @@ class DashboardRenderCore {
             iconImage.src = `/data/icons/${categoryIcon}`;
             iconImage.alt = '';
             iconImage.className = 'bookmark-icon';
-            titleElement.appendChild(iconImage);
+            labelWrap.appendChild(iconImage);
             try {
                 const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
                 const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
@@ -994,21 +1011,21 @@ class DashboardRenderCore {
             } catch (e) {
                 // ignore
             }
-            titleElement.appendChild(document.createTextNode(' '));
+            labelWrap.appendChild(document.createTextNode(' '));
         } else {
             const textIcon = categoryIcon || '▣';
-            titleElement.appendChild(document.createTextNode(`${textIcon} `));
+            labelWrap.appendChild(document.createTextNode(`${textIcon} `));
         }
-        titleElement.appendChild(nameSpan);
+        labelWrap.appendChild(nameSpan);
 
         if (!isSmartCollection && window.DashboardCategorySort?.createSortControls) {
-            titleElement.appendChild(window.DashboardCategorySort.createSortControls(d, category, this));
+            trailingWrap.appendChild(window.DashboardCategorySort.createSortControls(d, category, this));
         }
 
         const chevron = document.createElement('span');
         chevron.className = 'category-chevron';
         chevron.setAttribute('aria-hidden', 'true');
-        titleElement.appendChild(chevron);
+        trailingWrap.appendChild(chevron);
 
         if (isSmartCollection) {
             const whyHint = d.getSmartCollectionWhyHint(category.id, category);
@@ -1026,9 +1043,12 @@ class DashboardRenderCore {
                     e.preventDefault();
                     e.stopPropagation();
                 });
-                titleElement.appendChild(whyBtn);
+                trailingWrap.appendChild(whyBtn);
             }
         }
+
+        titleElement.appendChild(labelWrap);
+        titleElement.appendChild(trailingWrap);
 
         const setCategoryCollapsed = (collapsed) => {
             categoryDiv.setAttribute('data-collapsed', collapsed ? 'true' : 'false');

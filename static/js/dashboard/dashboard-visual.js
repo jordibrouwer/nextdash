@@ -154,6 +154,8 @@ class DashboardVisual {
         
         // Add current font size class
         document.body.classList.add(`font-size-${fontSize}`);
+        window.DashboardCategoryTitleFit?.invalidateMinCategoryFontCache?.();
+        window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.();
     }
 
 

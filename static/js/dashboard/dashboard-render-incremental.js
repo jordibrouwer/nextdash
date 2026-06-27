@@ -170,7 +170,10 @@ class DashboardRenderIncremental {
             nameSpan.title = category.name;
         }
         window.DashboardCategorySort?.ensureCategorySortControls?.(d, categoryEl, category, d.renderCore);
-        window.DashboardCategorySort?.updateCategorySortUi?.(d, categoryEl, category);
+        const titleEl = categoryEl.querySelector('.category-title');
+        if (titleEl) {
+            window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
+        }
     }
 
     patchCategoryBookmarks(categoryEl, category, bookmarks, options = {}) {
@@ -291,9 +294,12 @@ class DashboardRenderIncremental {
 
     finishIncrementalRefresh() {
         const d = this.dash;
+        const container = document.getElementById('dashboard-layout');
         d._categoryListsCache = null;
         d._renderAnimationsEnabled = false;
         this.core.initializeCategoryReorder();
+        window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
+        window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
         d.updateSearchComponent?.();
         d.syncBookmarkGridA11y?.();
         d.keyboardNavigation?.scheduleUpdate?.();

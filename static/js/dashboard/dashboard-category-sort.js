@@ -6,8 +6,14 @@
 
     function normalizeSortMode(mode) {
         const value = String(mode || 'order').toLowerCase();
-        if (value === 'custom') {
+        if (value === 'custom' || value === 'manual') {
             return 'order';
+        }
+        if (value === 'a-z' || value === 'alphabetical' || value === 'name') {
+            return 'az';
+        }
+        if (value === 'recently' || value === 'recently-used' || value === 'rec') {
+            return 'recent';
         }
         return VALID_MODES.has(value) ? value : 'order';
     }
@@ -22,6 +28,9 @@
             return 'order';
         }
         const id = String(category.id ?? '');
+        if (category.sortMode != null && String(category.sortMode).trim() !== '') {
+            return normalizeSortMode(category.sortMode);
+        }
         if (isPersistedCategory(dash, id)) {
             const match = (dash.categories || []).find((cat) => String(cat.id) === id);
             return normalizeSortMode(match?.sortMode || 'order');
@@ -198,6 +207,7 @@
         const categoryName = String(category?.name || resolveCategoryDisplayName(dash, category?.id ?? '')).trim();
         const controls = document.createElement('span');
         controls.className = 'category-sort-controls';
+        controls.setAttribute('data-sort-mode', sortMode);
         controls.setAttribute('role', 'group');
         controls.setAttribute('aria-label', sortGroupAriaLabel(dash, category));
 
@@ -228,7 +238,11 @@
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setCategorySortMode(dash, category.id || '', mode, { toggle: true });
+                const next = setCategorySortMode(dash, category.id || '', mode, { toggle: true });
+                const categoryEl = controls.closest('.category[data-category-id]');
+                if (categoryEl) {
+                    updateCategorySortUi(dash, categoryEl, { ...category, sortMode: next });
+                }
                 renderCore?.renderDashboard?.({ animate: false });
             });
             controls.appendChild(btn);
@@ -258,20 +272,20 @@
         if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
             return;
         }
-        if (categoryEl.querySelector('.category-sort-controls')) {
-            return;
+        if (!categoryEl.querySelector('.category-sort-controls')) {
+            const titleEl = categoryEl.querySelector('.category-title');
+            if (!titleEl || !renderCore) {
+                return;
+            }
+            const chevron = titleEl.querySelector('.category-chevron');
+            const controls = createSortControls(dash, category, renderCore);
+            if (chevron) {
+                titleEl.insertBefore(controls, chevron);
+            } else {
+                titleEl.appendChild(controls);
+            }
         }
-        const titleEl = categoryEl.querySelector('.category-title');
-        if (!titleEl || !renderCore) {
-            return;
-        }
-        const chevron = titleEl.querySelector('.category-chevron');
-        const controls = createSortControls(dash, category, renderCore);
-        if (chevron) {
-            titleEl.insertBefore(controls, chevron);
-        } else {
-            titleEl.appendChild(controls);
-        }
+        updateCategorySortUi(dash, categoryEl, category);
     }
 
     function updateCategorySortUi(dash, categoryEl, category) {
@@ -279,15 +293,35 @@
             return;
         }
         const sortMode = getCategorySortMode(dash, category);
+        categoryEl.setAttribute('data-bookmark-sort', sortMode);
         const list = categoryEl.querySelector('.bookmarks-list[data-category-id]');
         if (list) {
             list.classList.toggle('bookmarks-list--sort-active', sortMode !== 'order');
+        }
+        const controls = categoryEl.querySelector('.category-sort-controls');
+        if (controls) {
+            controls.setAttribute('data-sort-mode', sortMode);
         }
         categoryEl.querySelectorAll('.category-sort-btn[data-sort-mode]').forEach((btn) => {
             const mode = btn.getAttribute('data-sort-mode');
             const active = mode === sortMode;
             btn.classList.toggle('is-active', active);
             btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    function refreshAllCategorySortUi(dash, root = document) {
+        if (!dash) {
+            return;
+        }
+        const scope = root?.querySelectorAll
+            ? root
+            : document;
+        scope.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])').forEach((categoryEl) => {
+            const categoryId = String(categoryEl.getAttribute('data-category-id') ?? '');
+            const persisted = (dash.categories || []).find((cat) => String(cat.id) === categoryId);
+            const category = persisted || { id: categoryId };
+            updateCategorySortUi(dash, categoryEl, category);
         });
     }
 
@@ -301,5 +335,6 @@
         createSortControls,
         ensureCategorySortControls,
         updateCategorySortUi,
+        refreshAllCategorySortUi,
     };
 })();
