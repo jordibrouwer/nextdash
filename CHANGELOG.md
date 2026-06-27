@@ -59,7 +59,7 @@ _(Nothing yet — see [v2026.06.28](#v20260628--june-2026) for the latest releas
 
 ## v2026.06.28 — June 2026
 
-**Per-category bookmark sort, category title polish, pin/note cleanup & favicon incremental refresh** — each category sorts independently with header chips that show the active mode; long category names shrink or wrap beside sort controls; press-and-hold (~500 ms) renames a category like bookmark inline edit; pin/note row icons are gone but pins, notes, and commands stay fully usable; legacy `sortMethod` migrates on all pages at once; favicon toggles refresh rows in place.
+**Per-category bookmark sort, category title polish, pin/note cleanup, favicon incremental refresh & tour/promo polish** — each category sorts independently with header chips that show the active mode; long category names shrink or wrap beside sort controls; press-and-hold (~500 ms) renames a category like bookmark inline edit with a one-time discoverability promo; pin/note row icons are gone but pins, notes, and commands stay fully usable; legacy `sortMethod` migrates on all pages at once; favicon toggles refresh rows in place; dashboard feature tour steps highlight the correct controls again.
 
 ### Dashboard
 
@@ -67,6 +67,8 @@ _(Nothing yet — see [v2026.06.28](#v20260628--june-2026) for the latest releas
 - **fix** **Sort chip active state** — **A–Z** / **Rec** buttons show a clear selected style immediately on click (`is-active`, `aria-pressed`, `data-sort-mode` on `.category-sort-controls`). Manual order leaves both chips inactive. `refreshAllCategorySortUi` runs after incremental patches and settings refresh; `finishIncrementalRefresh` fixes a missing `container` reference when refreshing sort UI.
 - **new** **Adaptive category title fitting** — `dashboard-category-title-fit.js` shrinks long category names step by step down to the **xs** minimum (smallest General font size), then allows up to **two lines** with `line-clamp` and ellipsis. **A–Z** / **Rec** chips and the chevron stay on the first row in `.category-title-trailing`. Fitting runs after full render, incremental title updates, rename commit/cancel, font-size changes, and layout resize (`ResizeObserver` on `#dashboard-layout`).
 - **new** **Long-press category rename** — press and hold a category header for **~500 ms** (shared `DashboardInlineEdit.ROW_LONG_PRESS_MS`, same as bookmark inline edit; not on sort chips or the ℹ button) to open inline rename. Movement cancels the timer; the follow-up click is suppressed so collapse does not toggle. **Double-click** remains as a legacy shortcut. Documented in cheat sheet, rotating tips, onboarding, Help, README, MANUAL, and the categories guided tour.
+- **new** **Category rename discoverability promo** — first inline rename shows a one-time **Got it** balloon beside the category header (`categoryRename` in `dashboard-feature-promos.js`; storage key `nextdash:dashboard-category-rename-promo-confirmed-v1`). **Esc** on the promo dismisses it and cancels rename. Reset via **Reset all dashboard promos** or `:promo feature`.
+- **fix** **Feature tour spotlight** — dashboard feature tour steps highlight footer and header targets (search, commands, finders, pages overview) via a body-level focus ring cutout instead of z-index hacks on the blur overlay, fixing targets that stayed blurred in Safari and other browsers (`feature-tour.js`, `feature-tour.css`).
 - **fix** **Smart collection ℹ popover** — “why am I seeing this?” hint uses a fixed-position body popover with a readable background (replacing the unreadable CSS `::after` tooltip).
 - **change** **Pin & note row icons removed** — pin/note toggles are gone from Config → General and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes remain searchable (`:note`, fuzzy search) and editable inline or via commands (`:pin`, `:unpin`, `G` then `P`, `:open pinned`).
 - **change** **Category sort UX** — A–Z / Recent chips stay at full opacity; sort buttons are keyboard-focusable with arrow navigation; category collapse ignores clicks on sort controls; `:sort` palette rows show the focused category name.
@@ -81,8 +83,8 @@ _(Nothing yet — see [v2026.06.28](#v20260628--june-2026) for the latest releas
 ### Developer & docs
 
 - **new** **Playwright** — `dashboard-category-sort.spec.js` (active chip state, A–Z toggle, drag-handle hide), `dashboard-show-icons.spec.js`; `dashboard-category-sort.js`, `dashboard-category-title-fit.js`, `dashboard-smart-why-popover.js`, `settings-sanitize.js`.
-- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), onboarding bookmarks step, categories tour reorder step, cheat sheet, and What's new updated for v2026.06.28 (title fitting, sort active state, long-press rename).
-- **fix** **Cache-bust** — `whats-new-v96` data version and `2026.06-dashboard-release-v75` dashboard release token; `cat-sort-4`, `cat-sort-active-1`, `cat-title-fit-1`, `cat-longpress-1`, `render-fp-icons-1`, `smart-why-popover-1`, `settings-sanitize-1`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), onboarding bookmarks step, categories tour reorder step, cheat sheet, and What's new updated for v2026.06.28 (title fitting, sort active state, long-press rename, feature tour spotlight, category rename promo).
+- **fix** **Cache-bust** — `whats-new-v96` data version and `2026.06-dashboard-release-v75` dashboard release token; `cat-sort-4`, `cat-sort-active-1`, `cat-title-fit-1`, `cat-longpress-1`, `cat-rename-promo-1`, `focus-ring-1`, `render-fp-icons-1`, `smart-why-popover-1`, `settings-sanitize-1`.
 
 ---
 

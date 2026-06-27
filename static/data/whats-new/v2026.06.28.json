@@ -34,6 +34,19 @@
         {
           "badge": "new",
           "text": "<strong>Long-press category rename</strong> — press and hold a category header for ~500&nbsp;ms (same timing as bookmark inline edit, not on <strong>A–Z</strong> / <strong>Rec</strong>) to rename inline on the dashboard. Double-click still works as a legacy shortcut. Cheat sheet, rotating tips, onboarding, Help, and the categories guided tour document the new gesture."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Category rename promo</strong> — the first inline rename shows a one-time <strong>Got it</strong> balloon beside the category header. <kbd>Esc</kbd> on the promo dismisses it and cancels rename. Reset via <strong>Reset all dashboard promos</strong> or <code>:promo feature</code> (EN/NL/DE/FR)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — feature tour",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Feature tour spotlight</strong> — guided tour steps now highlight footer and header targets (search, commands, finders, pages overview) via a fixed body-level focus ring cutout, fixing backdrop-filter stacking issues in Safari and other browsers."
         }
       ]
     },
@@ -72,11 +85,11 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Docs</strong> — CHANGELOG, What's new, README, MANUAL, config help (EN/NL/DE/FR), onboarding step, categories tour, and cheat sheet updated for category title fitting, sort active state, and long-press rename."
+          "text": "<strong>Docs</strong> — CHANGELOG, What's new, README, MANUAL, config help (EN/NL/DE/FR), onboarding step, categories tour, and cheat sheet updated for category title fitting, sort active state, long-press rename, feature tour spotlight, and category rename promo."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v96</code> data version and <code>2026.06-dashboard-release-v75</code> dashboard release token; <code>cat-sort-4</code>, <code>cat-title-fit-1</code>, <code>cat-longpress-1</code>, <code>render-fp-icons-1</code>, <code>smart-why-popover-1</code>, <code>settings-sanitize-1</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v96</code> data version and <code>2026.06-dashboard-release-v75</code> dashboard release token; <code>cat-sort-4</code>, <code>cat-title-fit-1</code>, <code>cat-longpress-1</code>, <code>cat-rename-promo-1</code>, <code>focus-ring-1</code>, <code>render-fp-icons-1</code>, <code>smart-why-popover-1</code>, <code>settings-sanitize-1</code>."
         }
       ]
     }
