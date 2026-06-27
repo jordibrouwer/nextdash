@@ -52,7 +52,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_No unreleased changes at this time._
+### Dashboard
+
+- **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically. `:sort` now applies to the focused category.
 
 ---
 

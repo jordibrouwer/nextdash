@@ -1794,8 +1794,12 @@ class SearchCommandsComponent {
             return [];
         }
 
-        const validMethods = ['order', 'az', 'recent', 'custom'];
-        const current = dashboard.settings.sortMethod || 'order';
+        const categoryId = window.DashboardCategorySort?.resolveFocusedCategoryId?.(dashboard) ?? '';
+        const current = window.DashboardCategorySort?.getCategorySortMode?.(
+            dashboard,
+            { id: categoryId }
+        ) || 'order';
+        const validMethods = ['order', 'az', 'recent'];
 
         if (!method) {
             return validMethods.map((sortMethod) => ({
@@ -1804,7 +1808,7 @@ class SearchCommandsComponent {
                 stateId: `sort:${sortMethod}`,
                 completion: `:sort ${sortMethod} `,
                 type: 'command',
-                action: () => this.applySort(dashboard, sortMethod),
+                action: () => this.applySort(dashboard, sortMethod, categoryId),
             }));
         }
 
@@ -1818,19 +1822,22 @@ class SearchCommandsComponent {
             shortcut: ':SORT',
             stateId: `sort:${sortMethod}`,
             type: 'command',
-            action: () => this.applySort(dashboard, sortMethod),
+            action: () => this.applySort(dashboard, sortMethod, categoryId),
         }));
     }
 
-    applySort(dashboard, method) {
-        dashboard.settings.sortMethod = method;
+    applySort(dashboard, method, categoryId) {
+        const normalized = window.DashboardCategorySort?.normalizeSortMode?.(method) || 'order';
+        const current = window.DashboardCategorySort?.getCategorySortMode?.(
+            dashboard,
+            { id: categoryId }
+        ) || 'order';
+        const next = normalized === current && normalized !== 'order' ? 'order' : normalized;
+        window.DashboardCategorySort?.setCategorySortMode?.(dashboard, categoryId, next);
         if (typeof dashboard.renderDashboard === 'function') {
             dashboard.renderDashboard();
         }
-        if (typeof dashboard.saveSettings === 'function') {
-            dashboard.saveSettings();
-        }
-        return this._paletteRefresh(`sort:${method}`);
+        return this._paletteRefresh(`sort:${next}`);
     }
 
     handleLayoutVersionCommand(args) {

@@ -500,7 +500,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:category` / `:cat` | Jump to category or smart collection by number or name |
 | `:filter <tag>` / `:filter clear` | Apply or clear dashboard tag filter (OR, same as tag cloud) |
 | `:remove` | Delete selected |
-| `:sort order\|az\|recent\|custom` | Sort mode |
+| `:sort order\|az\|recent` | Sort mode for the focused category |
 | `:open all` / `:open pinned` | Open all or pinned bookmarks on page (safe batch cap) |
 | `:open tag <name>` / `:open category <name>` | Open bookmarks matching tag or category on current page |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
@@ -582,9 +582,9 @@ Use **config → pages** to rename a page on any device.
 
 ### Sorting
 
-- Pinned bookmarks stay on top; pinned sort is alphabetical.  
-- Non-pinned: manual, A–Z, recent, etc. (config and `:sort`).  
-- **`:sort custom`** respects manual drag order.
+- Each category header has **A–Z** and **Recent** toggles; click an active toggle again to return to manual drag order.
+- Sort is view-only: bookmark order in data is unchanged until you drag (manual mode only).
+- **`:sort`** applies to the category you are focused in (keyboard selection or first category as fallback).
 
 ### Collapse
 

@@ -25,7 +25,6 @@ const SETTING_INFO_DEFS = [
     { type: 'checkbox', targetId: 'show-note-icon-checkbox', btnId: 'show-note-icon-info-btn', title: 'showNoteIconInfoTitle', message: 'showNoteIconInfoMessage' },
     { type: 'checkbox', targetId: 'show-link-preview-cards-checkbox', btnId: 'show-link-preview-cards-info-btn', title: 'showLinkPreviewCardsInfoTitle', message: 'showLinkPreviewCardsInfoMessage' },
     { type: 'labelFor', labelFor: 'link-preview-hover-delay-select', btnId: 'link-preview-hover-delay-info-btn', title: 'linkPreviewHoverDelayInfoTitle', message: 'linkPreviewHoverDelayInfoMessage' },
-    { type: 'labelFor', labelFor: 'sort-method-select', btnId: 'sort-method-info-btn', title: 'bookmarkSortingInfoTitle', message: 'bookmarkSortingInfoMessage' },
     { type: 'checkbox', targetId: 'new-tab-checkbox', btnId: 'new-tab-info-btn', title: 'openLinksInNewTabInfoTitle', message: 'openLinksInNewTabInfoMessage' },
     { type: 'checkbox', targetId: 'paste-url-quick-add-checkbox', btnId: 'paste-url-quick-add-info-btn', title: 'pasteUrlQuickAddInfoTitle', message: 'pasteUrlQuickAddInfoMessage' },
     { type: 'checkbox', targetId: 'allow-local-bookmarks-checkbox', btnId: 'allow-local-bookmarks-info-btn', title: 'allowLocalBookmarksInfoTitle', message: 'allowLocalBookmarksInfoMessage' },

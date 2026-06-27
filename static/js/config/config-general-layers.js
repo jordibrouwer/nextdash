@@ -239,9 +239,6 @@ class ConfigGeneralLayers {
             <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Pin icons, link previews, category collapse, and more are under Advanced → Bookmarks.</p>
         `;
 
-        const sortGroup = display.querySelector('#sort-method-select')?.closest('.form-group');
-        if (sortGroup) essentials.appendChild(sortGroup);
-
         const tree = document.createElement('div');
         tree.className = 'checkbox-tree';
 

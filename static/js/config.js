@@ -107,7 +107,7 @@ class ConfigManager {
             showShortcuts: true,
             showPinIcon: false,
             showNoteIcon: true,
-            sortMethod: 'order',
+            categorySortModesMigrated: true,
             layoutPreset: 'default',
             layoutVersion: 'classic',
             packedColumns: true,

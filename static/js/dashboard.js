@@ -68,7 +68,7 @@ class Dashboard {
             showIcons: true,
             showLinkPreviewCards: false,
             linkPreviewHoverDelayMs: 150,
-            sortMethod: 'order',
+            categorySortModesMigrated: true,
             layoutPreset: 'default',
             layoutVersion: 'classic',
             densityMode: 'compact',

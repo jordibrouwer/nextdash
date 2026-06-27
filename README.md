@@ -134,7 +134,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
 - `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
-- `:sort <method>` — `order` / `az` / `recent` / `custom`
+- `:sort <method>` — per focused category: `order` / `az` / `recent`
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
 - `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
 - `:health [filter]` — open health page — `broken`, `duplicate`, `stale`, `refresh`, …; `:health page [n]` filters by page

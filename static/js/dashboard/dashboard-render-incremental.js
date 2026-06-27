@@ -169,6 +169,7 @@ class DashboardRenderIncremental {
             nameSpan.textContent = nextName;
             nameSpan.title = category.name;
         }
+        window.DashboardCategorySort?.updateCategorySortUi?.(d, categoryEl, category);
     }
 
     patchCategoryBookmarks(categoryEl, category, bookmarks, options = {}) {

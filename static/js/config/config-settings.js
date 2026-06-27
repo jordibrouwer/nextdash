@@ -655,14 +655,6 @@ class ConfigSettings {
             });
         }
 
-        const sortMethodSelect = document.getElementById('sort-method-select');
-        if (sortMethodSelect) {
-            sortMethodSelect.value = settings.sortMethod || 'order';
-            sortMethodSelect.addEventListener('change', (e) => {
-                settings.sortMethod = e.target.value;
-            });
-        }
-
         const layoutVersionSelect = document.getElementById('layout-version-select');
         if (layoutVersionSelect) {
             const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern', 'glass'];
@@ -2057,8 +2049,6 @@ class ConfigSettings {
         if (showPinIconCheckbox) settings.showPinIcon = showPinIconCheckbox.checked;
         const showNoteIconCheckbox = document.getElementById('show-note-icon-checkbox');
         if (showNoteIconCheckbox) settings.showNoteIcon = showNoteIconCheckbox.checked;
-        const sortMethodSelectUI = document.getElementById('sort-method-select');
-        if (sortMethodSelectUI) settings.sortMethod = sortMethodSelectUI.value;
         const autoDarkModeCheckboxUI = document.getElementById('auto-dark-mode-checkbox');
         if (autoDarkModeCheckboxUI) settings.autoDarkMode = autoDarkModeCheckboxUI.checked;
         const showSearchFlowBannerCheckboxUI = document.getElementById('show-search-flow-banner-checkbox');
@@ -2735,7 +2725,6 @@ class ConfigSettings {
         watch('density-mode-select', 'densityMode');
         watch('layout-version-select', 'layoutVersion');
         watch('layout-preset-select', 'layoutPreset');
-        watch('sort-method-select', 'sortMethod');
         this.watchFontSizeGroup(settings, markDirty);
         watch('font-preset-select', 'fontPreset');
         watch('font-weight-select', 'fontWeight');
@@ -2863,7 +2852,7 @@ class ConfigSettings {
             enableCustomFavicon: false,
             customFaviconPath: '',
             language: 'en',
-            sortMethod: 'order',
+            categorySortModesMigrated: true,
             layoutVersion: 'classic',
             layoutPreset: 'default',
             pasteUrlQuickAdd: true,

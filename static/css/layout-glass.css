@@ -501,7 +501,10 @@ body[data-layout-version="glass"] .smart-collection-why-btn {
     border-radius: var(--layout-radius-pill);
 }
 
-body[data-layout-version="glass"] .smart-collection-why-btn[data-tooltip]::after {
+body[data-layout-version="glass"] .smart-collection-why-popover {
+    background: color-mix(in srgb, var(--background-secondary) 96%, var(--background-primary));
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-md);
 }

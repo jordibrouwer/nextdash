@@ -488,6 +488,7 @@ class DashboardData {
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
+        window.DashboardCategorySort?.migrateLegacySortForPage?.(d, targetPageId);
         d.refreshButtonTipsOnPageChange?.();
 
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);

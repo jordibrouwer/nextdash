@@ -63,6 +63,7 @@ type Category struct {
 	Name       string `json:"name"`
 	OriginalID string `json:"originalId,omitempty"` // Track original ID for renames
 	Icon       string `json:"icon,omitempty"`       // Custom icon for category
+	SortMode   string `json:"sortMode,omitempty"`   // Bookmark sort within category: order, az, recent
 }
 
 type Page struct {
@@ -150,7 +151,9 @@ type Settings struct {
 	ShowPinIcon                 bool                             `json:"showPinIcon"`                 // Show pin icon next to pinned bookmarks
 	ShowNoteIcon                bool                             `json:"showNoteIcon"`                // Show note icon next to bookmarks with a note
 	IncludeFindersInSearch      bool                             `json:"includeFindersInSearch"`      // Include finders in normal search
-	SortMethod                  string                           `json:"sortMethod"`                  // Sort method for bookmarks: order, az, recent, custom
+	SortMethod                  string                           `json:"sortMethod,omitempty"`        // Legacy global sort (migrated to per-category sortMode)
+	CategorySortModes           map[string]map[string]string     `json:"categorySortModes,omitempty"` // Per-page sort for uncategorized/orphan categories
+	CategorySortModesMigrated   bool                             `json:"categorySortModesMigrated"`   // Legacy sortMethod migrated to per-category modes
 	LayoutPreset                string                           `json:"layoutPreset"`                // Dashboard layout preset
 	LayoutVersion               string                           `json:"layoutVersion"`               // Dashboard layout version: classic, modern, glass
 	DensityMode                 string                           `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense

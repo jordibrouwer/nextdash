@@ -177,7 +177,7 @@ class DashboardRenderCore {
 
         d.categories.forEach((category) => {
             const id = String(category.id);
-            const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || []);
+            const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || [], category);
             if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0) {
                 return;
             }
@@ -190,7 +190,7 @@ class DashboardRenderCore {
             const uncategorizedCategory = { id: '', name: _unc !== 'dashboard.uncategorized' ? _unc : 'Uncategorized' };
             columnBlocks.push({
                 category: uncategorizedCategory,
-                bookmarks: this.sortBookmarks(uncategorizedBookmarks),
+                bookmarks: this.sortBookmarks(uncategorizedBookmarks, uncategorizedCategory),
             });
         }
 
@@ -214,7 +214,7 @@ class DashboardRenderCore {
                     name: `${orphanLabelBase} (${id})`,
                     icon: '⚠',
                 },
-                bookmarks: this.sortBookmarks(orphanBookmarks),
+                bookmarks: this.sortBookmarks(orphanBookmarks, { id }),
             });
         });
 
@@ -244,6 +244,7 @@ class DashboardRenderCore {
         if (!container) return;
 
         d._abortInlineEditForRender();
+        window.DashboardSmartWhyPopover?.hide?.();
 
         if (d.hasActiveTagFilters()) {
             d._categoryListsCache = null;
@@ -396,10 +397,13 @@ class DashboardRenderCore {
     }
 
 
-    sortBookmarks(bookmarks) {
+    sortBookmarks(bookmarks, categoryContext) {
         const d = this.dash;
         const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])];
-        const method = d.settings.sortMethod || 'order';
+        const category = typeof categoryContext === 'object' && categoryContext !== null
+            ? categoryContext
+            : (categoryContext != null ? { id: categoryContext } : null);
+        const method = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';
         const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
         const pinned = pinNotesUiEnabled
             ? sorted
@@ -446,6 +450,10 @@ class DashboardRenderCore {
                 return;
             }
             const categoryId = listElement.getAttribute('data-category-id') || '';
+            const sortMode = window.DashboardCategorySort?.getCategorySortMode(d, { id: categoryId }) || 'order';
+            if (sortMode !== 'order') {
+                return;
+            }
 
             const reorderInstance = new DragReorder({
                 container: listElement,
@@ -993,6 +1001,10 @@ class DashboardRenderCore {
         }
         titleElement.appendChild(nameSpan);
 
+        if (!isSmartCollection && window.DashboardCategorySort?.createSortControls) {
+            titleElement.appendChild(window.DashboardCategorySort.createSortControls(d, category, this));
+        }
+
         const chevron = document.createElement('span');
         chevron.className = 'category-chevron';
         chevron.setAttribute('aria-hidden', 'true');
@@ -1005,11 +1017,11 @@ class DashboardRenderCore {
                 whyBtn.type = 'button';
                 whyBtn.className = 'smart-collection-why-btn';
                 whyBtn.textContent = 'ℹ';
-                whyBtn.setAttribute('data-tooltip', whyHint);
                 whyBtn.setAttribute(
                     'aria-label',
                     d.language?.t?.('dashboard.smartWhyAria') || 'Why am I seeing this collection?'
                 );
+                window.DashboardSmartWhyPopover?.attach?.(whyBtn, whyHint);
                 whyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -1052,6 +1064,10 @@ class DashboardRenderCore {
         // Bookmarks list
         const bookmarksList = document.createElement('div');
         bookmarksList.className = 'bookmarks-list';
+        const categorySortMode = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';
+        if (!isSmartCollection && categorySortMode !== 'order') {
+            bookmarksList.classList.add('bookmarks-list--sort-active');
+        }
         bookmarksList.setAttribute('data-category-id', category.id || '');
         bookmarksList.setAttribute('data-bookmarks-list', 'true');
         bookmarksList.setAttribute('role', 'presentation');

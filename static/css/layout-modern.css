@@ -466,7 +466,7 @@ body[data-layout-version="modern"] .smart-collection-why-btn {
     border-radius: var(--layout-radius-pill);
 }
 
-body[data-layout-version="modern"] .smart-collection-why-btn[data-tooltip]::after {
+body[data-layout-version="modern"] .smart-collection-why-popover {
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-md);
 }
