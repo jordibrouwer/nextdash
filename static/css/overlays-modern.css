@@ -265,7 +265,7 @@ body[data-layout-version="modern"] .feature-tour-btn:hover:not(:disabled) {
     box-shadow: var(--layout-shadow-sm);
 }
 
-body[data-layout-version="modern"] .feature-tour-highlight {
+body[data-layout-version="modern"] .feature-tour-focus-ring {
     border-radius: var(--layout-radius-sm);
 }
 

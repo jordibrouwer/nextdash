@@ -22,7 +22,15 @@
     }
 }
 
-/* Card is a direct child of body so it sits above the highlighted element (z-index 2201) */
+/* Spotlight steps: dimming comes from the body-level focus ring cutout. */
+.feature-tour-overlay.feature-tour-overlay--spotlight {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: none;
+}
+
+/* Card is a direct child of body so it sits above the focus ring (z-index 2201). */
 .feature-tour-card {
     position: fixed;
     z-index: 2202;
@@ -120,36 +128,35 @@
     color: var(--text-secondary);
 }
 
-.feature-tour-highlight {
+/* Positioned on body in JS — cutout dim, independent of parent stacking contexts. */
+.feature-tour-focus-ring {
+    position: fixed;
+    z-index: 2201;
+    pointer-events: none;
+    border: 3px solid var(--accent-primary);
+    border-radius: 6px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.58);
+    box-sizing: border-box;
+}
+
+.feature-tour-focus-ring[hidden] {
+    display: none !important;
+}
+
+body[data-tour-active="true"] .feature-tour-target-active {
     position: relative;
     z-index: 2201;
-    box-shadow: 0 0 0 2px var(--accent-primary), 0 0 0 6px color-mix(in srgb, var(--accent-primary) 18%, transparent);
 }
 
 @media (max-width: 768px) {
-    .feature-tour-highlight {
-        box-shadow: 0 0 0 1px var(--accent-primary), 0 0 0 3px color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    .feature-tour-focus-ring {
+        border-width: 2px;
     }
 }
 
-/* Elevate the header and button bar above the overlay so highlighted
-   elements are crisp and interactive — their parent stacking contexts
-   (z-index 1000 / no position) would otherwise keep them painted below
-   the overlay's backdrop-filter blur. */
-body[data-tour-active="true"] .header-top {
-    position: relative;
-    z-index: 2201;
-    pointer-events: none;
-}
-
-body[data-tour-active="true"] .button-container {
-    z-index: 2201;
-    pointer-events: none;
-}
-
-/* Force commands, finders and search buttons visible during the tour */
-body[data-tour-active="true"] .commands-button,
-body[data-tour-active="true"] .finders-button,
+/* Beat mobile-experience hide rules while the tour references footer buttons. */
+body[data-tour-active="true"] #commands-button,
+body[data-tour-active="true"] #finders-button,
 body[data-tour-active="true"] #search-button {
     display: flex !important;
 }

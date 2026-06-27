@@ -6,7 +6,9 @@ class FeatureTour {
         this.steps = this.buildSteps();
         this.currentStep = 0;
         this.overlay = null;
+        this.focusRing = null;
         this.highlightedElement = null;
+        this.repositionHandler = null;
         this.keyHandler = null;
         this.onPersist = typeof options.onPersist === 'function' ? options.onPersist : null;
         this.onApplySettings = typeof options.onApplySettings === 'function' ? options.onApplySettings : null;
@@ -213,8 +215,14 @@ class FeatureTour {
             secondary.onclick = null;
         }
 
-        this.positionCard(step);
         this.highlight(step.selector);
+        this.positionCard(step);
+        requestAnimationFrame(() => {
+            if (this.highlightedElement) {
+                this.syncFocusRing(this.highlightedElement);
+            }
+            this.positionCard(step);
+        });
     }
 
     renderFields(container, step) {
@@ -354,25 +362,103 @@ class FeatureTour {
         card.style.transform = 'none';
     }
 
-    highlight(selector) {
+    ensureFocusRing() {
+        if (this.focusRing) {
+            return;
+        }
+        const ring = document.createElement('div');
+        ring.className = 'feature-tour-focus-ring';
+        ring.hidden = true;
+        ring.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(ring);
+        this.focusRing = ring;
+    }
+
+    clearHighlight() {
         if (this.highlightedElement) {
-            this.highlightedElement.classList.remove('feature-tour-highlight');
+            this.highlightedElement.classList.remove('feature-tour-target-active');
             this.highlightedElement = null;
         }
+        if (this.focusRing) {
+            this.focusRing.hidden = true;
+        }
+        if (this.overlay) {
+            this.overlay.classList.remove('feature-tour-overlay--spotlight');
+        }
+        this.unbindReposition();
+    }
+
+    bindReposition() {
+        if (this.repositionHandler) {
+            return;
+        }
+        this.repositionHandler = () => {
+            if (!this.highlightedElement) {
+                return;
+            }
+            this.syncFocusRing(this.highlightedElement);
+            this.positionCard(this.steps[this.currentStep]);
+        };
+        window.addEventListener('resize', this.repositionHandler);
+        window.addEventListener('scroll', this.repositionHandler, true);
+    }
+
+    unbindReposition() {
+        if (!this.repositionHandler) {
+            return;
+        }
+        window.removeEventListener('resize', this.repositionHandler);
+        window.removeEventListener('scroll', this.repositionHandler, true);
+        this.repositionHandler = null;
+    }
+
+    syncFocusRing(element) {
+        this.ensureFocusRing();
+        const pad = 6;
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 1 || rect.height < 1) {
+            this.focusRing.hidden = true;
+            return;
+        }
+        this.focusRing.style.top = `${Math.round(rect.top - pad)}px`;
+        this.focusRing.style.left = `${Math.round(rect.left - pad)}px`;
+        this.focusRing.style.width = `${Math.round(rect.width + pad * 2)}px`;
+        this.focusRing.style.height = `${Math.round(rect.height + pad * 2)}px`;
+        this.focusRing.hidden = false;
+    }
+
+    revealTarget(selector) {
+        return document.querySelector(selector);
+    }
+
+    highlight(selector) {
+        this.clearHighlight();
         if (!selector) {
             return;
         }
-        const element = document.querySelector(selector);
+        const element = this.revealTarget(selector);
         if (!element) {
             return;
         }
-        element.classList.add('feature-tour-highlight');
+        element.classList.add('feature-tour-target-active');
         this.highlightedElement = element;
+        if (this.overlay) {
+            this.overlay.classList.add('feature-tour-overlay--spotlight');
+        }
         const computedStyle = window.getComputedStyle ? window.getComputedStyle(element) : null;
         const isFixedLike = computedStyle && (computedStyle.position === 'fixed' || computedStyle.position === 'sticky');
         if (!isFixedLike && typeof element.scrollIntoView === 'function') {
             element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            window.setTimeout(() => {
+                if (this.highlightedElement === element) {
+                    this.syncFocusRing(element);
+                    this.positionCard(this.steps[this.currentStep]);
+                }
+            }, 320);
+        } else {
+            this.syncFocusRing(element);
         }
+        this.bindReposition();
     }
 
     nextStep() {
@@ -405,14 +491,15 @@ class FeatureTour {
             this.persisted = true;
             Promise.resolve(this.onPersist()).catch(() => {});
         }
-        if (this.highlightedElement) {
-            this.highlightedElement.classList.remove('feature-tour-highlight');
-            this.highlightedElement = null;
-        }
+        this.clearHighlight();
         document.body.removeAttribute('data-tour-active');
         if (this.card) {
             this.card.remove();
             this.card = null;
+        }
+        if (this.focusRing) {
+            this.focusRing.remove();
+            this.focusRing = null;
         }
         if (this.overlay) {
             this.overlay.remove();
