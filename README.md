@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.26**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.28**.
 
 ---
 
@@ -134,7 +134,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
 - `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
-- `:sort <method>` — per focused category: `order` / `az` / `recent`
+- `:sort <method>` — per focused category: `order` / `az` / `recent` (palette shows the category name)
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
 - `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
 - `:health [filter]` — open health page — `broken`, `duplicate`, `stale`, `refresh`, …; `:health page [n]` filters by page
@@ -204,6 +204,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard; bulk tag-filter move/delete groups rapid toasts into one message
+- **Per-category sort** — **A–Z** and **Rec** chips in each category header (including *Other* and unknown-category blocks); click an active chip again for manual order; `:sort` in the command palette; legacy global sort removed from Config → General
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks)
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
@@ -229,6 +230,7 @@ Dynamic bookmark groups that appear automatically:
 - Custom theme editor (`config#colors`) — dark/light default palettes, **packaged themes** subtab (edit built-in families), custom theme list with **export/import** and **undo**; live preview on palette cards with contrast warnings; optional **Theme** tab guided tour; on mobile the editor is read-only (viewer mode)
 - Auto dark mode — follows system light/dark without overwriting your saved theme palette id
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
+- **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
 - ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first, older notes on scroll
@@ -255,7 +257,7 @@ Dynamic bookmark groups that appear automatically:
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
-- Pin bookmarks to keep them at the top
+- Pin bookmarks to keep them at the top of their category (no pin badge on dashboard rows; use `:pin` / inline edit)
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped; **missing icons are batch-fetched with a progress bar**
 - Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes)
 - Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups; after restore, missing bookmark icons are prefetched the same way

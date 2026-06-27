@@ -621,6 +621,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 - Auto-fetch title/description/image when adding URLs (if enabled).  
 - **`[`** toggles preview card on keyboard focus.  
+- **Show favicons** — **Config → General → Bookmarks** or `:favicons on/off` on the dashboard.  
 - **Fetch favicon** in config detail or health actions.
 
 ### Shortcuts
@@ -832,7 +833,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 #### Layout and structure
 
-- **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (icons, new-tab, sort, quick-add, page tabs).  
+- **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
 - **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
 
 ### Guided config tours

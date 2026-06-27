@@ -1,0 +1,67 @@
+{
+  "tag": "v2026.06.28",
+  "date": "June 2026",
+  "releasedAt": "2026-06-28",
+  "sections": [
+    {
+      "title": "Dashboard — per-category sort",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Per-category bookmark sort</strong> — each category header has <strong>A–Z</strong> and <strong>Rec</strong> chips (click again for manual drag order). The global sort setting was removed from <strong>Config → General</strong>; legacy <code>sortMethod</code> migrates across <em>all pages</em> on first dashboard load. <code>:sort order</code> / <code>az</code> / <code>recent</code> applies to the focused category and shows the category name in the command palette."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Category sort UX</strong> — sort chips stay at full opacity; buttons are keyboard-focusable with <strong>←</strong>/<strong>→</strong> navigation; category collapse ignores clicks on sort controls; virtual blocks (<em>Other</em>, unknown category) get header sort controls when missing after incremental patches."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart collection ℹ popover</strong> — the &quot;why am I seeing this?&quot; hint on smart collections uses a fixed-position body popover with a readable background (replacing the unreadable CSS tooltip)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — pins, notes &amp; favicons",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Pin &amp; note row icons removed</strong> — pin/note toggles are gone from <strong>Config → General</strong> and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes stay searchable in fuzzy search and editable via <code>:note</code>, inline edit, and <code>:pin</code> / <code>:unpin</code> / <code>G+P</code> / <code>:open pinned</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon toggle + incremental render</strong> — <code>bookmarkRenderFingerprint</code> includes <code>showIcons</code> so toggling <strong>Show favicons</strong> (<code>:favicons on/off</code>) refreshes rows in place without a full grid rebuild."
+        }
+      ]
+    },
+    {
+      "title": "Config &amp; persistence",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Legacy sort migration</strong> — <code>migrateLegacySortAllPages</code> applies the old global <code>sortMethod</code> to every page's categories in one pass; transient <code>_sortMigratedPageIds</code> is stripped before settings persist (<code>settings-sanitize.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Show favicons</strong> — <strong>Config → General → Bookmarks</strong> exposes the favicon visibility toggle with ℹ help and Playwright coverage (<code>dashboard-show-icons.spec.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Developer &amp; docs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Playwright</strong> — <code>dashboard-category-sort.spec.js</code> (A–Z toggle, drag-handle hide, full-opacity sort chips); favicon toggle spec; category-sort and smart-why-popover modules."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Docs</strong> — CHANGELOG, What's new, README, MANUAL, and config help (EN/NL/DE/FR) updated for v2026.06.28."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v96</code> data version and <code>2026.06-dashboard-release-v75</code> dashboard release token."
+        }
+      ]
+    }
+  ]
+}

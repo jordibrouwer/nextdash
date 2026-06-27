@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.28 — June 2026](#v20260628--june-2026)
 - [v2026.06.27 — June 2026](#v20260627--june-2026)
 - [v2026.06.26 — June 2026](#v20260626--june-2026)
 - [v2026.06.25 — June 2026](#v20260625--june-2026)
@@ -52,13 +53,33 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+_(Nothing yet — see [v2026.06.28](#v20260628--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.28 — June 2026
+
+**Per-category bookmark sort, pin/note polish & favicon incremental refresh** — each category sorts independently with header chips and `:sort`; pin/note row icons are gone but pins, notes, and commands stay fully usable; legacy `sortMethod` migrates on all pages at once; favicon toggles refresh rows in place.
+
 ### Dashboard
 
-- **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically across all pages on first load. `:sort` now applies to the focused category.
-- **change** **Pin & note row icons removed** — pin/note toggles are gone from Config → General and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes remain searchable (`:note`, fuzzy search) and editable inline or via commands (`:pin`, `:unpin`, `G` then `P`).
+- **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically across all pages on first load. `:sort` applies to the focused category and shows its name in the command palette.
+- **fix** **Smart collection ℹ popover** — “why am I seeing this?” hint uses a fixed-position body popover with a readable background (replacing the unreadable CSS `::after` tooltip).
+- **change** **Pin & note row icons removed** — pin/note toggles are gone from Config → General and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes remain searchable (`:note`, fuzzy search) and editable inline or via commands (`:pin`, `:unpin`, `G` then `P`, `:open pinned`).
 - **change** **Category sort UX** — A–Z / Recent chips stay at full opacity; sort buttons are keyboard-focusable with arrow navigation; category collapse ignores clicks on sort controls; `:sort` palette rows show the focused category name.
 - **fix** **Orphan & uncategorized sort UI** — virtual category blocks (Other, unknown category) get sort header controls when missing after incremental patches.
 - **fix** **Favicon toggle + incremental render** — `bookmarkRenderFingerprint` includes `showIcons` so toggling favicons refreshes rows without a full forced rebuild.
+
+### Config & persistence
+
+- **fix** **Legacy sort migration** — `migrateLegacySortAllPages` applies old global `sortMethod` to every page's categories in one pass on dashboard load; `_sortMigratedPageIds` stripped via `settings-sanitize.js` before settings persist.
+- **fix** **Show favicons** — Config → General → Bookmarks exposes favicon visibility with ℹ help; `:favicons on/off` on the dashboard.
+
+### Developer & docs
+
+- **new** **Playwright** — `dashboard-category-sort.spec.js`, `dashboard-show-icons.spec.js`; `dashboard-category-sort.js`, `dashboard-smart-why-popover.js`, `settings-sanitize.js`.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, config help (EN/NL/DE/FR), and What's new updated for v2026.06.28.
+- **fix** **Cache-bust** — `whats-new-v96` data version and `2026.06-dashboard-release-v75` dashboard release token; `cat-sort-3`, `cat-sort-ux-1`, `render-fp-icons-1`, `smart-why-popover-1`, `settings-sanitize-1`.
 
 ---
 
