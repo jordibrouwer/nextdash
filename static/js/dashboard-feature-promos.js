@@ -1,5 +1,5 @@
 /**
- * One-time discoverability promos: inline edit, tag cloud, tag filter bulk, recent bookmarks, quick move, page overview.
+ * One-time discoverability promos: inline edit, tag cloud, tag filter bulk, recent bookmarks, quick move, page overview, category rename.
  */
 (function initDashboardFeaturePromos(global) {
     const CLICK_SHIELD_MS = 600;
@@ -79,6 +79,14 @@
             bodyKey: 'categoryCollapsePromoBody',
             bodyFallback: '<kbd>Enter</kbd> or <kbd>Space</kbd> on a category header collapses or expands it · collapsed sections are skipped while navigating bookmarks',
             dismissKey: 'categoryCollapsePromoDismiss',
+        },
+        categoryRename: {
+            storageKey: 'nextdash:dashboard-category-rename-promo-confirmed-v1',
+            titleKey: 'categoryRenamePromoTitle',
+            titleFallback: 'Rename category',
+            bodyKey: 'categoryRenamePromoBody',
+            bodyFallback: 'Press and hold a category title (~500 ms) to rename on the dashboard · <kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel · double-click still works',
+            dismissKey: 'categoryRenamePromoDismiss',
         },
         quickMove: {
             storageKey: 'nextdash:dashboard-quick-move-promo-confirmed-v1',
@@ -172,6 +180,7 @@
         if (global.DashboardTagCloud?.modalOpen && pendingKind !== 'tagCloud') return true;
         if (document.getElementById('page-overview-overlay') && pendingKind !== 'pageOverview') return true;
         if (document.body.classList.contains('bookmark-inline-edit-active') && pendingKind !== 'inlineEdit') return true;
+        if (document.querySelector('.category-title--renaming') && pendingKind !== 'categoryRename') return true;
         if (document.getElementById('move-popover') && pendingKind !== 'quickMove') return true;
         if (document.getElementById('delete-popover') && pendingKind !== 'quickDelete') return true;
         if (document.getElementById('tag-popover') && pendingKind !== 'quickTag') return true;
@@ -276,6 +285,12 @@
             if (event.key === 'Escape') {
                 const kind = openKind;
                 confirmOpen();
+                if (kind === 'categoryRename') {
+                    const input = document.querySelector('.category-title--renaming .category-rename-input');
+                    if (input instanceof HTMLInputElement) {
+                        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+                    }
+                }
                 if (kind === 'inlineEdit' && document.body.classList.contains('bookmark-inline-edit-active')) {
                     const dash = window.dashboardInstance;
                     const inline = dash?.inlineEdit;
@@ -503,6 +518,13 @@
         if (!panel || typeof ResizeObserver === 'undefined') return;
         boundPanelResize = new ResizeObserver(() => reposition());
         boundPanelResize.observe(panel);
+    }
+
+    function getCategoryRenameTitleElement() {
+        if (anchorEl instanceof HTMLElement && anchorEl.classList.contains('category-title')) {
+            return anchorEl;
+        }
+        return document.querySelector('.category-title--renaming');
     }
 
     function getInlineEditFormElement() {
@@ -775,6 +797,9 @@
         if (kind === 'cheatsheet') {
             bindCheatsheetModalResize();
         }
+        if (kind === 'categoryRename') {
+            bindAnchorResize(getCategoryRenameTitleElement);
+        }
         const positionAfterLayout = () => {
             positionPromo();
             if (kind !== 'inlineEdit' && kind !== 'tagFilterBulk') {
@@ -784,14 +809,15 @@
         if (kind === 'tagCloud' || kind === 'pageOverview' || kind === 'inlineEdit'
             || kind === 'tagFilterBulk' || kind === 'recentBookmarks'
             || kind === 'previewCard' || kind === 'quickAddOmnibox' || kind === 'datePopover'
-            || kind === 'categoryCollapse' || kind === 'cheatsheet') {
+            || kind === 'categoryCollapse' || kind === 'categoryRename' || kind === 'cheatsheet') {
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 positionAfterLayout();
                 if (kind === 'pageOverview' || kind === 'recentBookmarks' || kind === 'cheatsheet') {
                     setTimeout(positionAfterLayout, 180);
                 }
                 if (kind === 'inlineEdit' || kind === 'tagFilterBulk' || kind === 'previewCard'
-                    || kind === 'quickAddOmnibox' || kind === 'datePopover' || kind === 'categoryCollapse') {
+                    || kind === 'quickAddOmnibox' || kind === 'datePopover' || kind === 'categoryCollapse'
+                    || kind === 'categoryRename') {
                     setTimeout(positionAfterLayout, 200);
                 }
             }));

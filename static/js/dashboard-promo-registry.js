@@ -24,6 +24,7 @@
             'nextdash:dashboard-date-popover-promo-confirmed-v1',
             'nextdash:dashboard-weather-geolocation-promo-confirmed-v1',
             'nextdash:dashboard-category-collapse-promo-confirmed-v1',
+            'nextdash:dashboard-category-rename-promo-confirmed-v1',
             'nextdash:dashboard-quick-move-promo-confirmed-v1',
             'nextdash:dashboard-quick-delete-promo-confirmed-v1',
             'nextdash:dashboard-page-overview-promo-confirmed-v1',

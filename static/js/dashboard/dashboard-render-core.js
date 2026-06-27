@@ -894,6 +894,7 @@ class DashboardRenderCore {
         nameSpan.replaceWith(input);
         input.focus();
         input.select();
+        window.DashboardFeaturePromos?.tryShowDeferred?.('categoryRename', titleEl);
 
         let done = false;
 
