@@ -461,7 +461,7 @@ class DashboardSetup {
             ['tipHealthStale', 'Tip: check health page <code>stale</code> bookmarks you haven\'t used recently'],
             ['tipHealthMerge', 'Tip: merge duplicate bookmarks in health page bulk actions'],
             ['tipCommandNote', 'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly'],
-            ['tipInlineRename', 'Tip: double-click a page tab or category title to rename it inline'],
+            ['tipInlineRename', 'Tip: press and hold a category title (~500 ms) to rename it; double-click a page tab to rename the page'],
             ['tipPreviewCopyUrl', 'Tip: hover a preview card and click the clipboard icon to copy the URL'],
             ['tipCompactBadge', 'Tip: compact/dense mode shows an open-count badge on each bookmark'],
             ['tipConfigSearchBar', 'Tip: use the search bar in config → bookmarks to filter by name, URL, tag, or note'],

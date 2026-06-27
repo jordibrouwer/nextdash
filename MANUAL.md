@@ -141,7 +141,7 @@ Switch pages with `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`).
 
 - Collapse/expand per category on the dashboard.  
 - Drag the **grip** on a category title to reorder sections.  
-- Double-click a category header to rename.
+- Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works.
 
 ### 4.3 Bookmarks
 
@@ -988,6 +988,7 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | Gesture | Action |
 |---------|--------|
 | Long-press row | Inline edit |
+| Long-press category header (~500 ms) | Rename category (not on sort buttons) |
 | Swipe (if enabled) | Change page |
 | Tap **Search** | Open search overlay (with mode tabs on phone) |
 | Tap **+ Bookmark** | Full add-bookmark modal |

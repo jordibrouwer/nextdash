@@ -422,7 +422,7 @@ class ConfigCategoriesTour {
             await this.moveTourDemoCategoryToFront();
             step.body = this.t(
                 'configCategoriesTourReorderDoneBody',
-                'We moved “news” to the first position — check your dashboard: the category tab order follows this list. Drag the ⠿ handle anytime to change order yourself.'
+                    'We moved “news” to the first position — check your dashboard: the category tab order follows this list. Drag the ⠿ handle anytime to change order yourself. Press and hold a category title (~500 ms) to rename it inline.'
             );
             step.getTarget = () => this.findDemoDragHandle() || this.findDemoCategoryElement();
             step.selector = null;

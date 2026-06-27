@@ -798,6 +798,87 @@ class DashboardRenderCore {
     }
 
 
+    _attachCategoryTitleLongPress(titleEl, nameSpan, category) {
+        const longMs = window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
+        const slop = 8;
+        let timer = null;
+        let startX = 0;
+        let startY = 0;
+        let activePointerId = null;
+
+        const clearTimer = () => {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            titleEl.classList.remove('category-title-longpress-armed');
+            activePointerId = null;
+        };
+
+        const isExcludedTarget = (target) => Boolean(
+            target?.closest?.('.category-sort-controls, .smart-collection-why-btn, .category-rename-input')
+        );
+
+        const onPointerDown = (e) => {
+            if (e.button !== undefined && e.button !== 0) {
+                return;
+            }
+            if (isExcludedTarget(e.target)) {
+                return;
+            }
+            if (titleEl.classList.contains('category-title--renaming')) {
+                return;
+            }
+            clearTimer();
+            startX = e.clientX;
+            startY = e.clientY;
+            activePointerId = e.pointerId;
+            titleEl.classList.add('category-title-longpress-armed');
+            timer = setTimeout(() => {
+                timer = null;
+                titleEl.classList.remove('category-title-longpress-armed');
+                activePointerId = null;
+                if (titleEl.classList.contains('category-title--renaming')) {
+                    return;
+                }
+                this._startCategoryRename(titleEl, nameSpan, category);
+                const blockClick = (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                };
+                titleEl.addEventListener('click', blockClick, { capture: true, once: true });
+            }, longMs);
+        };
+
+        const onPointerMove = (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) {
+                return;
+            }
+            if (!timer) {
+                return;
+            }
+            const dx = Math.abs(e.clientX - startX);
+            const dy = Math.abs(e.clientY - startY);
+            if (dx > slop || dy > slop) {
+                clearTimer();
+            }
+        };
+
+        const onPointerEnd = (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) {
+                return;
+            }
+            clearTimer();
+        };
+
+        titleEl.addEventListener('pointerdown', onPointerDown);
+        titleEl.addEventListener('pointermove', onPointerMove);
+        titleEl.addEventListener('pointerup', onPointerEnd);
+        titleEl.addEventListener('pointercancel', onPointerEnd);
+        titleEl.addEventListener('lostpointercapture', onPointerEnd);
+    }
+
+
     _startCategoryRename(titleEl, nameSpan, category) {
         const d = this.dash;
         if (titleEl.querySelector('.category-rename-input')) return;
@@ -1077,7 +1158,11 @@ class DashboardRenderCore {
         });
 
         if (!isSmartCollection) {
+            this._attachCategoryTitleLongPress(titleElement, nameSpan, category);
             titleElement.addEventListener('dblclick', (e) => {
+                if (e.target.closest('.category-sort-controls, .smart-collection-why-btn')) {
+                    return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
                 this._startCategoryRename(titleElement, nameSpan, category);

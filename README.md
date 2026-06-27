@@ -209,8 +209,8 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
 - Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels even when the inline-edit promo is open; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
+- Press and hold a category header (~500 ms, not on sort buttons) to rename it — double-click still works
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
-- Double-click a category header to rename it
 - Collapsible categories with optional always-collapsed default
 - Tags on bookmarks with autocomplete; filter by tag in search and collections
 
@@ -282,8 +282,8 @@ Full UI translations available for English, Dutch, German, and French.
 | Drag the left strip of a bookmark | Reorder within category or move to another category |
 | Long press a bookmark row (~500 ms) | Open inline edit (save with **Save** or **Ctrl+Enter**) |
 | Hover over a bookmark | Show preview card when enabled (Config → General → Advanced → Bookmarks) |
+| Long press a category header (~500 ms) | Rename the category (not on sort buttons; double-click still works) |
 | Double-click a page tab | Rename the page |
-| Double-click a category header | Rename the category |
 
 ---
 

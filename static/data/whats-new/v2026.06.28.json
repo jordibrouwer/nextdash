@@ -12,11 +12,28 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>Sort chip active state</strong> — the active <strong>A–Z</strong> or <strong>Rec</strong> chip now shows a clear selected style immediately on click (<code>is-active</code>, <code>aria-pressed</code>, <code>data-sort-mode</code> on the control group). Manual drag order leaves both chips inactive. <code>refreshAllCategorySortUi</code> keeps headers in sync after incremental patches and settings refresh."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>Category sort UX</strong> — sort chips stay at full opacity; buttons are keyboard-focusable with <strong>←</strong>/<strong>→</strong> navigation; category collapse ignores clicks on sort controls; virtual blocks (<em>Other</em>, unknown category) get header sort controls when missing after incremental patches."
         },
         {
           "badge": "fix",
           "text": "<strong>Smart collection ℹ popover</strong> — the &quot;why am I seeing this?&quot; hint on smart collections uses a fixed-position body popover with a readable background (replacing the unreadable CSS tooltip)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard — category titles",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Adaptive category title fitting</strong> — long category names shrink step by step down to the smallest General font size (<code>xs</code>) so they stay beside the sort chips on one row. If still too long at minimum size, the title may wrap to <strong>two lines</strong> with ellipsis; sort buttons always stay on the first row. A <code>ResizeObserver</code> on the dashboard grid and font-size changes re-run the fit after render, rename, and config sync (<code>dashboard-category-title-fit.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Long-press category rename</strong> — press and hold a category header for ~500&nbsp;ms (same timing as bookmark inline edit, not on <strong>A–Z</strong> / <strong>Rec</strong>) to rename inline on the dashboard. Double-click still works as a legacy shortcut. Cheat sheet, rotating tips, onboarding, Help, and the categories guided tour document the new gesture."
         }
       ]
     },
@@ -51,15 +68,15 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Playwright</strong> — <code>dashboard-category-sort.spec.js</code> (A–Z toggle, drag-handle hide, full-opacity sort chips); favicon toggle spec; category-sort and smart-why-popover modules."
+          "text": "<strong>Playwright</strong> — <code>dashboard-category-sort.spec.js</code> (A–Z toggle, active chip state, drag-handle hide, full-opacity sort chips); favicon toggle spec; <code>dashboard-category-sort.js</code>, <code>dashboard-category-title-fit.js</code>, and <code>dashboard-smart-why-popover.js</code>."
         },
         {
           "badge": "fix",
-          "text": "<strong>Docs</strong> — CHANGELOG, What's new, README, MANUAL, and config help (EN/NL/DE/FR) updated for v2026.06.28."
+          "text": "<strong>Docs</strong> — CHANGELOG, What's new, README, MANUAL, config help (EN/NL/DE/FR), onboarding step, categories tour, and cheat sheet updated for category title fitting, sort active state, and long-press rename."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v96</code> data version and <code>2026.06-dashboard-release-v75</code> dashboard release token."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v96</code> data version and <code>2026.06-dashboard-release-v75</code> dashboard release token; <code>cat-sort-4</code>, <code>cat-title-fit-1</code>, <code>cat-longpress-1</code>, <code>render-fp-icons-1</code>, <code>smart-why-popover-1</code>, <code>settings-sanitize-1</code>."
         }
       ]
     }

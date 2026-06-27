@@ -2215,6 +2215,10 @@ a.bookmark-open:hover {
     user-select: none;
 }
 
+.category-title.category-title-longpress-armed {
+    user-select: none;
+}
+
 /* Inline badge — shared base for pin, note, status */
 .bookmark-superscript-badge {
     flex-shrink: 0;

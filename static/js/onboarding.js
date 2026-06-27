@@ -243,7 +243,7 @@ class Onboarding {
                 title: this.t('onboarding.bookmarksInputStepTitle', 'Bookmarks: keyboard & mouse'),
                 body: this.t(
                     'onboarding.bookmarksInputStepBody',
-                    'Arrow keys move the highlight; Enter or Space opens; semicolon (;) edits. Drag the left strip to reorder; press and hold a row (not the strip) for about half a second for inline edit. More in Help → Dashboard bookmarks.'
+                    'Arrow keys move the highlight; Enter or Space opens; semicolon (;) edits. Drag the left strip to reorder; press and hold a row (not the strip) for about half a second for inline edit; press and hold a category title the same way to rename it. More in Help → Dashboard bookmarks.'
                 ),
                 selector: '#dashboard-layout',
                 placement: 'bottom'

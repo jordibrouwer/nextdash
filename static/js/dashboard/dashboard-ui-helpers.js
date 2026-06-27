@@ -212,7 +212,7 @@ class DashboardUiHelpers {
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
-                item('Double-click category', 'bmRenameCategory', 'Rename category header'),
+                item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons; double-click still works)'),
                 item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
             ]),
             section('sectionSearchModes', 'Search modes', [

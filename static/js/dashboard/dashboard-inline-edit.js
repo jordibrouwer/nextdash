@@ -1381,7 +1381,7 @@ class DashboardInlineEdit {
 
     attachBookmarkRowLongPress(row, openLink, bookmarkRef, signal) {
         const d = this.dash;
-        const longMs = 500;
+        const longMs = DashboardInlineEdit.ROW_LONG_PRESS_MS;
         const slop = 8;
         let timer = null;
         let startX = 0;
@@ -1485,5 +1485,7 @@ class DashboardInlineEdit {
     }
 
 }
+
+DashboardInlineEdit.ROW_LONG_PRESS_MS = 500;
 
 window.DashboardInlineEdit = DashboardInlineEdit;
