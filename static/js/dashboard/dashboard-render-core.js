@@ -404,15 +404,10 @@ class DashboardRenderCore {
             ? categoryContext
             : (categoryContext != null ? { id: categoryContext } : null);
         const method = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';
-        const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
-        const pinned = pinNotesUiEnabled
-            ? sorted
-                .filter((bookmark) => Boolean(bookmark?.pinned))
-                .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }))
-            : [];
-        const regular = pinNotesUiEnabled
-            ? sorted.filter((bookmark) => !bookmark?.pinned)
-            : sorted;
+        const pinned = sorted
+            .filter((bookmark) => Boolean(bookmark?.pinned))
+            .sort((a, b) => (a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' }));
+        const regular = sorted.filter((bookmark) => !bookmark?.pinned);
 
         if (method === 'az') {
             return [

@@ -160,7 +160,7 @@ Each bookmark has:
 | **Status check** | Optional ping for online/offline |
 | **Open count / last opened** | Usage tracking |
 
-Pinned and notes still exist in your data and in **Config → General** / the bookmark editor, but the dashboard temporarily hides pin/note row UI and related shortcuts while the row makeover is in progress (<code>pinAndNotesEnabled</code> in <code>dashboard-feature-flags.js</code>).
+Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sort). Notes remain searchable in fuzzy search and editable via `:note` or inline edit. Pin and note row icons were removed from the dashboard and from **Config → General**; there are no pin/note badges on bookmark rows.
 
 ### 4.4 Config vs dashboard
 

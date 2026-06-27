@@ -425,13 +425,10 @@ class DashboardInlineEdit {
         form.appendChild(iconWrap);
         syncIconState();
 
-        let noteInput = null;
-        if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
-            noteInput = document.createElement('textarea');
-            noteInput.className = 'bookmark-inline-textarea';
-            noteInput.value = bookmark.note || '';
-            form.appendChild(mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput));
-        }
+        let noteInput = document.createElement('textarea');
+        noteInput.className = 'bookmark-inline-textarea';
+        noteInput.value = bookmark.note || '';
+        form.appendChild(mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput));
 
         const tagsInput = document.createElement('input');
         tagsInput.type = 'text';
@@ -530,22 +527,19 @@ class DashboardInlineEdit {
             void reloadCatSelectForPage(sourcePageId);
         }
 
-        let pinInput = null;
-        if (typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()) {
-            const pinField = document.createElement('input');
-            pinField.type = 'checkbox';
-            pinField.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
-            pinField.checked = Boolean(bookmark.pinned);
-            const pinWrap = document.createElement('div');
-            pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
-            const pinLabel = document.createElement('label');
-            pinLabel.htmlFor = pinField.id;
-            pinLabel.textContent = cfg('pinnedShort', 'Pinned');
-            pinWrap.appendChild(pinField);
-            pinWrap.appendChild(pinLabel);
-            form.appendChild(pinWrap);
-            pinInput = pinField;
-        }
+        const pinField = document.createElement('input');
+        pinField.type = 'checkbox';
+        pinField.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
+        pinField.checked = Boolean(bookmark.pinned);
+        const pinWrap = document.createElement('div');
+        pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
+        const pinLabel = document.createElement('label');
+        pinLabel.htmlFor = pinField.id;
+        pinLabel.textContent = cfg('pinnedShort', 'Pinned');
+        pinWrap.appendChild(pinField);
+        pinWrap.appendChild(pinLabel);
+        form.appendChild(pinWrap);
+        const pinInput = pinField;
 
         const statusInput = document.createElement('input');
         statusInput.type = 'checkbox';

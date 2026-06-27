@@ -172,7 +172,6 @@ class DashboardUiHelpers {
         });
 
         const isSideRail = d.settings?.buttonBarPosition === 'side-left';
-        const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
         const sections = [
             section('sectionNavigation', 'Navigation', [
                 item('1–9', 'navPageTab', 'Switch to page tab'),
@@ -185,7 +184,7 @@ class DashboardUiHelpers {
                 item('Page Up / Page Down', 'navPageScroll', 'Jump one screen up / down through bookmarks'),
                 item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
                 item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category or smart collection'),
-                ...(pinNotesUiEnabled ? [item('G + P', 'navGotoPinned', 'Jump to first pinned bookmark on the page')] : []),
+                item('G + P', 'navGotoPinned', 'Jump to first pinned bookmark on the page'),
                 item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
                 item('Esc', 'navEscClear', 'Clear selection / close overlay; undo unsaved drag reorder'),
             ]),
@@ -231,10 +230,10 @@ class DashboardUiHelpers {
             ]),
             section('sectionCommandsBookmarks', 'Commands — bookmarks', [
                 item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Ctrl+Shift+A) or quick-add omnibox (&)'),
-                ...(pinNotesUiEnabled ? [item(':note', 'cbNote', 'Edit note on the focused bookmark')] : []),
+                item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':move / :edit / :copy', 'cbMoveEditCopy', 'Move, inline-edit, or copy URL of the keyboard-selected bookmark'),
                 item(':quicktag (:qt)', 'cbQuicktag', 'Open quick-tag popover on the keyboard-selected bookmark (same as Shift+T)'),
-                ...(pinNotesUiEnabled ? [item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark')] : []),
+                item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
                 item(':tag', 'cbTagList', 'List all tags in the command palette (dashboard layout unchanged)'),
                 item(':tag <name>', 'cbTagBrowse', 'Browse bookmarks by tag in the palette — :tag work or :tag:work'),
                 item(':tag +name / :tag -name', 'cbTagMutate', 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name'),
@@ -243,11 +242,9 @@ class DashboardUiHelpers {
                 item(':remove', 'cbRemove', 'Delete the focused bookmark'),
                 item(':find <text> / :find clear', 'cbFind', 'Filter bookmark tiles on the current page — :find clear removes the filter'),
                 item(
-                    pinNotesUiEnabled ? ':open all / :open pinned' : ':open all',
+                    ':open all / :open pinned',
                     'cbOpenAll',
-                    pinNotesUiEnabled
-                        ? 'Open every bookmark or pinned bookmarks on the current page (capped at 15)'
-                        : 'Open every bookmark on the current page (capped at 15)'
+                    'Open every bookmark or pinned bookmarks on the current page (capped at 15)'
                 ),
                 item(':open tag <name> / :open category <name>', 'cbOpenTagCat', 'Open bookmarks matching a tag or category on the current page'),
                 item(':open last [n]', 'cbOpenLast', 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)'),

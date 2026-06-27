@@ -30,16 +30,9 @@ class DashboardSetup {
         d.syncTagCloudButtonPlacement();
 
         document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
-        const pinNotesUiEnabled = typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled();
-        document.body.setAttribute('data-pin-notes-disabled', pinNotesUiEnabled ? 'false' : 'true');
-        document.body.setAttribute(
-            'data-show-pin-icon',
-            pinNotesUiEnabled && d.settings.showPinIcon === true ? 'true' : 'false'
-        );
-        document.body.setAttribute(
-            'data-show-note-icon',
-            pinNotesUiEnabled && d.settings.showNoteIcon !== false ? 'true' : 'false'
-        );
+        document.body.setAttribute('data-pin-notes-disabled', 'true');
+        document.body.setAttribute('data-show-pin-icon', 'false');
+        document.body.setAttribute('data-show-note-icon', 'false');
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
         const layoutVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(d.settings.layoutVersion)
@@ -467,9 +460,7 @@ class DashboardSetup {
             ['tipHealthRefresh', 'Tip: <code>refresh</code> in health page re-scans all bookmarks'],
             ['tipHealthStale', 'Tip: check health page <code>stale</code> bookmarks you haven\'t used recently'],
             ['tipHealthMerge', 'Tip: merge duplicate bookmarks in health page bulk actions'],
-            ...(typeof isDashboardPinNotesEnabled === 'function' && isDashboardPinNotesEnabled()
-                ? [['tipCommandNote', 'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly']]
-                : []),
+            ['tipCommandNote', 'Tip: use <code>:note</code> in the command palette to edit a bookmark\'s note instantly'],
             ['tipInlineRename', 'Tip: double-click a page tab or category title to rename it inline'],
             ['tipPreviewCopyUrl', 'Tip: hover a preview card and click the clipboard icon to copy the URL'],
             ['tipCompactBadge', 'Tip: compact/dense mode shows an open-count badge on each bookmark'],

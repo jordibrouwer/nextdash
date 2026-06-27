@@ -169,6 +169,7 @@ class DashboardData {
             } else {
                 d.settings = serverSettings;
             }
+            delete d.settings._sortMigratedPageIds;
 
             if (!Array.isArray(d.settings.smartRecentPageIds)) {
                 d.settings.smartRecentPageIds = [];
@@ -329,6 +330,8 @@ class DashboardData {
                 }
             }
             d.currentPageId = initialPageId;
+
+            await window.DashboardCategorySort?.migrateLegacySortAllPages?.(d);
             
             if (!skipPageBookmarks) {
                 // Load bookmarks and categories for initial page
@@ -488,7 +491,6 @@ class DashboardData {
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
-        window.DashboardCategorySort?.migrateLegacySortForPage?.(d, targetPageId);
         d.refreshButtonTipsOnPageChange?.();
 
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
@@ -638,12 +640,15 @@ class DashboardData {
     async saveSettings() {
         const d = this.dash;
         try {
+            const payload = typeof sanitizeSettingsForPersist === 'function'
+                ? sanitizeSettingsForPersist(d.settings)
+                : d.settings;
             const response = await dashFetch('/api/settings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(d.settings)
+                body: JSON.stringify(payload)
             });
             
             if (!response.ok) {
@@ -654,9 +659,9 @@ class DashboardData {
             const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
                 || localStorage.getItem('deviceSpecificSettings') === 'true';
             if (deviceSpecific && window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
-                window.DeviceSettingsMerge.saveDeviceLocalSettings(d.settings);
+                window.DeviceSettingsMerge.saveDeviceLocalSettings(payload);
             } else if (deviceSpecific) {
-                localStorage.setItem('dashboardSettings', JSON.stringify(d.settings));
+                localStorage.setItem('dashboardSettings', JSON.stringify(payload));
             }
         } catch (error) {
             d.showErrorNotification(

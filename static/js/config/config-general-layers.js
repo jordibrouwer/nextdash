@@ -236,7 +236,7 @@ class ConfigGeneralLayers {
         essentials.innerHTML = `
             <h3 class="section-title" data-i18n="config.generalBookmarksEssentialsTitle">Bookmarks</h3>
             <p class="general-card-intro" data-i18n="config.generalBookmarksEssentialsIntro">Everyday bookmark display and navigation.</p>
-            <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Pin icons, link previews, category collapse, and more are under Advanced → Bookmarks.</p>
+            <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Link previews, category collapse, and more are under Advanced → Bookmarks.</p>
         `;
 
         const tree = document.createElement('div');

@@ -54,7 +54,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Dashboard
 
-- **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically. `:sort` now applies to the focused category.
+- **new** **Per-category bookmark sort** — each category header has **A–Z** and **Recent** toggles (click again for manual drag order). The global sort setting was removed from Config → General; legacy `sortMethod` migrates automatically across all pages on first load. `:sort` now applies to the focused category.
+- **change** **Pin & note row icons removed** — pin/note toggles are gone from Config → General and bookmark rows no longer show pin/note badges. Pins still sort to the top of a category; notes remain searchable (`:note`, fuzzy search) and editable inline or via commands (`:pin`, `:unpin`, `G` then `P`).
 
 ---
 

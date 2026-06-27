@@ -83,45 +83,68 @@
         return first?.getAttribute('data-category-id') || '';
     }
 
-    function migrateLegacySortForPage(dash, pageId) {
+    function migrateLegacySortAllPages(dash) {
         if (!dash?.settings || dash.settings.categorySortModesMigrated) {
-            return;
+            return Promise.resolve();
+        }
+        if (migrateLegacySortAllPages._inFlight) {
+            return migrateLegacySortAllPages._inFlight;
         }
 
+        const fetchFn = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const legacy = normalizeSortMode(dash.settings.sortMethod || 'order');
-        let categoriesChanged = false;
+        const pages = Array.isArray(dash.pages) ? dash.pages : [];
 
-        (dash.categories || []).forEach((cat) => {
-            if (!cat.sortMode) {
-                cat.sortMode = legacy;
-                categoriesChanged = true;
+        migrateLegacySortAllPages._inFlight = (async () => {
+            for (const page of pages) {
+                const pageId = Number(page.id);
+                if (!Number.isFinite(pageId)) {
+                    continue;
+                }
+                try {
+                    const res = await fetchFn(`/api/categories?page=${pageId}`);
+                    if (!res.ok) {
+                        continue;
+                    }
+                    const categories = await res.json();
+                    let changed = false;
+                    const updated = (categories || []).map((cat) => {
+                        if (!cat.sortMode) {
+                            changed = true;
+                            return { ...cat, sortMode: legacy };
+                        }
+                        return cat;
+                    });
+                    if (!changed) {
+                        continue;
+                    }
+                    const payload = updated.map((cat) => ({ ...cat, originalId: cat.id }));
+                    const saveRes = await fetchFn(`/api/categories?page=${pageId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!saveRes.ok) {
+                        continue;
+                    }
+                    dash.data?.updatePageDataCache?.(pageId, { categories: updated });
+                    if (Number(dash.currentPageId) === pageId) {
+                        dash.categories = dash.data?.clonePageCategories?.(updated) ?? updated;
+                    }
+                } catch {
+                    // Best-effort per page; continue with remaining pages.
+                }
             }
-        });
 
-        if (!Array.isArray(dash.settings._sortMigratedPageIds)) {
-            dash.settings._sortMigratedPageIds = [];
-        }
-        const pid = Number(pageId);
-        if (!dash.settings._sortMigratedPageIds.includes(pid)) {
-            dash.settings._sortMigratedPageIds.push(pid);
-        }
-
-        if (categoriesChanged) {
-            dash.renderCore?.saveCategoryOrder?.({
-                pageId: pid,
-                payload: (dash.categories || []).map((cat) => ({ ...cat })),
-            });
-        }
-
-        const allPagesMigrated = (dash.pages || []).every((page) => (
-            dash.settings._sortMigratedPageIds.includes(Number(page.id))
-        ));
-        if (allPagesMigrated) {
             delete dash.settings.sortMethod;
-            dash.settings.categorySortModesMigrated = true;
             delete dash.settings._sortMigratedPageIds;
-            dash.saveSettings?.();
-        }
+            dash.settings.categorySortModesMigrated = true;
+            await dash.saveSettings?.();
+        })();
+
+        return migrateLegacySortAllPages._inFlight.finally(() => {
+            migrateLegacySortAllPages._inFlight = null;
+        });
     }
 
     function label(dash, key, fallback) {
@@ -196,7 +219,7 @@
         getCategorySortMode,
         setCategorySortMode,
         resolveFocusedCategoryId,
-        migrateLegacySortForPage,
+        migrateLegacySortAllPages,
         createSortControls,
         updateCategorySortUi,
     };

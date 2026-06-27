@@ -870,9 +870,6 @@ class KeyboardNavigation {
     }
 
     jumpToPinned() {
-        if (typeof isDashboardPinNotesEnabled === 'function' && !isDashboardPinNotesEnabled()) {
-            return;
-        }
         this.updateNavigableElements();
         const pinnedRow = this.navigableElements.find((row) => {
             const idx = parseInt(row.getAttribute('data-bookmark-index'), 10);
