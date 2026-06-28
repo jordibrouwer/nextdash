@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [dev]
   pull_request:
+    branches: [dev]
 
 jobs:
   validate-json:
