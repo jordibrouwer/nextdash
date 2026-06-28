@@ -44,7 +44,7 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 	}
 }
 
-func TestNewHandlersStartsPrefetchAsync(t *testing.T) {
+func TestNewHandlersConsumesPrefetchFlag(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
