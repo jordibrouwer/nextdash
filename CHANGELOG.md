@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.29.1 — June 2026](#v202606291--june-2026)
 - [v2026.06.29 — June 2026](#v20260629--june-2026)
 - [v2026.06.28 — June 2026](#v20260628--june-2026)
 - [v2026.06.27 — June 2026](#v20260627--june-2026)
@@ -54,7 +55,30 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.29](#v20260629--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.29.1](#v202606291--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.29.1 — June 2026
+
+**Stability patch** — atomic JSON persistence for user data and caches, a missing English locale string on Config keyboard reset, and gentler batched favicon prefetch on startup.
+
+### Stability & persistence
+
+- **fix** **Atomic JSON writes** — bookmarks, settings, page order, finders, colors, and related data files write via temp file + rename so a crash mid-save is less likely to corrupt on-disk JSON.
+- **fix** **Health & preview caches** — `health-cache.json` and the bookmark preview cache use the same atomic write path.
+
+### Config
+
+- **fix** **Keyboard reset confirm** — added missing `config.keyboardResetAllConfirm` string in `en.json` for the reset-all-shortcuts prompt.
+
+### Startup
+
+- **fix** **Default favicon prefetch** — first-run icon downloads batch up to eight bookmarks at a time (same cap as the Config prefetch API) instead of loading every missing icon in one tight loop.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v98` data version and `2026.06-dashboard-release-v77` dashboard release token.
 
 ---
 

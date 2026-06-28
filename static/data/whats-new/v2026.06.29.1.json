@@ -1,0 +1,34 @@
+{
+  "tag": "v2026.06.29.1",
+  "date": "June 2026",
+  "releasedAt": "2026-06-29",
+  "sections": [
+    {
+      "title": "Stability &amp; persistence",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Safer JSON saves</strong> — bookmarks, settings, page data, finders, colors, and the health/preview caches now write through a temporary file and rename. A crash or power loss during save is much less likely to leave a half-written JSON file on disk."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard reset confirm</strong> — the English confirmation prompt for <em>Reset all shortcuts</em> no longer shows a missing translation key."
+        }
+      ]
+    },
+    {
+      "title": "Startup",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Default favicon prefetch</strong> — first-run icon downloads now run in small batches (up to eight at a time), matching the Config prefetch route, so startup stays responsive on large bookmark sets."
+        }
+      ]
+    }
+  ]
+}

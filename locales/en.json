@@ -772,6 +772,7 @@
         "keyboardEdit": "Rebind",
         "keyboardReset": "Reset",
         "keyboardResetAll": "Reset all to defaults",
+        "keyboardResetAllConfirm": "Reset all keyboard shortcuts to defaults?",
         "keyboardImportInvalid": "Could not import keyboard preset — invalid file.",
         "keyboardExportPreset": "Export keyboard preset",
         "keyboardImportPreset": "Import keyboard preset",

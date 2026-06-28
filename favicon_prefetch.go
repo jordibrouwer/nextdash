@@ -149,6 +149,9 @@ func (h *Handlers) fetchAndStoreBookmarkIcon(bookmarkURL string) string {
 }
 
 func (h *Handlers) startDefaultBookmarkIconPrefetch() {
+	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
+		return
+	}
 	go func() {
 		h.prefetchMu.Lock()
 		defer h.prefetchMu.Unlock()
@@ -158,52 +161,17 @@ func (h *Handlers) startDefaultBookmarkIconPrefetch() {
 
 func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	const pageID = 1
-	bookmarks := h.store.GetBookmarksByPage(pageID)
-	if len(bookmarks) == 0 {
-		return
-	}
-
-	type iconResult struct {
-		index  int
-		urlKey string
-		icon   string
-	}
-
-	var wg sync.WaitGroup
-	results := make(chan iconResult, len(bookmarks))
-
-	for i := range bookmarks {
-		if strings.TrimSpace(bookmarks[i].Icon) != "" {
-			continue
+	const batchLimit = 8
+	totalApplied := 0
+	for {
+		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false)
+		totalApplied += result.Applied
+		if result.Done || result.Attempted == 0 {
+			break
 		}
-		urlStr := strings.TrimSpace(bookmarks[i].URL)
-		if urlStr == "" {
-			continue
-		}
-		urlKey := canonicalBookmarkURLKey(urlStr)
-		wg.Add(1)
-		go func(idx int, bookmarkURL, key string) {
-			defer wg.Done()
-			if icon := h.fetchAndStoreBookmarkIcon(bookmarkURL); icon != "" {
-				results <- iconResult{index: idx, urlKey: key, icon: icon}
-			}
-		}(i, urlStr, urlKey)
 	}
-
-	wg.Wait()
-	close(results)
-
-	updates := make([]PrefetchIconUpdate, 0, len(bookmarks))
-	for result := range results {
-		updates = append(updates, PrefetchIconUpdate{
-			Index:  result.index,
-			URLKey: result.urlKey,
-			Icon:   result.icon,
-		})
-	}
-
-	if applied := h.store.MergePrefetchBookmarkIcons(pageID, updates); applied > 0 {
-		log.Printf("nextDash: prefetched favicons for %d default bookmarks on page %d", applied, pageID)
+	if totalApplied > 0 {
+		log.Printf("nextDash: prefetched favicons for %d default bookmarks on page %d", totalApplied, pageID)
 	}
 }
 
