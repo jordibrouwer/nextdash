@@ -25,7 +25,19 @@ fi
 git config merge.ours.driver true
 
 git checkout main
-git merge dev --no-edit
+if ! git merge dev --no-edit; then
+  # modify/delete: main removed dev-only files; keep them deleted on main
+  while IFS= read -r path; do
+    [[ -n "$path" ]] && git rm -f "$path" >/dev/null 2>&1 || true
+  done < <(git diff --name-only --diff-filter=UD)
+
+  if git diff --name-only --diff-filter=U | grep -q .; then
+    echo "Unresolved merge conflicts remain. Fix manually, then commit on main." >&2
+    exit 1
+  fi
+
+  git commit --no-edit
+fi
 
 PRUNE_DIRS=(
   tests
