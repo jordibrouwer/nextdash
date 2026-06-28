@@ -329,7 +329,9 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
    ./scripts/release-to-main.sh v2026.06.29
    ```
 
-   That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, and pushes.
+   That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).
+
+   **One-time setup:** `brew install gh` and `gh auth login`.
 
 Do **not** merge `dev` into `main` manually on GitHub — the compare banner after pushing to `dev` is informational only until you run the release script.
 

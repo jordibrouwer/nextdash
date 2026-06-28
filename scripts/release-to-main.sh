@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Merge dev into main and strip dev-only paths from main.
+# Merge dev into main, strip dev-only paths, tag, push, and publish a GitHub Release.
 # Usage: ./scripts/release-to-main.sh v2026.06.29
+# Requires: gh auth login (once) for the GitHub Release step.
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -22,11 +23,57 @@ if [[ -z "$TAG" ]]; then
   exit 1
 fi
 
+extract_changelog_notes() {
+  local tag="$1"
+  local version="${tag#v}"
+  if [[ ! -f CHANGELOG.md ]]; then
+    return 1
+  fi
+  awk -v ver="$version" '
+    $0 ~ "^## v" ver " " { found=1; next }
+    found && /^---$/ { exit }
+    found { print }
+  ' CHANGELOG.md
+}
+
+publish_github_release() {
+  local tag="$1"
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Note: gh not found; skipped GitHub Release. Install with: brew install gh" >&2
+    return 0
+  fi
+
+  if ! gh auth status >/dev/null 2>&1; then
+    echo "Note: gh not logged in; skipped GitHub Release. Run once: gh auth login" >&2
+    return 0
+  fi
+
+  local notes_file
+  notes_file="$(mktemp)"
+  if extract_changelog_notes "$tag" > "$notes_file" 2>/dev/null; then
+    :
+  else
+    echo "Release ${tag}" > "$notes_file"
+  fi
+
+  if gh release view "$tag" >/dev/null 2>&1; then
+    gh release edit "$tag" --notes-file "$notes_file" --latest
+    rm -f "$notes_file"
+    echo "Updated GitHub Release ${tag} (latest)."
+    return 0
+  fi
+
+  gh release create "$tag" --title "$tag" --notes-file "$notes_file" --latest
+  rm -f "$notes_file"
+  echo "Published GitHub Release ${tag} (latest)."
+}
+
 git config merge.ours.driver true
 
 git checkout main
 if ! git merge dev --no-edit; then
-  # modify/delete: main removed dev-only files; keep them deleted on main
+  echo "Resolving modify/delete conflicts for dev-only paths on main..."
   while IFS= read -r path; do
     [[ -n "$path" ]] && git rm -f "$path" >/dev/null 2>&1 || true
   done < <(git diff --name-only --diff-filter=UD)
@@ -73,6 +120,7 @@ fi
 
 git tag "$TAG"
 git push origin main --tags
+publish_github_release "$TAG"
 git checkout dev
 
 echo "Released $TAG on main."
