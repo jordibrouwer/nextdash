@@ -367,7 +367,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			},
 		}
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
-		os.WriteFile(mainPageBookmarksFile, data, 0644)
+		writeFileAtomic(mainPageBookmarksFile, data, 0644)
 		fs.markDefaultBookmarkIconPrefetch()
 	}
 
@@ -470,7 +470,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AllowLocalBookmarks:         true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
-		os.WriteFile(fs.settingsFile, data, 0644)
+		writeFileAtomic(fs.settingsFile, data, 0644)
 	}
 
 	// Initialize default finders if file doesn't exist
@@ -480,14 +480,14 @@ func (fs *FileStore) initializeDefaultFiles() {
 			{Name: "DuckDuckGo", SearchUrl: "https://duckduckgo.com/?q=%s", Shortcut: "du"},
 		}
 		data, _ := json.MarshalIndent(defaultFinders, "", "  ")
-		os.WriteFile(findersFile, data, 0644)
+		writeFileAtomic(findersFile, data, 0644)
 	}
 
 	// Initialize colors if file doesn't exist
 	if _, err := os.Stat(fs.colorsFile); os.IsNotExist(err) {
 		defaultColors := getDefaultColors()
 		data, _ := json.MarshalIndent(defaultColors, "", "  ")
-		os.WriteFile(fs.colorsFile, data, 0644)
+		writeFileAtomic(fs.colorsFile, data, 0644)
 	}
 
 	// One-time migration: remove existing custom themes and reset active custom theme to dark.
@@ -516,7 +516,7 @@ func (fs *FileStore) migrateCustomThemesToUserManaged() {
 		}
 	}
 
-	_ = os.WriteFile(fs.customThemesMigrationMarker, []byte("migrated"), 0644)
+	_ = writeFileAtomic(fs.customThemesMigrationMarker, []byte("migrated"), 0644)
 }
 
 func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
@@ -548,7 +548,7 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(fs.settingsFile, out, 0644)
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
 }
 
 func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
@@ -580,7 +580,7 @@ func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(fs.settingsFile, out, 0644)
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
 }
 
 func (fs *FileStore) ensureDataDir() {
@@ -851,7 +851,7 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filePath, newData, 0644)
+	return writeFileAtomic(filePath, newData, 0644)
 }
 
 func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) ([]Bookmark, bool) {
@@ -1322,10 +1322,10 @@ func (fs *FileStore) resetAllDataLocked() error {
 
 	fs.removeFactoryResetUserAssets()
 
-	os.WriteFile(fmt.Sprintf("%s/finders.json", fs.dataDir), []byte("[]"), 0644)
+	writeFileAtomic(fmt.Sprintf("%s/finders.json", fs.dataDir), []byte("[]"), 0644)
 
 	data, _ := json.MarshalIndent(PageOrder{Order: []int{1}}, "", "  ")
-	os.WriteFile(fs.pageOrderFile, data, 0644)
+	writeFileAtomic(fs.pageOrderFile, data, 0644)
 
 	os.Remove(fs.settingsFile)
 
@@ -1408,7 +1408,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 	if err != nil {
 		return 0
 	}
-	if err := os.WriteFile(filePath, newData, 0644); err != nil {
+	if err := writeFileAtomic(filePath, newData, 0644); err != nil {
 		return 0
 	}
 	return applied
