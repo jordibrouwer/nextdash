@@ -106,6 +106,23 @@ go build -o nextDash && ./nextDash
 
 Data is stored under `./data` by default.
 
+### Cloning from GitHub
+
+If you pull the source from GitHub instead of using the published container image:
+
+| Branch | Use when |
+|--------|----------|
+| **`main`** (default) | **Self-hosting and Docker builds** — stable release tree with the app, extension folder, and docs |
+| **`dev`** | Contributing code, running tests, or following active development |
+
+```sh
+git clone https://github.com/jordibrouwer/nextdash.git
+cd nextdash
+# already on main — build or use docker compose here
+```
+
+For day-to-day use you do **not** need to switch branches: clone the default **`main`** branch, run Docker Compose or `docker build`, and mount `./data` as usual. Choose **`dev`** only if you develop nextDash itself (see the **Contributing** section in the README).
+
 ### First launch flow
 
 ```

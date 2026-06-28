@@ -68,6 +68,7 @@ _(Nothing yet — see [v2026.06.29](#v20260629--june-2026) for the latest releas
 - **new** **`scripts/release-to-main.sh`** — merges `dev` → `main`, strips dev-only files (tests, Playwright, internal scripts), tags, and pushes. Do not merge `dev` into `main` manually on GitHub.
 - **change** **CI** — GitHub Actions (JSON validation + Playwright) run on pushes and pull requests to **`dev`**, not `main`.
 - **change** **Release `main` tree** — keeps Go source, `static/`, `templates/`, `locales/`, Docker files, README, CHANGELOG, MANUAL, screenshots, and the browser extension; drops tests and dev tooling from the default branch.
+- **fix** **MANUAL** — [Installation](#3-installation-and-first-launch) documents which Git branch to clone (`main` for self-hosting, `dev` for contributors).
 - **fix** **Cache-bust** — `whats-new-v97` data version and `2026.06-dashboard-release-v76` dashboard release token.
 
 ---
