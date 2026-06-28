@@ -21,17 +21,10 @@ func readPreviewCacheFile() PreviewCacheFile {
 }
 
 func writePreviewCacheFile(cache PreviewCacheFile) error {
-	if err := os.MkdirAll("data", 0755); err != nil {
-		return err
-	}
 	if cache.Cache == nil {
 		cache.Cache = map[string]BookmarkPreview{}
 	}
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(previewCachePath, data, 0644)
+	return writeIndentJSONFile(previewCachePath, cache)
 }
 
 func previewCacheEntryValid(entry BookmarkPreview) bool {
@@ -121,17 +114,10 @@ func readHealthCacheFile() HealthScanCacheFile {
 }
 
 func writeHealthCacheFile(cache HealthScanCacheFile) error {
-	if err := os.MkdirAll("data", 0755); err != nil {
-		return err
-	}
 	if cache.Cache == nil {
 		cache.Cache = map[string]HealthScanCache{}
 	}
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(healthCachePath, data, 0644)
+	return writeIndentJSONFile(healthCachePath, cache)
 }
 
 func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) error {
