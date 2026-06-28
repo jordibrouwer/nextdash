@@ -17,19 +17,19 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-tabs-border-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=stats-tab-visibility-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v3">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-phase2-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-surface-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-3">
-    <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-flow-3">
-    <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-simple-list-1">
-    <link rel="stylesheet" href="/static/css/config/config-collections.css">
+    <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
+    <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
+    <link rel="stylesheet" href="/static/css/config/config-collections.css?v=collections-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-backups.css">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
@@ -45,14 +45,14 @@
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v=phone-layout-1">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
-    <link rel="stylesheet" href="/static/css/config-modern.css?v=config-bg-dots-1">
+    <link rel="stylesheet" href="/static/css/config-modern.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-bg-dots-1">
+    <link rel="stylesheet" href="/static/css/config-glass.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
-    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-tabs-full-1">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-align-1">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
@@ -1167,8 +1167,8 @@
 
             <div class="tab-content" data-tab-content="pages">
             <div class="simple-tab">
+                <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></span>
                 <div class="simple-toolbar">
-                    <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></span>
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
                 <ul id="pages-list" class="pages-list js-list simple-list" role="list">
@@ -1179,8 +1179,8 @@
 
             <div class="tab-content" data-tab-content="categories">
             <div class="simple-tab">
+                <span class="simple-tab-intro" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</span>
                 <div class="simple-toolbar">
-                    <span class="simple-tab-intro" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</span>
                     <div class="simple-toolbar-right">
                         <label for="categories-page-selector" data-i18n="config.categoriesPageLabel">Page:</label>
                         <select id="categories-page-selector" class="page-selector simple-page-select">
@@ -1197,8 +1197,8 @@
 
             <div class="tab-content" data-tab-content="tags">
             <div class="tags-tab">
+                <span class="tags-tab-intro" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</span>
                 <div class="tags-toolbar">
-                    <span class="tags-tab-intro" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</span>
                     <div class="tags-filter-wrap">
                         <label class="visually-hidden" for="tags-filter-input" data-i18n="config.tagsFilterLabel">Filter tags</label>
                         <input type="search" id="tags-filter-input" class="tags-filter-input" data-i18n-placeholder="config.tagsFilterPlaceholder" placeholder="Filter tags…" autocomplete="off">
@@ -1518,11 +1518,9 @@
 
             <div class="tab-content" data-tab-content="finders">
             <div class="simple-tab">
+                <span class="simple-tab-intro" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</span>
                 <div class="simple-toolbar">
-                    <span class="simple-tab-intro" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</span>
-                    <div class="simple-toolbar-right">
-                        <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
-                    </div>
+                    <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
                 </div>
                 <div class="finders-body">
                     <div class="finders-filter-wrap">
@@ -1539,8 +1537,8 @@
 
             <div class="tab-content" data-tab-content="collections">
             <div class="collections-tab">
+                <span class="collections-tab-intro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</span>
                 <div class="collections-toolbar">
-                    <span class="collections-tab-intro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</span>
                     <button type="button" id="add-collection-btn" class="btn btn-primary btn-small">+ New collection</button>
                 </div>
                 <div id="collections-list" class="collections-list"></div>

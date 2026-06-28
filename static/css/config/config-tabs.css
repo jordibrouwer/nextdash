@@ -40,6 +40,16 @@
 /* Config tab bar: single scrollable row, never wraps */
 .tabs-scroll-wrapper {
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-self: stretch;
+}
+
+.config-controls-wrapper .tabs-scroll-wrapper .tabs {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .tabs-scroll-wrapper::after {

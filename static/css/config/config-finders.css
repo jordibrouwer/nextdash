@@ -2,24 +2,38 @@
 .finders-body {
     display: flex;
     flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
     min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Finders: toolbar is standalone; filter row is borderless (input only) */
+.simple-tab:has(.finders-body) .simple-toolbar {
+    border-bottom: 1px solid var(--border-primary);
+    justify-content: flex-end;
 }
 
 .finders-filter-wrap {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border-primary);
-    border-bottom: none;
-    background: color-mix(in srgb, var(--background-primary) 18%, transparent);
+    padding: 0;
+    border: none;
+    background: transparent;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .finders-filter-input {
     flex: 1 1 auto;
     min-width: 0;
-    padding: 0.35rem 0.5rem;
+    box-sizing: border-box;
+    padding: 0.4rem 1.75rem 0.4rem 0.55rem;
     border: 1px solid var(--border-primary);
+    border-radius: 6px;
     background: var(--background-primary);
     color: var(--text-primary);
     font-family: inherit;
@@ -29,6 +43,7 @@
 .finders-filter-input:focus {
     outline: none;
     border-color: var(--text-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
 }
 
 .finders-filter-input::-webkit-search-cancel-button {
@@ -72,6 +87,12 @@
     gap: 1rem;
     padding: 0.5rem 0.75rem;
     min-width: 0;
+    background: transparent;
+    transition: background-color 0.12s ease;
+}
+
+.finders-body .finder-item-row:hover {
+    background: var(--config-row-hover);
 }
 
 .finders-body .finder-item-actions {

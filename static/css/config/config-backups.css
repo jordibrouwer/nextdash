@@ -5,14 +5,11 @@
 .backups-tab {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    padding: 1rem 0;
-}
-
-.backups-tab-intro {
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    gap: var(--config-tab-gap, 0.85rem);
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .backups-tab-intro p {

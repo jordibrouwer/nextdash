@@ -1,9 +1,48 @@
+/* ── Tab intro copy — plain text on all config tabs (all layouts) ── */
+html:has(#config-main) :is(
+    .general-tab-intro,
+    .general-layer-intro,
+    .backups-tab-intro,
+    .stats-page-intro,
+    .theme-colors-intro,
+    .keyboard-tab .keyboard-intro,
+    .structure-workspace-intro
+) {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+html:has(#config-main) :is(
+    .simple-tab-intro,
+    .tags-tab-intro,
+    .collections-tab-intro
+) {
+    display: block;
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
 /* ── General tab intro ── */
 .general-tab-intro {
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
-    margin-bottom: 1.25rem;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -32,6 +71,10 @@
 /* Configuration Styles — box model scoped to config chrome (not portaled overlays) */
 html:has(#config-main) {
     box-sizing: border-box;
+    --config-surface-toolbar: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    --config-surface-list: transparent;
+    --config-row-hover: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    --config-tab-gap: 0.85rem;
 }
 
 html:has(#config-main) #config-main,
@@ -95,6 +138,140 @@ body {
     padding: 0 1rem;
 }
 
+/* Equal-width chrome rows (save bar, tabs, General intro/cards) */
+.config-controls-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--config-tab-gap);
+    width: 100%;
+    max-width: 100%;
+}
+
+.config-controls-wrapper .config-actions-top,
+.config-controls-wrapper .tabs-scroll-wrapper,
+.config-controls-wrapper .tabs {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.config-breadcrumb-row {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content[data-tab-content="general"] > div {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#config-main > .tab-content {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#config-main > .tab-content > :is(
+    .simple-tab,
+    .tags-tab,
+    .collections-tab,
+    .backups-tab,
+    .theme-colors-editor,
+    .keyboard-tab
+) {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content[data-tab-content="bookmarks"] > div,
+.tab-content[data-tab-content="help"] > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content.active[data-tab-content="stats"] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content[data-tab-content="stats"] .stats-page-intro {
+    margin-bottom: 0;
+}
+
+/* Full-width config rows — match save bar / tabs across all tabs */
+html:has(#config-main) :is(
+    .general-layer-toolbar,
+    .general-card,
+    .help-search-filter,
+    .bookmarks-splitview,
+    .structure-workspace-card,
+    .simple-toolbar,
+    .simple-list,
+    .tags-toolbar,
+    .tags-body,
+    .tags-cloud,
+    .tags-list-panel,
+    .collections-toolbar,
+    .collections-list,
+    .finders-body,
+    .finders-filter-wrap,
+    .backups-section,
+    .stats-filter-bar,
+    .stats-chip-nav,
+    .stats-layout,
+    .theme-colors-toolbar,
+    .colors-tab-panel,
+    .help-layout
+) {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content[data-tab-content="general"] > div > .general-tab-intro,
+.tab-content[data-tab-content="general"] .general-layout,
+.tab-content[data-tab-content="general"] .general-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.general-config-chrome {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--config-tab-gap);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.general-config-chrome > .general-layer-toolbar,
+.general-config-chrome > .general-panels-bulk-actions,
+.general-config-chrome > .general-layer-intro,
+.general-config-chrome > .general-advanced-nav-wrap {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0;
+}
+
+.general-config-chrome > .general-layer-intro {
+    margin-top: 0;
+}
+
 /* Config breadcrumb */
 .config-breadcrumb {
     font-family: var(--font-family-mono, monospace);
@@ -128,8 +305,12 @@ body {
     gap: 0.75rem 1.5rem;
     justify-content: flex-start;
     align-items: center;
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 1rem;
-    margin: 0 -1rem;
+    margin: 0;
     margin-bottom: 0;
     background-color: var(--background-secondary);
     position: relative;

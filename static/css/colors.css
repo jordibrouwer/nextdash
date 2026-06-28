@@ -3,7 +3,10 @@
 .theme-colors-editor {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .theme-colors-editor--readonly .theme-colors-actions button:not(.colors-readonly-allowed),
