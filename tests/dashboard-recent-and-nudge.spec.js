@@ -38,7 +38,8 @@ async function resetOnboarding(page) {
         if (response.ok) {
             const settings = await response.json();
             settings.onboardingCompleted = false;
-            await fetch('/api/settings', {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
@@ -49,6 +50,7 @@ async function resetOnboarding(page) {
 
 async function seedRecentBookmarks(page, count) {
     await page.evaluate(async (bookmarkCount) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const dash = window.dashboardInstance;
         if (!dash) throw new Error('dashboardInstance missing');
 
@@ -72,7 +74,7 @@ async function seedRecentBookmarks(page, count) {
             const missing = additions.filter((bm) => !existing.some((entry) => entry.url === bm.url));
             const payload = missing.length ? [...existing, ...missing] : existing;
             if (missing.length) {
-                const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                const save = await api(`/api/bookmarks?page=${pageId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
@@ -82,7 +84,7 @@ async function seedRecentBookmarks(page, count) {
                     continue;
                 }
             }
-            await dash.loadPageBookmarks(pageId);
+            await dash.loadPageBookmarks(pageId, { forceFetch: true });
             const recent = dash.recent.getRecentBookmarksWithUrls(dash.bookmarks, 0);
             if (recent.length >= bookmarkCount) {
                 return;

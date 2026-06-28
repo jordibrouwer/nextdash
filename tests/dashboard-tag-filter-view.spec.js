@@ -12,34 +12,41 @@ async function dismissBlockingUi(page) {
 
 async function ensureLintgrasFilter(page) {
     await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const dash = window.dashboardInstance;
         const pageId = dash.currentPageId;
         const base = Date.now();
         const response = await fetch(`/api/bookmarks?page=${pageId}`);
         const bookmarks = await response.json();
         const tag = 'lintgras';
-        const hasTagged = bookmarks.some((bookmark) => (
+        let taggedIndex = bookmarks.findIndex((bookmark) => (
             (bookmark.tags || []).some((entry) => String(entry).toLowerCase() === tag)
         ));
-        if (!hasTagged) {
-            await fetch(`/api/bookmarks?page=${pageId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify([
-                    ...bookmarks,
-                    {
-                        name: 'Tag filter fixture',
-                        url: `https://example.com/tag-filter-${base}`,
-                        shortcut: '',
-                        category: 'other',
-                        tags: [tag],
-                        openCount: 0,
-                        createdAt: base,
-                    },
-                ]),
+        if (taggedIndex < 0) {
+            bookmarks.push({
+                name: 'Tag filter fixture',
+                url: `https://example.com/tag-filter-${base}`,
+                shortcut: 'LF',
+                category: 'other',
+                tags: [tag],
+                openCount: 3,
+                createdAt: base,
             });
-            await dash.loadPageBookmarks(pageId);
+        } else {
+            const fixture = { ...bookmarks[taggedIndex] };
+            fixture.shortcut = fixture.shortcut || 'LF';
+            fixture.openCount = Math.max(fixture.openCount || 0, 3);
+            bookmarks[taggedIndex] = fixture;
         }
+        const save = await api(`/api/bookmarks?page=${pageId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookmarks),
+        });
+        if (!save.ok) {
+            throw new Error(`save bookmarks failed: ${save.status}`);
+        }
+        await dash.loadPageBookmarks(pageId, { forceFetch: true });
         await dash.setTagFilters([tag], { animate: false });
     });
 }

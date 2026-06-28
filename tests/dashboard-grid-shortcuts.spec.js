@@ -116,13 +116,14 @@ test.describe('dashboard grid shortcuts', () => {
     test('tag popover marks current bookmark tags with is-current', async ({ page }) => {
         const tagName = `pw-tag-${Date.now()}`;
         await page.evaluate(async (tag) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const d = window.dashboardInstance;
             const pageId = d.currentPageId;
             const base = Date.now();
             const url = `https://example.com/pw-tag-popover-${base}`;
             const response = await fetch(`/api/bookmarks?page=${pageId}`);
             const bookmarks = await response.json();
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await api(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([
@@ -138,7 +139,7 @@ test.describe('dashboard grid shortcuts', () => {
                     },
                 ]),
             });
-            await d.loadPageBookmarks(pageId);
+            await d.loadPageBookmarks(pageId, { forceFetch: true });
             d.keyboardNavigation?.updateNavigableElements?.();
             const bookmark = (d.bookmarks || []).find((bm) => bm.url === url)
                 || (d.allBookmarks || []).find((bm) => bm.url === url);

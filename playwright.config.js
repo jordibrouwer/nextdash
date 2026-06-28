@@ -1,5 +1,6 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
+const { E2E_WEB_SERVER_ENV } = require('./tests/e2e-helpers');
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080';
 const isCI = Boolean(process.env.CI);
@@ -28,5 +29,9 @@ module.exports = defineConfig({
             timeout: 120_000,
             stdout: 'pipe',
             stderr: 'pipe',
+            env: {
+                ...process.env,
+                ...E2E_WEB_SERVER_ENV,
+            },
         },
 });

@@ -10,7 +10,8 @@ test('onboarding step 9 finish closes tour', async ({ page }) => {
         if (response.ok) {
             const settings = await response.json();
             settings.onboardingCompleted = false;
-            await fetch('/api/settings', {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),

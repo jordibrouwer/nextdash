@@ -57,10 +57,11 @@ test.describe('dashboard bookmark favicons toggle (showIcons)', () => {
         expect(iconsBefore).toBeGreaterThan(0);
 
         await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const res = await fetch('/api/settings');
             const settings = await res.json();
             settings.showIcons = false;
-            await fetch('/api/settings', {
+            await api('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
@@ -76,10 +77,11 @@ test.describe('dashboard bookmark favicons toggle (showIcons)', () => {
         await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeVisible();
 
         await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const res = await fetch('/api/settings');
             const settings = await res.json();
             settings.showIcons = true;
-            await fetch('/api/settings', {
+            await api('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),

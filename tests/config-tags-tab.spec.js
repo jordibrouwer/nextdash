@@ -32,6 +32,7 @@ async function waitForConfigReady(page) {
 /** @param {import('@playwright/test').Page} page @param {{ tag: string, count: number }[]} spec */
 async function seedTagsOnFirstPage(page, spec) {
     return page.evaluate(async (tagSpec) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const base = Date.now();
         const pageId = window.configManager?.pagesData?.[0]?.id ?? 1;
         const response = await fetch(`/api/bookmarks?page=${pageId}`);
@@ -53,7 +54,7 @@ async function seedTagsOnFirstPage(page, spec) {
                 });
             }
         });
-        const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+        const save = await api(`/api/bookmarks?page=${pageId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify([...bookmarks, ...additions]),

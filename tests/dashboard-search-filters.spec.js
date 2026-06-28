@@ -82,6 +82,7 @@ test.describe('dashboard search filters', () => {
 
     test('status:checked filter lists monitored bookmarks', async ({ page }) => {
         const seededUrl = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -102,7 +103,7 @@ test.describe('dashboard search filters', () => {
                 const hasTarget = bookmarks.some((bm) => bm.url === url);
                 const payload = hasTarget ? bookmarks : [...bookmarks, target];
                 if (!hasTarget) {
-                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                    const save = await api(`/api/bookmarks?page=${pageId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
@@ -112,7 +113,7 @@ test.describe('dashboard search filters', () => {
                         continue;
                     }
                 }
-                await dash.loadPageBookmarks(pageId);
+                await dash.loadPageBookmarks(pageId, { forceFetch: true });
                 dash.updateSearchComponent?.();
                 const found = (dash.bookmarks || []).find((bm) => bm.url === url);
                 if (found?.checkStatus === true) {
@@ -209,6 +210,7 @@ test.describe('dashboard search filters', () => {
 
     test('tag filter lists bookmarks when tag exists', async ({ page }) => {
         const tag = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -224,12 +226,12 @@ test.describe('dashboard search filters', () => {
                 openCount: 0,
                 createdAt: base,
             };
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await api(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([...bookmarks, target]),
             });
-            await dash.loadPageBookmarks(pageId);
+            await dash.loadPageBookmarks(pageId, { forceFetch: true });
             dash.updateSearchComponent();
             return targetTag;
         });
@@ -248,6 +250,7 @@ test.describe('dashboard search filters', () => {
 
     test('tag: shows tag autocomplete suggestions', async ({ page }) => {
         const tag = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -268,7 +271,7 @@ test.describe('dashboard search filters', () => {
                 const hasTarget = bookmarks.some((bm) => bm.url === target.url);
                 const payload = hasTarget ? bookmarks : [...bookmarks, target];
                 if (!hasTarget) {
-                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                    const save = await api(`/api/bookmarks?page=${pageId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
@@ -278,7 +281,7 @@ test.describe('dashboard search filters', () => {
                         continue;
                     }
                 }
-                await dash.loadPageBookmarks(pageId);
+                await dash.loadPageBookmarks(pageId, { forceFetch: true });
                 dash.updateSearchComponent?.();
                 const pool = dash.searchComponent?._collectFilterBookmarkPool?.() || [];
                 const hasTag = pool.some((bm) => (
@@ -308,6 +311,7 @@ test.describe('dashboard search filters', () => {
 
     test('tag: shows at most 20 tags until a name prefix is typed', async ({ page }) => {
         const rareTag = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -322,12 +326,12 @@ test.describe('dashboard search filters', () => {
                 openCount: 0,
                 createdAt: base + index,
             }));
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await api(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([...bookmarks, ...additions]),
             });
-            await dash.loadPageBookmarks(pageId);
+            await dash.loadPageBookmarks(pageId, { forceFetch: true });
             dash.updateSearchComponent?.();
             return `e2e-top20-${base}-24`;
         });
@@ -350,6 +354,7 @@ test.describe('dashboard search filters', () => {
 
     test('status:online uses persisted reachability not only live cache', async ({ page }) => {
         const seeded = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -366,12 +371,12 @@ test.describe('dashboard search filters', () => {
                 openCount: 0,
                 createdAt: base,
             };
-            await fetch(`/api/bookmarks?page=${pageId}`, {
+            await api(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([...bookmarks, target]),
             });
-            await dash.loadPageBookmarks(pageId);
+            await dash.loadPageBookmarks(pageId, { forceFetch: true });
             return target.url;
         });
 
@@ -388,6 +393,7 @@ test.describe('dashboard search filters', () => {
 
     test('typing tag name without colon suggests tag filter by usage', async ({ page }) => {
         const tag = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const dash = window.dashboardInstance;
             const pageId = dash.currentPageId;
             const base = Date.now();
@@ -408,7 +414,7 @@ test.describe('dashboard search filters', () => {
                 const hasTarget = bookmarks.some((bm) => bm.url === target.url);
                 const payload = hasTarget ? bookmarks : [...bookmarks, target];
                 if (!hasTarget) {
-                    const save = await fetch(`/api/bookmarks?page=${pageId}`, {
+                    const save = await api(`/api/bookmarks?page=${pageId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
@@ -418,7 +424,7 @@ test.describe('dashboard search filters', () => {
                         continue;
                     }
                 }
-                await dash.loadPageBookmarks(pageId);
+                await dash.loadPageBookmarks(pageId, { forceFetch: true });
                 dash.updateSearchComponent?.();
                 const pool = dash.searchComponent?._collectFilterBookmarkPool?.() || [];
                 const hasTag = pool.some((bm) => (
