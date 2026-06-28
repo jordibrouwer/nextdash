@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.29 — June 2026](#v20260629--june-2026)
 - [v2026.06.28 — June 2026](#v20260628--june-2026)
 - [v2026.06.27 — June 2026](#v20260627--june-2026)
 - [v2026.06.26 — June 2026](#v20260626--june-2026)
@@ -53,7 +54,22 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.28](#v20260628--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.29](#v20260629--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.29 — June 2026
+
+**Repository dev/main split & release workflow** — day-to-day development moves to the `dev` branch; `main` stays the lean Docker release tree (docs, extension, screenshots kept); CI runs on `dev`; releases use `./scripts/release-to-main.sh`.
+
+### Developer & repository
+
+- **change** **Branch workflow** — develop on **`dev`**; publish Docker images from **`main`**. The README Contributing section documents the flow.
+- **new** **`scripts/release-to-main.sh`** — merges `dev` → `main`, strips dev-only files (tests, Playwright, internal scripts), tags, and pushes. Do not merge `dev` into `main` manually on GitHub.
+- **change** **CI** — GitHub Actions (JSON validation + Playwright) run on pushes and pull requests to **`dev`**, not `main`.
+- **change** **Release `main` tree** — keeps Go source, `static/`, `templates/`, `locales/`, Docker files, README, CHANGELOG, MANUAL, screenshots, and the browser extension; drops tests and dev tooling from the default branch.
+- **fix** **MANUAL** — [Installation](#3-installation-and-first-launch) documents which Git branch to clone (`main` for self-hosting, `dev` for contributors).
+- **fix** **Cache-bust** — `whats-new-v97` data version and `2026.06-dashboard-release-v76` dashboard release token.
 
 ---
 

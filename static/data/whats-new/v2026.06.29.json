@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.06.29",
+  "date": "June 2026",
+  "releasedAt": "2026-06-29",
+  "sections": [
+    {
+      "title": "Developer &amp; repository",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Repository layout</strong> — development happens on the <code>dev</code> branch; <code>main</code> is the published Docker release. Self-hosters cloning the default branch get the same app; contributors see the branch workflow in the README."
+        }
+      ]
+    }
+  ]
+}

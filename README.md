@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.28**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.29**.
 
 ---
 
@@ -312,6 +312,29 @@ See `extension/README.md` for full usage and development notes.
 ## Contributing
 
 Issues and pull requests are welcome — bugs, features, and translations alike.
+
+### Branch workflow
+
+| Branch | Purpose |
+|--------|---------|
+| **`dev`** | Day-to-day development (tests, CI, scripts) |
+| **`main`** | Published release for Docker and the public repo page |
+
+1. Branch from **`dev`**, make changes, and open pull requests **into `dev`**.
+2. CI runs on pushes and PRs to **`dev`**.
+3. When a release is ready, merge **`dev` → `main`** with:
+
+   ```bash
+   git checkout dev
+   ./scripts/release-to-main.sh v2026.06.29
+   ```
+
+   That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, and pushes.
+
+Do **not** merge `dev` into `main` manually on GitHub — the compare banner after pushing to `dev` is informational only until you run the release script.
+
+**Clone for development:** `git clone` then `git checkout dev`.  
+**Clone for Docker / stable use:** stay on the default **`main`** branch.
 
 ---
 
