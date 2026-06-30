@@ -74,8 +74,8 @@ body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):
     color: var(--text-tertiary);
 }
 
-/* Status rows — explicit interaction chrome (wins over any stale status tint) */
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+/* Status rows — explicit interaction chrome (wins over idle status tint / color-lock) */
+.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: linear-gradient(
         90deg,
@@ -86,7 +86,7 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     box-shadow: none;
 }
 
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: linear-gradient(
         90deg,
         color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,

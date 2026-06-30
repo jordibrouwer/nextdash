@@ -2256,7 +2256,7 @@
         "showDockLayoutSelectorInfoTitle": "Layout-kiezer in dock",
         "showDockLayoutSelectorInfoMessage": "Layout-wisselaar in de footer.\n\n• Snel wisselen zonder config te openen",
         "colorizeStatusInfoTitle": "Status kleuren",
-        "colorizeStatusInfoMessage": "Markeert offline bladwijzers met een rode rij.\n\n• Online bladwijzers blijven neutraal; pingtijd toont bereikbaarheid\n• Vereist ingeschakelde bladwijzerstatus",
+        "colorizeStatusInfoMessage": "Markeert offline bladwijzers met een rode rij.\n\n• Online bladwijzers blijven neutraal; pingtijd toont bereikbaarheid\n• Hover en toetsenbordselectie gebruiken altijd de normale rij-highlight (deze optie geldt alleen voor idle-rijkleuren)\n• Vereist ingeschakelde bladwijzerstatus",
         "showPingTimesInfoTitle": "Pingtijden",
         "showPingTimesInfoMessage": "Milliseconden bij status.\n\n• Alleen als statuschecks aan staan",
         "showStatusLoadingInfoTitle": "Status laden",

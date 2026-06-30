@@ -2254,7 +2254,7 @@
         "showDockLayoutSelectorInfoTitle": "Layout-Auswahl im Dock",
         "showDockLayoutSelectorInfoMessage": "Schneller Layout-Wechsel in der Fußleiste.",
         "colorizeStatusInfoTitle": "Status einfärben",
-        "colorizeStatusInfoMessage": "Kachelfarbe bei Online/Offline.",
+        "colorizeStatusInfoMessage": "Färbt Offline-Lesezeichen rot ein.\n\n• Online bleibt neutral; Ping zeigt Erreichbarkeit\n• Hover und Tastaturauswahl nutzen immer die normale Zeilen-Hervorhebung (diese Option betrifft nur Idle-Farben)\n• Erfordert aktivierten Lesezeichenstatus",
         "showPingTimesInfoTitle": "Ping-Zeiten",
         "showPingTimesInfoMessage": "Antwortzeit in Millisekunden.",
         "showStatusLoadingInfoTitle": "Status-Ladeanzeige",

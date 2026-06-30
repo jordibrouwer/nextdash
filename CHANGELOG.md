@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.30.1 — June 2026](#v202606301--june-2026)
 - [v2026.06.30 — June 2026](#v20260630--june-2026)
 - [v2026.06.29.1 — June 2026](#v202606291--june-2026)
 - [v2026.06.29 — June 2026](#v20260629--june-2026)
@@ -56,7 +57,31 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.30.1](#v202606301--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.30.1 — June 2026
+
+**Status bookmark hover, side-rail polish & deploy docs** — full-row highlight for status bookmarks even when row colorization is off; Modern + side rail no longer shows duplicate navigation; clearer config help for the colorize option; `docker-compose.prod.yml` for image-only production deploys.
+
+### Dashboard
+
+- **fix** **Status bookmark hover with colorize off** — when *Change bookmark color when offline* is disabled, `status-color-lock` no longer forces `background: none` on hover; interaction chrome applies the same full-row gradient as normal bookmarks instead of only updating the ms badge.
+- **fix** **Modern + side rail** — with layout *Modern* and button bar *Side rail (left)*, navigation no longer appears twice; bottom-dock styling is excluded so only the vertical rail shows (Glass fix was in v2026.06.30).
+
+### Config
+
+- **fix** **Status colorize help** — ℹ tooltip on *Change bookmark color when offline* (EN/NL/DE/FR) clarifies that hover and keyboard selection always use normal row highlight; the option affects idle offline/checking tints only.
+
+### Developer & docs
+
+- **new** **`docker-compose.prod.yml`** — production compose file: only `./data` volume; assets served from the image (dev `docker-compose.yml` still mounts `./static` / `./templates` for live edits).
+- **fix** **README** — latest version **v2026.06.30.1**, prod vs dev compose documented, release script example updated.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v103` data version and `2026.06-dashboard-release-v82` dashboard release token; `status-hover-row-3` on status/bookmark-row CSS; `glass-side-rail-2` on `layout-glass.css`; `modern-side-rail-1` on `layout-modern.css`.
 
 ---
 

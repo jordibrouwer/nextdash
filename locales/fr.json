@@ -2254,7 +2254,7 @@
         "showDockLayoutSelectorInfoTitle": "Sélecteur de mise en page dans le dock",
         "showDockLayoutSelectorInfoMessage": "Changement rapide de layout dans le dock.",
         "colorizeStatusInfoTitle": "Coloriser le statut",
-        "colorizeStatusInfoMessage": "Couleur de tuile selon en ligne/hors ligne.",
+        "colorizeStatusInfoMessage": "Colore les favoris hors ligne en rouge.\n\n• En ligne reste neutre ; le ping indique la disponibilité\n• Survol et sélection clavier utilisent toujours la surbrillance de ligne normale (cette option ne concerne que les couleurs au repos)\n• Nécessite le statut des favoris activé",
         "showPingTimesInfoTitle": "Afficher les temps de ping",
         "showPingTimesInfoMessage": "Temps de réponse en millisecondes.",
         "showStatusLoadingInfoTitle": "Indicateur de chargement du statut",

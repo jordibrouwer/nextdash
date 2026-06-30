@@ -229,7 +229,7 @@ body[data-layout-version="modern"] .tag-filter-indicator-clear {
 
 /* ─── Bottom toolbar (center dock) ───────────────────────────────────────── */
 
-body[data-layout-version="modern"] .button-container {
+body[data-layout-version="modern"]:not([data-button-position="side-left"]) .button-container {
     width: fit-content;
     max-width: min(52rem, calc(100vw - 2.5rem));
     padding: 0.55rem 0.8rem 0.65rem;
@@ -333,6 +333,50 @@ body[data-layout-version="modern"] .tag-cloud-toggle-btn.search-button {
     -webkit-backdrop-filter: blur(16px);
 }
 
+/* ─── Side rail: rail only (no bottom dock / corner FAB duplicate) ─────────── */
+
+body[data-layout-version="modern"][data-button-position="side-left"] .button-container {
+    width: var(--rail-width, 44px);
+    max-width: var(--rail-width, 44px);
+    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 2 + 0.3rem);
+    border-radius: 0;
+    border-top: none;
+    border-bottom: none;
+    border-left: none;
+    gap: 0;
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .search-button {
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .search-button:hover {
+    transform: translateX(2px);
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .search-button:active {
+    transform: translateX(0);
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn,
+body[data-layout-version="modern"][data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn:hover {
+    box-shadow: none;
+}
+
 /* ─── Page overview overlay ───────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .page-overview-overlay {
@@ -400,7 +444,7 @@ body[data-layout-version="modern"].no-animations .tag-filter-indicator-chip:hove
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
-    body[data-layout-version="modern"]:not([data-mobile-layout="true"]) .button-container {
+    body[data-layout-version="modern"]:not([data-mobile-layout="true"]):not([data-button-position="side-left"]) .button-container {
         border-radius: var(--layout-radius-md);
         padding: 0.5rem 0.55rem 0.58rem;
     }
@@ -988,13 +1032,13 @@ body[data-layout-version="modern"].bookmark-kbd-selection-dimmed .dashboard-grid
 }
 
 /* Status rows — interaction chrome matches normal bookmarks (idle tint is inactive-only) */
-body[data-layout-version="modern"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
-body[data-layout-version="modern"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 34%, transparent);
 }

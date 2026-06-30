@@ -50,19 +50,19 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     color: inherit;
 }
 
-/* Optional: preserve bookmark row colors while still showing status state/ping */
-body.status-color-lock .bookmark-link.status-online,
-body.status-color-lock .bookmark-link.status-offline,
-body.status-color-lock .bookmark-link.status-checking {
+/* Optional: preserve bookmark row colors while still showing status state/ping (idle only) */
+body.status-color-lock .bookmark-link.status-online:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body.status-color-lock .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: inherit;
     background: none;
     box-shadow: none;
     font-weight: inherit;
 }
 
-body.status-color-lock .bookmark-link.status-online .status-text,
-body.status-color-lock .bookmark-link.status-offline .status-text,
-body.status-color-lock .bookmark-link.status-checking .status-text {
+body.status-color-lock .bookmark-link.status-online:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text,
+body.status-color-lock .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text,
+body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text {
     color: var(--text-secondary);
 }
 
