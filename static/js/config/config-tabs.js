@@ -181,20 +181,30 @@ class ConfigTabs {
             return true;
         }
 
-        const fromDom = this.c.getCategoriesFromDOM();
-        if (!fromDom) {
+        let categories;
+        try {
+            categories = await this.c.resolveCategoriesForSave(pageId);
+        } catch (error) {
+            console.error('Error resolving categories before page switch:', error);
+            this.c.ui.showNotification(
+                this.c.language.t('config.dashboardSyncFailed'),
+                'error'
+            );
+            return false;
+        }
+        if (categories === null) {
             return true;
         }
 
-        const validationError = this.c.validateCategoriesData(fromDom);
+        const validationError = this.c.validateCategoriesData(categories);
         if (validationError) {
             this.c.ui.showNotification(validationError, 'error');
             return false;
         }
 
         try {
-            this.c.categoriesData = fromDom;
-            await this.c.withRetry(() => this.c.data.saveCategoriesByPage(fromDom, pageId));
+            this.c.categoriesData = categories;
+            await this.c.withRetry(() => this.c.data.saveCategoriesByPage(categories, pageId));
             this.c.signalDashboardReload('category-page-switch');
             this.c.syncSnapshotAfterStructurePersist();
             return true;

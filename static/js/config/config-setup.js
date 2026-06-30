@@ -869,7 +869,7 @@ class ConfigSetup {
         }
     
         if (window.ConfigQuickAdd) {
-            this.c.quickAdd = new window.ConfigQuickAdd(this);
+            this.c.quickAdd = new window.ConfigQuickAdd(this.c);
             const quickAddBtn = document.getElementById('config-quick-add-btn');
             if (quickAddBtn) {
                 quickAddBtn.addEventListener('click', () => {
