@@ -61,6 +61,19 @@
           "text": "<strong>Phone deep link</strong> — opening <code>/config#bookmarks</code> on a phone shows a clear <em>desktop only</em> card with a link back to the dashboard instead of a broken empty editor."
         }
       ]
+    },
+    {
+      "title": "Help &amp; documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help (EN / NL / DE / FR)</strong> — the in-app help index now documents tab shell consistency, breadcrumb save mode, the unified save status line, the Bookmarks <strong>Context</strong> panel, and the phone <code>#bookmarks</code> desktop-only card. The <strong>What's new</strong> recap at the top of Help includes this release."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>User manual (MANUAL.md)</strong> — expanded config walkthrough: list tabs, save-mode pills, <strong>Config → Help</strong> section, Context vs Pages/Categories editing, and updated troubleshooting for the new save UX."
+        }
+      ]
     }
   ]
 }
