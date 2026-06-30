@@ -440,15 +440,7 @@ html:has(#config-main) :is(
 }
 
 .save-status-indicator {
-    font-size: var(--font-size-controls);
-    color: var(--accent-success);
-    opacity: 0.9;
-}
-
-/* unsaved status styling: config-unsaved-state.css */
-
-.save-status-indicator.is-hidden {
-    display: none;
+    /* shell: config-save-status.css */
 }
 
 .top-quick-action {

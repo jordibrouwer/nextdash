@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=stats-tab-visibility-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-save-status-v1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -78,7 +78,7 @@
                 <div class="config-actions-top">
                     <div class="config-actions-buttons">
                         <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
-                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator" aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
+                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
                         <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
                         <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
                         <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
@@ -109,6 +109,7 @@
         <div class="container">
             <div class="config-breadcrumb-row">
                 <div id="config-breadcrumb" class="config-breadcrumb" data-i18n-aria="config.breadcrumbAria"></div>
+                <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
                 <div id="config-settings-search-anchor" class="config-settings-search-anchor">
                 <div class="config-settings-search" role="search">
                     <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
@@ -2336,7 +2337,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
-    <script src="/static/js/config/config-ui.js?v=config-ui-tour-keys-1"></script>
+    <script src="/static/js/config/config-ui.js?v=config-save-status-v1"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-storage.js"></script>
@@ -2359,7 +2360,7 @@
     <script src="/static/js/config/config-settings-defaults.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
     <script src="/static/js/config/config-tab-tours.js?v=config-tab-tours-1"></script>
-    <script src="/static/js/config/config-persistence.js?v=config-persistence-4"></script>
+    <script src="/static/js/config/config-persistence.js?v=config-save-status-v1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=config-setup-tour-keys-1"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
@@ -2403,7 +2404,7 @@
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">
-            <span class="config-save-sticky-hint" data-i18n="config.unsavedStickyHint">You have unsaved changes</span>
+            <span class="config-save-sticky-hint" aria-live="polite">You have unsaved changes</span>
             <div class="config-save-sticky-actions">
                 <button type="button" id="save-btn-sticky" class="btn btn-success" data-i18n="config.saveShort">Save</button>
                 <button type="button" id="discard-sticky-btn" class="btn btn-danger btn-small" data-i18n="config.discardShort">Discard</button>

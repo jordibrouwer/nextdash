@@ -6,6 +6,7 @@
 @import url('config/config-tab-shell.css?v=config-tab-consistency-2');
 @import url('config/config-buttons.css');
 @import url('config/config-unsaved-state.css');
+@import url('config/config-save-status.css?v=config-save-status-v1');
 @import url('config/config-notifications.css');
 @import url('config/config-sliders.css');
 @import url('config/config-help.css');

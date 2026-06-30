@@ -106,6 +106,7 @@ class ConfigUI {
                 : null;
             this.updateBreadcrumb(targetTab, generalSub);
             this.initBreadcrumbObserver(targetTab);
+            this.updateTabSaveMode(targetTab);
 
             // Update URL hash (preserve general layer subpaths across tab switches)
             if (targetTab === 'colors') {
@@ -319,6 +320,7 @@ class ConfigUI {
         });
 
         this.switchToTab = switchToTab;
+        this.updateTabSaveMode(this._currentTab);
 
         const configTabKeyAllowed = () => {
             if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {
@@ -490,6 +492,34 @@ class ConfigUI {
             html += `${sep}<span class="config-breadcrumb-sub">${panelTitle}</span>`;
         }
         el.innerHTML = html;
+    }
+
+    updateTabSaveMode(tab) {
+        const el = document.getElementById('config-tab-save-mode');
+        if (!el) return;
+        const lang = window.configManager?.language;
+        const modes = {
+            general: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            bookmarks: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            keyboard: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            tags: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            collections: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            pages: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            categories: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            finders: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            stats: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            backups: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            help: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            colors: { key: 'config.tabSaveModeColorsSave', mod: 'colors-save' },
+        };
+        const mode = modes[tab];
+        if (!mode) {
+            el.hidden = true;
+            return;
+        }
+        el.hidden = false;
+        el.textContent = lang?.t(mode.key) || mode.mod;
+        el.className = `config-tab-save-mode config-tab-save-mode--${mode.mod}`;
     }
 
     _breadcrumbTabLabel(tab) {

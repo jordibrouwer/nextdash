@@ -487,18 +487,11 @@ class ConfigPersistence {
 
     flashSavedIndicator() {
         if (this.c.isDirty) return;
-        const saveStatus = document.getElementById('save-status-indicator');
-        if (!saveStatus) return;
-        saveStatus.textContent = this.c.language?.t('config.allSaved') || 'All saved ✓';
-        saveStatus.classList.remove('is-hidden', 'is-unsaved');
-        saveStatus.classList.add('is-saved-flash');
+        this.updateSaveStatusUI('flash');
         clearTimeout(this.c._savedFlashTimer);
         this.c._savedFlashTimer = setTimeout(() => {
-            saveStatus.classList.remove('is-saved-flash');
-            if (this.c.isDirty) {
-                saveStatus.classList.add('is-hidden');
-            } else {
-                saveStatus.textContent = this.c.language?.t('config.savedShort') || 'Saved';
+            if (!this.c.isDirty) {
+                this.updateSaveStatusUI('saved');
             }
         }, 1500);
     }
@@ -548,7 +541,9 @@ class ConfigPersistence {
         discardSticky?.addEventListener('click', () => this.discardChanges());
         if (!sticky) return;
         const onScroll = () => {
-            sticky.classList.toggle('is-scroll-active', window.scrollY > 100 && this.c.isDirty);
+            const active = window.scrollY > 100 && this.c.isDirty;
+            sticky.classList.toggle('is-scroll-active', active);
+            document.body.classList.toggle('config-sticky-save-visible', active);
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         this.c._stickySaveScrollHandler = onScroll;
@@ -569,24 +564,57 @@ class ConfigPersistence {
         ].filter(Boolean);
     }
 
+    _saveStatusText(state) {
+        const lang = this.c.language;
+        const map = {
+            saved: ['config.savedShort', 'Saved'],
+            unsaved: ['config.unsavedStatus', 'Unsaved'],
+            saving: ['config.saving', 'Saving…'],
+            flash: ['config.allSaved', 'All saved ✓'],
+            failed: ['config.saveFailed', 'Save failed'],
+        };
+        const [key, fallback] = map[state] || map.saved;
+        return lang?.t(key) || fallback;
+    }
+
+    updateSaveStatusUI(state = 'saved') {
+        const saveStatus = document.getElementById('save-status-indicator');
+        const stickyHint = document.querySelector('.config-save-sticky-hint');
+        const badge = document.getElementById('unsaved-indicator');
+        if (badge) {
+            badge.classList.remove('is-visible');
+        }
+        if (!saveStatus) return;
+
+        saveStatus.classList.remove('is-hidden', 'is-unsaved', 'is-saving', 'is-saved-flash', 'is-save-failed');
+        saveStatus.textContent = this._saveStatusText(state);
+
+        if (state === 'unsaved') {
+            saveStatus.classList.add('is-unsaved');
+        } else if (state === 'saving') {
+            saveStatus.classList.add('is-saving');
+        } else if (state === 'flash') {
+            saveStatus.classList.add('is-saved-flash');
+        } else if (state === 'failed') {
+            saveStatus.classList.add('is-save-failed', 'is-unsaved');
+        }
+
+        if (stickyHint) {
+            stickyHint.textContent = state === 'unsaved'
+                ? (this.c.language?.t('config.unsavedStickyHint') || 'You have unsaved changes')
+                : saveStatus.textContent;
+        }
+    }
+
     setDirtyState(isDirty) {
         this.c.isDirty = isDirty === true;
         const saveButtons = this.getSaveButtons();
-        const badge = document.getElementById('unsaved-indicator');
-        const saveStatus = document.getElementById('save-status-indicator');
         const undoTopBtn = document.getElementById('undo-top-btn');
         const discardTopBtn = document.getElementById('discard-top-btn');
         saveButtons.forEach((saveBtn) => {
             saveBtn.classList.toggle('has-unsaved', this.c.isDirty);
         });
-        if (badge) {
-            badge.classList.toggle('is-visible', this.c.isDirty);
-        }
-        if (saveStatus) {
-            saveStatus.textContent = this.c.language?.t('config.savedShort') || 'Saved';
-            saveStatus.classList.toggle('is-unsaved', this.c.isDirty);
-            saveStatus.classList.toggle('is-hidden', this.c.isDirty);
-        }
+        this.updateSaveStatusUI(this.c.isDirty ? 'unsaved' : 'saved');
         if (undoTopBtn) {
             undoTopBtn.disabled = !this.c.undoSnapshot;
             undoTopBtn.classList.toggle('is-visible', !!this.c.undoSnapshot);
@@ -596,6 +624,9 @@ class ConfigPersistence {
             discardTopBtn.classList.toggle('is-visible', this.c.isDirty);
         }
         document.body.classList.toggle('config-is-dirty', this.c.isDirty);
+        if (!this.c.isDirty) {
+            document.body.classList.remove('config-sticky-save-visible');
+        }
         if (this.c._stickySaveScrollHandler) {
             this.c._stickySaveScrollHandler();
         }
@@ -765,11 +796,7 @@ class ConfigPersistence {
             ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(this.c))
             : this.c.findersData;
         const changeScope = this.getPendingChangeScope();
-        const saveStatus = document.getElementById('save-status-indicator');
-        if (saveStatus) {
-            saveStatus.textContent = this.c.language?.t('config.savingChanges') || 'Saving changes...';
-            saveStatus.classList.remove('is-unsaved');
-        }
+        this.updateSaveStatusUI('saving');
         this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
         try {
@@ -831,10 +858,7 @@ class ConfigPersistence {
         } catch (error) {
             console.error('Error saving configuration:', error);
             this.c.ui.hideNotification();
-            if (saveStatus) {
-                saveStatus.textContent = 'Save failed';
-                saveStatus.classList.add('is-unsaved');
-            }
+            this.updateSaveStatusUI('failed');
             const message = String(error?.message || '');
             if (message.toLowerCase().includes('duplicate shortcut')) {
                 this.c.ui.showNotification(message, 'error');
