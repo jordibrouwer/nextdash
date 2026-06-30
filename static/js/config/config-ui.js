@@ -71,8 +71,14 @@ class ConfigUI {
         });
 
         // Function to switch to a specific tab
-        const switchToTab = (targetTab) => {
+        const switchToTab = async (targetTab) => {
             const previousTab = this._currentTab;
+            if (previousTab === 'categories' && targetTab !== 'categories') {
+                const allowed = await window.configManager?.guardCategoriesTabLeave?.(targetTab);
+                if (allowed === false) {
+                    return false;
+                }
+            }
             if (previousTab === 'colors' && targetTab !== 'colors') {
                 window.configManager?.colorsEditor?.clearPreviewStyle?.();
             }
@@ -228,6 +234,7 @@ class ConfigUI {
                     mgr.scheduleConfigStatsTour?.();
                 }
             }
+            return true;
         };
 
     const validTabs = ['general', 'colors', 'pages', 'categories', 'tags', 'bookmarks', 'finders', 'collections', 'backups', 'keyboard', 'stats', 'help'];
@@ -275,7 +282,11 @@ class ConfigUI {
                         return;
                     }
                 }
-                switchToTab(tab);
+                const switched = await switchToTab(tab);
+                if (!switched) {
+                    history.replaceState(null, '', `#${this._currentTab}`);
+                    return;
+                }
             }
             if (tab === 'general' && window.configManager?.generalLayers) {
                 window.configManager.generalLayers.applyHash(window.location.hash);
@@ -298,7 +309,8 @@ class ConfigUI {
                     const allowed = await configManager.guardColorsTabLeave(targetTab);
                     if (!allowed) return;
                 }
-                switchToTab(targetTab);
+                const switched = await switchToTab(targetTab);
+                if (!switched) return;
                 this._scrollTabIntoView(button);
             });
         });

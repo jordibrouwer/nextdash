@@ -174,6 +174,16 @@ class ConfigTabs {
         return ok;
     }
 
+    async guardCategoriesTabLeave(targetTab) {
+        if (this.c._configCategoriesTourActive || this.c._configCategoriesTourStarting) {
+            return true;
+        }
+        if (this.c.ui._currentTab !== 'categories' || targetTab === 'categories') {
+            return true;
+        }
+        return this.flushCategoriesPageBeforeSwitch();
+    }
+
     async flushCategoriesPageBeforeSwitch() {
         clearTimeout(this.c._categoryReorderPersistTimer);
         const pageId = Number(this.c.currentCategoriesPageId);
@@ -205,6 +215,10 @@ class ConfigTabs {
         try {
             this.c.categoriesData = categories;
             await this.c.withRetry(() => this.c.data.saveCategoriesByPage(categories, pageId));
+            if (Number(this.c.currentPageId) === pageId) {
+                this.c.bookmarksPageCategories = categories.map((cat) => ({ ...cat }));
+                this.c.refreshBookmarksFilterOptions?.();
+            }
             this.c.signalDashboardReload('category-page-switch');
             this.c.syncSnapshotAfterStructurePersist();
             return true;
@@ -229,7 +243,7 @@ class ConfigTabs {
             'reloadTagsTabData', 'onConfigTagsTabOpened',
             'cancelPendingFindersTabReload', 'reloadFindersTabData', 'onConfigFindersTabOpened',
             'onConfigPagesTabOpened', 'onConfigCollectionsTabOpened', 'onConfigColorsTabOpened',
-            'ensureColorsEditor', 'removeCustomTheme', 'guardColorsTabLeave',
+            'ensureColorsEditor', 'removeCustomTheme', 'guardColorsTabLeave', 'guardCategoriesTabLeave',
             'flushCategoriesPageBeforeSwitch',
         ];
         for (const name of methods) {

@@ -145,4 +145,43 @@ test.describe('config tabs (phase 3 lifecycle)', () => {
         expect(preserved.categoryCount).toBe(1);
         expect(preserved.bookmarkCategory).toBe('persist-guard');
     });
+
+    test('leaving categories tab flushes category edits to the server', async ({ page }) => {
+        await waitForConfigReady(page);
+        await page.evaluate(() => window.configManager.ui.switchToTab('categories'));
+        await page.waitForSelector('[data-tab-content="categories"].active', { timeout: 10_000 });
+
+        const preserved = await page.evaluate(async () => {
+            const cm = window.configManager;
+            const pageId = Number(cm.currentCategoriesPageId) || 1;
+            const seed = [{ id: 'tab-leave-flush', name: 'Before Tab Leave', icon: '' }];
+            await cm.data.saveCategoriesByPage(seed, pageId);
+            await cm.loadPageCategories(pageId);
+
+            const nameInput = document.querySelector(
+                '#categories-list .category-item[data-category-id="tab-leave-flush"] input[data-field="name"]'
+            );
+            if (!nameInput) {
+                return { ok: false, reason: 'missing-name-input' };
+            }
+            nameInput.value = 'After Tab Leave';
+            nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            const switched = await cm.ui.switchToTab('general');
+            if (!switched) {
+                return { ok: false, reason: 'tab-switch-blocked' };
+            }
+
+            const fromServer = await cm.data.loadCategoriesByPage(pageId);
+            const saved = (fromServer || []).find((category) => category.id === 'tab-leave-flush');
+            return {
+                ok: true,
+                switched,
+                name: saved?.name || '',
+            };
+        });
+
+        expect(preserved.ok).toBe(true);
+        expect(preserved.name).toBe('After Tab Leave');
+    });
 });
