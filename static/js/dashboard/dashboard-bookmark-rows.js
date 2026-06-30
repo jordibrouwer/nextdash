@@ -11,8 +11,20 @@ class DashboardBookmarkRows {
         const name = String(bookmark?.name || '').trim();
         if (name) return name;
         const url = String(bookmark?.url || '').trim();
-        if (url) return url;
+        if (url) {
+            const host = window.BookmarkUrlUtils?.extractDomainFromUrl?.(url);
+            return host || url;
+        }
         return d.bookmarkFallbackName();
+    }
+
+    /** Full URL (or name) for title/aria when the visible label is shortened to hostname. */
+    bookmarkRowTooltip(bookmark) {
+        const name = String(bookmark?.name || '').trim();
+        if (name) return name;
+        const url = String(bookmark?.url || '').trim();
+        if (url) return url;
+        return this.bookmarkDisplayLabel(bookmark);
     }
 
     applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
@@ -383,10 +395,11 @@ class DashboardBookmarkRows {
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
         const displayLabel = this.bookmarkDisplayLabel(bookmark);
+        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textSpan = document.createElement('span');
         textSpan.className = 'bookmark-text';
         textSpan.textContent = displayLabel;
-        textSpan.title = displayLabel;
+        textSpan.title = rowTooltip;
         openLink.appendChild(textSpan);
 
         const recordOpen = () => d.recordBookmarkOpened(
@@ -455,7 +468,7 @@ class DashboardBookmarkRows {
             shortcutSpan.dataset.shortcut = shortcutText;
         }
         {
-            let linkLabel = this.bookmarkDisplayLabel(bookmark);
+            let linkLabel = this.bookmarkRowTooltip(bookmark);
             if (shortcutText) {
                 const shortcutPrefix = d.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
                 linkLabel = `${linkLabel}, ${shortcutPrefix} ${shortcutText}`;
@@ -735,10 +748,11 @@ class DashboardBookmarkRows {
         link.className = 'bookmark-link recent-bookmark-link';
 
         const displayLabel = this.bookmarkDisplayLabel(bookmark);
+        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textWrapper = document.createElement('span');
         textWrapper.className = 'bookmark-text recent-bookmark-text';
         textWrapper.textContent = displayLabel;
-        textWrapper.title = displayLabel;
+        textWrapper.title = rowTooltip;
         link.appendChild(textWrapper);
 
         const meta = document.createElement('span');
