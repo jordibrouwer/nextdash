@@ -135,7 +135,16 @@ git checkout main
 if ! git merge dev --no-edit; then
   echo "Resolving modify/delete conflicts for dev-only paths on main..."
   while IFS= read -r path; do
-    [[ -n "$path" ]] && git rm -f "$path" >/dev/null 2>&1 || true
+    [[ -n "$path" ]] || continue
+    case "$path" in
+      static/js/*|static/css/*|templates/*|locales/*)
+        git checkout --theirs -- "$path" 2>/dev/null || true
+        git add -- "$path" 2>/dev/null || true
+        ;;
+      *)
+        git rm -f "$path" >/dev/null 2>&1 || true
+        ;;
+    esac
   done < <(git diff --name-only --diff-filter=UD)
 
   if git diff --name-only --diff-filter=U | grep -q .; then
