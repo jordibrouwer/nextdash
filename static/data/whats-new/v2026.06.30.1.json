@@ -9,6 +9,28 @@
         {
           "badge": "fix",
           "text": "<strong>Status bookmark selection (colorize off)</strong> — bookmarks with ping/status monitoring now highlight the full row on hover and keyboard selection even when <em>Change bookmark color when offline</em> is disabled in Config. Previously only the ms badge lit up in that mode."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Modern + side rail</strong> — with layout <em>Modern</em> and button bar <em>Side rail (left)</em>, navigation no longer appears twice (same fix as Glass in v2026.06.30)."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Status colorize help</strong> — the ℹ tooltip on <em>Change bookmark color when offline</em> now explains that hover and keyboard selection always use the normal row highlight; the option only affects idle offline/checking row colors."
+        }
+      ]
+    },
+    {
+      "title": "Self-hosting",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Production Docker Compose</strong> — <code>docker-compose.prod.yml</code> mounts only <code>./data</code>; CSS and templates come from the image so production deploys match the built release (use <code>docker-compose.yml</code> for dev with live static mounts)."
         }
       ]
     }
