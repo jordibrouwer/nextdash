@@ -1,0 +1,37 @@
+{
+  "tag": "v2026.06.30",
+  "date": "June 2026",
+  "releasedAt": "2026-06-30",
+  "sections": [
+    {
+      "title": "Config &amp; categories",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Categories stay put</strong> — category lists are no longer accidentally cleared when switching config tabs or pages, or when the categories panel was empty but bookmarks still referenced those categories. Existing bookmarks can help recover missing category entries after upgrade."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Categories save on tab switch</strong> — edits on Config → Categories (rename, reorder, add) are saved automatically when you open another tab."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quick-add shows immediately</strong> — new bookmarks from ⚡ Quick add appear in the Config → Bookmarks table right away without a full page reload."
+        }
+      ]
+    },
+    {
+      "title": "Config layout",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Stats tab stays in place</strong> — the stats panel no longer shows on top of other config tabs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cleaner config panels</strong> — row widths, intros, save bar, and section toolbars align consistently across classic, modern, and glass themes."
+        }
+      ]
+    }
+  ]
+}

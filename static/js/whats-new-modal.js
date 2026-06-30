@@ -16,7 +16,7 @@
     let modalSessionId = 0;
 
     function getDataVersion() {
-        return window.NEXTDASH_WHATS_NEW_DATA_VERSION || 'whats-new-v98';
+        return window.NEXTDASH_WHATS_NEW_DATA_VERSION || 'whats-new-v99';
     }
 
     function getReleaseToken() {
