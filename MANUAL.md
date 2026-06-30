@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help**.
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.06.31**).
 
 ---
 
@@ -588,7 +588,7 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 - Drag the **grip** on a row in **config → pages**, or focus a row and press **↑** / **↓**.
 - Order saves automatically after a short debounce (~600 ms) and shows a localized sync toast.
-- **Archive** hides a page from the dashboard and page picker without deleting its bookmarks (restore from the Structure workspace or the archived list).
+- **Archive** hides a page from the dashboard and page picker without deleting its bookmarks (restore from **config → pages**, the **Context** panel on Bookmarks when expanded, or the archived list there).
 
 ### Move between pages
 
@@ -725,10 +725,12 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 
 The first time you open the **Theme** tab on a desktop-width window, a **9-step guided tour** creates a temporary **Tour demo** palette, saves it, activates it on General, then removes it (see [Guided config tours](#guided-config-tours)).
 
-### Config → pages & categories (structure tabs)
+### Config → pages & categories (list tabs)
 
-- **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). Page dropdowns skip archived pages. Desktop only (mobile shows a toast).  
-- **Categories** — per-page list with icon, name, **merge**, remove, bookmark count per row; drag or **↑/↓** reorder with auto-save; switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Desktop only for full editing.
+Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collections**) share the same layout pattern introduced in **v2026.06.31**: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
+
+- **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). Page dropdowns skip archived pages. Desktop only (mobile shows a toast). On **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.  
+- **Categories** — per-page list with icon, name, **merge**, remove, bookmark count per row; drag or **↑/↓** reorder with auto-save; switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Breadcrumb shows the selected page. On **Bookmarks**, **Context** only switches the active category filter. Desktop only for full editing.
 
 ### Typography and density
 
@@ -742,7 +744,7 @@ The first time you open the **Theme** tab on a desktop-width window, a **9-step 
 
 ### What’s new
 
-**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.06.31** config tab consistency (shared list-tab shell, breadcrumb context, unified save status, Bookmarks **Context** panel) — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -832,7 +834,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | **bookmarks** | Split-view editor, bulk actions; **Context** panel for page/category; breadcrumb shows active page/category |
 | **finders** | External search shortcuts |
 | **backups** | ZIP backup/restore, CSV, browser HTML import |
-| **help** | In-app documentation index |
+| **help** | In-app documentation index (EN/NL/DE/FR); What's new recap; searchable via settings search — available on phone |
 | **stats** | Usage insights (desktop) |
 | **keyboard** | Rebind shortcuts (link from help) |
 | **colors** | Theme editor (`#colors`) — dark/light, custom & packaged palettes, export/import, undo |
@@ -857,7 +859,8 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 #### Layout and structure
 
-- **Tab shell (v2026.06.31)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. On **Classic** layout, each list tab fuses toolbar + list into one surface card. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs.
+- **Tab shell (v2026.06.31)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. On **Classic** layout, each list tab fuses toolbar + list into one surface card. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs. **Modern** and **Glass** may render toolbar and list as separate stacked cards with the same markup — visual card count can differ from Classic while behaviour stays the same.
+- **Save UX** — tabs that auto-save (Pages, Categories, Finders, …) show an **Auto-save** pill in the breadcrumb row; General and Bookmarks show **Requires save** until you click **Save**. Stats is **Read-only**; Theme uses **Save colors**. One status line beside **Save** shows dirty / saved / syncing (there is no separate unsaved badge in the header).
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
 - **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
 
@@ -868,7 +871,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
 | **General** (11 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Search settings…** (`Ctrl+Shift+K`), **Save** |
-| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed **Context** panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
+| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed **Context** panel (page/category switcher — not full structure editing), **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
 | **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
@@ -884,6 +887,18 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 **Mobile** — Tours do not auto-start on the phone config layout (≤768px). Portrait tablets and wider touch layouts keep full config and may run tours. Rotating footer tips, the settings search promo, and promo banners are also hidden on the broader mobile dashboard layout.
 
 **Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`; each step highlights the matching control with a focus ring). After onboarding, **What's new** may open first; classic-layout users may then see a **layout-versions** tip, a **paste URL** spotlight, and a **preview cards** spotlight in the same session — separate from config tab tours.
+
+### Config → Help
+
+Available on every screen width (including phone). The **Help** tab is a searchable index of the same topics as this manual, in shorter form:
+
+- **Quick links** — anchor jump list (quick start, onboarding, general, navigation, mobile, keyboard, bookmarks, search, tags, collections, health, backup, troubleshooting, …).
+- **What's new recap** — scrollable history of recent changes; **v2026.06.31** documents config tab consistency (shared list-tab shell, breadcrumb + save-mode pill, unified save status, Bookmarks **Context** panel, phone `#bookmarks` card).
+- **Translated** — EN, NL, DE, FR (same keys as the rest of config).
+- **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
+- **Keyboard tab link** — opens `config#keyboard` for rebinding (not in the main tab bar).
+
+On phone, Help is the only config tab besides **General** that shows the full documentation index; structure tabs need a wider window.
 
 ### Config keyboard
 
@@ -1153,7 +1168,7 @@ Bookmark index may have changed after reorder/delete. Link still opens the right
 
 ### Settings not applying
 
-Click **Save** in config (sticky bar). Some fields autosave — watch for “unsaved” indicator.
+Click **Save** in config (sticky bar) when the breadcrumb shows **Requires save**. Auto-save tabs (Pages, Categories, Finders, …) persist after a short debounce — watch the status line beside **Save** and the **Auto-save** pill in the breadcrumb row.
 
 ### Config Save fails on local/private URLs
 
@@ -1221,9 +1236,9 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 ## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
-- **Config → Help** — Same topics, translated, with quick anchor links  
-- **In-app What's new (★)** — Latest release highlights; older releases load as you scroll (skeleton while fetching)  
+- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.06.31** (new / fix)  
+- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links and a **What's new** recap  
+- **In-app What's new (★)** — Latest release highlights first; older releases load as you scroll (skeleton while fetching)  
 
 ---
 
