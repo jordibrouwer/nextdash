@@ -175,6 +175,8 @@
     background: var(--config-surface-toolbar);
     padding: 0.75rem;
     min-height: 9rem;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .structure-column-header {
@@ -196,6 +198,8 @@
     gap: 0.35rem;
     max-height: 12rem;
     overflow: auto;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .structure-list-item {
@@ -206,6 +210,8 @@
     padding: 0.38rem 0.5rem;
     cursor: pointer;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .structure-list-item.is-active {

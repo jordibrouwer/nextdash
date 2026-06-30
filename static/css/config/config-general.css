@@ -263,6 +263,10 @@ html:has(#config-main) :is(
     box-sizing: border-box;
 }
 
+html:has(#config-main) #config-main :is(.structure-column, .structure-list, .structure-list-item) {
+    box-sizing: border-box;
+}
+
 .tab-content[data-tab-content="general"] > div > .general-tab-intro,
 .tab-content[data-tab-content="general"] .general-layout,
 .tab-content[data-tab-content="general"] .general-card {

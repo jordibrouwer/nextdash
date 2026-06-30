@@ -249,4 +249,23 @@ test.describe('config tab consistency v4 classic surfaces', () => {
         });
         expect(shadow).not.toBe('none');
     });
+
+    test('structure pages list items stay within column width', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('bookmarks');
+            const card = document.getElementById('structure-workspace-card');
+            card?.classList.remove('is-collapsed');
+            document.getElementById('structure-workspace-toggle')?.setAttribute('aria-expanded', 'true');
+            await cm.loadPageBookmarks(cm.currentPageId);
+        });
+
+        const item = page.locator('#structure-pages-list .structure-list-item').first();
+        await expect(item).toBeVisible();
+        const fits = await item.evaluate((el) => {
+            const list = el.parentElement;
+            return Boolean(list && el.offsetWidth <= list.clientWidth);
+        });
+        expect(fits).toBe(true);
+    });
 });
