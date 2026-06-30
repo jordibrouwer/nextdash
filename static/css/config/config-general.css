@@ -89,7 +89,7 @@ html:has(#config-main) .config-section,
 html:has(#config-main) .config-section *,
 html:has(#config-main) .config-save-sticky,
 html:has(#config-main) .config-save-sticky * {
-    box-sizing: inherit;
+    box-sizing: border-box;
 }
 
 body {
@@ -237,6 +237,7 @@ html:has(#config-main) :is(
     .help-search-filter,
     .bookmarks-splitview,
     .structure-workspace-card,
+    .config-tab-surface,
     .config-tab-toolbar,
     .simple-toolbar,
     .simple-list,

@@ -156,6 +156,7 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+    min-width: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }

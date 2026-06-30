@@ -311,3 +311,71 @@ test.describe('config tab consistency v4 classic surfaces', () => {
         await expect(page.locator('#structure-workspace-card')).not.toHaveClass(/is-collapsed/);
     });
 });
+
+test.describe('config tab surface box model', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+  /** @param {import('@playwright/test').Page} page @param {string} tab */
+    async function expectSurfaceToolbarFits(page, tab) {
+        const fits = await page.evaluate((tabId) => {
+            const surface = document.querySelector(`[data-tab-content="${tabId}"] .config-tab-surface`);
+            const toolbar = surface?.querySelector('.config-tab-toolbar');
+            if (!surface || !toolbar) return false;
+            const surfaceRect = surface.getBoundingClientRect();
+            const toolbarRect = toolbar.getBoundingClientRect();
+            const buttons = [...toolbar.querySelectorAll('button, .btn')];
+            const buttonsFit = buttons.every((btn) => btn.getBoundingClientRect().right <= surfaceRect.right + 0.5);
+            return toolbar.offsetWidth <= surface.clientWidth + 0.5 && buttonsFit;
+        }, tab);
+        expect(fits).toBe(true);
+    }
+
+    test('pages tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+        await expectSurfaceToolbarFits(page, 'pages');
+    });
+
+    test('categories tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('categories');
+            await cm.loadPageCategories(cm.currentCategoriesPageId || cm.currentPageId || 1);
+        });
+        await expectSurfaceToolbarFits(page, 'categories');
+    });
+
+    test('collections tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('collections'));
+        await expectSurfaceToolbarFits(page, 'collections');
+    });
+
+    test('finders tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('finders'));
+        await expectSurfaceToolbarFits(page, 'finders');
+    });
+
+    test('tags tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('tags'));
+        await expectSurfaceToolbarFits(page, 'tags');
+    });
+
+    test('categories list action buttons fit inside surface card', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('categories');
+            await cm.loadPageCategories(cm.currentCategoriesPageId || cm.currentPageId || 1);
+        });
+        const fits = await page.evaluate(() => {
+            const surface = document.querySelector('[data-tab-content="categories"] .config-tab-surface');
+            if (!surface) return false;
+            const surfaceRect = surface.getBoundingClientRect();
+            const actions = [...surface.querySelectorAll('.category-item-actions button')];
+            if (actions.length === 0) return true;
+            return actions.every((btn) => btn.getBoundingClientRect().right <= surfaceRect.right + 0.5);
+        });
+        expect(fits).toBe(true);
+    });
+});
