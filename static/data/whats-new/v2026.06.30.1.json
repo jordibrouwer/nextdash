@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.06.30.1",
+  "date": "June 2026",
+  "releasedAt": "2026-06-30",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Status bookmark selection (colorize off)</strong> — bookmarks with ping/status monitoring now highlight the full row on hover and keyboard selection even when <em>Change bookmark color when offline</em> is disabled in Config. Previously only the ms badge lit up in that mode."
+        }
+      ]
+    }
+  ]
+}

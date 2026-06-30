@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.30.1 — June 2026](#v202606301--june-2026)
 - [v2026.06.30 — June 2026](#v20260630--june-2026)
 - [v2026.06.29.1 — June 2026](#v202606291--june-2026)
 - [v2026.06.29 — June 2026](#v20260629--june-2026)
@@ -56,7 +57,21 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.30.1](#v202606301--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.30.1 — June 2026
+
+**Status bookmark hover patch** — full-row highlight on hover and keyboard selection now works for status-monitored bookmarks even when row colorization is turned off (`colorizeStatus` / *Change bookmark color when offline*).
+
+### Dashboard
+
+- **fix** **Status bookmark hover with colorize off** — when *Change bookmark color when offline* is disabled, `status-color-lock` no longer forces `background: none` on hover; interaction chrome applies the same full-row gradient as normal bookmarks instead of only updating the ms badge.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v102` data version and `2026.06-dashboard-release-v81` dashboard release token; `status-hover-row-3` on status/bookmark-row/modern CSS; `glass-side-rail-2` on `layout-glass.css`.
 
 ---
 
