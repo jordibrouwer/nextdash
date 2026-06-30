@@ -988,13 +988,13 @@ body[data-layout-version="modern"].bookmark-kbd-selection-dimmed .dashboard-grid
 }
 
 /* Status rows — interaction chrome matches normal bookmarks (idle tint is inactive-only) */
-body[data-layout-version="modern"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
-body[data-layout-version="modern"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 34%, transparent);
 }
