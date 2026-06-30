@@ -134,6 +134,10 @@ class ConfigLanguage {
             window.ConfigSettingsSearch?.relocateForLayout?.();
             window.ConfigSettingsSearch?.syncMobileLayout?.({ rebuildIndex: false });
             this.scheduleSearchIndexRefresh();
+            const tab = window.configManager?.ui?._currentTab;
+            if (tab) {
+                window.configManager.ui.updateTabSaveMode(tab);
+            }
         }
     }
 
