@@ -495,10 +495,8 @@ class ConfigPersistence {
         clearTimeout(this.c._savedFlashTimer);
         this.c._savedFlashTimer = setTimeout(() => {
             saveStatus.classList.remove('is-saved-flash');
-            if (this.c.isDirty) {
+            if (!this.c.isDirty) {
                 saveStatus.classList.add('is-hidden');
-            } else {
-                saveStatus.textContent = this.c.language?.t('config.savedShort') || 'Saved';
             }
         }, 1500);
     }
@@ -583,9 +581,10 @@ class ConfigPersistence {
             badge.classList.toggle('is-visible', this.c.isDirty);
         }
         if (saveStatus) {
-            saveStatus.textContent = this.c.language?.t('config.savedShort') || 'Saved';
             saveStatus.classList.toggle('is-unsaved', this.c.isDirty);
-            saveStatus.classList.toggle('is-hidden', this.c.isDirty);
+            if (this.c.isDirty || !saveStatus.classList.contains('is-saved-flash')) {
+                saveStatus.classList.add('is-hidden');
+            }
         }
         if (undoTopBtn) {
             undoTopBtn.disabled = !this.c.undoSnapshot;
@@ -768,7 +767,7 @@ class ConfigPersistence {
         const saveStatus = document.getElementById('save-status-indicator');
         if (saveStatus) {
             saveStatus.textContent = this.c.language?.t('config.savingChanges') || 'Saving changes...';
-            saveStatus.classList.remove('is-unsaved');
+            saveStatus.classList.remove('is-unsaved', 'is-hidden');
         }
         this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
