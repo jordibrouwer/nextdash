@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.30.1**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.30.2**.
 
 ---
 
@@ -57,6 +57,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```sh
 go build -o nextDash && ./nextDash
 ```
+
+By default, data is stored in `./data`. Override with `NEXTDASH_DATA_DIR` (absolute or relative path) when you need a separate data location.
 
 ---
 
@@ -332,7 +334,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.06.30.1
+   ./scripts/release-to-main.sh v2026.06.30.2
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).

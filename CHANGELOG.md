@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.30.2 — June 2026](#v202606302--june-2026)
 - [v2026.06.30.1 — June 2026](#v202606301--june-2026)
 - [v2026.06.30 — June 2026](#v20260630--june-2026)
 - [v2026.06.29.1 — June 2026](#v202606291--june-2026)
@@ -57,7 +58,30 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.30.1](#v202606301--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.30.2](#v202606302--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.30.2 — June 2026
+
+**Config tour focus lock & nameless bookmark labels** — guided config tours dim and block the rest of the page (tabs, Save, fields) except the current spotlight step; URL-only bookmarks show a short hostname on the dashboard with the full URL in the tooltip.
+
+### Dashboard
+
+- **fix** **Nameless bookmark label** — bookmarks with an empty name show the site hostname in the grid (e.g. `github.com`) instead of a blank row; the full URL remains in the row tooltip and `aria-label`.
+
+### Config
+
+- **fix** **Guided tour interaction lock** — while any config tab tour is active, tabs, save bar, settings search, and page content are non-interactive; only the tour card and the highlighted step region accept clicks. Welcome steps without a target use the tour backdrop dim; highlighted steps keep the existing box-shadow cutout.
+
+### Developer & docs
+
+- **new** **`NEXTDASH_DATA_DIR`** — optional environment variable overrides the data directory (default `./data`); Playwright E2E uses an isolated temp dir so local bookmarks are not touched during tests.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and What's new updated for **v2026.06.30.2**.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v104` data version and `2026.06-dashboard-release-v83` dashboard release token; `general-tour-v4` and `guided-flow-v5` / `guided-flow-v4` on config tour and guard assets; `bookmark-display-label-2` on `dashboard-bookmark-rows.js`.
 
 ---
 

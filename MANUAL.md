@@ -353,7 +353,8 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 ### Mouse
 
-- Click the bookmark name (or icon area) to open the URL.  
+- Click the bookmark name (or icon area) to open the URL.
+- Bookmarks **without a display name** show the site **hostname** in the grid (e.g. `docs.example.com`); hover or keyboard focus shows the **full URL** in the tooltip.
 - Respect **open in new tab** setting from config.  
 - **Launcher layout**: large tiles; click plays a short pulse animation.
 
@@ -856,7 +857,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Guided config tours
 
-**One-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The card stays near the bottom on large highlights so it does not cover the spotlight. Page scroll is locked per step so the highlight stays stable. Tours need a **desktop-width** window (the mobile config layout does not run them).
+**One-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The card stays near the bottom on large highlights so it does not cover the spotlight. Page scroll is locked per step so the highlight stays stable. While a tour runs, the **rest of the config page is dimmed and non-interactive** — tab buttons, Save, settings search, and other fields cannot be clicked; only the **spotlight region** for the current step and the **tour card** stay active, so you cannot switch tabs mid-tour. Tours need a **desktop-width** window (the mobile config layout does not run them).
 
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
@@ -1101,6 +1102,10 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Save pages / categories / finders / settings / colours | `POST /api/pages`, `/api/categories`, `/api/finders`, `/api/settings`, `/api/colors` |
 
 Read-only endpoints (`GET` bookmarks, settings, health list, ping, etc.) stay open. The browser extension can store the same token under **Settings → Write token**.
+
+### Optional `NEXTDASH_DATA_DIR`
+
+By default nextDash stores pages, bookmarks, settings, and uploads under `./data` next to the binary (or `/app/data` in Docker). Set `NEXTDASH_DATA_DIR` to use another directory — useful for multiple instances, tests, or keeping data on a separate volume without changing the mount path inside the container.
 
 ### Localhost bookmarks
 
