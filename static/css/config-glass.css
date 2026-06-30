@@ -272,6 +272,7 @@ body[data-layout-version="glass"] .tags-body {
 }
 
 body[data-layout-version="glass"] :is(
+    .config-tab-toolbar,
     .simple-toolbar,
     .collections-toolbar,
     .tags-toolbar,
@@ -286,6 +287,7 @@ body[data-layout-version="glass"] :is(
     box-shadow: var(--layout-shadow-sm);
 }
 
+body[data-layout-version="glass"] .config-tab-toolbar,
 body[data-layout-version="glass"] .simple-toolbar,
 body[data-layout-version="glass"] .collections-toolbar,
 body[data-layout-version="glass"] .tags-toolbar {
@@ -342,6 +344,7 @@ body[data-layout-version="glass"] .simple-tab-hint {
     opacity: 1;
 }
 
+body[data-layout-version="glass"] .config-tab-toolbar,
 body[data-layout-version="glass"] .simple-toolbar,
 body[data-layout-version="glass"] .collections-toolbar {
     justify-content: flex-end;

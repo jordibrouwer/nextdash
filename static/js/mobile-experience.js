@@ -6,6 +6,8 @@
 
     const MOBILE_FOOTER_BUTTONS = ['search'];
     const MOBILE_CONFIG_TABS = ['general', 'help', 'colors'];
+    /** Hash-deep-link tabs allowed on phone with a blocking card instead of redirecting to General. */
+    const MOBILE_PHONE_CONTEXT_TABS = ['bookmarks'];
     const MOBILE_GENERAL_PANELS = ['localization', 'basics-core', 'layout'];
     /** Set when the mobile info banner was shown and dismissed (persists across sessions). */
     const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
@@ -163,6 +165,10 @@
         if (!hash) return;
         let tab = hash.split('/')[0];
         if (hash.startsWith('colors')) tab = 'colors';
+        if (MOBILE_PHONE_CONTEXT_TABS.includes(tab)) {
+            window.configManager?.ui?.switchToTab?.(tab);
+            return;
+        }
         if (tab && !MOBILE_CONFIG_TABS.includes(tab)) {
             const next = `${window.location.pathname}${window.location.search}#general`;
             if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== next) {
@@ -351,6 +357,7 @@
     window.MobileExperience = {
         MOBILE_FOOTER_BUTTONS,
         MOBILE_CONFIG_TABS,
+        MOBILE_PHONE_CONTEXT_TABS,
         MOBILE_GENERAL_PANELS,
         isMobileLayout,
         isPhoneLayout,

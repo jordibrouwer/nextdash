@@ -18,7 +18,7 @@ class ConfigPages {
         const list = Array.isArray(pages) ? pages : [];
         if (list.length === 0) {
             const hint = document.createElement('li');
-            hint.className = 'pages-list-empty-hint';
+            hint.className = 'pages-list-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'listitem');
             const defaultName = 'main';
             const tpl = this.t('config.pagesListDefaultHint');

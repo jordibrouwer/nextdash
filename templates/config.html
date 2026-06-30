@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=stats-tab-visibility-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-intro-spacing-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -78,7 +78,7 @@
                 <div class="config-actions-top">
                     <div class="config-actions-buttons">
                         <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
-                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator" aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
+                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
                         <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
                         <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
                         <span id="save-status-indicator" class="save-status-indicator is-hidden" aria-live="polite" data-i18n="config.savedShort">Saved</span>
@@ -109,6 +109,7 @@
         <div class="container">
             <div class="config-breadcrumb-row">
                 <div id="config-breadcrumb" class="config-breadcrumb" data-i18n-aria="config.breadcrumbAria"></div>
+                <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
                 <div id="config-settings-search-anchor" class="config-settings-search-anchor">
                 <div class="config-settings-search" role="search">
                     <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
@@ -1166,22 +1167,29 @@
             </div>
 
             <div class="tab-content" data-tab-content="pages">
-            <div class="simple-tab">
-                <span class="simple-tab-intro" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></span>
-                <div class="simple-toolbar">
+            <div class="simple-tab config-tab-page">
+                <div class="config-tab-intro simple-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint config-tab-intro-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></p>
+                </div>
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
                 <ul id="pages-list" class="pages-list js-list simple-list" role="list">
                     <!-- Pages will be loaded here -->
                 </ul>
+                </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="categories">
-            <div class="simple-tab">
-                <span class="simple-tab-intro" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</span>
-                <div class="simple-toolbar">
-                    <div class="simple-toolbar-right">
+            <div class="simple-tab config-tab-page">
+                <div class="config-tab-intro simple-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</p>
+                </div>
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
+                    <div class="simple-toolbar-right config-tab-toolbar-tools">
                         <label for="categories-page-selector" data-i18n="config.categoriesPageLabel">Page:</label>
                         <select id="categories-page-selector" class="page-selector simple-page-select">
                             <!-- Pages will be loaded here -->
@@ -1192,14 +1200,18 @@
                 <ul id="categories-list" class="categories-list js-list simple-list" role="list">
                     <!-- Categories will be loaded here -->
                 </ul>
+                </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="tags">
-            <div class="tags-tab">
-                <span class="tags-tab-intro" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</span>
-                <div class="tags-toolbar">
-                    <div class="tags-filter-wrap">
+            <div class="tags-tab config-tab-page">
+                <div class="config-tab-intro tags-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</p>
+                </div>
+                <div class="config-tab-surface">
+                <div class="tags-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
+                    <div class="tags-filter-wrap config-filter-field">
                         <label class="visually-hidden" for="tags-filter-input" data-i18n="config.tagsFilterLabel">Filter tags</label>
                         <input type="search" id="tags-filter-input" class="tags-filter-input" data-i18n-placeholder="config.tagsFilterPlaceholder" placeholder="Filter tags…" autocomplete="off">
                         <button type="button" id="tags-filter-clear" class="tags-filter-clear" data-i18n-aria="config.tagsFilterClear" aria-label="Clear filter" hidden>✕</button>
@@ -1216,31 +1228,44 @@
                         <ul id="tags-list" class="tags-list" role="list"></ul>
                     </div>
                 </div>
-                <div id="tags-empty-state" class="tags-empty-state" hidden>
+                <div id="tags-empty-state" class="tags-empty-state config-empty-state" hidden>
                     <p data-i18n="config.tagsListEmptyHint">No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
+                    <button type="button" id="tags-empty-cta" class="btn btn-secondary btn-small config-empty-state-cta" data-i18n="config.tagsEmptyCta">Open Bookmarks tab</button>
+                </div>
                 </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="bookmarks">
-            <div>
+            <div class="bookmarks-tab config-tab-page">
+                <div id="bookmarks-phone-block" class="config-phone-block-card" role="status">
+                    <div class="config-phone-block-card-inner config-empty-state">
+                        <p class="config-phone-block-card-lead" data-i18n="config.bookmarksPhoneBlockLead">Bookmark editor needs a wider screen</p>
+                        <p class="config-phone-block-card-hint" data-i18n="config.bookmarksPhoneBlockHint">On your phone you can add and edit bookmarks from the dashboard (+ Bookmark). Open config on a tablet or computer for the full split-view editor, structure workspace, and bulk actions.</p>
+                        <a href="/" class="btn btn-primary btn-small config-phone-block-card-cta" data-i18n="config.bookmarksPhoneBlockCta">← Back to dashboard</a>
+                    </div>
+                </div>
+                <div class="config-tab-intro bookmarks-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.bookmarksTabIntro">Browse and edit all bookmarks in a split view: list on the left, detail panel on the right. Filter by page or category, use bulk actions, or expand Context to switch page and category while you edit.</p>
+                </div>
+                <div id="bookmarks-tab-workspace" class="bookmarks-tab-workspace">
                 <div class="structure-workspace-card is-collapsible is-collapsed" id="structure-workspace-card">
                     <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
-                        <span data-i18n="config.structureWorkspaceTitle">Structure</span>
+                        <span data-i18n="config.structureWorkspaceTitle">Context</span>
                     </h3>
-                    <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Manage pages, categories, archived pages and favicon policy.</p>
+                    <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Switch page and category for the bookmark list below. Restore archived pages or set favicon policy here.</p>
                     <div class="structure-workspace" id="structure-workspace-panel">
                     <section class="structure-column">
                         <div class="structure-column-header">
-                            <h3 data-i18n="config.structurePages">Pages</h3>
-                            <button id="structure-add-page-btn" class="btn btn-secondary btn-small" type="button" data-i18n="config.structureAddPage">+ Page</button>
+                            <h3 data-i18n="config.structurePages">Page</h3>
+                            <button type="button" class="structure-goto-tab-link" data-structure-goto-tab="pages" data-i18n="config.structureGotoPagesTab">Pages tab →</button>
                         </div>
                         <div id="structure-pages-list" class="structure-list"></div>
                     </section>
                     <section class="structure-column">
                         <div class="structure-column-header">
-                            <h3 data-i18n="config.structureCategories">Categories</h3>
-                            <button id="structure-add-category-btn" class="btn btn-secondary btn-small" type="button" data-i18n="config.structureAddCategory">+ Category</button>
+                            <h3 data-i18n="config.structureCategories">Category</h3>
+                            <button type="button" class="structure-goto-tab-link" data-structure-goto-tab="categories" data-i18n="config.structureGotoCategoriesTab">Categories tab →</button>
                         </div>
                         <div id="structure-categories-list" class="structure-list"></div>
                     </section>
@@ -1263,6 +1288,7 @@
                         <div id="structure-archived-pages-list" class="structure-list"></div>
                     </section>
                     </div>
+                    <p class="structure-workspace-footnote" data-i18n="config.structureWorkspaceFootnote">Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.</p>
                 </div>
 
                 <!-- Bookmarks split-view: lijst + detail paneel -->
@@ -1270,7 +1296,7 @@
 
                     <!-- Linker kolom: lijst + controls -->
                     <div class="bookmarks-splitview-list">
-                        <div class="bookmarks-list-controls">
+                        <div class="bookmarks-list-controls config-tab-toolbar config-tab-toolbar--bookmarks">
                             <div class="bookmarks-list-controls-row">
                                 <div class="page-selector-inline">
                                     <select id="page-selector" class="page-selector" title="Bookmarks page" aria-label="Bookmarks page">
@@ -1513,78 +1539,88 @@
                     </div>
 
                 </div>
+                </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="finders">
-            <div class="simple-tab">
-                <span class="simple-tab-intro" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</span>
-                <div class="simple-toolbar">
-                    <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+            <div class="simple-tab config-tab-page">
+                <div class="config-tab-intro simple-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</p>
                 </div>
-                <div class="finders-body">
-                    <div class="finders-filter-wrap">
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
+                    <div class="finders-filter-wrap config-filter-field config-filter-field--wide">
                         <label class="visually-hidden" for="finders-filter-input" data-i18n="config.findersFilterLabel">Filter finders</label>
                         <input type="search" id="finders-filter-input" class="finders-filter-input" data-i18n-placeholder="config.findersFilterPlaceholder" placeholder="Filter finders…" autocomplete="off">
                         <button type="button" id="finders-filter-clear" class="finders-filter-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
                     </div>
+                    <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
+                </div>
+                <div class="finders-body">
                     <div id="finders-list" class="finders-list js-list simple-list">
                         <!-- Finders will be loaded here -->
                     </div>
+                </div>
                 </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="collections">
-            <div class="collections-tab">
-                <span class="collections-tab-intro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</span>
-                <div class="collections-toolbar">
-                    <button type="button" id="add-collection-btn" class="btn btn-primary btn-small">+ New collection</button>
+            <div class="collections-tab config-tab-page">
+                <div class="config-tab-intro collections-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.collectionsTabIntro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</p>
+                </div>
+                <div class="config-tab-surface">
+                <div class="collections-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
+                    <button type="button" id="add-collection-btn" class="btn btn-primary btn-small" data-i18n="config.addCollectionBtn">+ Add collection</button>
                 </div>
                 <div id="collections-list" class="collections-list"></div>
-                <div id="collections-empty-state" class="collections-empty-state" style="display:none">
-                    <p>No collections yet. Create one to group bookmarks by tag, category, or shortcut.</p>
+                <div id="collections-empty-state" class="collections-empty-state config-empty-state" style="display:none">
+                    <p data-i18n="config.collectionsEmptyHint">No collections yet. Create one to group bookmarks by tag, category, or shortcut.</p>
+                    <button type="button" id="collections-empty-cta" class="btn btn-primary btn-small config-empty-state-cta" data-i18n="config.addCollectionBtn">+ Add collection</button>
+                </div>
                 </div>
 
                 <!-- Edit panel -->
                 <div id="collections-edit-panel" class="collections-edit-panel" hidden>
                     <div class="collections-edit-header">
-                        <h3 class="collections-edit-title" id="col-edit-title">New collection</h3>
+                        <h3 class="collections-edit-title" id="col-edit-title" data-i18n="config.collectionEditNewTitle">New collection</h3>
                     </div>
                     <div class="collections-edit-body">
                         <div class="bookmark-detail-section">
-                            <label class="bookmark-detail-label" for="col-edit-name">Name</label>
-                            <input type="text" id="col-edit-name" class="bookmark-detail-input" placeholder="My collection" autocomplete="off">
+                            <label class="bookmark-detail-label" for="col-edit-name" data-i18n="config.collectionEditNameLabel">Name</label>
+                            <input type="text" id="col-edit-name" class="bookmark-detail-input" data-i18n-placeholder="config.collectionEditNamePlaceholder" placeholder="My collection" autocomplete="off">
                         </div>
                         <div class="bookmark-detail-section">
-                            <label class="bookmark-detail-label" for="col-edit-icon">Icon (emoji)</label>
-                            <input type="text" id="col-edit-icon" class="bookmark-detail-input col-edit-icon-input" placeholder="★" autocomplete="off" maxlength="4">
+                            <label class="bookmark-detail-label" for="col-edit-icon" data-i18n="config.collectionEditIconLabel">Icon (emoji)</label>
+                            <input type="text" id="col-edit-icon" class="bookmark-detail-input col-edit-icon-input" data-i18n-placeholder="config.collectionEditIconPlaceholder" placeholder="★" autocomplete="off" maxlength="4">
                         </div>
                         <div class="bookmark-detail-section">
-                            <label class="bookmark-detail-label" for="col-edit-logic">Match logic</label>
+                            <label class="bookmark-detail-label" for="col-edit-logic" data-i18n="config.collectionEditLogicLabel">Match logic</label>
                             <select id="col-edit-logic" class="bookmark-detail-select">
-                                <option value="and">AND — all rules must match</option>
-                                <option value="or">OR — any rule must match</option>
+                                <option value="and" data-i18n="config.collectionEditLogicAnd">AND — all rules must match</option>
+                                <option value="or" data-i18n="config.collectionEditLogicOr">OR — any rule must match</option>
                             </select>
                         </div>
                         <div class="bookmark-detail-section">
-                            <label class="bookmark-detail-label">Rules</label>
+                            <label class="bookmark-detail-label" data-i18n="config.collectionEditRulesLabel">Rules</label>
                             <div id="col-edit-rules" class="col-rules-list"></div>
-                            <button type="button" id="col-edit-add-rule" class="btn btn-secondary btn-small col-add-rule-btn">+ Add rule</button>
+                            <button type="button" id="col-edit-add-rule" class="btn btn-secondary btn-small col-add-rule-btn" data-i18n="config.collectionEditAddRule">+ Add rule</button>
                         </div>
                     </div>
                     <div class="collections-edit-actions">
-                        <button type="button" id="col-edit-save" class="btn btn-primary btn-small">Save</button>
-                        <button type="button" id="col-edit-cancel" class="btn btn-secondary btn-small">Cancel</button>
+                        <button type="button" id="col-edit-save" class="btn btn-primary btn-small" data-i18n="config.saveShort">Save</button>
+                        <button type="button" id="col-edit-cancel" class="btn btn-secondary btn-small" data-i18n="config.cancel">Cancel</button>
                     </div>
                 </div>
             </div>
             </div>
 
             <div class="tab-content" data-tab-content="backups">
-            <div class="backups-tab">
-                <div class="backups-tab-intro">
-                    <p data-i18n="config.backupsIntro">Back up and restore your entire dashboard — pages, categories, bookmarks, finders, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
+            <div class="backups-tab config-tab-page">
+                <div class="config-tab-intro backups-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.backupsIntro">Back up and restore your entire dashboard — pages, categories, bookmarks, finders, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
                 </div>
 
                 <div class="backups-section">
@@ -1655,15 +1691,16 @@
             </div>
 
             <div class="tab-content" data-tab-content="stats">
-            <div class="stats-page-intro">
-                <p data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
-                <div class="stats-page-intro-actions">
+            <div class="stats-tab config-tab-page">
+            <div class="config-tab-intro stats-page-intro">
+                <p class="config-tab-intro-lead" data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
+                <div class="config-tab-toolbar-tools stats-page-intro-actions">
                     <button type="button" id="stats-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.statsRefresh">Refresh</button>
                     <button type="button" id="stats-export-csv-btn" class="btn btn-secondary btn-small" data-i18n="config.statsExportCsv">Export CSV</button>
                 </div>
             </div>
-            <div class="stats-filter-bar">
-                <div class="stats-filter-wrap">
+            <div class="stats-filter-bar config-tab-toolbar config-tab-toolbar--with-filter">
+                <div class="stats-filter-wrap config-filter-field config-filter-field--wide">
                     <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
                     <input type="search" id="stats-filter-input" class="stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
                     <button type="button" id="stats-filter-clear" class="stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
@@ -2034,14 +2071,17 @@
                 </div>
             </div>
             </div>
+            </div>
 
             <div class="tab-content" data-tab-content="colors">
             {{template "theme-colors-editor" .}}
             </div>
 
             <div class="tab-content" data-tab-content="keyboard">
-            <div class="keyboard-tab">
-                <p class="keyboard-intro" data-i18n="config.keyboardIntro">Customize keyboard shortcuts. Click "Rebind" next to any shortcut and press the key you want to use. Press Escape to cancel.</p>
+            <div class="keyboard-tab config-tab-page">
+                <div class="config-tab-intro">
+                    <p class="config-tab-intro-lead keyboard-intro" data-i18n="config.keyboardIntro">Customize keyboard shortcuts. Click "Rebind" next to any shortcut and press the key you want to use. Press Escape to cancel.</p>
+                </div>
                 <div id="keyboard-bindings-container"></div>
             </div>
             </div>
@@ -2309,7 +2349,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v104"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v105"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2319,7 +2359,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
-    <script src="/static/js/config/config-ui.js?v=config-ui-tabs-flush-1"></script>
+    <script src="/static/js/config/config-ui.js?v=config-structure-context-1"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-storage.js"></script>
@@ -2342,12 +2382,12 @@
     <script src="/static/js/config/config-settings-defaults.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
     <script src="/static/js/config/config-tab-tours.js?v=config-tab-tours-1"></script>
-    <script src="/static/js/config/config-persistence.js?v=config-persistence-4"></script>
+    <script src="/static/js/config/config-persistence.js?v=config-save-status-v1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=config-setup-2"></script>
+    <script src="/static/js/config/config-setup.js?v=config-structure-context-2"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-layer-default-1"></script>
-    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v4"></script>
+    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v5"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
     <script src="/static/js/config-general-tour.js?v=general-tour-v3"></script>
     <script src="/static/js/config-bookmarks-tour.js?v=bookmarks-phase5-1"></script>
@@ -2375,7 +2415,7 @@
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/mobile-experience.js?v=phone-layout-2"></script>
+    <script src="/static/js/mobile-experience.js?v=phone-layout-3"></script>
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
@@ -2386,7 +2426,7 @@
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">
-            <span class="config-save-sticky-hint" data-i18n="config.unsavedStickyHint">You have unsaved changes</span>
+            <span class="config-save-sticky-hint" aria-live="polite">You have unsaved changes</span>
             <div class="config-save-sticky-actions">
                 <button type="button" id="save-btn-sticky" class="btn btn-success" data-i18n="config.saveShort">Save</button>
                 <button type="button" id="discard-sticky-btn" class="btn btn-danger btn-small" data-i18n="config.discardShort">Discard</button>

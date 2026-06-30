@@ -12,7 +12,8 @@ class DashboardBookmarkRows {
         if (name) return name;
         const url = String(bookmark?.url || '').trim();
         if (url) {
-            const host = window.BookmarkUrlUtils?.extractDomainFromUrl?.(url);
+            const host = window.BookmarkUrlUtils?.bookmarkDisplayHostnameFromUrl?.(url)
+                || window.BookmarkUrlUtils?.extractDomainFromUrl?.(url);
             return host || url;
         }
         return d.bookmarkFallbackName();

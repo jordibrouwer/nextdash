@@ -17,7 +17,7 @@ class ConfigCategories {
         const list = Array.isArray(categories) ? categories : [];
         if (list.length === 0) {
             const hint = document.createElement('li');
-            hint.className = 'categories-list-empty-hint';
+            hint.className = 'categories-list-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'listitem');
             hint.textContent = this.t('config.categoriesListEmptyHint') || 'No categories on this page yet. Add one to organise bookmarks.';
             container.appendChild(hint);

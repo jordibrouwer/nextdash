@@ -868,6 +868,7 @@ class ColorsEditor {
 
         document.addEventListener('keydown', (e) => {
             if (window.configManager?.ui?._currentTab !== 'colors') return;
+            if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) return;
             if (this.isReadonly()) return;
             const inField = e.target.closest('input, textarea, select');
             if (e.key === 's' || e.key === 'S') {

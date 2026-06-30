@@ -3,20 +3,12 @@
    ============================================================ */
 
 .backups-tab {
-    display: flex;
-    flex-direction: column;
-    gap: var(--config-tab-gap, 0.85rem);
+    /* layout: config-tab-shell.css (.config-tab-page) */
     padding: 0;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
 }
 
 .backups-tab-intro p {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    line-height: 1.55;
+    /* shell: config-tab-shell.css */
 }
 
 /* ── Section ── */

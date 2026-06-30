@@ -9,12 +9,6 @@
     box-sizing: border-box;
 }
 
-/* Finders: toolbar is standalone; filter row is borderless (input only) */
-.simple-tab:has(.finders-body) .simple-toolbar {
-    border-bottom: 1px solid var(--border-primary);
-    justify-content: flex-end;
-}
-
 .finders-filter-wrap {
     display: flex;
     align-items: center;
@@ -28,16 +22,7 @@
 }
 
 .finders-filter-input {
-    flex: 1 1 auto;
-    min-width: 0;
-    box-sizing: border-box;
-    padding: 0.4rem 1.75rem 0.4rem 0.55rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--font-size-controls);
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
 }
 
 .finders-filter-input:focus {
@@ -66,11 +51,7 @@
 
 .finders-list-empty-hint,
 .finders-filter-empty-hint {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    /* shell: config-tab-shell.css (.config-empty-state--inlist) */
 }
 
 /* Outer shell — like .tag-item */

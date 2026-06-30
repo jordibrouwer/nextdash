@@ -1,0 +1,370 @@
+/**
+ * Config tab shell — shared intro, toolbar, filter, and empty-state primitives (v1–v2).
+ * Legacy tab-specific class names remain for JS and layout variants; these are the canonical hooks.
+ */
+
+/* ── Tab page column ── */
+.config-tab-page,
+.simple-tab,
+.tags-tab,
+.collections-tab,
+.bookmarks-tab,
+.backups-tab,
+.stats-tab,
+.keyboard-tab,
+.theme-colors-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.simple-tab,
+.tags-tab,
+.collections-tab {
+    min-height: 300px;
+}
+
+.bookmarks-tab-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Consistent intro → body spacing on all config tab pages */
+html:has(#config-main) #config-main :is(
+    .config-tab-page,
+    .bookmarks-tab-workspace,
+    .tab-content[data-tab-content="general"] > div
+) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+}
+
+/* ── Intro copy ── */
+.config-tab-intro,
+.simple-tab-intro,
+.tags-tab-intro,
+.collections-tab-intro,
+.bookmarks-tab-intro,
+.backups-tab-intro,
+.stats-page-intro,
+.theme-colors-intro,
+.keyboard-tab .keyboard-intro {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.config-tab-intro-lead,
+.config-tab-intro p,
+.backups-tab-intro p,
+.stats-page-intro p,
+.theme-colors-intro p {
+    margin: 0;
+    font-size: inherit;
+    color: inherit;
+    line-height: inherit;
+}
+
+.stats-page-intro {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.stats-page-intro .config-tab-intro-lead,
+.stats-page-intro > p {
+    flex: 1;
+}
+
+.config-tab-intro-hint,
+.simple-tab-hint {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+/* ── Toolbar row ── */
+.config-tab-toolbar,
+.simple-toolbar,
+.tags-toolbar,
+.collections-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar);
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.config-tab-toolbar--list-attached,
+.simple-toolbar {
+    border-bottom: none;
+}
+
+/* Unified toolbar + list card (v4) */
+.config-tab-surface {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.config-tab-toolbar--in-surface {
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface > .simple-list,
+.config-tab-surface > .finders-body,
+.config-tab-surface > .collections-list,
+.config-tab-surface > .tags-body,
+.config-tab-surface > .config-empty-state {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.config-tab-surface > .finders-body {
+    gap: 0;
+    min-height: 0;
+}
+
+.config-tab-surface > .finders-body .simple-list {
+    border: none;
+    background: transparent;
+}
+
+.config-tab-surface > .collections-list:empty {
+    display: none;
+}
+
+.config-tab-toolbar-tools,
+.simple-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    min-width: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-tab-toolbar--with-filter {
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.config-tab-toolbar--with-filter > .config-filter-field {
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    min-width: 10rem;
+}
+
+.config-tab-toolbar--with-filter > .config-filter-field--wide {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 8rem;
+}
+
+.config-tab-toolbar--bookmarks {
+    display: block;
+    justify-content: unset;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    background: var(--config-surface-toolbar);
+}
+
+.config-tab-toolbar--bookmarks .bookmarks-list-controls-row {
+    padding: 0.6rem 0.75rem;
+}
+
+.config-tab-toolbar--bookmarks .bookmarks-list-search-row {
+    padding: 0 0.75rem 0.6rem;
+}
+
+.stats-filter-wrap {
+    /* filter field: config-tab-shell.css (.config-filter-field) */
+}
+
+.stats-filter-input {
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+}
+
+/* ── Filter field (tags, finders, stats, …) ── */
+.config-filter-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 12rem;
+    min-width: 8rem;
+}
+
+.config-filter-field--wide {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+}
+
+.config-filter-field input[type="search"],
+.config-filter-input {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.4rem 1.75rem 0.4rem 0.55rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.config-filter-field input[type="search"]:focus,
+.config-filter-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.config-filter-field input[type="search"]::placeholder,
+.config-filter-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.config-filter-field input[type="search"]::-webkit-search-cancel-button,
+.config-filter-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.config-filter-clear,
+.tags-filter-clear,
+.stats-filter-clear {
+    position: absolute;
+    right: 0.3rem;
+    background: none;
+    border: none;
+    padding: 0.15rem 0.35rem;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    line-height: 1;
+}
+
+.config-filter-clear:hover,
+.tags-filter-clear:hover,
+.stats-filter-clear:hover {
+    color: var(--text-secondary);
+}
+
+/* ── Empty state ── */
+.config-empty-state,
+.tags-empty-state,
+.collections-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    border: 1px solid var(--border-primary);
+    padding: 2rem;
+    text-align: center;
+}
+
+.config-empty-state[hidden],
+.tags-empty-state[hidden] {
+    display: none !important;
+}
+
+.config-empty-state p,
+.tags-empty-state p,
+.collections-empty-state p {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-tertiary);
+    max-width: 360px;
+}
+
+.config-empty-state--inlist,
+.pages-list-empty-hint,
+.categories-list-empty-hint,
+.finders-list-empty-hint,
+.finders-filter-empty-hint {
+    display: block;
+    margin: 0;
+    padding: 0.85rem 1rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    text-align: left;
+    max-width: none;
+}
+
+/* ── Phone blocking card (v3) — desktop-only tabs on narrow viewports ── */
+.config-phone-block-card {
+    display: none;
+}
+
+body[data-phone-layout="true"] .config-phone-block-card {
+    display: block;
+}
+
+body[data-phone-layout="true"] .bookmarks-tab-workspace {
+    display: none !important;
+}
+
+.config-phone-block-card-inner {
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75rem;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius-md, 0.5rem);
+    background: var(--config-surface-list, var(--background-secondary));
+}
+
+.config-phone-block-card-lead {
+    margin: 0;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.config-phone-block-card-hint {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.config-phone-block-card-cta {
+    margin-top: 0.25rem;
+}

@@ -879,12 +879,15 @@ class ConfigSetup {
             }
         }
     
-        const structureAddPageBtn = document.getElementById('structure-add-page-btn');
-        if (structureAddPageBtn) structureAddPageBtn.addEventListener('click', () => this.c.addPage());
-        const structureAddCategoryBtn = document.getElementById('structure-add-category-btn');
-        if (structureAddCategoryBtn) structureAddCategoryBtn.addEventListener('click', () => this.c.addCategory());
         const structureAddBookmarkBtn = document.getElementById('structure-add-bookmark-btn');
         if (structureAddBookmarkBtn) structureAddBookmarkBtn.addEventListener('click', () => this.c.addBookmark());
+
+        document.querySelectorAll('[data-structure-goto-tab]').forEach((link) => {
+            link.addEventListener('click', () => {
+                const tab = link.getAttribute('data-structure-goto-tab');
+                if (tab) this.c.ui.switchToTab(tab);
+            });
+        });
     
         const selectAllBookmarksBtn = document.getElementById('select-all-bookmarks-btn');
         if (selectAllBookmarksBtn) {
@@ -1043,6 +1046,13 @@ class ConfigSetup {
         if (addCollectionBtn) addCollectionBtn.addEventListener('click', () => {
             if (this.c.collections) this.c.collections._openEdit(null, this);
         });
+        const collectionsEmptyCta = document.getElementById('collections-empty-cta');
+        if (collectionsEmptyCta) collectionsEmptyCta.addEventListener('click', () => addCollectionBtn?.click());
+
+        const tagsEmptyCta = document.getElementById('tags-empty-cta');
+        if (tagsEmptyCta) tagsEmptyCta.addEventListener('click', () => {
+            document.querySelector('.tab-button[data-tab="bookmarks"]')?.click();
+        });
     
         const pageSelector = document.getElementById('page-selector');
         if (pageSelector) {
@@ -1060,6 +1070,7 @@ class ConfigSetup {
                 if (clearEl) clearEl.hidden = true;
                 await this.c.loadPageBookmarks(e.target.value);
                 this.c.renderStructureWorkspace();
+                this.c.ui.refreshTabBreadcrumb?.('bookmarks');
             });
         }
         const faviconPolicySelect = document.getElementById('favicon-refresh-policy-select');
@@ -1072,6 +1083,9 @@ class ConfigSetup {
             });
         }
         document.addEventListener('keydown', (e) => {
+            if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {
+                return;
+            }
             const key = String(e.key).toLowerCase();
             const mod = e.ctrlKey || e.metaKey;
             if (mod && e.shiftKey && key === 'k') {
@@ -1097,6 +1111,7 @@ class ConfigSetup {
                 }
                 this.c.refreshBookmarksList();
                 this.c.renderStructureWorkspace();
+                this.c.ui.refreshTabBreadcrumb?.('bookmarks');
             });
         }
     
@@ -1156,6 +1171,7 @@ class ConfigSetup {
                 this.c.saveLastCategoriesPageId(nextPageId);
                 await this.c.loadPageCategories(nextPageId);
                 this.c.syncCategoriesPageSelectorUI(nextPageId);
+                this.c.ui.refreshTabBreadcrumb?.('categories');
             });
         }
     
@@ -1459,17 +1475,20 @@ class ConfigSetup {
     setupBookmarksTabCollapsibles() {
         const STRUCTURE_KEY = 'nextdash-config-structure-workspace-v1';
         const MORE_KEY = 'nextdash-config-bookmark-detail-more-v1';
-    
+
         const structureCard = document.getElementById('structure-workspace-card');
         const structureToggle = document.getElementById('structure-workspace-toggle');
         if (structureCard && structureToggle) {
-            let structureExpanded = false;
-            try {
-                const raw = localStorage.getItem(STRUCTURE_KEY);
-                if (raw === '1' || raw === 'true') structureExpanded = true;
-            } catch { /* ignore */ }
-    
-            const setStructureExpanded = (expanded, persist = true) => {
+            const readStructureExpanded = () => {
+                try {
+                    const raw = localStorage.getItem(STRUCTURE_KEY);
+                    return raw === '1' || raw === 'true';
+                } catch {
+                    return false;
+                }
+            };
+
+            const setStructureExpanded = (expanded, { persist = true } = {}) => {
                 structureCard.classList.toggle('is-collapsed', !expanded);
                 structureToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
                 if (persist) {
@@ -1478,10 +1497,22 @@ class ConfigSetup {
                     } catch { /* ignore */ }
                 }
             };
-    
-            setStructureExpanded(structureExpanded, false);
-    
-            const toggleStructure = () => setStructureExpanded(structureCard.classList.contains('is-collapsed'));
+
+            this.c.applyStructureWorkspacePersistedState = () => {
+                const card = document.getElementById('structure-workspace-card');
+                const toggle = document.getElementById('structure-workspace-toggle');
+                if (!card || !toggle) return;
+                setStructureExpanded(readStructureExpanded(), { persist: false });
+            };
+
+            this.c.expandStructureWorkspace = () => setStructureExpanded(true);
+
+            this.c.applyStructureWorkspacePersistedState();
+
+            const toggleStructure = () => {
+                const willExpand = structureCard.classList.contains('is-collapsed');
+                setStructureExpanded(willExpand);
+            };
             structureToggle.addEventListener('click', toggleStructure);
             structureToggle.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -1489,8 +1520,6 @@ class ConfigSetup {
                     toggleStructure();
                 }
             });
-    
-            this.c.expandStructureWorkspace = () => setStructureExpanded(true);
         }
     
         const moreDetails = document.getElementById('bookmark-detail-more');

@@ -1,0 +1,66 @@
+{
+  "tag": "v2026.06.31",
+  "date": "June 2026",
+  "releasedAt": "2026-07-01",
+  "sections": [
+    {
+      "title": "Config layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shared tab shell</strong> — list tabs (Pages, Categories, Tags, Finders, Collections) now share the same intro copy, toolbar, filter field, and empty-state pattern. Backups, Stats, Theme, and Keyboard use the same semantic intros and spacing rhythm."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Classic surface cards (v4)</strong> — on the <em>Classic</em> layout, each list tab wraps its toolbar and list in one elevated <code>.config-tab-surface</code> card instead of separate floating blocks."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Intro spacing</strong> — consistent vertical gap between the tab intro paragraph and the content below on <strong>General</strong>, <strong>Bookmarks</strong>, and all list tabs (no more cramped toolbars flush against the intro text)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Button clipping</strong> — tab toolbars and action buttons no longer clip at the right edge; config chrome descendants use <code>border-box</code> sizing so padding stays inside the panel width."
+        }
+      ]
+    },
+    {
+      "title": "Config save &amp; empty states",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Unified save status</strong> — one status line beside <strong>Save</strong> replaces the old separate unsaved badge. The sticky save bar hint stays in sync when you scroll."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Per-tab save mode pill</strong> — the breadcrumb row shows <em>Requires save</em>, <em>Auto-save</em>, or <em>Read-only</em> for the active tab (e.g. Categories auto-save vs General requires Save)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty-state CTAs</strong> — Tags and Collections empty states link to useful next steps (open Bookmarks to add a tag; start editing a collection) instead of leaving you on a blank panel."
+        }
+      ]
+    },
+    {
+      "title": "Config → Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Context panel</strong> — the former <em>Structure</em> workspace is now <strong>Context</strong>: a compact page/category switcher for the list below. Reorder, archive, templates, icons, and merge live on the <strong>Pages</strong> and <strong>Categories</strong> tabs — links in the panel footnote take you there."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Remember Context open/closed</strong> — collapsed or expanded state is stored in <code>localStorage</code> and restored when you return to Bookmarks."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Breadcrumb context</strong> — on Bookmarks and Categories, the breadcrumb trail shows the active page and category (e.g. <code>config / bookmarks / Work / dev</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Phone deep link</strong> — opening <code>/config#bookmarks</code> on a phone shows a clear <em>desktop only</em> card with a link back to the dashboard instead of a broken empty editor."
+        }
+      ]
+    }
+  ]
+}

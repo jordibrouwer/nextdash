@@ -74,13 +74,15 @@ class ConfigCollections {
         const ruleCount = document.createElement('span');
         ruleCount.className = 'collection-item-rules';
         const n = (col.rules || []).length;
-        ruleCount.textContent = n === 1 ? '1 rule' : `${n} rules`;
+        ruleCount.textContent = n === 1
+            ? this.t('config.collectionRuleCountOne', '1 rule')
+            : this.t('config.collectionRuleCount', '{count} rules').replace('{count}', String(n));
         inner.appendChild(ruleCount);
 
         const editBtn = document.createElement('button');
         editBtn.type = 'button';
         editBtn.className = 'btn btn-secondary btn-small';
-        editBtn.textContent = 'Edit';
+        editBtn.textContent = this.t('config.collectionEditBtn', 'Edit');
         editBtn.addEventListener('click', () => this._openEdit(col, manager));
         inner.appendChild(editBtn);
 
@@ -88,7 +90,7 @@ class ConfigCollections {
         deleteBtn.type = 'button';
         deleteBtn.className = 'btn btn-danger';
         deleteBtn.textContent = '×';
-        deleteBtn.title = 'Delete collection';
+        deleteBtn.title = this.t('config.collectionDeleteTitle', 'Delete collection');
         deleteBtn.addEventListener('click', () => this._deleteCollection(col, manager));
         inner.appendChild(deleteBtn);
 
@@ -108,6 +110,13 @@ class ConfigCollections {
         if (list) list.style.display = 'none';
         if (emptyState) emptyState.style.display = 'none';
         panel.hidden = false;
+
+        const titleEl = panel.querySelector('#col-edit-title');
+        if (titleEl) {
+            titleEl.textContent = col
+                ? this.t('config.collectionEditTitle', 'Edit collection')
+                : this.t('config.collectionEditNewTitle', 'New collection');
+        }
 
         // Name
         const nameInput = panel.querySelector('#col-edit-name');
@@ -160,7 +169,11 @@ class ConfigCollections {
 
         const fieldSel = document.createElement('select');
         fieldSel.className = 'col-rule-field bookmark-detail-select';
-        [['tag', 'Tag'], ['category', 'Category'], ['shortcut', 'Shortcut']].forEach(([val, label]) => {
+        [
+            ['tag', this.t('config.collectionRuleFieldTag', 'Tag')],
+            ['category', this.t('config.collectionRuleFieldCategory', 'Category')],
+            ['shortcut', this.t('config.collectionRuleFieldShortcut', 'Shortcut')],
+        ].forEach(([val, label]) => {
             const opt = document.createElement('option');
             opt.value = val;
             opt.textContent = label;
@@ -171,7 +184,10 @@ class ConfigCollections {
 
         const opSel = document.createElement('select');
         opSel.className = 'col-rule-op bookmark-detail-select';
-        [['includes', 'includes'], ['excludes', 'excludes']].forEach(([val, label]) => {
+        [
+            ['includes', this.t('config.collectionRuleOpIncludes', 'includes')],
+            ['excludes', this.t('config.collectionRuleOpExcludes', 'excludes')],
+        ].forEach(([val, label]) => {
             const opt = document.createElement('option');
             opt.value = val;
             opt.textContent = label;
@@ -183,7 +199,7 @@ class ConfigCollections {
         const valInput = document.createElement('input');
         valInput.type = 'text';
         valInput.className = 'col-rule-value bookmark-detail-input';
-        valInput.placeholder = 'value';
+        valInput.placeholder = this.t('config.collectionRuleValuePlaceholder', 'value');
         valInput.value = rule ? (rule.value || '') : '';
         row.appendChild(valInput);
 

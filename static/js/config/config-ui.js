@@ -101,11 +101,18 @@ class ConfigUI {
             }
 
             this._currentTab = targetTab;
-            const generalSub = targetTab === 'general' && window.configManager?.generalLayers
-                ? window.configManager.generalLayers.getBreadcrumbSubsection()
-                : null;
-            this.updateBreadcrumb(targetTab, generalSub);
+            let subsection = null;
+            let panelTitle = null;
+            if (targetTab === 'general' && window.configManager?.generalLayers) {
+                subsection = window.configManager.generalLayers.getBreadcrumbSubsection();
+            } else {
+                const ctx = this._breadcrumbContextForTab(targetTab);
+                subsection = ctx.subsection;
+                panelTitle = ctx.panelTitle;
+            }
+            this.updateBreadcrumb(targetTab, subsection, panelTitle);
             this.initBreadcrumbObserver(targetTab);
+            this.updateTabSaveMode(targetTab);
 
             // Update URL hash (preserve general layer subpaths across tab switches)
             if (targetTab === 'colors') {
@@ -134,6 +141,9 @@ class ConfigUI {
                 if (targetTab === 'bookmarks' || targetTab === 'categories') {
                     mgr.refreshCustomSelects();
                     mgr.refreshPageDropdowns();
+                }
+                if (targetTab === 'bookmarks') {
+                    mgr.applyStructureWorkspacePersistedState?.();
                 } else if (targetTab === 'pages') {
                     mgr.renderPagesTab();
                     if (mgr._configPagesTourActive || mgr._configPagesTourStarting) {
@@ -206,6 +216,7 @@ class ConfigUI {
                 }
                 if (
                     targetTab === 'bookmarks' &&
+                    !window.MobileExperience?.isPhoneLayout?.() &&
                     !mgr._configBookmarksTourActive &&
                     !mgr._configBookmarksTourStarting &&
                     !mgr._configTagsTourActive &&
@@ -241,7 +252,9 @@ class ConfigUI {
 
     const getAllowedTabs = () => {
         if (window.MobileExperience?.isPhoneLayout?.()) {
-            return window.MobileExperience.MOBILE_CONFIG_TABS;
+            const base = window.MobileExperience.MOBILE_CONFIG_TABS || [];
+            const hashOnly = window.MobileExperience.MOBILE_PHONE_CONTEXT_TABS || [];
+            return [...base, ...hashOnly];
         }
         return validTabs;
     };
@@ -302,6 +315,9 @@ class ConfigUI {
 
         tabButtons.forEach(button => {
             button.addEventListener('click', async () => {
+                if (window.ConfigTourRuntime?.hasActiveConfigTour?.()) {
+                    return;
+                }
                 const targetTab = button.getAttribute('data-tab');
                 if (!getAllowedTabs().includes(targetTab)) return;
                 if (targetTab === this._currentTab) return;
@@ -316,8 +332,12 @@ class ConfigUI {
         });
 
         this.switchToTab = switchToTab;
+        this.updateTabSaveMode(this._currentTab);
 
         const configTabKeyAllowed = () => {
+            if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {
+                return false;
+            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return false;
             if (document.activeElement?.isContentEditable) return false;
@@ -484,6 +504,77 @@ class ConfigUI {
             html += `${sep}<span class="config-breadcrumb-sub">${panelTitle}</span>`;
         }
         el.innerHTML = html;
+    }
+
+    updateTabSaveMode(tab) {
+        const el = document.getElementById('config-tab-save-mode');
+        if (!el) return;
+        const lang = window.configManager?.language;
+        const modes = {
+            general: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            bookmarks: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            keyboard: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
+            tags: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            collections: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            pages: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            categories: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            finders: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
+            stats: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            backups: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            help: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
+            colors: { key: 'config.tabSaveModeColorsSave', mod: 'colors-save' },
+        };
+        const mode = modes[tab];
+        if (!mode) {
+            el.hidden = true;
+            return;
+        }
+        el.hidden = false;
+        el.textContent = lang?.t(mode.key) || mode.mod;
+        el.className = `config-tab-save-mode config-tab-save-mode--${mode.mod}`;
+    }
+
+    _breadcrumbContextForTab(tab) {
+        const mgr = window.configManager;
+        if (!mgr) return { subsection: null, panelTitle: null };
+
+        if (tab === 'bookmarks') {
+            const page = mgr.getVisiblePages?.().find(
+                (p) => Number(p.id) === Number(mgr.currentPageId)
+            );
+            const subsection = page?.name || null;
+            const filter = mgr.currentBookmarksCategoryFilter || '__all__';
+            let panelTitle = null;
+            if (filter && filter !== '__all__') {
+                const cats = mgr.bookmarksPageCategories || mgr.categoriesData || [];
+                const match = cats.find((cat) => cat.id === filter);
+                panelTitle = match?.name
+                    || mgr.formatRecoveredCategoryName?.(filter)
+                    || filter;
+            }
+            return { subsection, panelTitle };
+        }
+
+        if (tab === 'categories') {
+            const pageId = mgr.currentCategoriesPageId ?? mgr.currentPageId;
+            const page = mgr.getVisiblePages?.().find(
+                (p) => Number(p.id) === Number(pageId)
+            );
+            return { subsection: page?.name || null, panelTitle: null };
+        }
+
+        return { subsection: null, panelTitle: null };
+    }
+
+    refreshTabBreadcrumb(tab = this._currentTab) {
+        if (!tab) return;
+        if (tab === 'general') {
+            const layerSub = window.configManager?.generalLayers?.getBreadcrumbSubsection?.() || null;
+            this.updateBreadcrumb('general', layerSub);
+            return;
+        }
+        const ctx = this._breadcrumbContextForTab(tab);
+        this.updateBreadcrumb(tab, ctx.subsection, ctx.panelTitle);
     }
 
     _breadcrumbTabLabel(tab) {
