@@ -22,10 +22,14 @@ html:has(#config-main) :is(
 
 html:has(#config-main) :is(
     .config-tab-intro,
+    .config-tab-intro-lead,
     .simple-tab-intro,
     .tags-tab-intro,
     .collections-tab-intro,
-    .bookmarks-tab-intro
+    .bookmarks-tab-intro,
+    .backups-tab-intro,
+    .stats-page-intro,
+    .theme-colors-intro
 ) {
     display: block;
     flex: none;
@@ -182,6 +186,9 @@ body {
     .collections-tab,
     .bookmarks-tab,
     .backups-tab,
+    .stats-tab,
+    .keyboard-tab,
+    .theme-colors-editor,
     .theme-colors-editor,
     .keyboard-tab
 ) {
@@ -202,6 +209,15 @@ body {
 }
 
 .tab-content.active[data-tab-content="stats"] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content.active[data-tab-content="stats"] > .stats-tab {
     display: flex;
     flex-direction: column;
     gap: var(--config-tab-gap, 0.85rem);

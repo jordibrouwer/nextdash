@@ -1,31 +1,13 @@
 /* ── Page intro ── */
 .stats-page-intro {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.stats-page-intro p {
-    flex: 1;
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    line-height: 1.5;
+    /* shell: config-tab-shell.css */
 }
 
 .stats-page-intro-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    flex-shrink: 0;
+    /* shell: config-tab-toolbar-tools */
 }
 
 .stats-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.65rem 1rem;
     margin-bottom: 0;
     width: 100%;
     max-width: 100%;
@@ -33,60 +15,15 @@
 }
 
 .stats-filter-wrap {
-    position: relative;
-    flex: 1 1 14rem;
-    max-width: 22rem;
-    min-width: 10rem;
-    display: flex;
-    align-items: center;
+    /* shell: config-tab-shell.css (.config-filter-field) */
 }
 
 .stats-filter-input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.4rem 1.75rem 0.4rem 0.55rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
     background: color-mix(in srgb, var(--background-primary) 40%, transparent);
-    color: var(--text-primary);
-    font-family: var(--font-family-main);
-    font-size: var(--font-size-controls);
-    outline: none;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.stats-filter-input:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
-}
-
-.stats-filter-input::placeholder {
-    color: var(--text-tertiary);
-}
-
-.stats-filter-input::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.stats-filter-clear {
-    position: absolute;
-    right: 0.3rem;
-    background: none;
-    border: none;
-    padding: 0.15rem 0.35rem;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: var(--font-size-controls);
-    line-height: 1;
-}
-
-.stats-filter-clear:hover {
-    color: var(--text-secondary);
-}
-
-.stats-filter-hint {
+.stats-filter-bar .stats-filter-hint {
+    flex: 1 1 100%;
     margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);

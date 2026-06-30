@@ -1,13 +1,10 @@
 .keyboard-tab .keyboard-intro {
-    margin: 0;
     opacity: 0.85;
     font-size: 0.95rem;
 }
 
 .keyboard-tab {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    /* layout: config-tab-shell.css (.config-tab-page) */
 }
 
 .keyboard-preset-toolbar {

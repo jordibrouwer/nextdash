@@ -1043,6 +1043,13 @@ class ConfigSetup {
         if (addCollectionBtn) addCollectionBtn.addEventListener('click', () => {
             if (this.c.collections) this.c.collections._openEdit(null, this);
         });
+        const collectionsEmptyCta = document.getElementById('collections-empty-cta');
+        if (collectionsEmptyCta) collectionsEmptyCta.addEventListener('click', () => addCollectionBtn?.click());
+
+        const tagsEmptyCta = document.getElementById('tags-empty-cta');
+        if (tagsEmptyCta) tagsEmptyCta.addEventListener('click', () => {
+            document.querySelector('.tab-button[data-tab="bookmarks"]')?.click();
+        });
     
         const pageSelector = document.getElementById('page-selector');
         if (pageSelector) {

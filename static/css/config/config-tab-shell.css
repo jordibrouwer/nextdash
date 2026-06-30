@@ -1,5 +1,5 @@
 /**
- * Config tab shell — shared intro, toolbar, filter, and empty-state primitives (v1).
+ * Config tab shell — shared intro, toolbar, filter, and empty-state primitives (v1–v2).
  * Legacy tab-specific class names remain for JS and layout variants; these are the canonical hooks.
  */
 
@@ -7,8 +7,25 @@
 .config-tab-page,
 .simple-tab,
 .tags-tab,
-.collections-tab {
+.collections-tab,
+.bookmarks-tab,
+.backups-tab,
+.stats-tab,
+.keyboard-tab,
+.theme-colors-editor {
+    display: flex;
+    flex-direction: column;
     gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.simple-tab,
+.tags-tab,
+.collections-tab {
+    min-height: 300px;
 }
 
 /* ── Intro copy ── */
@@ -16,11 +33,38 @@
 .simple-tab-intro,
 .tags-tab-intro,
 .collections-tab-intro,
-.bookmarks-tab-intro {
+.bookmarks-tab-intro,
+.backups-tab-intro,
+.stats-page-intro,
+.theme-colors-intro,
+.keyboard-tab .keyboard-intro {
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     margin: 0;
     line-height: 1.5;
+}
+
+.config-tab-intro-lead,
+.config-tab-intro p,
+.backups-tab-intro p,
+.stats-page-intro p,
+.theme-colors-intro p {
+    margin: 0;
+    font-size: inherit;
+    color: inherit;
+    line-height: inherit;
+}
+
+.stats-page-intro {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.stats-page-intro .config-tab-intro-lead,
+.stats-page-intro > p {
+    flex: 1;
 }
 
 .config-tab-intro-hint,
@@ -65,7 +109,49 @@
     color: var(--text-secondary);
 }
 
-/* ── Filter field (tags, finders, …) ── */
+.config-tab-toolbar--with-filter {
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.config-tab-toolbar--with-filter > .config-filter-field {
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    min-width: 10rem;
+}
+
+.config-tab-toolbar--with-filter > .config-filter-field--wide {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 8rem;
+}
+
+.config-tab-toolbar--bookmarks {
+    display: block;
+    justify-content: unset;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    background: var(--config-surface-toolbar);
+}
+
+.config-tab-toolbar--bookmarks .bookmarks-list-controls-row {
+    padding: 0.6rem 0.75rem;
+}
+
+.config-tab-toolbar--bookmarks .bookmarks-list-search-row {
+    padding: 0 0.75rem 0.6rem;
+}
+
+.stats-filter-wrap {
+    /* filter field: config-tab-shell.css (.config-filter-field) */
+}
+
+.stats-filter-input {
+    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
+}
+
+/* ── Filter field (tags, finders, stats, …) ── */
 .config-filter-field {
     position: relative;
     display: flex;
@@ -115,7 +201,8 @@
 }
 
 .config-filter-clear,
-.tags-filter-clear {
+.tags-filter-clear,
+.stats-filter-clear {
     position: absolute;
     right: 0.3rem;
     background: none;
@@ -129,7 +216,8 @@
 }
 
 .config-filter-clear:hover,
-.tags-filter-clear:hover {
+.tags-filter-clear:hover,
+.stats-filter-clear:hover {
     color: var(--text-secondary);
 }
 
@@ -138,8 +226,10 @@
 .tags-empty-state,
 .collections-empty-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1rem;
     border: 1px solid var(--border-primary);
     padding: 2rem;
     text-align: center;
