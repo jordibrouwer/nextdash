@@ -6,10 +6,8 @@ import (
 	"time"
 )
 
-const healthCachePath = "data/health-cache.json"
-
 func readPreviewCacheFile() PreviewCacheFile {
-	data, err := os.ReadFile(previewCachePath)
+	data, err := os.ReadFile(previewCacheFilePath())
 	if err != nil {
 		return PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
 	}
@@ -24,7 +22,7 @@ func writePreviewCacheFile(cache PreviewCacheFile) error {
 	if cache.Cache == nil {
 		cache.Cache = map[string]BookmarkPreview{}
 	}
-	return writeIndentJSONFile(previewCachePath, cache)
+	return writeIndentJSONFile(previewCacheFilePath(), cache)
 }
 
 func previewCacheEntryValid(entry BookmarkPreview) bool {
@@ -96,7 +94,7 @@ func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {
 }
 
 func readHealthCacheFile() HealthScanCacheFile {
-	data, err := os.ReadFile(healthCachePath)
+	data, err := os.ReadFile(healthCacheFilePath())
 	if err != nil {
 		return HealthScanCacheFile{
 			GeneratedAt: time.Now().UnixMilli(),
@@ -117,7 +115,7 @@ func writeHealthCacheFile(cache HealthScanCacheFile) error {
 	if cache.Cache == nil {
 		cache.Cache = map[string]HealthScanCache{}
 	}
-	return writeIndentJSONFile(healthCachePath, cache)
+	return writeIndentJSONFile(healthCacheFilePath(), cache)
 }
 
 func (h *Handlers) mergeHealthCacheUpdates(updates map[string]HealthScanCache) error {

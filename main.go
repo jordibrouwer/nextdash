@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -22,6 +23,9 @@ func main() {
 
 	// Initialize the data store
 	store := NewStore()
+	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
+		log.Printf("Using data directory: %s", ResolveDataDir())
+	}
 
 	// Initialize handlers
 	handlers := NewHandlers(store, embeddedFiles)
@@ -83,7 +87,8 @@ func main() {
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")
 
 	// Data files (for uploaded favicons, etc.)
-	r.PathPrefix("/data/").Handler(http.StripPrefix("/data/", http.FileServer(http.Dir("data/"))))
+	dataDir := ResolveDataDir()
+	r.PathPrefix("/data/").Handler(http.StripPrefix("/data/", http.FileServer(http.Dir(dataDir))))
 
 	// Locales: prefer on-disk files in dev/Docker mounts, fall back to embed.
 	if info, err := os.Stat("locales"); err == nil && info.IsDir() {

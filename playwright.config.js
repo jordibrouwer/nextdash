@@ -1,10 +1,18 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
+const { prepareE2EDataDir } = require('./tests/playwright-data-env');
+
+const skipServer = Boolean(process.env.PLAYWRIGHT_SKIP_SERVER);
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === 'true';
+
+if (!skipServer && !reuseExistingServer) {
+    prepareE2EDataDir();
+}
+
 const { E2E_WEB_SERVER_ENV } = require('./tests/e2e-helpers');
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080';
 const isCI = Boolean(process.env.CI);
-const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === 'true';
 
 module.exports = defineConfig({
     testDir: 'tests',
@@ -15,12 +23,13 @@ module.exports = defineConfig({
     workers: 1,
     reporter: isCI ? [['github'], ['line']] : 'line',
     globalSetup: require.resolve('./tests/playwright-global-setup.js'),
+    globalTeardown: require.resolve('./tests/playwright-global-teardown.js'),
     use: {
         baseURL,
         headless: true,
         trace: 'on-first-retry',
     },
-    webServer: process.env.PLAYWRIGHT_SKIP_SERVER
+    webServer: skipServer
         ? undefined
         : {
             command: 'go run .',

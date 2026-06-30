@@ -54,12 +54,12 @@ func (h *Handlers) UploadFavicon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
 		return
 	}
 
-	faviconPath := filepath.Join("data", "favicon"+ext)
+	faviconPath := filepath.Join(ResolveDataDir(), "favicon"+ext)
 	if err := os.WriteFile(faviconPath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return
@@ -107,7 +107,7 @@ func (h *Handlers) UploadFont(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataDir := "data"
+	dataDir := ResolveDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
 		return
@@ -177,7 +177,7 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := os.MkdirAll("data/icons", 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(ResolveDataDir(), "icons"), 0755); err != nil {
 		http.Error(w, "Unable to create directory", http.StatusInternalServerError)
 		return
 	}
@@ -192,7 +192,7 @@ func (h *Handlers) UploadIcon(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(baseName) == "" {
 		fileName = "icon-" + randomHex(8) + ext
 	}
-	filePath := filepath.Join("data/icons", fileName)
+	filePath := filepath.Join(ResolveDataDir(), "icons", fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		http.Error(w, "Unable to save file", http.StatusInternalServerError)
 		return

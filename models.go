@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -323,12 +324,13 @@ type FileStore struct {
 }
 
 func NewStore() Store {
+	root := ResolveDataDir()
 	store := &FileStore{
-		settingsFile:                "data/settings.json",
-		colorsFile:                  "data/colors.json",
-		pageOrderFile:               "data/pages.json",
-		dataDir:                     "data",
-		customThemesMigrationMarker: "data/.custom-themes-reset-v1",
+		settingsFile:                filepath.Join(root, "settings.json"),
+		colorsFile:                  filepath.Join(root, "colors.json"),
+		pageOrderFile:               filepath.Join(root, "pages.json"),
+		dataDir:                     root,
+		customThemesMigrationMarker: filepath.Join(root, ".custom-themes-reset-v1"),
 	}
 
 	// Initialize default files if they don't exist
@@ -341,7 +343,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.ensureDataDir()
 
 	// Initialize bookmarks for main page if file doesn't exist
-	mainPageBookmarksFile := "data/bookmarks-1.json"
+	mainPageBookmarksFile := filepath.Join(fs.dataDir, "bookmarks-1.json")
 	if _, err := os.Stat(mainPageBookmarksFile); os.IsNotExist(err) {
 		defaultPageWithBookmarks := PageWithBookmarks{
 			Page: Page{
@@ -584,7 +586,7 @@ func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 }
 
 func (fs *FileStore) ensureDataDir() {
-	os.MkdirAll("data", 0755)
+	os.MkdirAll(fs.dataDir, 0755)
 }
 
 // getDefaultNewPageCategories returns the default categories for a newly created page

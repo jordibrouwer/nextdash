@@ -6,6 +6,8 @@ const WRITE_TOKEN = process.env.NEXTDASH_WRITE_TOKEN || 'playwright-e2e-write-to
 /** Env vars for the Playwright-managed `go run .` server. */
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
+    NEXTDASH_DISABLE_PREFETCH: '1',
+    ...(process.env.NEXTDASH_DATA_DIR ? { NEXTDASH_DATA_DIR: process.env.NEXTDASH_DATA_DIR } : {}),
 };
 
 /** @param {import('@playwright/test').Page} page */
