@@ -1,39 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
-        await page.locator('.onboarding-skip').click();
-        await expect(card).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function dismissBlockingOverlays(page) {
-    const whatsNew = page.locator('#app-modal.show');
-    if (await whatsNew.count()) {
-        await page.keyboard.press('Escape');
-        await expect(whatsNew).toHaveCount(0, { timeout: 3000 });
-    }
-    const searchPromo = page.locator('.dashboard-search-promo');
-    if (await searchPromo.count()) {
-        await searchPromo.locator('button').first().click();
-        await expect(searchPromo).toHaveCount(0, { timeout: 3000 });
-    }
-}
-
-async function markWhatsNewSeen(page) {
-    await page.addInitScript(() => {
-        try {
-            const release = '2026.06-dashboard-release-v72';
-            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
-        } catch {
-            // ignore
-        }
-    });
-}
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 test.describe('dashboard search filters', () => {
     test.describe.configure({ mode: 'serial' });

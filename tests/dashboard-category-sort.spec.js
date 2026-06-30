@@ -1,24 +1,16 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-async function dismissBlockingOverlays(page) {
-    const whatsNew = page.locator('#app-modal.show');
-    if (await whatsNew.count()) {
-        await page.keyboard.press('Escape');
-        await expect(whatsNew).toHaveCount(0, { timeout: 3000 });
-    }
-}
+const {
+    markWhatsNewSeen,
+    dismissBlockingOverlays,
+    dismissOnboardingIfPresent,
+} = require('./e2e-helpers');
 
 test.describe('dashboard per-category sort', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
-        await page.addInitScript(() => {
-            try {
-                const release = '2026.06-dashboard-release-v72';
-                localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
-            } catch {
-                // ignore
-            }
+        await markWhatsNewSeen(page, {
+            extraPromoConfirmedKeys: ['nextdash:dashboard-grid-keyboard-promo-confirmed-v1'],
         });
     });
 
@@ -27,6 +19,7 @@ test.describe('dashboard per-category sort', () => {
         await page.waitForSelector('#dashboard-layout .category:not([data-smart-collection="true"])', {
             timeout: 15_000,
         });
+        await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
         const category = page.locator('#dashboard-layout .category:not([data-smart-collection="true"])').first();

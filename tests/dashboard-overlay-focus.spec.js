@@ -1,33 +1,14 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { markWhatsNewSeen, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
-async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
-        await page.locator('.onboarding-skip').click();
-        await expect(card).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function markWhatsNewSeen(page) {
-    await page.addInitScript(() => {
-        try {
-            const release = '2026.06-dashboard-release-v72';
-            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
-            [
-                'nextdash:dashboard-cheatsheet-promo-confirmed-v1',
-                'nextdash:dashboard-recent-bookmarks-promo-confirmed-v1',
-                'nextdash:dashboard-page-overview-promo-confirmed-v1',
-                'nextdash:dashboard-tag-cloud-promo-confirmed-v1',
-                'nextdash:dashboard-quick-add-omnibox-promo-confirmed-v1',
-            ].forEach((key) => localStorage.setItem(key, '1'));
-        } catch {
-            // ignore
-        }
-    });
-}
+const OVERLAY_FOCUS_PROMO_KEYS = [
+    'nextdash:dashboard-cheatsheet-promo-confirmed-v1',
+    'nextdash:dashboard-recent-bookmarks-promo-confirmed-v1',
+    'nextdash:dashboard-page-overview-promo-confirmed-v1',
+    'nextdash:dashboard-tag-cloud-promo-confirmed-v1',
+    'nextdash:dashboard-quick-add-omnibox-promo-confirmed-v1',
+];
 
 async function dismissBlockingOverlays(page) {
     const whatsNew = page.locator('#app-modal.show');
@@ -54,7 +35,7 @@ test.describe('dashboard overlay focus', () => {
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
-        await markWhatsNewSeen(page);
+        await markWhatsNewSeen(page, { extraPromoConfirmedKeys: OVERLAY_FOCUS_PROMO_KEYS });
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);

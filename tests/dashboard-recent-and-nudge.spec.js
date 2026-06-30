@@ -1,34 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
-        await page.locator('.onboarding-skip').click();
-        await expect(card).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function dismissWhatsNewIfPresent(page) {
-    const modal = page.locator('#app-modal.show');
-    if (await modal.count()) {
-        await page.keyboard.press('Escape');
-        await expect(modal).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function markWhatsNewSeen(page) {
-    await page.addInitScript(() => {
-        try {
-            const release = '2026.06-dashboard-release-v72';
-            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
-        } catch {
-            // ignore
-        }
-    });
-}
+const { markWhatsNewSeen, dismissWhatsNewIfPresent, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 async function resetOnboarding(page) {
     await page.evaluate(async () => {

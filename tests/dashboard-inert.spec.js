@@ -1,35 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
-        await page.locator('.onboarding-skip').click();
-        await expect(card).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function markWhatsNewSeen(page) {
-    await page.addInitScript(() => {
-        try {
-            const release = '2026.06-dashboard-release-v72';
-            localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-release', release);
-            localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
-            localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
-        } catch {
-            // ignore
-        }
-    });
-}
-
-async function dismissWhatsNewIfPresent(page) {
-    const modal = page.locator('#app-modal.show');
-    if (await modal.count()) {
-        await page.keyboard.press('Escape');
-        await expect(modal).toHaveCount(0, { timeout: 5000 });
-    }
-}
+const { markWhatsNewSeen, dismissWhatsNewIfPresent, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 async function expectDashboardNotInert(page) {
     await expect.poll(async () => page.evaluate(() => ({
@@ -47,7 +18,7 @@ test.describe('dashboard inert after overlays', () => {
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
-        await markWhatsNewSeen(page);
+        await markWhatsNewSeen(page, { confirmCheatsheetPromo: true });
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);

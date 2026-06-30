@@ -1,34 +1,10 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
-        await page.locator('.onboarding-skip').click();
-        await expect(card).toHaveCount(0, { timeout: 5000 });
-    }
-}
-
-async function dismissBlockingOverlays(page) {
-    const whatsNew = page.locator('#app-modal.show');
-    if (await whatsNew.count()) {
-        await page.keyboard.press('Escape');
-        await expect(whatsNew).toHaveCount(0, { timeout: 3000 });
-    }
-    const searchPromo = page.locator('.dashboard-search-promo');
-    if (await searchPromo.count()) {
-        await searchPromo.locator('button').first().click();
-        await expect(searchPromo).toHaveCount(0, { timeout: 3000 });
-    }
-    const gridPromoClose = page.locator('.dashboard-grid-kbd-promo-close');
-    if (await gridPromoClose.count()) {
-        await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
-        await expect(page.locator('.dashboard-grid-kbd-promo')).toHaveCount(0, { timeout: 3000 });
-    }
-}
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 test.describe('dashboard inline edit', () => {
     test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
