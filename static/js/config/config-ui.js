@@ -141,6 +141,9 @@ class ConfigUI {
                 if (targetTab === 'bookmarks' || targetTab === 'categories') {
                     mgr.refreshCustomSelects();
                     mgr.refreshPageDropdowns();
+                }
+                if (targetTab === 'bookmarks') {
+                    mgr.applyStructureWorkspacePersistedState?.();
                 } else if (targetTab === 'pages') {
                     mgr.renderPagesTab();
                     if (mgr._configPagesTourActive || mgr._configPagesTourStarting) {

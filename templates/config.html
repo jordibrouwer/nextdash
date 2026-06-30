@@ -1246,24 +1246,26 @@
                     </div>
                 </div>
                 <div id="bookmarks-tab-workspace" class="bookmarks-tab-workspace">
-                <p class="config-tab-intro bookmarks-tab-intro config-tab-intro-lead" data-i18n="config.bookmarksTabIntro">Browse and edit all bookmarks in a split view: list on the left, detail panel on the right. Filter by page or category, use bulk actions, or expand Structure to manage pages and categories.</p>
+                <div class="config-tab-intro bookmarks-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.bookmarksTabIntro">Browse and edit all bookmarks in a split view: list on the left, detail panel on the right. Filter by page or category, use bulk actions, or expand Context to switch page and category while you edit.</p>
+                </div>
                 <div class="structure-workspace-card is-collapsible is-collapsed" id="structure-workspace-card">
                     <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
-                        <span data-i18n="config.structureWorkspaceTitle">Structure</span>
+                        <span data-i18n="config.structureWorkspaceTitle">Context</span>
                     </h3>
-                    <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Manage pages, categories, archived pages and favicon policy.</p>
+                    <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Switch page and category for the bookmark list below. Restore archived pages or set favicon policy here.</p>
                     <div class="structure-workspace" id="structure-workspace-panel">
                     <section class="structure-column">
                         <div class="structure-column-header">
-                            <h3 data-i18n="config.structurePages">Pages</h3>
-                            <button id="structure-add-page-btn" class="btn btn-secondary btn-small" type="button" data-i18n="config.structureAddPage">+ Page</button>
+                            <h3 data-i18n="config.structurePages">Page</h3>
+                            <button type="button" class="structure-goto-tab-link" data-structure-goto-tab="pages" data-i18n="config.structureGotoPagesTab">Pages tab →</button>
                         </div>
                         <div id="structure-pages-list" class="structure-list"></div>
                     </section>
                     <section class="structure-column">
                         <div class="structure-column-header">
-                            <h3 data-i18n="config.structureCategories">Categories</h3>
-                            <button id="structure-add-category-btn" class="btn btn-secondary btn-small" type="button" data-i18n="config.structureAddCategory">+ Category</button>
+                            <h3 data-i18n="config.structureCategories">Category</h3>
+                            <button type="button" class="structure-goto-tab-link" data-structure-goto-tab="categories" data-i18n="config.structureGotoCategoriesTab">Categories tab →</button>
                         </div>
                         <div id="structure-categories-list" class="structure-list"></div>
                     </section>
@@ -1286,6 +1288,7 @@
                         <div id="structure-archived-pages-list" class="structure-list"></div>
                     </section>
                     </div>
+                    <p class="structure-workspace-footnote" data-i18n="config.structureWorkspaceFootnote">Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.</p>
                 </div>
 
                 <!-- Bookmarks split-view: lijst + detail paneel -->
@@ -2356,7 +2359,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
-    <script src="/static/js/config/config-ui.js?v=config-tab-consistency-3"></script>
+    <script src="/static/js/config/config-ui.js?v=config-structure-context-1"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-storage.js"></script>
@@ -2381,7 +2384,7 @@
     <script src="/static/js/config/config-tab-tours.js?v=config-tab-tours-1"></script>
     <script src="/static/js/config/config-persistence.js?v=config-save-status-v1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=config-tab-consistency-3"></script>
+    <script src="/static/js/config/config-setup.js?v=config-structure-context-2"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-layer-default-1"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v5"></script>

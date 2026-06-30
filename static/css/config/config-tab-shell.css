@@ -28,6 +28,16 @@
     min-height: 300px;
 }
 
+.bookmarks-tab-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 /* ── Intro copy ── */
 .config-tab-intro,
 .simple-tab-intro,

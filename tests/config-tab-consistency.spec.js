@@ -268,4 +268,46 @@ test.describe('config tab consistency v4 classic surfaces', () => {
         });
         expect(fits).toBe(true);
     });
+
+    test('context panel links open Pages and Categories tabs', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('bookmarks');
+            document.getElementById('structure-workspace-card')?.classList.remove('is-collapsed');
+        });
+
+        await page.evaluate(() => {
+            document.querySelector('[data-structure-goto-tab="pages"]')?.click();
+        });
+        await expect(page.locator('[data-tab-content="pages"].active')).toBeVisible();
+
+        await page.evaluate(() => {
+            window.configManager.ui.switchToTab('bookmarks');
+            document.querySelector('[data-structure-goto-tab="categories"]')?.click();
+        });
+        await expect(page.locator('[data-tab-content="categories"].active')).toBeVisible();
+    });
+
+    test('context panel persists open state across reloads', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('bookmarks');
+            localStorage.setItem('nextdash-config-structure-workspace-v1', '0');
+            cm.applyStructureWorkspacePersistedState?.();
+        });
+        await expect(page.locator('#structure-workspace-card')).toHaveClass(/is-collapsed/);
+
+        await page.evaluate(() => {
+            document.getElementById('structure-workspace-toggle')?.click();
+        });
+        await expect(page.locator('#structure-workspace-card')).not.toHaveClass(/is-collapsed/);
+
+        const stored = await page.evaluate(() => localStorage.getItem('nextdash-config-structure-workspace-v1'));
+        expect(stored).toBe('1');
+
+        await page.reload();
+        await page.waitForFunction(() => typeof window.configManager?.applyStructureWorkspacePersistedState === 'function');
+        await page.evaluate(() => window.configManager.ui.switchToTab('bookmarks'));
+        await expect(page.locator('#structure-workspace-card')).not.toHaveClass(/is-collapsed/);
+    });
 });

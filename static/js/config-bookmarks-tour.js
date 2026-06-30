@@ -1166,7 +1166,7 @@ class ConfigBookmarksTour {
                 title: this.t('configBookmarksTourWelcomeTitle', 'Welcome to the Bookmarks editor'),
                 body: this.t(
                     'configBookmarksTourWelcomeBody',
-                    'List on the left, detail editor on the right. Structure workspace above stays collapsed until you need pages or categories.'
+                    'List on the left, detail editor on the right. The Context panel above stays collapsed until you need to switch page or category.'
                 ),
                 selector: '.bookmarks-splitview',
                 scrollBlock: 'start',

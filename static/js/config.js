@@ -223,6 +223,7 @@ class ConfigManager {
             window.AppModal.setLanguage(this.language);
         }
         this.renderConfig();
+        this.applyStructureWorkspacePersistedState?.();
         this.initReordering();
         await this.persistRepairedPagesIfNeeded();
         await this.reloadPagesFromServerIfNeeded();

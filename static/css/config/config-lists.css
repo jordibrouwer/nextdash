@@ -192,6 +192,35 @@
     font-size: var(--font-size-text);
 }
 
+.structure-goto-tab-link {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    text-decoration: underline;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.structure-goto-tab-link:hover {
+    color: var(--accent-primary);
+}
+
+.structure-goto-tab-link:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.structure-workspace-footnote {
+    margin: 0 0.75rem 0.75rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
 .structure-list {
     display: flex;
     flex-direction: column;
