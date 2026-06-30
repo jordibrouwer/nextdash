@@ -1067,6 +1067,7 @@ class ConfigSetup {
                 if (clearEl) clearEl.hidden = true;
                 await this.c.loadPageBookmarks(e.target.value);
                 this.c.renderStructureWorkspace();
+                this.c.ui.refreshTabBreadcrumb?.('bookmarks');
             });
         }
         const faviconPolicySelect = document.getElementById('favicon-refresh-policy-select');
@@ -1107,6 +1108,7 @@ class ConfigSetup {
                 }
                 this.c.refreshBookmarksList();
                 this.c.renderStructureWorkspace();
+                this.c.ui.refreshTabBreadcrumb?.('bookmarks');
             });
         }
     
@@ -1166,6 +1168,7 @@ class ConfigSetup {
                 this.c.saveLastCategoriesPageId(nextPageId);
                 await this.c.loadPageCategories(nextPageId);
                 this.c.syncCategoriesPageSelectorUI(nextPageId);
+                this.c.ui.refreshTabBreadcrumb?.('categories');
             });
         }
     

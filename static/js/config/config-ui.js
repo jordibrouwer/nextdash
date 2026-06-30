@@ -101,10 +101,16 @@ class ConfigUI {
             }
 
             this._currentTab = targetTab;
-            const generalSub = targetTab === 'general' && window.configManager?.generalLayers
-                ? window.configManager.generalLayers.getBreadcrumbSubsection()
-                : null;
-            this.updateBreadcrumb(targetTab, generalSub);
+            let subsection = null;
+            let panelTitle = null;
+            if (targetTab === 'general' && window.configManager?.generalLayers) {
+                subsection = window.configManager.generalLayers.getBreadcrumbSubsection();
+            } else {
+                const ctx = this._breadcrumbContextForTab(targetTab);
+                subsection = ctx.subsection;
+                panelTitle = ctx.panelTitle;
+            }
+            this.updateBreadcrumb(targetTab, subsection, panelTitle);
             this.initBreadcrumbObserver(targetTab);
             this.updateTabSaveMode(targetTab);
 
@@ -207,6 +213,7 @@ class ConfigUI {
                 }
                 if (
                     targetTab === 'bookmarks' &&
+                    !window.MobileExperience?.isPhoneLayout?.() &&
                     !mgr._configBookmarksTourActive &&
                     !mgr._configBookmarksTourStarting &&
                     !mgr._configTagsTourActive &&
@@ -242,7 +249,9 @@ class ConfigUI {
 
     const getAllowedTabs = () => {
         if (window.MobileExperience?.isPhoneLayout?.()) {
-            return window.MobileExperience.MOBILE_CONFIG_TABS;
+            const base = window.MobileExperience.MOBILE_CONFIG_TABS || [];
+            const hashOnly = window.MobileExperience.MOBILE_PHONE_CONTEXT_TABS || [];
+            return [...base, ...hashOnly];
         }
         return validTabs;
     };
@@ -520,6 +529,49 @@ class ConfigUI {
         el.hidden = false;
         el.textContent = lang?.t(mode.key) || mode.mod;
         el.className = `config-tab-save-mode config-tab-save-mode--${mode.mod}`;
+    }
+
+    _breadcrumbContextForTab(tab) {
+        const mgr = window.configManager;
+        if (!mgr) return { subsection: null, panelTitle: null };
+
+        if (tab === 'bookmarks') {
+            const page = mgr.getVisiblePages?.().find(
+                (p) => Number(p.id) === Number(mgr.currentPageId)
+            );
+            const subsection = page?.name || null;
+            const filter = mgr.currentBookmarksCategoryFilter || '__all__';
+            let panelTitle = null;
+            if (filter && filter !== '__all__') {
+                const cats = mgr.bookmarksPageCategories || mgr.categoriesData || [];
+                const match = cats.find((cat) => cat.id === filter);
+                panelTitle = match?.name
+                    || mgr.formatRecoveredCategoryName?.(filter)
+                    || filter;
+            }
+            return { subsection, panelTitle };
+        }
+
+        if (tab === 'categories') {
+            const pageId = mgr.currentCategoriesPageId ?? mgr.currentPageId;
+            const page = mgr.getVisiblePages?.().find(
+                (p) => Number(p.id) === Number(pageId)
+            );
+            return { subsection: page?.name || null, panelTitle: null };
+        }
+
+        return { subsection: null, panelTitle: null };
+    }
+
+    refreshTabBreadcrumb(tab = this._currentTab) {
+        if (!tab) return;
+        if (tab === 'general') {
+            const layerSub = window.configManager?.generalLayers?.getBreadcrumbSubsection?.() || null;
+            this.updateBreadcrumb('general', layerSub);
+            return;
+        }
+        const ctx = this._breadcrumbContextForTab(tab);
+        this.updateBreadcrumb(tab, ctx.subsection, ctx.panelTitle);
     }
 
     _breadcrumbTabLabel(tab) {

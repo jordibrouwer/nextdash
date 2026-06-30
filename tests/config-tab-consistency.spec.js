@@ -164,3 +164,66 @@ test.describe('config tab consistency (v2 empty states & v2b save UX)', () => {
         await expect(pill).toHaveText(/read-only/i);
     });
 });
+
+test.describe('config tab consistency v3 navigation', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('bookmarks breadcrumb includes page and category context', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('bookmarks');
+            await cm.loadPageBookmarks(cm.currentPageId);
+            cm.currentBookmarksCategoryFilter = 'development';
+            const filter = document.getElementById('bookmarks-category-filter');
+            if (filter) filter.value = 'development';
+            cm.ui.refreshTabBreadcrumb('bookmarks');
+        });
+
+        const crumb = page.locator('#config-breadcrumb');
+        await expect(crumb).toContainText(/bookmarks/i);
+        await expect(crumb).toContainText(/main/i);
+        await expect(crumb).toContainText(/development/i);
+    });
+
+    test('categories breadcrumb includes selected page name', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('categories');
+            const pageId = cm.currentCategoriesPageId || cm.currentPageId || 1;
+            await cm.loadPageCategories(pageId);
+            cm.ui.refreshTabBreadcrumb('categories');
+        });
+
+        const crumb = page.locator('#config-breadcrumb');
+        await expect(crumb).toContainText(/categories/i);
+        await expect(crumb).toContainText(/main/i);
+    });
+});
+
+test.describe('config tab consistency v3 phone block', () => {
+    test('bookmarks hash on phone shows blocking card and keeps hash', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await skipConfigTours(page);
+        await page.goto('/config#bookmarks');
+        await page.waitForFunction(() => typeof window.configManager?.ui !== 'undefined');
+        await page.waitForSelector('[data-tab-content="bookmarks"].active', { timeout: 20_000 });
+
+        await expect(page).toHaveURL(/#bookmarks/);
+        await expect(page.locator('#bookmarks-phone-block')).toBeVisible();
+        await expect(page.locator('#bookmarks-tab-workspace')).toBeHidden();
+        await expect(page.locator('.bookmarks-splitview')).toBeHidden();
+    });
+
+    test('unsupported phone hash still redirects to general', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await skipConfigTours(page);
+        await page.goto('/config#pages');
+        await page.waitForFunction(() => typeof window.configManager?.ui !== 'undefined');
+        await page.waitForSelector('[data-tab-content="general"].active', { timeout: 20_000 });
+
+        await expect(page).toHaveURL(/#general/);
+    });
+});

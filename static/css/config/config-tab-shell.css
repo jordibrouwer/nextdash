@@ -264,3 +264,44 @@
     text-align: left;
     max-width: none;
 }
+
+/* ── Phone blocking card (v3) — desktop-only tabs on narrow viewports ── */
+.config-phone-block-card {
+    display: none;
+}
+
+body[data-phone-layout="true"] .config-phone-block-card {
+    display: block;
+}
+
+body[data-phone-layout="true"] .bookmarks-tab-workspace {
+    display: none !important;
+}
+
+.config-phone-block-card-inner {
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75rem;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius-md, 0.5rem);
+    background: var(--config-surface-list, var(--background-secondary));
+}
+
+.config-phone-block-card-lead {
+    margin: 0;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.config-phone-block-card-hint {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.config-phone-block-card-cta {
+    margin-top: 0.25rem;
+}
