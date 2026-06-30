@@ -329,7 +329,11 @@ Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on t
 
 **config → bookmarks**: list on the left, detail on the right. Best for many edits, tags, notes, favicon upload, and bulk actions.
 
-At the top, the **Structure** workspace (pages, categories, archived pages, favicon policy) starts **collapsed** — expand it when you need structural edits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** opens the full new-bookmark form and saves to disk immediately — the new row appears in the list right away (search/category filters adjust so you can see it). In the detail panel, **category** stays visible; shortcut, icon, tags, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
+At the top, the **Context** panel (page and category switcher for the list below) starts **collapsed** — expand it when you need to change page or category without leaving Bookmarks. Reorder pages, archive, templates, icons, and merge categories on the dedicated **Pages** and **Categories** tabs (links in the Context footnote). Open/closed state is remembered across visits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** opens the full new-bookmark form and saves to disk immediately — the new row appears in the list right away (search/category filters adjust so you can see it). In the detail panel, **category** stays visible; shortcut, icon, tags, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
+
+The breadcrumb row shows your current location (e.g. `config / bookmarks / Work / dev`) and whether the tab **Requires save**, **Auto-saves**, or is **Read-only**.
+
+On a **phone** (≤768px), opening `/config#bookmarks` shows a clear *desktop only* card with a link back to the dashboard — use a wider window for the split-view editor.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs and after guided tours.
 
@@ -825,7 +829,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | **collections** | Custom collection rules |
 | **pages** | Add, rename, archive, reorder pages (auto-save; ↑/↓ keyboard; desktop) |
 | **categories** | Per-page categories — merge, counts, auto-save on reorder and when leaving the tab or changing page (desktop) |
-| **bookmarks** | Split-view editor, bulk actions |
+| **bookmarks** | Split-view editor, bulk actions; **Context** panel for page/category; breadcrumb shows active page/category |
 | **finders** | External search shortcuts |
 | **backups** | ZIP backup/restore, CSV, browser HTML import |
 | **help** | In-app documentation index |
@@ -846,12 +850,14 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 
 ### Find settings & quick actions (desktop config)
 
+- **Breadcrumb row** — shows `config / <tab> / …` with sub-context on Bookmarks (page + category) and Categories (page). A pill beside the trail indicates save mode: **Requires save** (General, Bookmarks, …), **Auto-save** (Pages, Categories, …), **Read-only** (Stats), or **Save colors** (Theme). One status line beside **Save** shows dirty/saved state (replaces the old separate unsaved badge).
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
 - **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll). Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
 
 #### Layout and structure
 
+- **Tab shell (v2026.06.31)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. On **Classic** layout, each list tab fuses toolbar + list into one surface card. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs.
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
 - **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
 
@@ -862,7 +868,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | Tour | When it starts | What it covers |
 |------|----------------|----------------|
 | **General** (11 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Search settings…** (`Ctrl+Shift+K`), **Save** |
-| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed structure panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
+| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed **Context** panel, **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
 | **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
 | **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
 | **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
@@ -978,7 +984,7 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing and for **guided config tours** (General and Bookmarks).
+On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing and for **guided config tours** (General and Bookmarks). If you open `/config#bookmarks` on a phone, a **desktop only** card explains the limit and links back to the dashboard.
 
 Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers or guided General tour.
 
@@ -998,7 +1004,7 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
 | **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
-| **Config tabs** | **General** (language, theme, layout) + **Help** | Bookmarks, pages, backup, stats, health, theme editor, tours, all settings |
+| **Config tabs** | **General** (language, theme, layout) + **Help**; `#bookmarks` shows desktop-only card | Bookmarks, pages, backup, stats, health, theme editor, tours, all settings |
 | **Link preview on hover** | Off | When enabled in settings |
 | **Guided tours & footer tips** | Skipped / hidden | Optional on first visit |
 

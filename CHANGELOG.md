@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.31 — June 2026](#v20260631--june-2026)
 - [v2026.06.30.2 — June 2026](#v202606302--june-2026)
 - [v2026.06.30.1 — June 2026](#v202606301--june-2026)
 - [v2026.06.30 — June 2026](#v20260630--june-2026)
@@ -58,7 +59,44 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.30.2](#v202606302--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.31 — June 2026
+
+**Config Tab Consistency (v1–v4)** — shared shell primitives across config tabs; unified save status and per-tab save-mode labels; classic fused surface cards; breadcrumb context; Bookmarks **Context** panel with persisted open state; intro spacing and button-clipping fixes; phone card for `#bookmarks` deep links; Playwright regression coverage.
+
+### Config layout (v1 & v4)
+
+- **new** **Shared tab shell** — `config-tab-shell.css` introduces reusable `.config-tab-intro`, `.config-tab-toolbar`, `.config-filter-field`, `.config-empty-state`, and `.config-tab-surface` primitives. List tabs (Pages, Categories, Tags, Finders, Collections) share the same intro copy pattern, toolbar alignment, filter styling, and empty-state layout.
+- **new** **Semantic intros on remaining tabs** — Backups, Stats, Theme (`#colors`), and Keyboard adopt the shared intro pattern; Bookmarks, Stats, and Finders toolbars align to shell toolbar classes; Collections i18n and unified **+ Add** labels complete v2 rollout.
+- **fix** **Classic fused surface cards (v4)** — on `body[data-layout-version="classic"]`, list tabs wrap toolbar + list in one `.config-tab-surface` card (`config-classic-surfaces.css`) with shared radius, border, and shadow tokens (`--config-surface-list`, `--config-surface-toolbar`, `--config-surface-radius`).
+- **fix** **Intro → content spacing** — flex column + `gap: var(--config-tab-gap)` on the General tab wrapper, Bookmarks intro moved outside `bookmarks-tab-workspace`, and a high-specificity shell rule so intro paragraphs keep consistent whitespace before toolbars and panels on General, Bookmarks, and list tabs.
+- **fix** **Clipped toolbar buttons** — `#config-main *` now uses `border-box` instead of inheriting `content-box` from `body`, so right-edge padding on tab toolbars and action buttons is no longer clipped by overflow-hidden surfaces.
+- **fix** **Structure workspace list border** — right border on Context panel list items no longer clips on classic surfaces.
+
+### Config save UX (v2 & v2b)
+
+- **fix** **Unified save status line** — retired `#unsaved-indicator` badge; one `#save-status-indicator` beside **Save** shows dirty/saved/syncing state. Sticky save bar (`body.config-sticky-save-visible`) stays in sync when scrolling.
+- **new** **Per-tab save mode pill** — `#config-tab-save-mode` in the breadcrumb row shows **Requires save**, **Auto-save**, **Read-only**, or **Save colors** depending on the active tab (General/Bookmarks vs Categories/Pages vs Stats vs Theme).
+- **fix** **Empty-state CTAs** — Tags empty state links to Bookmarks to add a tagged bookmark; Collections empty state opens the edit panel for a new collection.
+
+### Config navigation (v3)
+
+- **new** **Breadcrumb context** — `#config-breadcrumb` shows sub-context on Bookmarks (active page + category) and Categories (active page); Colors subtab context was already supported and remains.
+- **fix** **Bookmarks Context panel (Route A)** — renamed **Structure** workspace to **Context**: compact page/category switcher for the bookmark list below. Removed duplicate **+ Page** / **+ Category** actions; footnote links to **Pages** and **Categories** tabs for reorder, archive, templates, icons, and merge.
+- **fix** **Context panel persistence** — collapsed/expanded state stored in `localStorage` (`nextdash-config-structure-workspace-v1`) and restored on tab switch and after `renderConfig`.
+- **fix** **Phone `#bookmarks` deep link** — on ≤768px, `/config#bookmarks` shows `.config-phone-block-card` (desktop-only message + back to dashboard) instead of a broken split-view; `#bookmarks` hash routing still works on desktop.
+
+### Developer & docs
+
+- **new** **Playwright: config tab consistency** — `tests/config-tab-consistency.spec.js` covers empty-state CTAs, save status line, sticky bar sync, save-mode pills, classic surface box model, breadcrumb context, phone block, intro spacing (General, Bookmarks vs Categories), and Context panel default/persistence.
+- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and What's new updated for **v2026.06.31**.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v105` data version and `2026.06-dashboard-release-v84` dashboard release token; `config-intro-spacing-1` on `config.css` / `config-general.css` / `config-tab-shell.css`; prior `config-tab-consistency-4`, `config-box-model-1`, `config-chrome-align-1`, and `bookmarks-list-surface-1` bundles retained on per-tab CSS.
 
 ---
 

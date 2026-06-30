@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Merge dev into main, strip dev-only paths, tag, push, and publish a GitHub Release.
-# Usage: ./scripts/release-to-main.sh v2026.06.29
+# Usage: ./scripts/release-to-main.sh v2026.06.31
 # Requires: gh auth login (once) for the GitHub Release step.
 set -euo pipefail
 
@@ -24,7 +24,7 @@ if [[ -z "$TAG" ]]; then
 fi
 
 if [[ ! "$TAG" =~ ^v[0-9] ]]; then
-  echo "Tag must start with v (e.g. v2026.06.30.2), got: ${TAG}" >&2
+  echo "Tag must start with v (e.g. v2026.06.31), got: ${TAG}" >&2
   exit 1
 fi
 
