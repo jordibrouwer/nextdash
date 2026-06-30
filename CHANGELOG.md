@@ -62,7 +62,7 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 ## v2026.06.30 — June 2026
 
-**Category stability, config quick-add refresh & tab layout polish** — fixes accidental category deletion (#1), saves category edits when leaving the Categories tab, shows new quick-add bookmarks immediately, and aligns config panel layout across classic/modern/glass themes.
+**Category stability, config quick-add refresh & tab layout polish** — fixes accidental category deletion (#1), saves category edits when leaving the Categories tab, shows new quick-add bookmarks immediately, aligns config panel layout across classic/modern/glass themes, and restores normal bookmark row highlight for status-monitored links.
 
 ### Config & categories
 
@@ -75,10 +75,12 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 - **fix** **Stats tab visibility** — the stats panel no longer bleeds through on other config tabs in classic layout.
 - **fix** **Config tab layout alignment** — unified row widths and intro styling across classic, modern, and glass; save bar, tabs chrome, finders filter toolbar, and section panels align consistently.
+- **fix** **Save status indicator** — the “Saved” label beside Save stays hidden until a save runs (brief “Saving…” / “All saved ✓” flash only); it no longer remains visible at all times.
 
 ### Dashboard
 
 - **fix** **Category sync guard** — dashboard category-order save no longer posts an empty payload when bookmarks still reference categories.
+- **fix** **Status bookmark hover & selection** — bookmarks with status/ping monitoring use the same full-row highlight on hover and keyboard selection as normal bookmarks, instead of only tinting the ms badge.
 
 ### Developer & docs
 
@@ -89,7 +91,7 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 ### Cache-bust
 
-- **fix** **Cache-bust** — `whats-new-v99` data version and `2026.06-dashboard-release-v78` dashboard release token; `config-ui-tabs-flush-1`, `config-tabs-flush-1`, `config-setup-2`, `config-quick-add-2`, `search-commands-new-2` on config bundles.
+- **fix** **Cache-bust** — `whats-new-v100` data version and `2026.06-dashboard-release-v79` dashboard release token; `status-hover-row-1` on status/bookmark-row CSS; `config-ui-tabs-flush-1`, `config-tabs-flush-1`, `config-setup-2`, `config-quick-add-2`, `search-commands-new-2` on config bundles.
 
 ---
 

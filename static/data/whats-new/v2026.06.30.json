@@ -30,6 +30,19 @@
         {
           "badge": "fix",
           "text": "<strong>Cleaner config panels</strong> — row widths, intros, save bar, and section toolbars align consistently across classic, modern, and glass themes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Save indicator</strong> — the &quot;Saved&quot; label beside Save stays hidden until you save; it no longer remains visible all the time."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Status bookmark selection</strong> — bookmarks with status/ping monitoring now highlight the full row on hover and keyboard selection, same as other bookmarks (not only the ms badge)."
         }
       ]
     }
