@@ -3,6 +3,7 @@
 @import url('config/config-tabs.css?v=config-chrome-align-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');
+@import url('config/config-tab-shell.css?v=config-tab-consistency-1');
 @import url('config/config-buttons.css');
 @import url('config/config-unsaved-state.css');
 @import url('config/config-notifications.css');

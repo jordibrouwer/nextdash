@@ -186,7 +186,7 @@ class ConfigFinders {
 
         if (list.length === 0) {
             const hint = document.createElement('p');
-            hint.className = 'finders-list-empty-hint';
+            hint.className = 'finders-list-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'status');
             hint.textContent = this.t('config.findersListEmptyHint')
                 || 'No finders yet. Click + Add finder to create a shortcut to an external search site.';
@@ -198,7 +198,7 @@ class ConfigFinders {
 
         if (filtered.length === 0) {
             const hint = document.createElement('p');
-            hint.className = 'finders-filter-empty-hint';
+            hint.className = 'finders-filter-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'status');
             hint.textContent = this.t('config.findersFilterEmpty') || 'No finders match your filter.';
             container.appendChild(hint);

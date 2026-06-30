@@ -10,32 +10,7 @@
 }
 
 .simple-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border-primary);
-    border-bottom: none;
-    background: var(--config-surface-toolbar);
-    flex-shrink: 0;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.simple-tab-intro {
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-.simple-tab-hint {
-    display: inline-block;
-    margin-top: 0.25rem;
-    font-size: 0.78rem;
-    color: var(--text-tertiary);
-    opacity: 0.85;
+    /* layout: config-tab-shell.css (.config-tab-toolbar) */
 }
 
 .simple-tab-hint-handle {
@@ -45,15 +20,6 @@
     vertical-align: middle;
     line-height: 1;
     margin: 0 0.1em;
-}
-
-.simple-toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
 }
 
 .simple-page-select {
@@ -70,11 +36,7 @@
 
 .pages-list-empty-hint,
 .categories-list-empty-hint {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    /* shell: config-tab-shell.css (.config-empty-state--inlist) */
 }
 
 .category-icon-input {

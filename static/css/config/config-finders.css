@@ -66,11 +66,7 @@
 
 .finders-list-empty-hint,
 .finders-filter-empty-hint {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    /* shell: config-tab-shell.css (.config-empty-state--inlist) */
 }
 
 /* Outer shell — like .tag-item */

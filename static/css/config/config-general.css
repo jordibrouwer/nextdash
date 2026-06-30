@@ -21,9 +21,11 @@ html:has(#config-main) :is(
 }
 
 html:has(#config-main) :is(
+    .config-tab-intro,
     .simple-tab-intro,
     .tags-tab-intro,
-    .collections-tab-intro
+    .collections-tab-intro,
+    .bookmarks-tab-intro
 ) {
     display: block;
     flex: none;
@@ -178,6 +180,7 @@ body {
     .simple-tab,
     .tags-tab,
     .collections-tab,
+    .bookmarks-tab,
     .backups-tab,
     .theme-colors-editor,
     .keyboard-tab
@@ -188,6 +191,7 @@ body {
 }
 
 .tab-content[data-tab-content="bookmarks"] > div,
+.tab-content[data-tab-content="bookmarks"] > .bookmarks-tab,
 .tab-content[data-tab-content="help"] > div {
     display: flex;
     flex-direction: column;
@@ -217,6 +221,7 @@ html:has(#config-main) :is(
     .help-search-filter,
     .bookmarks-splitview,
     .structure-workspace-card,
+    .config-tab-toolbar,
     .simple-toolbar,
     .simple-list,
     .tags-toolbar,
@@ -226,7 +231,9 @@ html:has(#config-main) :is(
     .collections-toolbar,
     .collections-list,
     .finders-body,
+    .config-filter-field,
     .finders-filter-wrap,
+    .config-empty-state,
     .backups-section,
     .stats-filter-bar,
     .stats-chip-nav,
@@ -440,7 +447,7 @@ html:has(#config-main) :is(
 .config-main {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: var(--config-tab-gap, 0.85rem);
 }
 
 /* Config sections inside tabs - full width of their parent */
