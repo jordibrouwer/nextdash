@@ -65,7 +65,7 @@ _(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest releas
 
 ## v2026.06.31 — June 2026
 
-**Config Tab Consistency (v1–v4)** — shared shell primitives across config tabs; unified save status and per-tab save-mode labels; classic fused surface cards; breadcrumb context; Bookmarks **Context** panel with persisted open state; intro spacing and button-clipping fixes; phone card for `#bookmarks` deep links; Playwright regression coverage.
+**Config Tab Consistency (v1–v4)** — shared shell primitives across config tabs; unified save status and per-tab save-mode labels; classic fused surface cards; breadcrumb context; Bookmarks **Context** panel with persisted open state; intro spacing and button-clipping fixes; phone card for `#bookmarks` deep links; Playwright regression coverage; Help tab and **MANUAL.md** aligned in EN/NL/DE/FR.
 
 ### Config layout (v1 & v4)
 
@@ -92,7 +92,9 @@ _(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest releas
 ### Developer & docs
 
 - **new** **Playwright: config tab consistency** — `tests/config-tab-consistency.spec.js` covers empty-state CTAs, save status line, sticky bar sync, save-mode pills, classic surface box model, breadcrumb context, phone block, intro spacing (General, Bookmarks vs Categories), and Context panel default/persistence.
-- **fix** **Help & manual** — README, MANUAL, CHANGELOG, and What's new updated for **v2026.06.31**.
+- **fix** **Help tab (EN / NL / DE / FR)** — **What's new** recap adds **v2026.06.31** at the top; **Config → General**, **Manage bookmarks**, and **Phone vs desktop** sections document tab shell, breadcrumb save-mode pill, unified save status, **Context** panel (replacing Structure), phone `#bookmarks` card, and updated Bookmarks guided-tour copy.
+- **fix** **MANUAL.md** — §16 expanded with **Config → Help**, list-tab shell, save UX pills, Classic vs Modern/Glass surfaces; archive restore via Pages/Context; troubleshooting no longer references the retired unsaved badge.
+- **fix** **Release docs** — README, CHANGELOG, What's new (`v2026.06.31.json`), and MANUAL updated for **v2026.06.31** (no new dashboard release token).
 
 ### Cache-bust
 
