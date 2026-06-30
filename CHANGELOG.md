@@ -62,7 +62,7 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 ## v2026.06.30 — June 2026
 
-**Category stability, config quick-add refresh & tab layout polish** — fixes accidental category deletion (#1), saves category edits when leaving the Categories tab, shows new quick-add bookmarks immediately, aligns config panel layout across classic/modern/glass themes, and restores normal bookmark row highlight for status-monitored links.
+**Category stability, config quick-add refresh & tab layout polish** — fixes accidental category deletion (#1), saves category edits when leaving the Categories tab, shows new quick-add bookmarks immediately, aligns config panel layout across classic/modern/glass themes, restores normal bookmark row highlight for status-monitored links, and fixes duplicate navigation in glass layout with side rail left.
 
 ### Config & categories
 
@@ -81,6 +81,7 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 - **fix** **Category sync guard** — dashboard category-order save no longer posts an empty payload when bookmarks still reference categories.
 - **fix** **Status bookmark hover & selection** — bookmarks with status/ping monitoring use the same full-row highlight on hover and keyboard selection as normal bookmarks, instead of only tinting the ms badge.
+- **fix** **Glass + side rail** — with layout *Glass* and button bar *Side rail (left)*, navigation no longer appears twice; bottom-dock glass styling is excluded so only the vertical rail shows.
 
 ### Developer & docs
 
@@ -91,7 +92,7 @@ _(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest releas
 
 ### Cache-bust
 
-- **fix** **Cache-bust** — `whats-new-v100` data version and `2026.06-dashboard-release-v79` dashboard release token; `status-hover-row-1` on status/bookmark-row CSS; `config-ui-tabs-flush-1`, `config-tabs-flush-1`, `config-setup-2`, `config-quick-add-2`, `search-commands-new-2` on config bundles.
+- **fix** **Cache-bust** — `whats-new-v101` data version and `2026.06-dashboard-release-v80` dashboard release token; `status-hover-row-2` on status/bookmark-row CSS; `glass-side-rail-1` on `layout-glass.css`; `config-ui-tabs-flush-1`, `config-tabs-flush-1`, `config-setup-2`, `config-quick-add-2`, `search-commands-new-2` on config bundles.
 
 ---
 
