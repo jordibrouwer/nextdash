@@ -65,7 +65,7 @@ _(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest releas
 
 ## v2026.06.31 — June 2026
 
-**Config Tab Consistency (v1–v4)** — shared shell primitives across config tabs; unified save status and per-tab save-mode labels; classic fused surface cards; breadcrumb context; Bookmarks **Context** panel with persisted open state; intro spacing and button-clipping fixes; phone card for `#bookmarks` deep links; Playwright regression coverage; Help tab and **MANUAL.md** aligned in EN/NL/DE/FR.
+**Config Tab Consistency (v1–v4)** — shared shell primitives across config tabs; unified save status and per-tab save-mode labels; classic fused surface cards; breadcrumb context; Bookmarks **Context** panel with persisted open state; intro spacing and button-clipping fixes; phone card for `#bookmarks` deep links; config header aligned with dashboard chrome; Playwright regression coverage; Help tab and **MANUAL.md** aligned in EN/NL/DE/FR.
 
 ### Config layout (v1 & v4)
 
@@ -75,6 +75,7 @@ _(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest releas
 - **fix** **Intro → content spacing** — flex column + `gap: var(--config-tab-gap)` on the General tab wrapper, Bookmarks intro moved outside `bookmarks-tab-workspace`, and a high-specificity shell rule so intro paragraphs keep consistent whitespace before toolbars and panels on General, Bookmarks, and list tabs.
 - **fix** **Clipped toolbar buttons** — `#config-main *` now uses `border-box` instead of inheriting `content-box` from `body`, so right-edge padding on tab toolbars and action buttons is no longer clipped by overflow-hidden surfaces.
 - **fix** **Structure workspace list border** — right border on Context panel list items no longer clips on classic surfaces.
+- **fix** **Config header chrome** — top row matches the dashboard `header-top` container width and link styling; **configuration** title is larger; health and **back to dashboard** links stay top-aligned on the right; extra whitespace separates the header from the save row so the page no longer jumps when switching from the dashboard.
 
 ### Config save UX (v2 & v2b)
 

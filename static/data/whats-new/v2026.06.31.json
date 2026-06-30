@@ -21,6 +21,10 @@
         {
           "badge": "fix",
           "text": "<strong>Button clipping</strong> — tab toolbars and action buttons no longer clip at the right edge; config chrome descendants use <code>border-box</code> sizing so padding stays inside the panel width."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config header chrome</strong> — the top row matches the dashboard header width and link styling: a larger <strong>configuration</strong> title on the left, <em>health</em> and <em>back to dashboard</em> links top-aligned on the right, and breathing room before the save row so switching between dashboard and config feels consistent."
         }
       ]
     },
