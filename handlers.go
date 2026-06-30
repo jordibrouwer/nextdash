@@ -29,7 +29,6 @@ type Handlers struct {
 	prefetchMu     sync.Mutex
 }
 
-const previewCachePath = "data/preview-cache.json"
 const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
 
 func normalizeShortcut(shortcut string) string {

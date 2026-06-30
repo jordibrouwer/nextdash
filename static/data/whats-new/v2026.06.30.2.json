@@ -1,0 +1,25 @@
+{
+  "tag": "v2026.06.30.2",
+  "date": "June 2026",
+  "releasedAt": "2026-06-30",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Nameless bookmarks</strong> — bookmarks without a display name now show the site <em>hostname</em> in the grid (e.g. <code>github.com</code>) instead of a blank row. Hover or focus the row for the full URL in the tooltip."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Guided tours stay on track</strong> — while a config tab tour runs, the rest of the page is dimmed and non-interactive (tabs, Save, search, other fields). Only the highlighted step and the tour card accept clicks, so you cannot accidentally switch tabs mid-tour."
+        }
+      ]
+    }
+  ]
+}

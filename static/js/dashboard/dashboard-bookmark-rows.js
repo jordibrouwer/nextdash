@@ -6,6 +6,27 @@ class DashboardBookmarkRows {
         this.dash = dashboard;
     }
 
+    bookmarkDisplayLabel(bookmark) {
+        const d = this.dash;
+        const name = String(bookmark?.name || '').trim();
+        if (name) return name;
+        const url = String(bookmark?.url || '').trim();
+        if (url) {
+            const host = window.BookmarkUrlUtils?.extractDomainFromUrl?.(url);
+            return host || url;
+        }
+        return d.bookmarkFallbackName();
+    }
+
+    /** Full URL (or name) for title/aria when the visible label is shortened to hostname. */
+    bookmarkRowTooltip(bookmark) {
+        const name = String(bookmark?.name || '').trim();
+        if (name) return name;
+        const url = String(bookmark?.url || '').trim();
+        if (url) return url;
+        return this.bookmarkDisplayLabel(bookmark);
+    }
+
     applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
         const d = this.dash;
         const refs = (Array.isArray(bookmarkRefs) ? bookmarkRefs : [bookmarkRefs])
@@ -326,7 +347,8 @@ class DashboardBookmarkRows {
             const createLetterAvatar = () => {
                 const letter = document.createElement('span');
                 letter.className = 'bookmark-icon-letter';
-                letter.textContent = (bookmark.name || '?').charAt(0);
+                const label = this.bookmarkDisplayLabel(bookmark);
+                letter.textContent = (label.charAt(0) || '?').toUpperCase();
                 return letter;
             };
 
@@ -372,10 +394,12 @@ class DashboardBookmarkRows {
         openLink.setAttribute('role', 'gridcell');
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
+        const displayLabel = this.bookmarkDisplayLabel(bookmark);
+        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textSpan = document.createElement('span');
         textSpan.className = 'bookmark-text';
-        textSpan.textContent = bookmark.name || '';
-        if (bookmark.name) textSpan.title = bookmark.name;
+        textSpan.textContent = displayLabel;
+        textSpan.title = rowTooltip;
         openLink.appendChild(textSpan);
 
         const recordOpen = () => d.recordBookmarkOpened(
@@ -444,7 +468,7 @@ class DashboardBookmarkRows {
             shortcutSpan.dataset.shortcut = shortcutText;
         }
         {
-            let linkLabel = bookmark.name || bookmark.url || d.bookmarkFallbackName();
+            let linkLabel = this.bookmarkRowTooltip(bookmark);
             if (shortcutText) {
                 const shortcutPrefix = d.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
                 linkLabel = `${linkLabel}, ${shortcutPrefix} ${shortcutText}`;
@@ -723,9 +747,12 @@ class DashboardBookmarkRows {
         link.href = safeHref || '#';
         link.className = 'bookmark-link recent-bookmark-link';
 
+        const displayLabel = this.bookmarkDisplayLabel(bookmark);
+        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textWrapper = document.createElement('span');
         textWrapper.className = 'bookmark-text recent-bookmark-text';
-        textWrapper.textContent = bookmark.name;
+        textWrapper.textContent = displayLabel;
+        textWrapper.title = rowTooltip;
         link.appendChild(textWrapper);
 
         const meta = document.createElement('span');

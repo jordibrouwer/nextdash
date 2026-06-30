@@ -481,7 +481,8 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ensure base data directory exists before writing imported files.
-	if err := os.MkdirAll("data", 0755); err != nil {
+	dataDir := ResolveDataDir()
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		http.Error(w, "Failed to prepare data directory", http.StatusInternalServerError)
 		return
 	}
@@ -546,7 +547,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
 
-	if err := commitPreparedImport("data", prepared); err != nil {
+	if err := commitPreparedImport(dataDir, prepared); err != nil {
 		http.Error(w, "Failed to apply import", http.StatusInternalServerError)
 		return
 	}
@@ -572,7 +573,7 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Ensure base data directory exists so backup works on first run.
-	dataDir := "data"
+	dataDir := ResolveDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		http.Error(w, "Failed to prepare backup directory", http.StatusInternalServerError)
 		return

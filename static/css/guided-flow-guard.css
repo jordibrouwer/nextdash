@@ -4,9 +4,12 @@ body.guided-flow-locked #dashboard-layout {
     pointer-events: none;
 }
 
-/* Config page (tabs, + Add finder/category, lists) stays interactive under guided-flow-locked. */
-body.guided-flow-locked .config-section,
-body.guided-flow-locked #config-main {
+/*
+ * Config page stays interactive during onboarding / feature tours only.
+ * During config tab tours, chrome is locked in config-general-tour.css.
+ */
+body.guided-flow-locked:not([data-config-general-tour-active]):not([data-config-bookmarks-tour-active]):not([data-config-finders-tour-active]):not([data-config-stats-tour-active]):not([data-config-categories-tour-active]):not([data-config-tags-tour-active]):not([data-config-pages-tour-active]):not([data-config-collections-tour-active]):not([data-config-theme-tour-active]) .config-section,
+body.guided-flow-locked:not([data-config-general-tour-active]):not([data-config-bookmarks-tour-active]):not([data-config-finders-tour-active]):not([data-config-stats-tour-active]):not([data-config-categories-tour-active]):not([data-config-tags-tour-active]):not([data-config-pages-tour-active]):not([data-config-collections-tour-active]):not([data-config-theme-tour-active]) #config-main {
     pointer-events: auto;
 }
 

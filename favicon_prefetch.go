@@ -110,7 +110,7 @@ func saveIconBytes(data []byte, ext string) (string, error) {
 		}
 	}
 
-	iconsDir := "data/icons"
+	iconsDir := filepath.Join(ResolveDataDir(), "icons")
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
 		return "", err
 	}
