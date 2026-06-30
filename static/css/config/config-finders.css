@@ -9,11 +9,6 @@
     box-sizing: border-box;
 }
 
-/* Finders: filter lives in toolbar; list attaches below */
-.simple-tab:has(.finders-body) .config-tab-toolbar--list-attached {
-    border-bottom: none;
-}
-
 .finders-filter-wrap {
     display: flex;
     align-items: center;

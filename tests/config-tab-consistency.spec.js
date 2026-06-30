@@ -227,3 +227,26 @@ test.describe('config tab consistency v3 phone block', () => {
         await expect(page).toHaveURL(/#general/);
     });
 });
+
+test.describe('config tab consistency v4 classic surfaces', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('pages tab wraps toolbar and list in config-tab-surface', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+        const surface = page.locator('[data-tab-content="pages"] .config-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('#pages-list.simple-list')).toBeVisible();
+    });
+
+    test('classic layout applies surface shadow on pages card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+        const shadow = await page.locator('[data-tab-content="pages"] .config-tab-surface').evaluate((el) => {
+            return window.getComputedStyle(el).boxShadow;
+        });
+        expect(shadow).not.toBe('none');
+    });
+});

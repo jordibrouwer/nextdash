@@ -99,6 +99,47 @@
     border-bottom: none;
 }
 
+/* Unified toolbar + list card (v4) */
+.config-tab-surface {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.config-tab-toolbar--in-surface {
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface > .simple-list,
+.config-tab-surface > .finders-body,
+.config-tab-surface > .collections-list,
+.config-tab-surface > .tags-body,
+.config-tab-surface > .config-empty-state {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.config-tab-surface > .finders-body {
+    gap: 0;
+    min-height: 0;
+}
+
+.config-tab-surface > .finders-body .simple-list {
+    border: none;
+    background: transparent;
+}
+
+.config-tab-surface > .collections-list:empty {
+    display: none;
+}
+
 .config-tab-toolbar-tools,
 .simple-toolbar-right {
     display: flex;

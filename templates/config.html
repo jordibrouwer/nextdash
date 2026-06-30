@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-tab-consistency-3">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-tab-consistency-4">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -1171,12 +1171,14 @@
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint config-tab-intro-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></p>
                 </div>
-                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--list-attached">
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
                 <ul id="pages-list" class="pages-list js-list simple-list" role="list">
                     <!-- Pages will be loaded here -->
                 </ul>
+                </div>
             </div>
             </div>
 
@@ -1185,7 +1187,8 @@
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</p>
                 </div>
-                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--list-attached">
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <div class="simple-toolbar-right config-tab-toolbar-tools">
                         <label for="categories-page-selector" data-i18n="config.categoriesPageLabel">Page:</label>
                         <select id="categories-page-selector" class="page-selector simple-page-select">
@@ -1197,6 +1200,7 @@
                 <ul id="categories-list" class="categories-list js-list simple-list" role="list">
                     <!-- Categories will be loaded here -->
                 </ul>
+                </div>
             </div>
             </div>
 
@@ -1205,7 +1209,8 @@
                 <div class="config-tab-intro tags-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</p>
                 </div>
-                <div class="tags-toolbar config-tab-toolbar">
+                <div class="config-tab-surface">
+                <div class="tags-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <div class="tags-filter-wrap config-filter-field">
                         <label class="visually-hidden" for="tags-filter-input" data-i18n="config.tagsFilterLabel">Filter tags</label>
                         <input type="search" id="tags-filter-input" class="tags-filter-input" data-i18n-placeholder="config.tagsFilterPlaceholder" placeholder="Filter tags…" autocomplete="off">
@@ -1226,6 +1231,7 @@
                 <div id="tags-empty-state" class="tags-empty-state config-empty-state" hidden>
                     <p data-i18n="config.tagsListEmptyHint">No tags yet. Add tags to bookmarks via the Bookmarks tab or the inline editor on the dashboard.</p>
                     <button type="button" id="tags-empty-cta" class="btn btn-secondary btn-small config-empty-state-cta" data-i18n="config.tagsEmptyCta">Open Bookmarks tab</button>
+                </div>
                 </div>
             </div>
             </div>
@@ -1539,7 +1545,8 @@
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</p>
                 </div>
-                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--list-attached">
+                <div class="config-tab-surface">
+                <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
                     <div class="finders-filter-wrap config-filter-field config-filter-field--wide">
                         <label class="visually-hidden" for="finders-filter-input" data-i18n="config.findersFilterLabel">Filter finders</label>
                         <input type="search" id="finders-filter-input" class="finders-filter-input" data-i18n-placeholder="config.findersFilterPlaceholder" placeholder="Filter finders…" autocomplete="off">
@@ -1552,6 +1559,7 @@
                         <!-- Finders will be loaded here -->
                     </div>
                 </div>
+                </div>
             </div>
             </div>
 
@@ -1560,13 +1568,15 @@
                 <div class="config-tab-intro collections-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.collectionsTabIntro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</p>
                 </div>
-                <div class="collections-toolbar config-tab-toolbar">
+                <div class="config-tab-surface">
+                <div class="collections-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-collection-btn" class="btn btn-primary btn-small" data-i18n="config.addCollectionBtn">+ Add collection</button>
                 </div>
                 <div id="collections-list" class="collections-list"></div>
                 <div id="collections-empty-state" class="collections-empty-state config-empty-state" style="display:none">
                     <p data-i18n="config.collectionsEmptyHint">No collections yet. Create one to group bookmarks by tag, category, or shortcut.</p>
                     <button type="button" id="collections-empty-cta" class="btn btn-primary btn-small config-empty-state-cta" data-i18n="config.addCollectionBtn">+ Add collection</button>
+                </div>
                 </div>
 
                 <!-- Edit panel -->
