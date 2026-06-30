@@ -348,32 +348,52 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     z-index: 1;
 }
 
-/* Header */
-.header {
+/* Header — aligned with dashboard .header-top row */
+.config-header-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    width: 100%;
 }
 
-.title {
-    font-size: calc(var(--font-size-title) * 0.72);
+.config-header-top .header-top-primary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-header-label {
+    margin: 0;
+    font-size: calc(var(--font-size-title) * 0.62);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-black);
-    opacity: 0.8;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.1;
     color: var(--text-primary);
+    opacity: 0.8;
     user-select: none;
 }
 
-.header-links {
+.config-header-top .header-actions,
+.config-header-top .header-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem 1.25rem;
     align-items: center;
     justify-content: flex-end;
+    gap: 1.5rem;
+    margin-left: auto;
+    align-self: flex-start;
+    padding-top: 0.12rem;
 }
 
-.back-link {
+.config-header-top .health-link a,
+.config-header-top .dashboard-link a,
+.config-header-top .header-links .back-link {
     text-decoration: none;
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -381,10 +401,30 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     color: var(--text-secondary);
     transition: color 0.15s ease;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
 }
 
-.back-link:hover {
+.config-header-top .health-link a:hover,
+.config-header-top .dashboard-link a:hover,
+.config-header-top .header-links .back-link:hover {
     color: var(--text-primary);
+}
+
+.config-header-top .health-link a {
+    animation: healthLinkShimmer 3s ease-in-out infinite;
+    flex-wrap: wrap;
+    gap: 0.35em;
+}
+
+.config-header-top .health-link a:hover {
+    animation: none;
+    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
 }
 
 .health-badge {
@@ -419,12 +459,12 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     100% { text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0); }
 }
 
-.header-links a[href="/health"] {
+.config-header-top .header-links a[href="/health"] {
     transition: none;
     animation: healthLinkShimmer 3s ease-in-out infinite;
 }
 
-.header-links a[href="/health"]:hover {
+.config-header-top .header-links a[href="/health"]:hover {
     animation: none;
     text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
     color: var(--text-primary);

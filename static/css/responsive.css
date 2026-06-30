@@ -256,7 +256,14 @@
     .dashboard-section.section-controls,
     .config-section.section-header {
         padding-top: 1.5rem;
+    }
+
+    .dashboard-section.section-controls {
         padding-bottom: 0;
+    }
+
+    .config-section.section-header {
+        padding-bottom: 1.25rem;
     }
     
     .dashboard-section.section-title,
@@ -337,6 +344,25 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+    }
+
+    .header.config-header-top {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem 0.75rem;
+    }
+
+    .header.config-header-top .header-links {
+        order: 0;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+    }
+
+    .config-header-top .header-actions {
+        margin-left: auto;
     }
 
     .page-navigation {
@@ -546,7 +572,14 @@
     .dashboard-section.section-controls,
     .config-section.section-header {
         padding-top: 1.25rem;
+    }
+
+    .dashboard-section.section-controls {
         padding-bottom: 0;
+    }
+
+    .config-section.section-header {
+        padding-bottom: 1.125rem;
     }
     
     .dashboard-section.section-title,
@@ -596,6 +629,25 @@
         display: flex;
         flex-direction: column;
         gap: 0.625rem;
+    }
+
+    .header.config-header-top {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem 0.625rem;
+    }
+
+    .header.config-header-top .header-links {
+        order: 0;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.625rem 0.85rem;
+    }
+
+    .config-header-top .header-actions {
+        margin-left: auto;
     }
     
     .page-nav-btn {
@@ -720,7 +772,14 @@
     .dashboard-section.section-controls,
     .config-section.section-header {
         padding-top: 1rem;
+    }
+
+    .dashboard-section.section-controls {
         padding-bottom: 0;
+    }
+
+    .config-section.section-header {
+        padding-bottom: 1rem;
     }
     
     .dashboard-section.section-title,
@@ -770,6 +829,25 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .header.config-header-top {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .header.config-header-top .header-links {
+        order: 0;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
+    }
+
+    .config-header-top .header-actions {
+        margin-left: auto;
     }
     
     .page-navigation {

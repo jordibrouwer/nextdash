@@ -51,28 +51,18 @@ body[data-layout-version="glass"] .general-layout {
 
 body[data-layout-version="glass"] .config-section.section-header {
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
-    padding-bottom: 1.15rem;
+    padding-bottom: 1.5rem;
 }
 
-body[data-layout-version="glass"] .header-links .back-link {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.38rem 0.8rem;
-    border-radius: var(--layout-radius-pill);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    transition:
-        color var(--layout-transition),
-        border-color var(--layout-transition),
-        background-color var(--layout-transition),
-        box-shadow var(--layout-transition);
+body[data-layout-version="glass"] .config-header-top {
+    gap: var(--layout-gap-header) 1.5rem;
+    align-items: flex-start;
 }
 
-body[data-layout-version="glass"] .header-links .back-link:hover {
-    color: var(--text-primary);
-    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
-    box-shadow: var(--layout-shadow-sm);
+body[data-layout-version="glass"] .config-header-top .header-actions {
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
