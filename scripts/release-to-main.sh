@@ -23,6 +23,66 @@ if [[ -z "$TAG" ]]; then
   exit 1
 fi
 
+if [[ ! "$TAG" =~ ^v[0-9] ]]; then
+  echo "Tag must start with v (e.g. v2026.06.30.2), got: ${TAG}" >&2
+  exit 1
+fi
+
+tag_commit() {
+  git rev-parse "${1}^{commit}" 2>/dev/null
+}
+
+remote_tag_commit() {
+  local sha
+  sha="$(git ls-remote origin "refs/tags/${1}^{}" 2>/dev/null | awk 'NR==1 {print $1}')"
+  [[ -n "$sha" ]] || return 1
+  git rev-parse "${sha}^{commit}" 2>/dev/null
+}
+
+ensure_release_tag() {
+  local tag="$1"
+  local head
+  head="$(git rev-parse HEAD)"
+  if git show-ref --tags --verify --quiet "refs/tags/${tag}"; then
+    local existing
+    existing="$(tag_commit "$tag")"
+    if [[ "$existing" == "$head" ]]; then
+      echo "Tag ${tag} already exists locally on current HEAD — reusing."
+      return 0
+    fi
+    echo "Tag ${tag} already exists locally on ${existing}, but HEAD is ${head}." >&2
+    echo "Use a new version tag, or delete the old tag:" >&2
+    echo "  git tag -d ${tag} && git push origin :refs/tags/${tag}" >&2
+    exit 1
+  fi
+  git tag "$tag"
+  echo "Created tag ${tag}."
+}
+
+push_main_and_tag() {
+  local tag="$1"
+  local head tagged remote_tagged
+
+  head="$(git rev-parse HEAD)"
+  tagged="$(tag_commit "$tag")"
+
+  git push origin main
+
+  if remote_tag_commit "$tag"; then
+    remote_tagged="$(remote_tag_commit "$tag")"
+    if [[ "$remote_tagged" == "$tagged" ]]; then
+      echo "Tag ${tag} already exists on origin — skipping tag push."
+      return 0
+    fi
+    echo "Tag ${tag} on origin points to ${remote_tagged}, local tag is ${tagged}." >&2
+    echo "Refusing to move an existing release tag. Bump the version or delete the remote tag first." >&2
+    exit 1
+  fi
+
+  git push origin "refs/tags/${tag}"
+  echo "Pushed tag ${tag} to origin."
+}
+
 extract_changelog_notes() {
   local tag="$1"
   local version="${tag#v}"
@@ -118,8 +178,8 @@ if ! git diff --cached --quiet; then
   git commit -m "Prune dev-only files after merge from dev."
 fi
 
-git tag "$TAG"
-git push origin main --tags
+ensure_release_tag "$TAG"
+push_main_and_tag "$TAG"
 publish_github_release "$TAG"
 git checkout dev
 
