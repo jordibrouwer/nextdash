@@ -1,5 +1,5 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=config-intro-spacing-1');
+@import url('config/config-general.css?v=config-header-align-2');
 @import url('config/config-tabs.css?v=config-chrome-align-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');

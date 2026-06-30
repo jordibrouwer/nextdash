@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-intro-spacing-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-header-align-2">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -61,11 +61,17 @@
     <!-- Section 1: Title and nav links -->
     <div class="config-section section-header">
         <div class="container">
-            <header class="header">
-                <h1 class="title" data-i18n="config.title">configuration</h1>
-                <div class="header-links">
-                    <a href="/health" class="back-link">→ <span data-i18n="config.health">health beta</span></a>
-                    <a href="/" class="back-link" data-i18n="config.backToDashboard">← back to dashboard</a>
+            <header class="header header-top config-header-top">
+                <div class="header-top-primary">
+                    <h1 class="config-header-label" data-i18n="config.title">configuration</h1>
+                </div>
+                <div class="header-actions header-links">
+                    <div class="health-link">
+                        <a href="/health" class="back-link">→ <span data-i18n="config.health">health beta</span></a>
+                    </div>
+                    <div class="dashboard-link">
+                        <a href="/" class="back-link" data-i18n="config.backToDashboard">← back to dashboard</a>
+                    </div>
                 </div>
             </header>
         </div>
