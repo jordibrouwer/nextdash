@@ -1,3 +1,5 @@
+# Development Docker Compose — mounts ./static, ./templates, ./locales for live assets without rebuild.
+# For production from a checkout, use docker-compose.prod.yml (image assets only).
 services:
   nextdash:
     build: .

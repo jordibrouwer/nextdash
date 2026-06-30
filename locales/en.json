@@ -2266,7 +2266,7 @@
         "showDockLayoutSelectorInfoTitle": "Layout selector in dock",
         "showDockLayoutSelectorInfoMessage": "Shows a layout switcher in the footer dock.\n\n• Quick switch between layout presets without opening config",
         "colorizeStatusInfoTitle": "Colorize bookmark status",
-        "colorizeStatusInfoMessage": "Highlights offline bookmarks with a red row.\n\n• Online bookmarks stay neutral; ping time shows reachability\n• Requires bookmark status to be enabled",
+        "colorizeStatusInfoMessage": "Highlights offline bookmarks with a red row.\n\n• Online bookmarks stay neutral; ping time shows reachability\n• Hover and keyboard selection always use the normal full-row highlight (this option affects idle row colors only)\n• Requires bookmark status to be enabled",
         "showPingTimesInfoTitle": "Show ping times",
         "showPingTimesInfoMessage": "Displays response time in milliseconds next to status.\n\n• Only when status checks are enabled",
         "showStatusLoadingInfoTitle": "Status loading indicator",

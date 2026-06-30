@@ -1,0 +1,15 @@
+# Production Docker Compose — assets served from the image (no static/templates mounts).
+# Use docker-compose.yml for local dev (live CSS/JS from ./static without rebuild).
+services:
+  nextdash:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=8080
+      # Optional: require X-NextDash-Token on destructive/write API calls
+      # - NEXTDASH_WRITE_TOKEN=change-me
+    restart: unless-stopped
+    container_name: nextdash
