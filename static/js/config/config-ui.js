@@ -302,6 +302,9 @@ class ConfigUI {
 
         tabButtons.forEach(button => {
             button.addEventListener('click', async () => {
+                if (window.ConfigTourRuntime?.hasActiveConfigTour?.()) {
+                    return;
+                }
                 const targetTab = button.getAttribute('data-tab');
                 if (!getAllowedTabs().includes(targetTab)) return;
                 if (targetTab === this._currentTab) return;
@@ -318,6 +321,9 @@ class ConfigUI {
         this.switchToTab = switchToTab;
 
         const configTabKeyAllowed = () => {
+            if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {
+                return false;
+            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return false;
             if (document.activeElement?.isContentEditable) return false;

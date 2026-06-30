@@ -365,16 +365,59 @@
         if (!mounted) {
             return;
         }
-        if (isCompanionModeActive()) {
-            return;
-        }
         if (event.key === 'Escape') {
             return;
         }
-        if (isConfigTabTourActive() && !isAppModalBlockingInteraction()) {
+
+        if (isAppModalBlockingInteraction()) {
             if (isAllowedTarget(event.target) || isAllowedTarget(document.activeElement)) {
                 return;
             }
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            focusFirstAppModalControl();
+            return;
+        }
+
+        /*
+         * Config tab tours: only spotlight fields and tour-card navigation keys work.
+         * Blocks 1–9 tab jumps, Ctrl/Cmd+K, Ctrl/Cmd+Shift+K, Save, etc. even when the tour card is focused.
+         */
+        if (isConfigTabTourActive()) {
+            if (isTourHighlightElement(event.target) || isTourHighlightElement(document.activeElement)) {
+                return;
+            }
+            const onTourCard =
+                isTourCardElement(event.target) ||
+                isTourCardElement(document.activeElement) ||
+                isPointerOnTourCard(event);
+            const tourCardKeys = new Set([
+                'Tab',
+                'Enter',
+                ' ',
+                'ArrowUp',
+                'ArrowDown',
+                'Home',
+                'End',
+                'PageUp',
+                'PageDown',
+            ]);
+            if (onTourCard && tourCardKeys.has(event.key)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            return;
+        }
+
+        if (isCompanionModeActive()) {
+            return;
         }
         if (isAllowedTarget(event.target) || isAllowedTarget(document.activeElement)) {
             return;

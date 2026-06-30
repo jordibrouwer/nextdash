@@ -65,6 +65,17 @@
         }
     }
 
+    /** Hostname for grid labels — strips a leading www. segment only. */
+    function bookmarkDisplayHostnameFromUrl(raw) {
+        let host = extractDomainFromUrl(raw);
+        if (!host) return '';
+        const lower = host.toLowerCase();
+        if (lower.startsWith('www.')) {
+            return host.slice(4);
+        }
+        return host;
+    }
+
     function isHttpUrl(raw) {
         try {
             const u = new URL(ensureHttpUrl(raw));
@@ -137,6 +148,7 @@
         canonicalBookmarkURLKey,
         deriveFaviconFromBookmarkUrl,
         extractDomainFromUrl,
+        bookmarkDisplayHostnameFromUrl,
         isHttpUrl,
         safeHttpResourceUrl,
         safeCssImageUrl,

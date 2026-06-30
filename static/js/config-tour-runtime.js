@@ -29,6 +29,14 @@
         return document.body.getAttributeNames().some((name) => /^data-config-.+-tour-active$/.test(name));
     }
 
+    function shouldBlockConfigShortcuts() {
+        const modal = document.getElementById('app-modal');
+        if (modal?.classList.contains('show')) {
+            return false;
+        }
+        return hasActiveConfigTour();
+    }
+
     function ensureTourBackdrop() {
         let backdrop = document.getElementById(TOUR_BACKDROP_ID);
         if (!backdrop) {
@@ -199,5 +207,7 @@
         isOversizedHighlight,
         applyCardPlacement,
         withAppModal,
+        hasActiveConfigTour,
+        shouldBlockConfigShortcuts,
     };
 })();

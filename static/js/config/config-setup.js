@@ -1072,6 +1072,9 @@ class ConfigSetup {
             });
         }
         document.addEventListener('keydown', (e) => {
+            if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {
+                return;
+            }
             const key = String(e.key).toLowerCase();
             const mod = e.ctrlKey || e.metaKey;
             if (mod && e.shiftKey && key === 'k') {

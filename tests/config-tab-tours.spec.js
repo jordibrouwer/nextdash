@@ -137,6 +137,33 @@ test.describe('config tab tours (phase 1 registry)', () => {
         expect(highlightClickable).toBe('auto');
     });
 
+    test('general tour blocks keyboard tab shortcuts and settings search', async ({ page }) => {
+        await waitForConfigReady(page);
+        const result = await resetAndForceStartTour(page, 'general');
+        expect(result?.ok).toBe(true);
+
+        await page.waitForSelector('.config-general-tour-card', { state: 'visible', timeout: 10_000 });
+        await page.locator('.config-general-tour-next').focus();
+
+        const tabBefore = await page.evaluate(() => document.querySelector('.tab-button.active')?.getAttribute('data-tab'));
+        await page.keyboard.press('2');
+        const tabAfterDigit = await page.evaluate(() => document.querySelector('.tab-button.active')?.getAttribute('data-tab'));
+        expect(tabAfterDigit).toBe(tabBefore);
+
+        await page.keyboard.press('ArrowRight');
+        const tabAfterArrow = await page.evaluate(() => document.querySelector('.tab-button.active')?.getAttribute('data-tab'));
+        expect(tabAfterArrow).toBe(tabBefore);
+
+        const mod = process.platform === 'darwin' ? 'Meta+Shift+K' : 'Control+Shift+K';
+        await page.keyboard.press(mod);
+        const searchFocused = await page.evaluate(() => document.activeElement?.id === 'config-settings-search-input');
+        expect(searchFocused).toBe(false);
+
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+        const paletteOpen = await page.evaluate(() => Boolean(document.querySelector('.config-command-palette.show')));
+        expect(paletteOpen).toBe(false);
+    });
+
     test('finders tour replaces general tour without duplicate overlays', async ({ page }) => {
         await waitForConfigReady(page);
 
