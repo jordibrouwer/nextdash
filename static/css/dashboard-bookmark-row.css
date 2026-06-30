@@ -1,0 +1,96 @@
+/* Bookmark row hover / selection — loaded after dashboard.css so layout presets cannot override */
+
+.bookmark-link:not(.bookmark-inline-editing) {
+    transition:
+        background 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease;
+}
+
+body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
+    transition: none;
+}
+
+.bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--text-primary);
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
+    );
+    border-radius: 4px;
+}
+
+.bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
+    );
+}
+
+.bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge,
+.bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .status-text,
+.bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
+    color: var(--text-secondary);
+}
+
+a.bookmark-open:focus-visible {
+    outline: none;
+}
+
+/* Status rows: tint idle rows only; hover/selection use default bookmark chrome */
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    color: var(--status-offline-fg, var(--accent-error, #ef4444));
+    background: var(--status-offline-bg, color-mix(in srgb, var(--accent-error, #ef4444) 24%, var(--background-primary)));
+    box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
+}
+
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
+    background: var(--status-checking-bg, color-mix(in srgb, var(--accent-warning, #f59e0b) 16%, var(--background-primary)));
+}
+
+/* While the mouse explores bookmarks, soften the stale keyboard selection until the next keyboard move. */
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
+    );
+}
+
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-superscript-badge,
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .status-text,
+body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-shortcut {
+    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    border-color: color-mix(in srgb, var(--border-primary) 65%, transparent);
+    color: var(--text-tertiary);
+}
+
+/* Status rows — explicit interaction chrome (wins over any stale status tint) */
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--text-primary);
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
+    );
+    box-shadow: none;
+}
+
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
+    );
+}
