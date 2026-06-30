@@ -150,6 +150,24 @@
         return target instanceof Element && Boolean(target.closest(TOUR_CARD_SELECTOR));
     }
 
+    function isTourHighlightElement(target) {
+        return target instanceof Element && Boolean(target.closest('[class$="-tour-highlight"]'));
+    }
+
+    function isPointerOnTourHighlight(event) {
+        let x = event.clientX;
+        let y = event.clientY;
+        if ((x == null || y == null) && event.touches?.[0]) {
+            x = event.touches[0].clientX;
+            y = event.touches[0].clientY;
+        }
+        if (typeof x !== 'number' || typeof y !== 'number') {
+            return false;
+        }
+        const hit = document.elementFromPoint(x, y);
+        return hit instanceof Element && isTourHighlightElement(hit);
+    }
+
     /** True when #app-modal is visible — not the body class (can lag after close). */
     function isAppModalBlockingInteraction() {
         return isAppModalOpen();
@@ -165,6 +183,11 @@
 
         /* Tour card buttons must work whenever AppModal is not open. */
         if (onTourCard && !appModalBlocking) {
+            return true;
+        }
+
+        /* Spotlight targets (e.g. + Add finder) stay interactive during config tab tours. */
+        if (isConfigTabTourActive() && isTourHighlightElement(target) && !appModalBlocking) {
             return true;
         }
 
@@ -245,10 +268,23 @@
         }
 
         /*
-         * Config tab tours: page chrome is inert via CSS (#config-main, sticky bar, etc.).
-         * Capture-phase JS blocking breaks tour-card clicks after tab switches / markDirty.
+         * Config tab tours: CSS locks #config-main and tab chrome; JS blocks stray clicks
+         * (header links, skip link) while keeping the tour card and spotlight targets usable.
          */
         if (isConfigTabTourActive() && !appModalBlocking) {
+            if (
+                isPointerOnTourCard(event) ||
+                isTourCardElement(event.target) ||
+                isPointerOnTourHighlight(event) ||
+                isTourHighlightElement(event.target)
+            ) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
             return;
         }
 
@@ -293,7 +329,11 @@
         if (isTourCardElement(event.target) && !isAppModalBlockingInteraction()) {
             return;
         }
-        if (isConfigTabTourActive() && !isAppModalBlockingInteraction()) {
+        if (
+            isConfigTabTourActive() &&
+            !isAppModalBlockingInteraction() &&
+            (isTourHighlightElement(event.target) || isTourCardElement(event.target))
+        ) {
             return;
         }
         if (isAllowedTarget(event.target)) {

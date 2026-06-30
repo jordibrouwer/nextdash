@@ -1,5 +1,73 @@
 /* Config guided tours — dim via highlight box-shadow (no JS-positioned hole panels) */
 
+/*
+ * While any config tab tour runs: lock tabs, save bar, search, and page content.
+ * Spotlight targets ([class$="-tour-highlight"]) re-enable pointer-events below.
+ */
+body[data-config-general-tour-active] .skip-to-content,
+body[data-config-bookmarks-tour-active] .skip-to-content,
+body[data-config-finders-tour-active] .skip-to-content,
+body[data-config-stats-tour-active] .skip-to-content,
+body[data-config-categories-tour-active] .skip-to-content,
+body[data-config-tags-tour-active] .skip-to-content,
+body[data-config-pages-tour-active] .skip-to-content,
+body[data-config-collections-tour-active] .skip-to-content,
+body[data-config-theme-tour-active] .skip-to-content,
+body[data-config-general-tour-active] .config-section,
+body[data-config-bookmarks-tour-active] .config-section,
+body[data-config-finders-tour-active] .config-section,
+body[data-config-stats-tour-active] .config-section,
+body[data-config-categories-tour-active] .config-section,
+body[data-config-tags-tour-active] .config-section,
+body[data-config-pages-tour-active] .config-section,
+body[data-config-collections-tour-active] .config-section,
+body[data-config-theme-tour-active] .config-section,
+body[data-config-general-tour-active] #config-save-sticky,
+body[data-config-bookmarks-tour-active] #config-save-sticky,
+body[data-config-finders-tour-active] #config-save-sticky,
+body[data-config-stats-tour-active] #config-save-sticky,
+body[data-config-categories-tour-active] #config-save-sticky,
+body[data-config-tags-tour-active] #config-save-sticky,
+body[data-config-pages-tour-active] #config-save-sticky,
+body[data-config-collections-tour-active] #config-save-sticky,
+body[data-config-theme-tour-active] #config-save-sticky {
+    pointer-events: none !important;
+}
+
+/* Welcome / no-target steps: full-page dim via backdrop (highlight steps use box-shadow cutout). */
+body[data-config-general-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-bookmarks-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-finders-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-stats-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-categories-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-tags-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-pages-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-collections-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop,
+body[data-config-theme-tour-active]:not(:has([class$="-tour-highlight"])) .config-tour-backdrop {
+    background: rgba(0, 0, 0, 0.58);
+}
+
+body[data-config-general-tour-active] [class$="-tour-highlight"],
+body[data-config-bookmarks-tour-active] [class$="-tour-highlight"],
+body[data-config-finders-tour-active] [class$="-tour-highlight"],
+body[data-config-stats-tour-active] [class$="-tour-highlight"],
+body[data-config-categories-tour-active] [class$="-tour-highlight"],
+body[data-config-tags-tour-active] [class$="-tour-highlight"],
+body[data-config-pages-tour-active] [class$="-tour-highlight"],
+body[data-config-collections-tour-active] [class$="-tour-highlight"],
+body[data-config-theme-tour-active] [class$="-tour-highlight"],
+body[data-config-general-tour-active] [class$="-tour-highlight"] *,
+body[data-config-bookmarks-tour-active] [class$="-tour-highlight"] *,
+body[data-config-finders-tour-active] [class$="-tour-highlight"] *,
+body[data-config-stats-tour-active] [class$="-tour-highlight"] *,
+body[data-config-categories-tour-active] [class$="-tour-highlight"] *,
+body[data-config-tags-tour-active] [class$="-tour-highlight"] *,
+body[data-config-pages-tour-active] [class$="-tour-highlight"] *,
+body[data-config-collections-tour-active] [class$="-tour-highlight"] *,
+body[data-config-theme-tour-active] [class$="-tour-highlight"] * {
+    pointer-events: auto !important;
+}
+
 body[data-config-bookmarks-tour-active]:not(.config-bookmarks-tour-ready) .config-bookmarks-tour-card,
 body[data-config-finders-tour-active]:not(.config-finders-tour-ready) .config-finders-tour-card,
 body[data-config-stats-tour-active]:not(.config-stats-tour-ready) .config-stats-tour-card,

@@ -106,6 +106,37 @@ test.describe('config tab tours (phase 1 registry)', () => {
         expect(pageErrors).toEqual([]);
     });
 
+    test('general tour blocks tab switches and non-highlight controls', async ({ page }) => {
+        await waitForConfigReady(page);
+        const result = await resetAndForceStartTour(page, 'general');
+        expect(result?.ok).toBe(true);
+
+        await page.waitForSelector('.config-general-tour-card', { state: 'visible', timeout: 10_000 });
+        await page.evaluate(() => {
+            document.querySelector('.config-general-tour-card .config-general-tour-next')?.click();
+        });
+        await expect.poll(() => page.evaluate(() => Boolean(document.querySelector('.config-general-tour-highlight')))).toBe(true);
+
+        const tabBefore = await page.evaluate(() => document.querySelector('.tab-button.active')?.getAttribute('data-tab'));
+        await page.locator('.tab-button[data-tab="bookmarks"]').click({ force: true, timeout: 2000 }).catch(() => {});
+        const tabAfter = await page.evaluate(() => document.querySelector('.tab-button.active')?.getAttribute('data-tab'));
+        expect(tabAfter).toBe(tabBefore);
+
+        const blocked = await page.evaluate(() => {
+            const saveBtn = document.getElementById('save-btn');
+            if (!saveBtn) return { missing: true };
+            return { pointerEvents: window.getComputedStyle(saveBtn).pointerEvents };
+        });
+        expect(blocked.pointerEvents).toBe('none');
+
+        const highlightClickable = await page.evaluate(() => {
+            const highlight = document.querySelector('.config-general-tour-highlight');
+            if (!highlight) return null;
+            return window.getComputedStyle(highlight).pointerEvents;
+        });
+        expect(highlightClickable).toBe('auto');
+    });
+
     test('finders tour replaces general tour without duplicate overlays', async ({ page }) => {
         await waitForConfigReady(page);
 
