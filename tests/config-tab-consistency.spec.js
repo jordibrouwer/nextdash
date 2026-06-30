@@ -378,4 +378,39 @@ test.describe('config tab surface box model', () => {
         });
         expect(fits).toBe(true);
     });
+
+    test('intro spacing matches between list tabs and bookmarks', async ({ page }) => {
+        const measureGap = (tab) => page.evaluate((tabId) => {
+            const root = document.querySelector(`[data-tab-content="${tabId}"] .config-tab-page`);
+            const intro = root?.querySelector('.config-tab-intro');
+            const body = tabId === 'bookmarks'
+                ? root?.querySelector('.bookmarks-tab-workspace, .config-tab-surface')
+                : root?.querySelector('.config-tab-surface');
+            if (!intro || !body) return null;
+            return body.getBoundingClientRect().top - intro.getBoundingClientRect().bottom;
+        }, tab);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('categories'));
+        const categoriesGap = await measureGap('categories');
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('bookmarks'));
+        const bookmarksGap = await measureGap('bookmarks');
+
+        expect(categoriesGap).not.toBeNull();
+        expect(bookmarksGap).not.toBeNull();
+        expect(bookmarksGap).toBeGreaterThan(8);
+        expect(bookmarksGap).toBeCloseTo(categoriesGap, 0);
+    });
+
+    test('general tab intro has spacing before config chrome', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        const gap = await page.evaluate(() => {
+            const intro = document.querySelector('[data-tab-content="general"] .general-tab-intro');
+            const chrome = document.getElementById('general-config-chrome');
+            if (!intro || !chrome) return null;
+            return chrome.getBoundingClientRect().top - intro.getBoundingClientRect().bottom;
+        });
+        expect(gap).not.toBeNull();
+        expect(gap).toBeGreaterThan(8);
+    });
 });

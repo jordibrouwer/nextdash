@@ -38,6 +38,17 @@
     box-sizing: border-box;
 }
 
+/* Consistent intro → body spacing on all config tab pages */
+html:has(#config-main) #config-main :is(
+    .config-tab-page,
+    .bookmarks-tab-workspace,
+    .tab-content[data-tab-content="general"] > div
+) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+}
+
 /* ── Intro copy ── */
 .config-tab-intro,
 .simple-tab-intro,

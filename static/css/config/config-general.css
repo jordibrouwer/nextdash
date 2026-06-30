@@ -169,6 +169,9 @@ body {
 }
 
 .tab-content[data-tab-content="general"] > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
