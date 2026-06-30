@@ -31,14 +31,14 @@ body:not(.status-color-lock) {
     transition: color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
-/* Status colors — offline/checking rows only; online keeps default row chrome + ping badge */
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline {
+/* Status colors — offline/checking rows only (idle); hover/selection uses bookmark-row chrome */
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
     background: var(--status-offline-bg, color-mix(in srgb, var(--accent-error, #ef4444) 24%, var(--background-primary)));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
 }
 
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking {
+body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
     background: var(--status-checking-bg, color-mix(in srgb, var(--accent-warning, #f59e0b) 16%, var(--background-primary)));
 }
@@ -50,21 +50,6 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
     color: inherit;
 }
 
-/* Hover/selection: keep offline/checking signal visible across all themes */
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-offline-fg, var(--accent-error, #ef4444));
-    background: var(--status-offline-bg-active, color-mix(in srgb, var(--accent-error, #ef4444) 32%, var(--background-primary)));
-    box-shadow:
-        inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444)),
-        inset 0 0 0 1px var(--status-offline-ring, color-mix(in srgb, var(--accent-error, #ef4444) 55%, transparent));
-}
-
-body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
-    background: var(--status-checking-bg-active, color-mix(in srgb, var(--accent-warning, #f59e0b) 24%, var(--background-primary)));
-    box-shadow: inset 0 0 0 1px var(--status-checking-ring, color-mix(in srgb, var(--accent-warning, #f59e0b) 48%, transparent));
-}
-
 /* Optional: preserve bookmark row colors while still showing status state/ping */
 body.status-color-lock .bookmark-link.status-online,
 body.status-color-lock .bookmark-link.status-offline,
@@ -73,15 +58,6 @@ body.status-color-lock .bookmark-link.status-checking {
     background: none;
     box-shadow: none;
     font-weight: inherit;
-}
-
-body:not(.status-color-lock) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge:not(.status-text),
-body:not(.status-color-lock) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut,
-body:not(.status-color-lock) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge:not(.status-text),
-body:not(.status-color-lock) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut {
-    background: color-mix(in srgb, currentColor 12%, var(--background-primary));
-    border-color: color-mix(in srgb, currentColor 42%, var(--border-secondary));
-    color: currentColor;
 }
 
 body.status-color-lock .bookmark-link.status-online .status-text,
@@ -102,21 +78,29 @@ body.status-color-lock .bookmark-link.status-checking .status-text {
     visibility: hidden;
 }
 
-/* Online status ping time — row stays neutral; badge shows reachability */
-.bookmark-link.status-online .status-text,
-.bookmark-link.status-online:is(:hover, .keyboard-selected, :focus-within) .status-text {
+/* Online status ping time — row stays neutral; badge shows reachability when idle */
+.bookmark-link.status-online:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text {
     color: var(--accent-success);
     border-color: color-mix(in srgb, var(--accent-success) 30%, transparent);
 }
 
-/* Offline status text */
-.bookmark-link.status-offline .status-text {
+/* Hover/selection: ping badge matches other row badges (full row uses bookmark chrome) */
+.bookmark-link.status-online:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .status-text,
+.bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .status-text,
+.bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .status-text {
+    color: var(--text-secondary);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
+    background: transparent;
+}
+
+/* Offline status text (idle only) */
+.bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text {
     color: var(--accent-error);
     border-color: color-mix(in srgb, var(--accent-error) 30%, transparent);
 }
 
-/* Checking status text */
-.bookmark-link.status-checking .status-text {
+/* Checking status text (idle only) */
+.bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within) .status-text {
     color: var(--accent-warning);
     border-color: color-mix(in srgb, var(--accent-warning) 30%, transparent);
 }

@@ -532,46 +532,23 @@ body[data-layout-version="glass"] .dashboard-grid:not(.layout-launcher) .bookmar
 }
 
 body[data-layout-version="glass"] .dashboard-grid:not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge,
+body[data-layout-version="glass"] .dashboard-grid:not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .status-text,
 body[data-layout-version="glass"] .dashboard-grid:not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut {
     background: color-mix(in srgb, var(--background-primary) 70%, transparent);
     border-color: color-mix(in srgb, var(--accent-primary) 28%, var(--border-secondary));
     color: var(--text-secondary);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-offline {
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-offline-fg, var(--accent-error));
     background: color-mix(in srgb, var(--accent-error) 18%, var(--background-secondary));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error));
     font-weight: var(--font-weight-semibold, 600);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-checking {
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-checking-fg, var(--accent-warning));
     background: color-mix(in srgb, var(--accent-warning) 12%, var(--background-secondary));
-}
-
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-offline-fg, var(--accent-error));
-    background: color-mix(in srgb, var(--accent-error) 28%, var(--background-secondary));
-    box-shadow:
-        inset 3px 0 0 var(--status-offline-bar, var(--accent-error)),
-        inset 0 0 0 1px var(--status-offline-ring, color-mix(in srgb, var(--accent-error) 55%, transparent));
-    font-weight: var(--font-weight-semibold, 600);
-}
-
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-checking-fg, var(--accent-warning));
-    background: color-mix(in srgb, var(--accent-warning) 18%, var(--background-secondary));
-    box-shadow: inset 0 0 0 1px var(--status-checking-ring, color-mix(in srgb, var(--accent-warning) 48%, transparent));
-}
-
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge:not(.status-text),
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut,
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge:not(.status-text),
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid:not(.layout-launcher) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-shortcut {
-    background: color-mix(in srgb, currentColor 12%, var(--background-secondary));
-    border-color: color-mix(in srgb, currentColor 42%, var(--border-secondary));
-    color: currentColor;
 }
 
 body[data-layout-version="glass"] .bookmark-shortcut {
@@ -1117,23 +1094,23 @@ body[data-layout-version="glass"][data-mobile-layout="true"] .dashboard-grid:not
 
 /* ─── Status row colors (override preset chrome) ─────────────────────────── */
 
-body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline {
+body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
     background: color-mix(in srgb, var(--accent-error, #ef4444) 22%, var(--background-secondary));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
     font-weight: var(--font-weight-semibold, 600);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking {
+body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
     background: color-mix(in srgb, var(--accent-warning, #f59e0b) 14%, var(--background-secondary));
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-list .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline,
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-cards .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline,
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-masonry .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline,
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-terminal .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline,
-body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-widgets .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline {
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-list .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-cards .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-masonry .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-terminal .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing),
+body[data-layout-version="glass"]:not(.status-color-lock) .dashboard-grid.layout-widgets .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
     color: var(--status-offline-fg, var(--accent-error, #ef4444));
     background: color-mix(in srgb, var(--accent-error, #ef4444) 24%, var(--background-secondary));
     box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
@@ -1144,33 +1121,22 @@ body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-b
     border-radius: var(--modern-row-radius, 4px);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-offline-fg, var(--accent-error, #ef4444));
-    background: color-mix(in srgb, var(--accent-error, #ef4444) 30%, var(--background-secondary));
-    box-shadow:
-        inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444)),
-        inset 0 0 0 1px var(--status-offline-ring, color-mix(in srgb, var(--accent-error, #ef4444) 55%, transparent));
-}
-
-body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--status-checking-fg, var(--accent-warning, #f59e0b));
-    background: color-mix(in srgb, var(--accent-warning, #f59e0b) 20%, var(--background-secondary));
-    box-shadow: inset 0 0 0 1px var(--status-checking-ring, color-mix(in srgb, var(--accent-warning, #f59e0b) 48%, transparent));
-}
-
 body[data-layout-version="glass"].bookmark-kbd-selection-dimmed .dashboard-grid:not(.layout-launcher) .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-superscript-badge,
+body[data-layout-version="glass"].bookmark-kbd-selection-dimmed .dashboard-grid:not(.layout-launcher) .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .status-text,
 body[data-layout-version="glass"].bookmark-kbd-selection-dimmed .dashboard-grid:not(.layout-launcher) .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-shortcut {
     background: color-mix(in srgb, var(--background-primary) 70%, transparent);
     border-color: color-mix(in srgb, var(--border-primary) 55%, transparent);
     color: var(--text-tertiary);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock).bookmark-kbd-selection-dimmed .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-offline.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
-    background: color-mix(in srgb, var(--accent-error, #ef4444) 22%, var(--background-secondary));
-    box-shadow: inset 3px 0 0 var(--status-offline-bar, var(--accent-error, #ef4444));
+/* Status rows — interaction chrome matches normal bookmarks (idle tint is inactive-only) */
+body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
-body[data-layout-version="glass"]:not(.status-color-lock).bookmark-kbd-selection-dimmed .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link.status-checking.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
-    background: color-mix(in srgb, var(--accent-warning, #f59e0b) 14%, var(--background-secondary));
-    box-shadow: none;
+body[data-layout-version="glass"]:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 34%, transparent);
 }
