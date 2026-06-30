@@ -43,6 +43,10 @@
         {
           "badge": "fix",
           "text": "<strong>Status bookmark selection</strong> — bookmarks with status/ping monitoring now highlight the full row on hover and keyboard selection, same as other bookmarks (not only the ms badge)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Glass + side rail</strong> — with layout <em>Glass</em> and button bar <em>Side rail (left)</em>, navigation no longer appears twice (vertical rail only; bottom dock styling excluded)."
         }
       ]
     }
