@@ -8,6 +8,9 @@
     grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px);
     grid-template-rows: minmax(calc(100vh - 180px), max-content);
     align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* ── Lijst kolom ── */
@@ -412,8 +415,8 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     padding: 0.45rem 0.75rem;
     border-bottom: 1px solid var(--border-primary);
     cursor: pointer;
-    background: var(--background-primary);
-    transition: background 0.1s ease;
+    background: transparent;
+    transition: background 0.12s ease;
     min-height: 2.4rem;
 }
 
@@ -422,7 +425,7 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
 }
 
 .bookmarks-splitview-list .bookmark-item:hover {
-    background: var(--background-secondary);
+    background: var(--config-row-hover);
 }
 
 .bookmarks-splitview-list .bookmark-item.is-selected-detail {

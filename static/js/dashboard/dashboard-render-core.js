@@ -743,6 +743,15 @@ class DashboardRenderCore {
             ...unrendered
         ];
 
+        // Orphan/virtual categories in the DOM are not persisted objects — never write an
+        // empty payload that would wipe categories still referenced by bookmarks.
+        if (newIds.length > 0 && newCategories.length === 0) {
+            return;
+        }
+        if (newCategories.length === 0 && Array.isArray(d.categories) && d.categories.length > 0) {
+            return;
+        }
+
         d.categories = newCategories;
         this.scheduleCategoryOrderSave();
     }
@@ -769,6 +778,15 @@ class DashboardRenderCore {
 
         const sourceCategories = Array.isArray(options.payload) ? options.payload : d.categories;
         const payload = (sourceCategories || []).map((category) => ({ ...category, originalId: category.id }));
+
+        if (payload.length === 0 && Array.isArray(d.bookmarks)) {
+            const bookmarksStillReferenceCategories = d.bookmarks.some(
+                (bookmark) => String(bookmark?.category || '').trim() !== ''
+            );
+            if (bookmarksStillReferenceCategories) {
+                return;
+            }
+        }
 
         const saveTask = (async () => {
             try {

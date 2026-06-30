@@ -44,8 +44,7 @@
 .tags-tab {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem 0;
+    gap: var(--config-tab-gap, 0.85rem);
     min-height: 300px;
     width: 100%;
     max-width: 100%;
@@ -59,7 +58,7 @@
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: var(--config-surface-toolbar);
     flex-shrink: 0;
     flex-wrap: wrap;
     width: 100%;
@@ -296,7 +295,7 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     min-width: 0;
     box-sizing: border-box;
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: var(--config-surface-list);
 }
 
 .tags-list-panel[hidden] {
@@ -347,10 +346,6 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     border-bottom: 1px solid var(--border-primary);
 }
 
-.tag-item:nth-child(even) .tag-item-row {
-    background: color-mix(in srgb, var(--background-secondary) 35%, transparent);
-}
-
 .tag-item:last-child {
     border-bottom: none;
 }
@@ -376,6 +371,12 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     gap: 0.5rem 0.75rem;
     padding: 0.55rem 0.75rem;
     min-height: 2.75rem;
+    background: transparent;
+    transition: background-color 0.12s ease;
+}
+
+.tag-item-row:hover {
+    background: var(--config-row-hover);
 }
 
 .tag-item-label {

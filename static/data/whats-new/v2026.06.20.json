@@ -8,39 +8,39 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>One-time feature balloons (desktop)</strong> \u2014 contextual <strong>Got it</strong> promos appear beside the relevant control the first time you use a feature; stored in <code>localStorage</code> per promo kind. Hidden on mobile and during onboarding, tours, or other overlays."
+          "text": "<strong>One-time feature balloons (desktop)</strong> — contextual <strong>Got it</strong> promos appear beside the relevant control the first time you use a feature; stored in <code>localStorage</code> per promo kind. Hidden on mobile and during onboarding, tours, or other overlays."
         },
         {
           "badge": "new",
-          "text": "<strong>Shared left/right placement</strong> \u2014 <code>DashboardPromoPlacement.positionBesideAnchor()</code> picks the side with more viewport space and vertically centers the balloon (arrow points at the anchor)."
+          "text": "<strong>Shared left/right placement</strong> — <code>DashboardPromoPlacement.positionBesideAnchor()</code> picks the side with more viewport space and vertically centers the balloon (arrow points at the anchor)."
         },
         {
           "badge": "new",
-          "text": "<strong>Search promos</strong> \u2014 <code>&gt;</code> (search), <code>:</code> (commands), and <code>?</code> (finders) each get their own promo beside the search bar; a follow-up <strong>filters</strong> promo appears after you dismiss the search promo and first type <code>tag:</code>, <code>category:</code>, <code>status:</code>, <code>page:</code>, or <code>@</code>."
+          "text": "<strong>Search promos</strong> — <code>&gt;</code> (search), <code>:</code> (commands), and <code>?</code> (finders) each get their own promo beside the search bar; a follow-up <strong>filters</strong> promo appears after you dismiss the search promo and first type <code>tag:</code>, <code>category:</code>, <code>status:</code>, <code>page:</code>, or <code>@</code>."
         },
         {
           "badge": "new",
-          "text": "<strong>Grid &amp; collections</strong> \u2014 first arrow-key selection shows a grid-navigation promo beside the bookmark row; first <code>G</code>+<code>1</code>\u2013<code>9</code> or <code>GG</code> jump shows a separate G-jump promo; first jump into a smart collection shows a promo beside the category header."
+          "text": "<strong>Grid &amp; collections</strong> — first arrow-key selection shows a grid-navigation promo beside the bookmark row; first <code>G</code>+<code>1</code>–<code>9</code> or <code>GG</code> jump shows a separate G-jump promo; first jump into a smart collection shows a promo beside the category header."
         },
         {
           "badge": "new",
-          "text": "<strong>Feature promos</strong> \u2014 inline edit (<code>;</code>), tag cloud (<code>/</code>), tag-filter bulk toolbar, recent bookmarks (<code>*</code>), preview card (<code>[</code>), quick-add omnibox (<code>&amp;</code>), week overview (header date click), category collapse (<code>Enter</code>/<code>Space</code> on header), quick move (<code>Shift+M</code>), quick delete (<code>Shift+D</code>), page overview (<code>,</code>), and keyboard cheat sheet (<code>!</code>/<code>F1</code>)."
+          "text": "<strong>Feature promos</strong> — inline edit (<code>;</code>), tag cloud (<code>/</code>), tag-filter bulk toolbar, recent bookmarks (<code>*</code>), preview card (<code>[</code>), quick-add omnibox (<code>&amp;</code>), week overview (header date click), category collapse (<code>Enter</code>/<code>Space</code> on header), quick move (<code>Shift+M</code>), quick delete (<code>Shift+D</code>), page overview (<code>,</code>), and keyboard cheat sheet (<code>!</code>/<code>F1</code>)."
         },
         {
           "badge": "new",
-          "text": "<strong>Config settings search promo</strong> \u2014 the breadcrumb search balloon uses the same left/right beside-anchor placement as dashboard promos (repositions on scroll/resize)."
+          "text": "<strong>Config settings search promo</strong> — the breadcrumb search balloon uses the same left/right beside-anchor placement as dashboard promos (repositions on scroll/resize)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Promo coordination</strong> \u2014 promos defer while search, modals, tours, or another promo is open; closing a host overlay dismisses its promo without marking it seen (including <code>Esc</code> on quick-move/delete popovers); filter and bulk promos can retry after a short delay when the tag cloud is still open."
+          "text": "<strong>Promo coordination</strong> — promos defer while search, modals, tours, or another promo is open; closing a host overlay dismisses its promo without marking it seen (including <code>Esc</code> on quick-move/delete popovers); filter and bulk promos can retry after a short delay when the tag cloud is still open."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cheat sheet promo layering</strong> \u2014 the <code>!</code>/<code>F1</code> balloon renders above the modal overlay so <strong>Got it</strong> dismisses only the promo, not the cheat sheet."
+          "text": "<strong>Cheat sheet promo layering</strong> — the <code>!</code>/<code>F1</code> balloon renders above the modal overlay so <strong>Got it</strong> dismisses only the promo, not the cheat sheet."
         },
         {
           "badge": "new",
-          "text": "<strong>Promo replay controls</strong> \u2014 <strong>Reset G+jump promo</strong> and <strong>Reset cheat sheet promo</strong> in <strong>config \u2192 Advanced \u2192 System &amp; tools \u2192 Tours &amp; onboarding</strong> (desktop). Cheat-sheet reset opens the sheet when the dashboard tab is active."
+          "text": "<strong>Promo replay controls</strong> — <strong>Reset G+jump promo</strong> and <strong>Reset cheat sheet promo</strong> in <strong>config → Advanced → System &amp; tools → Tours &amp; onboarding</strong> (desktop). Cheat-sheet reset opens the sheet when the dashboard tab is active."
         }
       ]
     },
@@ -49,15 +49,15 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Shift+D quick delete</strong> \u2014 with a bookmark row selected, opens the same popover UI as <code>Shift+M</code>: choose <strong>Delete</strong> or <strong>Cancel</strong> with arrows and <code>Enter</code>; undo remains in the toast. Plain <code>Delete</code> still opens the confirmation dialog."
+          "text": "<strong>Shift+D quick delete</strong> — with a bookmark row selected, opens the same popover UI as <code>Shift+M</code>: choose <strong>Delete</strong> or <strong>Cancel</strong> with arrows and <code>Enter</code>; undo remains in the toast. Plain <code>Delete</code> still opens the confirmation dialog."
         },
         {
           "badge": "fix",
-          "text": "<strong>Move/delete popovers beside the row</strong> \u2014 <code>Shift+M</code>, <code>Shift+D</code>, and tag-filter bulk move menus use the shared beside-anchor placement and reposition on scroll/resize."
+          "text": "<strong>Move/delete popovers beside the row</strong> — <code>Shift+M</code>, <code>Shift+D</code>, and tag-filter bulk move menus use the shared beside-anchor placement and reposition on scroll/resize."
         },
         {
           "badge": "fix",
-          "text": "<strong>Move popover context</strong> \u2014 shows the bookmark\u2019s current category (or categories) above the destination list."
+          "text": "<strong>Move popover context</strong> — shows the bookmark’s current category (or categories) above the destination list."
         }
       ]
     },
@@ -66,11 +66,11 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Bulk toolbar on filtered grid</strong> \u2014 when a tag filter has matches, a toolbar under the filter chips offers <strong>Open all</strong> / <strong>Open first N</strong>, <strong>Copy links</strong>, <strong>Move</strong> (category or page popover), and <strong>Delete</strong> (confirm + undo toast)."
+          "text": "<strong>Bulk toolbar on filtered grid</strong> — when a tag filter has matches, a toolbar under the filter chips offers <strong>Open all</strong> / <strong>Open first N</strong>, <strong>Copy links</strong>, <strong>Move</strong> (category or page popover), and <strong>Delete</strong> (confirm + undo toast)."
         },
         {
           "badge": "new",
-          "text": "<strong>Bulk discoverability promo</strong> \u2014 one-time balloon beside the toolbar after the tag-cloud promo was dismissed and matches exist."
+          "text": "<strong>Bulk discoverability promo</strong> — one-time balloon beside the toolbar after the tag-cloud promo was dismissed and matches exist."
         }
       ]
     },
@@ -79,15 +79,15 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Tag cloud positioning</strong> \u2014 modal sizes from tag count, prefers above or below the <code>/</code> FAB based on space, and scrolls the body when content exceeds the column."
+          "text": "<strong>Tag cloud positioning</strong> — modal sizes from tag count, prefers above or below the <code>/</code> FAB based on space, and scrolls the body when content exceeds the column."
         },
         {
           "badge": "fix",
-          "text": "<strong>Filter chips only</strong> \u2014 removed the redundant FAB badge text; active filters stay on the header chips and filter summary tooltip."
+          "text": "<strong>Filter chips only</strong> — removed the redundant FAB badge text; active filters stay on the header chips and filter summary tooltip."
         },
         {
           "badge": "fix",
-          "text": "<strong>Week overview theming</strong> \u2014 the date popover uses dashboard theme tokens (<code>--background-secondary</code>, <code>--border-primary</code>, <code>--accent-primary</code>) instead of hardcoded dark-glass fallbacks; modern and glass layouts get matching elevation."
+          "text": "<strong>Week overview theming</strong> — the date popover uses dashboard theme tokens (<code>--background-secondary</code>, <code>--border-primary</code>, <code>--accent-primary</code>) instead of hardcoded dark-glass fallbacks; modern and glass layouts get matching elevation."
         }
       ]
     },
@@ -96,7 +96,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Preview cards spotlight</strong> \u2014 after What\u2019s new, layout-versions, and paste-URL hints, desktop users who still have preview cards off may see a one-time bottom stripe with <strong>Enable</strong> or <strong>Never mind</strong>. It waits until onboarding, tours, modals, and other promos are idle. Reset from <strong>config \u2192 Advanced \u2192 System &amp; tools \u2192 Tours &amp; onboarding</strong>."
+          "text": "<strong>Preview cards spotlight</strong> — after What’s new, layout-versions, and paste-URL hints, desktop users who still have preview cards off may see a one-time bottom stripe with <strong>Enable</strong> or <strong>Never mind</strong>. It waits until onboarding, tours, modals, and other promos are idle. Reset from <strong>config → Advanced → System &amp; tools → Tours &amp; onboarding</strong>."
         }
       ]
     },
@@ -105,11 +105,11 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Row highlight edge</strong> \u2014 status, hover, and keyboard-selection backgrounds no longer clip at the right edge; bookmark rows keep <code>2px</code> end padding (<code>--bookmark-row-end-pad</code>) so the active colour shows beside the shortcut text."
+          "text": "<strong>Row highlight edge</strong> — status, hover, and keyboard-selection backgrounds no longer clip at the right edge; bookmark rows keep <code>2px</code> end padding (<code>--bookmark-row-end-pad</code>) so the active colour shows beside the shortcut text."
         },
         {
           "badge": "fix",
-          "text": "<strong>Status column stability</strong> \u2014 ping badges live in a fixed grid column (<code>data-show-ping</code> on bookmark lists) instead of inline flex inside the link, so packed columns no longer shift when status or ping updates; empty ping cells reserve width; periodic rechecks skip the yellow checking state when a confirmed status is already cached; rigid packed-column flex sizing and <code>scrollbar-gutter: stable</code> reduce horizontal jitter."
+          "text": "<strong>Status column stability</strong> — ping badges live in a fixed grid column (<code>data-show-ping</code> on bookmark lists) instead of inline flex inside the link, so packed columns no longer shift when status or ping updates; empty ping cells reserve width; periodic rechecks skip the yellow checking state when a confirmed status is already cached; rigid packed-column flex sizing and <code>scrollbar-gutter: stable</code> reduce horizontal jitter."
         }
       ]
     },
@@ -118,15 +118,15 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Dotted background restored</strong> \u2014 the dot pattern uses a dedicated <code>body::before</code> layer in <code>theme.css</code>; theme colour tokens load on <code>html[data-theme]</code> so <code>--background-dots</code> resolves reliably; <code>ThemeLoader.syncBackgroundDots()</code> keeps the class and <code>data-show-background-dots</code> attribute in sync."
+          "text": "<strong>Dotted background restored</strong> — the dot pattern uses a dedicated <code>body::before</code> layer in <code>theme.css</code>; theme colour tokens load on <code>html[data-theme]</code> so <code>--background-dots</code> resolves reliably; <code>ThemeLoader.syncBackgroundDots()</code> keeps the class and <code>data-show-background-dots</code> attribute in sync."
         },
         {
           "badge": "fix",
-          "text": "<strong>Custom background guard</strong> \u2014 <code>has-custom-background</code> is only applied when a gradient or image is actually resolved; invalid Auto/Gradient/Image picks no longer wipe the dot pattern."
+          "text": "<strong>Custom background guard</strong> — <code>has-custom-background</code> is only applied when a gradient or image is actually resolved; invalid Auto/Gradient/Image picks no longer wipe the dot pattern."
         },
         {
           "badge": "fix",
-          "text": "<strong>Config surfaces</strong> \u2014 semi-transparent tab bar and modern/glass layout tokens so dots show through panels; action bar no longer paints a solid opaque strip over the page background."
+          "text": "<strong>Config surfaces</strong> — semi-transparent tab bar and modern/glass layout tokens so dots show through panels; action bar no longer paints a solid opaque strip over the page background."
         }
       ]
     },
@@ -135,23 +135,23 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Cheat sheet &amp; config Help</strong> \u2014 <code>Shift+D</code> quick delete documented in the keyboard cheat sheet and Help \u2192 Keyboard / Navigation (EN/NL/DE/FR)."
+          "text": "<strong>Cheat sheet &amp; config Help</strong> — <code>Shift+D</code> quick delete documented in the keyboard cheat sheet and Help → Keyboard / Navigation (EN/NL/DE/FR)."
         },
         {
           "badge": "fix",
-          "text": "<strong>Rotating tips</strong> \u2014 <code>tipQuickDelete</code> and <code>tipQuickMove</code> added to the dashboard tip rotation."
+          "text": "<strong>Rotating tips</strong> — <code>tipQuickDelete</code> and <code>tipQuickMove</code> added to the dashboard tip rotation."
         },
         {
           "badge": "fix",
-          "text": "<strong>AppModal structure repair</strong> \u2014 <code>ensureModalStructure()</code> rebuilds missing header/body on an existing <code>#app-modal</code> so recent-bookmarks and other modals render reliably."
+          "text": "<strong>AppModal structure repair</strong> — <code>ensureModalStructure()</code> rebuilds missing header/body on an existing <code>#app-modal</code> so recent-bookmarks and other modals render reliably."
         },
         {
           "badge": "fix",
-          "text": "<strong>README &amp; manual</strong> \u2014 desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours &amp; onboarding lists the new promo reset buttons."
+          "text": "<strong>README &amp; manual</strong> — desktop discoverability overview (G+jump, cheat sheet, settings-search promo); Tours &amp; onboarding lists the new promo reset buttons."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> \u2014 <code>whats-new-v82</code> (<code>2026.06-dashboard-release-v66</code>); <code>status-col-stable-1</code> on <code>dashboard.css</code>, <code>status.css</code>, and <code>dashboard-bookmark-row.css</code>; <code>theme.css?v=bg-dots-layer-2</code>; prior <code>whats-new-v81</code>, <code>config-bg-dots-2</code>, and <code>bookmark-row-end-pad-1</code> bundles retained."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v82</code> (<code>2026.06-dashboard-release-v66</code>); <code>status-col-stable-1</code> on <code>dashboard.css</code>, <code>status.css</code>, and <code>dashboard-bookmark-row.css</code>; <code>theme.css?v=bg-dots-layer-2</code>; prior <code>whats-new-v81</code>, <code>config-bg-dots-2</code>, and <code>bookmark-row-end-pad-1</code> bundles retained."
         }
       ]
     }

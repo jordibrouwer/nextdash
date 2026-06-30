@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.06.30 — June 2026](#v20260630--june-2026)
 - [v2026.06.29.1 — June 2026](#v202606291--june-2026)
 - [v2026.06.29 — June 2026](#v20260629--june-2026)
 - [v2026.06.28 — June 2026](#v20260628--june-2026)
@@ -55,7 +56,40 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.29.1](#v202606291--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.06.30](#v20260630--june-2026) for the latest release.)_
+
+---
+
+## v2026.06.30 — June 2026
+
+**Category stability, config quick-add refresh & tab layout polish** — fixes accidental category deletion (#1), saves category edits when leaving the Categories tab, shows new quick-add bookmarks immediately, and aligns config panel layout across classic/modern/glass themes.
+
+### Config & categories
+
+- **fix** **Categories no longer wiped** — guarded category saves on tab/page switch and persist paths no longer POST an empty list when the DOM is stale but bookmarks still reference categories; server ignores empty category saves in that case and can recover category entries from bookmark refs.
+- **fix** **Categories tab auto-save on leave** — renaming, reordering, or adding categories is flushed to disk when you switch to another config tab (blocked if validation fails).
+- **fix** **Quick-add bookmark list refresh** — ⚡ Quick add on Config → Bookmarks updates the table immediately after save (correct `ConfigManager` wiring, optimistic store update, resilient modal teardown); active search/category filters adjust so the new row is visible.
+- **fix** **Category ID stabilization persist** — `ensureStableCategoryIds` now persists stabilized category and bookmark data instead of leaving fixes in memory only.
+
+### Config UI
+
+- **fix** **Stats tab visibility** — the stats panel no longer bleeds through on other config tabs in classic layout.
+- **fix** **Config tab layout alignment** — unified row widths and intro styling across classic, modern, and glass; save bar, tabs chrome, finders filter toolbar, and section panels align consistently.
+
+### Dashboard
+
+- **fix** **Category sync guard** — dashboard category-order save no longer posts an empty payload when bookmarks still reference categories.
+
+### Developer & docs
+
+- **new** **Regression tests** — `models_categories_test.go`, `tests/config-tabs.spec.js` (category guard + tab-leave flush), `tests/config-quick-add.spec.js`.
+- **fix** **Onboarding e2e** — consolidated skip/finish flows in `onboarding.spec.js` with progress-based step advancement (`tests/e2e-helpers.js`).
+- **fix** **GitHub #1 closed** — “Categories got deleted” resolved on `dev` and verified locally.
+- **fix** **Help & manual** — README (latest version **v2026.06.30**), MANUAL (categories auto-save, quick-add list refresh, stats tab scope, config panel alignment).
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v99` data version and `2026.06-dashboard-release-v78` dashboard release token; `config-ui-tabs-flush-1`, `config-tabs-flush-1`, `config-setup-2`, `config-quick-add-2`, `search-commands-new-2` on config bundles.
 
 ---
 

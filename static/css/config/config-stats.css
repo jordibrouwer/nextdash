@@ -4,10 +4,6 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
 }
 
 .stats-page-intro p {
@@ -30,7 +26,10 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.65rem 1rem;
-    margin-bottom: 0.85rem;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .stats-filter-wrap {

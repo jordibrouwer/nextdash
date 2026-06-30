@@ -367,9 +367,16 @@ class CustomSelect {
         document.removeEventListener('click', this._onDocClick);
         window.removeEventListener('scroll', this._onScroll, true);
         window.removeEventListener('resize', this._onScroll);
-        this.optionsContainer.remove();
-        this.wrapper.parentNode.insertBefore(this.originalSelect, this.wrapper);
-        this.wrapper.remove();
+        try {
+            this.optionsContainer?.remove();
+            const parent = this.wrapper?.parentNode;
+            if (parent && this.originalSelect && this.wrapper) {
+                parent.insertBefore(this.originalSelect, this.wrapper);
+            }
+            this.wrapper?.remove();
+        } catch (error) {
+            console.warn('CustomSelect destroy failed:', error);
+        }
     }
 }
 

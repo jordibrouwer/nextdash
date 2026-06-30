@@ -594,6 +594,54 @@ func getDefaultNewPageCategories() []Category {
 	}
 }
 
+func bookmarksReferenceCategories(bookmarks []Bookmark) bool {
+	for _, bookmark := range bookmarks {
+		if strings.TrimSpace(bookmark.Category) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func rebuildCategoriesFromBookmarkRefs(bookmarks []Bookmark) []Category {
+	if !bookmarksReferenceCategories(bookmarks) {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	out := make([]Category, 0)
+	for _, bookmark := range bookmarks {
+		id := strings.TrimSpace(bookmark.Category)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, Category{
+			ID:         id,
+			OriginalID: id,
+			Name:       formatRecoveredCategoryName(id),
+		})
+	}
+	return out
+}
+
+func formatRecoveredCategoryName(categoryID string) string {
+	slug := strings.TrimSpace(categoryID)
+	if slug == "" {
+		return "Category"
+	}
+	if strings.HasPrefix(slug, "cat_") {
+		name := strings.ReplaceAll(strings.TrimPrefix(slug, "cat_"), "_", " ")
+		if name == "" {
+			return slug
+		}
+		return name
+	}
+	return strings.ReplaceAll(strings.ReplaceAll(slug, "-", " "), "_", " ")
+}
+
 func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -1008,7 +1056,10 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 		return []Category{}
 	}
 
-	if pageWithBookmarks.Categories == nil {
+	if len(pageWithBookmarks.Categories) == 0 {
+		if recovered := rebuildCategoriesFromBookmarkRefs(pageWithBookmarks.Bookmarks); len(recovered) > 0 {
+			return recovered
+		}
 		return []Category{}
 	}
 	return pageWithBookmarks.Categories
@@ -1042,6 +1093,11 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
 		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
+	}
+
+	if len(categories) == 0 && bookmarksReferenceCategories(pageWithBookmarks.Bookmarks) {
+		// Ignore accidental empty saves while bookmarks still reference categories.
+		return nil
 	}
 
 	// Create a mapping from old category IDs to new category IDs
@@ -1278,7 +1334,7 @@ func (fs *FileStore) SavePage(page Page) error {
 	if existing.Bookmarks == nil {
 		existing.Bookmarks = []Bookmark{}
 	}
-	if existing.Categories == nil {
+	if len(existing.Categories) == 0 && !bookmarksReferenceCategories(existing.Bookmarks) {
 		existing.Categories = getDefaultNewPageCategories()
 	}
 

@@ -16,6 +16,10 @@ body[data-layout-version="glass"] .config-actions-top {
     box-shadow: var(--layout-shadow-sm);
     padding: 0.85rem 1rem;
     margin: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-self: stretch;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
@@ -73,12 +77,25 @@ body[data-layout-version="glass"] .header-links .back-link:hover {
 
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
 
+body[data-layout-version="glass"] .config-controls-wrapper .tabs-scroll-wrapper {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    background: var(--background-secondary);
+    box-shadow: var(--layout-shadow-sm);
+    padding: 0.3rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-self: stretch;
+}
+
 body[data-layout-version="glass"] .config-controls-wrapper .tabs {
     gap: 0.3rem;
-    padding: 0.3rem;
-    border-radius: var(--layout-radius-md);
-    border-color: var(--border-primary);
-    background: var(--background-secondary);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="glass"] .tab-button {
@@ -106,24 +123,20 @@ body[data-layout-version="glass"] .tab-button.active {
 
 body[data-layout-version="glass"] :is(
     .general-card,
-    .general-tab-intro,
     .general-layer-toolbar,
-    .general-layer-intro,
     .general-advanced-nav-wrap,
     .general-advanced-nav,
-    .stats-page-intro,
     .stats-index,
     .stats-block,
     .help-index,
     .help-block,
-    .backups-tab-intro,
     .backups-section,
     .structure-workspace-card,
     .structure-column,
     .page-selector-wrapper
 ) {
     border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
+    border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
     box-shadow: var(--layout-shadow-sm);
     backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
@@ -192,7 +205,7 @@ body[data-layout-version="glass"] .general-layer-btn.is-active {
 }
 
 body[data-layout-version="glass"] .general-layer-intro {
-    padding: 0.9rem 1rem;
+    padding: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     line-height: 1.5;
@@ -282,6 +295,19 @@ body[data-layout-version="glass"] .tags-toolbar {
     padding: 0.9rem 1rem;
 }
 
+body[data-layout-version="glass"] .finders-filter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 0;
+}
+
 body[data-layout-version="glass"] .simple-list,
 body[data-layout-version="glass"] .collections-list {
     overflow: hidden;
@@ -311,19 +337,24 @@ body[data-layout-version="glass"] .tags-list-header {
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
 }
 
-body[data-layout-version="glass"] .simple-tab-intro,
-body[data-layout-version="glass"] .tags-tab-intro,
-body[data-layout-version="glass"] .collections-tab-intro {
-    flex: 1 1 0;
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    line-height: 1.5;
-}
-
 body[data-layout-version="glass"] .simple-tab-hint {
     color: var(--text-tertiary);
     opacity: 1;
+}
+
+body[data-layout-version="glass"] .simple-toolbar,
+body[data-layout-version="glass"] .collections-toolbar {
+    justify-content: flex-end;
+}
+
+body[data-layout-version="glass"] .tags-toolbar {
+    justify-content: stretch;
+}
+
+body[data-layout-version="glass"] .tags-toolbar .tags-filter-wrap {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
 }
 
 body[data-layout-version="glass"] .collections-tab .collections-edit-panel {
@@ -345,6 +376,19 @@ body[data-layout-version="glass"] .tags-tab .tags-empty-state {
 body[data-layout-version="glass"] .backups-tab {
     gap: var(--config-tab-gap);
     padding: 0;
+}
+
+body[data-layout-version="glass"] .keyboard-tab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap);
+}
+
+body[data-layout-version="glass"] .stats-filter-bar,
+body[data-layout-version="glass"] .stats-chip-nav {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 body[data-layout-version="glass"] .stats-layout {
@@ -414,15 +458,13 @@ body[data-layout-version="glass"] .number-input-btn {
     border-radius: var(--layout-radius-sm);
 }
 
-body[data-layout-version="glass"] .config-controls-wrapper .tabs {
-    margin-top: 0.5rem;
-}
-
 body[data-layout-version="glass"] .simple-list .page-item,
 body[data-layout-version="glass"] .simple-list .category-item,
 body[data-layout-version="glass"] .simple-list .finder-item,
+body[data-layout-version="glass"] .finders-body .finder-item-row,
 body[data-layout-version="glass"] .collections-list .collection-item-row,
-body[data-layout-version="glass"] .tags-list .tag-item-row {
+body[data-layout-version="glass"] .tags-list .tag-item-row,
+body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item {
     background: transparent;
     border-radius: 0;
     margin-bottom: 0;
@@ -432,8 +474,10 @@ body[data-layout-version="glass"] .tags-list .tag-item-row {
 body[data-layout-version="glass"] .simple-list .page-item:hover,
 body[data-layout-version="glass"] .simple-list .category-item:hover,
 body[data-layout-version="glass"] .simple-list .finder-item:hover,
+body[data-layout-version="glass"] .finders-body .finder-item-row:hover,
 body[data-layout-version="glass"] .collections-list .collection-item-row:hover,
-body[data-layout-version="glass"] .tags-list .tag-item-row:hover {
+body[data-layout-version="glass"] .tags-list .tag-item-row:hover,
+body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item:hover {
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface));
 }
 
@@ -563,7 +607,6 @@ body[data-layout-version="glass"] .theme-colors-editor {
 }
 
 body[data-layout-version="glass"] :is(
-    .theme-colors-intro,
     .theme-colors-toolbar,
     .colors-tab-panel
 ) {
@@ -571,10 +614,6 @@ body[data-layout-version="glass"] :is(
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
     box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="glass"] .theme-colors-intro {
-    padding: 0.9rem 1rem;
 }
 
 body[data-layout-version="glass"] .theme-colors-intro .simple-tab-intro {
@@ -755,10 +794,6 @@ body[data-layout-version="glass"] .structure-workspace-card.is-collapsible .stru
     border-radius: var(--layout-radius-sm) var(--layout-radius-sm) 0 0;
 }
 
-body[data-layout-version="glass"] .structure-workspace-intro {
-    padding-inline: 0.85rem;
-}
-
 /* ─── Bookmarks split-view ─────────────────────────────────────────────────── */
 
 body[data-layout-version="glass"] .bookmarks-splitview {
@@ -818,7 +853,7 @@ body[data-layout-version="glass"] .bookmark-add-menu-trigger {
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item {
-    background: var(--layout-surface-inset);
+    background: transparent;
     border-bottom-color: var(--layout-surface-border);
 }
 
@@ -854,7 +889,7 @@ body[data-layout-version="glass"] .bookmark-detail-select:focus {
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item:hover {
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface-inset));
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--layout-surface));
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list .bookmark-item.is-selected-detail {

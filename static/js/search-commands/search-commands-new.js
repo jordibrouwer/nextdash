@@ -182,18 +182,14 @@ class SearchCommandNew {
     }
 
     getBookmarksForPage(pageId) {
-        const dash = window.dashboardInstance;
         const mgr = window.configManager;
         if (pageId == null) return [];
 
-        if (
-            mgr &&
-            Number(mgr.currentPageId) === Number(pageId) &&
-            Array.isArray(mgr.bookmarksData)
-        ) {
-            return mgr.bookmarksData;
+        if (mgr?.bookmarkStore) {
+            return mgr.bookmarkStore.getPage(pageId);
         }
 
+        const dash = window.dashboardInstance;
         if (!dash) return [];
 
         const samePage = Number(dash.currentPageId) === pageId || String(dash.currentPageId) === String(pageId);
@@ -739,7 +735,13 @@ class SearchCommandNew {
             this._boundHandleKeyDown = null;
         }
         if (this._modalCustomSelects) {
-            this._modalCustomSelects.forEach(cs => cs.destroy());
+            this._modalCustomSelects.forEach((cs) => {
+                try {
+                    cs.destroy();
+                } catch (error) {
+                    console.warn('Error destroying modal custom select:', error);
+                }
+            });
             this._modalCustomSelects = [];
         }
 
@@ -762,7 +764,7 @@ class SearchCommandNew {
         }
         if (!form?.checkValidity()) {
             form.reportValidity();
-            return;
+            return { ok: false };
         }
 
         const urlInput = document.getElementById('new-bookmark-url');
@@ -776,19 +778,19 @@ class SearchCommandNew {
         if (shortcut && this.hasShortcutConflictOnPage(shortcut, pageId)) {
             this.updateShortcutConflictHint();
             this.notify(this.t('config.shortcutConflict', 'Shortcut already in use'), 'error');
-            return;
+            return { ok: false };
         }
 
         if (normalizedUrl && this.hasUrlDuplicateOnPage(normalizedUrl, pageId)) {
             this.updateUrlDuplicateHint();
             this.notify(this.duplicateBookmarkUrlMessage(), 'error');
-            return;
+            return { ok: false };
         }
 
         const iconFile = document.getElementById('new-bookmark-icon-file')?.files?.[0];
         const iconUrl = (document.getElementById('new-bookmark-icon-url')?.value || '').trim();
         const icon = await this.resolveIconValue(iconFile, iconUrl);
-        if (icon === null) return;
+        if (icon === null) return { ok: false };
 
         const rawTags = String(formData.get('tags') || '');
         const tags = rawTags.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i);
@@ -812,7 +814,7 @@ class SearchCommandNew {
 
         if (!Number.isFinite(pageId) || pageId < 1) {
             this.notify(this.t('config.errorCreatingBookmark', 'Invalid page selected.'), 'error');
-            return;
+            return { ok: false };
         }
 
         const urlKey = this.canonicalBookmarkURLKey(bookmark.url);
@@ -824,7 +826,7 @@ class SearchCommandNew {
                 : (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
             if (pool.some((b) => this.canonicalBookmarkURLKey(b.url) === urlKey)) {
                 this.notify(this.duplicateBookmarkUrlMessage(), 'error');
-                return;
+                return { ok: false };
             }
         }
 
@@ -836,7 +838,11 @@ class SearchCommandNew {
             });
 
             if (response.ok) {
-                this.closeModal();
+                try {
+                    this.closeModal();
+                } catch (error) {
+                    console.warn('Error closing new-bookmark modal after save:', error);
+                }
                 this.pendingIcon = '';
                 if (window.dashboardInstance) {
                     await window.dashboardInstance.loadAllBookmarks();
@@ -845,6 +851,7 @@ class SearchCommandNew {
                     }
                 }
                 this.notify(this.t('config.bookmarkCreated', 'Bookmark created successfully!'), 'success');
+                return { ok: true, pageId, bookmark: { ...bookmark, pageId } };
             } else if (response.status === 409) {
                 let conflictMessage = this.duplicateBookmarkUrlMessage();
                 const raw = await response.text();
@@ -866,6 +873,7 @@ class SearchCommandNew {
             console.error('Error creating bookmark:', error);
             this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
         }
+        return { ok: false };
     }
 
     async resolveIconValue(iconFile, iconUrl) {

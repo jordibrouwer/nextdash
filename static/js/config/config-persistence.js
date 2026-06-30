@@ -228,8 +228,9 @@ class ConfigPersistence {
         }
 
         try {
-            const categoriesForSelectedPage = this.c.getCategoriesFromDOM();
-            if (categoriesForSelectedPage && categoriesForSelectedPage.length >= 0) {
+            const categoriesForSelectedPage = await this.c.resolveCategoriesForSave(this.c.currentCategoriesPageId);
+            const categoriesSaved = categoriesForSelectedPage !== null;
+            if (categoriesSaved) {
                 const validationError = this.validateCategoriesData(categoriesForSelectedPage);
                 if (validationError) {
                     this.c.ui.showNotification(validationError, 'error');
@@ -247,7 +248,9 @@ class ConfigPersistence {
                     if (renameMap && renameMap.oldId && renameMap.newId && renameMap.oldId !== renameMap.newId) {
                         this.c.reassignBookmarkCategoryIds(renameMap.oldId, renameMap.newId);
                     }
-                    await this.c.saveBookmarksPage(bookmarksSavePageId, this.c.bookmarksData);
+                    if (categoriesSaved || renameMap) {
+                        await this.c.saveBookmarksPage(bookmarksSavePageId, this.c.bookmarksData);
+                    }
                 } else {
                     const pageBookmarks = await this.c.withRetry(() => this.c.data.loadBookmarksByPage(this.c.currentCategoriesPageId));
                     let changed = false;
@@ -258,6 +261,9 @@ class ConfigPersistence {
                             return { ...bookmark, category: renameMap.newId };
                         }
                         if (bookmark.category && !categoryIdSet.has(bookmark.category)) {
+                            if (!categoriesSaved) {
+                                return bookmark;
+                            }
                             changed = true;
                             return { ...bookmark, category: '' };
                         }
@@ -808,6 +814,7 @@ class ConfigPersistence {
             if ((needsFullPersist || changeScope.hasCategoriesChanges) && this.c.currentCategoriesPageId) {
                 const categoriesForSelectedPage = await this.c.resolveCategoriesForSave(this.c.currentCategoriesPageId);
                 if (categoriesForSelectedPage !== null) {
+                    this.c.categoriesData = categoriesForSelectedPage.map((cat) => ({ ...cat }));
                     await this.c.data.saveCategoriesByPage(categoriesForSelectedPage, this.c.currentCategoriesPageId);
                 }
             }

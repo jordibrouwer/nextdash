@@ -2,22 +2,29 @@
 .simple-tab {
     display: flex;
     flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
     min-height: 300px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .simple-toolbar {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border-primary);
     border-bottom: none;
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    background: var(--config-surface-toolbar);
     flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .simple-tab-intro {
-    flex: 1 1 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     margin: 0;
@@ -55,6 +62,10 @@
 
 .simple-list {
     border: 1px solid var(--border-primary);
+    background: var(--config-surface-list);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .pages-list-empty-hint,
@@ -126,13 +137,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    background: var(--config-surface-toolbar);
 }
 
 .structure-workspace-card {
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
-    margin-bottom: 1rem;
+    background: var(--config-surface-toolbar);
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .structure-workspace-card.is-collapsible .structure-workspace-toggle {
@@ -173,7 +187,7 @@
 }
 
 .structure-workspace-intro {
-    margin: -0.2rem 0.85rem 0.65rem;
+    margin: 0;
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
     line-height: 1.35;
@@ -196,7 +210,7 @@
 
 .structure-column {
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    background: var(--config-surface-toolbar);
     padding: 0.75rem;
     min-height: 9rem;
 }
@@ -279,6 +293,13 @@
     align-items: center;
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border-primary);
+    background: transparent;
+    transition: background-color 0.12s ease;
+}
+
+.page-item:hover,
+.category-item:hover {
+    background: var(--config-row-hover);
 }
 
 .page-item:last-child,

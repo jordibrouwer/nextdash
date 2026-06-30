@@ -10,60 +10,157 @@ class ConfigQuickAdd {
         this._delegate = null;
     }
 
+    _bookmarkUrlKey(url) {
+        return String(url || '').trim().toLowerCase();
+    }
+
+    _resolveTargetPageId() {
+        const pageEl = document.getElementById('new-bookmark-page');
+        const fromModal = pageEl ? Number(pageEl.value) : NaN;
+        if (Number.isFinite(fromModal) && fromModal >= 1) {
+            return fromModal;
+        }
+        const mgr = this.manager;
+        return Number(mgr.getResolvedBookmarksPageId?.() ?? mgr.currentPageId) || 1;
+    }
+
+    _clearBookmarksSearchUi(mgr) {
+        mgr.currentBookmarksSearch = '';
+        const searchEl = document.getElementById('bookmarks-search');
+        if (searchEl) {
+            searchEl.value = '';
+        }
+        const clearEl = document.getElementById('bookmarks-search-clear');
+        if (clearEl) {
+            clearEl.hidden = true;
+        }
+    }
+
+    _ensureBookmarkVisibleInFilter(mgr, bookmark, viewingPageId) {
+        const newCategory = String(bookmark?.category || '').trim();
+        const filter = mgr.currentBookmarksCategoryFilter || '__all__';
+        const isNamedCategoryFilter = filter !== '__all__'
+            && filter !== '__none__'
+            && filter !== '__missing_icon__'
+            && filter !== '__icon_failed__'
+            && !String(filter).startsWith('__');
+        if (isNamedCategoryFilter && filter !== newCategory) {
+            mgr.currentBookmarksCategoryFilter = newCategory || '__all__';
+            mgr.saveLastCategoryFilterForPage?.(viewingPageId, mgr.currentBookmarksCategoryFilter);
+            const filterSelect = document.getElementById('bookmarks-category-filter');
+            if (filterSelect) {
+                filterSelect.value = mgr.currentBookmarksCategoryFilter;
+            }
+            return;
+        }
+        if (filter === '__none__' && newCategory) {
+            mgr.currentBookmarksCategoryFilter = '__all__';
+            mgr.saveLastCategoryFilterForPage?.(viewingPageId, '__all__');
+            const filterSelect = document.getElementById('bookmarks-category-filter');
+            if (filterSelect) {
+                filterSelect.value = '__all__';
+            }
+        }
+    }
+
+    async _applyBookmarkAfterSave(pageId, bookmark) {
+        const mgr = this.manager;
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid < 1 || !bookmark) {
+            return;
+        }
+
+        const urlKey = this._bookmarkUrlKey(bookmark.url);
+        let listIndex = -1;
+
+        if (mgr.bookmarkStore) {
+            const list = mgr.bookmarkStore.getPage(pid);
+            listIndex = list.findIndex((bm) => this._bookmarkUrlKey(bm.url) === urlKey);
+            if (listIndex < 0) {
+                list.push({ ...bookmark, pageId: pid });
+                listIndex = list.length - 1;
+            }
+        } else if (pid === Number(mgr.currentPageId) && Array.isArray(mgr.bookmarksData)) {
+            listIndex = mgr.bookmarksData.findIndex((bm) => this._bookmarkUrlKey(bm.url) === urlKey);
+            if (listIndex < 0) {
+                mgr.bookmarksData.push({ ...bookmark, pageId: pid });
+                listIndex = mgr.bookmarksData.length - 1;
+            }
+        }
+
+        const viewingPageId = Number(mgr.getResolvedBookmarksPageId?.() ?? mgr.currentPageId);
+        if (pid !== viewingPageId) {
+            return;
+        }
+
+        mgr.currentPageId = viewingPageId;
+        this._clearBookmarksSearchUi(mgr);
+        this._ensureBookmarkVisibleInFilter(mgr, bookmark, viewingPageId);
+
+        mgr.refreshBookmarksList({
+            skipFlush: true,
+            focusIndex: listIndex,
+            highlightIndex: listIndex,
+        });
+        mgr.markDirty?.();
+
+        if (mgr.bookmarkStore) {
+            try {
+                await mgr.bookmarkStore.loadPage(pid);
+                if (pid === viewingPageId) {
+                    const synced = mgr.bookmarkStore.getPage(pid);
+                    const syncedIndex = synced.findIndex((bm) => this._bookmarkUrlKey(bm.url) === urlKey);
+                    mgr.refreshBookmarksList({
+                        skipFlush: true,
+                        focusIndex: syncedIndex >= 0 ? syncedIndex : synced.length - 1,
+                        highlightIndex: syncedIndex >= 0 ? syncedIndex : synced.length - 1,
+                    });
+                }
+            } catch (error) {
+                console.warn('Could not resync bookmarks after quick add:', error);
+            }
+        }
+    }
+
     _build() {
         if (typeof SearchCommandNew === 'undefined') return null;
 
         const delegate = new SearchCommandNew(this.manager.language || null);
         const mgr = this.manager;
+        const quickAdd = this;
 
-        // Route notifications through the config toast
         delegate.notify = (message, type = 'error') => {
             mgr.ui.showNotification(message, type);
         };
 
-        // Wrap createBookmark to detect a successful save and refresh the config list.
-        // We track whether a successful response was received so we only refresh on success.
         const origCreate = delegate.createBookmark.bind(delegate);
-        const origClose = delegate.closeModal.bind(delegate);
 
         delegate.createBookmark = async function () {
-            let savedPageId = null;
-
-            // Temporarily intercept closeModal — it's only called inside createBookmark on success
-            delegate.closeModal = function () {
-                const pageEl = document.getElementById('new-bookmark-page');
-                savedPageId = pageEl ? Number(pageEl.value) : Number(mgr.currentPageId);
-                origClose();
-            };
-
-            await origCreate();
-
-            // Restore original closeModal
-            delegate.closeModal = origClose;
-
-            // If savedPageId was captured, a successful save+close happened
-            if (savedPageId !== null && Number(savedPageId) === Number(mgr.currentPageId)) {
-                try {
-                    const newData = await mgr.data.loadBookmarksByPage(savedPageId);
-                    mgr.bookmarksData = newData;
-                    mgr.refreshBookmarksList({ skipFlush: true });
-                } catch { /* ignore */ }
+            const result = await origCreate();
+            if (result?.ok) {
+                await quickAdd._applyBookmarkAfterSave(result.pageId, result.bookmark);
             }
+            return result;
         };
 
         return delegate;
     }
 
     open() {
-        if (!this._delegate) {
-            this._delegate = this._build();
-        }
+        this._delegate = this._build();
         if (!this._delegate) return;
 
-        // Refresh context with latest data before opening
-        const pages = (this.manager.pagesData || []).filter(p => !p.archived);
+        if (!this.manager?.bookmarkStore) {
+            console.warn('ConfigQuickAdd: config manager is not wired correctly');
+            return;
+        }
+
+        const viewingPageId = this.manager.getResolvedBookmarksPageId?.()
+            ?? this.manager.currentPageId
+            ?? 1;
+        const pages = (this.manager.pagesData || []).filter((p) => !this.manager.isPageArchived?.(p.id));
         this._delegate.setContext(
-            this.manager.currentPageId || 1,
+            viewingPageId,
             this.manager.bookmarksPageCategories || [],
             pages
         );

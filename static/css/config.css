@@ -1,6 +1,6 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=config-scoped-reset-1');
-@import url('config/config-tabs.css?v=config-tabs-border-1');
+@import url('config/config-general.css?v=stats-tab-visibility-1');
+@import url('config/config-tabs.css?v=config-chrome-align-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');
 @import url('config/config-buttons.css');

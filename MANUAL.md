@@ -159,6 +159,7 @@ Switch pages with `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`).
 - Collapse/expand per category on the dashboard.  
 - Drag the **grip** on a category title to reorder sections.  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. The first rename may show a one-time **Got it** promo beside the header; **Esc** dismisses the promo and cancels rename.
+- In **config → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
 ### 4.3 Bookmarks
 
@@ -328,7 +329,7 @@ Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on t
 
 **config → bookmarks**: list on the left, detail on the right. Best for many edits, tags, notes, favicon upload, and bulk actions.
 
-At the top, the **Structure** workspace (pages, categories, archived pages, favicon policy) starts **collapsed** — expand it when you need structural edits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** inserts a URL and saves immediately. In the detail panel, **category** stays visible; shortcut, icon, tags, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
+At the top, the **Structure** workspace (pages, categories, archived pages, favicon policy) starts **collapsed** — expand it when you need structural edits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** opens the full new-bookmark form and saves to disk immediately — the new row appears in the list right away (search/category filters adjust so you can see it). In the detail panel, **category** stays visible; shortcut, icon, tags, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs and after guided tours.
 
@@ -722,7 +723,7 @@ The first time you open the **Theme** tab on a desktop-width window, a **9-step 
 ### Config → pages & categories (structure tabs)
 
 - **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). Page dropdowns skip archived pages. Desktop only (mobile shows a toast).  
-- **Categories** — per-page list with icon, name, **merge**, remove, bookmark count per row; drag or **↑/↓** reorder with auto-save; switching the page selector flushes pending edits first. Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Desktop only for full editing.
+- **Categories** — per-page list with icon, name, **merge**, remove, bookmark count per row; drag or **↑/↓** reorder with auto-save; switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Desktop only for full editing.
 
 ### Typography and density
 
@@ -798,7 +799,7 @@ The dashboard **health** link badge counts broken links and warnings (including 
 
 ### Stats (`config#stats`)
 
-Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar.
+Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar. Content stays on the Stats tab only — it does not overlay other config tabs.
 
 - **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
 - **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), sparklines, and **week-over-week** active-bookmark comparison when the **week** period is selected. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
@@ -822,7 +823,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 | **theme** | Built-in theme picker |
 | **collections** | Custom collection rules |
 | **pages** | Add, rename, archive, reorder pages (auto-save; ↑/↓ keyboard; desktop) |
-| **categories** | Per-page categories — merge, counts, auto-save reorder (desktop) |
+| **categories** | Per-page categories — merge, counts, auto-save on reorder and when leaving the tab or changing page (desktop) |
 | **bookmarks** | Split-view editor, bulk actions |
 | **finders** | External search shortcuts |
 | **backups** | ZIP backup/restore, CSV, browser HTML import |
@@ -837,7 +838,7 @@ Open `/config`. Tabs `1`–`8` jump between sections. **S** saves (sticky bar).
 - **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.
 - **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Section nav links wrap on narrow widths; labels such as *Fine-tuning* and *Display options* group related panels. Sticky **section links** at the top jump to panels; the active section highlights while you scroll (`aria-current`).
 - **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; nav shows Essentials links, an *Advanced sections* divider, then Advanced links.
-- **Sticky chrome** — In Advanced and All, the layer toolbar and section nav stay pinned while you scroll. Save row and main tab bar use a solid background so content does not show through.
+- **Sticky chrome** — In Advanced and All, the layer toolbar and section nav stay pinned while you scroll. Save row and main tab bar use a solid background so content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
 - **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
 - **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.

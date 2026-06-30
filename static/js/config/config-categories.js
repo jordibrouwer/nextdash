@@ -377,6 +377,12 @@ class ConfigCategoriesController {
                 if (Number(pageId) === Number(this.c.currentPageId)) {
                     this.c.bookmarksData = bookmarksForPage;
                 }
+                try {
+                    await this.c.data.saveCategoriesByPage(this.c.categoriesData, this.c.currentCategoriesPageId);
+                    await this.c.saveBookmarksPage(pageId, bookmarksForPage);
+                } catch (stabilizeErr) {
+                    console.error('Failed to persist stabilized category ids:', stabilizeErr);
+                }
             }
     
             this.c.rebuildCategoryBookmarkCounts(bookmarksForPage);
