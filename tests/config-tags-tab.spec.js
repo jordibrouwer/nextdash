@@ -73,6 +73,19 @@ async function openTagsTab(page) {
     });
     await page.waitForSelector('[data-tab-content="tags"].active', { timeout: 10_000 });
     await expect(page.locator('.config-tags-tour-card')).toHaveCount(0);
+    await expect(page.locator('#tags-cloud.tags-cloud--live')).toBeVisible({ timeout: 5000 });
+}
+
+/** Programmatic click — cloud chips drift via CSS so Playwright “stable” clicks flake. */
+async function clickTagCloudChip(page, tag) {
+    await page.evaluate((targetTag) => {
+        const chip = [...document.querySelectorAll('#tags-cloud button.tag-cloud-word')]
+            .find((btn) => btn.querySelector('.tag-cloud-word-label')?.textContent?.trim() === targetTag);
+        if (!chip) {
+            throw new Error(`Tag cloud chip not found: ${targetTag}`);
+        }
+        chip.click();
+    }, tag);
 }
 
 test.describe('config tags tab UI', () => {
@@ -180,7 +193,7 @@ test.describe('config tags tab UI', () => {
         await seedTagsOnFirstPage(page, [{ tag: target, count: 2 }]);
         await openTagsTab(page);
 
-        await page.locator(`#tags-cloud .tag-cloud-word-label:has-text("${target}")`).click();
+        await clickTagCloudChip(page, target);
 
         const row = page.locator(`.tag-item[data-tag="${target}"]`);
         await expect(row.locator('.tag-drilldown.is-open')).toBeVisible();
