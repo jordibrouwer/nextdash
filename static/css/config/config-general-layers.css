@@ -4,9 +4,11 @@
     align-items: center;
     gap: 0.5rem 0.75rem;
     margin: 0;
-    padding: 0.5rem 0.65rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
     border: 1px solid var(--border-primary);
     background: color-mix(in srgb, var(--background-primary) 35%, transparent);
+    box-sizing: border-box;
 }
 
 .general-layer-switch {

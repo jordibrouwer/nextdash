@@ -769,6 +769,7 @@
         "backupsTab": "backups",
         "allSaved": "All saved ✓",
         "savedShort": "Saved",
+        "tabScrollHint": "more tabs →",
         "unsavedStatus": "Unsaved",
         "saveFailed": "Save failed",
         "tabSaveModeRequiresSave": "Requires Save",

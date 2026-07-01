@@ -617,7 +617,7 @@ class ConfigPersistence {
         this.updateSaveStatusUI(this.c.isDirty ? 'unsaved' : 'saved');
         if (undoTopBtn) {
             undoTopBtn.disabled = !this.c.undoSnapshot;
-            undoTopBtn.classList.toggle('is-visible', !!this.c.undoSnapshot);
+            undoTopBtn.classList.toggle('is-visible', this.c.isDirty && !!this.c.undoSnapshot);
         }
         if (discardTopBtn) {
             discardTopBtn.disabled = !this.c.isDirty;

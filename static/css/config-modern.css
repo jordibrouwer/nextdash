@@ -38,10 +38,20 @@ body[data-layout-version="modern"] .tabs-scroll-wrapper::after {
 }
 
 body[data-layout-version="modern"] .config-save-sticky {
-    background: var(--layout-surface);
+    background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-top-color: var(--layout-surface-border);
+    border-top: none;
+    box-shadow: none;
+    padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+}
+
+body[data-layout-version="modern"] .config-save-sticky-inner {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+    background: var(--background-secondary);
+    padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
 }
 
 body[data-layout-version="modern"] .config-main {
@@ -87,6 +97,15 @@ body[data-layout-version="modern"] .config-tab-group-label {
 
 body[data-layout-version="modern"] .config-tab-group--active .config-tab-group-label {
     color: color-mix(in srgb, var(--accent-primary) 70%, var(--text-primary));
+}
+
+body[data-layout-version="modern"] .config-tab-group[data-tab-group="help"] {
+    background: color-mix(in srgb, var(--layout-surface-inset) 50%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .config-tab-group[data-tab-group="help"] .config-tab-group-label {
+    font-weight: var(--font-weight-medium);
+    opacity: 0.88;
 }
 
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
@@ -204,7 +223,8 @@ body[data-layout-version="modern"] .general-card {
 }
 
 body[data-layout-version="modern"] .general-layer-toolbar {
-    padding: 0.9rem 1rem;
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
+    min-height: var(--config-toolbar-min-height, 2.75rem);
 }
 
 body[data-layout-version="modern"] .general-layer-switch {
@@ -323,7 +343,8 @@ body[data-layout-version="modern"] .tags-toolbar {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.9rem 1rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
 }
 
 body[data-layout-version="modern"] .finders-filter-wrap {
@@ -568,8 +589,7 @@ body[data-layout-version="modern"] .setting-preview {
 
 /* ─── Save bar & actions ───────────────────────────────────────────────────── */
 
-body[data-layout-version="modern"] .config-save-sticky.is-visible {
-    border-top-color: var(--layout-surface-border);
+body[data-layout-version="modern"] .config-save-sticky.is-scroll-active .config-save-sticky-inner {
     box-shadow: 0 -4px 20px color-mix(in srgb, var(--text-primary) 10%, transparent);
 }
 

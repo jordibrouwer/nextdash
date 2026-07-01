@@ -17,7 +17,7 @@
     color: var(--text-primary);
 }
 
-.config-actions-buttons #save-btn.btn-success,
+.config-actions-primary #save-btn.btn-success,
 .config-save-sticky-actions #save-btn-sticky.btn-success {
     border: 1px solid var(--border-primary);
     color: var(--text-primary);
@@ -29,7 +29,7 @@
     transform: translateX(2px);
 }
 
-.config-actions-buttons #save-btn.btn-success:hover,
+.config-actions-primary #save-btn.btn-success:hover,
 .config-save-sticky-actions #save-btn-sticky.btn-success:hover {
     background-color: var(--background-secondary);
     transform: translateX(2px);

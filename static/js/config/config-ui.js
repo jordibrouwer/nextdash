@@ -387,17 +387,23 @@ class ConfigUI {
             visible[nextIdx].click();
         });
 
-        // Fade mask: toggle is-scrolled-end on wrapper when tabs are fully scrolled
+        // Fade mask + scroll hint when tab bar overflows horizontally
         const tabBar = document.querySelector('.config-controls-wrapper .tabs');
         const tabWrapper = document.querySelector('.tabs-scroll-wrapper');
         if (tabBar && tabWrapper) {
             const updateMask = () => {
+                const hasOverflow = tabBar.scrollWidth > tabBar.clientWidth + 2;
                 const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 2;
-                tabWrapper.classList.toggle('is-scrolled-end', atEnd);
+                tabWrapper.classList.toggle('has-tabs-overflow', hasOverflow);
+                tabWrapper.classList.toggle('is-scrolled-end', atEnd || !hasOverflow);
             };
             tabBar.addEventListener('scroll', updateMask, { passive: true });
             window.addEventListener('resize', updateMask, { passive: true });
             requestAnimationFrame(updateMask);
+            if (typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(() => updateMask());
+                ro.observe(tabBar);
+            }
         }
     }
 

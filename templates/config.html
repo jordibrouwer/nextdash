@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-save-bar-compact-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-chrome-v5-2">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -40,19 +40,19 @@
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layer-focus-1">
-    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-edge-1">
+    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-2">
     <link rel="stylesheet" href="/static/css/colors.css?v=colors-preview-v2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v=phone-layout-1">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
-    <link rel="stylesheet" href="/static/css/config-modern.css?v=config-save-bar-compact-1">
+    <link rel="stylesheet" href="/static/css/config-modern.css?v=config-chrome-v5-2">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-save-bar-compact-1">
+    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-chrome-v5-2">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
-    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-save-bar-compact-1">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-v5-2">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
@@ -80,16 +80,22 @@
     <div class="config-section section-controls config-page-column">
             <div class="config-controls-wrapper">
                 <div class="config-actions-top">
-                    <div class="config-actions-buttons">
-                        <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
-                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
-                        <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
-                        <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
-                        <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
+                    <div class="config-actions-strip">
+                        <div class="config-actions-primary">
+                            <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
+                            <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
+                            <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
+                            <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
+                        </div>
+                        <div class="config-actions-meta">
+                            <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
+                            <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="tabs-scroll-wrapper">
+                <span class="config-tabs-scroll-hint" aria-hidden="true" data-i18n="config.tabScrollHint">more tabs →</span>
                 <div class="tabs config-tabs-grouped" role="tablist">
                     <div class="config-tab-group" data-tab-group="system">
                         <span class="config-tab-group-label" data-i18n="config.tabGroupSystem">System</span>
@@ -132,7 +138,6 @@
     <div class="config-section section-content config-page-column">
             <div class="config-breadcrumb-row">
                 <div id="config-breadcrumb" class="config-breadcrumb" data-i18n-aria="config.breadcrumbAria"></div>
-                <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
                 <div id="config-settings-search-anchor" class="config-settings-search-anchor">
                 <div class="config-settings-search" role="search">
                     <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
@@ -2385,7 +2390,7 @@
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
     <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-3"></script>
-    <script src="/static/js/config/config-ui.js?v=config-v5-1"></script>
+    <script src="/static/js/config/config-ui.js?v=config-chrome-v5-2"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-storage.js"></script>

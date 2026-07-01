@@ -84,6 +84,9 @@ html:has(#config-main) {
     --config-save-bar-padding-block: 0.45rem;
     --config-save-bar-padding-inline: 0.65rem;
     --config-save-tabs-divider-gap: 0.45rem;
+    --config-toolbar-min-height: 2.75rem;
+    --config-toolbar-padding-block: 0.5rem;
+    --config-toolbar-padding-inline: 0.75rem;
 }
 
 html:has(#config-main) #config-main,
@@ -362,11 +365,8 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 /* Config Actions Top — compact save row; divider before tabs in config-save-bar.css */
 .config-actions-top {
     display: flex;
-    flex-direction: row;
-    gap: 0.5rem 0.85rem;
-    justify-content: flex-start;
-    align-items: center;
-    align-self: stretch;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -375,6 +375,43 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     background-color: var(--background-secondary);
     position: relative;
     z-index: 1;
+}
+
+.config-actions-strip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem 1rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.config-actions-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+}
+
+.config-actions-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem 0.65rem;
+    margin-inline-start: auto;
+    min-width: 0;
+}
+
+.config-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-start;
 }
 
 /* Header — aligned with dashboard .header-top row */
@@ -521,11 +558,11 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 }
 
 .top-quick-action {
-    display: none;
+    display: none !important;
 }
 
-.top-quick-action.is-visible {
-    display: inline-flex;
+body.config-is-dirty .top-quick-action.is-visible {
+    display: inline-flex !important;
 }
 
 /* Config Main */

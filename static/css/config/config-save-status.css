@@ -94,12 +94,12 @@
 }
 
 /* De-emphasize top Save when sticky bar is showing the same actions */
-body.config-sticky-save-visible .config-actions-buttons #save-btn,
-body.config-sticky-save-visible .config-actions-buttons #discard-top-btn {
+body.config-sticky-save-visible .config-actions-primary #save-btn,
+body.config-sticky-save-visible .config-actions-primary #discard-top-btn {
     opacity: 0.55;
 }
 
-body.config-sticky-save-visible .config-actions-buttons #save-btn:focus-visible,
-body.config-sticky-save-visible .config-actions-buttons #discard-top-btn:focus-visible {
+body.config-sticky-save-visible .config-actions-primary #save-btn:focus-visible,
+body.config-sticky-save-visible .config-actions-primary #discard-top-btn:focus-visible {
     opacity: 1;
 }

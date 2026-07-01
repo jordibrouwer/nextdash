@@ -68,6 +68,46 @@
     opacity: 0;
 }
 
+.config-tabs-scroll-hint {
+    position: absolute;
+    top: 50%;
+    right: 0.4rem;
+    z-index: 3;
+    transform: translateY(-50%);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--layout-radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    background: color-mix(in srgb, var(--background-secondary) 92%, var(--background-primary));
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.tabs-scroll-wrapper.has-tabs-overflow:not(.is-scrolled-end) .config-tabs-scroll-hint {
+    opacity: 0.92;
+}
+
+.config-tab-group[data-tab-group="help"] {
+    background: color-mix(in srgb, var(--background-primary) 8%, var(--background-secondary));
+}
+
+.config-tab-group[data-tab-group="help"] .config-tab-group-label {
+    font-weight: var(--font-weight-medium);
+    opacity: 0.82;
+    letter-spacing: 0.06em;
+}
+
+.config-tab-group[data-tab-group="help"] .config-tab-group-label::before {
+    content: '? ';
+    opacity: 0.65;
+}
+
 .tab-button {
     padding: 0.4rem clamp(0.2rem, 1.2vw, 0.6rem);
     border: none;

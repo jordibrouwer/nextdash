@@ -14,8 +14,8 @@
     padding: 0;
 }
 
-.config-breadcrumb-row .config-tab-save-mode {
-    margin-left: 0.35rem;
+.config-actions-meta .config-tab-save-mode {
+    margin: 0;
 }
 
 .config-settings-search {

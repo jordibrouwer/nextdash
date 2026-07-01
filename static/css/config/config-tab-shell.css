@@ -106,7 +106,8 @@ html:has(#config-main) #config-main :is(
     align-items: center;
     justify-content: flex-end;
     gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
     border: 1px solid var(--border-primary);
     background: var(--config-surface-toolbar);
     flex-shrink: 0;

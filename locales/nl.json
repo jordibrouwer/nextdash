@@ -769,6 +769,7 @@
         "backupsTab": "back-ups",
         "allSaved": "Alles opgeslagen ✓",
         "savedShort": "Opgeslagen",
+        "tabScrollHint": "meer tabs →",
         "unsavedStatus": "Niet opgeslagen",
         "saveFailed": "Opslaan mislukt",
         "tabSaveModeRequiresSave": "Save vereist",
