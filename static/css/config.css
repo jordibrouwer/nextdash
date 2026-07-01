@@ -1,5 +1,5 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=config-chrome-v5-3');
+@import url('config/config-general.css?v=config-chrome-v5-4');
 @import url('config/config-tabs.css?v=config-tab-groups-weight-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');
