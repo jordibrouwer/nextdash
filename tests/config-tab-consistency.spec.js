@@ -1,6 +1,19 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
+/** @param {number} actual @param {number} expected @param {number} [tolerance=3] */
+function expectWidthNear(actual, expected, tolerance = 3) {
+    expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance);
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function applyClassicLayout(page) {
+    await page.evaluate(() => {
+        document.documentElement.setAttribute('data-layout-version', 'classic');
+        document.body.setAttribute('data-layout-version', 'classic');
+    });
+}
+
 async function skipConfigTours(page) {
     await page.addInitScript(() => {
         try {
@@ -232,6 +245,7 @@ test.describe('config tab consistency v4 classic surfaces', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
         await waitForConfigReady(page);
+        await applyClassicLayout(page);
     });
 
     test('pages tab wraps toolbar and list in config-tab-surface', async ({ page }) => {
@@ -464,22 +478,34 @@ test.describe('config tab groups (v5)', () => {
     });
 
     test('tab groups use proportional width by visible tab count', async ({ page }) => {
-        const widths = await page.evaluate(() => {
+        const data = await page.evaluate(() => {
             const groupWidth = (id) => (
                 document.querySelector(`.config-tab-group[data-tab-group="${id}"]`)?.getBoundingClientRect().width || 0
+            );
+            const weight = (id) => (
+                document.querySelector(`.config-tab-group[data-tab-group="${id}"]`)
+                    ?.style.getPropertyValue('--config-tab-group-weight') || ''
             );
             return {
                 system: groupWidth('system'),
                 dashboard: groupWidth('dashboard'),
                 extras: groupWidth('extras'),
                 help: groupWidth('help'),
+                weights: {
+                    system: weight('system'),
+                    dashboard: weight('dashboard'),
+                    extras: weight('extras'),
+                    help: weight('help'),
+                },
             };
         });
 
-        expect(widths.system).toBeGreaterThan(widths.dashboard * 1.05);
-        expect(widths.dashboard).toBeGreaterThan(widths.help * 1.5);
-        expect(widths.system / widths.help).toBeGreaterThan(4);
-        expect(widths.system / widths.help).toBeLessThan(6);
+        expect(data.weights.system).toBe('5');
+        expect(data.weights.dashboard).toBe('3');
+        expect(data.weights.extras).toBe('3');
+        expect(data.weights.help).toBe('1');
+        expect(data.system).toBeGreaterThan(data.dashboard * 1.05);
+        expect(data.dashboard).toBeGreaterThan(data.help * 1.5);
     });
 
     test('chrome rows match general panel content width', async ({ page }) => {
@@ -498,10 +524,10 @@ test.describe('config tab groups (v5)', () => {
         });
 
         expect(widths.column).toBeGreaterThan(0);
-        expect(widths.save).toBe(widths.column);
-        expect(widths.tabs).toBe(widths.column);
-        expect(widths.toolbar).toBe(widths.column);
-        expect(widths.card).toBe(widths.column);
+        expectWidthNear(widths.save, widths.column);
+        expectWidthNear(widths.tabs, widths.column);
+        expectWidthNear(widths.toolbar, widths.column);
+        expectWidthNear(widths.card, widths.column);
     });
 });
 

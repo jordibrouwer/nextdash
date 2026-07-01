@@ -17,7 +17,7 @@ test.describe('config keyboard tab', () => {
     });
 
     test('lists fixed sections and rebindable shortcuts', async ({ page }) => {
-        await expect(page.locator('.keyboard-section--fixed')).toHaveCount(3);
+        await expect(page.locator('.keyboard-section--fixed')).toHaveCount(4);
         await expect(page.locator('.keyboard-binding-row--fixed').count()).resolves.toBeGreaterThan(15);
         await expect(page.locator('.keyboard-binding-row:not(.keyboard-binding-row--fixed)')).not.toHaveCount(0);
         await expect(page.locator('.binding-edit-btn').first()).toBeVisible();
