@@ -161,10 +161,11 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config page**
-- `1–9` — jump to the Nth visible config tab
-- `←`/`→` — move between visible config tabs (when focus is not in an input)
+- `1–9` — jump to the Nth visible config tab (order follows tab groups: **System** → **Dashboard** → **Extras** → **Help**)
+- `←`/`→` — previous/next config tab; crosses into the next tab group at group edges (when focus is not in an input or modal)
+- `Alt` + `←`/`→` — jump to the first tab of the previous/next tab group
 - `S` — save changes
-- `Alt + ↑/↓` — reorder the selected bookmark
+- `Alt + ↑/↓` — reorder the selected bookmark on the Bookmarks tab
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
@@ -196,7 +197,7 @@ In-app help: Config → Help tab → *General settings* (same content, translate
 
 #### Config → Keyboard
 
-Open **`config#keyboard`** (link from Help → Keyboard shortcuts or the footer tip). **Fixed defaults** at the top match the cheat sheet — add bookmark (`&`, `+` / `Ctrl+Shift+A`, `:new`, `Ctrl+V`), **quick actions** on a selected row (`Shift+M`, `Shift+T`, `Shift+D`, `Ctrl+C`, `[`, `Delete`), and **grid navigation** chords (`G+1–9`, `G+P`, `G G`, `Shift+←/→`, Home/End, Tab, `F1`). **Rebindable** keys below include search (`>`), command palette (`:`), page overview (`,`), global search (`@`), tag cloud (`/`), inline edit (`;`), arrows, Enter, and page tabs `1`–`9`. Click **Rebind**, press a key, then **Save** — conflicts with fixed or existing bindings show a warning. **Export** / **import** your rebindable preset as JSON from the toolbar; fixed shortcuts stay on the cheat sheet.
+Open **`config#keyboard`** (link from Help → Keyboard shortcuts or the footer tip). **Fixed defaults** at the top match the cheat sheet — add bookmark (`&`, `+` / `Ctrl+Shift+A`, `:new`, `Ctrl+V`), **quick actions** on a selected row (`Shift+M`, `Shift+T`, `Shift+D`, `Ctrl+C`, `[`, `Delete`), **grid navigation** chords (`G+1–9`, `G+P`, `G G`, `Shift+←/→`, Home/End, Tab, `F1`), and a **Config tab bar** section (`1–9`, `←/→` with group wrap, `Alt+←/→` between groups, `S`, `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+K`, `Alt+↑/↓` on Bookmarks). **Rebindable** keys below include search (`>`), command palette (`:`), page overview (`,`), global search (`@`), tag cloud (`/`), inline edit (`;`), arrows, Enter, and page tabs `1`–`9`. Click **Rebind**, press a key, then **Save** — conflicts with fixed or existing bindings show a warning. **Export** / **import** your rebindable preset as JSON from the toolbar; fixed shortcuts stay on the cheat sheet.
 
 ### Search filters
 

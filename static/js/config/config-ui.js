@@ -367,24 +367,47 @@ class ConfigUI {
             btn.click();
         });
 
-        // ←/→: previous / next visible tab (same guards as 1–9)
+        // ←/→: previous / next tab; crosses group boundaries at edges
+        // Alt+←/→: jump to first tab of previous / next group
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+            if (e.ctrlKey || e.metaKey || e.shiftKey) return;
             if (!configTabKeyAllowed()) return;
+
             const visible = getVisibleTabButtons();
             if (visible.length < 2) return;
-            const currentIdx = visible.findIndex((btn) => btn.getAttribute('data-tab') === this._currentTab);
-            let nextIdx;
-            if (currentIdx < 0) {
-                nextIdx = e.key === 'ArrowRight' ? 0 : visible.length - 1;
-            } else if (e.key === 'ArrowRight') {
-                nextIdx = (currentIdx + 1) % visible.length;
-            } else {
-                nextIdx = (currentIdx - 1 + visible.length) % visible.length;
+
+            const direction = e.key === 'ArrowRight' ? 'right' : 'left';
+            const tabAllowed = (tab) => visible.some((btn) => btn.getAttribute('data-tab') === tab);
+            const groups = window.ConfigTabGroups;
+
+            let targetTab = null;
+            if (e.altKey && groups?.getJumpTabForGroup) {
+                targetTab = groups.getJumpTabForGroup(direction, this._currentTab, tabAllowed);
+            } else if (groups?.getAdjacentTabAcrossGroups) {
+                targetTab = groups.getAdjacentTabAcrossGroups(direction, this._currentTab, tabAllowed);
             }
+
+            if (!targetTab) {
+                const currentIdx = visible.findIndex((btn) => btn.getAttribute('data-tab') === this._currentTab);
+                let nextIdx;
+                if (currentIdx < 0) {
+                    nextIdx = direction === 'right' ? 0 : visible.length - 1;
+                } else if (direction === 'right') {
+                    nextIdx = (currentIdx + 1) % visible.length;
+                } else {
+                    nextIdx = (currentIdx - 1 + visible.length) % visible.length;
+                }
+                targetTab = visible[nextIdx].getAttribute('data-tab');
+            }
+
+            const targetBtn = visible.find((btn) => btn.getAttribute('data-tab') === targetTab);
+            if (!targetBtn) return;
+            if (targetTab === this._currentTab && !e.altKey) return;
             e.preventDefault();
-            visible[nextIdx].click();
+            if (targetTab !== this._currentTab) {
+                targetBtn.click();
+            }
         });
 
         // Fade mask + scroll hint when tab bar overflows horizontally
@@ -491,12 +514,22 @@ class ConfigUI {
         this.showNotification(message, 'error', options);
     }
 
+    _escapeBreadcrumbText(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     updateBreadcrumb(tab, subsection, panelTitle) {
         const el = document.getElementById('config-breadcrumb');
         if (!el) return;
-        const sep = `<span class="config-breadcrumb-sep">/</span>`;
+        const esc = (value) => this._escapeBreadcrumbText(value);
+        const sep = '<span class="config-breadcrumb-sep" aria-hidden="true">›</span>';
         const tabLabel = this._breadcrumbTabLabel(tab);
-        let html = `config${sep}${tabLabel}`;
+        const parts = [tabLabel];
+
         if (tab === 'colors') {
             const sub = (() => {
                 try { return sessionStorage.getItem('nextdash:colors-subtab') || 'custom'; } catch (_) { return 'custom'; }
@@ -505,14 +538,20 @@ class ConfigUI {
                 const subLabel = window.configManager?.language?.t(
                     sub === 'dark' ? 'dashboard.darkTheme' : 'dashboard.lightTheme'
                 ) || sub;
-                html += `${sep}<span class="config-breadcrumb-sub">${subLabel}</span>`;
+                parts.push(subLabel);
             }
         } else if (subsection) {
-            html += `${sep}<span class="config-breadcrumb-sub">${subsection}</span>`;
+            parts.push(subsection);
         }
         if (panelTitle) {
-            html += `${sep}<span class="config-breadcrumb-sub">${panelTitle}</span>`;
+            parts.push(panelTitle);
         }
+
+        el.setAttribute('aria-label', parts.join(' › '));
+        let html = `<span class="config-breadcrumb-tab">${esc(tabLabel)}</span>`;
+        parts.slice(1).forEach((part) => {
+            html += `${sep}<span class="config-breadcrumb-sub">${esc(part)}</span>`;
+        });
         el.innerHTML = html;
     }
 
