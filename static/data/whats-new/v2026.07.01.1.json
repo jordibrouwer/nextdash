@@ -1,0 +1,71 @@
+{
+  "tag": "v2026.07.01.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-01",
+  "sections": [
+    {
+      "title": "Config surfaces (v5 continued)",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Classic unified chrome (C10)</strong> — on <em>Classic</em> layout, the configuration header, save row, and tab bar now fuse into one connected card with shared border, radius, and shadow — matching the Modern/Glass chrome card introduced in <strong>v2026.07.01</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard tab list shell (A7)</strong> — <strong>Config → Keyboard</strong> uses the shared <code>.config-tab-surface</code> pattern: filter toolbar inside the surface, shortcut sections as divided rows (no nested floating cards), consistent with Pages, Categories, Tags, Finders, and Collections."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks tab shell (B2/B4)</strong> — the Bookmarks workspace (Context panel, filters, split-view list) sits inside one <code>.bookmarks-tab-surface</code> card. Search uses the shared <code>config-filter-field</code> styling so Bookmarks visually matches other list tabs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stats tab surface (B9)</strong> — filter toolbar (table search, <strong>Refresh</strong>, <strong>Export CSV</strong>), chip navigation, sidebar index, and stats blocks fuse into one <code>.stats-tab-surface</code> card with divided rows instead of separate stacked cards."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Backups tab surface (B9)</strong> — ZIP backup, settings export/import, and CSV sections appear as divided rows inside one <code>.backups-tab-surface</code> card (danger section keeps its inset accent stripe)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard &amp; health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health badge count pill</strong> — dashboard and config header health links show a compact count-only pill (e.g. <code>3</code> or <code>99+</code>) with theme accent colours for broken vs warning counts. Screen readers still get a full <em>aria-label</em>; the old <em>broken</em> text label is removed from the visible badge."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline bookmark editor</strong> — long-press inline edit no longer traps the form behind dashboard <code>inert</code>. Background dimming uses opacity only so fields stay interactive in all browsers; save and click-outside handling is hardened."
+        }
+      ]
+    },
+    {
+      "title": "Discoverability &amp; sync",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Cross-browser promo sync</strong> — dismissed <em>Got it</em> promos, What's new last-seen release, and rotating-tips timing now persist in <code>settings.json</code> under <code>discoverabilityState</code>. Open the dashboard on another browser or device and your progress follows (legacy <code>localStorage</code> keys migrate automatically on first load)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Promo reliability</strong> — dashboard discoverability promos are restored after a regression; auto-show for paste URL, preview-cards, and layout-version nudges stays off (reset individually from <strong>Tours &amp; onboarding</strong> if you want them back)."
+        }
+      ]
+    },
+    {
+      "title": "Help &amp; documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help (EN / NL / DE / FR)</strong> — What's new recap and General help document fused Stats/Backups/Keyboard/Bookmarks surfaces, Classic chrome parity, health count badge, and discoverability sync."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, CHANGELOG</strong> — release notes for <strong>v2026.07.01.1</strong>; Playwright config suite extended for Keyboard list shell, Bookmarks surface, and Stats/Backups surfaces."
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.01**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.01.1**).
 
 ---
 
@@ -704,7 +704,7 @@ nextDash has three **layout versions** — same bookmark grid and categories, di
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start (they also refresh on page change without resetting that delay). **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; the G+jump hint may appear on hold and retries when blocked by What's new or another overlay), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename; **Esc** on the promo cancels rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. Last-seen release and dismissed promos sync via **`settings.discoverabilityState`** in `settings.json` across browsers (**v2026.07.01.1**). **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start (they also refresh on page change without resetting that delay). **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; the G+jump hint may appear on hold and retries when blocked by What's new or another overlay), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename; **Esc** on the promo cancels rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
 
 **Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
@@ -744,7 +744,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.01** config tab bar v5 (grouped tabs, compact save chrome, Modern/Glass fused surfaces and unified header chrome) and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.01.1** config surface parity (Keyboard/Bookmarks/Stats/Backups fused surfaces, Classic header chrome, health count badge, discoverability sync), **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -802,11 +802,11 @@ Filter, sort, search, and page-filter state persist in the session across refres
 
 From the dashboard, **`:health`** (command mode) opens health with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/health?filter=stale`.
 
-The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts). When broken issues exist, the link opens `/health?filter=broken`. On **config**, the header **→ health beta** link and **General → Essentials → Health →** use the same routing (Essentials link appears when status monitoring is on).
+The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts) as a compact number pill — broken count takes priority over warnings (**v2026.07.01.1**). When broken issues exist, the link opens `/health?filter=broken`. On **config**, the header **→ health beta** link and **General → Essentials → Health →** use the same routing (Essentials link appears when status monitoring is on).
 
 ### Stats (`config#stats`)
 
-Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar. Content stays on the Stats tab only — it does not overlay other config tabs.
+Read-only analytics (desktop). Filter toolbar, chip navigation, sidebar index, and stats blocks sit inside one fused **surface card** on all layout versions (**v2026.07.01.1**). Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar. Content stays on the Stats tab only — it does not overlay other config tabs.
 
 - **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
 - **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), sparklines, and **week-over-week** active-bookmark comparison when the **week** period is selected. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
@@ -815,7 +815,7 @@ Read-only analytics (desktop). Sidebar index jumps to sections; on phone, horizo
 - **Tags** — coverage, most-used tag, untagged count, per-tag tables.
 - **Rot & cleanup** — stale bookmarks, cleanup score (resets when the library is empty).
 - **Conflicts** — duplicate URL detail list and shortcut conflicts with a link to **Health**.
-- **Toolbar** — **Refresh** reloads stats in-tab; **Export CSV** downloads multiple sections (respects active period filters); **Filter tables** narrows rows across all stats tables with a visible/total hint.
+- **Toolbar** — **Filter tables** search (narrows rows across all stats tables with a visible/total hint), **Refresh** (reloads stats in-tab), and **Export CSV** (downloads multiple sections; respects active period filters) live in the in-surface toolbar (**v2026.07.01.1** moved Refresh/Export from the intro row).
 - **Overview** — includes **Last backup** (formatted date from the backups tab when a ZIP was created in this browser).
 
 ---
@@ -854,7 +854,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 
 - **Breadcrumb row** — compact path `tab › context` (e.g. `bookmarks › Work › dev`) with sub-context on Bookmarks (page + category) and Categories (page). **Search settings…** lives in the same row on the right.
 - **Save row** — compact strip with **Save**, **Undo** / **Discard** (only when there are unsaved changes), **Requires save** / **Auto-save** / **Read-only** / **Save colors** pill, and one dirty/saved/syncing status line.
-- **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card.
+- **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card; **Classic** gained the same fused header chrome in **v2026.07.01.1**.
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
 - **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll). Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
@@ -874,7 +874,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 #### Layout and structure
 
 - **Tab groups (v2026.07.01)** — labelled groups **System**, **Dashboard**, **Extras**, **Help** with proportional width; active group highlighted; **Keyboard** under System. Tab bar may show a *more tabs →* hint when it overflows horizontally.
-- **Tab shell (v2026.06.31 / v2026.07.01)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. On **Classic**, **Modern**, and **Glass**, each list tab fuses toolbar + list into one surface card. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs.
+- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. **Keyboard**, **Bookmarks**, **Stats**, and **Backups** use the same fused `config-tab-surface` pattern (**v2026.07.01.1**). On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs.
 - **Save UX** — tabs that auto-save (Pages, Categories, Finders, …) show an **Auto-save** pill in the **save row**; General and Bookmarks show **Requires save** until you click **Save**. Stats is **Read-only**; Theme uses **Save colors**. One status line beside **Save** shows dirty / saved / syncing. **Undo** and **Discard** in the save row appear only when something changed.
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
 - **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
@@ -908,7 +908,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 Available on every screen width (including phone). The **Help** tab is a searchable index of the same topics as this manual, in shorter form:
 
 - **Quick links** — anchor jump list (quick start, onboarding, general, navigation, mobile, keyboard, bookmarks, search, tags, collections, health, backup, troubleshooting, …).
-- **What's new recap** — scrollable history of recent changes; **v2026.07.01** documents config tab bar v5 (groups, compact save chrome, Modern/Glass fused surfaces and unified header chrome, cross-group keyboard); **v2026.06.31** documents config tab consistency (shared list-tab shell, breadcrumb context, unified save status, Bookmarks **Context** panel, phone `#bookmarks` card).
+- **What's new recap** — scrollable history of recent changes; **v2026.07.01.1** documents config surface parity (Keyboard/Bookmarks/Stats/Backups fused surfaces, Classic header chrome, health count badge, discoverability cross-browser sync, inline editor fix); **v2026.07.01** documents config tab bar v5 (groups, compact save chrome, Modern/Glass fused surfaces and unified header chrome, cross-group keyboard); **v2026.06.31** documents config tab consistency (shared list-tab shell, breadcrumb context, unified save status, Bookmarks **Context** panel, phone `#bookmarks` card).
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
@@ -933,7 +933,7 @@ On phone, Help is the only config tab besides **General** that shows the full do
 
 ### ZIP backup (full instance)
 
-**config → backups → Create backup**
+**config → backups → Create backup** — ZIP, settings export, and CSV sections appear as divided rows inside one fused surface card on all layout versions (**v2026.07.01.1**).
 
 Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
 
@@ -1252,7 +1252,7 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 ## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.01** (new / fix)  
+- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.01.1** (new / fix)  
 - **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links and a **What's new** recap  
 - **In-app What's new (★)** — Latest release highlights first; older releases load as you scroll (skeleton while fetching)  
 
