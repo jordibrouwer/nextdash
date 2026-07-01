@@ -249,6 +249,49 @@ class ConfigKeyboard {
                     },
                 ],
             },
+            {
+                titleKey: 'config.keyboardSectionConfigTabBar',
+                titleFallback: 'Config tab bar',
+                noteKey: 'config.keyboardFixedNoteConfigTabBar',
+                noteFallback: 'On the config page when focus is not in an input or modal. Tabs are grouped: System, Dashboard, Extras, Help.',
+                bindings: [
+                    {
+                        keys: ['1–9'],
+                        descriptionKey: 'config.keyboardConfigTab1to9Desc',
+                        descriptionFallback: 'Jump to the Nth visible config tab',
+                    },
+                    {
+                        keys: ['←', '→'],
+                        descriptionKey: 'config.keyboardConfigTabArrowsDesc',
+                        descriptionFallback: 'Previous / next tab; crosses into the next group at group edges',
+                    },
+                    {
+                        keys: ['Alt+←', 'Alt+→'],
+                        descriptionKey: 'config.keyboardConfigTabGroupJumpDesc',
+                        descriptionFallback: 'Jump to first tab of previous / next tab group',
+                    },
+                    {
+                        keys: ['S'],
+                        descriptionKey: 'config.keyboardConfigSaveDesc',
+                        descriptionFallback: 'Save config changes',
+                    },
+                    {
+                        keys: ['Ctrl+Shift+K', 'Cmd+Shift+K'],
+                        descriptionKey: 'config.keyboardConfigSettingsSearchDesc',
+                        descriptionFallback: 'Find settings, tabs, and help sections',
+                    },
+                    {
+                        keys: ['Ctrl+K', 'Cmd+K'],
+                        descriptionKey: 'config.keyboardConfigPaletteDesc',
+                        descriptionFallback: 'Quick actions palette (save, open dashboard, tour resets)',
+                    },
+                    {
+                        keys: ['Alt+↑', 'Alt+↓'],
+                        descriptionKey: 'config.keyboardConfigReorderDesc',
+                        descriptionFallback: 'Reorder selected bookmark on the Bookmarks tab',
+                    },
+                ],
+            },
         ];
     }
 

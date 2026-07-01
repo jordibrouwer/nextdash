@@ -81,6 +81,12 @@ html:has(#config-main) {
     --config-surface-list: transparent;
     --config-row-hover: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
     --config-tab-gap: 0.85rem;
+    --config-save-bar-padding-block: 0.45rem;
+    --config-save-bar-padding-inline: 0.65rem;
+    --config-save-tabs-divider-gap: 0.45rem;
+    --config-toolbar-min-height: 2.75rem;
+    --config-toolbar-padding-block: 0.5rem;
+    --config-toolbar-padding-inline: 0.75rem;
 }
 
 html:has(#config-main) #config-main,
@@ -137,6 +143,26 @@ body {
     padding-bottom: 2rem;
 }
 
+/* Single shared column — header, save/tabs, and tab content share exact width */
+html:has(#config-main) .config-page-shell {
+    display: grid;
+    grid-template-columns: minmax(0, min(88%, 1600px));
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    box-sizing: border-box;
+}
+
+html:has(#config-main) .config-page-column {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 .container {
     max-width: min(88%, 1600px);
     width: 100%;
@@ -149,7 +175,14 @@ body {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--config-tab-gap);
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+html:has(#config-main) .config-section.section-controls .config-controls-wrapper {
+    align-self: stretch;
     width: 100%;
     max-width: 100%;
 }
@@ -303,49 +336,110 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     margin-top: 0;
 }
 
-/* Config breadcrumb */
+/* Config breadcrumb — compact path (tab › context) */
 .config-breadcrumb {
-    font-family: var(--font-family-mono, monospace);
-    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--font-family-main);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
-    opacity: 0.7;
-    padding: 0.4rem 0 0.6rem;
-    letter-spacing: 0.02em;
-    min-height: 1.6rem;
+    opacity: 1;
+    padding: 0.1rem 0 0.3rem;
+    letter-spacing: 0.01em;
+    min-height: 1.2rem;
+    line-height: 1.25;
     transition: opacity 0.15s ease;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .config-breadcrumb:empty {
     display: none;
 }
 
+.config-breadcrumb-tab {
+    flex-shrink: 0;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+}
+
 .config-breadcrumb-sep {
-    margin: 0 0.4em;
-    opacity: 0.5;
+    margin: 0 0.35em;
+    opacity: 0.38;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    font-size: 0.82em;
+    line-height: 1;
 }
 
 .config-breadcrumb-sub {
-    color: var(--text-primary);
-    opacity: 0.85;
+    color: var(--text-secondary);
+    opacity: 0.82;
+    font-weight: var(--font-weight-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    text-transform: lowercase;
+    letter-spacing: 0.03em;
 }
 
-/* Config Actions Top — solid bar so sticky scroll does not show content through Save */
+/* Config Actions Top — compact save row; divider before tabs in config-save-bar.css */
 .config-actions-top {
     display: flex;
-    flex-direction: row;
-    gap: 0.75rem 1.5rem;
-    justify-content: flex-start;
-    align-items: center;
-    align-self: stretch;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 1rem;
+    padding: var(--config-save-bar-padding-block) var(--config-save-bar-padding-inline);
     margin: 0;
-    margin-bottom: 0;
     background-color: var(--background-secondary);
     position: relative;
     z-index: 1;
+}
+
+.config-actions-strip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem 1rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.config-actions-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+}
+
+.config-actions-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem 0.65rem;
+    margin-inline-start: auto;
+    min-width: 0;
+}
+
+.config-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-start;
 }
 
 /* Header — aligned with dashboard .header-top row */
@@ -492,11 +586,11 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 }
 
 .top-quick-action {
-    display: none;
+    display: none !important;
 }
 
-.top-quick-action.is-visible {
-    display: inline-flex;
+body.config-is-dirty .top-quick-action.is-visible {
+    display: inline-flex !important;
 }
 
 /* Config Main */

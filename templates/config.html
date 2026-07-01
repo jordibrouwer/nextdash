@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-header-align-2">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -40,27 +40,27 @@
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layer-focus-1">
-    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=settings-search-edge-1">
+    <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=colors-preview-v2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v=phone-layout-1">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
-    <link rel="stylesheet" href="/static/css/config-modern.css?v=finders-add-right-1">
+    <link rel="stylesheet" href="/static/css/config-modern.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
-    <link rel="stylesheet" href="/static/css/config-glass.css?v=finders-add-right-1">
+    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
-    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-align-1">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-v5-5">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
+    <div class="config-page-shell">
     <!-- Section 1: Title and nav links -->
-    <div class="config-section section-header">
-        <div class="container">
+    <div class="config-section section-header config-page-column">
             <header class="header header-top config-header-top">
                 <div class="header-top-primary">
                     <h1 class="config-header-label" data-i18n="config.title">configuration</h1>
@@ -74,48 +74,70 @@
                     </div>
                 </div>
             </header>
-        </div>
     </div>
 
     <!-- Section 2: Save/Reset buttons and tabs -->
-    <div class="config-section section-controls">
-        <div class="container">
+    <div class="config-section section-controls config-page-column">
             <div class="config-controls-wrapper">
                 <div class="config-actions-top">
-                    <div class="config-actions-buttons">
-                        <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
-                        <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
-                        <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
-                        <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
-                        <span id="save-status-indicator" class="save-status-indicator is-hidden" aria-live="polite" data-i18n="config.savedShort">Saved</span>
+                    <div class="config-actions-strip">
+                        <div class="config-actions-primary">
+                            <button type="button" id="save-btn" class="btn btn-success" data-i18n="config.saveShort">Save</button>
+                            <span id="unsaved-indicator" class="unsaved-badge unsaved-indicator config-save-badge-retired" hidden aria-hidden="true"></span>
+                            <button type="button" id="undo-top-btn" class="btn btn-secondary btn-small top-quick-action" data-i18n="config.undoShort">Undo</button>
+                            <button type="button" id="discard-top-btn" class="btn btn-danger btn-small top-quick-action" data-i18n="config.discardShort">Discard</button>
+                        </div>
+                        <div class="config-actions-meta">
+                            <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
+                            <span id="save-status-indicator" class="save-status-indicator" aria-live="polite" data-i18n="config.savedShort">Saved</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="tabs-scroll-wrapper">
-                <div class="tabs">
-                    <button type="button" class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
-                    <button type="button" class="tab-button" data-tab="colors" data-i18n="config.colorsTab">theme</button>
-                    <button type="button" class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
-                    <button type="button" class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
-                    <button type="button" class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
-                    <button type="button" class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
-                    <button type="button" class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
-                    <button type="button" class="tab-button" data-tab="collections" data-i18n="config.collectionsTab">collections</button>
-                    <button type="button" class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
-                    <button type="button" class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
-                    <button type="button" class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
+                <span class="config-tabs-scroll-hint" aria-hidden="true" data-i18n="config.tabScrollHint">more tabs →</span>
+                <div class="tabs config-tabs-grouped" role="tablist">
+                    <div class="config-tab-group" data-tab-group="system">
+                        <span class="config-tab-group-label" data-i18n="config.tabGroupSystem">System</span>
+                        <div class="config-tab-group-tabs" role="presentation">
+                            <button type="button" class="tab-button active" data-tab="general" data-i18n="config.generalTab">general</button>
+                            <button type="button" class="tab-button" data-tab="colors" data-i18n="config.colorsTab">theme</button>
+                            <button type="button" class="tab-button" data-tab="backups" data-i18n="config.backupsTab">backups</button>
+                            <button type="button" class="tab-button" data-tab="stats" data-i18n="config.statsTab">stats</button>
+                            <button type="button" class="tab-button" data-tab="keyboard" data-i18n="config.keyboardTab">keyboard</button>
+                        </div>
+                    </div>
+                    <div class="config-tab-group" data-tab-group="dashboard">
+                        <span class="config-tab-group-label" data-i18n="config.tabGroupDashboard">Dashboard</span>
+                        <div class="config-tab-group-tabs" role="presentation">
+                            <button type="button" class="tab-button" data-tab="pages" data-i18n="config.pagesTab">pages</button>
+                            <button type="button" class="tab-button" data-tab="categories" data-i18n="config.categoriesTab">categories</button>
+                            <button type="button" class="tab-button" data-tab="bookmarks" data-i18n="config.bookmarksTab">bookmarks</button>
+                        </div>
+                    </div>
+                    <div class="config-tab-group" data-tab-group="extras">
+                        <span class="config-tab-group-label" data-i18n="config.tabGroupExtras">Extras</span>
+                        <div class="config-tab-group-tabs" role="presentation">
+                            <button type="button" class="tab-button" data-tab="tags" data-i18n="config.tagsTab">tags</button>
+                            <button type="button" class="tab-button" data-tab="finders" data-i18n="config.findersTab">finders</button>
+                            <button type="button" class="tab-button" data-tab="collections" data-i18n="config.collectionsTab">collections</button>
+                        </div>
+                    </div>
+                    <div class="config-tab-group" data-tab-group="help">
+                        <span class="config-tab-group-label" data-i18n="config.tabGroupHelp">Help</span>
+                        <div class="config-tab-group-tabs" role="presentation">
+                            <button type="button" class="tab-button" data-tab="help" data-i18n="config.aboutTab">help</button>
+                        </div>
+                    </div>
                 </div>
                 </div>
             </div>
-        </div>
     </div>
 
     <!-- Section 3: Page content -->
-    <div class="config-section section-content">
-        <div class="container">
+    <div class="config-section section-content config-page-column">
             <div class="config-breadcrumb-row">
                 <div id="config-breadcrumb" class="config-breadcrumb" data-i18n-aria="config.breadcrumbAria"></div>
-                <span id="config-tab-save-mode" class="config-tab-save-mode config-tab-save-mode--requires-save" hidden></span>
                 <div id="config-settings-search-anchor" class="config-settings-search-anchor">
                 <div class="config-settings-search" role="search">
                     <label class="config-settings-search-label" for="config-settings-search-input" data-i18n="config.settingsSearchLabel">Search settings</label>
@@ -1298,11 +1320,12 @@
                 </div>
 
                 <!-- Bookmarks split-view: lijst + detail paneel -->
+                <div class="config-tab-surface bookmarks-tab-surface">
                 <div class="bookmarks-splitview">
 
                     <!-- Linker kolom: lijst + controls -->
                     <div class="bookmarks-splitview-list">
-                        <div class="bookmarks-list-controls config-tab-toolbar config-tab-toolbar--bookmarks">
+                        <div class="bookmarks-list-controls config-tab-toolbar config-tab-toolbar--bookmarks config-tab-toolbar--in-surface">
                             <div class="bookmarks-list-controls-row">
                                 <div class="page-selector-inline">
                                     <select id="page-selector" class="page-selector" title="Bookmarks page" aria-label="Bookmarks page">
@@ -1544,6 +1567,7 @@
                         </div>
                     </div>
 
+                </div>
                 </div>
                 </div>
             </div>
@@ -2137,6 +2161,12 @@
                             </ul>
                         </section>
 
+                        <section id="help-config-tabs" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageConfigTabsTitle">Config tab bar</h3>
+                            <p class="help-block-intro" data-i18n="config.helpPageConfigTabsIntro">How config tabs are grouped on desktop and phone (v2026.07.01).</p>
+                            <ul data-i18n="config.helpPageConfigTabsItems"></ul>
+                        </section>
+
                         <section id="help-navigation" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageNavigationTitle">Navigation</h3>
                             <ul data-i18n="config.helpPageNavigationItems">
@@ -2160,7 +2190,7 @@
 
                         <section id="help-keyboard" class="help-block help-block--spotlight">
                             <h3 class="section-title" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</h3>
-                            <p class="help-block-intro" data-i18n="config.helpPageKeyboardIntro">Rebind search, navigation, and dashboard keys. The keyboard tab is not in the main tab bar — open it here.</p>
+                            <p class="help-block-intro" data-i18n="config.helpPageKeyboardIntro">Rebind search, navigation, and dashboard keys. Open the keyboard tab under System in the tab bar, or use the button below.</p>
                             <ul data-i18n="config.helpPageKeyboardItems">
                                 <li>Open the cheat sheet on the dashboard with <code>!</code> or <code>F1</code>.</li>
                             </ul>
@@ -2351,11 +2381,11 @@
             </div>
 
             </main>
-        </div>
+    </div>
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v105"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v106"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2365,7 +2395,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
-    <script src="/static/js/config/config-ui.js?v=config-structure-context-1"></script>
+    <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-weight-1"></script>
+    <script src="/static/js/config/config-ui.js?v=config-chrome-v5-4"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-storage.js"></script>
@@ -2415,13 +2446,13 @@
     <script src="/static/js/dashboard-promo-registry.js?v=promo-registry-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
-    <script src="/static/js/config/config-keyboard.js?v=keyboard-3"></script>
+    <script src="/static/js/config/config-keyboard.js?v=config-tab-groups-kbd-1"></script>
     <script src="/static/js/config/config-tags.js?v=tags-wordcloud-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v=search-commands-new-2"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/mobile-experience.js?v=phone-layout-3"></script>
+    <script src="/static/js/mobile-experience.js?v=phone-layout-4"></script>
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>

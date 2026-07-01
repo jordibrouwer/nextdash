@@ -2,9 +2,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-    min-height: 1.75rem;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+    min-height: 1.35rem;
 }
 
 .config-breadcrumb-row .config-breadcrumb {
@@ -14,8 +14,8 @@
     padding: 0;
 }
 
-.config-breadcrumb-row .config-tab-save-mode {
-    margin-left: 0.35rem;
+.config-actions-meta .config-tab-save-mode {
+    margin: 0;
 }
 
 .config-settings-search {

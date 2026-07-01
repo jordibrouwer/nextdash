@@ -14,7 +14,7 @@ body[data-layout-version="glass"] .config-actions-top {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
-    padding: 0.85rem 1rem;
+    padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
     margin: 0;
     width: 100%;
     max-width: 100%;
@@ -33,10 +33,22 @@ body[data-layout-version="glass"] .tabs-scroll-wrapper::after {
 }
 
 body[data-layout-version="glass"] .config-save-sticky {
-    background: var(--layout-surface);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-top: none;
+    box-shadow: none;
+    padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+}
+
+body[data-layout-version="glass"] .config-save-sticky-inner {
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+    background: var(--background-secondary);
     backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    border-top-color: var(--layout-surface-border);
+    padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
 }
 
 body[data-layout-version="glass"] .config-main {
@@ -63,6 +75,43 @@ body[data-layout-version="glass"] .config-header-top .header-actions {
     gap: 0.85rem;
     flex-wrap: wrap;
     justify-content: flex-end;
+}
+
+body[data-layout-version="glass"] .config-controls-wrapper .tabs.config-tabs-grouped {
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="glass"] .config-tab-group {
+    border-inline-end-color: color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+
+body[data-layout-version="glass"] .config-tab-group-label {
+    background: color-mix(in srgb, var(--layout-surface-inset) 40%, var(--layout-surface));
+}
+
+body[data-layout-version="glass"] .config-tab-group--active {
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--layout-surface));
+}
+
+body[data-layout-version="glass"] .config-tab-group--active .config-tab-group-label {
+    color: color-mix(in srgb, var(--accent-primary) 70%, var(--text-primary));
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent-primary) 75%, transparent);
+}
+
+body[data-layout-version="glass"] .config-tab-group--active .tab-button:not(.active) {
+    opacity: 0.76;
+}
+
+body[data-layout-version="glass"] .config-tab-group[data-tab-group="help"] {
+    background: color-mix(in srgb, var(--layout-surface-inset) 50%, var(--layout-surface));
+}
+
+body[data-layout-version="glass"] .config-tab-group[data-tab-group="help"] .config-tab-group-label {
+    font-weight: var(--font-weight-medium);
+    opacity: 0.88;
 }
 
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
@@ -98,15 +147,36 @@ body[data-layout-version="glass"] .tab-button {
         box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="glass"] .tab-button:hover {
-    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+body[data-layout-version="glass"] .tab-button:hover:not(.active),
+body[data-layout-version="glass"] .tab-button:focus-visible:not(.active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary)),
+        0 1px 4px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+body[data-layout-version="glass"] .tab-button:focus-visible {
+    outline: none;
+}
+
+body[data-layout-version="glass"] .tab-button.active:hover,
+body[data-layout-version="glass"] .tab-button.active:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 40%, transparent),
+        var(--layout-shadow-sm);
 }
 
 body[data-layout-version="glass"] .tab-button.active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary));
+    border-bottom: none;
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 32%, transparent),
+        inset 0 -3px 0 var(--accent-primary),
+        inset 0 1px 0 color-mix(in srgb, var(--accent-primary) 30%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 42%, transparent),
         var(--layout-shadow-sm);
+    z-index: 1;
 }
 
 /* ─── Unified surfaces (all config tabs) ──────────────────────────────────── */
@@ -165,7 +235,8 @@ body[data-layout-version="glass"] .general-card {
 }
 
 body[data-layout-version="glass"] .general-layer-toolbar {
-    padding: 0.9rem 1rem;
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
+    min-height: var(--config-toolbar-min-height, 2.75rem);
 }
 
 body[data-layout-version="glass"] .general-layer-switch {
@@ -270,7 +341,7 @@ body[data-layout-version="glass"] :is(
     .collections-list,
     .tags-cloud,
     .tags-list-panel
-) {
+):not(.config-tab-surface *) {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
@@ -284,7 +355,8 @@ body[data-layout-version="glass"] .tags-toolbar {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.9rem 1rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
 }
 
 body[data-layout-version="glass"] .finders-filter-wrap {
@@ -531,8 +603,7 @@ body[data-layout-version="glass"] .setting-preview {
 
 /* ─── Save bar & actions ───────────────────────────────────────────────────── */
 
-body[data-layout-version="glass"] .config-save-sticky.is-visible {
-    border-top-color: var(--layout-surface-border);
+body[data-layout-version="glass"] .config-save-sticky.is-scroll-active .config-save-sticky-inner {
     box-shadow: 0 -4px 20px color-mix(in srgb, var(--text-primary) 10%, transparent);
 }
 

@@ -68,6 +68,46 @@
     opacity: 0;
 }
 
+.config-tabs-scroll-hint {
+    position: absolute;
+    top: 50%;
+    right: 0.4rem;
+    z-index: 3;
+    transform: translateY(-50%);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--layout-radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    background: color-mix(in srgb, var(--background-secondary) 92%, var(--background-primary));
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.tabs-scroll-wrapper.has-tabs-overflow:not(.is-scrolled-end) .config-tabs-scroll-hint {
+    opacity: 0.92;
+}
+
+.config-tab-group[data-tab-group="help"] {
+    background: color-mix(in srgb, var(--background-primary) 8%, var(--background-secondary));
+}
+
+.config-tab-group[data-tab-group="help"] .config-tab-group-label {
+    font-weight: var(--font-weight-medium);
+    opacity: 0.82;
+    letter-spacing: 0.06em;
+}
+
+.config-tab-group[data-tab-group="help"] .config-tab-group-label::before {
+    content: '? ';
+    opacity: 0.65;
+}
+
 .tab-button {
     padding: 0.4rem clamp(0.2rem, 1.2vw, 0.6rem);
     border: none;
@@ -78,7 +118,11 @@
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
     position: relative;
     text-transform: lowercase;
     letter-spacing: 0.05em;
@@ -91,16 +135,45 @@
     content: none;
 }
 
+.config-controls-wrapper .tab-button:hover:not(.active),
+.config-controls-wrapper .tab-button:focus-visible:not(.active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    border-bottom-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
+}
+
+.config-controls-wrapper .tab-button:focus-visible {
+    outline: none;
+}
+
 .tab-button:hover {
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
 }
 
 .tab-button.active {
-    background: var(--background-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
     color: var(--text-primary);
-    border-bottom-color: var(--accent-primary);
+    border-bottom: 3px solid var(--accent-primary);
     font-weight: var(--font-weight-bold);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--accent-primary) 22%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
+    z-index: 1;
+}
+
+.config-controls-wrapper .tab-button.active {
+    margin-bottom: -1px;
+}
+
+.config-controls-wrapper .tab-button.active:hover,
+.config-controls-wrapper .tab-button.active:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    border-bottom-color: var(--accent-primary);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--accent-primary) 28%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 36%, var(--border-primary));
 }
 
 /* Tab Content */
@@ -132,4 +205,89 @@
 
 body.no-animations .tab-content {
     animation: none !important;
+}
+
+/* ── Tab groups (v5 — System | Dashboard | Extras | Help) ── */
+.config-tabs-grouped {
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    min-width: 100%;
+}
+
+.config-tab-group {
+    display: flex;
+    flex-direction: column;
+    flex: var(--config-tab-group-weight, 1) 1 0;
+    min-width: min-content;
+    border-inline-end: 1px solid var(--border-primary);
+}
+
+.config-tab-group[data-tab-group="system"] {
+    --config-tab-group-weight: 5;
+}
+
+.config-tab-group[data-tab-group="dashboard"] {
+    --config-tab-group-weight: 3;
+}
+
+.config-tab-group[data-tab-group="extras"] {
+    --config-tab-group-weight: 3;
+}
+
+.config-tab-group[data-tab-group="help"] {
+    --config-tab-group-weight: 1;
+}
+
+.config-tab-group:last-child {
+    border-inline-end: none;
+}
+
+.config-tab-group[hidden] {
+    display: none !important;
+}
+
+.config-tab-group-label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    opacity: 0.72;
+    padding: 0.28rem 0.45rem 0.18rem;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-primary);
+    line-height: 1.2;
+}
+
+.config-tab-group--active .config-tab-group-label {
+    color: var(--text-primary);
+    opacity: 0.95;
+    border-bottom-color: color-mix(in srgb, var(--accent-primary) 50%, var(--border-primary));
+    box-shadow: inset 0 -2px 0 var(--accent-primary);
+}
+
+.config-tab-group--active {
+    background: color-mix(in srgb, var(--accent-primary) 5%, var(--background-secondary));
+}
+
+.config-tab-group--active .tab-button:not(.active) {
+    opacity: 0.78;
+}
+
+.config-tab-group-tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+}
+
+.config-controls-wrapper .tabs.config-tabs-grouped .tab-button {
+    flex: 1 1 0;
+}
+
+body[data-phone-layout="true"] .config-tab-group:not([data-tab-group="system"]):not([data-tab-group="help"]) {
+    display: none !important;
 }

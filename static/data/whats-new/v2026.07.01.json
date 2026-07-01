@@ -1,0 +1,71 @@
+{
+  "tag": "v2026.07.01",
+  "date": "July 2026",
+  "releasedAt": "2026-07-01",
+  "sections": [
+    {
+      "title": "Config tab bar (v5)",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tab groups</strong> — config tabs are organised as <strong>System</strong> (General, Theme, Backups, Stats, Keyboard), <strong>Dashboard</strong> (Pages, Categories, Bookmarks), <strong>Extras</strong> (Tags, Finders, Collections), and <strong>Help</strong>. Group labels show which area you are in; the active group is highlighted."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Proportional group width</strong> — each group takes space based on how many tabs it contains (e.g. System is wider than Help) instead of four equal columns."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Compact save chrome</strong> — slimmer save row with the save-mode pill (<em>Requires save</em>, <em>Auto-save</em>, <em>Read-only</em>) beside <strong>Save</strong>; <strong>Undo</strong> and <strong>Discard</strong> appear only when there are unsaved changes. A subtle divider separates save from tabs; a <em>more tabs →</em> hint appears when the tab bar overflows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Phone layout</strong> — on phones (≤768px), only <strong>System</strong> and <strong>Help</strong> groups stay visible; Dashboard and Extras tabs remain available on wider screens."
+        }
+      ]
+    },
+    {
+      "title": "Modern &amp; Glass layout parity",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Fused list surfaces</strong> — on <em>Modern</em> and <em>Glass</em>, list tabs (Pages, Categories, Tags, Finders, Collections) now wrap toolbar + list in one <code>.config-tab-surface</code> card, matching Classic instead of showing separate stacked cards."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unified app chrome</strong> — on <em>Modern</em> and <em>Glass</em>, the configuration header, save row, and tab bar read as one connected card with shared borders and a single shadow."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard &amp; navigation",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Cross-group tab keys</strong> — <code>←</code>/<code>→</code> move between tabs and cross into the next group at the edges; <code>Alt+←</code>/<code>Alt+→</code> jump to the first tab of the previous/next group. Listed on the dashboard cheat sheet and under <strong>Config → Keyboard → Config tab bar</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stronger active tab</strong> — clearer active tab and active-group styling (border, inset stripe on Modern/Glass) so the current section is easier to spot."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Compact breadcrumb</strong> — breadcrumb shows <code>tab › context</code> (e.g. <code>bookmarks › Work › dev</code>) without a redundant <code>config /</code> prefix."
+        }
+      ]
+    },
+    {
+      "title": "Help &amp; documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help (EN / NL / DE / FR)</strong> — What's new recap and General help document tab groups, compact save chrome, Modern/Glass fused surfaces, unified header chrome, and updated keyboard shortcuts."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, CHANGELOG</strong> — release notes for <strong>v2026.07.01</strong>; Playwright config suite extended for tab groups, proportional widths, and chrome alignment."
+        }
+      ]
+    }
+  ]
+}

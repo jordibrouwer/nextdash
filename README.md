@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.06.31**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01**.
 
 ---
 
@@ -161,10 +161,11 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config page**
-- `1–9` — jump to the Nth visible config tab
-- `←`/`→` — move between visible config tabs (when focus is not in an input)
+- `1–9` — jump to the Nth visible config tab (order follows tab groups: **System** → **Dashboard** → **Extras** → **Help**)
+- `←`/`→` — previous/next config tab; crosses into the next tab group at group edges (when focus is not in an input or modal)
+- `Alt` + `←`/`→` — jump to the first tab of the previous/next tab group
 - `S` — save changes
-- `Alt + ↑/↓` — reorder the selected bookmark
+- `Alt + ↑/↓` — reorder the selected bookmark on the Bookmarks tab
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
@@ -175,6 +176,8 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
 **Config tab consistency (v2026.06.31)** — list tabs share intro copy, toolbars, filters, and empty states; on **Classic** layout, toolbar + list fuse into one surface card. The breadcrumb row shows tab save mode (**Requires save** / **Auto-save** / **Read-only**) and sub-context on Bookmarks and Categories. **Config → Bookmarks** uses a collapsible **Context** panel (page/category switcher; structure edits on Pages/Categories tabs) that remembers open/closed state. Unified save status beside **Save** replaces the old unsaved badge. Opening `#bookmarks` on a phone shows a desktop-only card instead of a broken editor.
+
+**Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface (parity with Classic). `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
 
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
@@ -196,7 +199,7 @@ In-app help: Config → Help tab → *General settings* (same content, translate
 
 #### Config → Keyboard
 
-Open **`config#keyboard`** (link from Help → Keyboard shortcuts or the footer tip). **Fixed defaults** at the top match the cheat sheet — add bookmark (`&`, `+` / `Ctrl+Shift+A`, `:new`, `Ctrl+V`), **quick actions** on a selected row (`Shift+M`, `Shift+T`, `Shift+D`, `Ctrl+C`, `[`, `Delete`), and **grid navigation** chords (`G+1–9`, `G+P`, `G G`, `Shift+←/→`, Home/End, Tab, `F1`). **Rebindable** keys below include search (`>`), command palette (`:`), page overview (`,`), global search (`@`), tag cloud (`/`), inline edit (`;`), arrows, Enter, and page tabs `1`–`9`. Click **Rebind**, press a key, then **Save** — conflicts with fixed or existing bindings show a warning. **Export** / **import** your rebindable preset as JSON from the toolbar; fixed shortcuts stay on the cheat sheet.
+Open **`config#keyboard`** (link from Help → Keyboard shortcuts or the footer tip). **Fixed defaults** at the top match the cheat sheet — add bookmark (`&`, `+` / `Ctrl+Shift+A`, `:new`, `Ctrl+V`), **quick actions** on a selected row (`Shift+M`, `Shift+T`, `Shift+D`, `Ctrl+C`, `[`, `Delete`), **grid navigation** chords (`G+1–9`, `G+P`, `G G`, `Shift+←/→`, Home/End, Tab, `F1`), and a **Config tab bar** section (`1–9`, `←/→` with group wrap, `Alt+←/→` between groups, `S`, `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+K`, `Alt+↑/↓` on Bookmarks). **Rebindable** keys below include search (`>`), command palette (`:`), page overview (`,`), global search (`@`), tag cloud (`/`), inline edit (`;`), arrows, Enter, and page tabs `1`–`9`. Click **Rebind**, press a key, then **Save** — conflicts with fixed or existing bindings show a warning. **Export** / **import** your rebindable preset as JSON from the toolbar; fixed shortcuts stay on the cheat sheet.
 
 ### Search filters
 
@@ -336,7 +339,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.06.31
+   ./scripts/release-to-main.sh v2026.07.01
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).
