@@ -21,7 +21,7 @@ body[data-layout-version="modern"] .config-actions-top {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
-    padding: 0.85rem 1rem;
+    padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
     margin: 0;
     width: 100%;
     max-width: 100%;
@@ -70,6 +70,25 @@ body[data-layout-version="modern"] .config-header-top .header-actions {
     justify-content: flex-end;
 }
 
+body[data-layout-version="modern"] .config-controls-wrapper .tabs.config-tabs-grouped {
+    background: var(--layout-surface);
+    border: 1px solid var(--layout-surface-border);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .config-tab-group {
+    border-inline-end-color: color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+
+body[data-layout-version="modern"] .config-tab-group-label {
+    background: color-mix(in srgb, var(--layout-surface-inset) 40%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .config-tab-group--active .config-tab-group-label {
+    color: color-mix(in srgb, var(--accent-primary) 70%, var(--text-primary));
+}
+
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .config-controls-wrapper .tabs-scroll-wrapper {
@@ -103,8 +122,25 @@ body[data-layout-version="modern"] .tab-button {
         box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="modern"] .tab-button:hover {
-    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+body[data-layout-version="modern"] .tab-button:hover:not(.active),
+body[data-layout-version="modern"] .tab-button:focus-visible:not(.active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary)),
+        0 1px 4px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+body[data-layout-version="modern"] .tab-button:focus-visible {
+    outline: none;
+}
+
+body[data-layout-version="modern"] .tab-button.active:hover,
+body[data-layout-version="modern"] .tab-button.active:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 40%, transparent),
+        var(--layout-shadow-sm);
 }
 
 body[data-layout-version="modern"] .tab-button.active {

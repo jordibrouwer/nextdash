@@ -6,7 +6,7 @@
     isolation: isolate;
     background-color: var(--background-secondary);
     background-image: none;
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--border-primary) 55%, transparent);
+    box-shadow: none;
 }
 
 /* Solid layer behind buttons — covers dot grid and scrolled settings */
@@ -19,16 +19,16 @@
     pointer-events: none;
 }
 
-/* Classic: full container width — save bar and tabs share the same bleed */
-body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
-body:not([data-layout-version]) .config-section.section-controls .config-actions-top,
-body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
-body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
+html:has(#config-main) :is(
+    .config-section.section-header .config-header-top,
+    .config-section.section-controls .config-actions-top,
+    .config-section.section-controls .tabs-scroll-wrapper,
+    .config-section.section-controls .config-controls-wrapper .tabs
+) {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
     box-sizing: border-box;
-    margin-inline: -1rem;
-    padding-inline: 1rem;
+    align-self: stretch;
 }
 
 body[data-layout-version="modern"] .config-section.section-controls .config-actions-top,
@@ -39,26 +39,6 @@ body[data-layout-version="glass"] .config-section.section-controls .config-actio
     -webkit-backdrop-filter: none;
 }
 
-@media (max-width: 991px) {
-    body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
-    body:not([data-layout-version]) .config-section.section-controls .config-actions-top,
-    body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
-    body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
-        margin-inline: -0.75rem;
-        padding-inline: 0.75rem;
-    }
-}
-
-@media (max-width: 575px) {
-    body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
-    body:not([data-layout-version]) .config-section.section-controls .config-actions-top,
-    body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
-    body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
-        margin-inline: -0.5rem;
-        padding-inline: 0.5rem;
-    }
-}
-
 /* Opaque main tab nav — sticky chrome below save row */
 .config-section.section-controls .tabs-scroll-wrapper {
     position: relative;
@@ -66,6 +46,13 @@ body[data-layout-version="glass"] .config-section.section-controls .config-actio
     isolation: isolate;
     background-color: var(--background-secondary);
     background-image: none;
+    margin-top: var(--config-save-tabs-divider-gap, 0.45rem);
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
+body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
+    padding-top: var(--config-save-tabs-divider-gap, 0.45rem);
+    border-top: 1px solid var(--border-primary);
 }
 
 .config-section.section-controls .tabs-scroll-wrapper::before {
@@ -93,17 +80,13 @@ body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-
 }
 
 @media (max-width: 991px) {
-    body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper,
-    body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper {
-        margin-inline: 0;
-        padding-inline: 0;
+    html:has(#config-main) .config-page-shell {
+        padding-inline: 0.75rem;
     }
 }
 
 @media (max-width: 575px) {
-    body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper,
-    body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper {
-        margin-inline: 0;
-        padding-inline: 0;
+    html:has(#config-main) .config-page-shell {
+        padding-inline: 0.5rem;
     }
 }

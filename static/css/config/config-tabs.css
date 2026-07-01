@@ -78,7 +78,11 @@
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
     position: relative;
     text-transform: lowercase;
     letter-spacing: 0.05em;
@@ -91,9 +95,21 @@
     content: none;
 }
 
+.config-controls-wrapper .tab-button:hover:not(.active),
+.config-controls-wrapper .tab-button:focus-visible:not(.active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    border-bottom-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
+}
+
+.config-controls-wrapper .tab-button:focus-visible {
+    outline: none;
+}
+
 .tab-button:hover {
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
 }
 
 .tab-button.active {
@@ -101,6 +117,13 @@
     color: var(--text-primary);
     border-bottom-color: var(--accent-primary);
     font-weight: var(--font-weight-bold);
+}
+
+.config-controls-wrapper .tab-button.active:hover,
+.config-controls-wrapper .tab-button.active:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+    border-bottom-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
 }
 
 /* Tab Content */
@@ -132,4 +155,63 @@
 
 body.no-animations .tab-content {
     animation: none !important;
+}
+
+/* ── Tab groups (v5 — System | Dashboard | Extras | Help) ── */
+.config-tabs-grouped {
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    min-width: 100%;
+}
+
+.config-tab-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: min-content;
+    border-inline-end: 1px solid var(--border-primary);
+}
+
+.config-tab-group:last-child {
+    border-inline-end: none;
+}
+
+.config-tab-group[hidden] {
+    display: none !important;
+}
+
+.config-tab-group-label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    opacity: 0.72;
+    padding: 0.28rem 0.45rem 0.18rem;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-primary);
+    line-height: 1.2;
+}
+
+.config-tab-group--active .config-tab-group-label {
+    color: var(--text-primary);
+    opacity: 0.95;
+}
+
+.config-tab-group-tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+}
+
+.config-controls-wrapper .tabs.config-tabs-grouped .tab-button {
+    flex: 1 1 0;
+}
+
+body[data-phone-layout="true"] .config-tab-group:not([data-tab-group="system"]):not([data-tab-group="help"]) {
+    display: none !important;
 }

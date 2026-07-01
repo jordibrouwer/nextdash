@@ -81,6 +81,9 @@ html:has(#config-main) {
     --config-surface-list: transparent;
     --config-row-hover: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
     --config-tab-gap: 0.85rem;
+    --config-save-bar-padding-block: 0.45rem;
+    --config-save-bar-padding-inline: 0.65rem;
+    --config-save-tabs-divider-gap: 0.45rem;
 }
 
 html:has(#config-main) #config-main,
@@ -137,6 +140,26 @@ body {
     padding-bottom: 2rem;
 }
 
+/* Single shared column — header, save/tabs, and tab content share exact width */
+html:has(#config-main) .config-page-shell {
+    display: grid;
+    grid-template-columns: minmax(0, min(88%, 1600px));
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    box-sizing: border-box;
+}
+
+html:has(#config-main) .config-page-column {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 .container {
     max-width: min(88%, 1600px);
     width: 100%;
@@ -149,7 +172,14 @@ body {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--config-tab-gap);
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+html:has(#config-main) .config-section.section-controls .config-controls-wrapper {
+    align-self: stretch;
     width: 100%;
     max-width: 100%;
 }
@@ -329,20 +359,19 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     opacity: 0.85;
 }
 
-/* Config Actions Top — solid bar so sticky scroll does not show content through Save */
+/* Config Actions Top — compact save row; divider before tabs in config-save-bar.css */
 .config-actions-top {
     display: flex;
     flex-direction: row;
-    gap: 0.75rem 1.5rem;
+    gap: 0.5rem 0.85rem;
     justify-content: flex-start;
     align-items: center;
     align-self: stretch;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 1rem;
+    padding: var(--config-save-bar-padding-block) var(--config-save-bar-padding-inline);
     margin: 0;
-    margin-bottom: 0;
     background-color: var(--background-secondary);
     position: relative;
     z-index: 1;

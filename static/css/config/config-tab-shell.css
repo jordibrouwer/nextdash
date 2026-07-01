@@ -161,6 +161,13 @@ html:has(#config-main) #config-main :is(
     display: none;
 }
 
+.config-tab-surface > .bookmarks-splitview {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
 .config-tab-toolbar-tools,
 .simple-toolbar-right {
     display: flex;

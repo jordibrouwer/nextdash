@@ -113,6 +113,8 @@ class ConfigUI {
             this.updateBreadcrumb(targetTab, subsection, panelTitle);
             this.initBreadcrumbObserver(targetTab);
             this.updateTabSaveMode(targetTab);
+            window.ConfigTabGroups?.updateActiveGroup?.(targetTab);
+            window.ConfigTabGroups?.syncGroupVisibility?.();
 
             // Update URL hash (preserve general layer subpaths across tab switches)
             if (targetTab === 'colors') {
@@ -333,6 +335,8 @@ class ConfigUI {
 
         this.switchToTab = switchToTab;
         this.updateTabSaveMode(this._currentTab);
+        window.ConfigTabGroups?.updateActiveGroup?.(this._currentTab);
+        window.ConfigTabGroups?.syncGroupVisibility?.();
 
         const configTabKeyAllowed = () => {
             if (window.ConfigTourRuntime?.shouldBlockConfigShortcuts?.()) {

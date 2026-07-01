@@ -41,6 +41,26 @@ body[data-layout-version="classic"] .bookmarks-splitview {
     overflow: hidden;
 }
 
+body[data-layout-version="classic"] .bookmarks-tab-surface {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--config-surface-radius);
+    box-shadow: var(--config-surface-shadow);
+    overflow: hidden;
+    background: var(--config-surface-list);
+}
+
+body[data-layout-version="classic"] .bookmarks-tab-surface .bookmarks-splitview {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body[data-layout-version="classic"] .bookmarks-tab-surface .config-tab-toolbar--in-surface {
+    background: var(--config-surface-toolbar);
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+}
+
 body[data-layout-version="classic"] .bookmarks-splitview-list {
     border: none;
     border-right: 1px solid var(--border-primary);

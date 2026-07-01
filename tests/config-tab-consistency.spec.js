@@ -414,3 +414,89 @@ test.describe('config tab surface box model', () => {
         expect(gap).toBeGreaterThan(8);
     });
 });
+
+test.describe('config tab groups (v5)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('renders System, Dashboard, Extras, and Help groups with expected tabs', async ({ page }) => {
+        await expect(page.locator('.config-tab-group[data-tab-group="system"] .tab-button')).toHaveCount(5);
+        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"] .tab-button')).toHaveCount(3);
+        await expect(page.locator('.config-tab-group[data-tab-group="extras"] .tab-button')).toHaveCount(3);
+        await expect(page.locator('.config-tab-group[data-tab-group="help"] .tab-button')).toHaveCount(1);
+
+        await expect(page.locator('.config-tab-group-label[data-i18n="config.tabGroupSystem"]')).toBeVisible();
+        await expect(page.locator('.config-tab-group-label[data-i18n="config.tabGroupDashboard"]')).toBeVisible();
+        await expect(page.locator('.config-tab-group-label[data-i18n="config.tabGroupExtras"]')).toBeVisible();
+        await expect(page.locator('.config-tab-group-label[data-i18n="config.tabGroupHelp"]')).toBeVisible();
+    });
+
+    test('highlights active group when switching tabs', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).toHaveClass(/config-tab-group--active/);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('finders'));
+        await expect(page.locator('.config-tab-group[data-tab-group="extras"]')).toHaveClass(/config-tab-group--active/);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).toHaveClass(/config-tab-group--active/);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('help'));
+        await expect(page.locator('.config-tab-group[data-tab-group="help"]')).toHaveClass(/config-tab-group--active/);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
+        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).toHaveClass(/config-tab-group--active/);
+        await expect(page.locator('.tab-button[data-tab="keyboard"]')).toHaveClass(/active/);
+    });
+
+    test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.reload();
+        await page.waitForFunction(() => typeof window.configManager?.ui !== 'undefined');
+        await page.waitForSelector('[data-tab-content="general"].active', { timeout: 20_000 });
+
+        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).toBeVisible();
+        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).toBeHidden();
+        await expect(page.locator('.config-tab-group[data-tab-group="extras"]')).toBeHidden();
+        await expect(page.locator('.config-tab-group[data-tab-group="help"]')).toBeVisible();
+    });
+
+    test('chrome rows match general panel content width', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await page.evaluate(() => window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false }));
+
+        const widths = await page.evaluate(() => {
+            const w = (sel) => Math.round(document.querySelector(sel)?.getBoundingClientRect().width || 0);
+            return {
+                shell: w('.config-page-shell'),
+                save: w('.config-actions-top'),
+                tabs: w('.tabs-scroll-wrapper'),
+                toolbar: w('.general-layer-toolbar'),
+                card: w('.general-card'),
+            };
+        });
+
+        expect(widths.shell).toBeGreaterThan(0);
+        expect(widths.save).toBe(widths.shell);
+        expect(widths.tabs).toBe(widths.shell);
+        expect(widths.toolbar).toBe(widths.shell);
+        expect(widths.card).toBe(widths.shell);
+    });
+});
+
+test.describe('config bookmarks surface (v5)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+        await page.evaluate(() => window.configManager.ui.switchToTab('bookmarks'));
+    });
+
+    test('wraps split view in bookmarks-tab-surface', async ({ page }) => {
+        const surface = page.locator('.bookmarks-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.bookmarks-splitview')).toBeVisible();
+        await expect(surface.locator('.config-tab-toolbar--in-surface')).toBeVisible();
+    });
+});

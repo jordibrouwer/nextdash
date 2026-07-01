@@ -5,7 +5,7 @@
     'use strict';
 
     const MOBILE_FOOTER_BUTTONS = ['search'];
-    const MOBILE_CONFIG_TABS = ['general', 'help', 'colors'];
+    const MOBILE_CONFIG_TABS = ['general', 'help', 'colors', 'keyboard'];
     /** Hash-deep-link tabs allowed on phone with a blocking card instead of redirecting to General. */
     const MOBILE_PHONE_CONTEXT_TABS = ['bookmarks'];
     const MOBILE_GENERAL_PANELS = ['localization', 'basics-core', 'layout'];
@@ -308,8 +308,12 @@
         if (nowPhone) {
             applyConfigTabGuard();
         }
+        window.ConfigTabGroups?.syncGroupVisibility?.();
+        window.ConfigTabGroups?.updateActiveGroup?.(window.configManager?.ui?._currentTab);
         window.ConfigSettingsSearch?.relocateForLayout?.();
         window.ConfigSettingsSearch?.syncMobileLayout?.();
+        window.ConfigTabGroups?.syncGroupVisibility?.();
+        window.ConfigTabGroups?.updateActiveGroup?.(window.configManager?.ui?._currentTab);
 
         if (!nowMobile && wasMobile && window.configManager) {
             window.ConfigSettingsSearch?.init?.(window.configManager.language);
@@ -352,6 +356,8 @@
             resizeTimer = setTimeout(onLayoutChange, 120);
         });
         window.addEventListener('hashchange', applyConfigTabGuard);
+        window.ConfigTabGroups?.syncGroupVisibility?.();
+        window.ConfigTabGroups?.updateActiveGroup?.(window.configManager?.ui?._currentTab);
     }
 
     window.MobileExperience = {
