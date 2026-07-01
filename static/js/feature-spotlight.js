@@ -152,6 +152,7 @@
         }
 
         show(delayMs = 1400, options = {}) {
+            if (window.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) return false;
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             try {
                 if (localStorage.getItem(this.storageKey)) return false;

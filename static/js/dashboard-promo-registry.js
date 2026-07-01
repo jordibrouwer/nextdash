@@ -4,6 +4,39 @@
  * Module clearPromoSeen() is preferred; storageKey is a config-page fallback.
  */
 (function initDashboardPromoRegistry(global) {
+    const DISCOVERABILITY_PROMOS_PAUSED = false;
+
+    /** Never auto-show these (Ctrl+V paste, preview cards, classic/modern/glass nudge). */
+    const AUTO_PROMO_DISABLED = new Set([
+        'pasteSpotlight',
+        'layoutVersionNudge',
+        'previewCardSpotlight',
+        'previewCard',
+    ]);
+
+    function areDiscoverabilityPromosPaused() {
+        return DISCOVERABILITY_PROMOS_PAUSED === true;
+    }
+
+    function isAutoPromoDisabled(id) {
+        return AUTO_PROMO_DISABLED.has(id);
+    }
+
+    function dismissAllDiscoverabilityOverlays() {
+        global.DashboardFeaturePromos?.dismissOpen?.();
+        global.DashboardGridKeyboardPromo?.dismissPopover?.();
+        global.DashboardSearchPromo?.dismissPopover?.();
+        global.DashboardGJumpPromo?.dismissPopover?.();
+        global.DashboardSmartCollectionPromo?.dismissPopover?.();
+        document.querySelectorAll('.feature-spotlight').forEach((el) => {
+            el.classList.remove('show');
+            el.remove();
+        });
+        document.querySelectorAll('.dashboard-feature-promo, .dashboard-grid-kbd-promo, .dashboard-search-promo').forEach((el) => {
+            el.remove();
+        });
+    }
+
     const ENTRIES = [
         { id: 'search', priority: 10, storageKeys: [
             'nextdash:dashboard-search-promo-search-v2',
@@ -64,6 +97,10 @@
 
     global.DashboardPromoRegistry = {
         entries: ENTRIES,
+        areDiscoverabilityPromosPaused,
+        isPaused: areDiscoverabilityPromosPaused,
+        isAutoPromoDisabled,
+        dismissAllDiscoverabilityOverlays,
         clearAll,
         clearById,
         listIds() {

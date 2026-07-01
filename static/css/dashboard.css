@@ -2459,25 +2459,24 @@ a.bookmark-open:hover {
 }
 
 /*
- * Inline edit focus: blur/dim chrome and other rows only (never filter a layout
- * ancestor of the form — that would blur the editor too).
+ * Inline edit focus: dim siblings with opacity only (no filter:blur — Safari mis-routes
+ * pointer hits through blurred layers). Never set pointer-events:none on #dashboard-layout
+ * itself; only on non-editing chrome so the inline form stays fully interactive.
  */
 body.bookmark-inline-edit-active .dashboard-section.section-controls,
 body.bookmark-inline-edit-active .dashboard-section.section-title,
 body.bookmark-inline-edit-active .button-container,
 body.bookmark-inline-edit-active #dashboard-layout .category-title,
 body.bookmark-inline-edit-active #dashboard-layout .bookmark-link:not(.bookmark-inline-editing) {
-    filter: blur(3px);
-    opacity: 0.5;
+    opacity: 0.45;
     pointer-events: none;
-    transition: filter 0.2s ease, opacity 0.2s ease;
+    transition: opacity 0.2s ease;
 }
 
 body.bookmark-inline-edit-active #shortcut-search:not(.show) {
-    filter: blur(3px);
-    opacity: 0.5;
+    opacity: 0.45;
     pointer-events: none;
-    transition: filter 0.2s ease, opacity 0.2s ease;
+    transition: opacity 0.2s ease;
 }
 
 body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
@@ -2489,10 +2488,20 @@ body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     isolation: isolate;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    touch-action: manipulation;
 }
 
-body.bookmark-inline-edit-active .category .bookmarks-list {
+body.bookmark-inline-edit-active .bookmark-inline-form,
+body.bookmark-inline-edit-active .bookmark-inline-form * {
+    pointer-events: auto;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+body.bookmark-inline-edit-active .category .bookmarks-list,
+body.bookmark-inline-edit-active .category-body > .bookmarks-list {
     overflow: visible;
+    min-height: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2502,8 +2511,6 @@ body.bookmark-inline-edit-active .category .bookmarks-list {
     body.bookmark-inline-edit-active #dashboard-layout .category-title,
     body.bookmark-inline-edit-active #dashboard-layout .bookmark-link:not(.bookmark-inline-editing),
     body.bookmark-inline-edit-active #shortcut-search:not(.show) {
-        filter: none;
-        opacity: 0.62;
         transition: none;
     }
 }
@@ -2514,7 +2521,7 @@ body.bookmark-inline-edit-active .bookmark-inline-form {
     filter: none;
 }
 
-body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
+body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-discard-modal) {
     z-index: 10050;
 }
 
@@ -2547,9 +2554,11 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-form .bookmark-inline-input,
 .bookmark-inline-form .bookmark-inline-select,
 .bookmark-inline-form .bookmark-inline-textarea,
-.bookmark-inline-form .bookmark-inline-icon-preview,
 .bookmark-inline-form .bookmark-inline-action-btn {
     background: var(--background-secondary);
+    pointer-events: auto;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 @keyframes inlineEditReveal {
@@ -2596,10 +2605,16 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     padding: 0.25rem 0.4rem;
     border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: var(--background-primary);
+    background: var(--background-secondary);
     color: var(--text-primary);
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .bookmark-inline-input:focus,
@@ -2629,7 +2644,12 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-action-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    pointer-events: none;
+}
+
+.bookmark-inline-action-btn.bookmark-inline-save--invalid,
+.bookmark-inline-action-btn[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .bookmark-inline-actions {
@@ -2638,6 +2658,13 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     gap: 0.35rem;
     margin-top: 0.25rem;
     align-items: center;
+    position: relative;
+    z-index: 5;
+}
+
+.bookmark-inline-actions .bookmark-inline-action-btn {
+    position: relative;
+    z-index: 2;
 }
 
 .bookmark-inline-hint {

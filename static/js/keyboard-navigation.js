@@ -1363,6 +1363,9 @@ class KeyboardNavigation {
     clearSelection(options = {}) {
         const restoreFocus = options.restoreFocus !== false;
         const hadSelection = this.currentIndex >= 0;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return;
+        }
         this.restoreKbdSelection();
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
@@ -1459,6 +1462,9 @@ class KeyboardNavigation {
 
     disable() {
         this.isEnabled = false;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return;
+        }
         this.clearSelection();
     }
 

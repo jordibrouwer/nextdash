@@ -8,9 +8,11 @@ class DashboardPromos {
 
     canShowPostOnboardingPrompts() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) return false;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (d.onboardingStartedInSession) return false;
         if (!d.settings?.onboardingCompleted) return false;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         return true;
     }
@@ -33,12 +35,14 @@ class DashboardPromos {
 
     shouldShowLayoutNudgePrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('layoutVersionNudge')) return false;
         return window.LayoutVersionNudge?.shouldOffer?.(d) === true;
     }
 
 
     shouldShowPasteSpotlightPrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('pasteSpotlight')) return false;
         if (typeof window.FeatureSpotlight !== 'function') return false;
         if (d.settings?.pasteUrlQuickAdd === false) return false;
         if (window.matchMedia?.('(pointer: coarse)').matches) return false;
@@ -164,6 +168,7 @@ class DashboardPromos {
 
     shouldShowPreviewCardSpotlightPrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('previewCardSpotlight')) return false;
         return window.PreviewCardSpotlight?.shouldOffer?.(d) === true;
     }
 

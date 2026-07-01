@@ -178,6 +178,13 @@
             return false;
         }
 
+        if (
+            document.body.classList.contains('bookmark-inline-edit-active')
+            && target.closest?.('.bookmark-link.bookmark-inline-editing, .bookmark-inline-form, .tag-ac-dropdown')
+        ) {
+            return true;
+        }
+
         const onTourCard = isTourCardElement(target);
         const appModalBlocking = isAppModalBlockingInteraction();
 
@@ -223,6 +230,12 @@
     }
 
     function detectActiveGuidedFlow() {
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return false;
+        }
+        if (window.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return false;
+        }
         if (document.body.hasAttribute('data-tour-active')) {
             return true;
         }
@@ -249,6 +262,13 @@
 
     function blockPointerEvent(event) {
         if (!mounted) {
+            return;
+        }
+        if (
+            document.body.classList.contains('bookmark-inline-edit-active')
+            && event.target instanceof Element
+            && event.target.closest('.bookmark-inline-form, .bookmark-link.bookmark-inline-editing')
+        ) {
             return;
         }
         /* Companion layout: CSS handles layering; do not intercept pointer events. */
@@ -321,6 +341,13 @@
 
     function blockFocusIn(event) {
         if (!mounted) {
+            return;
+        }
+        if (
+            document.body.classList.contains('bookmark-inline-edit-active')
+            && event.target instanceof Element
+            && event.target.closest('.bookmark-inline-form, .bookmark-link.bookmark-inline-editing')
+        ) {
             return;
         }
         if (isCompanionModeActive()) {

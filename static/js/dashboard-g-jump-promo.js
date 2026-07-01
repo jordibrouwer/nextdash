@@ -272,6 +272,9 @@
     }
 
     function showPromoForAnchor(element) {
+        if (global.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return false;
+        }
         if (!canOfferPromo() || isPromoDeferred() || !(element instanceof HTMLElement)) {
             return false;
         }

@@ -229,7 +229,10 @@ class DashboardRenderCore {
 
     renderDashboard(options = {}) {
         const d = this.dash;
-        if (d.isInlineEditActive() && d.hasInlineEditUnsavedChanges()) {
+        if (d.isInlineEditActive()) {
+            if (options.incremental === 'status') {
+                d.statusMonitor?.refreshAllStatuses?.();
+            }
             return;
         }
         if (options.incremental === 'status') {

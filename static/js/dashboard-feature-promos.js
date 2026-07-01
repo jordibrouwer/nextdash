@@ -738,6 +738,9 @@
     }
 
     function canShowKind(kind) {
+        if (global.DashboardPromoRegistry?.isAutoPromoDisabled?.(kind)) {
+            return false;
+        }
         if (!PROMO_DEFS[kind] || readConfirmed(kind) || !isDesktopDiscoverability()) {
             return false;
         }
@@ -759,6 +762,9 @@
     }
 
     function tryShow(kind, anchor) {
+        if (global.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return false;
+        }
         if (!canShowKind(kind) || isPromoDeferred(kind) || !(anchor instanceof HTMLElement)) {
             return false;
         }

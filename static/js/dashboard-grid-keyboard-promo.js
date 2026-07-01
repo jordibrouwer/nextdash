@@ -237,6 +237,9 @@
     }
 
     function showPromoForAnchor(element) {
+        if (global.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return;
+        }
         if (!canOfferPromo() || isPromoDeferred() || !(element instanceof HTMLElement)) {
             return;
         }

@@ -357,6 +357,10 @@
                 onAbort?.();
                 return Promise.resolve();
             }
+            if (document.body.classList.contains('bookmark-inline-edit-active')) {
+                onAbort?.();
+                return Promise.resolve();
+            }
         }
 
         const finish = () => {

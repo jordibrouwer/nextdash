@@ -96,8 +96,7 @@
             || isOmniboxOpen()
             || isTagCloudModalOpen()
             || isMoveOrDeletePopoverOpen()
-            || isDatePopoverOpen()
-            || isInlineEditActive();
+            || isDatePopoverOpen();
     }
 
     function getTagFilterViewBody() {

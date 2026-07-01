@@ -317,6 +317,9 @@
     }
 
     function showPromoNow(token, { query = '', kind } = {}) {
+        if (global.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return;
+        }
         const promoKind = kind || getPromoKind(query);
         if (!promoKind || token !== promoShowToken || isPromoSuppressed(promoKind)) return;
         if (!isDesktopDiscoverability()) return;

@@ -30,7 +30,7 @@ test.describe('dashboard inline edit', () => {
             document.body.classList.contains('bookmark-inline-edit-active')
         ))).toBe(true);
         await expect.poll(async () => page.evaluate(() => (
-            window.FocusTrapUtils?.shouldTrapDashboardBackground?.() === true
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
         ))).toBe(true);
 
         await page.keyboard.press('Escape');
@@ -41,7 +41,7 @@ test.describe('dashboard inline edit', () => {
             document.body.classList.contains('bookmark-inline-edit-active')
         ))).toBe(false);
         await expect.poll(async () => page.evaluate(() => (
-            window.FocusTrapUtils?.shouldTrapDashboardBackground?.() === false
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
         ))).toBe(true);
 
         const nameAfter = await page.evaluate(() => {
@@ -50,6 +50,45 @@ test.describe('dashboard inline edit', () => {
             return row?.querySelector('.bookmark-text')?.textContent?.trim() || '';
         });
         expect(nameAfter).toBe(nameBefore);
+    });
+
+    test('click inside inline form keeps editor open and focuses field', async ({ page }) => {
+        await page.keyboard.press(';');
+        const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
+        await expect(urlInput).toBeVisible({ timeout: 3000 });
+
+        await urlInput.click();
+        await expect(urlInput).toBeFocused();
+        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
+        await expect.poll(async () => page.evaluate(() => (
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
+        ))).toBe(true);
+    });
+
+    test('multiple form fields accept clicks without closing', async ({ page }) => {
+        await page.keyboard.press(';');
+        await expect(page.locator('.bookmark-inline-form').first()).toBeVisible({ timeout: 3000 });
+        await page.locator('.bookmark-inline-form input[type="url"]').first().click();
+        await page.locator('.bookmark-inline-form .bookmark-inline-select').first().click();
+        await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).first().click();
+        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(0);
+    });
+
+    test('can type in inline form without discard modal', async ({ page }) => {
+        await page.keyboard.press(';');
+        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        await expect(nameInput).toBeVisible({ timeout: 3000 });
+        const original = await nameInput.inputValue();
+        await page.waitForTimeout(600);
+        await nameInput.click();
+        await nameInput.fill(`${original} typed`);
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
+        await expect(nameInput).toHaveValue(`${original} typed`);
+        await nameInput.fill(original);
+        await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).click();
+        await expect.poll(async () => page.evaluate(() => (
+            !document.querySelector('.bookmark-inline-editing')
+        ))).toBe(true);
     });
 
     test('Esc cancels inline edit when grid keyboard promo is still open', async ({ page }) => {
@@ -65,11 +104,51 @@ test.describe('dashboard inline edit', () => {
         await expect.poll(async () => page.evaluate(() => (
             window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
         ))).toBeGreaterThanOrEqual(0);
-        await expect(page.locator('.dashboard-grid-kbd-promo')).toBeVisible({ timeout: 3000 });
+        await page.evaluate(() => {
+            window.DashboardPromoRegistry?.clearById?.('gridKeyboard');
+            window.DashboardGridKeyboardPromo?.clearPromoSeen?.();
+        });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowUp');
 
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-input').first()).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Escape');
+        await expect.poll(async () => page.evaluate(() => (
+            !document.querySelector('.bookmark-inline-editing')
+        ))).toBe(true);
+    });
+
+    test('save commits inline edit changes', async ({ page }) => {
+        await page.keyboard.press(';');
+        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        await expect(nameInput).toBeVisible({ timeout: 3000 });
+        await page.waitForTimeout(600);
+        const original = await nameInput.inputValue();
+        const edited = `${original} save-test`;
+        await nameInput.fill(edited);
+        await page.keyboard.press('Control+Enter');
+        await expect.poll(async () => page.evaluate(() => (
+            !document.querySelector('.bookmark-inline-editing')
+        ))).toBe(true);
+        await expect.poll(async () => page.evaluate((expected) => {
+            const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
+            return rows.some((el) => el.querySelector('.bookmark-text')?.textContent?.trim() === expected);
+        }, edited)).toBe(true);
+    });
+
+    test('clicking second field keeps editor open', async ({ page }) => {
+        await page.keyboard.press(';');
+        const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
+        const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
+        await expect(nameInput).toBeVisible({ timeout: 3000 });
+        await page.waitForTimeout(700);
+        await urlInput.click();
+        await expect(urlInput).toBeFocused();
+        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
+        await urlInput.fill('https://example.com/safari-field-test');
+        await expect(urlInput).toHaveValue('https://example.com/safari-field-test');
+        await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).click();
         await expect.poll(async () => page.evaluate(() => (
             !document.querySelector('.bookmark-inline-editing')
         ))).toBe(true);
