@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.3 — July 2026](#v202607013--july-2026)
 - [v2026.07.01.2 — July 2026](#v202607012--july-2026)
 - [v2026.07.01.1 — July 2026](#v202607011--july-2026)
 - [v2026.07.01 — July 2026](#v20260701--july-2026)
@@ -62,7 +63,21 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.07.01.2](#v202607012--july-2026) for the latest release.)_
+_(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest release.)_
+
+---
+
+## v2026.07.01.3 — July 2026
+
+**Hotfix (Classic layout)** — separates the configuration title and header links from the save row and tab bar again. **Modern** and **Glass** keep the unified chrome card (C9).
+
+### Config (Classic only)
+
+- **fix** **Separate config header chrome** — reverts Classic **C10** fused card: `configuration` + health / back links sit in a transparent header row with gap below; **Save** and grouped tabs each use their own bordered card (`config-save-bar.css`). Modern/Glass unified chrome unchanged.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `config-chrome-classic-separate-2` on `config-save-bar.css`; `whats-new-v109` data version.
 
 ---
 
