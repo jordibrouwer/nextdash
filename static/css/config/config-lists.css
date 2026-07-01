@@ -111,6 +111,52 @@
     box-sizing: border-box;
 }
 
+.structure-workspace-card.structure-workspace-in-surface {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.bookmarks-tab-surface > .structure-workspace-in-surface.is-collapsed {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.bookmarks-tab-surface > .structure-workspace-in-surface:not(.is-collapsed) {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.structure-workspace-in-surface .structure-workspace-toggle {
+    padding: 0.45rem 0.75rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    box-sizing: border-box;
+    background: var(--config-surface-toolbar);
+    border-bottom: 1px solid transparent;
+}
+
+.structure-workspace-in-surface.is-collapsible .structure-workspace-toggle {
+    padding: 0.45rem 0.75rem;
+}
+
+.structure-workspace-in-surface:not(.is-collapsed) .structure-workspace-toggle {
+    border-bottom-color: var(--border-primary);
+}
+
+.structure-workspace-in-surface .structure-workspace-intro {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.structure-workspace-in-surface .structure-workspace {
+    margin: 0.75rem;
+}
+
+.structure-workspace-in-surface .structure-workspace-footnote {
+    margin: 0 0.75rem 0.75rem;
+}
+
 .structure-workspace-card.is-collapsible .structure-workspace-toggle {
     cursor: pointer;
     user-select: none;
@@ -124,6 +170,11 @@
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold);
     transition: color 0.15s ease;
+}
+
+.structure-workspace-card.structure-workspace-in-surface.is-collapsible .structure-workspace-toggle {
+    padding: 0.45rem 0.75rem;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
 }
 
 .structure-workspace-card.is-collapsible .structure-workspace-toggle:hover {

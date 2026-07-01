@@ -880,7 +880,7 @@ body[data-layout-version="modern"] .bookmarks-splitview-detail {
     background: var(--layout-surface-inset);
 }
 
-body[data-layout-version="modern"] .bookmarks-search-input,
+body[data-layout-version="modern"] .bookmarks-filter-wrap .config-filter-input,
 body[data-layout-version="modern"] .bookmark-detail-input,
 body[data-layout-version="modern"] .bookmark-detail-shortcut,
 body[data-layout-version="modern"] .bookmark-detail-note {
@@ -888,7 +888,7 @@ body[data-layout-version="modern"] .bookmark-detail-note {
     transition: border-color var(--layout-transition), box-shadow var(--layout-transition);
 }
 
-body[data-layout-version="modern"] .bookmarks-search-input:focus,
+body[data-layout-version="modern"] .bookmarks-filter-wrap .config-filter-input:focus,
 body[data-layout-version="modern"] .bookmark-detail-input:focus,
 body[data-layout-version="modern"] .bookmark-detail-shortcut:focus,
 body[data-layout-version="modern"] .bookmark-detail-note:focus {

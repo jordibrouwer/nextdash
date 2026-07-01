@@ -569,4 +569,25 @@ test.describe('config bookmarks surface (v5)', () => {
         await expect(surface.locator('.bookmarks-splitview')).toBeVisible();
         await expect(surface.locator('.config-tab-toolbar--in-surface')).toBeVisible();
     });
+
+    test('integrates context panel inside bookmarks surface (B4)', async ({ page }) => {
+        const surface = page.locator('.bookmarks-tab-surface');
+        await expect(surface.locator('#structure-workspace-card.structure-workspace-in-surface')).toBeVisible();
+        await expect(surface.locator('.bookmarks-splitview')).toBeVisible();
+
+        const cardCount = await page.evaluate(() => {
+            const workspace = document.getElementById('bookmarks-tab-workspace');
+            if (!workspace) return -1;
+            return workspace.querySelectorAll(':scope > .config-tab-surface').length;
+        });
+        expect(cardCount).toBe(1);
+    });
+
+    test('bookmarks search uses shared config-filter-field (B2)', async ({ page }) => {
+        const filter = page.locator('.bookmarks-filter-wrap.config-filter-field');
+        await expect(filter).toBeVisible();
+        await expect(filter.locator('#bookmarks-search.config-filter-input')).toBeVisible();
+        await expect(filter.locator('#bookmarks-search-clear.config-filter-clear')).toBeAttached();
+        await expect(page.locator('.bookmarks-search-wrap')).toHaveCount(0);
+    });
 });

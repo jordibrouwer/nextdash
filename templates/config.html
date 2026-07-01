@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-surface-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-shell-b2b4-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-list-shell-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
@@ -1277,7 +1277,8 @@
                     <p class="config-tab-intro-lead" data-i18n="config.bookmarksTabIntro">Browse and edit all bookmarks in a split view: list on the left, detail panel on the right. Filter by page or category, use bulk actions, or expand Context to switch page and category while you edit.</p>
                 </div>
                 <div id="bookmarks-tab-workspace" class="bookmarks-tab-workspace">
-                <div class="structure-workspace-card is-collapsible is-collapsed" id="structure-workspace-card">
+                <div class="config-tab-surface bookmarks-tab-surface">
+                <div class="structure-workspace-card structure-workspace-in-surface is-collapsible is-collapsed" id="structure-workspace-card">
                     <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
                         <span data-i18n="config.structureWorkspaceTitle">Context</span>
                     </h3>
@@ -1319,8 +1320,6 @@
                     <p class="structure-workspace-footnote" data-i18n="config.structureWorkspaceFootnote">Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.</p>
                 </div>
 
-                <!-- Bookmarks split-view: lijst + detail paneel -->
-                <div class="config-tab-surface bookmarks-tab-surface">
                 <div class="bookmarks-splitview">
 
                     <!-- Linker kolom: lijst + controls -->

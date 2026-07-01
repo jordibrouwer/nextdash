@@ -188,69 +188,18 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     gap: 0.35rem;
 }
 
-/* ── Zoekbalk ── */
-.bookmarks-list-search-row {
-    padding: 0.4rem 0.75rem 0.5rem;
-    border-top: 1px solid var(--border-primary);
+/* ── Filter row (shared config-filter-field) ── */
+.bookmarks-list-controls-row--filter {
+    /* padding + border: config-tab-shell.css */
 }
 
-.bookmarks-search-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.bookmarks-search-icon {
-    position: absolute;
-    left: 0.5rem;
-    width: 0.85rem;
-    height: 0.85rem;
-    color: var(--text-tertiary);
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    pointer-events: none;
-    flex-shrink: 0;
-}
-
-.bookmarks-search-input {
-    width: 100%;
-    padding: 0.32rem 2rem 0.32rem 1.85rem;
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--font-size-controls);
-    transition: border-color 0.15s ease;
-    box-sizing: border-box;
-}
-
-.bookmarks-search-input:focus {
-    outline: none;
-    border-color: var(--text-secondary);
-}
-
-.bookmarks-search-input::-webkit-search-cancel-button {
-    display: none;
-}
-
-.bookmarks-search-clear {
-    position: absolute;
-    right: 0.35rem;
-    background: none;
+.bookmarks-tab-surface .bookmarks-splitview-list {
     border: none;
-    padding: 0.15rem 0.3rem;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    font-size: 0.75rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
 }
 
-.bookmarks-search-clear:hover {
-    color: var(--text-primary);
+.bookmarks-tab-surface .bookmarks-splitview-detail {
+    border: none;
+    background: transparent;
 }
 
 /* ── Bulk toolbar ── */

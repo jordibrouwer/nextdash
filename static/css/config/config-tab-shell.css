@@ -202,17 +202,24 @@ html:has(#config-main) #config-main :is(
     display: block;
     justify-content: unset;
     padding: 0;
-    border: 1px solid var(--border-primary);
-    border-bottom: none;
     background: var(--config-surface-toolbar);
+}
+
+.config-tab-toolbar--bookmarks.config-tab-toolbar--in-surface {
+    border: none;
 }
 
 .config-tab-toolbar--bookmarks .bookmarks-list-controls-row {
     padding: 0.6rem 0.75rem;
 }
 
-.config-tab-toolbar--bookmarks .bookmarks-list-search-row {
-    padding: 0 0.75rem 0.6rem;
+.config-tab-toolbar--bookmarks .bookmarks-list-controls-row--filter {
+    padding-top: 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-tab-surface .config-tab-toolbar--bookmarks .bookmarks-list-controls-row--filter {
+    border-top-color: color-mix(in srgb, var(--border-primary) 40%, transparent);
 }
 
 .stats-filter-wrap {
