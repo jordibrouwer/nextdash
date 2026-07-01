@@ -1362,11 +1362,11 @@
                                     </div>
                                 </details>
                             </div>
-                            <div class="bookmarks-list-search-row">
-                                <div class="bookmarks-search-wrap">
-                                    <svg class="bookmarks-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-                                    <input type="search" id="bookmarks-search" class="bookmarks-search-input" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
-                                    <button type="button" id="bookmarks-search-clear" class="bookmarks-search-clear" aria-label="Clear search" hidden>✕</button>
+                            <div class="bookmarks-list-controls-row bookmarks-list-controls-row--filter">
+                                <div class="bookmarks-filter-wrap config-filter-field config-filter-field--wide">
+                                    <label class="visually-hidden" for="bookmarks-search" data-i18n="config.filterBookmarks">Filter bookmarks</label>
+                                    <input type="search" id="bookmarks-search" class="config-filter-input bookmarks-search-input" data-i18n-placeholder="config.filterBookmarks" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
+                                    <button type="button" id="bookmarks-search-clear" class="config-filter-clear bookmarks-search-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
                                 </div>
                             </div>
                         </div>
@@ -2459,7 +2459,7 @@
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
-    <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
+    <script src="/static/js/health-badge-utils.js?v=health-badge-count-only-1"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
     <script src="/static/js/config.js?v=config-save-toast-1"></script>

@@ -981,15 +981,15 @@ body {
 
 .health-badge {
     position: absolute;
-    top: -0.6em;
-    right: -0.8em;
+    top: -0.45em;
+    right: -0.55em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.3em;
-    height: 1.3em;
-    padding: 0 0.3em;
-    font-size: 0.58em;
+    min-width: 1.15em;
+    height: 1.15em;
+    padding: 0 0.25em;
+    font-size: 0.62em;
     font-weight: var(--font-weight-bold);
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -998,22 +998,12 @@ body {
     background: var(--accent-error);
     pointer-events: none;
     z-index: 1;
-}
-
-.health-badge--labeled {
-    position: static;
-    min-width: 0;
-    height: auto;
-    padding: 0.1em 0.45em;
-    font-size: 0.72em;
-    font-weight: var(--font-weight-black);
-    text-transform: lowercase;
-    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .health-badge-warn {
     background: var(--accent-warning);
-    color: #000;
+    color: var(--text-on-warning, #000);
 }
 
 /* Dashboard Grid */

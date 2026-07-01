@@ -29,12 +29,8 @@
         const badge = document.createElement('span');
         const n = count > 99 ? '99+' : String(count);
         const isBroken = type === 'broken';
-        badge.className = isBroken
-            ? 'health-badge health-badge--labeled'
-            : 'health-badge health-badge-warn health-badge--labeled';
-        const brokenLabel = t(language, 'dashboard.healthBrokenShort', 'broken');
-        const warnLabel = t(language, 'dashboard.healthWarnShort', 'warnings');
-        badge.textContent = `${n} ${isBroken ? brokenLabel : warnLabel}`;
+        badge.className = isBroken ? 'health-badge' : 'health-badge health-badge-warn';
+        badge.textContent = n;
         const ariaKey = isBroken ? 'dashboard.healthBrokenAria' : 'dashboard.healthWarnAria';
         const ariaFallback = isBroken ? '{count} broken bookmarks' : '{count} bookmarks with warnings';
         const ariaTemplate = t(language, ariaKey, ariaFallback);
