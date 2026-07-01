@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.01.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-01",
+  "sections": [
+    {
+      "title": "Config (Classic layout)",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Separate header chrome</strong> — on <em>Classic</em> layout only, the <strong>configuration</strong> title and header links (<em>health</em>, <em>back to dashboard</em>) are separate again from the save row and tab groups. <strong>Save</strong> and tabs each sit in their own card with spacing between them. <em>Modern</em> and <em>Glass</em> keep the unified header + save + tabs card."
+        }
+      ]
+    }
+  ]
+}
