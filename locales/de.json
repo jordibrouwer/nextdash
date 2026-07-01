@@ -2037,6 +2037,7 @@
         "resetConfigTagsTourFailedReload": "Tags-Tour konnte nicht gestartet werden. Seite aktualisieren und erneut versuchen.",
         "resetConfigTagsTourFailedMobile": "Tags-Tour konnte nicht gestartet werden. Breiteres Fenster verwenden oder Mobilgeräte-Emulation deaktivieren.",
         "helpPageIndexTitle": "Schnellzugriff",
+        "helpIntro": "Durchsuche Anleitungen, Tastenkürzel und Fehlerbehebung. Nutze den Filter, um Abschnitte einzugrenzen, oder springe über die Schnelllinks links.",
         "helpFilterLabel": "Hilfe filtern",
         "helpFilterPlaceholder": "Hilfe-Abschnitte filtern…",
         "helpFilterNoResults": "Keine passenden Abschnitte.",

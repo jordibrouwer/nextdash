@@ -694,3 +694,36 @@ test.describe('config stats & backups surface (B9)', () => {
         expect(sectionCount).toBe(1);
     });
 });
+
+test.describe('config help surface (B5)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+        await page.evaluate(() => window.configManager.ui.switchToTab('help'));
+    });
+
+    test('help tab uses shared intro and fused surface shell', async ({ page }) => {
+        await expect(page.locator('.help-tab.config-tab-page')).toBeVisible();
+        await expect(page.locator('.help-tab-intro .config-tab-intro-lead')).toBeVisible();
+        const surface = page.locator('.help-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.help-filter-bar.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('#help-search-filter.config-filter-input')).toBeVisible();
+        await expect(surface.locator('#help-search-clear.config-filter-clear')).toBeAttached();
+        await expect(surface.locator('.help-layout')).toBeVisible();
+        await expect(surface.locator('.help-index')).toBeVisible();
+        await expect(surface.locator('.help-content .help-block').first()).toBeVisible();
+
+        const surfaceCount = await page.evaluate(() => {
+            const tab = document.querySelector('[data-tab-content="help"] .help-tab');
+            return tab?.querySelectorAll(':scope > .config-tab-surface').length ?? 0;
+        });
+        expect(surfaceCount).toBe(1);
+
+        const nestedCards = await page.evaluate(() => {
+            const blocks = [...document.querySelectorAll('.help-tab-surface .help-block')];
+            return blocks.every((el) => getComputedStyle(el).boxShadow === 'none');
+        });
+        expect(nestedCards).toBe(true);
+    });
+});

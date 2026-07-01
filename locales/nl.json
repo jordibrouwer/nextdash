@@ -2047,6 +2047,7 @@
         "resetConfigTagsTourFailedReload": "Kon de Tags-rondleiding niet starten. Vernieuw de pagina en probeer opnieuw.",
         "resetConfigTagsTourFailedMobile": "Kon de Tags-rondleiding niet starten. Gebruik een breder venster of zet mobiele apparaatemulatie in de browser uit.",
         "helpPageIndexTitle": "Snelle links",
+        "helpIntro": "Blader door handleidingen, sneltoetsen en probleemoplossing. Gebruik het filter om secties te verfijnen, of spring via Snelle links links.",
         "helpFilterLabel": "Help filteren",
         "helpFilterPlaceholder": "Help-secties filteren…",
         "helpFilterNoResults": "Geen secties gevonden.",

@@ -2037,6 +2037,7 @@
         "resetConfigTagsTourFailedReload": "Impossible de démarrer la visite Tags. Actualisez la page et réessayez.",
         "resetConfigTagsTourFailedMobile": "Impossible de démarrer la visite Tags. Fenêtre plus large ou désactivez l’émulation mobile.",
         "helpPageIndexTitle": "Liens rapides",
+        "helpIntro": "Parcourez les guides, raccourcis et dépannage. Utilisez le filtre pour affiner les sections, ou sautez via les liens rapides à gauche.",
         "helpFilterLabel": "Filtrer l'aide",
         "helpFilterPlaceholder": "Filtrer les sections d'aide…",
         "helpFilterNoResults": "Aucune section ne correspond.",

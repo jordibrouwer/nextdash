@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b12-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b13-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -2139,12 +2139,21 @@
             </div>
 
             <div class="tab-content" data-tab-content="help">
-            <div>
-                <label class="help-search-label" for="help-search-filter" data-i18n="config.helpFilterLabel">Filter help</label>
-                <input type="search" id="help-search-filter" class="help-search-filter"
-                       data-i18n-placeholder="config.helpFilterPlaceholder"
-                       placeholder="Filter help sections…" autocomplete="off" spellcheck="false">
-                <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
+            <div class="help-tab config-tab-page">
+                <div class="config-tab-intro help-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.helpIntro">Browse setup guides, shortcuts, and troubleshooting. Use the filter to narrow sections, or jump via Quick links on the left.</p>
+                </div>
+                <div class="config-tab-surface help-tab-surface">
+                <div class="help-filter-bar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
+                    <div class="help-filter-wrap config-filter-field config-filter-field--wide">
+                        <label class="visually-hidden" for="help-search-filter" data-i18n="config.helpFilterLabel">Filter help</label>
+                        <input type="search" id="help-search-filter" class="config-filter-input help-search-filter"
+                               data-i18n-placeholder="config.helpFilterPlaceholder"
+                               placeholder="Filter help sections…" autocomplete="off" spellcheck="false">
+                        <button type="button" id="help-search-clear" class="config-filter-clear help-search-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                    </div>
+                    <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
+                </div>
                 <div class="help-layout">
                     <aside class="help-index">
                         <h3 class="section-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
@@ -2399,6 +2408,7 @@
                         <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">jordibrw.nl</a></p>
                     </div>
                 </div>
+                </div>
             </div>
             </div>
 
@@ -2458,7 +2468,7 @@
     <script src="/static/js/config-pages-tour.js"></script>
     <script src="/static/js/config-collections-tour.js"></script>
     <script src="/static/js/config-theme-tour.js"></script>
-    <script src="/static/js/config/config-help-search.js"></script>
+    <script src="/static/js/config/config-help-search.js?v=config-help-surface-b5-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>

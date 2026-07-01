@@ -2056,6 +2056,7 @@
         "resetConfigTagsTourFailedReload": "Could not start the Tags tour. Refresh the page and try again.",
         "resetConfigTagsTourFailedMobile": "Could not start the Tags tour. Use a wider window or disable mobile device emulation in your browser.",
         "helpPageIndexTitle": "Quick links",
+        "helpIntro": "Browse setup guides, shortcuts, and troubleshooting. Use the filter to narrow sections, or jump via Quick links on the left.",
         "helpFilterLabel": "Filter help",
         "helpFilterPlaceholder": "Filter help sections…",
         "helpFilterNoResults": "No sections match your search.",
