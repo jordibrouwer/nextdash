@@ -262,7 +262,20 @@ html:has(#config-main) .config-section.section-controls .config-controls-wrapper
     box-sizing: border-box;
 }
 
+.tab-content.active[data-tab-content="help"] > .help-tab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--config-tab-gap, 0.85rem);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 .tab-content[data-tab-content="stats"] .stats-page-intro {
+    margin-bottom: 0;
+}
+
+.tab-content[data-tab-content="help"] .help-tab-intro {
     margin-bottom: 0;
 }
 
@@ -270,7 +283,8 @@ html:has(#config-main) .config-section.section-controls .config-controls-wrapper
 html:has(#config-main) :is(
     .general-layer-toolbar,
     .general-card,
-    .help-search-filter,
+    .help-filter-bar,
+    .help-filter-wrap,
     .bookmarks-splitview,
     .structure-workspace-card,
     .config-tab-surface,

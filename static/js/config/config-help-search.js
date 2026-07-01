@@ -11,7 +11,7 @@
         return value !== fullKey ? value : fallback;
     }
 
-    function applyFilter(filterInput, emptyEl) {
+    function applyFilter(filterInput, emptyEl, clearBtn) {
         const q = (filterInput?.value || '').toLowerCase().trim();
         const blocks = document.querySelectorAll('.help-content .help-block');
         const navItems = document.querySelectorAll('.help-index ul li');
@@ -33,12 +33,16 @@
         if (emptyEl) {
             emptyEl.hidden = !q || visibleCount > 0;
         }
+        if (clearBtn) {
+            clearBtn.hidden = !filterInput?.value;
+        }
     }
 
     window.ConfigHelpSearch = {
         init(language) {
             const filterInput = document.getElementById('help-search-filter');
             const emptyEl = document.getElementById('help-search-empty');
+            const clearBtn = document.getElementById('help-search-clear');
             if (!filterInput) return;
 
             const placeholder = t(language, 'helpFilterPlaceholder', 'Filter help sections…');
@@ -49,15 +53,25 @@
                 emptyEl.textContent = t(language, 'helpFilterNoResults', 'No sections match your search.');
             }
 
-            filterInput.addEventListener('input', () => applyFilter(filterInput, emptyEl));
+            const runFilter = () => applyFilter(filterInput, emptyEl, clearBtn);
+
+            filterInput.addEventListener('input', runFilter);
 
             filterInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     filterInput.value = '';
-                    applyFilter(filterInput, emptyEl);
+                    runFilter();
                     filterInput.blur();
                 }
             });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    filterInput.value = '';
+                    runFilter();
+                    filterInput.focus();
+                });
+            }
         },
     };
 })();

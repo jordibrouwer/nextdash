@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b9-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b13-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -1159,7 +1159,7 @@
                                             <button type="button" id="reset-config-general-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigGeneralTourButton">General</button>
                                             <button type="button" id="reset-config-bookmarks-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigBookmarksTourButton">Bookmarks</button>
                                             <button type="button" id="reset-config-finders-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigFindersTourButton">Finders</button>
-                                            <button type="button" id="reset-config-stats-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigStatsTourButton">Stats</button>
+                                            <button type="button" id="reset-config-stats-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigStatsTourButton" hidden>Stats</button>
                                             <button type="button" id="reset-config-categories-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigCategoriesTourButton">Categories</button>
                                             <button type="button" id="reset-config-tags-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigTagsTourButton">Tags</button>
                                             <button type="button" id="reset-config-pages-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigPagesTourButton">Pages</button>
@@ -1203,9 +1203,16 @@
                 <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
-                <ul id="pages-list" class="pages-list js-list simple-list" role="list">
-                    <!-- Pages will be loaded here -->
-                </ul>
+                <div id="pages-list-panel" class="pages-list-panel">
+                    <div class="pages-list-header" aria-hidden="true" hidden>
+                        <span class="pages-list-header-label" data-i18n="config.pagesListColPage">Page</span>
+                        <span class="pages-list-header-count" data-i18n="config.tagsListColUsage">Usage</span>
+                        <span class="pages-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
+                    </div>
+                    <ul id="pages-list" class="pages-list js-list simple-list" role="list">
+                        <!-- Pages will be loaded here -->
+                    </ul>
+                </div>
                 </div>
             </div>
             </div>
@@ -1225,9 +1232,16 @@
                         <button type="button" id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
                     </div>
                 </div>
-                <ul id="categories-list" class="categories-list js-list simple-list" role="list">
-                    <!-- Categories will be loaded here -->
-                </ul>
+                <div id="categories-list-panel" class="categories-list-panel">
+                    <div class="categories-list-header" aria-hidden="true" hidden>
+                        <span class="categories-list-header-label" data-i18n="config.categoriesListColCategory">Category</span>
+                        <span class="categories-list-header-count" data-i18n="config.tagsListColUsage">Usage</span>
+                        <span class="categories-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
+                    </div>
+                    <ul id="categories-list" class="categories-list js-list simple-list" role="list">
+                        <!-- Categories will be loaded here -->
+                    </ul>
+                </div>
                 </div>
             </div>
             </div>
@@ -2125,12 +2139,21 @@
             </div>
 
             <div class="tab-content" data-tab-content="help">
-            <div>
-                <label class="help-search-label" for="help-search-filter" data-i18n="config.helpFilterLabel">Filter help</label>
-                <input type="search" id="help-search-filter" class="help-search-filter"
-                       data-i18n-placeholder="config.helpFilterPlaceholder"
-                       placeholder="Filter help sections…" autocomplete="off" spellcheck="false">
-                <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
+            <div class="help-tab config-tab-page">
+                <div class="config-tab-intro help-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.helpIntro">Browse setup guides, shortcuts, and troubleshooting. Use the filter to narrow sections, or jump via Quick links on the left.</p>
+                </div>
+                <div class="config-tab-surface help-tab-surface">
+                <div class="help-filter-bar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
+                    <div class="help-filter-wrap config-filter-field config-filter-field--wide">
+                        <label class="visually-hidden" for="help-search-filter" data-i18n="config.helpFilterLabel">Filter help</label>
+                        <input type="search" id="help-search-filter" class="config-filter-input help-search-filter"
+                               data-i18n-placeholder="config.helpFilterPlaceholder"
+                               placeholder="Filter help sections…" autocomplete="off" spellcheck="false">
+                        <button type="button" id="help-search-clear" class="config-filter-clear help-search-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                    </div>
+                    <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
+                </div>
                 <div class="help-layout">
                     <aside class="help-index">
                         <h3 class="section-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
@@ -2385,6 +2408,7 @@
                         <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">jordibrw.nl</a></p>
                     </div>
                 </div>
+                </div>
             </div>
             </div>
 
@@ -2393,7 +2417,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v109"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v110"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2403,7 +2427,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
-    <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-weight-1"></script>
+    <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-unsaved-1"></script>
     <script src="/static/js/config/config-ui.js?v=config-chrome-v5-4"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
@@ -2411,8 +2435,8 @@
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>
     <script src="/static/js/config/config-bookmark-store.js"></script>
-    <script src="/static/js/config/config-pages.js?v=config-domain-1"></script>
-    <script src="/static/js/config/config-categories.js?v=config-domain-1"></script>
+    <script src="/static/js/config/config-pages.js?v=page-usage-bar-1"></script>
+    <script src="/static/js/config/config-categories.js?v=category-usage-bar-1"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
@@ -2427,10 +2451,10 @@
     <script src="/static/js/config/config-settings.js?v=settings-sanitize-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
-    <script src="/static/js/config/config-tab-tours.js?v=config-tab-tours-1"></script>
-    <script src="/static/js/config/config-persistence.js?v=config-save-status-v1"></script>
+    <script src="/static/js/config/config-tab-tours.js?v=config-tab-tours-2"></script>
+    <script src="/static/js/config/config-persistence.js?v=config-unsaved-groups-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=config-structure-context-2"></script>
+    <script src="/static/js/config/config-setup.js?v=config-stats-tour-off-1"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-layer-default-1"></script>
     <script src="/static/js/guided-flow-guard.js?v=guided-flow-v5"></script>
@@ -2444,7 +2468,7 @@
     <script src="/static/js/config-pages-tour.js"></script>
     <script src="/static/js/config-collections-tour.js"></script>
     <script src="/static/js/config-theme-tour.js"></script>
-    <script src="/static/js/config/config-help-search.js"></script>
+    <script src="/static/js/config/config-help-search.js?v=config-help-surface-b5-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>

@@ -69,6 +69,66 @@
         syncGroupFlexWeights();
     }
 
+    /**
+     * @param {object} manager
+     * @returns {Set<string>}
+     */
+    function getDirtyTabs(manager) {
+        const dirty = new Set();
+        if (!manager) return dirty;
+
+        const scope = typeof manager.getPendingChangeScope === 'function'
+            ? manager.getPendingChangeScope()
+            : null;
+        if (!scope) return dirty;
+
+        if (scope.hasSettingsChanges) {
+            dirty.add('general');
+            dirty.add('keyboard');
+        }
+        if (manager.colorsDirty) {
+            dirty.add('colors');
+        }
+        if (scope.hasPagesChanges) {
+            dirty.add('pages');
+        }
+        if (scope.hasCategoriesChanges) {
+            dirty.add('categories');
+        }
+        if (scope.changedBookmarkPageIds?.length) {
+            dirty.add('bookmarks');
+            dirty.add('tags');
+        }
+        if (scope.hasFindersChanges) {
+            dirty.add('finders');
+        }
+        return dirty;
+    }
+
+    /**
+     * Tab + group unsaved dots (C14).
+     * @param {object} [manager]
+     */
+    function syncUnsavedIndicators(manager = window.configManager) {
+        const dirtyTabs = getDirtyTabs(manager);
+        const dirtyGroups = new Set();
+
+        dirtyTabs.forEach((tab) => {
+            const group = getGroupForTab(tab);
+            if (group) dirtyGroups.add(group);
+        });
+
+        document.querySelectorAll('.tab-button[data-tab]').forEach((btn) => {
+            const tab = btn.getAttribute('data-tab');
+            btn.classList.toggle('tab-has-unsaved', Boolean(tab && dirtyTabs.has(tab)));
+        });
+
+        document.querySelectorAll('.config-tab-group[data-tab-group]').forEach((groupEl) => {
+            const group = groupEl.dataset.tabGroup;
+            groupEl.classList.toggle('config-tab-group--unsaved', Boolean(group && dirtyGroups.has(group)));
+        });
+    }
+
     function getGroupBoundaries(filterTabFn) {
         const filter = typeof filterTabFn === 'function' ? filterTabFn : () => true;
         return GROUP_ORDER.reduce((acc, group) => {
@@ -150,5 +210,7 @@
         updateActiveGroup,
         syncGroupVisibility,
         syncGroupFlexWeights,
+        getDirtyTabs,
+        syncUnsavedIndicators,
     };
 }());

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.4 — July 2026](#v202607014--july-2026)
 - [v2026.07.01.3 — July 2026](#v202607013--july-2026)
 - [v2026.07.01.2 — July 2026](#v202607012--july-2026)
 - [v2026.07.01.1 — July 2026](#v202607011--july-2026)
@@ -63,7 +64,31 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest release.)_
+Nothing yet.
+
+---
+
+## v2026.07.01.4 — July 2026
+
+**Config polish (v5 continued)** — Pages and Categories usage columns; Help tab fused surface; unsaved dot on tab group labels; reduced-motion on config chrome; Stats guided tour paused.
+
+### Config
+
+- **new** **Pages usage column** — column headers (Page / Usage / Actions), popularity bar + bookmark count per page, tier styling from relative usage across all pages (`config-pages.js`, `config-lists.css`).
+- **new** **Categories usage column** — same Tags-style usage bar and count as Pages (per-category counts on the selected page).
+- **new** **Help tab surface (B5)** — `config-tab-intro` + `config-tab-surface help-tab-surface`: shared filter toolbar (`config-filter-field`, clear button), Quick links index + help blocks as divided rows inside one card on Classic, Modern, and Glass.
+- **new** **Tab group unsaved dot (C14)** — when a tab in a group has pending changes, the group label shows a dot (e.g. **System ●** when General is dirty); `syncUnsavedIndicators()` in `config-tab-groups.js` / `config-persistence.js`.
+- **fix** **Reduced-motion chrome (C15)** — `prefers-reduced-motion: reduce` disables tab transition animations, scroll-hint pulse, unsaved-badge pulse, and save-status spinner on config chrome (`config-tabs.css`, `config-unsaved-state.css`, `config-save-status.css`).
+- **fix** **Stats guided tour disabled** — `CONFIG_TAB_TOUR_DEFS` stats entry `enabled: false`; **Show Stats tour again** reset button hidden until the tour is re-enabled.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v110` data version and `2026.07-dashboard-release-v87` dashboard release token; `config-surface-b13-1` on `config.css`; `config-help-surface-b5-1` on help CSS/JS and classic/modern-glass surface imports; `config-tab-groups-unsaved-1` on `config-tab-groups.js` / `config-persistence.js`.
+
+### Developer & docs
+
+- **fix** **Playwright** — `config-tab-consistency.spec.js` adds Help surface (B5), group unsaved dot (C14), and reduced-motion chrome (C15); Classic C10 separate-header test retained.
+- **fix** **README, MANUAL, Help locales & What's new** — release notes for **v2026.07.01.4** in EN/NL/DE/FR.
 
 ---
 
@@ -78,6 +103,10 @@ _(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest rel
 ### Cache-bust
 
 - **fix** **Cache-bust** — `config-chrome-classic-separate-2` on `config-save-bar.css`; `whats-new-v109` data version.
+
+### Developer & docs
+
+- **fix** **README & CHANGELOG** — config tab bar v5 section documents Classic header separation (**v2026.07.01.3**); Modern/Glass bookmark row highlight (**v2026.07.01.2**); release references through **v2026.07.01.3**.
 
 ---
 
@@ -97,11 +126,11 @@ _(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest rel
 
 ## v2026.07.01.1 — July 2026
 
-**Config surface parity (v5 continued)** — Classic fused header chrome (C10); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
+**Config surface parity (v5 continued)** — Classic fused header chrome (C10, reverted in **v2026.07.01.3**); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
 
 ### Config surfaces (v5 continued)
 
-- **fix** **Classic unified chrome (C10)** — on `body[data-layout-version="classic"]`, `section-header` + `section-controls` fuse into one chrome card (`config-save-bar.css`, `config-classic-surfaces.css`) with shared border, radius, and shadow — parity with Modern/Glass C9 from **v2026.07.01**.
+- **fix** **Classic unified chrome (C10)** — on `body[data-layout-version="classic"]`, `section-header` + `section-controls` fuse into one chrome card (`config-save-bar.css`, `config-classic-surfaces.css`) with shared border, radius, and shadow — parity with Modern/Glass C9 from **v2026.07.01**. _(Reverted for Classic in **v2026.07.01.3**.)_
 - **fix** **Keyboard list shell (A7)** — `config-keyboard.css` + `config-tab-surface`: filter toolbar (`#keyboard-toolbar.config-tab-toolbar--in-surface`) and `#keyboard-bindings-container.keyboard-body` with divided `.keyboard-binding-row` rows inside one surface; no nested section cards.
 - **fix** **Bookmarks list shell (B2/B4)** — `.bookmarks-tab-surface` wraps Context panel, filters, and split-view; search field uses `config-filter-field` / `config-filter-input` (retired standalone `.bookmarks-search-wrap` styling path).
 - **fix** **Stats fused surface (B9)** — `.stats-tab-surface` wraps filter toolbar (search, **Refresh**, **Export CSV** moved from intro), chip nav, `.stats-layout` index + blocks as divided rows; nested card shadows suppressed on Classic, Modern, and Glass.

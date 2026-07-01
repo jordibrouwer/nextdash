@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.1**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.4**.
 
 ---
 
@@ -92,7 +92,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `1–9` — jump directly to a page tab
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
-- `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress
+- `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category or smart collection and select its first bookmark (hold `G` ~300 ms, or press `G` then a digit; a **quick tap** on `G` opens bookmark shortcuts starting with `G` instead)
 - `G + P` — jump to the first pinned bookmark on the page (hold `G` or `G` then `P`)
@@ -169,7 +169,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
-**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, **Stats**, and **Theme**. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
+**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, and **Theme**. The **Stats** tour is temporarily disabled. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
 
 **Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; promo may appear on hold and retries when blocked by What's new), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismissed promos persist in **`settings.json`** (`discoverabilityState`) and sync across browsers (**v2026.07.01.1**). **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
 
@@ -177,9 +177,11 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Config tab consistency (v2026.06.31)** — list tabs share intro copy, toolbars, filters, and empty states; on **Classic** layout, toolbar + list fuse into one surface card. The breadcrumb row shows tab save mode (**Requires save** / **Auto-save** / **Read-only**) and sub-context on Bookmarks and Categories. **Config → Bookmarks** uses a collapsible **Context** panel (page/category switcher; structure edits on Pages/Categories tabs) that remembers open/closed state. Unified save status beside **Save** replaces the old unsaved badge. Opening `#bookmarks` on a phone shows a desktop-only card instead of a broken editor.
 
-**Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface (parity with Classic). On **Classic** (**v2026.07.01.1**), the same fused header chrome applies. `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
+**Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
 
-**Config surface parity (v2026.07.01.1)** — **Keyboard**, **Bookmarks**, **Stats**, and **Backups** tabs now use the shared `config-tab-surface` list-shell: toolbar + content in one card with divided rows (no nested floating cards). Bookmarks search matches other list-tab filter styling; Stats moves **Refresh**/**Export CSV** into the in-surface toolbar. Health links show a compact count-only badge pill. Dismissed discoverability promos and What's new progress sync via `settings.discoverabilityState` in `settings.json` across browsers.
+**Config surface parity (v2026.07.01.1)** — **Keyboard**, **Bookmarks**, **Stats**, **Backups**, and **Help** tabs use the shared `config-tab-surface` list-shell: toolbar + content in one card with divided rows (no nested floating cards). Bookmarks search matches other list-tab filter styling; Stats moves **Refresh**/**Export CSV** into the in-surface toolbar. Health links show a compact count-only badge pill. Dismissed discoverability promos and What's new progress sync via `settings.discoverabilityState` in `settings.json` across browsers.
+
+**Config polish (v2026.07.01.4)** — **Pages** and **Categories** list tabs show a **Usage** column (Tags-style popularity bar + bookmark count). Unsaved changes show a dot on the tab group label (e.g. **System ●**). Config tab chrome respects `prefers-reduced-motion`. The Stats guided tour is temporarily disabled.
 
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
@@ -220,7 +222,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard; bulk tag-filter move/delete groups rapid toasts into one message
 - **Per-category sort** — **A–Z** and **Rec** chips in each category header (including *Other* and unknown-category blocks); click an active chip again for manual order; `:sort` in the command palette; legacy global sort removed from Config → General
-- **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks)
+- **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks); **Usage** column with popularity bar + bookmark count (Tags-style tier styling)
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
 - Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels even when the inline-edit promo is open; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
@@ -341,7 +343,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.1
+   ./scripts/release-to-main.sh v2026.07.01.4
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).

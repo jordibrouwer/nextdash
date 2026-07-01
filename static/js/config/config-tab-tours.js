@@ -21,6 +21,10 @@
         }
     }
 
+    function isTourEnabled(def) {
+        return def.enabled !== false;
+    }
+
     const CONFIG_TAB_TOUR_DEFS = [
         {
             id: 'general',
@@ -76,6 +80,7 @@
         {
             id: 'stats',
             title: 'Stats',
+            enabled: false,
             statePrefix: 'configStatsTour',
             tourGlobal: 'ConfigStatsTour',
             settingsFlag: 'configStatsTourCompleted',
@@ -415,6 +420,7 @@
 
         scheduleManualTour(id) {
             const def = this.getDef(id);
+            if (!isTourEnabled(def)) return;
             const c = this.config;
             const TourClass = this.getTourClass(def);
             if (typeof TourClass !== 'function') return;
@@ -465,6 +471,9 @@
 
         async maybeStart(id, { force = false } = {}) {
             const def = this.getDef(id);
+            if (!isTourEnabled(def)) {
+                return { ok: false, reason: 'disabled' };
+            }
             const TourClass = this.getTourClass(def);
             const c = this.config;
 
@@ -563,6 +572,7 @@
                 c[`scheduleConfig${title}Tour`] = () => this.schedule(def.id);
                 c[`config${title}TourFailureMessage`] = (reason) => this.failureMessage(def.id, reason);
                 c[`maybeStartConfig${title}Tour`] = (opts) => this.maybeStart(def.id, opts);
+                c[`isConfig${title}TourEnabled`] = () => isTourEnabled(def);
 
                 const isTabActiveName = def.isTabActiveMethod || `isConfig${title}TabActive`;
                 c[isTabActiveName] = () => this.isTabActive(def);

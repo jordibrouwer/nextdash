@@ -26,38 +26,66 @@ code {
     padding-left: 1.5rem;
 }
 
-.help-search-label {
-    display: block;
-    margin: 0 0 0.35rem;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.help-search-filter {
+/* Help tab — fused surface (B5) */
+.help-filter-bar {
+    margin-bottom: 0;
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
-    margin: 0 0 1rem;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
-    color: var(--text-primary);
-    font-family: var(--font-family);
-    font-size: var(--font-size-controls);
-    outline: none;
 }
 
-.help-search-filter:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+.help-tab-surface .help-filter-bar {
+    margin-bottom: 0;
 }
 
-.help-search-filter::placeholder {
-    color: var(--text-tertiary);
+.help-filter-wrap {
+    /* shell: config-tab-shell.css (.config-filter-field) */
+}
+
+.help-tab-surface .help-layout {
+    padding: 0;
+    gap: 0;
+}
+
+.help-tab-surface .help-index {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    padding: 0.75rem;
+    margin: 0;
+    top: 0;
+}
+
+.help-tab-surface .help-content {
+    gap: 0;
+}
+
+.help-tab-surface .help-block {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.help-tab-surface .help-block:last-child {
+    border-bottom: none;
+}
+
+.help-tab-surface .help-block--spotlight {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--accent-primary) 7%, transparent);
+}
+
+.help-tab-surface .help-support-block {
+    border-top: 1px solid var(--border-primary);
 }
 
 .help-search-empty {
-    margin: -0.5rem 0 1rem;
+    margin: 0;
+    flex: 1 1 100%;
+    padding: 0 0.75rem 0.5rem;
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
 }

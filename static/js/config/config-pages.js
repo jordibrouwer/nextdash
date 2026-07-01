@@ -9,14 +9,18 @@ class ConfigPages {
         this._keyboardMoveHandler = null;
     }
 
-    render(pages, generateId, isArchived) {
+    render(pages, generateId, isArchived, getBookmarkCount) {
         const container = document.getElementById('pages-list');
         if (!container) return;
+
+        const listPanel = document.getElementById('pages-list-panel');
+        const header = listPanel?.querySelector('.pages-list-header');
 
         container.innerHTML = '';
 
         const list = Array.isArray(pages) ? pages : [];
         if (list.length === 0) {
+            if (header) header.hidden = true;
             const hint = document.createElement('li');
             hint.className = 'pages-list-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'listitem');
@@ -29,8 +33,32 @@ class ConfigPages {
             return;
         }
 
+        if (header) header.hidden = false;
+
+        const resolveCount =
+            typeof getBookmarkCount === 'function'
+                ? getBookmarkCount
+                : (id) => window.configManager?.getPageBookmarkCount?.(id) ?? 0;
+
+        const counts = list.map((page) => resolveCount(page.id));
+        const maxCount = counts.length ? Math.max(...counts) : 0;
+        const minCount = counts.length ? Math.min(...counts) : maxCount;
+
         list.forEach((page, index) => {
-            container.appendChild(this.createPageElement(page, index, list, generateId, isArchived));
+            const count = counts[index];
+            const scale =
+                typeof ConfigTags !== 'undefined'
+                    ? ConfigTags.scaleForCount(count, minCount, maxCount)
+                    : maxCount <= 0
+                      ? 0.5
+                      : count / maxCount;
+            const tierClass =
+                typeof ConfigTags !== 'undefined'
+                    ? ConfigTags.listTierClassForScale(scale)
+                    : '';
+            container.appendChild(
+                this.createPageElement(page, index, list, isArchived, count, scale, tierClass)
+            );
         });
     }
 
@@ -58,13 +86,14 @@ class ConfigPages {
         }
     }
 
-    createPageElement(page, index, pages, generateId, isArchived) {
+    createPageElement(page, index, pages, isArchived, count, scale = 0.5, tierClass = '') {
         const li = document.createElement('li');
-        li.className = 'page-item js-item is-idle';
+        li.className = `page-item js-item is-idle${tierClass ? ` ${tierClass}` : ''}`;
         li.setAttribute('role', 'listitem');
         li.setAttribute('data-page-index', String(index));
         li.setAttribute('data-page-id', String(page.id));
         li.tabIndex = 0;
+        li.style.setProperty('--tag-popularity', scale.toFixed(3));
         li._pageRef = page;
 
         const isDefaultPage = Number(page.id) === 1;
@@ -74,15 +103,70 @@ class ConfigPages {
         const labelId = `page-name-label-${page.id}`;
         const inputId = `page-name-${page.id}`;
 
-        li.innerHTML = `
-            <span class="drag-handle js-drag-handle" title="${this.t('config.dragToReorder') || 'Drag to reorder'}" aria-label="${this.t('config.dragToReorder') || 'Drag to reorder'}">⠿</span>
-            <label class="visually-hidden" id="${labelId}" for="${inputId}">${this.t('config.pageNameLabelShort') || 'Page name'}</label>
-            <input type="text" id="${inputId}" name="${inputId}" value="${this.escapePageName(page.name)}" placeholder="${this.t('config.pageNamePlaceholder')}" data-page-id="${page.id}" data-field="name" aria-labelledby="${labelId}">
-            ${archived ? `<span class="page-archived-badge">${this.t('config.archived') || 'archived'}</span>` : ''}
-            <span class="page-item-actions"></span>
-        `;
+        const row = document.createElement('div');
+        row.className = 'page-item-row';
 
-        const actions = li.querySelector('.page-item-actions');
+        const primary = document.createElement('div');
+        primary.className = 'page-item-primary';
+
+        const dragLabel = this.t('config.dragToReorder') || 'Drag to reorder';
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'drag-handle js-drag-handle';
+        dragHandle.title = dragLabel;
+        dragHandle.setAttribute('aria-label', dragLabel);
+        dragHandle.textContent = '⠿';
+
+        const nameLabel = document.createElement('label');
+        nameLabel.className = 'visually-hidden';
+        nameLabel.id = labelId;
+        nameLabel.setAttribute('for', inputId);
+        nameLabel.textContent = this.t('config.pageNameLabelShort') || 'Page name';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.id = inputId;
+        nameInput.name = inputId;
+        nameInput.value = page.name || '';
+        nameInput.placeholder = this.t('config.pageNamePlaceholder') || '';
+        nameInput.dataset.pageId = page.id;
+        nameInput.dataset.field = 'name';
+        nameInput.setAttribute('aria-labelledby', labelId);
+
+        primary.appendChild(dragHandle);
+        primary.appendChild(nameLabel);
+        primary.appendChild(nameInput);
+
+        if (archived) {
+            const archivedBadge = document.createElement('span');
+            archivedBadge.className = 'page-archived-badge';
+            archivedBadge.textContent = this.t('config.archived') || 'archived';
+            primary.appendChild(archivedBadge);
+        }
+
+        row.appendChild(primary);
+
+        const meta = document.createElement('div');
+        meta.className = 'tag-item-meta';
+
+        const popularity = document.createElement('div');
+        popularity.className = 'tag-popularity';
+        popularity.setAttribute('aria-hidden', 'true');
+        const popularityBar = document.createElement('span');
+        popularityBar.className = 'tag-popularity-bar';
+        popularityBar.style.setProperty('--tag-fill', `${Math.round(scale * 100)}%`);
+        popularity.appendChild(popularityBar);
+        meta.appendChild(popularity);
+
+        const countBadge = document.createElement('span');
+        countBadge.className = 'tag-item-count';
+        const countTpl = this.t('config.pageBookmarkCount') || '{count} bookmarks';
+        countBadge.textContent = countTpl.replace('{count}', String(count));
+        countBadge.title = countBadge.textContent;
+        meta.appendChild(countBadge);
+        row.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'page-item-actions';
 
         if (!isDefaultPage) {
             const archiveBtn = document.createElement('button');
@@ -114,8 +198,9 @@ class ConfigPages {
             });
         }
         actions.appendChild(removeBtn);
+        row.appendChild(actions);
+        li.appendChild(row);
 
-        const nameInput = li.querySelector('input[data-field="name"]');
         nameInput.addEventListener('input', (e) => {
             page.name = e.target.value;
         });
@@ -132,13 +217,6 @@ class ConfigPages {
         });
 
         return li;
-    }
-
-    escapePageName(name) {
-        return String(name || '')
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;');
     }
 
     syncPageIndices() {
@@ -234,6 +312,28 @@ class ConfigPagesController {
         return this.c.pagesData.filter((page) => !this.c.isPageArchived(page.id));
     }
 
+    renderPagesList() {
+        this.rebuildPageBookmarkCounts();
+        this.c.pages.render(
+            this.c.pagesData,
+            this.c.generateId.bind(this.c),
+            this.c.isPageArchived.bind(this.c),
+            (id) => this.getPageBookmarkCount(id)
+        );
+    }
+
+    rebuildPageBookmarkCounts() {
+        this.c._pageBookmarkCounts = {};
+        (this.c.allBookmarksData || []).forEach((bookmark) => {
+            const pageId = Number(bookmark?.pageId) || 1;
+            this.c._pageBookmarkCounts[pageId] = (this.c._pageBookmarkCounts[pageId] || 0) + 1;
+        });
+    }
+
+    getPageBookmarkCount(pageId) {
+        return this.c._pageBookmarkCounts?.[Number(pageId)] || 0;
+    }
+
     async addPage(options = {}) {
         let pageName = (options.pageName || '').trim();
         let templateId = options.templateId || 'blank';
@@ -256,7 +356,7 @@ class ConfigPagesController {
             console.error('Error creating new page:', error);
         }
         
-        this.c.pages.render(this.c.pagesData, this.c.generateId.bind(this.c), this.c.isPageArchived.bind(this.c));
+        this.renderPagesList();
         this.c.pages.renderPageSelector(this.c.getVisiblePages(), newPage.id);
         this.c.pages.initReorder(this.c.pagesData, (newPages) => this.c.handlePagesReordered(newPages));
     
@@ -335,7 +435,7 @@ class ConfigPagesController {
                 this.c.originalPagesData.splice(origIndex, 1);
             }
     
-            this.c.pages.render(this.c.pagesData, this.c.generateId.bind(this.c), this.c.isPageArchived.bind(this.c));
+            this.renderPagesList();
             this.c.pages.renderPageSelector(this.c.getVisiblePages(), 1);
             this.c.pages.initReorder(this.c.pagesData, (newPages) => this.c.handlePagesReordered(newPages));
             
@@ -411,7 +511,7 @@ class ConfigPagesController {
         const order = [...this.c.pagesData];
         [order[index], order[swap]] = [order[swap], order[index]];
         this.c.pagesData = order;
-        this.c.pages.render(this.c.pagesData, this.c.generateId.bind(this.c), this.c.isPageArchived.bind(this.c));
+        this.renderPagesList();
         this.c.pages.initReorder(this.c.pagesData, (newPages) => this.c.handlePagesReordered(newPages));
         const focusEl = document.querySelector(`.page-item[data-page-id="${targetId}"]`);
         focusEl?.focus?.();
@@ -535,7 +635,7 @@ class ConfigPagesController {
 
     renderPagesTab() {
         this.c.pagesData = this.c.applyPagesNormalization(this.c.pagesData);
-        this.c.pages.render(this.c.pagesData, this.c.generateId.bind(this.c), this.c.isPageArchived.bind(this.c));
+        this.renderPagesList();
         this.c.pages.initReorder(this.c.pagesData, (newPages) => this.c.handlePagesReordered(newPages));
     }
 
@@ -593,7 +693,7 @@ class ConfigPagesController {
 
     installPublicMethods() {
         const c = this.config;
-        for (const name of ['handlePagesReordered', 'getArchivedPageIds', 'isPageArchived', 'getVisiblePages', 'addPage', 'removePage', 'removePageById', 'archivePage', 'archivePageById', 'movePageById', 'restoreArchivedPage', 'getPageTemplateDefinition', 'promptNewPageDetails', 'normalizePagesData', 'applyPagesNormalization', 'renderPagesTab', 'reloadPagesFromServerIfNeeded', 'resolvePageId', 'refreshStructureDependentUI']) {
+        for (const name of ['handlePagesReordered', 'getArchivedPageIds', 'isPageArchived', 'getVisiblePages', 'addPage', 'removePage', 'removePageById', 'archivePage', 'archivePageById', 'movePageById', 'restoreArchivedPage', 'getPageTemplateDefinition', 'promptNewPageDetails', 'normalizePagesData', 'applyPagesNormalization', 'renderPagesTab', 'renderPagesList', 'rebuildPageBookmarkCounts', 'getPageBookmarkCount', 'reloadPagesFromServerIfNeeded', 'resolvePageId', 'refreshStructureDependentUI']) {
             c[name] = (...args) => this[name](...args);
         }
     }

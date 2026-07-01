@@ -125,3 +125,23 @@ body.colors-is-dirty .theme-colors-toolbar {
     box-shadow: 0 0 0 1px var(--background-primary);
     pointer-events: none;
 }
+
+/* Group label dot when any tab in the group is dirty (C14) */
+.config-tab-group--unsaved .config-tab-group-label::after {
+    content: '';
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-inline-start: 0.3rem;
+    border-radius: 50%;
+    background: var(--unsaved-dot);
+    vertical-align: 0.08em;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--background-secondary) 85%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .unsaved-badge,
+    .btn-success.has-unsaved {
+        animation: none !important;
+    }
+}

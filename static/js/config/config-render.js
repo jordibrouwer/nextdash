@@ -12,7 +12,13 @@ class ConfigRenderController {
 
     renderConfig() {
         this.c.pagesData = this.c.applyPagesNormalization(this.c.pagesData);
-        this.c.pages.render(this.c.pagesData, this.c.generateId.bind(this.c), this.c.isPageArchived.bind(this.c));
+        this.c.rebuildPageBookmarkCounts?.();
+        this.c.pages.render(
+            this.c.pagesData,
+            this.c.generateId.bind(this.c),
+            this.c.isPageArchived.bind(this.c),
+            (id) => this.c.getPageBookmarkCount?.(id) ?? 0
+        );
         if (this.c.settings && typeof this.c.settings.populateSmartPageSelectors === 'function') {
             this.c.settings.populateSmartPageSelectors(this.c.pagesData, this.c.settingsData);
         }

@@ -341,7 +341,7 @@ class ConfigSetup {
         }
     
         const resetConfigStatsTourBtn = document.getElementById('reset-config-stats-tour-btn');
-        if (resetConfigStatsTourBtn) {
+        if (resetConfigStatsTourBtn && !resetConfigStatsTourBtn.hidden) {
             resetConfigStatsTourBtn.addEventListener('click', async () => {
                 try {
                     window.ConfigStatsTour?.teardownStaleDom?.();
