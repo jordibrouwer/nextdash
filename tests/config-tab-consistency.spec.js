@@ -264,31 +264,36 @@ test.describe('config tab consistency v4 classic surfaces', () => {
         expect(shadow).not.toBe('none');
     });
 
-    test('classic layout fuses header save and tabs into one chrome card (C10)', async ({ page }) => {
+    test('classic layout keeps config header separate from save row and tabs (C10 reverted)', async ({ page }) => {
         const chrome = await page.evaluate(() => {
             const header = document.querySelector('.config-page-shell > .config-section.section-header');
             const controls = document.querySelector('.config-page-shell > .config-section.section-controls');
             const actions = document.querySelector('.config-section.section-controls .config-actions-top');
-            if (!header || !controls || !actions) return null;
+            const tabsWrapper = document.querySelector('.config-section.section-controls .tabs-scroll-wrapper');
+            if (!header || !controls || !actions || !tabsWrapper) return null;
             const hs = getComputedStyle(header);
-            const cs = getComputedStyle(controls);
             const as = getComputedStyle(actions);
+            const ts = getComputedStyle(tabsWrapper);
             const headerRect = header.getBoundingClientRect();
             const controlsRect = controls.getBoundingClientRect();
             return {
-                headerRadiusBottom: hs.borderBottomLeftRadius,
-                controlsRadiusBottom: cs.borderBottomLeftRadius,
-                controlsBoxShadow: cs.boxShadow,
                 seamGap: controlsRect.top - headerRect.bottom,
-                actionsBackground: as.backgroundColor,
+                headerBoxShadow: hs.boxShadow,
+                headerBorderWidth: hs.borderTopWidth,
+                actionsBoxShadow: as.boxShadow,
+                actionsBorderWidth: as.borderTopWidth,
+                tabsBoxShadow: ts.boxShadow,
+                tabsMarginTop: ts.marginTop,
             };
         });
         expect(chrome).not.toBeNull();
-        expect(chrome.seamGap).toBeLessThanOrEqual(1);
-        expect(chrome.headerRadiusBottom).toBe('0px');
-        expect(parseFloat(chrome.controlsRadiusBottom)).toBeGreaterThan(0);
-        expect(chrome.controlsBoxShadow).not.toBe('none');
-        expect(chrome.actionsBackground).toBe('rgba(0, 0, 0, 0)');
+        expect(chrome.seamGap).toBeGreaterThan(4);
+        expect(chrome.headerBoxShadow).toBe('none');
+        expect(parseFloat(chrome.headerBorderWidth)).toBe(0);
+        expect(chrome.actionsBoxShadow).not.toBe('none');
+        expect(parseFloat(chrome.actionsBorderWidth)).toBeGreaterThan(0);
+        expect(chrome.tabsBoxShadow).not.toBe('none');
+        expect(parseFloat(chrome.tabsMarginTop)).toBeGreaterThan(0);
     });
 
     test('structure pages list items stay within column width', async ({ page }) => {

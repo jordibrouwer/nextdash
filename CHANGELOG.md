@@ -63,7 +63,18 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest release.)_
+**Config structure lists** — Pages and Categories tabs match the Tags usage column; Stats guided tour paused; Classic C10 Playwright test updated.
+
+### Config
+
+- **new** **Pages usage column** — column headers (Page / Usage / Actions), popularity bar + bookmark count per page, tier styling from relative usage across all pages (`config-pages.js`, `config-lists.css`).
+- **new** **Categories usage column** — same Tags-style usage bar and count as Pages (per-category counts on the selected page).
+- **fix** **Stats guided tour disabled** — `CONFIG_TAB_TOUR_DEFS` stats entry `enabled: false`; **Show Stats tour again** reset button hidden until the tour is re-enabled.
+
+### Developer & docs
+
+- **fix** **Playwright C10** — `config-tab-consistency.spec.js` asserts Classic keeps the configuration header separate from the save row and grouped tabs (**v2026.07.01.3**), not fused chrome.
+- **fix** **README, MANUAL & Help tab** — Classic header separation (**v2026.07.01.3**); Pages/Categories usage columns; Stats tour temporarily off in guided-tour lists.
 
 ---
 
