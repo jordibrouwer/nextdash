@@ -141,7 +141,8 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .finders-body,
 .config-tab-surface > .collections-list,
 .config-tab-surface > .tags-body,
-.config-tab-surface > .config-empty-state {
+.config-tab-surface > .config-empty-state,
+.config-tab-surface > .keyboard-body {
     border: none;
     border-radius: 0;
     background: transparent;

@@ -7,11 +7,16 @@
     /* layout: config-tab-shell.css (.config-tab-page) */
 }
 
+.keyboard-toolbar.config-tab-toolbar {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .keyboard-preset-toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1.25rem;
 }
 
 .keyboard-import-label {
@@ -23,50 +28,66 @@
     display: none;
 }
 
-#keyboard-bindings-container {
+.keyboard-body {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border-primary);
+    background: var(--config-surface-list);
 }
 
-.keyboard-section {
-    margin-bottom: 1.5rem;
+.config-tab-surface > .keyboard-body {
+    border: none;
+    background: transparent;
 }
 
-.keyboard-section:last-of-type {
-    margin-bottom: 0;
-}
-
-.keyboard-section-title {
-    margin: 0 0 1rem 0;
-    font-size: 1.05rem;
-    font-weight: 600;
-    opacity: 0.9;
+.keyboard-section-header {
+    padding: 0.45rem 0.75rem;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.9rem;
+    color: var(--text-tertiary);
+    background: var(--config-surface-toolbar, var(--background-secondary));
+    border-bottom: 1px solid var(--border-primary);
+    user-select: none;
 }
 
-.keyboard-bindings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+.keyboard-section-note {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .keyboard-binding-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
-    background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
-    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.08));
-    border-radius: 6px;
-    gap: 1.5rem;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 2.5rem;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.12s ease;
+}
+
+.keyboard-binding-row:hover {
+    background: var(--config-row-hover);
+}
+
+.keyboard-binding-row:last-child {
+    border-bottom: none;
 }
 
 .binding-description {
     flex: 1;
-    font-size: 0.95rem;
+    min-width: 0;
+    font-size: var(--font-size-text, 0.95rem);
     font-weight: 500;
 }
 
@@ -125,29 +146,6 @@
     }
 }
 
-.keyboard-reset-all-section {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
-}
-
-.keyboard-section--fixed {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.12));
-}
-
-.keyboard-fixed-note {
-    margin: -0.35rem 0 1rem;
-    font-size: 0.88rem;
-    opacity: 0.75;
-    line-height: 1.45;
-}
-
-.keyboard-binding-row--fixed {
-    background: var(--bg-primary, rgba(255, 255, 255, 0.02));
-}
-
 .binding-key--fixed {
     background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
     border-color: var(--border-primary, rgba(255, 255, 255, 0.15));
@@ -184,12 +182,13 @@
     .keyboard-binding-row {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .binding-key-display {
         width: 100%;
         justify-content: flex-start;
+        min-width: 0;
     }
 
     .binding-edit-btn,

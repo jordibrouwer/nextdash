@@ -7,7 +7,7 @@ async function waitForConfigKeyboardTab(page) {
     await page.waitForSelector('.general-layout', { timeout: 20_000 });
     await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
     await page.waitForSelector('[data-tab-content="keyboard"].active', { timeout: 10_000 });
-    await page.waitForSelector('#keyboard-bindings-container .keyboard-section--fixed', { timeout: 15_000 });
+    await page.waitForSelector('#keyboard-bindings-container .keyboard-binding-row--fixed', { timeout: 15_000 });
 }
 
 test.describe('config keyboard tab', () => {
@@ -17,10 +17,11 @@ test.describe('config keyboard tab', () => {
     });
 
     test('lists fixed sections and rebindable shortcuts', async ({ page }) => {
-        await expect(page.locator('.keyboard-section--fixed')).toHaveCount(4);
+        await expect(page.locator('.keyboard-section-header')).toHaveCount(8);
         await expect(page.locator('.keyboard-binding-row--fixed').count()).resolves.toBeGreaterThan(15);
         await expect(page.locator('.keyboard-binding-row:not(.keyboard-binding-row--fixed)')).not.toHaveCount(0);
         await expect(page.locator('.binding-edit-btn').first()).toBeVisible();
+        await expect(page.locator('[data-tab-content="keyboard"] .config-tab-surface')).toBeVisible();
     });
 
     test('rebind shows conflict for another default key', async ({ page }) => {

@@ -371,6 +371,31 @@ test.describe('config tab surface box model', () => {
         await expectSurfaceToolbarFits(page, 'finders');
     });
 
+    test('keyboard tab toolbar fits inside surface card', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
+        await expectSurfaceToolbarFits(page, 'keyboard');
+    });
+
+    test('keyboard tab uses list-shell surface', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
+        const shell = await page.evaluate(() => {
+            const surface = document.querySelector('[data-tab-content="keyboard"] .config-tab-surface');
+            const toolbar = surface?.querySelector('#keyboard-toolbar.config-tab-toolbar--in-surface');
+            const body = surface?.querySelector('#keyboard-bindings-container.keyboard-body');
+            const firstRow = body?.querySelector('.keyboard-binding-row');
+            if (!surface || !toolbar || !body || !firstRow) return null;
+            const rowStyle = getComputedStyle(firstRow);
+            return {
+                hasSurface: true,
+                rowBackground: rowStyle.backgroundColor,
+                rowBorderRadius: rowStyle.borderRadius,
+            };
+        });
+        expect(shell).not.toBeNull();
+        expect(shell?.hasSurface).toBe(true);
+        expect(shell?.rowBorderRadius).toBe('0px');
+    });
+
     test('tags tab toolbar fits inside surface card', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('tags'));
         await expectSurfaceToolbarFits(page, 'tags');

@@ -27,7 +27,8 @@ body[data-layout-version="modern"] .config-tab-surface > :is(
     .collections-list,
     .tags-body,
     .config-empty-state,
-    .bookmarks-splitview
+    .bookmarks-splitview,
+    .keyboard-body
 ),
 body[data-layout-version="glass"] .config-tab-surface > :is(
     .simple-list,
@@ -35,7 +36,8 @@ body[data-layout-version="glass"] .config-tab-surface > :is(
     .collections-list,
     .tags-body,
     .config-empty-state,
-    .bookmarks-splitview
+    .bookmarks-splitview,
+    .keyboard-body
 ) {
     border: none;
     border-radius: 0;
@@ -86,6 +88,7 @@ body[data-layout-version="modern"] .config-tab-surface :is(
     .simple-toolbar,
     .tags-toolbar,
     .collections-toolbar,
+    .keyboard-toolbar,
     .simple-list,
     .collections-list,
     .tags-body,
@@ -94,6 +97,7 @@ body[data-layout-version="modern"] .config-tab-surface :is(
     .tags-list,
     .finders-body,
     .finders-list,
+    .keyboard-body,
     .config-empty-state
 ),
 body[data-layout-version="glass"] .config-tab-surface :is(
@@ -101,6 +105,7 @@ body[data-layout-version="glass"] .config-tab-surface :is(
     .simple-toolbar,
     .tags-toolbar,
     .collections-toolbar,
+    .keyboard-toolbar,
     .simple-list,
     .collections-list,
     .tags-body,
@@ -109,6 +114,7 @@ body[data-layout-version="glass"] .config-tab-surface :is(
     .tags-list,
     .finders-body,
     .finders-list,
+    .keyboard-body,
     .config-empty-state
 ) {
     border: none;
@@ -139,7 +145,9 @@ body[data-layout-version="glass"] .config-tab-surface .tags-cloud {
 }
 
 body[data-layout-version="modern"] .config-tab-surface .tags-list-header,
-body[data-layout-version="glass"] .config-tab-surface .tags-list-header {
+body[data-layout-version="glass"] .config-tab-surface .tags-list-header,
+body[data-layout-version="modern"] .config-tab-surface .keyboard-section-header,
+body[data-layout-version="glass"] .config-tab-surface .keyboard-section-header {
     background: color-mix(in srgb, var(--layout-surface-inset) 55%, var(--layout-surface));
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
 }

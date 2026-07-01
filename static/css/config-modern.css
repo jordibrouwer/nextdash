@@ -781,17 +781,6 @@ body[data-layout-version="modern"] .help-support-block {
 
 /* ─── Keyboard tab ──────────────────────────────────────────────────────────── */
 
-body[data-layout-version="modern"] .keyboard-binding-row {
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    border-radius: var(--layout-radius-sm);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .keyboard-binding-row--fixed {
-    background: var(--layout-surface-inset);
-}
-
 body[data-layout-version="modern"] .binding-key {
     background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
     border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));

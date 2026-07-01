@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-surface-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
-    <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-3">
+    <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-list-shell-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css?v=collections-surface-1">
@@ -2112,7 +2112,10 @@
                 <div class="config-tab-intro">
                     <p class="config-tab-intro-lead keyboard-intro" data-i18n="config.keyboardIntro">Customize keyboard shortcuts. Click "Rebind" next to any shortcut and press the key you want to use. Press Escape to cancel.</p>
                 </div>
-                <div id="keyboard-bindings-container"></div>
+                <div class="config-tab-surface">
+                    <div id="keyboard-toolbar" class="keyboard-toolbar config-tab-toolbar config-tab-toolbar--in-surface"></div>
+                    <div id="keyboard-bindings-container" class="keyboard-body" role="list"></div>
+                </div>
             </div>
             </div>
 
@@ -2447,7 +2450,7 @@
     <script src="/static/js/dashboard-promo-registry.js?v=promo-restore-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
-    <script src="/static/js/config/config-keyboard.js?v=config-tab-groups-kbd-1"></script>
+    <script src="/static/js/config/config-keyboard.js?v=keyboard-list-shell-1"></script>
     <script src="/static/js/config/config-tags.js?v=tags-wordcloud-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v=search-commands-new-2"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
