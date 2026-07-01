@@ -37,6 +37,25 @@
         });
     }
 
+    function countVisibleTabsInGroup(groupEl) {
+        return Array.from(groupEl.querySelectorAll('.tab-button')).filter((btn) => {
+            if (btn.hidden) return false;
+            const style = window.getComputedStyle(btn);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        }).length;
+    }
+
+    function syncGroupFlexWeights() {
+        document.querySelectorAll('.config-tab-group[data-tab-group]').forEach((groupEl) => {
+            if (groupEl.hidden) {
+                groupEl.style.removeProperty('--config-tab-group-weight');
+                return;
+            }
+            const weight = Math.max(1, countVisibleTabsInGroup(groupEl));
+            groupEl.style.setProperty('--config-tab-group-weight', String(weight));
+        });
+    }
+
     function syncGroupVisibility() {
         document.querySelectorAll('.config-tab-group[data-tab-group]').forEach((groupEl) => {
             const tabs = groupEl.querySelectorAll('.tab-button');
@@ -47,6 +66,7 @@
             });
             groupEl.hidden = !hasVisible;
         });
+        syncGroupFlexWeights();
     }
 
     function getGroupBoundaries(filterTabFn) {
@@ -129,5 +149,6 @@
         getJumpTabForGroup,
         updateActiveGroup,
         syncGroupVisibility,
+        syncGroupFlexWeights,
     };
 }());

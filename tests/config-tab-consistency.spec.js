@@ -463,6 +463,25 @@ test.describe('config tab groups (v5)', () => {
         await expect(page.locator('.config-tab-group[data-tab-group="help"]')).toBeVisible();
     });
 
+    test('tab groups use proportional width by visible tab count', async ({ page }) => {
+        const widths = await page.evaluate(() => {
+            const groupWidth = (id) => (
+                document.querySelector(`.config-tab-group[data-tab-group="${id}"]`)?.getBoundingClientRect().width || 0
+            );
+            return {
+                system: groupWidth('system'),
+                dashboard: groupWidth('dashboard'),
+                extras: groupWidth('extras'),
+                help: groupWidth('help'),
+            };
+        });
+
+        expect(widths.system).toBeGreaterThan(widths.dashboard * 1.05);
+        expect(widths.dashboard).toBeGreaterThan(widths.help * 1.5);
+        expect(widths.system / widths.help).toBeGreaterThan(4);
+        expect(widths.system / widths.help).toBeLessThan(6);
+    });
+
     test('chrome rows match general panel content width', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('general'));
         await page.evaluate(() => window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false }));

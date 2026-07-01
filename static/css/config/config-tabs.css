@@ -218,9 +218,25 @@ body.no-animations .tab-content {
 .config-tab-group {
     display: flex;
     flex-direction: column;
-    flex: 1 1 0;
+    flex: var(--config-tab-group-weight, 1) 1 0;
     min-width: min-content;
     border-inline-end: 1px solid var(--border-primary);
+}
+
+.config-tab-group[data-tab-group="system"] {
+    --config-tab-group-weight: 5;
+}
+
+.config-tab-group[data-tab-group="dashboard"] {
+    --config-tab-group-weight: 3;
+}
+
+.config-tab-group[data-tab-group="extras"] {
+    --config-tab-group-weight: 3;
+}
+
+.config-tab-group[data-tab-group="help"] {
+    --config-tab-group-weight: 1;
 }
 
 .config-tab-group:last-child {
