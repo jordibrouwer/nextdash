@@ -414,9 +414,11 @@ class ConfigKeyboard {
         });
     }
 
-    renderPresetToolbar(container, manager) {
-        const toolbar = document.createElement('div');
-        toolbar.className = 'keyboard-preset-toolbar';
+    renderPresetToolbar(toolbar, manager) {
+        toolbar.innerHTML = '';
+
+        const tools = document.createElement('div');
+        tools.className = 'config-tab-toolbar-tools keyboard-preset-toolbar';
 
         const exportBtn = document.createElement('button');
         exportBtn.type = 'button';
@@ -447,21 +449,101 @@ class ConfigKeyboard {
         });
         importLabel.appendChild(importInput);
 
-        toolbar.appendChild(exportBtn);
-        toolbar.appendChild(importLabel);
-        container.appendChild(toolbar);
+        tools.appendChild(exportBtn);
+        tools.appendChild(importLabel);
+        toolbar.appendChild(tools);
+
+        const resetAllBtn = document.createElement('button');
+        resetAllBtn.type = 'button';
+        resetAllBtn.className = 'btn btn-danger btn-small keyboard-reset-all-btn';
+        resetAllBtn.textContent = this.label('config.keyboardResetAll', 'Reset all to defaults');
+        resetAllBtn.addEventListener('click', () => {
+            if (confirm(this.label('config.keyboardResetAllConfirm', 'Reset all keyboard shortcuts to defaults?'))) {
+                this.customBindings = {};
+                this.refresh(manager);
+                this.markDirty();
+            }
+        });
+        toolbar.appendChild(resetAllBtn);
+    }
+
+    renderSectionHeader(container, title) {
+        const header = document.createElement('div');
+        header.className = 'keyboard-section-header';
+        header.textContent = title;
+        container.appendChild(header);
+        return header;
+    }
+
+    renderSectionNote(container, text) {
+        if (!text) {
+            return;
+        }
+        const note = document.createElement('p');
+        note.className = 'keyboard-section-note';
+        note.textContent = text;
+        container.appendChild(note);
+    }
+
+    renderRebindableRow(container, binding) {
+        const row = document.createElement('div');
+        row.className = 'keyboard-binding-row';
+        row.setAttribute('role', 'listitem');
+
+        const descDiv = document.createElement('div');
+        descDiv.className = 'binding-description';
+        descDiv.textContent = this.bindingDescription(binding);
+
+        const keyDiv = document.createElement('div');
+        keyDiv.className = 'binding-key-display';
+
+        const currentKey = this.getEffectiveKey(binding.id);
+        const isCustom = this.customBindings[binding.id] !== undefined;
+
+        const keySpan = document.createElement('span');
+        keySpan.className = `binding-key ${isCustom ? 'custom' : ''}`;
+        keySpan.textContent = this.formatKeyForDisplay(currentKey);
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-secondary btn-small binding-edit-btn';
+        editBtn.textContent = this.label('config.keyboardEdit', 'Rebind');
+        editBtn.addEventListener('click', () => {
+            this.startListeningForKey(binding.id, keySpan, editBtn);
+        });
+
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.className = 'btn btn-secondary btn-small binding-reset-btn';
+        resetBtn.textContent = this.label('config.keyboardReset', 'Reset');
+        resetBtn.style.display = isCustom ? 'inline-block' : 'none';
+        resetBtn.addEventListener('click', () => {
+            delete this.customBindings[binding.id];
+            keySpan.textContent = this.formatKeyForDisplay(binding.key);
+            keySpan.classList.remove('custom');
+            resetBtn.style.display = 'none';
+            this.markDirty();
+        });
+
+        keyDiv.appendChild(keySpan);
+        keyDiv.appendChild(editBtn);
+        keyDiv.appendChild(resetBtn);
+
+        row.appendChild(descDiv);
+        row.appendChild(keyDiv);
+        container.appendChild(row);
     }
 
     refresh(manager) {
         this.lastManager = manager;
         this.customBindings = { ...manager.settingsData?.customKeyBindings } || {};
 
+        const toolbar = document.getElementById('keyboard-toolbar');
         const container = document.getElementById('keyboard-bindings-container');
-        if (!container) return;
+        if (!toolbar || !container) return;
 
+        this.renderPresetToolbar(toolbar, manager);
         container.innerHTML = '';
-
-        this.renderPresetToolbar(container, manager);
 
         this.getFixedBindingGroups().forEach((group) => {
             this.renderFixedSection(container, group);
@@ -477,110 +559,30 @@ class ConfigKeyboard {
         });
 
         categories.forEach((bindings, category) => {
-            const section = document.createElement('section');
-            section.className = 'keyboard-section';
-
-            const title = document.createElement('h4');
-            title.className = 'keyboard-section-title';
-            title.textContent = category;
-            section.appendChild(title);
-
-            const list = document.createElement('div');
-            list.className = 'keyboard-bindings-list';
-
+            this.renderSectionHeader(container, category);
             bindings.forEach((binding) => {
-                const row = document.createElement('div');
-                row.className = 'keyboard-binding-row';
-
-                const descDiv = document.createElement('div');
-                descDiv.className = 'binding-description';
-                descDiv.textContent = this.bindingDescription(binding);
-
-                const keyDiv = document.createElement('div');
-                keyDiv.className = 'binding-key-display';
-
-                const currentKey = this.getEffectiveKey(binding.id);
-                const isCustom = this.customBindings[binding.id] !== undefined;
-
-                const keySpan = document.createElement('span');
-                keySpan.className = `binding-key ${isCustom ? 'custom' : ''}`;
-                keySpan.textContent = this.formatKeyForDisplay(currentKey);
-
-                const editBtn = document.createElement('button');
-                editBtn.type = 'button';
-                editBtn.className = 'btn btn-secondary btn-small binding-edit-btn';
-                editBtn.textContent = this.label('config.keyboardEdit', 'Rebind');
-                editBtn.addEventListener('click', () => {
-                    this.startListeningForKey(binding.id, keySpan, editBtn);
-                });
-
-                const resetBtn = document.createElement('button');
-                resetBtn.type = 'button';
-                resetBtn.className = 'btn btn-secondary btn-small binding-reset-btn';
-                resetBtn.textContent = this.label('config.keyboardReset', 'Reset');
-                resetBtn.style.display = isCustom ? 'inline-block' : 'none';
-                resetBtn.addEventListener('click', () => {
-                    delete this.customBindings[binding.id];
-                    keySpan.textContent = this.formatKeyForDisplay(binding.key);
-                    keySpan.classList.remove('custom');
-                    resetBtn.style.display = 'none';
-                    this.markDirty();
-                });
-
-                keyDiv.appendChild(keySpan);
-                keyDiv.appendChild(editBtn);
-                keyDiv.appendChild(resetBtn);
-
-                row.appendChild(descDiv);
-                row.appendChild(keyDiv);
-                list.appendChild(row);
+                this.renderRebindableRow(container, binding);
             });
-
-            section.appendChild(list);
-            container.appendChild(section);
         });
-
-        const resetAllSection = document.createElement('div');
-        resetAllSection.className = 'keyboard-reset-all-section';
-
-        const resetAllBtn = document.createElement('button');
-        resetAllBtn.type = 'button';
-        resetAllBtn.className = 'btn btn-danger btn-small';
-        resetAllBtn.textContent = this.label('config.keyboardResetAll', 'Reset all to defaults');
-        resetAllBtn.addEventListener('click', () => {
-            if (confirm(this.label('config.keyboardResetAllConfirm', 'Reset all keyboard shortcuts to defaults?'))) {
-                this.customBindings = {};
-                this.refresh(manager);
-                this.markDirty();
-            }
-        });
-
-        resetAllSection.appendChild(resetAllBtn);
-        container.appendChild(resetAllSection);
     }
 
     renderFixedSection(container, group) {
-        const section = document.createElement('section');
-        section.className = 'keyboard-section keyboard-section--fixed';
-
-        const title = document.createElement('h4');
-        title.className = 'keyboard-section-title';
-        title.textContent = this.label(group.titleKey, group.titleFallback);
-        section.appendChild(title);
+        this.renderSectionHeader(
+            container,
+            this.label(group.titleKey, group.titleFallback),
+        );
 
         if (group.noteKey) {
-            const note = document.createElement('p');
-            note.className = 'keyboard-fixed-note';
-            note.textContent = this.label(group.noteKey, group.noteFallback || '');
-            section.appendChild(note);
+            this.renderSectionNote(
+                container,
+                this.label(group.noteKey, group.noteFallback || ''),
+            );
         }
-
-        const list = document.createElement('div');
-        list.className = 'keyboard-bindings-list';
 
         group.bindings.forEach((binding) => {
             const row = document.createElement('div');
             row.className = 'keyboard-binding-row keyboard-binding-row--fixed';
+            row.setAttribute('role', 'listitem');
             row.dataset.settingsSearchTitle = this.label(binding.descriptionKey, binding.descriptionFallback);
 
             const descDiv = document.createElement('div');
@@ -610,11 +612,8 @@ class ConfigKeyboard {
 
             row.appendChild(descDiv);
             row.appendChild(keyDiv);
-            list.appendChild(row);
+            container.appendChild(row);
         });
-
-        section.appendChild(list);
-        container.appendChild(section);
     }
 
     startListeningForKey(bindingId, keySpan, editBtn) {

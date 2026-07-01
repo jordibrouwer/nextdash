@@ -169,6 +169,7 @@ class DashboardData {
             } else {
                 d.settings = serverSettings;
             }
+            window.DiscoverabilityState?.init?.(d.settings.discoverabilityState);
             delete d.settings._sortMigratedPageIds;
 
             if (!Array.isArray(d.settings.smartRecentPageIds)) {

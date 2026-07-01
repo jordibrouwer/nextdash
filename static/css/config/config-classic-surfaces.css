@@ -28,10 +28,47 @@ body[data-layout-version="classic"] .config-tab-surface > .config-empty-state {
     background: transparent;
 }
 
-body[data-layout-version="classic"] .structure-workspace-card {
+body[data-layout-version="classic"] .structure-workspace-card:not(.structure-workspace-in-surface) {
     border-radius: var(--config-surface-radius);
     box-shadow: var(--config-surface-shadow);
     background: var(--config-surface-list);
+}
+
+body[data-layout-version="classic"] .bookmarks-tab-surface > .structure-workspace-in-surface {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+body[data-layout-version="classic"] .bookmarks-tab-surface > .structure-workspace-in-surface .structure-workspace-toggle {
+    background: var(--config-surface-toolbar);
+}
+
+body[data-layout-version="classic"] .stats-tab-surface,
+body[data-layout-version="classic"] .backups-tab-surface {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--config-surface-radius);
+    background: var(--config-surface-list);
+    box-shadow: var(--config-surface-shadow);
+    overflow: hidden;
+}
+
+body[data-layout-version="classic"] .stats-tab-surface .config-tab-toolbar--in-surface,
+body[data-layout-version="classic"] .backups-tab-surface .config-tab-toolbar--in-surface {
+    background: var(--config-surface-toolbar);
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+body[data-layout-version="classic"] .stats-tab-surface .stats-filter-bar,
+body[data-layout-version="classic"] .stats-tab-surface .stats-chip-nav,
+body[data-layout-version="classic"] .stats-tab-surface .stats-block,
+body[data-layout-version="classic"] .stats-tab-surface .stats-index,
+body[data-layout-version="classic"] .backups-tab-surface > .backups-section {
+    border-radius: 0;
+    box-shadow: none;
 }
 
 body[data-layout-version="classic"] .bookmarks-splitview {
@@ -68,18 +105,6 @@ body[data-layout-version="classic"] .bookmarks-splitview-list {
 
 body[data-layout-version="classic"] .bookmarks-splitview-detail {
     border: none;
-}
-
-body[data-layout-version="classic"] .stats-filter-bar,
-body[data-layout-version="classic"] .stats-chip-nav {
-    border-radius: var(--config-surface-radius);
-    box-shadow: var(--config-surface-shadow);
-    background: var(--config-surface-list);
-}
-
-body[data-layout-version="classic"] .stats-block {
-    border-radius: var(--config-surface-radius);
-    box-shadow: var(--config-surface-shadow);
 }
 
 body[data-layout-version="classic"] .collections-tab .collections-edit-panel {

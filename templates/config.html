@@ -17,20 +17,20 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-chrome-v5-4">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b9-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
-    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-surface-1">
+    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-surface-b9-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-shell-b2b4-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
-    <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-3">
+    <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-list-shell-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css?v=collections-surface-1">
-    <link rel="stylesheet" href="/static/css/config/config-backups.css">
+    <link rel="stylesheet" href="/static/css/config/config-backups.css?v=backups-surface-b9-1">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
     <link rel="stylesheet" href="/static/css/status.css">
@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
-    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-v5-5">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-c10-1">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
@@ -1277,7 +1277,8 @@
                     <p class="config-tab-intro-lead" data-i18n="config.bookmarksTabIntro">Browse and edit all bookmarks in a split view: list on the left, detail panel on the right. Filter by page or category, use bulk actions, or expand Context to switch page and category while you edit.</p>
                 </div>
                 <div id="bookmarks-tab-workspace" class="bookmarks-tab-workspace">
-                <div class="structure-workspace-card is-collapsible is-collapsed" id="structure-workspace-card">
+                <div class="config-tab-surface bookmarks-tab-surface">
+                <div class="structure-workspace-card structure-workspace-in-surface is-collapsible is-collapsed" id="structure-workspace-card">
                     <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
                         <span data-i18n="config.structureWorkspaceTitle">Context</span>
                     </h3>
@@ -1319,8 +1320,6 @@
                     <p class="structure-workspace-footnote" data-i18n="config.structureWorkspaceFootnote">Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.</p>
                 </div>
 
-                <!-- Bookmarks split-view: lijst + detail paneel -->
-                <div class="config-tab-surface bookmarks-tab-surface">
                 <div class="bookmarks-splitview">
 
                     <!-- Linker kolom: lijst + controls -->
@@ -1363,11 +1362,11 @@
                                     </div>
                                 </details>
                             </div>
-                            <div class="bookmarks-list-search-row">
-                                <div class="bookmarks-search-wrap">
-                                    <svg class="bookmarks-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-                                    <input type="search" id="bookmarks-search" class="bookmarks-search-input" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
-                                    <button type="button" id="bookmarks-search-clear" class="bookmarks-search-clear" aria-label="Clear search" hidden>✕</button>
+                            <div class="bookmarks-list-controls-row bookmarks-list-controls-row--filter">
+                                <div class="bookmarks-filter-wrap config-filter-field config-filter-field--wide">
+                                    <label class="visually-hidden" for="bookmarks-search" data-i18n="config.filterBookmarks">Filter bookmarks</label>
+                                    <input type="search" id="bookmarks-search" class="config-filter-input bookmarks-search-input" data-i18n-placeholder="config.filterBookmarks" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
+                                    <button type="button" id="bookmarks-search-clear" class="config-filter-clear bookmarks-search-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
                                 </div>
                             </div>
                         </div>
@@ -1653,6 +1652,8 @@
                     <p class="config-tab-intro-lead" data-i18n="config.backupsIntro">Back up and restore your entire dashboard — pages, categories, bookmarks, finders, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
                 </div>
 
+                <div class="config-tab-surface backups-tab-surface">
+
                 <div class="backups-section">
                     <h3 class="section-title" data-i18n="config.backupsZipSectionTitle">ZIP Backup &amp; Restore</h3>
                     <div class="backups-actions-row">
@@ -1717,6 +1718,8 @@
                     </div>
                 </div>
 
+                </div>
+
             </div>
             </div>
 
@@ -1724,16 +1727,17 @@
             <div class="stats-tab config-tab-page">
             <div class="config-tab-intro stats-page-intro">
                 <p class="config-tab-intro-lead" data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
+            </div>
+            <div class="config-tab-surface stats-tab-surface">
+            <div class="stats-filter-bar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
+                <div class="stats-filter-wrap config-filter-field config-filter-field--wide">
+                    <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
+                    <input type="search" id="stats-filter-input" class="config-filter-input stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
+                    <button type="button" id="stats-filter-clear" class="config-filter-clear stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                </div>
                 <div class="config-tab-toolbar-tools stats-page-intro-actions">
                     <button type="button" id="stats-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.statsRefresh">Refresh</button>
                     <button type="button" id="stats-export-csv-btn" class="btn btn-secondary btn-small" data-i18n="config.statsExportCsv">Export CSV</button>
-                </div>
-            </div>
-            <div class="stats-filter-bar config-tab-toolbar config-tab-toolbar--with-filter">
-                <div class="stats-filter-wrap config-filter-field config-filter-field--wide">
-                    <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
-                    <input type="search" id="stats-filter-input" class="stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
-                    <button type="button" id="stats-filter-clear" class="stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
                 </div>
                 <p id="stats-filter-hint" class="stats-filter-hint" hidden></p>
             </div>
@@ -2102,6 +2106,7 @@
             </div>
             </div>
             </div>
+            </div>
 
             <div class="tab-content" data-tab-content="colors">
             {{template "theme-colors-editor" .}}
@@ -2112,7 +2117,10 @@
                 <div class="config-tab-intro">
                     <p class="config-tab-intro-lead keyboard-intro" data-i18n="config.keyboardIntro">Customize keyboard shortcuts. Click "Rebind" next to any shortcut and press the key you want to use. Press Escape to cancel.</p>
                 </div>
-                <div id="keyboard-bindings-container"></div>
+                <div class="config-tab-surface">
+                    <div id="keyboard-toolbar" class="keyboard-toolbar config-tab-toolbar config-tab-toolbar--in-surface"></div>
+                    <div id="keyboard-bindings-container" class="keyboard-body" role="list"></div>
+                </div>
             </div>
             </div>
 
@@ -2163,7 +2171,7 @@
 
                         <section id="help-config-tabs" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageConfigTabsTitle">Config tab bar</h3>
-                            <p class="help-block-intro" data-i18n="config.helpPageConfigTabsIntro">How config tabs are grouped on desktop and phone (v2026.07.01).</p>
+                            <p class="help-block-intro" data-i18n="config.helpPageConfigTabsIntro">How config tabs are grouped on desktop and phone (v2026.07.01.1).</p>
                             <ul data-i18n="config.helpPageConfigTabsItems"></ul>
                         </section>
 
@@ -2385,7 +2393,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v106"></script>
+    <script src="/static/js/whats-new-stub.js?v=whats-new-v107"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2399,6 +2407,7 @@
     <script src="/static/js/config/config-ui.js?v=config-chrome-v5-4"></script>
     <script src="/static/js/device-settings-merge.js"></script>
     <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
+    <script src="/static/js/discoverability-state.js?v=discoverability-state-1"></script>
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>
     <script src="/static/js/config/config-bookmark-store.js"></script>
@@ -2443,10 +2452,10 @@
     <script src="/static/js/config/config-custom-themes.js?v=config-domain-1"></script>
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-preview-v2"></script>
-    <script src="/static/js/dashboard-promo-registry.js?v=promo-registry-1"></script>
+    <script src="/static/js/dashboard-promo-registry.js?v=promo-restore-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
-    <script src="/static/js/config/config-keyboard.js?v=config-tab-groups-kbd-1"></script>
+    <script src="/static/js/config/config-keyboard.js?v=keyboard-list-shell-1"></script>
     <script src="/static/js/config/config-tags.js?v=tags-wordcloud-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v=search-commands-new-2"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
@@ -2456,7 +2465,7 @@
     <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
     <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
     <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
-    <script src="/static/js/health-badge-utils.js?v=health-badge-v1"></script>
+    <script src="/static/js/health-badge-utils.js?v=health-badge-count-only-1"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
     <script src="/static/js/config.js?v=config-save-toast-1"></script>

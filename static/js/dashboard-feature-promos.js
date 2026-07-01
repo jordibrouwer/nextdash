@@ -150,6 +150,9 @@
     function readConfirmed(kind) {
         const def = PROMO_DEFS[kind];
         if (!def) return true;
+        if (global.DiscoverabilityState?.isStorageKeyConfirmed?.(def.storageKey)) {
+            return true;
+        }
         try {
             return localStorage.getItem(def.storageKey) === '1';
         } catch {
@@ -160,6 +163,7 @@
     function markConfirmed(kind) {
         const def = PROMO_DEFS[kind];
         if (!def) return;
+        global.DiscoverabilityState?.markStorageKeyConfirmed?.(def.storageKey);
         try {
             localStorage.setItem(def.storageKey, '1');
         } catch {
@@ -738,6 +742,9 @@
     }
 
     function canShowKind(kind) {
+        if (global.DashboardPromoRegistry?.isAutoPromoDisabled?.(kind)) {
+            return false;
+        }
         if (!PROMO_DEFS[kind] || readConfirmed(kind) || !isDesktopDiscoverability()) {
             return false;
         }
@@ -759,6 +766,9 @@
     }
 
     function tryShow(kind, anchor) {
+        if (global.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) {
+            return false;
+        }
         if (!canShowKind(kind) || isPromoDeferred(kind) || !(anchor instanceof HTMLElement)) {
             return false;
         }
@@ -846,12 +856,14 @@
         kinds.forEach((entry) => {
             const def = PROMO_DEFS[entry];
             if (!def) return;
+            global.DiscoverabilityState?.clearStorageKey?.(def.storageKey, { persist: false });
             try {
                 localStorage.removeItem(def.storageKey);
             } catch {
                 // Ignore storage errors.
             }
         });
+        global.DiscoverabilityState?.schedulePersist?.();
     }
 
     global.DashboardFeaturePromos = {

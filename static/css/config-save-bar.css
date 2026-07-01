@@ -155,3 +155,60 @@ body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll
 body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper::after {
     background: linear-gradient(to right, transparent, var(--background-secondary));
 }
+
+/* C10 — unified app chrome (classic): header + save row + tabs as one card */
+body[data-layout-version="classic"] .config-page-shell > .config-section.section-header {
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    border-radius: var(--config-surface-radius, 6px) var(--config-surface-radius, 6px) 0 0;
+    background: var(--background-secondary);
+    box-shadow: none;
+    padding: 1.35rem var(--config-save-bar-padding-inline, 0.65rem) 0.75rem;
+    margin-bottom: 0;
+}
+
+body[data-layout-version="classic"] .config-page-shell > .config-section.section-controls {
+    border: 1px solid var(--border-primary);
+    border-top: 1px solid var(--border-primary);
+    border-radius: 0 0 var(--config-surface-radius, 6px) var(--config-surface-radius, 6px);
+    background: var(--background-secondary);
+    box-shadow: var(--config-surface-shadow, 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent));
+    margin-top: calc(-1 * var(--config-tab-gap, 0.85rem));
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .config-actions-top {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding-inline: var(--config-save-bar-padding-inline, 0.65rem);
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .config-actions-top::before {
+    display: none;
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper {
+    margin-top: 0;
+    padding: 0.3rem var(--config-save-bar-padding-inline, 0.65rem) 0.3rem;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid var(--border-primary);
+    background: transparent;
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper::before {
+    display: none;
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .config-controls-wrapper .tabs.config-tabs-grouped {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper::after {
+    background: linear-gradient(to right, transparent, var(--background-secondary));
+}

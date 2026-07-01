@@ -205,6 +205,15 @@ type Settings struct {
 	ThemeIconStyling            map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd            bool                             `json:"pasteUrlQuickAdd"`            // Enable paste URL to quick-add bookmark on dashboard
 	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
+	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
+}
+
+// DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
+type DiscoverabilityState struct {
+	Confirmed           map[string]bool `json:"confirmed,omitempty"`
+	LastWhatsNewRelease string          `json:"lastWhatsNewRelease,omitempty"`
+	TipsPromoUntil      int64           `json:"tipsPromoUntil,omitempty"`
+	TipsNotBefore       int64           `json:"tipsNotBefore,omitempty"`
 }
 
 type ThemeIconStylingEntry struct {

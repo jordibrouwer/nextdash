@@ -12,6 +12,9 @@ class DashboardRenderIncremental {
 
     tryRender(options = {}) {
         const d = this.dash;
+        if (d.isInlineEditActive?.()) {
+            return false;
+        }
         if (options.incremental === 'settings') {
             return this.refreshSettingsDerivedDom();
         }
@@ -214,6 +217,12 @@ class DashboardRenderIncremental {
 
             if (row) {
                 usedRows.add(row);
+                if (row.classList.contains('bookmark-inline-editing') || row.querySelector('.bookmark-inline-form')) {
+                    d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
+                    row.setAttribute('data-bookmark-index', String(index));
+                    fragment.appendChild(row);
+                    return;
+                }
                 const needsRefresh = options.forceRowRefresh
                     || row.getAttribute('data-render-fp') !== fingerprint
                     || String(row.getAttribute('data-category-id') ?? '') !== String(category.id ?? '');

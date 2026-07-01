@@ -782,17 +782,6 @@ body[data-layout-version="glass"] .help-support-block {
 
 /* ─── Keyboard tab ──────────────────────────────────────────────────────────── */
 
-body[data-layout-version="glass"] .keyboard-binding-row {
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    border-radius: var(--layout-radius-sm);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="glass"] .keyboard-binding-row--fixed {
-    background: var(--layout-surface-inset);
-}
-
 body[data-layout-version="glass"] .binding-key {
     background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
     border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
@@ -897,11 +886,6 @@ body[data-layout-version="glass"] .bookmarks-list-controls {
     -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
 }
 
-body[data-layout-version="glass"] .bookmarks-list-search-row {
-    border-top-color: var(--layout-surface-border);
-    background: color-mix(in srgb, var(--layout-surface) 80%, transparent);
-}
-
 body[data-layout-version="glass"] .bookmarks-list-controls .page-selector,
 body[data-layout-version="glass"] .bookmarks-list-controls select,
 body[data-layout-version="glass"] .bookmarks-filter-inline select,
@@ -925,7 +909,7 @@ body[data-layout-version="glass"] .bookmarks-splitview-detail {
     background: var(--layout-surface-inset);
 }
 
-body[data-layout-version="glass"] .bookmarks-search-input,
+body[data-layout-version="glass"] .bookmarks-filter-wrap .config-filter-input,
 body[data-layout-version="glass"] .bookmark-detail-input,
 body[data-layout-version="glass"] .bookmark-detail-shortcut,
 body[data-layout-version="glass"] .bookmark-detail-note,
@@ -942,7 +926,7 @@ body[data-layout-version="glass"] .bookmark-detail-icon-preview {
     border-radius: var(--layout-radius-sm);
 }
 
-body[data-layout-version="glass"] .bookmarks-search-input:focus,
+body[data-layout-version="glass"] .bookmarks-filter-wrap .config-filter-input:focus,
 body[data-layout-version="glass"] .bookmark-detail-input:focus,
 body[data-layout-version="glass"] .bookmark-detail-shortcut:focus,
 body[data-layout-version="glass"] .bookmark-detail-note:focus,

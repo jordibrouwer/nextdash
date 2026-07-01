@@ -331,6 +331,7 @@ class ConfigManager {
             }
             this.settingsData = { ...this.settingsData, ...settings };
             ConfigSettingsDefaults.apply(this.settingsData);
+            window.DiscoverabilityState?.init?.(this.settingsData.discoverabilityState);
             this._persistedTheme = String(this.settingsData.theme || '');
             this.syncConfigTabToursSeenFromServer();
             this.currentPageId = this.resolvePageId(settings.currentPage, this.getVisiblePages());

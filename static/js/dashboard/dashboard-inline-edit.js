@@ -13,6 +13,53 @@ class DashboardInlineEdit {
 
 
 
+    snapshotInlineEditBaseline(bookmark, pageId) {
+        const tags = Array.isArray(bookmark?.tags)
+            ? bookmark.tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)
+            : [];
+        return {
+            name: String(bookmark?.name || '').trim(),
+            url: String(bookmark?.url || '').trim(),
+            shortcut: String(bookmark?.shortcut || '').trim().toUpperCase(),
+            category: String(bookmark?.category ?? ''),
+            icon: String(bookmark?.icon || '').trim(),
+            pinned: Boolean(bookmark?.pinned),
+            checkStatus: Boolean(bookmark?.checkStatus),
+            note: String(bookmark?.note || '').trim(),
+            tags,
+            pageId: Number(pageId),
+        };
+    }
+
+
+    refreshInlineEditBaseline(bookmarkRef, fields) {
+        if (!bookmarkRef?.bookmark || !fields) {
+            return;
+        }
+        const d = this.dash;
+        const pageId = fields.pageSelect
+            ? Number(fields.pageSelect.value)
+            : Number(bookmarkRef.pageId || d.currentPageId);
+        const tags = fields.tagsInput
+            ? fields.tagsInput.value.split(',').map((tag) => tag.trim().toLowerCase()).filter((tag, index, arr) => tag && arr.indexOf(tag) === index)
+            : [];
+        bookmarkRef.original = {
+            name: fields.nameInput.value.trim(),
+            url: fields.urlInput.value.trim(),
+            shortcut: fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5),
+            category: fields.catSelect.value,
+            icon: typeof fields.getPendingIcon === 'function'
+                ? String(fields.getPendingIcon() || '').trim()
+                : String(bookmarkRef.bookmark.icon || '').trim(),
+            pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmarkRef.bookmark.pinned),
+            checkStatus: fields.statusInput.checked,
+            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : '',
+            tags,
+            pageId: Number.isFinite(pageId) ? pageId : Number(bookmarkRef.pageId || d.currentPageId),
+        };
+    }
+
+
     hasInlineEditUnsavedChanges() {
         const d = this.dash;
         const ctx = d._inlineEditContext;
@@ -39,13 +86,13 @@ class DashboardInlineEdit {
             && tags.every((tag, index) => tag === originalTags[index]);
         const targetPageId = fields.pageSelect
             ? Number(fields.pageSelect.value)
-            : Number(ctx.bookmarkRef.pageId || d.currentPageId);
-        const originalPageId = Number(ctx.bookmarkRef.pageId || d.currentPageId);
+            : Number(original.pageId || ctx.bookmarkRef.pageId || d.currentPageId);
+        const originalPageId = Number(original.pageId || ctx.bookmarkRef.pageId || d.currentPageId);
 
         return name !== String(original.name || '').trim()
             || url !== String(original.url || '').trim()
             || shortcut !== String(original.shortcut || '').trim().toUpperCase()
-            || category !== String(original.category || '')
+            || category !== String(original.category ?? '')
             || (fields.pinInput && pinned !== Boolean(original.pinned))
             || checkStatus !== Boolean(original.checkStatus)
             || (fields.noteInput && note !== String(original.note || '').trim())
@@ -115,7 +162,8 @@ class DashboardInlineEdit {
                 message,
                 confirmText: d.formatDashboardLabel('inlineEditDiscardConfirmBtn', {}, 'Discard'),
                 cancelText: d.configLabel('cancel', 'Cancel'),
-                confirmClass: 'danger'
+                confirmClass: 'danger',
+                modalClass: 'inline-edit-discard-modal'
             });
         }
         return window.confirm(message);
@@ -180,6 +228,63 @@ class DashboardInlineEdit {
      * Long-press (not on reorder handle) opens inline editor. Uses AbortController on row to drop listeners on rebuild.
      * @param {AbortSignal} signal
      */
+
+    isPointerInsideInlineEdit(event) {
+        const editingRow = document.querySelector('.bookmark-link.bookmark-inline-editing');
+        if (!editingRow) {
+            return false;
+        }
+        const active = document.activeElement;
+        if (active instanceof Node && editingRow.contains(active)) {
+            return true;
+        }
+        const insideAuxUi = (node) => node instanceof Element && (
+            node.classList?.contains('bookmark-inline-form')
+            || node.classList?.contains('bookmark-inline-field')
+            || node.classList?.contains('tag-ac-dropdown')
+            || node.classList?.contains('dashboard-feature-promo')
+            || node.classList?.contains('dashboard-grid-kbd-promo')
+        );
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        if (path.includes(editingRow) || path.some(insideAuxUi)) {
+            return true;
+        }
+        const target = event.target;
+        if (target instanceof Node && (
+            editingRow.contains(target)
+            || Boolean(target.closest?.(
+                '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+            ))
+        )) {
+            return true;
+        }
+        const coords = this.getPointerClientCoords(event);
+        if (coords) {
+            const hit = document.elementFromPoint(coords.x, coords.y);
+            if (hit instanceof Node && (
+                editingRow.contains(hit)
+                || Boolean(hit.closest?.(
+                    '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+                ))
+            )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    getPointerClientCoords(event) {
+        if (typeof event?.clientX === 'number' && typeof event?.clientY === 'number') {
+            return { x: event.clientX, y: event.clientY };
+        }
+        const touch = event?.touches?.[0] || event?.changedTouches?.[0];
+        if (touch && typeof touch.clientX === 'number' && typeof touch.clientY === 'number') {
+            return { x: touch.clientX, y: touch.clientY };
+        }
+        return null;
+    }
+
 
     openBookmarkInlineEditor(row, bookmarkRef) {
         const d = this.dash;
@@ -360,6 +465,9 @@ class DashboardInlineEdit {
             d.notifyConfig('faviconFetched', 'Favicon fetched.', 'success');
         });
         urlInput.addEventListener('blur', () => {
+            if (!urlInput.dataset.touched) {
+                return;
+            }
             if (inlineAutoFetchTimer) {
                 clearTimeout(inlineAutoFetchTimer);
             }
@@ -520,6 +628,9 @@ class DashboardInlineEdit {
             if (!matched && cats.length > 0) {
                 catSelect.selectedIndex = 1;
             }
+            if (d._inlineEditContext?.fields?.catSelect === catSelect) {
+                this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
+            }
         };
 
         pageSelect.addEventListener('change', () => reloadCatSelectForPage(pageSelect.value));
@@ -576,45 +687,76 @@ class DashboardInlineEdit {
             return nameOk && urlOk;
         };
 
+        const syncSaveEnabled = () => {
+            const valid = validateForm();
+            saveBtn.setAttribute('aria-disabled', valid ? 'false' : 'true');
+            saveBtn.classList.toggle('bookmark-inline-save--invalid', !valid);
+        };
+
+        const runSave = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (saveBtn.dataset.saving === '1') {
+                return;
+            }
+            if (!validateForm(true)) {
+                return;
+            }
+            saveBtn.dataset.saving = '1';
+            try {
+                await this.commitBookmarkInlineEdit(bookmarkRef, {
+                    nameInput,
+                    urlInput,
+                    iconUrlInput,
+                    shortcutInput,
+                    catSelect,
+                    pageSelect,
+                    pinInput,
+                    statusInput,
+                    noteInput,
+                    tagsInput,
+                    getPendingIcon: () => pendingIcon
+                }, row);
+            } finally {
+                delete saveBtn.dataset.saving;
+            }
+        };
+
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
         saveBtn.textContent = cfg('saveChanges', 'Save');
-        saveBtn.disabled = !validateForm();
-        saveBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            if (!validateForm(true)) return;
-            await this.commitBookmarkInlineEdit(bookmarkRef, {
-                nameInput,
-                urlInput,
-                iconUrlInput,
-                shortcutInput,
-                catSelect,
-                pageSelect,
-                pinInput,
-                statusInput,
-                noteInput,
-                tagsInput,
-                getPendingIcon: () => pendingIcon
-            }, row);
+        saveBtn.setAttribute('aria-disabled', 'false');
+        saveBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
         });
+        saveBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+        });
+        saveBtn.addEventListener('click', runSave);
 
-        nameInput.addEventListener('input', () => { nameInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
-        urlInput.addEventListener('input', () => { urlInput.dataset.touched = '1'; saveBtn.disabled = !validateForm(); });
-        nameInput.addEventListener('blur', () => { nameInput.dataset.touched = '1'; validateForm(); });
+        nameInput.addEventListener('input', () => { nameInput.dataset.touched = '1'; syncSaveEnabled(); });
+        urlInput.addEventListener('input', () => { urlInput.dataset.touched = '1'; syncSaveEnabled(); });
+        nameInput.addEventListener('blur', () => { nameInput.dataset.touched = '1'; validateForm(); syncSaveEnabled(); });
         urlInput.addEventListener('blur', () => {
             const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput.value) || urlInput.value.trim();
             if (normalized && normalized !== urlInput.value.trim()) urlInput.value = normalized;
             urlInput.dataset.touched = '1';
             validateForm();
+            syncSaveEnabled();
         });
+        syncSaveEnabled();
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'bookmark-inline-action-btn';
         cancelBtn.textContent = d.formatDashboardLabel('cancel', {}, 'Cancel');
+        cancelBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.cancelBookmarkInlineEdit(row, bookmarkRef);
         });
 
@@ -656,7 +798,7 @@ class DashboardInlineEdit {
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
-                saveBtn.click();
+                void runSave(e);
             }
         });
 
@@ -669,8 +811,6 @@ class DashboardInlineEdit {
 
         row.appendChild(form);
         requestAnimationFrame(() => window.DashboardFeaturePromos?.reposition?.());
-        d.destroyCategoryReorderInstances();
-        d.initializeCategoryReorder();
         d._inlineEditContext = {
             bookmarkRef,
             row,
@@ -687,14 +827,50 @@ class DashboardInlineEdit {
                 getPendingIcon: () => pendingIcon
             }
         };
+        this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
         this.enterBookmarkInlineEditFocusMode();
-        nameInput.focus();
-        nameInput.select();
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                window.DashboardFeaturePromos?.tryShow?.('inlineEdit', form);
-            });
-        });
+        const ensureInlineFormVisible = () => {
+            const margin = 12;
+            const rect = form.getBoundingClientRect();
+            const viewportH = window.innerHeight;
+            if (rect.bottom > viewportH - margin) {
+                window.scrollBy({ top: rect.bottom - viewportH + margin, behavior: 'auto' });
+            }
+            const topRect = form.getBoundingClientRect();
+            if (topRect.top < margin) {
+                window.scrollBy({ top: topRect.top - margin, behavior: 'auto' });
+            }
+        };
+        const revealInlineEditor = () => {
+            ensureInlineFormVisible();
+            nameInput.focus({ preventScroll: true });
+        };
+        revealInlineEditor();
+        requestAnimationFrame(revealInlineEditor);
+
+        const openedAt = Date.now();
+
+        // Click-outside: bubble phase only — capture + layout inert caused Safari/Chrome regressions.
+        const onGlobalClickOutside = async (e) => {
+            if (!document.contains(form)) {
+                globalCleanup();
+                return;
+            }
+            if (Date.now() - openedAt < DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS) {
+                return;
+            }
+            if (this.isPointerInsideInlineEdit(e)) {
+                return;
+            }
+            if (d.isModalOpen()) {
+                return;
+            }
+            if (!(await this.confirmDiscardInlineEdit())) {
+                return;
+            }
+            globalCleanup();
+            this.cancelBookmarkInlineEdit(row, bookmarkRef);
+        };
 
         // Global ESC: close the form even when focus has drifted outside it
         const onGlobalEsc = async (e) => {
@@ -703,19 +879,6 @@ class DashboardInlineEdit {
             if (d.isModalOpen()) return;
             e.preventDefault();
             e.stopPropagation();
-            if (!(await this.confirmDiscardInlineEdit())) {
-                return;
-            }
-            globalCleanup();
-            this.cancelBookmarkInlineEdit(row, bookmarkRef);
-        };
-
-        // Click-outside: close on mousedown anywhere outside the form
-        const onGlobalClickOutside = async (e) => {
-            if (!document.contains(form)) { globalCleanup(); return; }
-            if (form.contains(e.target)) return;
-            if (e.target.closest?.('#app-modal')) return;
-            if (d.isModalOpen()) return;
             if (!(await this.confirmDiscardInlineEdit())) {
                 return;
             }
@@ -733,7 +896,7 @@ class DashboardInlineEdit {
 
         const globalCleanup = () => {
             document.removeEventListener('keydown', onGlobalEsc, true);
-            document.removeEventListener('mousedown', onGlobalClickOutside, true);
+            document.removeEventListener('mousedown', onGlobalClickOutside, false);
             clearInlineAutoFetchTimer();
             if (d._inlineEditGlobalCleanup === globalCleanup) d._inlineEditGlobalCleanup = null;
             if (d._inlineEditAutoFetchClear === clearInlineAutoFetchTimer) {
@@ -745,8 +908,10 @@ class DashboardInlineEdit {
 
         d._inlineEditGlobalCleanup = globalCleanup;
         document.addEventListener('keydown', onGlobalEsc, true);
-        // Delay click-outside to skip the mousedown that may have opened the form
-        setTimeout(() => document.addEventListener('mousedown', onGlobalClickOutside, true), 0);
+        setTimeout(
+            () => document.addEventListener('mousedown', onGlobalClickOutside, false),
+            DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS
+        );
     }
 
 
@@ -812,11 +977,7 @@ class DashboardInlineEdit {
         if (bookmarkRef.scope === 'current') {
             this.ensureBookmarkMutationSnapshot();
             Object.assign(bookmark, nextBookmarkState);
-            d._inlineEditGlobalCleanup?.();
-            d.inlineEditingBookmarkIndex = null;
-            d._inlineEditContext = null;
-            d.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
-            d.renderDashboard();
+            this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
             await d.saveBookmarkOrder();
             return;
         }
@@ -826,14 +987,10 @@ class DashboardInlineEdit {
             return;
         }
 
-        d._inlineEditGlobalCleanup?.();
-        d.inlineEditingBookmarkIndex = null;
-        d._inlineEditContext = null;
-        if (Number(bookmarkRef.pageId) === Number(d.currentPageId)) {
-            d.renderDashboard();
-        } else {
+        this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
+        if (Number(bookmarkRef.pageId) !== Number(d.currentPageId)) {
             await d.loadAllBookmarks();
-            d.renderDashboard();
+            d.renderDashboard({ incremental: false });
         }
     }
 
@@ -848,44 +1005,18 @@ class DashboardInlineEdit {
         const bookmark = bookmarkRef?.bookmark;
         if (!bookmark) {
             d.inlineEditingBookmarkIndex = null;
-            d.renderDashboard();
+            d.renderDashboard({ incremental: false });
             return;
         }
-        const categoryId = row.getAttribute('data-category-id') || bookmark.category || '';
         d.inlineEditingBookmarkIndex = null;
-        d.populateBookmarkRowView(row, bookmark, categoryId, true);
-        d.destroyCategoryReorderInstances();
-        d.initializeCategoryReorder();
-
-        const openLink = row.querySelector('a.bookmark-open');
-        if (openLink && typeof openLink.focus === 'function') {
-            openLink.focus({ preventScroll: true });
-        }
-        const kn = d.keyboardNavigation;
-        if (kn) {
-            kn.updateNavigableElements();
-            const idx = kn.navigableElements.indexOf(row);
-            if (idx >= 0) {
-                kn.currentIndex = idx;
-                kn.navigableElements.forEach((el, i) => {
-                    const selected = i === idx;
-                    el.classList.toggle('keyboard-selected', selected);
-                    el.setAttribute('aria-selected', selected ? 'true' : 'false');
-                    if (selected) {
-                        el.setAttribute('aria-current', 'true');
-                    } else {
-                        el.removeAttribute('aria-current');
-                    }
-                });
-                kn.syncRovingTabStops({ focus: false });
-                kn.syncGridActiveDescendant();
-            }
-        }
+        row?.classList?.remove('bookmark-inline-editing');
+        this.restoreInlineEditRow(row, bookmarkRef);
     }
 
 
     enterBookmarkInlineEditFocusMode() {
         const d = this.dash;
+        window.DashboardPromoRegistry?.dismissAllDiscoverabilityOverlays?.();
         document.body.classList.add('bookmark-inline-edit-active');
         d.keyboardNavigation?.disable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
@@ -897,6 +1028,58 @@ class DashboardInlineEdit {
         document.body.classList.remove('bookmark-inline-edit-active');
         d.keyboardNavigation?.enable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
+    }
+
+
+    finishInlineEditCommit(row) {
+        const d = this.dash;
+        d._inlineEditGlobalCleanup?.();
+        d._inlineEditAutoFetchClear?.();
+        d._inlineEditAutoFetchClear = null;
+        d.inlineEditingBookmarkIndex = null;
+        d._inlineEditContext = null;
+        this.leaveBookmarkInlineEditFocusMode();
+        row?.classList?.remove('bookmark-inline-editing');
+    }
+
+
+    restoreInlineEditRow(row, bookmarkRef) {
+        const d = this.dash;
+        const bookmark = bookmarkRef?.bookmark;
+        if (!row || !bookmark || !document.contains(row)) {
+            return false;
+        }
+        const categoryId = bookmark.category || row.getAttribute('data-category-id') || '';
+        d.populateBookmarkRowView(row, bookmark, categoryId, true);
+        d.destroyCategoryReorderInstances();
+        d.initializeCategoryReorder();
+
+        const kn = d.keyboardNavigation;
+        if (kn?.selectBookmarkRow?.(row, { focus: true })) {
+            return true;
+        }
+        const openLink = row.querySelector('a.bookmark-open');
+        if (openLink && typeof openLink.focus === 'function') {
+            openLink.focus({ preventScroll: true });
+        }
+        return true;
+    }
+
+
+    finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl) {
+        const d = this.dash;
+        const bookmark = bookmarkRef?.bookmark;
+        const prevCategoryId = row?.getAttribute('data-category-id') || bookmark?.category || '';
+        this.finishInlineEditCommit(row);
+        d.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
+        const nextCategoryId = bookmark?.category || '';
+        if (String(prevCategoryId) !== String(nextCategoryId) || !row || !document.contains(row)) {
+            d.renderDashboard({ incremental: false });
+            return;
+        }
+        if (!this.restoreInlineEditRow(row, bookmarkRef)) {
+            d.renderDashboard({ incremental: false });
+        }
     }
 
 
@@ -1150,8 +1333,7 @@ class DashboardInlineEdit {
         };
         d.removeBookmarkFromAllBookmarks(deleteRef);
         d.bookmarks.splice(deleteIndex, 1);
-        d._inlineEditGlobalCleanup?.();
-        d.inlineEditingBookmarkIndex = null;
+        this.finishInlineEditCommit(d._inlineEditContext?.row);
         d.renderDashboard();
 
         await d.saveBookmarkOrder();
@@ -1487,5 +1669,6 @@ class DashboardInlineEdit {
 }
 
 DashboardInlineEdit.ROW_LONG_PRESS_MS = 500;
+DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS = 500;
 
 window.DashboardInlineEdit = DashboardInlineEdit;

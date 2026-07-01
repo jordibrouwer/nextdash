@@ -8,9 +8,11 @@ class DashboardPromos {
 
     canShowPostOnboardingPrompts() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) return false;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (d.onboardingStartedInSession) return false;
         if (!d.settings?.onboardingCompleted) return false;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         return true;
     }
@@ -21,7 +23,8 @@ class DashboardPromos {
         if (typeof window.openWhatsNewModal !== 'function') return false;
         try {
             const release = window.NEXTDASH_WHATS_NEW_RELEASE;
-            const lastSeen = localStorage.getItem('nextdash:last-whats-new-dashboard-release');
+            const lastSeen = window.DiscoverabilityState?.getLastWhatsNewRelease?.()
+                || localStorage.getItem('nextdash:last-whats-new-dashboard-release');
             if (release && lastSeen === release) return false;
             if (!release && lastSeen) return false;
         } catch {
@@ -33,15 +36,22 @@ class DashboardPromos {
 
     shouldShowLayoutNudgePrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('layoutVersionNudge')) return false;
         return window.LayoutVersionNudge?.shouldOffer?.(d) === true;
     }
 
 
     shouldShowPasteSpotlightPrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('pasteSpotlight')) return false;
         if (typeof window.FeatureSpotlight !== 'function') return false;
         if (d.settings?.pasteUrlQuickAdd === false) return false;
         if (window.matchMedia?.('(pointer: coarse)').matches) return false;
+        if (window.FeatureSpotlight.DEFAULT_STORAGE_KEY) {
+            if (window.DiscoverabilityState?.isStorageKeyConfirmed?.(window.FeatureSpotlight.DEFAULT_STORAGE_KEY)) {
+                return false;
+            }
+        }
         try {
             if (localStorage.getItem(window.FeatureSpotlight.DEFAULT_STORAGE_KEY)) return false;
         } catch {
@@ -164,6 +174,7 @@ class DashboardPromos {
 
     shouldShowPreviewCardSpotlightPrompt() {
         const d = this.dash;
+        if (window.DashboardPromoRegistry?.isAutoPromoDisabled?.('previewCardSpotlight')) return false;
         return window.PreviewCardSpotlight?.shouldOffer?.(d) === true;
     }
 
@@ -361,6 +372,7 @@ class DashboardPromos {
                 d.initializeButtonTipsRotation();
                 d.onboardingStartedInSession = false;
                 try {
+                    window.DiscoverabilityState?.markStorageKeyConfirmed?.('nextdash:layout-modern-nudge-v1');
                     localStorage.setItem('nextdash:layout-modern-nudge-v1', '1');
                 } catch { /* layout chosen in onboarding */ }
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
