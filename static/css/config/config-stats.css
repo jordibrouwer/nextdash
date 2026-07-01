@@ -14,6 +14,46 @@
     box-sizing: border-box;
 }
 
+.stats-tab-surface .stats-filter-bar.stats-filter-bar {
+    margin-bottom: 0;
+}
+
+.stats-tab-surface .stats-chip-nav {
+    padding: 0.35rem 0.75rem;
+    margin: 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.stats-tab-surface .stats-layout {
+    padding: 0;
+    gap: 0;
+}
+
+.stats-tab-surface .stats-index {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    padding: 0.75rem;
+    margin: 0;
+}
+
+.stats-tab-surface .stats-content {
+    gap: 0;
+}
+
+.stats-tab-surface .stats-block {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.stats-tab-surface .stats-block:last-child {
+    border-bottom: none;
+}
+
 .stats-filter-wrap {
     /* shell: config-tab-shell.css (.config-filter-field) */
 }

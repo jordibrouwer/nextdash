@@ -17,20 +17,20 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-chrome-v5-4">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b9-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
-    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-filter-1">
+    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-surface-b9-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-shell-b2b4-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=keyboard-list-shell-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css?v=collections-surface-1">
-    <link rel="stylesheet" href="/static/css/config/config-backups.css">
+    <link rel="stylesheet" href="/static/css/config/config-backups.css?v=backups-surface-b9-1">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
     <link rel="stylesheet" href="/static/css/status.css">
@@ -1652,6 +1652,8 @@
                     <p class="config-tab-intro-lead" data-i18n="config.backupsIntro">Back up and restore your entire dashboard — pages, categories, bookmarks, finders, settings, and custom themes. Use the ZIP backup to safeguard your data or move it to another device. Import browser bookmarks as a starting point, or export all bookmarks to CSV for use in spreadsheet tools.</p>
                 </div>
 
+                <div class="config-tab-surface backups-tab-surface">
+
                 <div class="backups-section">
                     <h3 class="section-title" data-i18n="config.backupsZipSectionTitle">ZIP Backup &amp; Restore</h3>
                     <div class="backups-actions-row">
@@ -1716,6 +1718,8 @@
                     </div>
                 </div>
 
+                </div>
+
             </div>
             </div>
 
@@ -1723,16 +1727,17 @@
             <div class="stats-tab config-tab-page">
             <div class="config-tab-intro stats-page-intro">
                 <p class="config-tab-intro-lead" data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
+            </div>
+            <div class="config-tab-surface stats-tab-surface">
+            <div class="stats-filter-bar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
+                <div class="stats-filter-wrap config-filter-field config-filter-field--wide">
+                    <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
+                    <input type="search" id="stats-filter-input" class="config-filter-input stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
+                    <button type="button" id="stats-filter-clear" class="config-filter-clear stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                </div>
                 <div class="config-tab-toolbar-tools stats-page-intro-actions">
                     <button type="button" id="stats-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.statsRefresh">Refresh</button>
                     <button type="button" id="stats-export-csv-btn" class="btn btn-secondary btn-small" data-i18n="config.statsExportCsv">Export CSV</button>
-                </div>
-            </div>
-            <div class="stats-filter-bar config-tab-toolbar config-tab-toolbar--with-filter">
-                <div class="stats-filter-wrap config-filter-field config-filter-field--wide">
-                    <label class="visually-hidden" for="stats-filter-input" data-i18n="config.statsFilterLabel">Filter tables</label>
-                    <input type="search" id="stats-filter-input" class="stats-filter-input" data-i18n-placeholder="config.statsFilterPlaceholder" placeholder="Filter tables…" autocomplete="off">
-                    <button type="button" id="stats-filter-clear" class="stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
                 </div>
                 <p id="stats-filter-hint" class="stats-filter-hint" hidden></p>
             </div>
@@ -2098,6 +2103,7 @@
                     </section>
 
                 </div>
+            </div>
             </div>
             </div>
             </div>

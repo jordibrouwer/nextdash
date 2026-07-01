@@ -142,7 +142,8 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .collections-list,
 .config-tab-surface > .tags-body,
 .config-tab-surface > .config-empty-state,
-.config-tab-surface > .keyboard-body {
+.config-tab-surface > .keyboard-body,
+.config-tab-surface > .stats-layout {
     border: none;
     border-radius: 0;
     background: transparent;

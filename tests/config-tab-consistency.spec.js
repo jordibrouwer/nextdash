@@ -618,3 +618,39 @@ test.describe('config bookmarks surface (v5)', () => {
         await expect(page.locator('.bookmarks-search-wrap')).toHaveCount(0);
     });
 });
+
+test.describe('config stats & backups surface (B9)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('stats tab fuses filter toolbar and layout in one surface', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('stats'));
+        const surface = page.locator('.stats-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.stats-filter-bar.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('#stats-filter-input.config-filter-input')).toBeVisible();
+        await expect(surface.locator('#stats-refresh-btn')).toBeVisible();
+        await expect(surface.locator('.stats-layout')).toBeVisible();
+
+        const nestedCards = await page.evaluate(() => {
+            const blocks = [...document.querySelectorAll('.stats-tab-surface .stats-block')];
+            return blocks.every((el) => getComputedStyle(el).boxShadow === 'none');
+        });
+        expect(nestedCards).toBe(true);
+    });
+
+    test('backups tab wraps sections in one surface', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('backups'));
+        const surface = page.locator('.backups-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.backups-section')).toHaveCount(3);
+
+        const sectionCount = await page.evaluate(() => {
+            const tab = document.querySelector('[data-tab-content="backups"] .backups-tab');
+            return tab?.querySelectorAll(':scope > .config-tab-surface').length ?? 0;
+        });
+        expect(sectionCount).toBe(1);
+    });
+});
