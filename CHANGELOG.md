@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.2 — July 2026](#v202607012--july-2026)
 - [v2026.07.01.1 — July 2026](#v202607011--july-2026)
 - [v2026.07.01 — July 2026](#v20260701--july-2026)
 - [v2026.06.31 — June 2026](#v20260631--june-2026)
@@ -61,7 +62,21 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.07.01.1](#v202607011--july-2026) for the latest release.)_
+_(Nothing yet — see [v2026.07.01.2](#v202607012--july-2026) for the latest release.)_
+
+---
+
+## v2026.07.01.2 — July 2026
+
+**Hotfix** — restores full-row bookmark highlight on **Modern** and **Glass** dashboard layouts (keyboard selection and focus no longer show border-only chrome).
+
+### Dashboard
+
+- **fix** **Modern/Glass bookmark row highlight** — `layout-modern.css` and `layout-glass.css` restore full-row accent gradients for `.keyboard-selected` and `:focus-within` (parity with `dashboard-bookmark-row.css` on Classic). Preset-specific rules (terminal, cards, masonry, list, widgets), status rows, and `bookmark-kbd-selection-dimmed` no longer show border-only selection chrome.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `glass-row-selection-1` on `layout-glass-tokens.css` / `layout-glass.css`; `modern-row-selection-1` on `layout-modern.css`; `whats-new-v108` data version (release notes under **v2026.07.01.1** updated to mention this fix).
 
 ---
 

@@ -38,6 +38,10 @@
         {
           "badge": "fix",
           "text": "<strong>Inline bookmark editor</strong> — long-press inline edit no longer traps the form behind dashboard <code>inert</code>. Background dimming uses opacity only so fields stay interactive in all browsers; save and click-outside handling is hardened."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Modern &amp; Glass bookmark row highlight</strong> — keyboard-selected and focused bookmarks again use a full-row accent gradient (matching Classic) instead of a subtle border-only outline. Applies to all layout presets (terminal, cards, masonry, list, widgets), status rows, and softened selection after mouse hover."
         }
       ]
     },
