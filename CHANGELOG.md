@@ -67,7 +67,7 @@ _(Nothing yet — see [v2026.07.01.1](#v202607011--july-2026) for the latest rel
 
 ## v2026.07.01.1 — July 2026
 
-**Config surface parity (v5 continued)** — Classic fused header chrome (C10); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
+**Config surface parity (v5 continued)** — Classic fused header chrome (C10); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; Modern/Glass bookmark keyboard selection restored to full-row highlight; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
 
 ### Config surfaces (v5 continued)
 
@@ -81,6 +81,7 @@ _(Nothing yet — see [v2026.07.01.1](#v202607011--july-2026) for the latest rel
 
 - **fix** **Health count badge** — `health-badge-utils.js` renders count-only pills (`3`, `99+`) with `health-badge` / `health-badge-warn` theme accents on dashboard and config headers; visible `"broken"` label text removed; `aria-label` retains full context for screen readers.
 - **fix** **Inline bookmark editor** — `dashboard-inline-edit.js` stops applying dashboard `inert` during inline edit; background dimming is opacity-only; save/click-outside/Esc handling hardened so the form stays interactive across browsers (`tests/dashboard-inline-edit.spec.js` extended).
+- **fix** **Modern/Glass bookmark row highlight** — `layout-modern.css` and `layout-glass.css` restore full-row accent gradients for `.keyboard-selected` and `:focus-within` (parity with `dashboard-bookmark-row.css` on Classic). Preset-specific rules (terminal, cards, masonry, list, widgets), status rows, and `bookmark-kbd-selection-dimmed` no longer show border-only selection chrome.
 
 ### Discoverability & sync
 
@@ -95,7 +96,7 @@ _(Nothing yet — see [v2026.07.01.1](#v202607011--july-2026) for the latest rel
 
 ### Cache-bust
 
-- **fix** **Cache-bust** — `whats-new-v107` data version and `2026.07-dashboard-release-v86` dashboard release token; `config-surface-b9-1` on `config.css` / stats & backups CSS; `stats-backups-surface-b9-1` on classic/modern-glass surface imports; `keyboard-list-shell-1`, `bookmarks-list-shell-b2b4-1` on per-tab bundles.
+- **fix** **Cache-bust** — `whats-new-v108` data version and `2026.07-dashboard-release-v86` dashboard release token; `glass-row-selection-1` / `modern-row-selection-1` on layout bundles; `config-surface-b9-1` on `config.css` / stats & backups CSS; `stats-backups-surface-b9-1` on classic/modern-glass surface imports; `keyboard-list-shell-1`, `bookmarks-list-shell-b2b4-1` on per-tab bundles.
 
 ---
 

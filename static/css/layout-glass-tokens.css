@@ -34,6 +34,24 @@ body[data-layout-version="glass"] {
     --glass-chip-shadow:
         var(--layout-shadow-sm),
         inset 0 1px 0 color-mix(in srgb, var(--text-primary) 6%, transparent);
+    --glass-bookmark-row-hover-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
+    );
+    --glass-bookmark-row-selected-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
+    );
+    --glass-bookmark-row-dimmed-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
+    );
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
