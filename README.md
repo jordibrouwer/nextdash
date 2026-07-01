@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.1**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.3**.
 
 ---
 
@@ -92,7 +92,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 - `1–9` — jump directly to a page tab
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
-- `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress
+- `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category or smart collection and select its first bookmark (hold `G` ~300 ms, or press `G` then a digit; a **quick tap** on `G` opens bookmark shortcuts starting with `G` instead)
 - `G + P` — jump to the first pinned bookmark on the page (hold `G` or `G` then `P`)
@@ -177,7 +177,7 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Config tab consistency (v2026.06.31)** — list tabs share intro copy, toolbars, filters, and empty states; on **Classic** layout, toolbar + list fuse into one surface card. The breadcrumb row shows tab save mode (**Requires save** / **Auto-save** / **Read-only**) and sub-context on Bookmarks and Categories. **Config → Bookmarks** uses a collapsible **Context** panel (page/category switcher; structure edits on Pages/Categories tabs) that remembers open/closed state. Unified save status beside **Save** replaces the old unsaved badge. Opening `#bookmarks` on a phone shows a desktop-only card instead of a broken editor.
 
-**Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface (parity with Classic). On **Classic** (**v2026.07.01.1**), the same fused header chrome applies. `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
+**Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
 
 **Config surface parity (v2026.07.01.1)** — **Keyboard**, **Bookmarks**, **Stats**, and **Backups** tabs now use the shared `config-tab-surface` list-shell: toolbar + content in one card with divided rows (no nested floating cards). Bookmarks search matches other list-tab filter styling; Stats moves **Refresh**/**Export CSV** into the in-surface toolbar. Health links show a compact count-only badge pill. Dismissed discoverability promos and What's new progress sync via `settings.discoverabilityState` in `settings.json` across browsers.
 
@@ -341,7 +341,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.1
+   ./scripts/release-to-main.sh v2026.07.01.3
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).

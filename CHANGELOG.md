@@ -79,6 +79,10 @@ _(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest rel
 
 - **fix** **Cache-bust** — `config-chrome-classic-separate-2` on `config-save-bar.css`; `whats-new-v109` data version.
 
+### Developer & docs
+
+- **fix** **README & CHANGELOG** — config tab bar v5 section documents Classic header separation (**v2026.07.01.3**); Modern/Glass bookmark row highlight (**v2026.07.01.2**); release references through **v2026.07.01.3**.
+
 ---
 
 ## v2026.07.01.2 — July 2026
@@ -97,11 +101,11 @@ _(Nothing yet — see [v2026.07.01.3](#v202607013--july-2026) for the latest rel
 
 ## v2026.07.01.1 — July 2026
 
-**Config surface parity (v5 continued)** — Classic fused header chrome (C10); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
+**Config surface parity (v5 continued)** — Classic fused header chrome (C10, reverted in **v2026.07.01.3**); Keyboard, Bookmarks, Stats, and Backups tabs adopt the shared `config-tab-surface` list-shell pattern (A7, B2/B4, B9). Health badge becomes a count-only pill; inline bookmark editor regression fixed; discoverability promo/tour progress syncs via `settings.discoverabilityState` across browsers.
 
 ### Config surfaces (v5 continued)
 
-- **fix** **Classic unified chrome (C10)** — on `body[data-layout-version="classic"]`, `section-header` + `section-controls` fuse into one chrome card (`config-save-bar.css`, `config-classic-surfaces.css`) with shared border, radius, and shadow — parity with Modern/Glass C9 from **v2026.07.01**.
+- **fix** **Classic unified chrome (C10)** — on `body[data-layout-version="classic"]`, `section-header` + `section-controls` fuse into one chrome card (`config-save-bar.css`, `config-classic-surfaces.css`) with shared border, radius, and shadow — parity with Modern/Glass C9 from **v2026.07.01**. _(Reverted for Classic in **v2026.07.01.3**.)_
 - **fix** **Keyboard list shell (A7)** — `config-keyboard.css` + `config-tab-surface`: filter toolbar (`#keyboard-toolbar.config-tab-toolbar--in-surface`) and `#keyboard-bindings-container.keyboard-body` with divided `.keyboard-binding-row` rows inside one surface; no nested section cards.
 - **fix** **Bookmarks list shell (B2/B4)** — `.bookmarks-tab-surface` wraps Context panel, filters, and split-view; search field uses `config-filter-field` / `config-filter-input` (retired standalone `.bookmarks-search-wrap` styling path).
 - **fix** **Stats fused surface (B9)** — `.stats-tab-surface` wraps filter toolbar (search, **Refresh**, **Export CSV** moved from intro), chip nav, `.stats-layout` index + blocks as divided rows; nested card shadows suppressed on Classic, Modern, and Glass.
