@@ -341,7 +341,7 @@ body[data-layout-version="glass"] :is(
     .collections-list,
     .tags-cloud,
     .tags-list-panel
-) {
+):not(.config-tab-surface *) {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
