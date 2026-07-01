@@ -132,6 +132,7 @@
                 return;
             }
             if (persist) {
+                window.DiscoverabilityState?.markStorageKeyConfirmed?.(this.storageKey);
                 try {
                     localStorage.setItem(this.storageKey, '1');
                 } catch { /* ignore */ }
@@ -154,6 +155,7 @@
         show(delayMs = 1400, options = {}) {
             if (window.DashboardPromoRegistry?.areDiscoverabilityPromosPaused?.()) return false;
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+            if (window.DiscoverabilityState?.isStorageKeyConfirmed?.(this.storageKey)) return false;
             try {
                 if (localStorage.getItem(this.storageKey)) return false;
             } catch { /* ignore */ }
@@ -187,6 +189,7 @@
         }
 
         static resetStorage(storageKey = DEFAULT_STORAGE_KEY) {
+            window.DiscoverabilityState?.clearStorageKey?.(storageKey);
             try {
                 localStorage.removeItem(storageKey);
             } catch { /* ignore */ }

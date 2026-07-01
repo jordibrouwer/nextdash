@@ -33,6 +33,7 @@
             : 'classic';
         if (version !== 'classic') return false;
         try {
+            if (window.DiscoverabilityState?.isStorageKeyConfirmed?.(STORAGE_KEY)) return false;
             if (localStorage.getItem(STORAGE_KEY)) return false;
         } catch { /* ignore */ }
         return true;
@@ -73,6 +74,7 @@
         create,
         clearLegacySessionKeys,
         reset() {
+            window.DiscoverabilityState?.clearStorageKey?.(STORAGE_KEY);
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch { /* ignore */ }

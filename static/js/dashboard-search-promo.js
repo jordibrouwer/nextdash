@@ -48,16 +48,22 @@
     let boundReposition = null;
 
     function readConfirmedFromStorage(kind) {
+        const key = PROMO_KEYS[kind];
+        if (global.DiscoverabilityState?.isStorageKeyConfirmed?.(key)) {
+            return true;
+        }
         try {
-            return localStorage.getItem(PROMO_KEYS[kind]) === '1';
+            return localStorage.getItem(key) === '1';
         } catch {
             return true;
         }
     }
 
     function markConfirmedInStorage(kind) {
+        const key = PROMO_KEYS[kind];
+        global.DiscoverabilityState?.markStorageKeyConfirmed?.(key);
         try {
-            localStorage.setItem(PROMO_KEYS[kind], '1');
+            localStorage.setItem(key, '1');
         } catch {
             // Ignore storage errors.
         }
@@ -482,12 +488,14 @@
             removePromoFromDom();
             const kinds = kind ? [kind] : Object.keys(PROMO_KEYS);
             kinds.forEach((entry) => {
+                global.DiscoverabilityState?.clearStorageKey?.(PROMO_KEYS[entry], { persist: false });
                 try {
                     localStorage.removeItem(PROMO_KEYS[entry]);
                 } catch {
                     // Ignore storage errors.
                 }
             });
+            global.DiscoverabilityState?.schedulePersist?.();
         },
     };
 }(window));

@@ -10,6 +10,10 @@
     const ONBOARDING_TIPS_DELAY_MS = 60 * 1000;
 
     function readUntil() {
+        const fromServer = window.DiscoverabilityState?.getTipsPromoUntil?.();
+        if (fromServer > 0) {
+            return fromServer;
+        }
         try {
             return Number(localStorage.getItem(STORAGE_UNTIL) || 0);
         } catch {
@@ -18,6 +22,7 @@
     }
 
     function writeUntil(ts) {
+        window.DiscoverabilityState?.setTipsPromoUntil?.(ts);
         try {
             if (ts > 0) {
                 localStorage.setItem(STORAGE_UNTIL, String(ts));
@@ -28,6 +33,10 @@
     }
 
     function readTipsNotBefore() {
+        const fromServer = window.DiscoverabilityState?.getTipsNotBefore?.();
+        if (fromServer > 0) {
+            return fromServer;
+        }
         try {
             return Number(localStorage.getItem(STORAGE_TIPS_NOT_BEFORE) || 0);
         } catch {
@@ -36,6 +45,7 @@
     }
 
     function writeTipsNotBefore(ts) {
+        window.DiscoverabilityState?.setTipsNotBefore?.(ts);
         try {
             if (ts > 0) {
                 localStorage.setItem(STORAGE_TIPS_NOT_BEFORE, String(ts));
@@ -89,16 +99,15 @@
 
         /** User config wins; promo only applies when showTips was never set (undefined). */
         shouldShowRotatingTips(settings) {
-            if (!settings) return false;
-            if (settings.showTips === false) return false;
-            if (settings.showTips === true) return true;
+            if (settings?.showTips === false) return false;
+            if (settings?.showTips === true) return true;
             return this.isPromoActive();
         },
 
         onUserPreference(enabled) {
-            if (enabled === false) {
+            if (enabled) {
                 this.clearPromoPeriod();
             }
-        }
+        },
     };
-})();
+}());

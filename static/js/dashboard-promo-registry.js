@@ -82,6 +82,7 @@
 
     function clearAll({ replay = false } = {}) {
         [...ENTRIES].sort((a, b) => a.priority - b.priority).forEach(clearEntry);
+        global.DiscoverabilityState?.clearAllConfirmed?.({ persist: true });
         if (replay && global.dashboardInstance) {
             global.DashboardFeaturePromos?.tryShowDeferred?.();
         }

@@ -345,13 +345,17 @@
         }
 
         if (!force) {
-            try {
-                if (localStorage.getItem(STORAGE_KEY) === releaseToken) {
-                    onClose?.();
-                    return Promise.resolve();
-                }
-            } catch {
-                // Ignore localStorage failures.
+            const lastSeen = window.DiscoverabilityState?.getLastWhatsNewRelease?.()
+                || (() => {
+                    try {
+                        return localStorage.getItem(STORAGE_KEY);
+                    } catch {
+                        return null;
+                    }
+                })();
+            if (lastSeen === releaseToken) {
+                onClose?.();
+                return Promise.resolve();
             }
             if (typeof options.ifBlockingModalOpen === 'function' && options.ifBlockingModalOpen()) {
                 onAbort?.();
@@ -366,6 +370,7 @@
         const finish = () => {
             teardownLazyLoader();
             if (markSeenOnConfirm && releaseToken) {
+                window.DiscoverabilityState?.setLastWhatsNewRelease?.(releaseToken);
                 try {
                     localStorage.setItem(STORAGE_KEY, releaseToken);
                 } catch {

@@ -12,6 +12,9 @@
     let boundPromoKeydown = null;
 
     function readConfirmedFromStorage() {
+        if (global.DiscoverabilityState?.isStorageKeyConfirmed?.(PROMO_CONFIRMED_KEY)) {
+            return true;
+        }
         try {
             return localStorage.getItem(PROMO_CONFIRMED_KEY) === '1';
         } catch {
@@ -20,6 +23,7 @@
     }
 
     function markConfirmedInStorage() {
+        global.DiscoverabilityState?.markStorageKeyConfirmed?.(PROMO_CONFIRMED_KEY);
         try {
             localStorage.setItem(PROMO_CONFIRMED_KEY, '1');
         } catch {
@@ -283,6 +287,7 @@
         dismissPromo: confirmPromo,
         clearPromoSeen() {
             removePromoFromDom();
+            global.DiscoverabilityState?.clearStorageKey?.(PROMO_CONFIRMED_KEY);
             try {
                 localStorage.removeItem(PROMO_CONFIRMED_KEY);
             } catch {

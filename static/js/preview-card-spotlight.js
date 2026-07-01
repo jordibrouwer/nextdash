@@ -77,6 +77,7 @@
         if (dashboard.settings?.showLinkPreviewCards === true) return false;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         try {
+            if (window.DiscoverabilityState?.isStorageKeyConfirmed?.(STORAGE_KEY)) return false;
             if (localStorage.getItem(STORAGE_KEY)) return false;
         } catch { /* ignore */ }
         return true;
@@ -120,6 +121,7 @@
         create,
         enablePreviewCards,
         reset() {
+            window.DiscoverabilityState?.clearStorageKey?.(STORAGE_KEY);
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch { /* ignore */ }
