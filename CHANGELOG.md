@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01 — July 2026](#v20260701--july-2026)
 - [v2026.06.31 — June 2026](#v20260631--june-2026)
 - [v2026.06.30.2 — June 2026](#v202606302--june-2026)
 - [v2026.06.30.1 — June 2026](#v202606301--june-2026)
@@ -59,7 +60,50 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-_(Nothing yet — see [v2026.06.31](#v20260631--june-2026) for the latest release.)_
+_(Nothing yet — see [v2026.07.01](#v20260701--july-2026) for the latest release.)_
+
+---
+
+## v2026.07.01 — July 2026
+
+**Config tab bar v5** — grouped tabs (System | Dashboard | Extras | Help), compact save chrome, proportional group widths, Modern/Glass fused list surfaces and unified header chrome, cross-group keyboard navigation, compact breadcrumb, stronger active tab/group indicators; docs and Playwright coverage in EN/NL/DE/FR.
+
+### Config tab bar (v5)
+
+- **new** **Tab groups** — `config-tab-groups.js` organises tabs into **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), and **Help**. Group labels, active-group highlight, and **Help** styling at the end of the bar.
+- **new** **Keyboard in System** — **Keyboard** shortcut reference lives under the System group instead of a loose tab at the end of the flat list.
+- **new** **Proportional group width (C1)** — `--config-tab-group-weight` scales each group by visible tab count (5:3:3:1 on desktop); `syncGroupFlexWeights()` updates weights when phone layout hides groups.
+- **fix** **Phone tab groups** — ≤768px shows **System** + **Help** only; Dashboard and Extras groups are hidden via `mobile-experience.js` + `syncGroupVisibility()`.
+
+### Config chrome (v5)
+
+- **new** **Compact save strip** — `config-actions-strip` row: primary actions left, save-mode pill + status line right; slimmer padding tokens (`--config-save-bar-padding-*`, `--config-toolbar-min-height`).
+- **fix** **Save-mode pill in save row** — `#config-tab-save-mode` moved from breadcrumb into the save row beside the status indicator.
+- **fix** **Undo / Discard when dirty** — top **Undo** and **Discard** buttons hidden until `config-is-dirty`; sticky save bar matches.
+- **new** **Tab scroll hint** — `config.tabScrollHint` (`more tabs →`) on `.tabs-scroll-wrapper` when tabs overflow horizontally.
+- **fix** **Shared page grid** — `config-page-shell` grid aligns header, save/tabs, and tab content to one column width.
+- **fix** **Stronger active tab & group** — thicker active tab border (Classic), inset accent stripe (Modern/Glass), active group background + label accent; Help group distinct styling.
+
+### Modern & Glass parity
+
+- **fix** **Fused list-tab surfaces (B1)** — `config-modern-glass-surfaces.css` suppresses nested toolbar/list cards inside `.config-tab-surface`; theme list-card rules exclude `.config-tab-surface *` descendants. Tags cloud/list dividers inside the fused card.
+- **fix** **Unified app chrome (C9)** — on Modern/Glass, `section-header` + `section-controls` fuse into one card (top/bottom radius, single shadow on controls); inner cards on save row and tab bar removed. Selectors target `.config-page-shell > .section-header/section-controls`.
+
+### Keyboard & navigation
+
+- **new** **Cross-group keyboard** — `←`/`→` crosses group boundaries; `Alt+←`/`Alt+→` jumps to first tab of prev/next group (`getAdjacentTabAcrossGroups`, `getJumpTabForGroup`). Documented on cheat sheet and **Config → Keyboard → Config tab bar** (fourth fixed section).
+- **fix** **Compact breadcrumb** — removed `config /` prefix; shows `tab › context` with smaller typography; save-mode pill no longer in breadcrumb row.
+
+### Developer & docs
+
+- **new** **Playwright: config tab groups v5** — `tests/config-tab-consistency.spec.js` covers group rendering, active group highlight, phone visibility, proportional weights, chrome width alignment, bookmarks surface wrapper.
+- **fix** **Playwright stabilisation** — classic layout forced for surface-shadow test; width assertions use page column + ±3px tolerance; keyboard test expects four fixed sections.
+- **fix** **Help tab (EN / NL / DE / FR)** — **What's new** recap adds **v2026.07.01**; **Config → General** documents tab groups, compact save chrome, fused Modern/Glass surfaces.
+- **fix** **README & MANUAL** — Config v5 tab bar section; keyboard table updated for group navigation; release references through **v2026.07.01**.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v106` data version and `2026.07-dashboard-release-v85` dashboard release token; `config-chrome-v5-5` on save-bar and related config bundles; `config-tab-groups-weight-1` on `config-tabs.css` / `config-tab-groups.js`; `config-v5-2` on surface imports in `config.css`.
 
 ---
 
