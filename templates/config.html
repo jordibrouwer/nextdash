@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b9-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b11-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -1203,9 +1203,16 @@
                 <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-page-btn" class="btn btn-primary btn-small" data-i18n="config.addPage">+ Add page</button>
                 </div>
-                <ul id="pages-list" class="pages-list js-list simple-list" role="list">
-                    <!-- Pages will be loaded here -->
-                </ul>
+                <div id="pages-list-panel" class="pages-list-panel">
+                    <div class="pages-list-header" aria-hidden="true" hidden>
+                        <span class="pages-list-header-label" data-i18n="config.pagesListColPage">Page</span>
+                        <span class="pages-list-header-count" data-i18n="config.tagsListColUsage">Usage</span>
+                        <span class="pages-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
+                    </div>
+                    <ul id="pages-list" class="pages-list js-list simple-list" role="list">
+                        <!-- Pages will be loaded here -->
+                    </ul>
+                </div>
                 </div>
             </div>
             </div>
@@ -1225,9 +1232,16 @@
                         <button type="button" id="add-category-btn" class="btn btn-primary btn-small" data-i18n="config.addCategory">+ Add category</button>
                     </div>
                 </div>
-                <ul id="categories-list" class="categories-list js-list simple-list" role="list">
-                    <!-- Categories will be loaded here -->
-                </ul>
+                <div id="categories-list-panel" class="categories-list-panel">
+                    <div class="categories-list-header" aria-hidden="true" hidden>
+                        <span class="categories-list-header-label" data-i18n="config.categoriesListColCategory">Category</span>
+                        <span class="categories-list-header-count" data-i18n="config.tagsListColUsage">Usage</span>
+                        <span class="categories-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
+                    </div>
+                    <ul id="categories-list" class="categories-list js-list simple-list" role="list">
+                        <!-- Categories will be loaded here -->
+                    </ul>
+                </div>
                 </div>
             </div>
             </div>
@@ -2411,8 +2425,8 @@
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>
     <script src="/static/js/config/config-bookmark-store.js"></script>
-    <script src="/static/js/config/config-pages.js?v=config-domain-1"></script>
-    <script src="/static/js/config/config-categories.js?v=config-domain-1"></script>
+    <script src="/static/js/config/config-pages.js?v=page-usage-bar-1"></script>
+    <script src="/static/js/config/config-categories.js?v=category-usage-bar-1"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>

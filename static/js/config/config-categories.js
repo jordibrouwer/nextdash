@@ -12,10 +12,14 @@ class ConfigCategories {
         const container = document.getElementById('categories-list');
         if (!container) return;
 
+        const listPanel = document.getElementById('categories-list-panel');
+        const header = listPanel?.querySelector('.categories-list-header');
+
         container.innerHTML = '';
 
         const list = Array.isArray(categories) ? categories : [];
         if (list.length === 0) {
+            if (header) header.hidden = true;
             const hint = document.createElement('li');
             hint.className = 'categories-list-empty-hint config-empty-state config-empty-state--inlist';
             hint.setAttribute('role', 'listitem');
@@ -24,20 +28,40 @@ class ConfigCategories {
             return;
         }
 
+        if (header) header.hidden = false;
+
+        const counts = list.map((category) =>
+            typeof getBookmarkCount === 'function' ? getBookmarkCount(category.id) : 0
+        );
+        const maxCount = counts.length ? Math.max(...counts) : 0;
+        const minCount = counts.length ? Math.min(...counts) : maxCount;
+
         list.forEach((category, index) => {
+            const count = counts[index];
+            const scale =
+                typeof ConfigTags !== 'undefined'
+                    ? ConfigTags.scaleForCount(count, minCount, maxCount)
+                    : maxCount <= 0
+                      ? 0.5
+                      : count / maxCount;
+            const tierClass =
+                typeof ConfigTags !== 'undefined'
+                    ? ConfigTags.listTierClassForScale(scale)
+                    : '';
             container.appendChild(
-                this.createCategoryElement(category, index, getBookmarkCount)
+                this.createCategoryElement(category, index, count, scale, tierClass)
             );
         });
     }
 
-    createCategoryElement(category, index, getBookmarkCount) {
+    createCategoryElement(category, index, count, scale = 0.5, tierClass = '') {
         const li = document.createElement('li');
-        li.className = 'category-item js-item is-idle';
+        li.className = `category-item js-item is-idle${tierClass ? ` ${tierClass}` : ''}`;
         li.setAttribute('role', 'listitem');
         li.setAttribute('data-category-index', String(index));
         li.setAttribute('data-category-id', String(category.id));
         li.tabIndex = 0;
+        li.style.setProperty('--tag-popularity', scale.toFixed(3));
 
         if (!category.originalId) {
             category.originalId = category.id;
@@ -50,6 +74,12 @@ class ConfigCategories {
         const nameId = `category-name-${safeId}`;
         const iconLabelId = `category-icon-label-${safeId}`;
         const nameLabelId = `category-name-label-${safeId}`;
+
+        const row = document.createElement('div');
+        row.className = 'category-item-row';
+
+        const primary = document.createElement('div');
+        primary.className = 'category-item-primary';
 
         const dragLabel = this.t('config.dragToReorder') || 'Drag to reorder';
         const dragHandle = document.createElement('span');
@@ -92,14 +122,34 @@ class ConfigCategories {
         nameInput.dataset.field = 'name';
         nameInput.setAttribute('aria-labelledby', nameLabelId);
 
-        const count = typeof getBookmarkCount === 'function' ? getBookmarkCount(category.id) : 0;
+        primary.appendChild(dragHandle);
+        primary.appendChild(iconLabel);
+        primary.appendChild(iconInput);
+        primary.appendChild(nameLabel);
+        primary.appendChild(nameInput);
+        row.appendChild(primary);
+
+        const meta = document.createElement('div');
+        meta.className = 'tag-item-meta';
+
+        const popularity = document.createElement('div');
+        popularity.className = 'tag-popularity';
+        popularity.setAttribute('aria-hidden', 'true');
+        const popularityBar = document.createElement('span');
+        popularityBar.className = 'tag-popularity-bar';
+        popularityBar.style.setProperty('--tag-fill', `${Math.round(scale * 100)}%`);
+        popularity.appendChild(popularityBar);
+        meta.appendChild(popularity);
+
         const countBadge = document.createElement('span');
-        countBadge.className = 'category-bookmark-count';
+        countBadge.className = 'tag-item-count';
         const countTpl = this.t('config.categoryBookmarkCount') || '{count} bookmarks';
         countBadge.textContent = countTpl.replace('{count}', String(count));
         countBadge.title = countBadge.textContent;
+        meta.appendChild(countBadge);
+        row.appendChild(meta);
 
-        const actions = document.createElement('span');
+        const actions = document.createElement('div');
         actions.className = 'category-item-actions';
 
         const mergeBtn = document.createElement('button');
@@ -120,14 +170,8 @@ class ConfigCategories {
 
         actions.appendChild(mergeBtn);
         actions.appendChild(removeBtn);
-
-        li.appendChild(dragHandle);
-        li.appendChild(iconLabel);
-        li.appendChild(iconInput);
-        li.appendChild(nameLabel);
-        li.appendChild(nameInput);
-        li.appendChild(countBadge);
-        li.appendChild(actions);
+        row.appendChild(actions);
+        li.appendChild(row);
 
         nameInput.addEventListener('input', (e) => {
             category.name = e.target.value;

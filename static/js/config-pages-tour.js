@@ -302,7 +302,7 @@ class ConfigPagesTour {
                 mgr.originalPagesData.splice(origIndex, 1);
             }
 
-            mgr.pages.render(mgr.pagesData, mgr.generateId.bind(mgr), mgr.isPageArchived.bind(mgr));
+            mgr.renderPagesList?.();
             mgr.pages.renderPageSelector(mgr.getVisiblePages(), 1);
             mgr.pages.initReorder(mgr.pagesData, (newPages) => mgr.handlePagesReordered(newPages));
 
