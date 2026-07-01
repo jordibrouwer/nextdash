@@ -489,19 +489,19 @@ test.describe('config tab groups (v5)', () => {
         const widths = await page.evaluate(() => {
             const w = (sel) => Math.round(document.querySelector(sel)?.getBoundingClientRect().width || 0);
             return {
-                shell: w('.config-page-shell'),
+                column: w('.config-page-shell > .config-page-column'),
                 save: w('.config-actions-top'),
                 tabs: w('.tabs-scroll-wrapper'),
                 toolbar: w('.general-layer-toolbar'),
-                card: w('.general-card'),
+                card: w('.general-card:not([hidden])'),
             };
         });
 
-        expect(widths.shell).toBeGreaterThan(0);
-        expect(widths.save).toBe(widths.shell);
-        expect(widths.tabs).toBe(widths.shell);
-        expect(widths.toolbar).toBe(widths.shell);
-        expect(widths.card).toBe(widths.shell);
+        expect(widths.column).toBeGreaterThan(0);
+        expect(widths.save).toBe(widths.column);
+        expect(widths.tabs).toBe(widths.column);
+        expect(widths.toolbar).toBe(widths.column);
+        expect(widths.card).toBe(widths.column);
     });
 });
 
