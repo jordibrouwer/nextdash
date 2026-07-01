@@ -59,7 +59,7 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 	}
 
 	if err == nil && resp != nil {
-		defer resp.Body.Close()
+		defer drainAndCloseResponse(resp)
 		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
 			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: resp.StatusCode}
 		}

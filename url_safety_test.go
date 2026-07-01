@@ -113,3 +113,23 @@ func TestValidateBookmarkURLAllowsLocalWhenEnabled(t *testing.T) {
 		t.Fatalf("public bookmark should be allowed: %v", err)
 	}
 }
+
+func TestIsPublicHostCtx_RespectsDeadline(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel()
+	time.Sleep(2 * time.Millisecond)
+	if isPublicHostCtx(ctx, "example.com") {
+		t.Fatal("isPublicHostCtx() should fail when context is already expired")
+	}
+}
+
+func TestValidateHTTPURLCtx_RespectsDeadline(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel()
+	time.Sleep(2 * time.Millisecond)
+	if err := validateHTTPURLCtx(ctx, "https://example.com", false); err == nil {
+		t.Fatal("validateHTTPURLCtx() should fail when context is already expired")
+	}
+}

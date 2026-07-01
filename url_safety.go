@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/netip"
@@ -11,20 +12,31 @@ import (
 	"time"
 )
 
+const hostLookupTimeout = 3 * time.Second
+
 // isPublicHost returns true when host resolves only to routable (non-private) addresses.
 func isPublicHost(host string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), hostLookupTimeout)
+	defer cancel()
+	return isPublicHostCtx(ctx, host)
+}
+
+func isPublicHostCtx(ctx context.Context, host string) bool {
+	if ctx.Err() != nil {
+		return false
+	}
 	host = strings.TrimSpace(strings.ToLower(host))
 	if host == "" || host == "localhost" {
 		return false
 	}
 
-	ips, err := net.LookupIP(host)
+	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
 	if err != nil || len(ips) == 0 {
 		return false
 	}
 
-	for _, ip := range ips {
-		addr, ok := netip.AddrFromSlice(ip)
+	for _, ipAddr := range ips {
+		addr, ok := netip.AddrFromSlice(ipAddr.IP)
 		if !ok {
 			return false
 		}
@@ -37,6 +49,15 @@ func isPublicHost(host string) bool {
 }
 
 func validateHTTPURL(rawURL string, allowLocal bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), hostLookupTimeout)
+	defer cancel()
+	return validateHTTPURLCtx(ctx, rawURL, allowLocal)
+}
+
+func validateHTTPURLCtx(ctx context.Context, rawURL string, allowLocal bool) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	rawURL = strings.TrimSpace(rawURL)
 	if rawURL == "" {
 		return fmt.Errorf("URL is required")
@@ -59,7 +80,7 @@ func validateHTTPURL(rawURL string, allowLocal bool) error {
 		return nil
 	}
 
-	if !isPublicHost(parsedURL.Hostname()) {
+	if !isPublicHostCtx(ctx, parsedURL.Hostname()) {
 		return fmt.Errorf("URL host is not allowed")
 	}
 
@@ -141,6 +162,45 @@ func newOutboundHTTPClient(allowLocal bool, timeout time.Duration, maxRedirects 
 	}
 }
 
+// drainAndCloseResponse discards and closes an HTTP response body so connections can be reused.
+func drainAndCloseResponse(resp *http.Response) {
+	if resp == nil || resp.Body == nil {
+		return
+	}
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
+	_ = resp.Body.Close()
+}
+
+// redirectLocationFromResponse resolves a 3xx Location header against baseURL.
+func redirectLocationFromResponse(baseURL string, resp *http.Response, allowLocal bool) string {
+	ctx, cancel := context.WithTimeout(context.Background(), hostLookupTimeout)
+	defer cancel()
+	return redirectLocationFromResponseCtx(ctx, baseURL, resp, allowLocal)
+}
+
+func redirectLocationFromResponseCtx(ctx context.Context, baseURL string, resp *http.Response, allowLocal bool) string {
+	if ctx.Err() != nil || resp == nil || resp.StatusCode < 300 || resp.StatusCode >= 400 {
+		return ""
+	}
+	location := strings.TrimSpace(resp.Header.Get("Location"))
+	if location == "" {
+		return ""
+	}
+	base, parseErr := url.Parse(baseURL)
+	locURL, locErr := url.Parse(location)
+	if parseErr != nil || locErr != nil {
+		return ""
+	}
+	resolved := strings.TrimSpace(base.ResolveReference(locURL).String())
+	if resolved == "" || resolved == strings.TrimSpace(baseURL) {
+		return ""
+	}
+	if err := validateHTTPURLCtx(ctx, resolved, allowLocal); err != nil {
+		return ""
+	}
+	return resolved
+}
+
 // safeRedirectCheck validates each redirect target against the same host rules as the initial URL.
 func safeRedirectCheck(allowLocal bool, maxRedirects int) func(*http.Request, []*http.Request) error {
 	return func(req *http.Request, via []*http.Request) error {
@@ -154,7 +214,9 @@ func safeRedirectCheck(allowLocal bool, maxRedirects int) func(*http.Request, []
 		if allowLocal {
 			return nil
 		}
-		if !isPublicHost(host) {
+		lookupCtx, cancel := context.WithTimeout(req.Context(), hostLookupTimeout)
+		defer cancel()
+		if !isPublicHostCtx(lookupCtx, host) {
 			return fmt.Errorf("redirect host is not allowed")
 		}
 		return nil

@@ -1480,8 +1480,13 @@
 
     async function fetchAutoHealSuggestion(pageId, index, { redirectOnly = false } = {}) {
         const redirectParam = redirectOnly ? '&redirectOnly=1' : '';
+        const timeoutMs = redirectOnly
+            ? (HealthRuntime.DEFAULT_FETCH_TIMEOUT_MS + 5000)
+            : HealthRuntime.DEFAULT_FETCH_TIMEOUT_MS;
         const response = await healthFetch(
-            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}${redirectParam}`
+            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}${redirectParam}`,
+            {},
+            timeoutMs
         );
         if (!response.ok) {
             const message = await response.text();
@@ -1512,35 +1517,44 @@
     async function handleRedirectDetect(button, pageId, index) {
         closeAllActionMenus();
         try {
-            await runHealthAction('redirect-detect', async () => {
+            const suggestion = await runHealthAction('redirect-detect', async () => {
                 setButtonBusy(button, true);
                 try {
-                    const suggestion = await fetchAutoHealSuggestion(pageId, index, { redirectOnly: true });
-                    const redirectUrl = String(suggestion?.redirectUrl || '').trim();
-                    if (!redirectUrl) {
-                        showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
-                        return;
-                    }
-                    const applyNow = await confirmDialog({
-                        title: t('health.autoHealRedirect', 'detect redirect'),
-                        message: t(
-                            'health.autoHealRedirectConfirm',
-                            'Redirect found. Apply URL fix now?\n\n{url}',
-                            { url: redirectUrl }
-                        ),
-                        confirmText: t('health.confirm', 'Confirm'),
-                        cancelText: t('health.cancel', 'Cancel')
-                    });
-                    if (!applyNow) {
-                        showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: redirectUrl }));
-                        return;
-                    }
-                    await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
-                    showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
-                    await reloadReport();
+                    return await fetchAutoHealSuggestion(pageId, index, { redirectOnly: true });
                 } finally {
                     setButtonBusy(button, false);
                 }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
+            });
+            if (!suggestion) {
+                return;
+            }
+
+            const redirectUrl = String(suggestion?.redirectUrl || '').trim();
+            if (!redirectUrl) {
+                showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
+                return;
+            }
+            const applyNow = await confirmDialog({
+                title: t('health.autoHealRedirect', 'detect redirect'),
+                message: t(
+                    'health.autoHealRedirectConfirm',
+                    'Redirect found. Apply URL fix now?\n\n{url}',
+                    { url: redirectUrl }
+                ),
+                confirmText: t('health.confirm', 'Confirm'),
+                cancelText: t('health.cancel', 'Cancel')
+            });
+            if (!applyNow) {
+                showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: redirectUrl }));
+                return;
+            }
+
+            await runHealthAction('redirect-apply', async () => {
+                await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
+                showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
+                await reloadReport();
             }, {
                 busyMessage: t('health.autoHealWorking', 'working...')
             });

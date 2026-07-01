@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -2245,7 +2246,7 @@ func (h *Handlers) AutoHealSuggest(w http.ResponseWriter, r *http.Request) {
 	redirectOnlyRaw := strings.TrimSpace(r.URL.Query().Get("redirectOnly"))
 	redirectOnly := redirectOnlyRaw == "1" || strings.EqualFold(redirectOnlyRaw, "true")
 
-	redirectURL := h.detectRedirectURL(currentURL)
+	redirectURL := h.detectRedirectURLCtx(r.Context(), currentURL, redirectOnly)
 	suggestedTitle := ""
 	if !redirectOnly {
 		suggestedTitle = h.fetchPageTitleSafe(func() string {
@@ -2306,32 +2307,41 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	appliedURL := false
 	appliedTitle := false
 	var result Bookmark
-	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
-		if req.OneClick && updatedURL == "" {
-			updatedURL = strings.TrimSpace(h.detectRedirectURL(strings.TrimSpace(bookmark.URL)))
+
+	bookmarks := h.store.GetBookmarksByPage(req.PageID)
+	if req.Index >= len(bookmarks) {
+		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
+		return
+	}
+	sourceBookmark := bookmarks[req.Index]
+
+	// Outbound HTTP must not run inside MutateBookmarkAt — it holds the store write lock
+	// and would freeze dashboard/config/health for the full redirect/title fetch duration.
+	if req.OneClick && updatedURL == "" {
+		updatedURL = strings.TrimSpace(h.detectRedirectURLCtx(r.Context(), strings.TrimSpace(sourceBookmark.URL), false))
+	}
+	resolvedTitle := strings.TrimSpace(req.SuggestedTitle)
+	if refreshTitle && resolvedTitle == "" {
+		targetURL := updatedURL
+		if targetURL == "" {
+			targetURL = strings.TrimSpace(sourceBookmark.URL)
 		}
+		resolvedTitle = strings.TrimSpace(h.fetchPageTitleSafe(targetURL))
+	}
+
+	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
-			if err := h.validateBookmarkURL(updatedURL); err != nil {
-				return err
-			}
 			bookmark.URL = updatedURL
 			appliedURL = true
 		}
 
-		if refreshTitle {
-			targetURL := strings.TrimSpace(bookmark.URL)
-			title := strings.TrimSpace(req.SuggestedTitle)
-			if title == "" {
-				title = h.fetchPageTitleSafe(targetURL)
+		if refreshTitle && resolvedTitle != "" {
+			bookmark.PreviewTitle = resolvedTitle
+			// Keep user-defined names unless empty; fallback to fetched title.
+			if strings.TrimSpace(bookmark.Name) == "" || appliedURL {
+				bookmark.Name = resolvedTitle
 			}
-			if title != "" {
-				bookmark.PreviewTitle = title
-				// Keep user-defined names unless empty; fallback to fetched title.
-				if strings.TrimSpace(bookmark.Name) == "" || appliedURL {
-					bookmark.Name = title
-				}
-				appliedTitle = true
-			}
+			appliedTitle = true
 		}
 
 		if appliedURL {
@@ -2357,47 +2367,73 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) detectRedirectURL(urlStr string) string {
-	if err := validateHTTPURL(strings.TrimSpace(urlStr), h.allowLocalBookmarks()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	return h.detectRedirectURLCtx(ctx, urlStr, false)
+}
+
+func (h *Handlers) detectRedirectURLCtx(ctx context.Context, urlStr string, quickOnly bool) string {
+	urlStr = strings.TrimSpace(urlStr)
+	if ctx.Err() != nil {
 		return ""
 	}
 	allowLocal := h.allowLocalBookmarks()
-	client := &http.Client{
-		Timeout:   6 * time.Second,
+	if err := validateHTTPURLCtx(ctx, urlStr, allowLocal); err != nil {
+		return ""
+	}
+
+	overallTimeout := 12 * time.Second
+	if quickOnly {
+		overallTimeout = 8 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, overallTimeout)
+	defer cancel()
+
+	noFollowTimeout := 6 * time.Second
+	if quickOnly {
+		noFollowTimeout = 7 * time.Second
+	}
+	noFollow := &http.Client{
+		Timeout:   noFollowTimeout,
 		Transport: newSSRFSafeTransport(allowLocal, 2*time.Second),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	resp, err := client.Get(urlStr)
-	if err == nil && resp != nil {
-		defer resp.Body.Close()
-		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
-			location := strings.TrimSpace(resp.Header.Get("Location"))
-			if location != "" {
-				base, parseErr := url.Parse(urlStr)
-				locURL, locErr := url.Parse(location)
-				if parseErr == nil && locErr == nil {
-					resolved := base.ResolveReference(locURL).String()
-					if strings.TrimSpace(resolved) != strings.TrimSpace(urlStr) {
-						if err := validateHTTPURL(resolved, h.allowLocalBookmarks()); err == nil {
-							return resolved
-						}
-					}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	if err == nil {
+		if resp, doErr := noFollow.Do(req); resp != nil {
+			if doErr == nil {
+				if redirect := redirectLocationFromResponseCtx(ctx, urlStr, resp, allowLocal); redirect != "" {
+					drainAndCloseResponse(resp)
+					return redirect
 				}
 			}
+			drainAndCloseResponse(resp)
 		}
 	}
 
-	followClient := h.outboundHTTPClient(7*time.Second, 5)
-	resp, err = followClient.Get(urlStr)
-	if err != nil || resp == nil {
+	if quickOnly {
 		return ""
 	}
-	defer resp.Body.Close()
-	if resp.Request != nil && resp.Request.URL != nil {
-		finalURL := strings.TrimSpace(resp.Request.URL.String())
-		if finalURL != "" && finalURL != strings.TrimSpace(urlStr) {
-			if err := validateHTTPURL(finalURL, h.allowLocalBookmarks()); err == nil {
+
+	followClient := h.outboundHTTPClient(7*time.Second, 5)
+	req2, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	if err != nil {
+		return ""
+	}
+	resp2, err := followClient.Do(req2)
+	if err != nil || resp2 == nil {
+		if resp2 != nil {
+			drainAndCloseResponse(resp2)
+		}
+		return ""
+	}
+	defer drainAndCloseResponse(resp2)
+	if resp2.Request != nil && resp2.Request.URL != nil {
+		finalURL := strings.TrimSpace(resp2.Request.URL.String())
+		if finalURL != "" && finalURL != urlStr {
+			if err := validateHTTPURLCtx(ctx, finalURL, allowLocal); err == nil {
 				return finalURL
 			}
 		}
