@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.01.1**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.01.4**).
 
 ---
 
@@ -744,7 +744,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.01.1** config surface parity (Keyboard/Bookmarks/Stats/Backups fused surfaces, Classic header chrome, health count badge, discoverability sync), **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.01.4** config polish (Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome), **v2026.07.01.1** config surface parity, **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -854,7 +854,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 
 - **Breadcrumb row** — compact path `tab › context` (e.g. `bookmarks › Work › dev`) with sub-context on Bookmarks (page + category) and Categories (page). **Search settings…** lives in the same row on the right.
 - **Save row** — compact strip with **Save**, **Undo** / **Discard** (only when there are unsaved changes), **Requires save** / **Auto-save** / **Read-only** / **Save colors** pill, and one dirty/saved/syncing status line.
-- **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them.
+- **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. When a tab in a group has unsaved changes, the group label shows a dot (e.g. **System ●**) (**v2026.07.01.4**).
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
 - **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll). Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
 - **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
@@ -874,7 +874,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 #### Layout and structure
 
 - **Tab groups (v2026.07.01)** — labelled groups **System**, **Dashboard**, **Extras**, **Help** with proportional width; active group highlighted; **Keyboard** under System. Tab bar may show a *more tabs →* hint when it overflows horizontally.
-- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. **Keyboard**, **Bookmarks**, **Stats**, and **Backups** use the same fused `config-tab-surface` pattern (**v2026.07.01.1**). On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs.
+- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1 / v2026.07.01.4)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout. **Pages** and **Categories** also show a **Usage** column (popularity bar + bookmark count, like Tags) (**v2026.07.01.4**). **Keyboard**, **Bookmarks**, **Stats**, **Backups**, and **Help** use the fused `config-tab-surface` pattern. On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows. Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs. Config chrome respects `prefers-reduced-motion` (**v2026.07.01.4**).
 - **Save UX** — tabs that auto-save (Pages, Categories, Finders, …) show an **Auto-save** pill in the **save row**; General and Bookmarks show **Requires save** until you click **Save**. Stats is **Read-only**; Theme uses **Save colors**. One status line beside **Save** shows dirty / saved / syncing. **Undo** and **Discard** in the save row appear only when something changed.
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
 - **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
@@ -905,10 +905,10 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 
 ### Config → Help
 
-Available on every screen width (including phone). The **Help** tab is a searchable index of the same topics as this manual, in shorter form:
+Available on every screen width (including phone). The **Help** tab uses the shared config shell (**v2026.07.01.4**): intro paragraph, filter toolbar, and one fused surface card containing the Quick links index and help sections (divided rows on all layout versions). Topics match this manual in shorter form:
 
 - **Quick links** — anchor jump list (quick start, onboarding, general, navigation, mobile, keyboard, bookmarks, search, tags, collections, health, backup, troubleshooting, …).
-- **What's new recap** — scrollable history of recent changes; **v2026.07.01.1** documents config surface parity (Keyboard/Bookmarks/Stats/Backups fused surfaces, Classic header chrome, health count badge, discoverability cross-browser sync, inline editor fix); **v2026.07.01** documents config tab bar v5 (groups, compact save chrome, Modern/Glass fused surfaces and unified header chrome, cross-group keyboard); **v2026.06.31** documents config tab consistency (shared list-tab shell, breadcrumb context, unified save status, Bookmarks **Context** panel, phone `#bookmarks` card).
+- **What's new recap** — scrollable history of recent changes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome, and Stats tour paused; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
@@ -1252,7 +1252,7 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 ## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.01.1** (new / fix)  
+- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.01.4** (new / fix)  
 - **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links and a **What's new** recap  
 - **In-app What's new (★)** — Latest release highlights first; older releases load as you scroll (skeleton while fetching)  
 

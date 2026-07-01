@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.3**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.4**.
 
 ---
 
@@ -179,7 +179,9 @@ Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation t
 
 **Config tab bar v5 (v2026.07.01)** — tabs are grouped as **System**, **Dashboard**, **Extras**, and **Help** (Keyboard lives in System). Compact save strip with save-mode pill and dirty-only **Undo**/**Discard**; proportional group widths; tab scroll hint when the bar overflows. On **Modern** and **Glass**, the header + save row + tabs fuse into one chrome card and list tabs use a single fused surface. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. `←`/`→` cross tab groups; `Alt+←`/`→` jump between groups. Compact breadcrumb (`tab › context`).
 
-**Config surface parity (v2026.07.01.1)** — **Keyboard**, **Bookmarks**, **Stats**, and **Backups** tabs now use the shared `config-tab-surface` list-shell: toolbar + content in one card with divided rows (no nested floating cards). Bookmarks search matches other list-tab filter styling; Stats moves **Refresh**/**Export CSV** into the in-surface toolbar. Health links show a compact count-only badge pill. Dismissed discoverability promos and What's new progress sync via `settings.discoverabilityState` in `settings.json` across browsers.
+**Config surface parity (v2026.07.01.1)** — **Keyboard**, **Bookmarks**, **Stats**, **Backups**, and **Help** tabs use the shared `config-tab-surface` list-shell: toolbar + content in one card with divided rows (no nested floating cards). Bookmarks search matches other list-tab filter styling; Stats moves **Refresh**/**Export CSV** into the in-surface toolbar. Health links show a compact count-only badge pill. Dismissed discoverability promos and What's new progress sync via `settings.discoverabilityState` in `settings.json` across browsers.
+
+**Config polish (v2026.07.01.4)** — **Pages** and **Categories** list tabs show a **Usage** column (Tags-style popularity bar + bookmark count). Unsaved changes show a dot on the tab group label (e.g. **System ●**). Config tab chrome respects `prefers-reduced-motion`. The Stats guided tour is temporarily disabled.
 
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
@@ -341,7 +343,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.3
+   ./scripts/release-to-main.sh v2026.07.01.4
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).

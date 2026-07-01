@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.4 — July 2026](#v202607014--july-2026)
 - [v2026.07.01.3 — July 2026](#v202607013--july-2026)
 - [v2026.07.01.2 — July 2026](#v202607012--july-2026)
 - [v2026.07.01.1 — July 2026](#v202607011--july-2026)
@@ -63,18 +64,31 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-**Config structure lists** — Pages and Categories tabs match the Tags usage column; Stats guided tour paused; Classic C10 Playwright test updated.
+Nothing yet.
+
+---
+
+## v2026.07.01.4 — July 2026
+
+**Config polish (v5 continued)** — Pages and Categories usage columns; Help tab fused surface; unsaved dot on tab group labels; reduced-motion on config chrome; Stats guided tour paused.
 
 ### Config
 
 - **new** **Pages usage column** — column headers (Page / Usage / Actions), popularity bar + bookmark count per page, tier styling from relative usage across all pages (`config-pages.js`, `config-lists.css`).
 - **new** **Categories usage column** — same Tags-style usage bar and count as Pages (per-category counts on the selected page).
+- **new** **Help tab surface (B5)** — `config-tab-intro` + `config-tab-surface help-tab-surface`: shared filter toolbar (`config-filter-field`, clear button), Quick links index + help blocks as divided rows inside one card on Classic, Modern, and Glass.
+- **new** **Tab group unsaved dot (C14)** — when a tab in a group has pending changes, the group label shows a dot (e.g. **System ●** when General is dirty); `syncUnsavedIndicators()` in `config-tab-groups.js` / `config-persistence.js`.
+- **fix** **Reduced-motion chrome (C15)** — `prefers-reduced-motion: reduce` disables tab transition animations, scroll-hint pulse, unsaved-badge pulse, and save-status spinner on config chrome (`config-tabs.css`, `config-unsaved-state.css`, `config-save-status.css`).
 - **fix** **Stats guided tour disabled** — `CONFIG_TAB_TOUR_DEFS` stats entry `enabled: false`; **Show Stats tour again** reset button hidden until the tour is re-enabled.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v110` data version and `2026.07-dashboard-release-v87` dashboard release token; `config-surface-b13-1` on `config.css`; `config-help-surface-b5-1` on help CSS/JS and classic/modern-glass surface imports; `config-tab-groups-unsaved-1` on `config-tab-groups.js` / `config-persistence.js`.
 
 ### Developer & docs
 
-- **fix** **Playwright C10** — `config-tab-consistency.spec.js` asserts Classic keeps the configuration header separate from the save row and grouped tabs (**v2026.07.01.3**), not fused chrome.
-- **fix** **README, MANUAL & Help tab** — Classic header separation (**v2026.07.01.3**); Pages/Categories usage columns; Stats tour temporarily off in guided-tour lists.
+- **fix** **Playwright** — `config-tab-consistency.spec.js` adds Help surface (B5), group unsaved dot (C14), and reduced-motion chrome (C15); Classic C10 separate-header test retained.
+- **fix** **README, MANUAL, Help locales & What's new** — release notes for **v2026.07.01.4** in EN/NL/DE/FR.
 
 ---
 

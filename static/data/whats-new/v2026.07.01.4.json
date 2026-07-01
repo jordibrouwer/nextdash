@@ -1,0 +1,50 @@
+{
+  "tag": "v2026.07.01.4",
+  "date": "July 2026",
+  "releasedAt": "2026-07-01",
+  "sections": [
+    {
+      "title": "Config lists &amp; Help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Pages &amp; Categories usage columns</strong> — <strong>Config → Pages</strong> and <strong>Categories</strong> match <strong>Tags</strong>: column headers (name / <em>Usage</em> / Actions), popularity bar + bookmark count, tier styling from relative usage."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help tab surface (B5)</strong> — <strong>Config → Help</strong> uses the shared <code>config-tab-surface</code> shell: intro paragraph, filter toolbar with clear button, Quick links index + help sections as divided rows inside one card (Classic, Modern, and Glass)."
+        }
+      ]
+    },
+    {
+      "title": "Config chrome",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tab group unsaved dot (C14)</strong> — when a tab inside a group has unsaved changes, the group label shows a dot (e.g. <strong>System ●</strong> when <em>General</em> is dirty)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reduced-motion chrome (C15)</strong> — with <code>prefers-reduced-motion: reduce</code>, config tab transitions, scroll-hint pulse, unsaved-badge pulse, and save-status spinner animations are disabled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stats guided tour paused</strong> — the Stats tab spotlight tour is temporarily disabled; the <em>Show Stats tour again</em> reset button is hidden until the tour is re-enabled."
+        }
+      ]
+    },
+    {
+      "title": "Help &amp; documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help (EN / NL / DE / FR)</strong> — What's new recap and General help document <strong>v2026.07.01.4</strong> (usage columns, Help surface, unsaved group dots, reduced motion, Stats tour off)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, CHANGELOG</strong> — release notes for <strong>v2026.07.01.4</strong>; Playwright config suite extended for Help surface (B5), group unsaved dot (C14), and reduced-motion chrome (C15)."
+        }
+      ]
+    }
+  ]
+}
