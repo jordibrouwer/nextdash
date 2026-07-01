@@ -103,3 +103,10 @@ body.config-sticky-save-visible .config-actions-primary #save-btn:focus-visible,
 body.config-sticky-save-visible .config-actions-primary #discard-top-btn:focus-visible {
     opacity: 1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .save-status-indicator.is-saving::before {
+        animation: none !important;
+        border-top-color: var(--text-secondary);
+    }
+}

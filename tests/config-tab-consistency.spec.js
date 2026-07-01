@@ -522,6 +522,41 @@ test.describe('config tab groups (v5)', () => {
         await expect(page.locator('.tab-button[data-tab="keyboard"]')).toHaveClass(/active/);
     });
 
+    test('shows unsaved dot on System group when General is dirty (C14)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await page.evaluate(() => {
+            const cb = document.getElementById('show-background-dots-checkbox');
+            if (!cb) throw new Error('show-background-dots-checkbox missing');
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        await expect.poll(() => page.evaluate(() => (
+            document.querySelector('.config-tab-group[data-tab-group="system"]')
+                ?.classList.contains('config-tab-group--unsaved') === true
+        ))).toBe(true);
+        await expect(page.locator('.tab-button[data-tab="general"]')).toHaveClass(/tab-has-unsaved/);
+        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).not.toHaveClass(/config-tab-group--unsaved/);
+    });
+
+    test('respects prefers-reduced-motion for config tab chrome (C15)', async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+
+        const tabAnim = await page.evaluate(() => {
+            const panel = document.querySelector('.tab-content[data-tab-content="pages"]');
+            return panel ? getComputedStyle(panel).animationName : '';
+        });
+        expect(tabAnim === 'none' || tabAnim === '').toBeTruthy();
+
+        await page.evaluate(() => window.configManager.markDirty());
+        const saveAnim = await page.evaluate(() => {
+            const btn = document.getElementById('save-btn');
+            return btn ? getComputedStyle(btn).animationName : '';
+        });
+        expect(saveAnim === 'none' || saveAnim === '').toBeTruthy();
+    });
+
     test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 });
         await page.reload();

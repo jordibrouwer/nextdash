@@ -553,8 +553,7 @@ class ConfigPersistence {
     setColorsDirtyState(isDirty) {
         this.c.colorsDirty = isDirty === true;
         document.body.classList.toggle('colors-is-dirty', this.c.colorsDirty);
-        const colorsTab = document.querySelector('.tab-button[data-tab="colors"]');
-        colorsTab?.classList.toggle('tab-has-unsaved', this.c.colorsDirty);
+        window.ConfigTabGroups?.syncUnsavedIndicators?.(this.c);
     }
 
     getSaveButtons() {
@@ -630,6 +629,7 @@ class ConfigPersistence {
         if (this.c._stickySaveScrollHandler) {
             this.c._stickySaveScrollHandler();
         }
+        window.ConfigTabGroups?.syncUnsavedIndicators?.(this.c);
     }
 
     markDirty() {

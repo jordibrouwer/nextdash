@@ -201,10 +201,22 @@
     .tab-content {
         animation: none !important;
     }
+
+    .config-controls-wrapper .tab-button,
+    .config-tabs-scroll-hint,
+    .tabs-scroll-wrapper::after {
+        transition: none !important;
+    }
 }
 
 body.no-animations .tab-content {
     animation: none !important;
+}
+
+body.no-animations .config-controls-wrapper .tab-button,
+body.no-animations .config-tabs-scroll-hint,
+body.no-animations .tabs-scroll-wrapper::after {
+    transition: none !important;
 }
 
 /* ── Tab groups (v5 — System | Dashboard | Extras | Help) ── */
