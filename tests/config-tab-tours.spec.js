@@ -194,4 +194,34 @@ test.describe('config tab tours (phase 1 registry)', () => {
         });
         expect(dimming).toMatch(/9999px/);
     });
+
+    test('skip tour persists completion before step content and blocks auto-start', async ({ page }) => {
+        await waitForConfigReady(page);
+
+        const afterSkip = await page.evaluate(async () => {
+            const cm = window.configManager;
+            cm.settingsData.configGeneralTourCompleted = false;
+            localStorage.removeItem('nextdash:config-general-tour-v1');
+
+            const tour = new ConfigGeneralTour({
+                language: cm.language,
+                hasSeen: () => cm.hasSeenConfigGeneralTour(),
+                onMarkSeen: () => cm.markConfigGeneralTourCompleted(),
+            });
+            tour._tourShown = false;
+            window.ConfigTourRuntime.skipConfigTour(tour);
+            await new Promise((r) => setTimeout(r, 400));
+
+            const blocked = await cm.maybeStartConfigGeneralTour();
+            return {
+                completed: cm.settingsData.configGeneralTourCompleted === true,
+                localSeen: localStorage.getItem('nextdash:config-general-tour-v1') === '1',
+                autoStartBlocked: blocked?.ok === false && blocked?.reason === 'completed',
+            };
+        });
+
+        expect(afterSkip.completed).toBe(true);
+        expect(afterSkip.localSeen).toBe(true);
+        expect(afterSkip.autoStartBlocked).toBe(true);
+    });
 });

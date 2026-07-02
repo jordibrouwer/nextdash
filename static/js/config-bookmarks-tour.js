@@ -1585,7 +1585,7 @@ class ConfigBookmarksTour {
             } else if (btn.classList.contains('config-general-tour-skip')) {
                 event.preventDefault();
                 event.stopPropagation();
-                this.finish();
+                window.ConfigTourRuntime?.skipConfigTour?.(this);
             } else if (btn.classList.contains('config-general-tour-back')) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -1740,7 +1740,22 @@ class ConfigBookmarksTour {
         }
     }
 
-    finish() {
+    finish({ skipped = false } = {}) {
+        if (skipped) {
+            void this.markCompleted()
+                .then(() => this.ensureDemoRemoved())
+                .finally(() => {
+                    if (this.phase === 'dashboard') {
+                        ConfigBookmarksTour.setResume('cleanup');
+                        this.close();
+                        window.location.href = '/config#bookmarks';
+                        return;
+                    }
+                    this.close();
+                });
+            return;
+        }
+
         if (this.phase === 'dashboard') {
             void this.ensureDemoRemoved().finally(() => {
                 ConfigBookmarksTour.setResume('cleanup');
