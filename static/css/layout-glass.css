@@ -972,8 +972,8 @@ body[data-layout-version="glass"] .bookmark-inline-form {
     border-radius: var(--layout-radius-md);
     background-color: color-mix(
         in srgb,
-        var(--background-modal, var(--background-secondary)) 78%,
-        var(--background-secondary)
+        var(--background-secondary) 96%,
+        var(--background-primary) 4%
     );
     border: 2px solid color-mix(in srgb, var(--layout-surface-border) 65%, var(--border-primary));
     box-shadow:

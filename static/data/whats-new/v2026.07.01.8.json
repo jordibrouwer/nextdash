@@ -1,0 +1,29 @@
+{
+  "tag": "v2026.07.01.8",
+  "date": "July 2026",
+  "releasedAt": "2026-07-04",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit focus</strong> — long-press editor uses a nearly opaque panel (96% background) and a tour-like full-page blur overlay so labels and fields stay readable on glass and launcher layouts."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Collections unsaved dot (C14)</strong> — editing <strong>Collections</strong> lights <strong>Extras ●</strong> without marking <strong>System</strong> dirty; autosave syncs the snapshot and clears group dots."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reduced motion (C15)</strong> — <code>prefers-reduced-motion</code> and <em>Reduce animations</em> also disable tag-cloud word motion, keyboard rebind pulse, health-link shimmer, reorder highlights, theme-preview dot, and settings-search promo animations."
+        }
+      ]
+    }
+  ]
+}

@@ -82,9 +82,12 @@
             : null;
         if (!scope) return dirty;
 
-        if (scope.hasSettingsChanges) {
+        if (scope.hasNonCollectionSettingsChanges) {
             dirty.add('general');
             dirty.add('keyboard');
+        }
+        if (scope.hasCollectionsChanges) {
+            dirty.add('collections');
         }
         if (manager.colorsDirty) {
             dirty.add('colors');

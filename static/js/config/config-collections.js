@@ -314,7 +314,11 @@ class ConfigCollections {
 
     async _saveToServer(manager) {
         if (manager.settings && typeof manager.settings.saveSettingsToServer === 'function') {
-            await manager.settings.saveSettingsToServer(manager.settingsData);
+            const ok = await manager.settings.saveSettingsToServer(manager.settingsData);
+            if (ok) {
+                manager.persistence?.onSettingsAutosaved?.();
+                window.ConfigTabGroups?.syncUnsavedIndicators?.(manager);
+            }
         }
     }
 

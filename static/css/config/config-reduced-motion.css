@@ -1,0 +1,59 @@
+/**
+ * Config reduced-motion (C15) — animations beyond tab chrome, save status, and unsaved pulse.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+    /* Tags cloud (config Tags tab) */
+    .tags-cloud.tags-cloud--live .tag-cloud-word {
+        animation: none !important;
+    }
+
+    /* Keyboard rebind listening state */
+    .binding-edit-btn.listening {
+        animation: none !important;
+    }
+
+    /* Health link shimmer in config header */
+    .config-header-top .health-link a,
+    .config-header-top .header-links a[href="/health"] {
+        animation: none !important;
+    }
+
+    /* List reorder highlight (bookmarks structure, etc.) */
+    .bookmark-item.reorder-highlight {
+        animation: none !important;
+    }
+
+    /* Theme preview unsaved dot (General → Appearance) */
+    .theme-preview-badge::before {
+        animation: none !important;
+    }
+
+    /* Settings search discoverability promo */
+    .config-settings-search--promo .config-settings-search-input,
+    .config-settings-search-promo-badge,
+    .config-settings-search-promo-balloon {
+        animation: none !important;
+    }
+}
+
+body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
+    animation: none !important;
+}
+
+body.no-animations .binding-edit-btn.listening {
+    animation: none !important;
+}
+
+body.no-animations .config-header-top .health-link a,
+body.no-animations .config-header-top .header-links a[href="/health"] {
+    animation: none !important;
+}
+
+body.no-animations .bookmark-item.reorder-highlight {
+    animation: none !important;
+}
+
+body.no-animations .theme-preview-badge::before {
+    animation: none !important;
+}

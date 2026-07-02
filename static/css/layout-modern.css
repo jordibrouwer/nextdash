@@ -902,8 +902,8 @@ body[data-layout-version="modern"] .layout-launcher .bookmark-link.bookmark-inli
 body[data-layout-version="modern"] .bookmark-inline-form {
     background-color: color-mix(
         in srgb,
-        var(--background-modal, var(--background-secondary)) 78%,
-        var(--background-secondary)
+        var(--background-secondary) 96%,
+        var(--background-primary) 4%
     );
     border: 2px solid color-mix(in srgb, var(--border-primary) 70%, var(--text-secondary));
     box-shadow: var(--layout-shadow-md);
