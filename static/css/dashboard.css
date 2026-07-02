@@ -2449,22 +2449,49 @@ a.bookmark-open:hover {
 }
 
 /*
- * Inline edit focus: dim siblings with opacity only (no filter:blur — Safari mis-routes
- * pointer hits through blurred layers). Never set pointer-events:none on #dashboard-layout
- * itself; only on non-editing chrome so the inline form stays fully interactive.
+ * Inline edit focus: tour-like blur via a body overlay (backdrop-filter — not filter:blur
+ * on bookmarks; Safari mis-routes pointer hits through filtered layers). Never set
+ * pointer-events:none on #dashboard-layout itself; only on non-editing chrome so the
+ * inline form stays fully interactive.
  */
+body.bookmark-inline-edit-active::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    background: linear-gradient(
+        168deg,
+        color-mix(in srgb, var(--accent-primary) 18%, rgba(0, 0, 0, 0.08)) 0%,
+        rgba(0, 0, 0, 0.38) 42%,
+        color-mix(in srgb, var(--background-secondary) 35%, rgba(0, 0, 0, 0.5)) 100%
+    );
+    backdrop-filter: blur(6px) saturate(0.9);
+    -webkit-backdrop-filter: blur(6px) saturate(0.9);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    body.bookmark-inline-edit-active::before {
+        background: linear-gradient(
+            168deg,
+            color-mix(in srgb, var(--accent-primary) 14%, rgba(0, 0, 0, 0.42)) 0%,
+            rgba(0, 0, 0, 0.52) 100%
+        );
+    }
+}
+
 body.bookmark-inline-edit-active .dashboard-section.section-controls,
 body.bookmark-inline-edit-active .dashboard-section.section-title,
 body.bookmark-inline-edit-active .button-container,
 body.bookmark-inline-edit-active #dashboard-layout .category-title,
 body.bookmark-inline-edit-active #dashboard-layout .bookmark-link:not(.bookmark-inline-editing) {
-    opacity: 0.45;
+    opacity: 0.35;
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
 
 body.bookmark-inline-edit-active #shortcut-search:not(.show) {
-    opacity: 0.45;
+    opacity: 0.35;
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
@@ -2524,11 +2551,11 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-
     gap: 0.35rem;
     padding: 0.7rem 0.8rem;
     border-radius: 8px;
-    /* Opaque panel: theme modal colors are often rgba; secondary is solid in presets. */
+    /* Solid panel: glass/modal tokens are often rgba — mix toward primary for readability. */
     background-color: color-mix(
         in srgb,
-        var(--background-modal, var(--background-secondary)) 72%,
-        var(--background-secondary)
+        var(--background-secondary) 96%,
+        var(--background-primary) 4%
     );
     border: 2px solid var(--border-primary);
     box-shadow:
@@ -2545,7 +2572,11 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-
 .bookmark-inline-form .bookmark-inline-select,
 .bookmark-inline-form .bookmark-inline-textarea,
 .bookmark-inline-form .bookmark-inline-action-btn {
-    background: var(--background-secondary);
+    background: color-mix(
+        in srgb,
+        var(--background-secondary) 94%,
+        var(--background-primary) 6%
+    );
     pointer-events: auto;
     user-select: text;
     -webkit-user-select: text;
