@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.01.9",
+  "date": "July 2026",
+  "releasedAt": "2026-07-05",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>General → Advanced layer toolbar</strong> — Essentials / Advanced buttons sit flush at the top of the fused General surface again; sticky chrome inside the surface no longer leaves a gap or overlaps Expand/Collapse bulk actions."
+        }
+      ]
+    }
+  ]
+}
