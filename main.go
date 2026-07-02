@@ -130,7 +130,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: securityHeaders(r),
+		Handler: requestLogging(securityHeaders(r)),
 	}
 
 	go func() {
