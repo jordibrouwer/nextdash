@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.7 — June 2026](#v202607017--june-2026)
 - [v2026.07.01.6 — July 2026](#v202607016--july-2026)
 - [v2026.07.01.5 — June 2026](#v202607015--june-2026)
 - [v2026.07.01.4 — July 2026](#v202607014--july-2026)
@@ -67,6 +68,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.01.7 — June 2026
+
+**Config surface parity (General/Theme) + P1 hardening + P2 ops quick wins** — General and Theme tabs use fused `config-tab-surface` shells; Theme drops the local unsaved badge (B10); server adds `/version`, static cache headers, and request logging.
+
+### Config surfaces
+
+- **fix** **General tab** — `general-tab-surface` fuses layer toolbar, advanced nav, and section cards into one card on classic, modern, and glass (`templates/config.html`, `config-general.css`, `config-tab-shell.css`, surface bundles).
+- **fix** **Theme tab (B10)** — `theme-colors-tab-surface` fuses toolbar and palette panels; `#colors-unsaved-indicator` removed — dirty state uses shared save-mode pill, tab dot, and `body.colors-is-dirty` (`theme-colors-editor.html`, `colors.js`, `config-unsaved-state.css`).
+
+### Server & ops (P1 + P2)
+
+- **new** **GET /version** — JSON `version` + `commit` from Docker `VERSION`/`COMMIT` ldflags (`version.go`, `Dockerfile`).
+- **new** **Static Cache-Control** — `?v=` assets get `max-age=31536000, immutable`; other CSS/JS/fonts/images get one-day public cache (`static_cache.go`).
+- **new** **Request logging** — `X-Request-ID` on responses; logs method, path, status, bytes, duration (skips `/static/`, `/locales/`) (`request_log.go`).
+- **fix** **P1 hardening** — `NEXTDASH_CORS_ORIGINS` allowlist; in-memory preview cache reads; health report 3 min TTL + `?refresh=1`; structured backup/import logging; graceful shutdown with `FlushCaches()` (`cors.go`, `handlers.go`, `backup.go`, `main.go`).
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v113` data version and `2026.07-dashboard-release-v90` dashboard release token; `config-general-theme-surface-1` on General/Theme CSS bundles.
+
+### Developer & docs
+
+- **fix** **Playwright** — `config-tab-consistency.spec.js` adds General/Theme surface tests and Colors save-mode pill coverage.
+- **fix** **CHANGELOG & What's new** — release notes for **v2026.07.01.7**.
 
 ---
 
