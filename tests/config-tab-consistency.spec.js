@@ -878,3 +878,28 @@ test.describe('config help surface (B5)', () => {
         expect(nestedCards).toBe(true);
     });
 });
+
+test.describe('config general surface', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('general tab uses shared intro and fused surface shell', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await expect(page.locator('.general-tab.config-tab-page')).toBeVisible();
+        await expect(page.locator('[data-tab-content="general"] .config-tab-intro-lead')).toBeVisible();
+
+        const surface = page.locator('.general-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('#general-layer-toolbar.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('.general-layout')).toBeVisible();
+        await expect(surface.locator('.general-card').first()).toBeVisible();
+
+        const surfaceCount = await page.evaluate(() => {
+            const tab = document.querySelector('[data-tab-content="general"] .general-tab');
+            return tab?.querySelectorAll(':scope > .config-tab-surface').length ?? 0;
+        });
+        expect(surfaceCount).toBe(1);
+    });
+});

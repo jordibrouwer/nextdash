@@ -48,7 +48,8 @@ body[data-layout-version="classic"] .bookmarks-tab-surface > .structure-workspac
 
 body[data-layout-version="classic"] .stats-tab-surface,
 body[data-layout-version="classic"] .backups-tab-surface,
-body[data-layout-version="classic"] .help-tab-surface {
+body[data-layout-version="classic"] .help-tab-surface,
+body[data-layout-version="classic"] .general-tab-surface {
     border: 1px solid var(--border-primary);
     border-radius: var(--config-surface-radius);
     background: var(--config-surface-list);
@@ -64,6 +65,12 @@ body[data-layout-version="classic"] .help-tab-surface .config-tab-toolbar--in-su
     border-bottom: 1px solid var(--border-primary);
 }
 
+body[data-layout-version="classic"] .general-tab-surface .general-layer-toolbar.config-tab-toolbar--in-surface {
+    background: var(--config-surface-toolbar);
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+}
+
 body[data-layout-version="classic"] .stats-tab-surface .stats-filter-bar,
 body[data-layout-version="classic"] .stats-tab-surface .stats-chip-nav,
 body[data-layout-version="classic"] .stats-tab-surface .stats-block,
@@ -72,7 +79,8 @@ body[data-layout-version="classic"] .backups-tab-surface > .backups-section,
 body[data-layout-version="classic"] .collections-tab-surface > .collections-edit-panel,
 body[data-layout-version="classic"] .help-tab-surface .help-filter-bar,
 body[data-layout-version="classic"] .help-tab-surface .help-index,
-body[data-layout-version="classic"] .help-tab-surface .help-block {
+body[data-layout-version="classic"] .help-tab-surface .help-block,
+body[data-layout-version="classic"] .general-tab-surface .general-card {
     border-radius: 0;
     box-shadow: none;
 }

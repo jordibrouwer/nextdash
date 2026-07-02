@@ -1,11 +1,11 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=config-help-surface-b5-1');
+@import url('config/config-general.css?v=config-general-surface-1');
 @import url('config/config-tabs.css?v=config-tab-groups-weight-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');
-@import url('config/config-classic-surfaces.css?v=config-help-surface-b5-1');
-@import url('config/config-modern-glass-surfaces.css?v=config-help-surface-b5-1');
-@import url('config/config-tab-shell.css?v=config-v5-2');
+@import url('config/config-classic-surfaces.css?v=config-general-surface-1');
+@import url('config/config-modern-glass-surfaces.css?v=config-general-surface-1');
+@import url('config/config-tab-shell.css?v=config-general-surface-1');
 @import url('config/config-buttons.css');
 @import url('config/config-unsaved-state.css');
 @import url('config/config-save-status.css?v=config-save-status-v1');

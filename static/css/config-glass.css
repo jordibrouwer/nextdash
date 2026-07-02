@@ -218,7 +218,7 @@ body[data-layout-version="glass"] .help-block--spotlight {
 
 /* ─── General tab (layer toolbar, intro, section nav) ─────────────────────── */
 
-body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > div {
+body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > .general-tab {
     display: flex;
     flex-direction: column;
     gap: var(--config-tab-gap);

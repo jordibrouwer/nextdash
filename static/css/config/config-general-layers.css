@@ -52,6 +52,15 @@
     font-weight: var(--font-weight-bold, 600);
 }
 
+.general-layer-toolbar.config-tab-toolbar--in-surface {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+    max-width: 100%;
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 35%, transparent));
+}
+
 .general-layer-show-all {
     font-size: 0.8rem;
     color: var(--text-secondary);

@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-layer-focus-1">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=config-general-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=colors-preview-v2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -173,14 +173,15 @@
                 </div>
             </div>
             <div class="tab-content active" data-tab-content="general">
-            <div>
-                <div class="general-tab-intro">
-                    <p data-i18n="config.generalTabIntro">Dashboard-wide settings. Click Save to apply; the dashboard updates without a full reload.</p>
+            <div class="general-tab config-tab-page">
+                <div class="config-tab-intro general-tab-intro">
+                    <p class="config-tab-intro-lead" data-i18n="config.generalTabIntro">Dashboard-wide settings. Click Save to apply; the dashboard updates without a full reload.</p>
                 </div>
                 <p id="general-layer-intro-mobile" class="general-layer-intro general-mobile-intro" hidden data-i18n="config.generalMobileIntro">On this screen: language, theme, and layout only. Open config on a wider display for bookmarks, smart collections, and the rest.</p>
                 <div id="general-mobile-settings-search-host" class="general-mobile-settings-search-host" hidden></div>
+                <div class="config-tab-surface general-tab-surface">
                 <div class="general-config-chrome" id="general-config-chrome">
-                <div id="general-layer-toolbar" class="general-layer-toolbar" role="group" data-i18n-aria="config.generalLayerToolbarAria">
+                <div id="general-layer-toolbar" class="general-layer-toolbar config-tab-toolbar config-tab-toolbar--in-surface" role="group" data-i18n-aria="config.generalLayerToolbarAria">
                     <div class="general-layer-switch" role="group" data-i18n-aria="config.generalLayerSwitchAria">
                         <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" aria-pressed="true" data-i18n="config.generalLayerEssentials">Essentials</button>
                         <button type="button" class="general-layer-btn" data-general-layer="advanced" aria-pressed="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
@@ -1192,8 +1193,9 @@
                     </section>
 
                 </div><!-- end .general-layout -->
+                </div><!-- end .general-tab-surface -->
 
-            </div>
+            </div><!-- end .general-tab -->
             </div>
 
             <div class="tab-content" data-tab-content="pages">
