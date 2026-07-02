@@ -80,7 +80,6 @@
         {
             id: 'stats',
             title: 'Stats',
-            enabled: false,
             statePrefix: 'configStatsTour',
             tourGlobal: 'ConfigStatsTour',
             settingsFlag: 'configStatsTourCompleted',
