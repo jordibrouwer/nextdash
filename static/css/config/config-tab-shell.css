@@ -316,7 +316,8 @@ html:has(#config-main) #config-main :is(
 }
 
 .config-empty-state[hidden],
-.tags-empty-state[hidden] {
+.tags-empty-state[hidden],
+.collections-empty-state[hidden] {
     display: none !important;
 }
 

@@ -201,6 +201,20 @@ test.describe('config tab consistency v3 navigation', () => {
         await expect(crumb).toContainText(/development/i);
     });
 
+    test('empty states toggle via hidden property not inline display (B11)', async ({ page }) => {
+        const ok = await page.evaluate(() => {
+            const tagsEmpty = document.getElementById('tags-empty-state');
+            const collectionsEmpty = document.getElementById('collections-empty-state');
+            if (!tagsEmpty || !collectionsEmpty) return false;
+            tagsEmpty.hidden = true;
+            tagsEmpty.hidden = false;
+            collectionsEmpty.hidden = true;
+            collectionsEmpty.hidden = false;
+            return !tagsEmpty.style.display && !collectionsEmpty.style.display;
+        });
+        expect(ok).toBe(true);
+    });
+
     test('categories breadcrumb includes selected page name', async ({ page }) => {
         await page.evaluate(async () => {
             const cm = window.configManager;
@@ -213,6 +227,58 @@ test.describe('config tab consistency v3 navigation', () => {
         const crumb = page.locator('#config-breadcrumb');
         await expect(crumb).toContainText(/categories/i);
         await expect(crumb).toContainText(/main/i);
+    });
+
+    test('tags breadcrumb includes active filter (B14)', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('tags');
+            await cm.reloadTagsTabData?.();
+            const input = document.getElementById('tags-filter-input');
+            if (input) {
+                input.value = 'design';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
+        const crumb = page.locator('#config-breadcrumb');
+        await expect(crumb).toContainText(/tags/i);
+        await expect(crumb).toContainText(/design/i);
+    });
+
+    test('stats breadcrumb includes section and period (B14)', async ({ page }) => {
+        await page.evaluate(async () => {
+            const cm = window.configManager;
+            await cm.ui.switchToTab('stats');
+            cm.stats._activeSectionId = 'stats-activity';
+            cm.stats.sectionPeriods.activity = 30;
+            cm.ui.refreshTabBreadcrumb('stats');
+        });
+
+        const crumb = page.locator('#config-breadcrumb');
+        await expect(crumb).toContainText(/stats/i);
+        await expect(crumb).toContainText(/activity/i);
+        await expect(crumb).toContainText(/month/i);
+    });
+
+    test('collections breadcrumb includes editor selection (B14)', async ({ page }) => {
+        await page.evaluate(() => {
+            const cm = window.configManager;
+            cm.settingsData.collections = [{
+                id: 'work-focus',
+                name: 'Work focus',
+                icon: '▤',
+                logic: 'and',
+                rules: [{ field: 'tag', operator: 'includes', value: 'work' }],
+            }];
+            cm.ui.switchToTab('collections');
+            cm.collections.refresh(cm);
+            cm.collections._openEdit(cm.settingsData.collections[0], cm);
+        });
+
+        const crumb = page.locator('#config-breadcrumb');
+        await expect(crumb).toContainText(/collections/i);
+        await expect(crumb).toContainText(/work focus/i);
     });
 });
 

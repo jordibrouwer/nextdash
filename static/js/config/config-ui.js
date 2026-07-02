@@ -612,6 +612,37 @@ class ConfigUI {
             return { subsection: page?.name || null, panelTitle: null };
         }
 
+        if (tab === 'tags') {
+            const filter = String(mgr.tags?._filterQuery || '').trim();
+            return { subsection: null, panelTitle: filter || null };
+        }
+
+        if (tab === 'collections') {
+            const panel = document.getElementById('collections-edit-panel');
+            if (!panel || panel.hidden) {
+                return { subsection: null, panelTitle: null };
+            }
+            const editingId = mgr.collections?._editingId;
+            if (editingId) {
+                const collections = mgr.collections?._getCollections?.(mgr)
+                    || mgr.settingsData?.collections
+                    || [];
+                const col = collections.find((c) => c.id === editingId);
+                return { subsection: null, panelTitle: col?.name || null };
+            }
+            const newLabel = mgr.language?.t('config.collectionEditNewTitle')
+                || 'New collection';
+            return { subsection: null, panelTitle: newLabel };
+        }
+
+        if (tab === 'stats') {
+            const sectionId = mgr.stats?._activeSectionId || 'stats-overview';
+            return {
+                subsection: mgr.stats?.breadcrumbSectionLabel?.(sectionId) || null,
+                panelTitle: mgr.stats?.breadcrumbPeriodLabel?.(sectionId) || null,
+            };
+        }
+
         return { subsection: null, panelTitle: null };
     }
 

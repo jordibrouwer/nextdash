@@ -40,6 +40,7 @@ class ConfigCollections {
             if (emptyState) emptyState.hidden = true;
             collections.forEach(col => list.appendChild(this._createRow(col, manager)));
         }
+        window.configManager?.ui?.refreshTabBreadcrumb?.('collections');
     }
 
     _createRow(col, manager) {
@@ -161,6 +162,8 @@ class ConfigCollections {
                 if (rulesContainer) this._addRuleRow(rulesContainer, manager);
             };
         }
+
+        window.configManager?.ui?.refreshTabBreadcrumb?.('collections');
     }
 
     _addRuleRow(container, manager, rule = null) {
