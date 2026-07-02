@@ -168,4 +168,45 @@ test.describe('dashboard bookmark add category placement', () => {
 
         await deleteBookmarkByUrl(page, pageId, uniqueUrl);
     });
+
+    test('isPageBookmarksStale detects tag-only divergence', async ({ page }) => {
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const pageId = Number(d.currentPageId) || 1;
+            const source = Array.isArray(d.bookmarks) && d.bookmarks.length
+                ? d.bookmarks[0]
+                : null;
+            if (!source) {
+                return { ok: false, reason: 'no-bookmarks' };
+            }
+
+            const staleBookmarks = d.bookmarks.map((bm, index) => (
+                index === 0
+                    ? { ...bm, tags: [...(bm.tags || []), 'stale-tag-test'] }
+                    : bm
+            ));
+            const freshAll = (d.allBookmarks || []).map((bm) => (
+                String(bm?.url || '').trim().toLowerCase() === String(source.url || '').trim().toLowerCase()
+                    && Number(bm.pageId) === pageId
+                    ? { ...bm, tags: ['fresh-tag-test'] }
+                    : bm
+            ));
+
+            d.allBookmarks = freshAll;
+            const stale = d.data.isPageBookmarksStale(pageId, staleBookmarks);
+            const sameTags = staleBookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, tags: ['fresh-tag-test'] } : bm
+            ));
+            const notStale = d.data.isPageBookmarksStale(pageId, sameTags);
+
+            return { ok: true, stale, notStale };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.stale).toBe(true);
+        expect(result.notStale).toBe(false);
+    });
 });

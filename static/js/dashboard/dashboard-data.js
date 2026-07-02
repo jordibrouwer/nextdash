@@ -530,6 +530,21 @@ class DashboardData {
         return d.allBookmarks.filter((bookmark) => Number(bookmark.pageId) === pid);
     }
 
+    _bookmarkTagsKey(tags) {
+        if (!Array.isArray(tags)) {
+            return '';
+        }
+        return tags
+            .map((tag) => String(tag).trim().toLowerCase())
+            .filter(Boolean)
+            .sort()
+            .join('\0');
+    }
+
+    _bookmarkStaleFingerprint(bookmark) {
+        return `${String(bookmark?.category ?? '').trim()}\x01${this._bookmarkTagsKey(bookmark?.tags)}`;
+    }
+
     isPageBookmarksStale(pageId, bookmarks) {
         const fromAll = this._getPageBookmarksFromAll(pageId);
         if (!fromAll) {
@@ -541,14 +556,14 @@ class DashboardData {
         }
         const currentByUrl = new Map(current.map((bookmark) => [
             this._bookmarkUrlKey(bookmark.url),
-            String(bookmark.category ?? '').trim(),
+            this._bookmarkStaleFingerprint(bookmark),
         ]));
         return fromAll.some((bookmark) => {
             const key = this._bookmarkUrlKey(bookmark.url);
             if (!currentByUrl.has(key)) {
                 return true;
             }
-            return currentByUrl.get(key) !== String(bookmark.category ?? '').trim();
+            return currentByUrl.get(key) !== this._bookmarkStaleFingerprint(bookmark);
         });
     }
 
