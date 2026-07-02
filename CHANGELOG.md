@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.5 — June 2026](#v202607015--june-2026)
 - [v2026.07.01.4 — July 2026](#v202607014--july-2026)
 - [v2026.07.01.3 — July 2026](#v202607013--july-2026)
 - [v2026.07.01.2 — July 2026](#v202607012--july-2026)
@@ -65,6 +66,41 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.01.5 — June 2026
+
+**Config surface polish (v5 continued)** — Health redirect/title fixes; Bookmarks Context and Collections editor fused into tab surfaces; list-tab shell parity; breadcrumb context; tour skip always persists completion.
+
+### Health
+
+- **fix** **Redirect check freeze** — health `detect redirect` no longer blocks the whole app while a check runs (`health-runtime.js`, redirect handler).
+- **fix** **Title fetch & retest-all UX** — bookmark title recovery and bulk **Retest all** give clearer progress and safer concurrency (`health.js`, health handlers).
+
+### Config surfaces
+
+- **fix** **Bookmarks Context (B4)** — Context panel inside `bookmarks-tab-surface` with flatter toggle styling; structure workspace panel placement (`config-bookmarks.js`, `config-lists.css`, classic/modern/glass surfaces).
+- **fix** **Collections editor (B8)** — `#collections-edit-panel` moved inside `.collections-tab-surface` (`config-collections.js`, `config-collections.css`).
+- **fix** **List-tab shell (A2)** — `.config-list-tab` on Pages, Categories, Tags, Finders, and Collections (`templates/config.html`, `config-tab-shell.css`, `config-lists.css`).
+- **fix** **Finders shared filter (A6)** — filter uses `config-filter-input` / `config-filter-clear`; custom finders filter CSS removed (`config-finders.css`).
+- **fix** **Empty states (B11)** — `.collections-empty-state[hidden]` and bookmark detail panel use `.hidden` / `hidden` attribute consistently (`config-tab-shell.css`, `config-bookmarks.js`).
+- **fix** **Breadcrumb context (B14)** — compact path shows Tags filter, Stats section + period, and Collections edit selection (`config-ui.js`, `config-tags.js`, `config-stats.js`, `config-collections.js`).
+- **fix** **General action rows (A10)** — Tours & onboarding uses `.config-action-list` (`config-general.css`, `templates/config.html`).
+- **fix** **General rhythm (B6)** — section gaps use `var(--config-tab-gap)` (`config-forms.css`).
+
+### Config tours
+
+- **fix** **Skip tour persistence** — `ConfigTourRuntime.skipConfigTour()` always calls `markCompleted()` → server save so skipped tours never auto-start again (`config-tour-runtime.js`, all config `*-tour.js` files).
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v111` data version and `2026.07-dashboard-release-v88` dashboard release token; `config-shell-a2b6-1` on `config.css` and related surface bundles.
+
+### Developer & docs
+
+- **fix** **Playwright** — `config-tab-consistency.spec.js` adds B4/B8, B11/B14, A2/A6/A10/B6; `config-tab-tours.spec.js` adds skip-tour persistence test.
+- **fix** **README, MANUAL, Help locales & What's new** — release notes for **v2026.07.01.5** in EN/NL/DE/FR.
 
 ---
 
