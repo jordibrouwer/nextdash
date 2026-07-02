@@ -100,31 +100,3 @@ func TestMergeSettingsFromBodyDiscoverabilityState(t *testing.T) {
 		t.Fatalf("theme = %q, want dark", merged.Theme)
 	}
 }
-
-func TestMergeSettingsFromBodyDiscoverabilityState(t *testing.T) {
-	t.Parallel()
-
-	stored := Settings{
-		Theme: "dark",
-		DiscoverabilityState: &DiscoverabilityState{
-			Confirmed: map[string]bool{"feature:inlineEdit": true},
-		},
-	}
-
-	merged, err := mergeSettingsFromBody(stored, []byte(`{"discoverabilityState":{"confirmed":{"promo:gJump":true},"lastWhatsNewRelease":"v2026.07.01"}}`))
-	if err != nil {
-		t.Fatalf("mergeSettingsFromBody: %v", err)
-	}
-	if merged.DiscoverabilityState == nil {
-		t.Fatal("discoverabilityState is nil")
-	}
-	if merged.DiscoverabilityState.Confirmed["promo:gJump"] != true {
-		t.Fatalf("confirmed promo:gJump = %v, want true", merged.DiscoverabilityState.Confirmed["promo:gJump"])
-	}
-	if merged.DiscoverabilityState.LastWhatsNewRelease != "v2026.07.01" {
-		t.Fatalf("lastWhatsNewRelease = %q, want v2026.07.01", merged.DiscoverabilityState.LastWhatsNewRelease)
-	}
-	if merged.Theme != "dark" {
-		t.Fatalf("theme = %q, want dark", merged.Theme)
-	}
-}
