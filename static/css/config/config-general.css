@@ -776,7 +776,7 @@ body.config-is-dirty .top-quick-action.is-visible {
 }
 
 .general-tab-surface .general-layout {
-    gap: 0;
+    gap: var(--config-tab-gap, 0.85rem);
     padding: 0;
 }
 
@@ -785,7 +785,6 @@ body.config-is-dirty .top-quick-action.is-visible {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
     margin: 0;
 }
 
