@@ -114,6 +114,7 @@ func main() {
 		staticHandler = http.FileServer(http.FS(staticFS))
 	}
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		applyStaticCacheControl(w, r)
 		ext := filepath.Ext(r.URL.Path)
 		if mimeType := mime.TypeByExtension(ext); mimeType != "" {
 			w.Header().Set("Content-Type", mimeType)
