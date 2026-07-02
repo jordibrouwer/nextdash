@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.01.6",
+  "date": "July 2026",
+  "releasedAt": "2026-07-02",
+  "sections": [
+    {
+      "title": "What's new modal",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release order</strong> — <strong>v2026.07.01.5</strong> now sorts above older releases in the ★ modal (manifest <code>releasedAt</code> corrected; cache-bust <code>whats-new-v112</code>)."
+        }
+      ]
+    }
+  ]
+}

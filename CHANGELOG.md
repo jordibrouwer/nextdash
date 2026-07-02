@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.6 — July 2026](#v202607016--july-2026)
 - [v2026.07.01.5 — June 2026](#v202607015--june-2026)
 - [v2026.07.01.4 — July 2026](#v202607014--july-2026)
 - [v2026.07.01.3 — July 2026](#v202607013--july-2026)
@@ -66,6 +67,24 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.01.6 — July 2026
+
+**Hotfix (What's new modal)** — **v2026.07.01.5** release notes sort first in the ★ modal again.
+
+### What's new
+
+- **fix** **Release manifest date** — `v2026.07.01.5` `releasedAt` set to `2026-07-02` so it sorts above **v2026.07.01.4** (`2026-07-01`) instead of appearing below or dropping out of the 7-day window.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v112` data version and `2026.07-dashboard-release-v89` dashboard release token.
+
+### Developer & docs
+
+- **fix** **CHANGELOG** — hotfix **v2026.07.01.6** documents the manifest sort fix.
 
 ---
 
