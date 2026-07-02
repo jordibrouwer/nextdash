@@ -1,0 +1,66 @@
+{
+  "tag": "v2026.07.02",
+  "date": "July 2026",
+  "releasedAt": "2026-07-02",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmark category sync</strong> — new bookmarks and category changes show in the correct column immediately after save (not only in smart collections). Page cache is invalidated and refreshed; stale cache self-heals when <code>allBookmarks</code> and the grid diverge."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Data revision</strong> — <code>GET /api/data-revision</code> fingerprints on-disk bookmarks, categories, finders, pages, and settings. The dashboard checks it before using the page cache and when you return to the tab, so server restarts and external edits stay visible."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Stats guided tour</strong> — re-enabled on the Stats tab (reset button visible again)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>General spacing (B6)</strong> — fused General surface uses <code>--config-tab-gap</code> for vertical rhythm between section cards."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shared tab intro (B7)</strong> — <code>.general-tab-intro</code> consolidated into <code>.config-tab-intro</code> across General and list tabs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Uniform labels (A8)</strong> — <code>--config-label-width</code> on forms, Colors, and Keyboard binding rows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard row rhythm (A10)</strong> — binding rows match list-tab row height and padding."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Persistent empty hints (B11)</strong> — Pages, Categories, Tags filter, and Finders keep stable empty-state copy (toggle <code>hidden</code> instead of destroying nodes)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reduced motion (C15)</strong> — broader <code>prefers-reduced-motion</code> coverage: spinners, usage bars, transitions, and more config animations."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Playwright</strong> — bookmark category placement, stale-cache bypass, and data-revision API tests."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, Help &amp; What's new</strong> — release notes for <strong>v2026.07.02</strong>; General Advanced docs no longer reference removed sticky section nav."
+        }
+      ]
+    }
+  ]
+}

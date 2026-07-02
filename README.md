@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.9**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.02**.
 
 ---
 
@@ -201,6 +201,10 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 
 **General Advanced toolbar (v2026.07.01.9)** — Essentials / Advanced buttons align flush with the fused General surface; no gap or overlap with Expand/Collapse bulk actions on the Advanced layer.
 
+**Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
+
+**Config polish (v2026.07.02)** — Stats guided tour re-enabled; General spacing (B6), shared tab intro (B7), uniform label width (A8), keyboard row rhythm (A10), persistent empty hints (B11), broader reduced-motion (C15).
+
 **Inline edit focus (v2026.07.01.8)** — long-press inline editor uses a nearly opaque panel and tour-like full-page blur so labels and fields stay readable on glass and launcher layouts.
 
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
@@ -363,7 +367,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.9
+   ./scripts/release-to-main.sh v2026.07.02
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).
