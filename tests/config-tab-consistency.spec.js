@@ -1002,6 +1002,102 @@ test.describe('config general & theme surface (C16/B10)', () => {
         expect(layout.toolbarPosition).toBe('static');
     });
 
+    test('advanced layer omits section jump nav row', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await page.evaluate(() => window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false }));
+
+        await expect(page.locator('#general-advanced-nav-wrap')).toHaveCount(0);
+        await expect(page.locator('#general-advanced-nav')).toHaveCount(0);
+    });
+
+    test('essentials and advanced layers share toolbar inset', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+
+        const essentialsPad = await page.evaluate(() => {
+            window.configManager.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            const toolbar = document.getElementById('general-layer-toolbar');
+            if (!toolbar) return null;
+            const style = getComputedStyle(toolbar);
+            return {
+                paddingLeft: parseFloat(style.paddingLeft),
+                paddingRight: parseFloat(style.paddingRight),
+            };
+        });
+        expect(essentialsPad).not.toBeNull();
+
+        const advancedPad = await page.evaluate(() => {
+            window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false });
+            const toolbar = document.getElementById('general-layer-toolbar');
+            if (!toolbar) return null;
+            const style = getComputedStyle(toolbar);
+            return {
+                paddingLeft: parseFloat(style.paddingLeft),
+                paddingRight: parseFloat(style.paddingRight),
+            };
+        });
+        expect(advancedPad).not.toBeNull();
+        expect(advancedPad.paddingLeft).toBeCloseTo(essentialsPad.paddingLeft, 1);
+        expect(advancedPad.paddingRight).toBeCloseTo(essentialsPad.paddingRight, 1);
+    });
+
+    test('essentials and advanced toggle keep toolbar viewport position', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+
+        const drift = await page.evaluate(() => {
+            window.configManager.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            window.scrollTo(0, 520);
+            const toolbar = document.getElementById('general-layer-toolbar');
+            if (!toolbar) return null;
+
+            const measure = () => toolbar.getBoundingClientRect().top;
+            const start = measure();
+
+            window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false });
+            const afterAdvanced = measure();
+
+            window.configManager.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            const afterEssentials = measure();
+
+            window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false });
+            const afterAdvancedAgain = measure();
+
+            return {
+                start,
+                afterAdvanced,
+                afterEssentials,
+                afterAdvancedAgain,
+            };
+        });
+
+        expect(drift).not.toBeNull();
+        expect(Math.abs(drift.afterAdvanced - drift.start)).toBeLessThan(2);
+        expect(Math.abs(drift.afterEssentials - drift.start)).toBeLessThan(2);
+        expect(Math.abs(drift.afterAdvancedAgain - drift.start)).toBeLessThan(2);
+    });
+
+    test('advanced general panels collapse and expand via section title', async ({ page }) => {
+        await page.evaluate(() => {
+            window.configManager.ui.switchToTab('general');
+            window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false });
+        });
+
+        const panel = page.locator('[data-general-panel="appearance-advanced"]');
+        await expect(panel).toBeVisible();
+        await expect(panel).toHaveClass(/is-collapsible/);
+
+        await page.evaluate(() => {
+            const card = document.querySelector('[data-general-panel="appearance-advanced"]');
+            card?.classList.remove('is-collapsed');
+        });
+        await expect(panel).not.toHaveClass(/is-collapsed/);
+
+        await panel.locator('.section-title').click();
+        await expect(panel).toHaveClass(/is-collapsed/);
+
+        await panel.locator('.section-title').click();
+        await expect(panel).not.toHaveClass(/is-collapsed/);
+    });
+
     test('theme tab uses fused surface without local unsaved badge (B10)', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
         await expect(page.locator('#theme-colors-editor.config-tab-page')).toBeVisible();

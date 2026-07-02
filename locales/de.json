@@ -2418,7 +2418,7 @@
         "advancedNavLayout": "Layout",
         "advancedNavBookmarksEssentials": "Lesezeichen",
         "advancedNavHeaderButtons": "Kopf & Schaltflächen",
-        "generalLayerAllIntro": "Alle Essentials- und Erweitert-Abschnitte auf einer Seite — nutzen Sie die Links oben oder klappen Sie alle Abschnitte unten ein/aus.",
+        "generalLayerAllIntro": "Alle Essentials- und Erweitert-Abschnitte auf einer Seite — nutzen Sie Alle ausklappen / Alle einklappen unten oder klicken Sie auf eine Abschnittsüberschrift.",
         "breadcrumbAria": "Aktuelle Position in den Einstellungen",
         "customTitleInputAria": "Benutzerdefinierter Dashboard-Titel (max. 100 Zeichen)",
         "bgPresetAria": "Hintergrund-Preset: {name}",

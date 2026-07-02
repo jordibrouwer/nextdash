@@ -2418,7 +2418,7 @@
         "advancedNavLayout": "Mise en page",
         "advancedNavBookmarksEssentials": "Favoris",
         "advancedNavHeaderButtons": "En-tête et boutons",
-        "generalLayerAllIntro": "Toutes les sections Essentiels et Avancé sur une page — utilisez les liens ci-dessus ou développez/réduisez tout ci-dessous.",
+        "generalLayerAllIntro": "Toutes les sections Essentiels et Avancé sur une page — utilisez Tout développer / Tout réduire ci-dessous, ou cliquez sur un titre de section.",
         "breadcrumbAria": "Emplacement actuel dans la configuration",
         "customTitleInputAria": "Titre du tableau de bord personnalisé (100 caractères max.)",
         "bgPresetAria": "Préréglage d'arrière-plan : {name}",

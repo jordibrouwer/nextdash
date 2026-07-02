@@ -6,11 +6,8 @@ class ConfigGeneralLayers {
         this.storageKey = 'nextdash-config-general-layer';
         this.root = null;
         this.toolbar = null;
-        this.advancedNav = null;
-        this.advancedNavWrap = null;
         this.layer = 'essentials';
         this._syncSmartMasterFromChildren = null;
-        this._navObserver = null;
         this._smartSyncing = false;
         this._handlersWired = false;
         this._refreshIndexTimer = null;
@@ -36,8 +33,6 @@ class ConfigGeneralLayers {
     init() {
         this.root = document.querySelector('.general-layout');
         this.toolbar = document.getElementById('general-layer-toolbar');
-        this.advancedNav = document.getElementById('general-advanced-nav');
-        this.advancedNavWrap = document.getElementById('general-advanced-nav-wrap');
         if (!this.root || !this.toolbar) return;
 
         this.restructurePanels();
@@ -47,7 +42,6 @@ class ConfigGeneralLayers {
             this.setupLayerJumps();
             this.setupSmartCollectionsMaster();
             this.setupSmartCollectionLabelPropagation();
-            this.setupAdvancedNav();
             this._handlersWired = true;
         }
         this.refreshCheckboxTreeSymbols();
@@ -582,56 +576,9 @@ class ConfigGeneralLayers {
         );
     }
 
-    syncAdvancedNavVisibility() {
-        if (!this.advancedNav || !this.root) return;
-
-        this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
-            const panelId = link.getAttribute('data-advanced-nav');
-            const card = this.root.querySelector(`[data-general-panel="${panelId}"]`);
-            const tier = link.getAttribute('data-nav-tier') || card?.dataset.configTier || 'advanced';
-            let visible = false;
-            if (this.layer === 'all') visible = true;
-            else if (this.layer === 'advanced') visible = tier === 'advanced';
-            link.hidden = !visible;
-        });
-        this.syncAdvancedNavDivider();
-    }
-
-    syncAdvancedNavDivider() {
-        if (!this.advancedNav) return;
-        this.advancedNav.querySelectorAll('.general-advanced-nav-divider').forEach((el) => el.remove());
-        if (this.layer !== 'all') return;
-
-        const links = [...this.advancedNav.querySelectorAll('[data-advanced-nav]')].filter((link) => !link.hidden);
-        const firstAdvanced = links.find((link) => {
-            const tier = link.getAttribute('data-nav-tier')
-                || this.root.querySelector(`[data-general-panel="${link.getAttribute('data-advanced-nav')}"]`)?.dataset.configTier
-                || 'advanced';
-            return tier === 'advanced';
-        });
-        if (!firstAdvanced) return;
-
-        const divider = document.createElement('span');
-        divider.className = 'general-advanced-nav-divider';
-        divider.setAttribute('role', 'separator');
-        divider.textContent = this.t('advancedNavSectionBreak', 'Advanced sections');
-        firstAdvanced.before(divider);
-    }
-
-    setAdvancedNavActive(panelId) {
-        if (!this.advancedNav) return;
-        this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
-            const active = link.getAttribute('data-advanced-nav') === panelId;
-            link.classList.toggle('is-active', active);
-            if (active) link.setAttribute('aria-current', 'location');
-            else link.removeAttribute('aria-current');
-        });
-    }
-
     scheduleLayerSideEffects({ layerChanged = false } = {}) {
         if (layerChanged || this._lastObservedLayer !== this.layer) {
             this._lastObservedLayer = this.layer;
-            this.refreshAdvancedNavObserver();
             window.configManager?.ui?.initBreadcrumbObserver?.('general');
         }
 
@@ -647,8 +594,6 @@ class ConfigGeneralLayers {
         if (!this.root) {
             this.root = document.querySelector('.general-layout');
             this.toolbar = this.toolbar || document.getElementById('general-layer-toolbar');
-            this.advancedNav = this.advancedNav || document.getElementById('general-advanced-nav');
-            this.advancedNavWrap = this.advancedNavWrap || document.getElementById('general-advanced-nav-wrap');
         }
         if (!this.root) return;
 
@@ -660,6 +605,12 @@ class ConfigGeneralLayers {
         }
 
         const prevLayer = this.layer;
+        const preserveScroll = prevLayer !== this.layer && !scrollPanel;
+        const scrollAnchor = preserveScroll
+            ? (document.getElementById('general-layer-toolbar') || document.querySelector('.general-tab-surface'))
+            : null;
+        const anchorTopBefore = scrollAnchor?.getBoundingClientRect().top ?? null;
+
         this.layer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
         if (persist) {
             this.persistLayerPreference(this.layer);
@@ -686,11 +637,6 @@ class ConfigGeneralLayers {
         if (introEss) introEss.hidden = this.layer !== 'essentials';
         if (introAdv) introAdv.hidden = this.layer !== 'advanced';
         if (introAll) introAll.hidden = this.layer !== 'all';
-
-        const showNav = this.layer === 'advanced' || this.layer === 'all';
-        if (this.advancedNavWrap) this.advancedNavWrap.hidden = !showNav;
-        else if (this.advancedNav) this.advancedNav.hidden = !showNav;
-        this.syncAdvancedNavVisibility();
 
         const bulkBar = document.getElementById('general-panels-bulk-actions');
         if (bulkBar) bulkBar.hidden = this.layer !== 'all';
@@ -728,6 +674,10 @@ class ConfigGeneralLayers {
         }
 
         window.configManager?.refreshGeneralPanelExpandState?.();
+
+        if (preserveScroll && scrollAnchor && anchorTopBefore !== null) {
+            this.preserveScrollAnchor(scrollAnchor, anchorTopBefore);
+        }
 
         window.configManager?.ui?.updateBreadcrumb?.(
             'general',
@@ -834,8 +784,19 @@ class ConfigGeneralLayers {
         }
         const tourActive = document.body.hasAttribute('data-config-general-tour-active');
         card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
-        if (this.layer === 'advanced' || this.layer === 'all') {
-            this.setAdvancedNavActive(panelId);
+    }
+
+    preserveScrollAnchor(anchor, topBefore) {
+        const fix = () => {
+            const delta = anchor.getBoundingClientRect().top - topBefore;
+            if (Math.abs(delta) > 0.5) {
+                window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
+            }
+        };
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => requestAnimationFrame(fix));
+        } else {
+            fix();
         }
     }
 
@@ -926,55 +887,6 @@ class ConfigGeneralLayers {
     setupSmartCollectionLabelPropagation() {
         this.root.querySelectorAll('.smart-collection-toggle').forEach((label) => {
             label.addEventListener('click', (e) => e.stopPropagation());
-        });
-    }
-
-    setupAdvancedNav() {
-        if (!this.advancedNav) return;
-
-        this.advancedNav.querySelectorAll('[data-advanced-nav]').forEach((link) => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const panel = link.getAttribute('data-advanced-nav');
-                this.scrollToPanel(panel, { switchLayer: true });
-            });
-        });
-
-        this.refreshAdvancedNavObserver();
-    }
-
-    refreshAdvancedNavObserver() {
-        if (!this.advancedNav || !this.root) return;
-
-        if (this._navObserver) {
-            this._navObserver.disconnect();
-            this._navObserver = null;
-        }
-
-        if (this.layer !== 'advanced' && this.layer !== 'all') return;
-        if (typeof IntersectionObserver === 'undefined') return;
-
-        const rootMargin = this.layer === 'all'
-            ? '-10% 0px -60% 0px'
-            : '-20% 0px -55% 0px';
-
-        this._navObserver = new IntersectionObserver((entries) => {
-            if (this.layer !== 'advanced' && this.layer !== 'all') return;
-            let best = null;
-            let bestRatio = 0;
-            entries.forEach((entry) => {
-                if (!entry.isIntersecting || entry.intersectionRatio <= bestRatio) return;
-                bestRatio = entry.intersectionRatio;
-                best = entry.target;
-            });
-            if (!best) return;
-            const id = best.getAttribute('data-general-panel');
-            this.setAdvancedNavActive(id);
-        }, { rootMargin, threshold: [0, 0.1, 0.25, 0.5, 0.75] });
-
-        this.root.querySelectorAll('[data-general-panel]').forEach((panel) => {
-            if (panel.hidden) return;
-            this._navObserver.observe(panel);
         });
     }
 

@@ -68,28 +68,6 @@
 
     function indexGeneralTab(entries, seen) {
         const tabLabel = getTabLabel('general');
-        document.querySelectorAll('#general-advanced-nav [data-advanced-nav]').forEach((link) => {
-            const panelId = link.getAttribute('data-advanced-nav');
-            const title = textOf(link);
-            if (!panelId || !title) return;
-            const panel = document.querySelector(`[data-general-panel="${panelId}"]`);
-            if (!isMobileIndexedPanel(panel)) return;
-            const sectionName = textOf(panel?.querySelector('.section-title')) || title;
-            const tier = panel?.dataset?.configTier;
-            const layerPart = tier === 'essentials'
-                ? t('generalLayerEssentials', 'Essentials')
-                : tier === 'advanced'
-                    ? t('generalLayerAdvanced', 'Advanced')
-                    : t('generalLayerAll', 'All sections');
-            addEntry(entries, seen, {
-                tab: 'general',
-                tabLabel,
-                title,
-                subtitle: `${tabLabel} › ${layerPart} › ${sectionName}`,
-                generalPanel: panelId,
-                targetEl: link,
-            });
-        });
 
         document.querySelectorAll('[data-tab-content="general"] [data-general-panel]').forEach((panel) => {
             const panelId = panel.getAttribute('data-general-panel');

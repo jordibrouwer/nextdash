@@ -45,7 +45,8 @@
     content: '+';
 }
 
-.general-card.is-collapsible.is-collapsed > *:not(.section-title) {
+.general-card.is-collapsible.is-collapsed > *:not(.section-title),
+.general-card.is-collapsible.is-collapsed .general-card-body {
     display: none;
 }
 

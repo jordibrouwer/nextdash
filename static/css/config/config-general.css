@@ -339,8 +339,7 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 
 .general-config-chrome > .general-layer-toolbar,
 .general-config-chrome > .general-panels-bulk-actions,
-.general-config-chrome > .general-layer-intro,
-.general-config-chrome > .general-advanced-nav-wrap {
+.general-config-chrome > .general-layer-intro {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -765,13 +764,15 @@ body.config-is-dirty .top-quick-action.is-visible {
 }
 
 .general-tab-surface .general-panels-bulk-actions,
-.general-tab-surface .general-layer-intro,
-.general-tab-surface .general-advanced-nav-wrap {
+.general-tab-surface .general-layer-intro {
     padding-block: 0.45rem;
 }
 
-.general-tab-surface .general-advanced-nav-wrap {
-    padding-bottom: 0.65rem;
+/* Keep chrome height stable when swapping Essentials vs Advanced intro copy */
+.general-tab-surface .general-config-chrome > #general-layer-intro-essentials:not([hidden]),
+.general-tab-surface .general-config-chrome > #general-layer-intro-advanced:not([hidden]) {
+    min-height: 4.75rem;
+    box-sizing: border-box;
 }
 
 .general-tab-surface .general-layout {

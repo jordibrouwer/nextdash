@@ -2418,7 +2418,7 @@
         "advancedNavLayout": "Layout",
         "advancedNavBookmarksEssentials": "Bladwijzers",
         "advancedNavHeaderButtons": "Kop & knoppen",
-        "generalLayerAllIntro": "Alle Essentials- en Geavanceerd-secties op één pagina — gebruik de sectielinks hierboven of klappen alles hieronder in/uit.",
+        "generalLayerAllIntro": "Alle Essentials- en Geavanceerd-secties op één pagina — gebruik Alles uitklappen / Alles inklappen hieronder, of klik op een sectiekop.",
         "breadcrumbAria": "Huidige locatie in config",
         "customTitleInputAria": "Aangepaste dashboardtitel (max. 100 tekens)",
         "bgPresetAria": "Achtergrondpreset: {name}",
