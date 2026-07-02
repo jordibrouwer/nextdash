@@ -816,6 +816,26 @@ test.describe('config tab groups (v5)', () => {
             return word ? getComputedStyle(word).animationName : '';
         });
         expect(tagAnim === 'none' || tagAnim === '').toBeTruthy();
+
+        await page.evaluate(() => {
+            const btn = document.getElementById('save-btn');
+            if (btn) btn.classList.add('btn-loading');
+        });
+        const btnAnim = await page.evaluate(() => {
+            const btn = document.getElementById('save-btn');
+            if (!btn) return '';
+            return getComputedStyle(btn, '::before').animationName;
+        });
+        expect(btnAnim === 'none' || btnAnim === '').toBeTruthy();
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
+        const barTransition = await page.evaluate(() => {
+            const bar = document.querySelector('.tag-popularity-bar');
+            return bar ? getComputedStyle(bar).transitionDuration : null;
+        });
+        if (barTransition !== null) {
+            expect(barTransition.split(',').every((d) => parseFloat(d) === 0)).toBeTruthy();
+        }
     });
 
     test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {

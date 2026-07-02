@@ -4,13 +4,15 @@
 
 @media (prefers-reduced-motion: reduce) {
     /* Tags cloud (config Tags tab) */
-    .tags-cloud.tags-cloud--live .tag-cloud-word {
+    .tags-cloud.tags-cloud--live .tag-cloud-word,
+    .tags-cloud .tag-cloud-word {
         animation: none !important;
     }
 
     /* Keyboard rebind listening state */
     .binding-edit-btn.listening {
         animation: none !important;
+        transition: none !important;
     }
 
     /* Health link shimmer in config header */
@@ -20,13 +22,16 @@
     }
 
     /* List reorder highlight (bookmarks structure, etc.) */
-    .bookmark-item.reorder-highlight {
+    .bookmark-item.reorder-highlight,
+    .structure-list-item.reorder-highlight {
         animation: none !important;
     }
 
     /* Theme preview unsaved dot (General → Appearance) */
+    .theme-preview-badge,
     .theme-preview-badge::before {
         animation: none !important;
+        transition: none !important;
     }
 
     /* Settings search discoverability promo */
@@ -34,15 +39,34 @@
     .config-settings-search-promo-badge,
     .config-settings-search-promo-balloon {
         animation: none !important;
+        transition: none !important;
+    }
+
+    .config-settings-search--promo .config-settings-search-input {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    }
+
+    /* Save / action button loading spinner */
+    .btn.btn-loading::before {
+        animation: none !important;
+    }
+
+    /* Usage / score bar width transitions */
+    .tag-popularity-bar,
+    .stats-score-bar-fill {
+        transition: none !important;
     }
 }
 
-body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
+body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word,
+body.no-animations .tags-cloud .tag-cloud-word {
     animation: none !important;
 }
 
 body.no-animations .binding-edit-btn.listening {
     animation: none !important;
+    transition: none !important;
 }
 
 body.no-animations .config-header-top .health-link a,
@@ -50,10 +74,29 @@ body.no-animations .config-header-top .header-links a[href="/health"] {
     animation: none !important;
 }
 
-body.no-animations .bookmark-item.reorder-highlight {
+body.no-animations .bookmark-item.reorder-highlight,
+body.no-animations .structure-list-item.reorder-highlight {
     animation: none !important;
 }
 
+body.no-animations .theme-preview-badge,
 body.no-animations .theme-preview-badge::before {
     animation: none !important;
+    transition: none !important;
+}
+
+body.no-animations .config-settings-search--promo .config-settings-search-input,
+body.no-animations .config-settings-search-promo-badge,
+body.no-animations .config-settings-search-promo-balloon {
+    animation: none !important;
+    transition: none !important;
+}
+
+body.no-animations .btn.btn-loading::before {
+    animation: none !important;
+}
+
+body.no-animations .tag-popularity-bar,
+body.no-animations .stats-score-bar-fill {
+    transition: none !important;
 }
