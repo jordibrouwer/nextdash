@@ -69,6 +69,7 @@ body[data-layout-version="classic"] .stats-tab-surface .stats-chip-nav,
 body[data-layout-version="classic"] .stats-tab-surface .stats-block,
 body[data-layout-version="classic"] .stats-tab-surface .stats-index,
 body[data-layout-version="classic"] .backups-tab-surface > .backups-section,
+body[data-layout-version="classic"] .collections-tab-surface > .collections-edit-panel,
 body[data-layout-version="classic"] .help-tab-surface .help-filter-bar,
 body[data-layout-version="classic"] .help-tab-surface .help-index,
 body[data-layout-version="classic"] .help-tab-surface .help-block {
@@ -112,9 +113,14 @@ body[data-layout-version="classic"] .bookmarks-splitview-detail {
     border: none;
 }
 
-body[data-layout-version="classic"] .collections-tab .collections-edit-panel {
+body[data-layout-version="classic"] .collections-tab-surface {
+    border: 1px solid var(--border-primary);
     border-radius: var(--config-surface-radius);
     box-shadow: var(--config-surface-shadow);
-    background: var(--config-surface-list);
     overflow: hidden;
+    background: var(--config-surface-list);
+}
+
+body[data-layout-version="classic"] .collections-tab-surface > .collections-list {
+    border: none;
 }

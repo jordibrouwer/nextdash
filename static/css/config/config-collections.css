@@ -105,6 +105,56 @@
     background: var(--background-secondary);
 }
 
+.collections-tab-surface > .collections-list {
+    border: none;
+    background: transparent;
+}
+
+.collections-tab-surface > .collections-edit-panel {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-top: 1px solid var(--border-primary);
+}
+
+.collections-tab-surface > .collections-edit-panel[hidden] {
+    display: none !important;
+}
+
+.collections-tab-surface > .config-empty-state {
+    border: none;
+    border-top: 1px solid var(--border-primary);
+}
+
+.collections-tab-surface .collections-edit-header {
+    display: flex;
+    align-items: center;
+    min-height: var(--config-toolbar-min-height, 2.75rem);
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar);
+}
+
+.collections-tab-surface .collections-edit-title {
+    margin: 0;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.collections-tab-surface .collections-edit-body {
+    padding: 0.75rem;
+}
+
+.collections-tab-surface .collections-edit-actions {
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--border-primary);
+    background: transparent;
+}
+
 .collections-edit-header {
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid var(--border-primary);

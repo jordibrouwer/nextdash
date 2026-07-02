@@ -1179,30 +1179,29 @@
         });
 
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
-            const btn = e.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.classList.add('btn-loading');
-            btn.textContent = t('health.retesting', 'retesting...');
+            const btn = e.currentTarget || e.target;
             try {
-                const response = await apiFetch('/api/health/retest-all', {
-                    method: 'POST',
-                    headers: writeJsonHeaders()
+                await runHealthAction('retest-all', async () => {
+                    setButtonBusy(btn, true);
+                    try {
+                        const response = await healthFetch('/api/health/retest-all', {
+                            method: 'POST',
+                            headers: writeJsonHeaders()
+                        }, 5 * 60 * 1000);
+                        if (!response.ok) {
+                            throw new Error(t('health.retestFailed', 'Failed to retest all bookmarks'));
+                        }
+                        const result = await response.json();
+                        showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
+                        await reloadReport();
+                    } finally {
+                        setButtonBusy(btn, false);
+                    }
+                }, {
+                    busyMessage: t('health.retesting', 'retesting...')
                 });
-                if (response.ok) {
-                    const result = await response.json();
-                    showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
-                    btn.textContent = t('health.reloading', 'reloading...');
-                    await reloadReport();
-                } else {
-                    showBulkStatus(t('health.retestFailed', 'Failed to retest all bookmarks'));
-                }
             } catch (error) {
-                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-            } finally {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.textContent = originalText;
+                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
             }
         });
 
@@ -1480,8 +1479,13 @@
 
     async function fetchAutoHealSuggestion(pageId, index, { redirectOnly = false } = {}) {
         const redirectParam = redirectOnly ? '&redirectOnly=1' : '';
+        const timeoutMs = redirectOnly
+            ? (HealthRuntime.DEFAULT_FETCH_TIMEOUT_MS + 5000)
+            : HealthRuntime.DEFAULT_FETCH_TIMEOUT_MS;
         const response = await healthFetch(
-            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}${redirectParam}`
+            `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}${redirectParam}`,
+            {},
+            timeoutMs
         );
         if (!response.ok) {
             const message = await response.text();
@@ -1512,35 +1516,44 @@
     async function handleRedirectDetect(button, pageId, index) {
         closeAllActionMenus();
         try {
-            await runHealthAction('redirect-detect', async () => {
+            const suggestion = await runHealthAction('redirect-detect', async () => {
                 setButtonBusy(button, true);
                 try {
-                    const suggestion = await fetchAutoHealSuggestion(pageId, index, { redirectOnly: true });
-                    const redirectUrl = String(suggestion?.redirectUrl || '').trim();
-                    if (!redirectUrl) {
-                        showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
-                        return;
-                    }
-                    const applyNow = await confirmDialog({
-                        title: t('health.autoHealRedirect', 'detect redirect'),
-                        message: t(
-                            'health.autoHealRedirectConfirm',
-                            'Redirect found. Apply URL fix now?\n\n{url}',
-                            { url: redirectUrl }
-                        ),
-                        confirmText: t('health.confirm', 'Confirm'),
-                        cancelText: t('health.cancel', 'Cancel')
-                    });
-                    if (!applyNow) {
-                        showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: redirectUrl }));
-                        return;
-                    }
-                    await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
-                    showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
-                    await reloadReport();
+                    return await fetchAutoHealSuggestion(pageId, index, { redirectOnly: true });
                 } finally {
                     setButtonBusy(button, false);
                 }
+            }, {
+                busyMessage: t('health.autoHealWorking', 'working...')
+            });
+            if (!suggestion) {
+                return;
+            }
+
+            const redirectUrl = String(suggestion?.redirectUrl || '').trim();
+            if (!redirectUrl) {
+                showBulkStatus(t('health.autoHealNoRedirect', 'No redirect suggestion found.'));
+                return;
+            }
+            const applyNow = await confirmDialog({
+                title: t('health.autoHealRedirect', 'detect redirect'),
+                message: t(
+                    'health.autoHealRedirectConfirm',
+                    'Redirect found. Apply URL fix now?\n\n{url}',
+                    { url: redirectUrl }
+                ),
+                confirmText: t('health.confirm', 'Confirm'),
+                cancelText: t('health.cancel', 'Cancel')
+            });
+            if (!applyNow) {
+                showBulkStatus(t('health.autoHealRedirectFound', 'Redirect found: {url}', { url: redirectUrl }));
+                return;
+            }
+
+            await runHealthAction('redirect-apply', async () => {
+                await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
+                showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
+                await reloadReport();
             }, {
                 busyMessage: t('health.autoHealWorking', 'working...')
             });

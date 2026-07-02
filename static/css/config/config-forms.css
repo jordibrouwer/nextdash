@@ -2,7 +2,7 @@
 .general-layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.6rem;
+    gap: var(--config-tab-gap, 0.85rem);
     align-items: start;
 }
 
@@ -151,7 +151,7 @@
 
 /* Full-width card outside the grid */
 .general-card-wide {
-    margin-top: 0.6rem;
+    margin-top: var(--config-tab-gap, 0.85rem);
 }
 
 .general-card-danger {
@@ -163,7 +163,7 @@
 .general-actions-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1.5rem;
+    gap: var(--config-tab-gap, 0.85rem) 1.5rem;
     align-items: flex-start;
 }
 
@@ -446,7 +446,7 @@
     border-top: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--config-tab-gap, 0.85rem);
 }
 
 .tour-resets-tab-label {

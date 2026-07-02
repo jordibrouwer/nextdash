@@ -10,43 +10,11 @@
 }
 
 .finders-filter-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0;
-    border: none;
-    background: transparent;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    /* filter field: config-tab-shell.css (.config-filter-field) */
 }
 
 .finders-filter-input {
-    background: color-mix(in srgb, var(--background-primary) 40%, transparent);
-}
-
-.finders-filter-input:focus {
-    outline: none;
-    border-color: var(--text-secondary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 16%, transparent);
-}
-
-.finders-filter-input::-webkit-search-cancel-button {
-    display: none;
-}
-
-.finders-filter-clear {
-    flex-shrink: 0;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    padding: 0.2rem 0.35rem;
-    line-height: 1;
-}
-
-.finders-filter-clear:hover {
-    color: var(--text-primary);
+    /* inherits .config-filter-input */
 }
 
 .finders-list-empty-hint,

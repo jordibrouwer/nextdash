@@ -4,6 +4,7 @@
  */
 
 /* ── Tab page column ── */
+.config-list-tab,
 .config-tab-page,
 .simple-tab,
 .tags-tab,
@@ -23,6 +24,7 @@
 }
 
 .simple-tab,
+.config-list-tab,
 .tags-tab,
 .collections-tab {
     min-height: 300px;
@@ -282,7 +284,8 @@ html:has(#config-main) #config-main :is(
 
 .config-filter-clear,
 .tags-filter-clear,
-.stats-filter-clear {
+.stats-filter-clear,
+.finders-filter-clear {
     position: absolute;
     right: 0.3rem;
     background: none;
@@ -297,7 +300,8 @@ html:has(#config-main) #config-main :is(
 
 .config-filter-clear:hover,
 .tags-filter-clear:hover,
-.stats-filter-clear:hover {
+.stats-filter-clear:hover,
+.finders-filter-clear:hover {
     color: var(--text-secondary);
 }
 
@@ -316,8 +320,47 @@ html:has(#config-main) #config-main :is(
 }
 
 .config-empty-state[hidden],
-.tags-empty-state[hidden] {
+.tags-empty-state[hidden],
+.collections-empty-state[hidden] {
     display: none !important;
+}
+
+/* ── General action list (A10 — same row rhythm as list tabs) ── */
+.config-action-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-primary);
+    background: var(--config-surface-list);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.config-action-list > .config-advanced-action-row {
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    min-height: 2.75rem;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.12s ease;
+}
+
+.config-action-list > .config-advanced-action-row:last-child {
+    border-bottom: none;
+}
+
+.config-action-list > .config-advanced-action-row:hover {
+    background: var(--config-row-hover);
+}
+
+.config-action-list .config-advanced-action-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-action-list .config-advanced-action-actions {
+    margin-left: auto;
 }
 
 .config-empty-state p,

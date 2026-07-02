@@ -90,6 +90,7 @@ class ConfigTags {
             this._filterQuery = String(input.value || '').trim().toLowerCase();
             syncClear();
             this._render();
+            window.configManager?.ui?.refreshTabBreadcrumb?.('tags');
         });
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && input.value) {
@@ -98,6 +99,7 @@ class ConfigTags {
                 this._filterQuery = '';
                 syncClear();
                 this._render();
+                window.configManager?.ui?.refreshTabBreadcrumb?.('tags');
             }
         });
         if (clearBtn) {
@@ -107,6 +109,7 @@ class ConfigTags {
                 clearBtn.hidden = true;
                 input.focus();
                 this._render();
+                window.configManager?.ui?.refreshTabBreadcrumb?.('tags');
             });
         }
     }

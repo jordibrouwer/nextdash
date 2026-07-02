@@ -192,6 +192,20 @@
         }
     }
 
+    /**
+     * User chose "Skip tour" — always persist completion (settings + localStorage) so
+     * auto-start never runs again, even when no step content was shown yet.
+     */
+    function skipConfigTour(tour) {
+        if (!tour || typeof tour.finish !== 'function') {
+            return;
+        }
+        const result = tour.finish({ skipped: true });
+        if (result && typeof result.then === 'function') {
+            void result;
+        }
+    }
+
     window.ConfigTourRuntime = {
         ensureTourPortal,
         ensureTourBackdrop,
@@ -207,6 +221,7 @@
         isOversizedHighlight,
         applyCardPlacement,
         withAppModal,
+        skipConfigTour,
         hasActiveConfigTour,
         shouldBlockConfigShortcuts,
     };

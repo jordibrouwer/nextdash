@@ -9,6 +9,7 @@ class ConfigStats {
         this.lastManager = null;
         this._scrollspyObs = null;
         this._filterQuery = '';
+        this._activeSectionId = 'stats-overview';
         // Current period (days) per section; 0 = all time
         this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, tags: 0, rot: 90 };
     }
@@ -266,6 +267,58 @@ class ConfigStats {
             : this.t('config.statsActivityOpensLifetimeYear');
     }
 
+    periodLabel(days) {
+        const keys = {
+            7: 'statsPeriodWeek',
+            30: 'statsPeriodMonth',
+            90: 'statsPeriod3Months',
+            180: 'statsPeriod6Months',
+            0: 'statsPeriodAllTime',
+        };
+        const key = keys[Number(days)] ?? 'statsPeriodAllTime';
+        return this.t(`config.${key}`);
+    }
+
+    breadcrumbSectionLabel(sectionId) {
+        const keys = {
+            'stats-overview': 'statsInfoOverviewTitle',
+            'stats-insights': 'statsInfoInsightsTitle',
+            'stats-score': 'statsInfoScoreTitle',
+            'stats-activity': 'statsInfoActivityTitle',
+            'stats-top': 'statsInfoTopTitle',
+            'stats-pages': 'statsInfoPagesTitle',
+            'stats-categories': 'statsInfoCategoriesTitle',
+            'stats-tags': 'statsInfoTagsTitle',
+            'stats-shortcuts': 'statsInfoShortcutsTitle',
+            'stats-finders': 'statsInfoFindersTitle',
+            'stats-rot': 'statsInfoRotTitle',
+            'stats-conflicts': 'statsInfoConflictsTitle',
+            'stats-search': 'statsInfoSearchTitle',
+        };
+        const key = keys[sectionId];
+        return key ? this.t(`config.${key}`) : null;
+    }
+
+    _sectionKeyFromId(sectionId) {
+        const map = {
+            'stats-activity': 'activity',
+            'stats-top': 'top',
+            'stats-pages': 'pages',
+            'stats-categories': 'categories',
+            'stats-tags': 'tags',
+            'stats-rot': 'rot',
+        };
+        return map[sectionId] || null;
+    }
+
+    breadcrumbPeriodLabel(sectionId) {
+        const section = this._sectionKeyFromId(sectionId);
+        if (!section || !Object.prototype.hasOwnProperty.call(this.sectionPeriods, section)) {
+            return null;
+        }
+        return this.periodLabel(this.sectionPeriods[section]);
+    }
+
     // ── Period button binding ───────────────────────────────────────────────
 
     syncPeriodButtonAria(bar) {
@@ -289,6 +342,7 @@ class ConfigStats {
                     const days = Number(btn.getAttribute('data-period'));
                     this.sectionPeriods[section] = days;
                     this.renderSection(section, bookmarks, pages, locale);
+                    window.configManager?.ui?.refreshTabBreadcrumb?.('stats');
                 });
             });
             this.syncPeriodButtonAria(bar);
@@ -326,9 +380,11 @@ class ConfigStats {
     }
 
     setActiveNavSection(sectionId) {
+        this._activeSectionId = sectionId;
         document.querySelectorAll('.stats-index-list a, #stats-chip-nav a').forEach((a) => {
             a.classList.toggle('is-active', a.getAttribute('href') === `#${sectionId}`);
         });
+        window.configManager?.ui?.refreshTabBreadcrumb?.('stats');
     }
 
     initScrollspy() {
@@ -1487,6 +1543,7 @@ class ConfigStats {
         this.bindTableFilter();
         this.applyTableFilter();
         this.initScrollspy();
+        window.configManager?.ui?.refreshTabBreadcrumb?.('stats');
     }
 }
 

@@ -350,17 +350,13 @@ class ConfigBookmarks {
         panel?.classList.toggle('is-editing', editing);
 
         if (editing) {
-            emptyEl?.setAttribute('hidden', '');
-            emptyEl?.style.removeProperty('display');
-            formEl?.removeAttribute('hidden');
-            formEl?.style.removeProperty('display');
+            if (emptyEl) emptyEl.hidden = true;
+            if (formEl) formEl.hidden = false;
             return;
         }
 
-        formEl?.setAttribute('hidden', '');
-        formEl?.style.removeProperty('display');
-        emptyEl?.removeAttribute('hidden');
-        emptyEl?.style.removeProperty('display');
+        if (formEl) formEl.hidden = true;
+        if (emptyEl) emptyEl.hidden = false;
     }
 
     openDetailPanel(index, bookmarks, categories) {

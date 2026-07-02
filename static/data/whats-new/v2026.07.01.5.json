@@ -1,0 +1,71 @@
+{
+  "tag": "v2026.07.01.5",
+  "date": "June 2026",
+  "releasedAt": "2026-06-28",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Redirect check freeze</strong> — the health <em>detect redirect</em> flow no longer blocks the whole app while a check runs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Title fetch &amp; retest-all</strong> — bookmark title recovery and the bulk <em>Retest all</em> action give clearer progress and safer concurrency."
+        }
+      ]
+    },
+    {
+      "title": "Config surfaces",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks Context (B4)</strong> — the collapsible Context panel sits inside the fused <code>bookmarks-tab-surface</code> with flatter toggle styling."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Collections editor (B8)</strong> — the edit panel lives inside <code>collections-tab-surface</code> instead of a floating card."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>List-tab shell (A2/A6)</strong> — Pages, Categories, Tags, Finders, and Collections share <code>config-list-tab</code>; Finders filter uses the shared <code>config-filter-input</code> / clear button."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty states (B11)</strong> — collections and bookmark detail empty states use the <code>hidden</code> attribute consistently."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Breadcrumb context (B14)</strong> — compact path shows Tags filter, Stats section + period, and Collections edit selection."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>General rhythm (A10/B6)</strong> — <em>Tours &amp; onboarding</em> rows use <code>config-action-list</code>; section gaps use <code>--config-tab-gap</code>."
+        }
+      ]
+    },
+    {
+      "title": "Config tours",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Skip tour persistence</strong> — <em>Skip tour</em> always marks the tour completed on the server (and in <code>localStorage</code>) so guided tours never auto-start again after skip."
+        }
+      ]
+    },
+    {
+      "title": "Help &amp; documentation",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help (EN / NL / DE / FR)</strong> — What's new recap and tab-bar help document <strong>v2026.07.01.5</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, CHANGELOG</strong> — release notes for <strong>v2026.07.01.5</strong>; Playwright config suite extended for B4/B8, B11/B14, A2/A6/A10/B6, and tour skip."
+        }
+      ]
+    }
+  ]
+}

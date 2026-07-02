@@ -956,7 +956,9 @@ class ConfigCollectionsTour {
         card.querySelector('.config-general-tour-next').textContent = this.t('configGeneralTourNext', 'Next');
 
         card.querySelector('.config-general-tour-back').addEventListener('click', () => this.prevStep());
-        card.querySelector('.config-general-tour-skip').addEventListener('click', () => this.finish());
+        card.querySelector('.config-general-tour-skip').addEventListener('click', () => {
+            window.ConfigTourRuntime?.skipConfigTour?.(this);
+        });
         card.querySelector('.config-general-tour-next').addEventListener('click', () => this.nextStep());
 
         this.keyHandler = (e) => {
@@ -1063,8 +1065,8 @@ class ConfigCollectionsTour {
         }
     }
 
-    finish() {
-        if (!this._tourShown) {
+    finish({ skipped = false } = {}) {
+        if (!skipped && !this._tourShown) {
             void this.ensureDemoRemoved().finally(() => this.close());
             return;
         }
