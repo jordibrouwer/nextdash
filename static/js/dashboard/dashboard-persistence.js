@@ -162,6 +162,7 @@ class DashboardPersistence {
                     d.pendingReorderSnapshot = null;
                 }
                 d.data?.updatePageDataCache?.(pageId, { bookmarks: payload });
+                void d.data?.fetchAndStoreDataRevision?.();
 
                 if (options.showReorderSavedToast && options.successMessage) {
                     d.showNotification(options.successMessage, 'success', { duration: 2000 });

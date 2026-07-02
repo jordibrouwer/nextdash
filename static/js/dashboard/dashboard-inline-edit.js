@@ -1070,10 +1070,12 @@ class DashboardInlineEdit {
         const d = this.dash;
         const bookmark = bookmarkRef?.bookmark;
         const prevCategoryId = row?.getAttribute('data-category-id') || bookmark?.category || '';
+        const prevTagsKey = d.data?._bookmarkTagsKey?.(bookmarkRef?.original?.tags) ?? '';
         this.finishInlineEditCommit(row);
         d.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
         const nextCategoryId = bookmark?.category || '';
-        if (String(prevCategoryId) !== String(nextCategoryId) || !row || !document.contains(row)) {
+        const tagsChanged = prevTagsKey !== (d.data?._bookmarkTagsKey?.(bookmark?.tags) ?? '');
+        if (String(prevCategoryId) !== String(nextCategoryId) || tagsChanged || !row || !document.contains(row)) {
             d.renderDashboard({ incremental: false });
             return;
         }

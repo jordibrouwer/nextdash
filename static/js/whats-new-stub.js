@@ -10,10 +10,10 @@
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
     const SEARCH_PROMO_MS = 7 * 24 * 60 * 60 * 1000;
-    const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=whats-new-v117';
+    const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=whats-new-v118';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v117';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v118';
 
     let loadPromise = null;
 

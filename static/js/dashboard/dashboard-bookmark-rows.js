@@ -1553,7 +1553,15 @@ class DashboardBookmarkRows {
             return false;
         })();
 
-        return persist.catch(() => false);
+        return persist
+            .then((ok) => {
+                if (ok) {
+                    void d.data?.fetchAndStoreDataRevision?.();
+                    d.renderDashboard({ incremental: false });
+                }
+                return ok;
+            })
+            .catch(() => false);
     }
 
 
