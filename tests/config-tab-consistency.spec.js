@@ -693,6 +693,32 @@ test.describe('config tab groups (v5)', () => {
         await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).not.toHaveClass(/config-tab-group--unsaved/);
     });
 
+    test('shows unsaved dot on Extras group when only Collections change (C14)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('collections'));
+
+        await page.evaluate(() => {
+            const mgr = window.configManager;
+            const cols = JSON.parse(JSON.stringify(mgr.settingsData.collections || []));
+            cols.push({
+                id: 'playwright-test-col',
+                name: 'Playwright test',
+                icon: '▤',
+                logic: 'and',
+                rules: [{ field: 'tag', operator: 'includes', value: 'work' }],
+            });
+            mgr.settingsData.collections = cols;
+            mgr.persistence.recomputeDirtyState();
+            window.ConfigTabGroups.syncUnsavedIndicators(mgr);
+        });
+
+        await expect.poll(() => page.evaluate(() => (
+            document.querySelector('.config-tab-group[data-tab-group="extras"]')
+                ?.classList.contains('config-tab-group--unsaved') === true
+        ))).toBe(true);
+        await expect(page.locator('.tab-button[data-tab="collections"]')).toHaveClass(/tab-has-unsaved/);
+        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).not.toHaveClass(/config-tab-group--unsaved/);
+    });
+
     test('respects prefers-reduced-motion for config tab chrome (C15)', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.evaluate(() => window.configManager.ui.switchToTab('pages'));
@@ -709,6 +735,45 @@ test.describe('config tab groups (v5)', () => {
             return btn ? getComputedStyle(btn).animationName : '';
         });
         expect(saveAnim === 'none' || saveAnim === '').toBeTruthy();
+    });
+
+    test('respects prefers-reduced-motion for config animations beyond chrome (C15)', async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('keyboard'));
+        await page.evaluate(() => {
+            const btn = document.querySelector('.binding-edit-btn');
+            if (btn) btn.classList.add('listening');
+        });
+        const keyboardAnim = await page.evaluate(() => {
+            const btn = document.querySelector('.binding-edit-btn.listening');
+            return btn ? getComputedStyle(btn).animationName : '';
+        });
+        expect(keyboardAnim === 'none' || keyboardAnim === '').toBeTruthy();
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        const healthAnim = await page.evaluate(() => {
+            const link = document.querySelector('.config-header-top .health-link a');
+            return link ? getComputedStyle(link).animationName : '';
+        });
+        expect(healthAnim === 'none' || healthAnim === '').toBeTruthy();
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('tags'));
+        await page.evaluate(() => {
+            const cloud = document.querySelector('.tags-cloud');
+            if (cloud) {
+                cloud.classList.add('tags-cloud--live');
+                const word = document.createElement('span');
+                word.className = 'tag-cloud-word';
+                word.style.setProperty('--tag-index', '0');
+                cloud.appendChild(word);
+            }
+        });
+        const tagAnim = await page.evaluate(() => {
+            const word = document.querySelector('.tags-cloud--live .tag-cloud-word');
+            return word ? getComputedStyle(word).animationName : '';
+        });
+        expect(tagAnim === 'none' || tagAnim === '').toBeTruthy();
     });
 
     test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {

@@ -423,6 +423,8 @@ class ConfigPersistence {
                 settingsOnly: false,
                 hasStructuralChanges: true,
                 hasSettingsChanges: true,
+                hasCollectionsChanges: true,
+                hasNonCollectionSettingsChanges: true,
                 changedBookmarkPageIds: null,
                 hasCategoriesChanges: true,
                 hasFindersChanges: true,
@@ -431,6 +433,11 @@ class ConfigPersistence {
         }
         const saved = this.c.savedSnapshot;
         const hasSettingsChanges = JSON.stringify(this.c.settingsData) !== JSON.stringify(saved.settingsData);
+        const hasCollectionsChanges = JSON.stringify(this.c.settingsData?.collections ?? [])
+            !== JSON.stringify(saved.settingsData?.collections ?? []);
+        const hasNonCollectionSettingsChanges = JSON.stringify(
+            this._settingsWithoutCollections(this.c.settingsData)
+        ) !== JSON.stringify(this._settingsWithoutCollections(saved.settingsData));
         const changedBookmarkPageIds = this._getChangedBookmarkPageIds(saved.allBookmarkPages || {});
         const hasBookmarkChanges = changedBookmarkPageIds.length > 0;
         const hasCategoriesChanges = JSON.stringify(this.c.categoriesData) !== JSON.stringify(saved.categoriesData);
@@ -442,6 +449,8 @@ class ConfigPersistence {
             || hasPagesChanges;
         return {
             hasSettingsChanges,
+            hasCollectionsChanges,
+            hasNonCollectionSettingsChanges,
             hasStructuralChanges,
             settingsOnly: hasSettingsChanges && !hasStructuralChanges,
             changedBookmarkPageIds,
@@ -449,6 +458,13 @@ class ConfigPersistence {
             hasFindersChanges,
             hasPagesChanges,
         };
+    }
+
+    _settingsWithoutCollections(settings) {
+        if (!settings || typeof settings !== 'object') return {};
+        const copy = JSON.parse(JSON.stringify(settings));
+        delete copy.collections;
+        return copy;
     }
 
     setupDirtyTracking() {
