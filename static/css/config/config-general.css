@@ -1,6 +1,6 @@
 /* ── Tab intro copy — plain text on all config tabs (all layouts) ── */
 html:has(#config-main) :is(
-    .general-tab-intro,
+    .config-tab-intro,
     .general-layer-intro,
     .backups-tab-intro,
     .stats-page-intro,
@@ -46,33 +46,7 @@ html:has(#config-main) :is(
     box-sizing: border-box;
 }
 
-/* ── General tab intro ── */
-.general-tab-intro {
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.general-tab-intro p {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    line-height: 1.55;
-}
-
-.general-tab-intro-support {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.general-tab-intro-support-label {
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
+/* ── General tab intro (B7 — canonical .config-tab-intro) ── */
 
 /* Configuration Styles — box model scoped to config chrome (not portaled overlays) */
 html:has(#config-main) {
@@ -87,6 +61,7 @@ html:has(#config-main) {
     --config-toolbar-min-height: 2.75rem;
     --config-toolbar-padding-block: 0.5rem;
     --config-toolbar-padding-inline: 0.75rem;
+    --config-label-width: 10rem;
 }
 
 html:has(#config-main) #config-main,
@@ -319,7 +294,7 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     box-sizing: border-box;
 }
 
-.tab-content[data-tab-content="general"] .general-tab-intro,
+.tab-content[data-tab-content="general"] .config-tab-intro,
 .tab-content[data-tab-content="general"] .general-layout,
 .tab-content[data-tab-content="general"] .general-card {
     width: 100%;
@@ -339,8 +314,7 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 
 .general-config-chrome > .general-layer-toolbar,
 .general-config-chrome > .general-panels-bulk-actions,
-.general-config-chrome > .general-layer-intro,
-.general-config-chrome > .general-advanced-nav-wrap {
+.general-config-chrome > .general-layer-intro {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -765,17 +739,19 @@ body.config-is-dirty .top-quick-action.is-visible {
 }
 
 .general-tab-surface .general-panels-bulk-actions,
-.general-tab-surface .general-layer-intro,
-.general-tab-surface .general-advanced-nav-wrap {
+.general-tab-surface .general-layer-intro {
     padding-block: 0.45rem;
 }
 
-.general-tab-surface .general-advanced-nav-wrap {
-    padding-bottom: 0.65rem;
+/* Keep chrome height stable when swapping Essentials vs Advanced intro copy */
+.general-tab-surface .general-config-chrome > #general-layer-intro-essentials:not([hidden]),
+.general-tab-surface .general-config-chrome > #general-layer-intro-advanced:not([hidden]) {
+    min-height: 4.75rem;
+    box-sizing: border-box;
 }
 
 .general-tab-surface .general-layout {
-    gap: 0;
+    gap: var(--config-tab-gap, 0.85rem);
     padding: 0;
 }
 
@@ -784,7 +760,6 @@ body.config-is-dirty .top-quick-action.is-visible {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
     margin: 0;
 }
 

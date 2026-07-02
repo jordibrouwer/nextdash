@@ -109,93 +109,22 @@ body.config-is-dirty .general-layout {
     scroll-margin-top: 5rem;
 }
 
-/* Fused General surface: keep chrome + toolbar in normal flow (no sticky).
- * Sticky on .general-config-chrome or .general-layer-toolbar inside overflow:hidden
- * .general-tab-surface caused a gap above the layer buttons and overlapped bulk actions. */
-[data-general-layer="advanced"] .general-tab-surface .general-config-chrome,
-[data-general-layer="all"] .general-tab-surface .general-config-chrome,
-[data-general-layer="advanced"] .general-tab-surface .general-layer-toolbar,
-[data-general-layer="all"] .general-tab-surface .general-layer-toolbar {
+/* Fused General surface: keep chrome + toolbar in normal flow on every layer (no sticky).
+ * Layer-specific padding resets caused Essentials vs Advanced content to shift horizontally. */
+.general-tab-surface .general-config-chrome,
+.general-tab-surface .general-layer-toolbar {
     position: static;
     top: auto;
     z-index: auto;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-}
-
-[data-general-layer="advanced"] .general-tab-surface .general-advanced-nav-wrap,
-[data-general-layer="all"] .general-tab-surface .general-advanced-nav-wrap {
-    position: static;
-    top: auto;
-    margin: 0;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: none;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-primary);
-    box-shadow: none;
 }
 
 .general-panels-bulk-actions[hidden] {
     display: none !important;
 }
 
+/* Section jump nav removed — collapsible panel headers are enough. */
 .general-advanced-nav-wrap {
-    position: sticky;
-    top: var(--config-general-nav-sticky-top, 3.25rem);
-    z-index: 6;
-    margin: 0 0 0.65rem;
-    overflow-x: visible;
-    background: color-mix(in srgb, var(--background-primary) 92%, transparent);
-    backdrop-filter: blur(6px);
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.general-advanced-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem 0.5rem;
-    width: 100%;
-    padding: 0.4rem 0;
-}
-
-.general-advanced-nav a {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    padding: 0.2rem 0.45rem;
-    border-radius: 3px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-}
-
-.general-advanced-nav a:hover {
-    color: var(--text-primary);
-    border-color: var(--border-primary);
-}
-
-.general-advanced-nav a.is-active {
-    color: var(--accent-primary);
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-}
-
-.general-advanced-nav-divider {
-    flex: 0 0 100%;
-    width: 100%;
-    margin: 0.2rem 0 0.05rem;
-    padding: 0.35rem 0 0.1rem;
-    border: 0;
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 50%, transparent);
-    font-size: 0.68rem;
-    font-weight: var(--font-weight-semibold, 600);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
+    display: none !important;
 }
 
 .general-panels-bulk-actions {
@@ -239,7 +168,7 @@ body.config-is-dirty .general-layout {
     display: none !important;
 }
 
-body[data-phone-layout="true"] .general-tab-intro,
+body[data-phone-layout="true"] [data-tab-content="general"] .config-tab-intro,
 body[data-phone-layout="true"] #general-layer-intro-essentials,
 body[data-phone-layout="true"] #general-layer-intro-advanced,
 body[data-phone-layout="true"] #general-layer-intro-all {
@@ -251,10 +180,6 @@ body[data-phone-layout="true"] .general-mobile-intro {
 }
 
 @media (max-width: 640px) {
-    .general-advanced-nav-wrap {
-        top: var(--config-general-nav-sticky-top, 2.5rem);
-    }
-
     .general-layer-show-all {
         margin-left: 0;
         width: 100%;

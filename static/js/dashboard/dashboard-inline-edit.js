@@ -1538,7 +1538,8 @@ class DashboardInlineEdit {
             this.leaveBookmarkInlineEditFocusMode();
 
             if (isCurrentScope) {
-                await d.loadPageBookmarks(d.currentPageId);
+                d.data?.invalidatePageDataCache?.(Number(d.currentPageId));
+                await d.loadPageBookmarks(d.currentPageId, { forceFetch: true });
             } else {
                 await d.loadAllBookmarks();
                 d.renderDashboard();

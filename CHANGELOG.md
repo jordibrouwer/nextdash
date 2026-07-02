@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.02 — July 2026](#v20260702--july-2026)
 - [v2026.07.01.9 — July 2026](#v202607019--july-2026)
 - [v2026.07.01.8 — July 2026](#v202607018--july-2026)
 - [v2026.07.01.7 — June 2026](#v202607017--june-2026)
@@ -70,6 +71,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.02 — July 2026
+
+**Dashboard bookmark sync + config polish** — New bookmarks land in the correct category column immediately; server data revision keeps open tabs fresh after writes and restarts. Config gets Stats tour back plus B6–B11 and A8/A10 surface rhythm fixes.
+
+### Dashboard
+
+- **fix** **Bookmark category sync** — after add/edit, invalidate page cache and `forceFetch` current page bookmarks; `refreshAfterBookmarkAdded()` centralizes post-save refresh; quick-add toolbar syncs categories before opening the modal; category read from the native `<select>` (`search-commands-new.js`, `dashboard-data.js`, `quick-add.js`, `dashboard-ui-helpers.js`).
+- **new** **`GET /api/data-revision`** — fingerprint of bookmarks, categories, finders, pages, and settings files (`models.go`, `handlers.go`); client checks revision before page cache use and on tab focus (`dashboard-data.js`, `dashboard-config-sync.js`).
+- **fix** **Stale cache healing** — compare page bookmarks with `allBookmarks` (URL + category); auto-refresh on `loadAllBookmarks`, `renderDashboard`, and inline-edit page moves.
+
+### Config
+
+- **fix** **Stats guided tour** — re-enabled (`config-tab-tours.js`, `templates/config.html`, `config-setup.js`).
+- **fix** **B6** — General fused surface vertical gap uses `--config-tab-gap` (`config-general.css`).
+- **fix** **B7** — `.general-tab-intro` → `.config-tab-intro` (`templates/config.html`, CSS, tests).
+- **fix** **A8** — `--config-label-width: 10rem` on forms, Colors, Keyboard (`config-general.css`, `config-tab-shell.css`).
+- **fix** **A10** — Keyboard binding rows match list-tab rhythm (`config-keyboard.css`).
+- **fix** **B11** — persistent empty hints on Pages, Categories, Tags filter, Finders (`config-*.js`, `config-tab-shell.css`).
+- **fix** **C15** — expanded `config-reduced-motion.css` (spinner, usage bars, transitions, etc.).
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v116` data version and `2026.07-dashboard-release-v93` dashboard release token; `data-revision-1` on dashboard data/config-sync/JS bundles.
+
+### Developer & docs
+
+- **fix** **Playwright** — `dashboard-bookmark-add-category.spec.js`, `data-revision.spec.js`.
+- **fix** **CHANGELOG, What's new, README, MANUAL & Help locales** — release notes for **v2026.07.02**.
 
 ---
 

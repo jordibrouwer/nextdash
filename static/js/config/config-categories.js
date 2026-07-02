@@ -14,20 +14,25 @@ class ConfigCategories {
 
         const listPanel = document.getElementById('categories-list-panel');
         const header = listPanel?.querySelector('.categories-list-header');
+        const emptyHint = document.getElementById('categories-list-empty-hint');
 
-        container.innerHTML = '';
+        [...container.children].forEach((child) => child.remove());
 
         const list = Array.isArray(categories) ? categories : [];
         if (list.length === 0) {
             if (header) header.hidden = true;
-            const hint = document.createElement('li');
-            hint.className = 'categories-list-empty-hint config-empty-state config-empty-state--inlist';
-            hint.setAttribute('role', 'listitem');
-            hint.textContent = this.t('config.categoriesListEmptyHint') || 'No categories on this page yet. Add one to organise bookmarks.';
-            container.appendChild(hint);
+            if (emptyHint) {
+                emptyHint.textContent = this.t('config.categoriesListEmptyHint')
+                    || 'No categories on this page yet. Add one to organise bookmarks.';
+                emptyHint.hidden = false;
+                if (listPanel && emptyHint.parentElement !== listPanel) {
+                    listPanel.appendChild(emptyHint);
+                }
+            }
             return;
         }
 
+        if (emptyHint) emptyHint.hidden = true;
         if (header) header.hidden = false;
 
         const counts = list.map((category) =>

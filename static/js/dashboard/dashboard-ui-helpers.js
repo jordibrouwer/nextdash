@@ -719,9 +719,14 @@ class DashboardUiHelpers {
                 });
                 if (response.ok) {
                     close();
-                    await d.loadPageBookmarks(d.currentPageId);
-                    if (d.settings.globalShortcuts) {
-                        await d.loadAllBookmarks();
+                    if (d.data?.refreshAfterBookmarkAdded) {
+                        await d.data.refreshAfterBookmarkAdded(d.currentPageId);
+                    } else {
+                        d.data?.invalidatePageDataCache?.(Number(d.currentPageId));
+                        await d.loadPageBookmarks(d.currentPageId, { forceFetch: true });
+                        if (d.settings.globalShortcuts) {
+                            await d.loadAllBookmarks();
+                        }
                     }
                     d.showNotification(t('dashboard.quickAddAdded').replace('{name}', name), 'success');
                 } else if (response.status === 409) {

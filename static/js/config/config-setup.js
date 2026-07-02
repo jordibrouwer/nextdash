@@ -341,7 +341,7 @@ class ConfigSetup {
         }
     
         const resetConfigStatsTourBtn = document.getElementById('reset-config-stats-tour-btn');
-        if (resetConfigStatsTourBtn && !resetConfigStatsTourBtn.hidden) {
+        if (resetConfigStatsTourBtn) {
             resetConfigStatsTourBtn.addEventListener('click', async () => {
                 try {
                     window.ConfigStatsTour?.teardownStaleDom?.();
@@ -1339,7 +1339,7 @@ class ConfigSetup {
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
         const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout', 'status-essentials-summary']);
-        const DEFAULT_OPEN_ADVANCED = new Set([]);
+        const DEFAULT_OPEN_ADVANCED = new Set(['appearance-advanced']);
     
         const getDefaultOpenForLayer = (layerMode) => {
             if (layerMode === 'advanced') return DEFAULT_OPEN_ADVANCED;
@@ -1423,7 +1423,8 @@ class ConfigSetup {
         // Wire general-card collapse
         document.querySelectorAll('.general-card').forEach((card) => {
             const title = card.querySelector('.section-title');
-            if (!title) return;
+            if (!title || title.dataset.collapseWired === '1') return;
+            title.dataset.collapseWired = '1';
             card.classList.add('is-collapsible');
             title.setAttribute('role', 'button');
             title.setAttribute('tabindex', '0');

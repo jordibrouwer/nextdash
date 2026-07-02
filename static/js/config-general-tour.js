@@ -384,9 +384,9 @@ class ConfigGeneralTour {
                 title: this.t('configGeneralTourAdvancedTitle', 'Advanced sections'),
                 body: this.t(
                     'configGeneralTourAdvancedBody',
-                    'Jump to appearance fine-tuning, bookmark display, live status pings, custom title/favicon, search overlay behavior, and system tools. Date, time, and weather live under Localization in this view.'
+                    'Expand appearance fine-tuning, bookmark display, live status pings, custom title/favicon, search overlay behavior, and system tools. Date, time, and weather live under Localization in Essentials.'
                 ),
-                selector: '#general-advanced-nav',
+                selector: '[data-general-panel="appearance-advanced"]',
                 layer: 'advanced',
                 scrollBlock: 'center',
             },

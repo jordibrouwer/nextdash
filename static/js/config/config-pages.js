@@ -15,24 +15,28 @@ class ConfigPages {
 
         const listPanel = document.getElementById('pages-list-panel');
         const header = listPanel?.querySelector('.pages-list-header');
+        const emptyHint = document.getElementById('pages-list-empty-hint');
 
-        container.innerHTML = '';
+        [...container.children].forEach((child) => child.remove());
 
         const list = Array.isArray(pages) ? pages : [];
         if (list.length === 0) {
             if (header) header.hidden = true;
-            const hint = document.createElement('li');
-            hint.className = 'pages-list-empty-hint config-empty-state config-empty-state--inlist';
-            hint.setAttribute('role', 'listitem');
-            const defaultName = 'main';
-            const tpl = this.t('config.pagesListDefaultHint');
-            hint.textContent = tpl.includes('{name}')
-                ? tpl.replace('{count}', '1').replace('{name}', defaultName)
-                : `You have 1 page: ${defaultName}.`;
-            container.appendChild(hint);
+            if (emptyHint) {
+                const defaultName = 'main';
+                const tpl = this.t('config.pagesListDefaultHint');
+                emptyHint.textContent = tpl.includes('{name}')
+                    ? tpl.replace('{count}', '1').replace('{name}', defaultName)
+                    : `You have 1 page: ${defaultName}.`;
+                emptyHint.hidden = false;
+                if (listPanel && emptyHint.parentElement !== listPanel) {
+                    listPanel.appendChild(emptyHint);
+                }
+            }
             return;
         }
 
+        if (emptyHint) emptyHint.hidden = true;
         if (header) header.hidden = false;
 
         const resolveCount =

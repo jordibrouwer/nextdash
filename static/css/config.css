@@ -1,14 +1,14 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=config-general-layer-toolbar-2');
+@import url('config/config-general.css?v=config-label-width-a8-1');
 @import url('config/config-tabs.css?v=config-tab-groups-weight-1');
 @import url('config/config-forms.css');
 @import url('config/config-lists.css');
 @import url('config/config-classic-surfaces.css?v=config-general-theme-surface-1');
-@import url('config/config-modern-glass-surfaces.css?v=config-general-layer-toolbar-2');
-@import url('config/config-tab-shell.css?v=config-general-theme-surface-1');
+@import url('config/config-modern-glass-surfaces.css?v=config-general-layer-toolbar-3');
+@import url('config/config-tab-shell.css?v=config-b11-empty-hidden-1');
 @import url('config/config-buttons.css');
 @import url('config/config-unsaved-state.css');
-@import url('config/config-reduced-motion.css?v=config-c14-c15-1');
+@import url('config/config-reduced-motion.css?v=config-c15-broad-1');
 @import url('config/config-save-status.css?v=config-save-status-v1');
 @import url('config/config-notifications.css');
 @import url('config/config-sliders.css');

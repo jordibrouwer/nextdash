@@ -324,7 +324,17 @@ html:has(#config-main) #config-main :is(
 
 .config-empty-state[hidden],
 .tags-empty-state[hidden],
-.collections-empty-state[hidden] {
+.collections-empty-state[hidden],
+.config-settings-search-empty[hidden],
+.help-search-empty[hidden],
+.config-command-palette-empty[hidden],
+#bookmark-detail-empty[hidden],
+.pages-list-empty-hint[hidden],
+.categories-list-empty-hint[hidden],
+.tags-filter-empty-hint[hidden],
+.finders-list-empty-hint[hidden],
+.finders-filter-empty-hint[hidden],
+.browser-import-no-new[hidden] {
     display: none !important;
 }
 
@@ -378,6 +388,7 @@ html:has(#config-main) #config-main :is(
 .config-empty-state--inlist,
 .pages-list-empty-hint,
 .categories-list-empty-hint,
+.tags-filter-empty-hint,
 .finders-list-empty-hint,
 .finders-filter-empty-hint {
     display: block;

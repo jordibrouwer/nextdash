@@ -229,6 +229,7 @@ class DashboardRenderCore {
 
     renderDashboard(options = {}) {
         const d = this.dash;
+        d.data?.schedulePageBookmarksHealIfNeeded?.();
         if (d.isInlineEditActive()) {
             if (options.incremental === 'status') {
                 d.statusMonitor?.refreshAllStatuses?.();

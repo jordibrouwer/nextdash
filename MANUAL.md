@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.01.5**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.02**).
 
 ---
 
@@ -744,7 +744,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion), **v2026.07.01.5** config surface polish, **v2026.07.01.4** config polish, **v2026.07.01.1** config surface parity, **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.02** bookmark category sync and data revision, **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15), **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion), **v2026.07.01.5** config surface polish, **v2026.07.01.4** config polish, **v2026.07.01.1** config surface parity, **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -843,11 +843,11 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 ### Essentials vs Advanced (general)
 
 - **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.
-- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Section nav links wrap on narrow widths; labels such as *Fine-tuning* and *Display options* group related panels. Sticky **section links** at the top jump to panels; the active section highlights while you scroll (`aria-current`).
-- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; nav shows Essentials links, an *Advanced sections* divider, then Advanced links.
-- **Sticky chrome** — In Advanced and All, the layer toolbar and section nav stay pinned while you scroll. Save row and main tab bar use a solid background so content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Click a **section title** (+/−) to expand or collapse each panel.
+- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls.
+- **Save row chrome** — Save row and main tab bar use a solid background so scrolling content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
 - **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
-- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
+- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
 
 ### Find settings & quick actions (desktop config)
@@ -908,7 +908,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 Available on every screen width (including phone). The **Help** tab uses the shared config shell (**v2026.07.01.4**): intro paragraph, filter toolbar, and one fused surface card containing the Quick links index and help sections (divided rows on all layout versions). Topics match this manual in shorter form:
 
 - **Quick links** — anchor jump list (quick start, onboarding, general, navigation, mobile, keyboard, bookmarks, search, tags, collections, health, backup, troubleshooting, …).
-- **What's new recap** — scrollable history of recent changes; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome, and Stats tour paused; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
+- **What's new recap** — scrollable history of recent changes; **v2026.07.02** documents bookmark category sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.

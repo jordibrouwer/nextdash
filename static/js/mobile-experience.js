@@ -206,7 +206,7 @@
         if (introEss) introEss.hidden = true;
         const introAll = document.getElementById('general-layer-intro-all');
         if (introAll) introAll.hidden = true;
-        const tabIntro = document.querySelector('.general-tab-intro');
+        const tabIntro = document.querySelector('[data-tab-content="general"] .config-tab-intro');
         if (tabIntro) tabIntro.hidden = true;
         const mobileIntro = document.getElementById('general-layer-intro-mobile');
         if (mobileIntro) mobileIntro.hidden = false;
@@ -232,7 +232,7 @@
         if (showAll) showAll.hidden = false;
         const mobileIntro = document.getElementById('general-layer-intro-mobile');
         if (mobileIntro) mobileIntro.hidden = true;
-        const tabIntro = document.querySelector('.general-tab-intro');
+        const tabIntro = document.querySelector('[data-tab-content="general"] .config-tab-intro');
         if (tabIntro) tabIntro.hidden = false;
         const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
         if (mobileSearchHost) mobileSearchHost.hidden = true;
