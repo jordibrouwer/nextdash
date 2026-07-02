@@ -562,7 +562,7 @@ test.describe('config tab surface box model', () => {
     test('general tab intro has spacing before config chrome', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('general'));
         const gap = await page.evaluate(() => {
-            const intro = document.querySelector('[data-tab-content="general"] .general-tab-intro');
+            const intro = document.querySelector('[data-tab-content="general"] .config-tab-intro');
             const chrome = document.getElementById('general-config-chrome');
             if (!intro || !chrome) return null;
             return chrome.getBoundingClientRect().top - intro.getBoundingClientRect().bottom;

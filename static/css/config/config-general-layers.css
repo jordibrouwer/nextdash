@@ -168,7 +168,7 @@ body.config-is-dirty .general-layout {
     display: none !important;
 }
 
-body[data-phone-layout="true"] .general-tab-intro,
+body[data-phone-layout="true"] [data-tab-content="general"] .config-tab-intro,
 body[data-phone-layout="true"] #general-layer-intro-essentials,
 body[data-phone-layout="true"] #general-layer-intro-advanced,
 body[data-phone-layout="true"] #general-layer-intro-all {
