@@ -1179,30 +1179,29 @@
         });
 
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
-            const btn = e.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.classList.add('btn-loading');
-            btn.textContent = t('health.retesting', 'retesting...');
+            const btn = e.currentTarget || e.target;
             try {
-                const response = await apiFetch('/api/health/retest-all', {
-                    method: 'POST',
-                    headers: writeJsonHeaders()
+                await runHealthAction('retest-all', async () => {
+                    setButtonBusy(btn, true);
+                    try {
+                        const response = await healthFetch('/api/health/retest-all', {
+                            method: 'POST',
+                            headers: writeJsonHeaders()
+                        }, 5 * 60 * 1000);
+                        if (!response.ok) {
+                            throw new Error(t('health.retestFailed', 'Failed to retest all bookmarks'));
+                        }
+                        const result = await response.json();
+                        showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
+                        await reloadReport();
+                    } finally {
+                        setButtonBusy(btn, false);
+                    }
+                }, {
+                    busyMessage: t('health.retesting', 'retesting...')
                 });
-                if (response.ok) {
-                    const result = await response.json();
-                    showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
-                    btn.textContent = t('health.reloading', 'reloading...');
-                    await reloadReport();
-                } else {
-                    showBulkStatus(t('health.retestFailed', 'Failed to retest all bookmarks'));
-                }
             } catch (error) {
-                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: error.message }));
-            } finally {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.textContent = originalText;
+                showBulkStatus(t('health.errorMessage', 'Error: {message}', { message: formatHealthError(error) }));
             }
         });
 

@@ -2249,12 +2249,11 @@ func (h *Handlers) AutoHealSuggest(w http.ResponseWriter, r *http.Request) {
 	redirectURL := h.detectRedirectURLCtx(r.Context(), currentURL, redirectOnly)
 	suggestedTitle := ""
 	if !redirectOnly {
-		suggestedTitle = h.fetchPageTitleSafe(func() string {
-			if redirectURL != "" {
-				return redirectURL
-			}
-			return currentURL
-		}())
+		titleURL := currentURL
+		if redirectURL != "" {
+			titleURL = redirectURL
+		}
+		suggestedTitle = h.fetchPageTitleSafeCtx(r.Context(), titleURL)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2326,7 +2325,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		if targetURL == "" {
 			targetURL = strings.TrimSpace(sourceBookmark.URL)
 		}
-		resolvedTitle = strings.TrimSpace(h.fetchPageTitleSafe(targetURL))
+		resolvedTitle = strings.TrimSpace(h.fetchPageTitleSafeCtx(r.Context(), targetURL))
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
@@ -2442,15 +2441,28 @@ func (h *Handlers) detectRedirectURLCtx(ctx context.Context, urlStr string, quic
 }
 
 func (h *Handlers) fetchPageTitleSafe(urlStr string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	return h.fetchPageTitleSafeCtx(ctx, urlStr)
+}
+
+func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) string {
 	urlStr = strings.TrimSpace(urlStr)
+	if ctx.Err() != nil {
+		return ""
+	}
 	if urlStr == "" {
 		return ""
 	}
-	if err := validateHTTPURL(urlStr, h.allowLocalBookmarks()); err != nil {
+	if err := validateHTTPURLCtx(ctx, urlStr, h.allowLocalBookmarks()); err != nil {
 		return ""
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+
 	client := h.outboundHTTPClient(8*time.Second, 5)
-	req, err := http.NewRequest("GET", urlStr, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
 		return ""
 	}
@@ -2458,9 +2470,12 @@ func (h *Handlers) fetchPageTitleSafe(urlStr string) string {
 
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
+		if resp != nil {
+			drainAndCloseResponse(resp)
+		}
 		return ""
 	}
-	defer resp.Body.Close()
+	defer drainAndCloseResponse(resp)
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
 	if err != nil {

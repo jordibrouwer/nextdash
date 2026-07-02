@@ -90,3 +90,17 @@ func TestAutoHealApplyValidatesURLBeforeStoreLock(t *testing.T) {
 		t.Fatalf("bookmark URL = %q, want https://example.com/new", bookmarks[0].URL)
 	}
 }
+
+func TestFetchPageTitleSafeCtx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte("<html><head><title>  Hello   World  </title></head></html>"))
+	}))
+	defer server.Close()
+
+	h := testHandlersWithLocalBookmarks(t)
+	got := h.fetchPageTitleSafeCtx(t.Context(), server.URL)
+	if got != "Hello World" {
+		t.Fatalf("fetchPageTitleSafeCtx() = %q, want %q", got, "Hello World")
+	}
+}
