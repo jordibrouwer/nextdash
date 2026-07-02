@@ -69,8 +69,8 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    padding: 0.5rem 0.75rem;
-    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    min-height: 2.75rem;
     background: transparent;
     border-bottom: 1px solid var(--border-primary);
     transition: background-color 0.12s ease;
