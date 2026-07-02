@@ -11,6 +11,10 @@
           "text": "<strong>Bookmark category sync</strong> — new bookmarks and category changes show in the correct column immediately after save (not only in smart collections). Page cache is invalidated and refreshed; stale cache self-heals when <code>allBookmarks</code> and the grid diverge."
         },
         {
+          "badge": "fix",
+          "text": "<strong>Bookmark tag sync</strong> — adding or removing tags via inline edit or the tag popover re-renders tag smart collections and the tag-filter view. Stale-cache detection includes tags; saves update the server data revision."
+        },
+        {
           "badge": "new",
           "text": "<strong>Data revision</strong> — <code>GET /api/data-revision</code> fingerprints on-disk bookmarks, categories, finders, pages, and settings. The dashboard checks it before using the page cache and when you return to the tab, so server restarts and external edits stay visible."
         }
@@ -54,7 +58,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Playwright</strong> — bookmark category placement, stale-cache bypass, and data-revision API tests."
+          "text": "<strong>Playwright</strong> — bookmark category placement, stale-cache bypass, tag-only stale detection, and data-revision API tests."
         },
         {
           "badge": "fix",

@@ -203,6 +203,8 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
+**Bookmark tag sync (v2026.07.02)** — tag edits re-render smart collections and the tag-filter view; stale-cache detection includes tags.
+
 **Config polish (v2026.07.02)** — Stats guided tour re-enabled; General spacing (B6), shared tab intro (B7), uniform label width (A8), keyboard row rhythm (A10), persistent empty hints (B11), broader reduced-motion (C15).
 
 **Inline edit focus (v2026.07.01.8)** — long-press inline editor uses a nearly opaque panel and tour-like full-page blur so labels and fields stay readable on glass and launcher layouts.

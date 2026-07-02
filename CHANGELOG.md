@@ -76,13 +76,14 @@ Nothing yet.
 
 ## v2026.07.02 — July 2026
 
-**Dashboard bookmark sync + config polish** — New bookmarks land in the correct category column immediately; server data revision keeps open tabs fresh after writes and restarts. Config gets Stats tour back plus B6–B11 and A8/A10 surface rhythm fixes.
+**Dashboard bookmark sync + config polish** — New bookmarks land in the correct category column immediately; tag edits keep smart collections and the tag filter in sync; server data revision keeps open tabs fresh after writes and restarts. Config gets Stats tour back plus B6–B11 and A8/A10 surface rhythm fixes.
 
 ### Dashboard
 
 - **fix** **Bookmark category sync** — after add/edit, invalidate page cache and `forceFetch` current page bookmarks; `refreshAfterBookmarkAdded()` centralizes post-save refresh; quick-add toolbar syncs categories before opening the modal; category read from the native `<select>` (`search-commands-new.js`, `dashboard-data.js`, `quick-add.js`, `dashboard-ui-helpers.js`).
 - **new** **`GET /api/data-revision`** — fingerprint of bookmarks, categories, finders, pages, and settings files (`models.go`, `handlers.go`); client checks revision before page cache use and on tab focus (`dashboard-data.js`, `dashboard-config-sync.js`).
-- **fix** **Stale cache healing** — compare page bookmarks with `allBookmarks` (URL + category); auto-refresh on `loadAllBookmarks`, `renderDashboard`, and inline-edit page moves.
+- **fix** **Stale cache healing** — compare page bookmarks with `allBookmarks` (URL, category, and tags); auto-refresh on `loadAllBookmarks`, `renderDashboard`, and inline-edit page moves.
+- **fix** **Bookmark tag sync** — tag add/remove via inline edit or tag popover re-renders tag smart collections and tag-filter view; `isPageBookmarksStale()` includes tags; `saveBookmarkOrder()` updates data revision (`dashboard-data.js`, `dashboard-inline-edit.js`, `dashboard-bookmark-rows.js`, `dashboard-persistence.js`).
 
 ### Config
 
@@ -96,11 +97,11 @@ Nothing yet.
 
 ### Cache-bust
 
-- **fix** **Cache-bust** — `whats-new-v116` data version and `2026.07-dashboard-release-v93` dashboard release token; `data-revision-1` on dashboard data/config-sync/JS bundles.
+- **fix** **Cache-bust** — `whats-new-v118` data version and `2026.07-dashboard-release-v94` dashboard release token; `data-revision-2` on dashboard data/persistence/inline-edit/bookmark-rows bundles.
 
 ### Developer & docs
 
-- **fix** **Playwright** — `dashboard-bookmark-add-category.spec.js`, `data-revision.spec.js`.
+- **fix** **Playwright** — `dashboard-bookmark-add-category.spec.js` (category placement, stale-cache bypass, tag-only stale detection), `data-revision.spec.js`.
 - **fix** **CHANGELOG, What's new, README, MANUAL & Help locales** — release notes for **v2026.07.02**.
 
 ---
