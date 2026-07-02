@@ -86,7 +86,7 @@
 
 .binding-description {
     flex: 1;
-    min-width: 0;
+    min-width: var(--config-label-width, 10rem);
     font-size: var(--font-size-text, 0.95rem);
     font-weight: 500;
 }

@@ -61,6 +61,7 @@ html:has(#config-main) {
     --config-toolbar-min-height: 2.75rem;
     --config-toolbar-padding-block: 0.5rem;
     --config-toolbar-padding-inline: 0.75rem;
+    --config-label-width: 10rem;
 }
 
 html:has(#config-main) #config-main,

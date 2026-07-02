@@ -247,7 +247,7 @@
     font-size: var(--font-size-text);
     color: var(--text-secondary);
     font-weight: var(--font-weight-semibold);
-    min-width: 160px;
+    min-width: var(--config-label-width, 10rem);
     margin: 0;
 }
 

@@ -489,7 +489,7 @@
 .form-group label {
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-text);
-    min-width: 120px;
+    min-width: var(--config-label-width, 10rem);
 }
 
 .form-group input,

@@ -638,6 +638,38 @@ test.describe('config list shell polish (A2/A6/A10/B6)', () => {
         expect(metrics.actionMinHeight).toBeCloseTo(metrics.listMinHeight, 0);
         expect(metrics.actionPaddingTop).toBeCloseTo(metrics.listPaddingTop, 1);
     });
+
+    test('form, color, and keyboard labels share config-label-width token (A8)', async ({ page }) => {
+        const widths = await page.evaluate(() => {
+            const probe = document.createElement('div');
+            probe.style.width = 'var(--config-label-width, 10rem)';
+            document.body.appendChild(probe);
+            const tokenWidth = parseFloat(getComputedStyle(probe).width);
+            document.body.removeChild(probe);
+
+            const cm = window.configManager;
+            cm.ui.switchToTab('general');
+            const formLabel = document.querySelector('[data-tab-content="general"] .form-group label');
+            const formWidth = formLabel ? parseFloat(getComputedStyle(formLabel).minWidth) : null;
+
+            cm.ui.switchToTab('colors');
+            const colorLabel = document.querySelector('.color-item label');
+            const colorWidth = colorLabel ? parseFloat(getComputedStyle(colorLabel).minWidth) : null;
+
+            cm.ui.switchToTab('keyboard');
+            const bindingDesc = document.querySelector('.keyboard-binding-row .binding-description');
+            const keyboardWidth = bindingDesc ? parseFloat(getComputedStyle(bindingDesc).minWidth) : null;
+
+            return { tokenWidth, formWidth, colorWidth, keyboardWidth };
+        });
+
+        expect(widths.formWidth).not.toBeNull();
+        expect(widths.colorWidth).not.toBeNull();
+        expect(widths.keyboardWidth).not.toBeNull();
+        expect(widths.formWidth).toBeCloseTo(widths.tokenWidth, 0);
+        expect(widths.colorWidth).toBeCloseTo(widths.tokenWidth, 0);
+        expect(widths.keyboardWidth).toBeCloseTo(widths.tokenWidth, 0);
+    });
 });
 
 test.describe('config tab groups (v5)', () => {
