@@ -457,6 +457,136 @@ class DashboardData {
         d._pageDataCache.delete(Number(pageId));
     }
 
+    async fetchDataRevision() {
+        try {
+            const res = await fetch('/api/data-revision', { cache: 'no-store' });
+            if (!res.ok) {
+                return null;
+            }
+            const body = await res.json();
+            const revision = String(body?.revision || '').trim();
+            return revision || null;
+        } catch {
+            return null;
+        }
+    }
+
+    async fetchAndStoreDataRevision() {
+        const revision = await this.fetchDataRevision();
+        if (revision) {
+            this.dash._serverDataRevision = revision;
+        }
+        return revision;
+    }
+
+    /**
+     * Compare server data revision with last seen value.
+     * @returns {Promise<boolean>} true when revision changed since last sync
+     */
+    async syncDataRevision({ invalidateOnChange = true } = {}) {
+        const revision = await this.fetchDataRevision();
+        if (!revision) {
+            return false;
+        }
+        const d = this.dash;
+        const prev = String(d._serverDataRevision || '');
+        const changed = Boolean(prev && prev !== revision);
+        if (changed && invalidateOnChange) {
+            this.invalidatePageDataCache();
+        }
+        d._serverDataRevision = revision;
+        return changed;
+    }
+
+    async refreshIfDataRevisionChanged() {
+        const d = this.dash;
+        if (!d._bookmarksReady || d.isInlineEditActive?.()) {
+            return false;
+        }
+        const changed = await this.syncDataRevision({ invalidateOnChange: true });
+        if (!changed) {
+            return false;
+        }
+        if (d.needsCrossPageBookmarks?.()) {
+            await this.loadAllBookmarks();
+        }
+        await this.loadPageBookmarks(d.currentPageId, { forceFetch: true, animate: false });
+        return true;
+    }
+
+    _bookmarkUrlKey(url) {
+        if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
+            return BookmarkUrlUtils.canonicalBookmarkURLKey(url);
+        }
+        return String(url || '').trim().toLowerCase();
+    }
+
+    _getPageBookmarksFromAll(pageId) {
+        const d = this.dash;
+        if (!Array.isArray(d.allBookmarks) || d.allBookmarks.length === 0) {
+            return null;
+        }
+        const pid = Number(pageId);
+        return d.allBookmarks.filter((bookmark) => Number(bookmark.pageId) === pid);
+    }
+
+    isPageBookmarksStale(pageId, bookmarks) {
+        const fromAll = this._getPageBookmarksFromAll(pageId);
+        if (!fromAll) {
+            return false;
+        }
+        const current = Array.isArray(bookmarks) ? bookmarks : [];
+        if (fromAll.length !== current.length) {
+            return true;
+        }
+        const currentByUrl = new Map(current.map((bookmark) => [
+            this._bookmarkUrlKey(bookmark.url),
+            String(bookmark.category ?? '').trim(),
+        ]));
+        return fromAll.some((bookmark) => {
+            const key = this._bookmarkUrlKey(bookmark.url);
+            if (!currentByUrl.has(key)) {
+                return true;
+            }
+            return currentByUrl.get(key) !== String(bookmark.category ?? '').trim();
+        });
+    }
+
+    invalidateStalePageCaches(pageId = null) {
+        const d = this.dash;
+        if (!d._pageDataCache?.size) {
+            return;
+        }
+        const pageIds = pageId == null
+            ? [...d._pageDataCache.keys()]
+            : [Number(pageId)];
+        pageIds.forEach((pid) => {
+            const entry = d._pageDataCache.get(pid);
+            if (entry && this.isPageBookmarksStale(pid, entry.bookmarks)) {
+                d._pageDataCache.delete(pid);
+            }
+        });
+    }
+
+    schedulePageBookmarksHealIfNeeded() {
+        const d = this.dash;
+        const pid = Number(d.currentPageId);
+        if (!Number.isFinite(pid) || pid < 1) {
+            return;
+        }
+        if (!this.isPageBookmarksStale(pid, d.bookmarks)) {
+            return;
+        }
+        if (d._pageBookmarksHealInFlight) {
+            return;
+        }
+        d._pageBookmarksHealInFlight = true;
+        void this.loadPageBookmarks(pid, { forceFetch: true, animate: false })
+            .finally(() => {
+                d._pageBookmarksHealInFlight = false;
+            });
+    }
+
     async prefetchPageData(pageId) {
         const d = this.dash;
         const pid = Number(pageId);
@@ -565,9 +695,21 @@ class DashboardData {
                 return false;
             }
 
+            let useForceFetch = forceFetch;
+            if (!useForceFetch) {
+                const revisionChanged = await this.syncDataRevision({ invalidateOnChange: true });
+                if (revisionChanged) {
+                    useForceFetch = true;
+                }
+            }
+
             let bookmarks;
             let categories;
-            const cached = !forceFetch ? this.getCachedPageData(targetPageId) : null;
+            let cached = !useForceFetch ? this.getCachedPageData(targetPageId) : null;
+            if (cached && this.isPageBookmarksStale(targetPageId, cached.bookmarks)) {
+                this.invalidatePageDataCache(targetPageId);
+                cached = null;
+            }
             if (cached) {
                 bookmarks = cached.bookmarks;
                 categories = cached.categories;
@@ -590,6 +732,7 @@ class DashboardData {
                     return false;
                 }
                 this.setPageDataCache(targetPageId, bookmarks, categories);
+                await this.fetchAndStoreDataRevision();
             }
 
             this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate });
@@ -620,6 +763,18 @@ class DashboardData {
                 throw new Error('Failed to load all bookmarks');
             }
             d.allBookmarks = await allBookmarksRes.json();
+            this.invalidateStalePageCaches();
+
+            const currentPageId = Number(d.currentPageId);
+            if (Number.isFinite(currentPageId)
+                && this.isPageBookmarksStale(currentPageId, d.bookmarks)
+                && !d._pageBookmarksHealInFlight) {
+                await this.loadPageBookmarks(currentPageId, {
+                    forceFetch: true,
+                    skipRender: true,
+                    rethrow: options.rethrow,
+                });
+            }
 
             // Update search component with all bookmarks
             if (d.searchComponent) {
@@ -636,6 +791,28 @@ class DashboardData {
                 }
             );
         }
+    }
+
+    /**
+     * Refresh dashboard data after a bookmark was added/updated on a page.
+     * Invalidates the per-page cache so category columns match smart collections.
+     */
+    async refreshAfterBookmarkAdded(pageId, options = {}) {
+        const d = this.dash;
+        const pid = Number(pageId);
+        if (!Number.isFinite(pid) || pid < 1) {
+            return;
+        }
+        this.invalidatePageDataCache(pid);
+        await this.loadAllBookmarks({ rethrow: options.rethrow });
+        if (Number(d.currentPageId) === pid) {
+            await this.loadPageBookmarks(pid, {
+                forceFetch: true,
+                animate: options.animate ?? false,
+                rethrow: options.rethrow,
+            });
+        }
+        await this.fetchAndStoreDataRevision();
     }
 
     async saveSettings() {

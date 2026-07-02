@@ -795,12 +795,15 @@ class SearchCommandNew {
         const rawTags = String(formData.get('tags') || '');
         const tags = rawTags.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i);
 
+        const categorySelect = document.getElementById('new-bookmark-category');
+        const categoryValue = String(categorySelect?.value ?? formData.get('category') ?? '').trim();
+
         const bookmark = {
             name: formData.get('name').trim(),
             url: normalizedUrl,
             note: (formData.get('note') || '').trim(),
             shortcut: formData.get('shortcut').trim().toUpperCase(),
-            category: formData.get('category'),
+            category: categoryValue,
             pinned: formData.get('pinned') === 'on',
             checkStatus: formData.get('checkStatus') === 'on',
             tags,
@@ -844,10 +847,12 @@ class SearchCommandNew {
                     console.warn('Error closing new-bookmark modal after save:', error);
                 }
                 this.pendingIcon = '';
-                if (window.dashboardInstance) {
+                if (window.dashboardInstance?.data?.refreshAfterBookmarkAdded) {
+                    await window.dashboardInstance.data.refreshAfterBookmarkAdded(pageId);
+                } else if (window.dashboardInstance) {
                     await window.dashboardInstance.loadAllBookmarks();
                     if (Number(pageId) === Number(window.dashboardInstance.currentPageId)) {
-                        await window.dashboardInstance.loadPageBookmarks(pageId);
+                        await window.dashboardInstance.loadPageBookmarks(pageId, { forceFetch: true });
                     }
                 }
                 this.notify(this.t('config.bookmarkCreated', 'Bookmark created successfully!'), 'success');

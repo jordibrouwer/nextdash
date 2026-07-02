@@ -280,6 +280,7 @@ class Dashboard {
             this.setupHeaderEnhancements();
             this.setupConfigStructureReloadListener();
             this.setupConfigReturnRefreshListener();
+            this.setupDataRevisionListener();
             this.setupExtensionBookmarkSavedListener();
             this.scheduleBackupTip();
 
@@ -884,6 +885,10 @@ class Dashboard {
 
     setupConfigReturnRefreshListener() {
         return this.configSync.setupConfigReturnRefreshListener(...arguments);
+    }
+
+    setupDataRevisionListener() {
+        return this.configSync.setupDataRevisionListener(...arguments);
     }
 
     restoreDashboardInteractionAfterBfcache() {

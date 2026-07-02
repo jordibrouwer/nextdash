@@ -608,6 +608,18 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(bookmarks)
 }
 
+func (h *Handlers) GetDataRevision(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"revision": h.store.GetDataRevision(),
+	})
+}
+
 func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {

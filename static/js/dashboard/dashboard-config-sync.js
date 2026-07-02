@@ -67,6 +67,19 @@ class DashboardConfigSync {
     }
 
 
+    setupDataRevisionListener() {
+        const d = this.dash;
+        const checkRevision = () => {
+            if (document.visibilityState && document.visibilityState !== 'visible') {
+                return;
+            }
+            void d.data?.refreshIfDataRevisionChanged?.();
+        };
+        document.addEventListener('visibilitychange', checkRevision);
+        window.addEventListener('focus', checkRevision);
+    }
+
+
     restoreDashboardInteractionAfterBfcache() {
         const d = this.dash;
         document.querySelectorAll('#dashboard-layout .bookmark-link').forEach((row) => {

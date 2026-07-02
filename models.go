@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -313,6 +316,8 @@ type Store interface {
 	TakeDefaultBookmarkIconPrefetch() bool
 	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and icon is empty.
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
+	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
+	GetDataRevision() string
 }
 
 // PrefetchIconUpdate is a merge-safe favicon write keyed by bookmark index and canonical URL.
@@ -2134,4 +2139,44 @@ type BookmarkPreview struct {
 	Domain      string `json:"domain"`
 	Icon        string `json:"icon"`
 	FetchedAt   int64  `json:"fetchedAt"`
+}
+
+// GetDataRevision fingerprints bookmark, category, finder, page, and settings files.
+// Any write or server restart that changes file mtimes produces a new revision.
+func (fs *FileStore) GetDataRevision() string {
+	fs.mutex.RLock()
+	defer fs.mutex.RUnlock()
+
+	fs.ensureDataDir()
+
+	paths := []string{
+		fs.settingsFile,
+		fs.colorsFile,
+		fs.pageOrderFile,
+		filepath.Join(fs.dataDir, "finders.json"),
+	}
+
+	if entries, err := os.ReadDir(fs.dataDir); err == nil {
+		for _, entry := range entries {
+			name := entry.Name()
+			if strings.HasPrefix(name, "bookmarks-") && strings.HasSuffix(name, ".json") {
+				paths = append(paths, filepath.Join(fs.dataDir, name))
+			}
+		}
+	}
+
+	sort.Strings(paths)
+
+	hash := sha256.New()
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err != nil {
+			hash.Write([]byte(path + ":missing;"))
+			continue
+		}
+		fmt.Fprintf(hash, "%s:%d:%d;", path, info.Size(), info.ModTime().UnixNano())
+	}
+
+	sum := hash.Sum(nil)
+	return hex.EncodeToString(sum[:8])
 }

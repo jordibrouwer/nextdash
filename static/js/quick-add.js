@@ -17,6 +17,20 @@ class QuickAddWidget {
         return this.dashboard?.searchComponent?.commandsComponent?.newCommandHandler;
     }
 
+    syncNewHandlerContext() {
+        const handler = this.getNewHandler();
+        const d = this.dashboard;
+        if (!handler || !d) {
+            return handler;
+        }
+        handler.setContext(
+            d.currentPageId || 1,
+            d.categories || [],
+            d.pages || []
+        );
+        return handler;
+    }
+
     static matchesChordShortcut(e) {
         return Boolean(e?.ctrlKey && e.shiftKey && e.code === 'KeyA');
     }
@@ -37,12 +51,12 @@ class QuickAddWidget {
         if (handler.modal?.classList.contains('show')) {
             handler.closeModal();
         } else {
-            handler.openModal();
+            this.syncNewHandlerContext()?.openModal();
         }
     }
 
     open() {
-        this.getNewHandler()?.openModal();
+        this.syncNewHandlerContext()?.openModal();
     }
 
     close() {
