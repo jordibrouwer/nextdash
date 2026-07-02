@@ -82,6 +82,18 @@ When the token is **not** set, behaviour is unchanged — everything stays open 
 
 Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
 
+### Optional CORS allowlist (LAN / VPS / extension)
+
+By default, bookmark API responses send `Access-Control-Allow-Origin: *` so the browser extension and cross-origin tools work without extra config.
+
+Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to restrict cross-origin reads/writes, for example:
+
+```bash
+NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+```
+
+Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response. Unset or empty keeps the default `*`.
+
 ---
 
 ## Features

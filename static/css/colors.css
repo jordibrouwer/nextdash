@@ -91,6 +91,40 @@
     border-bottom: 1px solid var(--border-primary);
 }
 
+.theme-colors-toolbar.config-tab-toolbar--in-surface {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: var(--config-toolbar-padding-block, 0.5rem);
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 35%, transparent));
+}
+
+/* Theme tab — fused surface (B10/C11) */
+.theme-colors-tab-surface .theme-colors-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.theme-colors-tab-surface .colors-tab-panel {
+    padding: 0.9rem 1rem;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.theme-colors-tab-surface .colors-tab-panel .config-section {
+    padding: 0;
+    border: none;
+}
+
 .theme-colors-actions {
     display: flex;
     flex-wrap: wrap;

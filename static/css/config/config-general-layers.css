@@ -11,6 +11,15 @@
     box-sizing: border-box;
 }
 
+.general-layer-toolbar.config-tab-toolbar--in-surface {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+    max-width: 100%;
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 35%, transparent));
+}
+
 .general-layer-switch {
     display: inline-flex;
     border: 1px solid var(--border-primary);

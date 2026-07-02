@@ -201,7 +201,7 @@ html:has(#config-main) .config-section.section-controls .config-controls-wrapper
     box-sizing: border-box;
 }
 
-.tab-content[data-tab-content="general"] > div {
+.tab-content[data-tab-content="general"] > .general-tab {
     display: flex;
     flex-direction: column;
     gap: var(--config-tab-gap, 0.85rem);
@@ -319,7 +319,7 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     box-sizing: border-box;
 }
 
-.tab-content[data-tab-content="general"] > div > .general-tab-intro,
+.tab-content[data-tab-content="general"] .general-tab-intro,
 .tab-content[data-tab-content="general"] .general-layout,
 .tab-content[data-tab-content="general"] .general-card {
     width: 100%;
@@ -745,6 +745,50 @@ body.config-is-dirty .top-quick-action.is-visible {
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     line-height: 1.45;
+}
+
+/* General tab — fused surface (C16/B6 parity with list tabs) */
+.general-tab-surface .general-config-chrome {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.general-tab-surface .general-config-chrome > :not(.general-layer-toolbar) {
+    padding-inline: var(--config-toolbar-padding-inline, 0.75rem);
+}
+
+.general-tab-surface .general-panels-bulk-actions,
+.general-tab-surface .general-layer-intro,
+.general-tab-surface .general-advanced-nav-wrap {
+    padding-block: 0.45rem;
+}
+
+.general-tab-surface .general-advanced-nav-wrap {
+    padding-bottom: 0.65rem;
+}
+
+.general-tab-surface .general-layout {
+    gap: 0;
+    padding: 0;
+}
+
+.general-tab-surface .general-card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-primary);
+    margin: 0;
+}
+
+.general-tab-surface .general-card:last-child {
+    border-bottom: none;
+}
+
+.general-tab-surface .general-card-danger {
+    background: color-mix(in srgb, var(--accent-error) 6%, transparent);
 }
 
 .pwa-install-steps ol {

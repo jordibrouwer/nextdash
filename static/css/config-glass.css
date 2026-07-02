@@ -218,7 +218,7 @@ body[data-layout-version="glass"] .help-block--spotlight {
 
 /* ─── General tab (layer toolbar, intro, section nav) ─────────────────────── */
 
-body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > div {
+body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > .general-tab {
     display: flex;
     flex-direction: column;
     gap: var(--config-tab-gap);
@@ -673,7 +673,7 @@ body[data-layout-version="glass"] .theme-colors-editor {
 body[data-layout-version="glass"] :is(
     .theme-colors-toolbar,
     .colors-tab-panel
-) {
+):not(.config-tab-surface *) {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);

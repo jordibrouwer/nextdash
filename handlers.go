@@ -26,9 +26,17 @@ type Handlers struct {
 	store          Store
 	files          embed.FS
 	previewCacheMu sync.RWMutex
+	previewCache   PreviewCacheFile
+	previewLoaded  bool
 	healthCacheMu  sync.RWMutex
+	healthReportMu sync.RWMutex
+	healthReport   BookmarkHealthReport
+	healthReportAt time.Time
+	healthReportOK bool
 	prefetchMu     sync.Mutex
 }
+
+const healthReportCacheTTL = 3 * time.Minute
 
 const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
 
@@ -144,6 +152,14 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 	return template.ParseFS(h.files, templateFiles...)
 }
 
+func (h *Handlers) FlushCaches() {
+	h.previewCacheMu.Lock()
+	if h.previewLoaded {
+		_ = writePreviewCacheFile(h.previewCache)
+	}
+	h.previewCacheMu.Unlock()
+}
+
 func NewHandlers(store Store, files embed.FS) *Handlers {
 	h := &Handlers{
 		store: store,
@@ -176,9 +192,35 @@ func (h *Handlers) HealthPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	refresh := r.URL.Query().Get("refresh")
+	forceRefresh := refresh == "1" || refresh == "true"
+	if !forceRefresh {
+		h.healthReportMu.RLock()
+		if h.healthReportOK && time.Since(h.healthReportAt) < healthReportCacheTTL {
+			report := h.healthReport
+			h.healthReportMu.RUnlock()
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(report)
+			return
+		}
+		h.healthReportMu.RUnlock()
+	}
+
 	report := h.buildBookmarkHealthReport()
+	h.healthReportMu.Lock()
+	h.healthReport = report
+	h.healthReportOK = true
+	h.healthReportAt = time.Now()
+	h.healthReportMu.Unlock()
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(report)
+}
+
+func (h *Handlers) invalidateHealthReportCache() {
+	h.healthReportMu.Lock()
+	h.healthReportOK = false
+	h.healthReportMu.Unlock()
 }
 
 func healthReasonLegacyLabel(r HealthReason) string {
@@ -513,10 +555,8 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 	w.Write(buf.Bytes())
 }
 
-func (h *Handlers) setCORSHeaders(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-NextDash-Token")
+func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
+	applyCORSHeaders(w, r)
 }
 
 type htmlPageData struct {
@@ -540,7 +580,7 @@ func (h *Handlers) validateBookmarkURL(bookmarkURL string) error {
 }
 
 func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}
@@ -569,7 +609,7 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}
@@ -672,7 +712,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}
@@ -770,7 +810,7 @@ func slugify(s string) string {
 }
 
 func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}
@@ -872,7 +912,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Handlers) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}
@@ -978,7 +1018,7 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}

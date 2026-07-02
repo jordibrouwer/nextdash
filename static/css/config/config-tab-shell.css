@@ -13,6 +13,7 @@
 .backups-tab,
 .stats-tab,
 .keyboard-tab,
+.general-tab,
 .theme-colors-editor {
     display: flex;
     flex-direction: column;
@@ -44,7 +45,7 @@
 html:has(#config-main) #config-main :is(
     .config-tab-page,
     .bookmarks-tab-workspace,
-    .tab-content[data-tab-content="general"] > div
+    .tab-content[data-tab-content="general"] > .general-tab
 ) {
     display: flex;
     flex-direction: column;
@@ -145,7 +146,9 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .tags-body,
 .config-tab-surface > .config-empty-state,
 .config-tab-surface > .keyboard-body,
-.config-tab-surface > .stats-layout {
+.config-tab-surface > .stats-layout,
+.config-tab-surface > .general-layout,
+.config-tab-surface > .theme-colors-body {
     border: none;
     border-radius: 0;
     background: transparent;

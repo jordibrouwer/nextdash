@@ -29,12 +29,23 @@ func previewCacheEntryValid(entry BookmarkPreview) bool {
 	return time.Now().UnixMilli()-entry.FetchedAt < previewCacheTTLMs
 }
 
-func (h *Handlers) getPreviewCacheEntry(key string) (BookmarkPreview, bool) {
-	h.previewCacheMu.RLock()
-	defer h.previewCacheMu.RUnlock()
+func (h *Handlers) ensurePreviewCacheLoadedLocked() {
+	if h.previewLoaded {
+		return
+	}
+	h.previewCache = readPreviewCacheFile()
+	if h.previewCache.Cache == nil {
+		h.previewCache.Cache = map[string]BookmarkPreview{}
+	}
+	h.previewLoaded = true
+}
 
-	cache := readPreviewCacheFile()
-	entry, ok := cache.Cache[key]
+func (h *Handlers) getPreviewCacheEntry(key string) (BookmarkPreview, bool) {
+	h.previewCacheMu.Lock()
+	defer h.previewCacheMu.Unlock()
+
+	h.ensurePreviewCacheLoadedLocked()
+	entry, ok := h.previewCache.Cache[key]
 	if !ok || !previewCacheEntryValid(entry) {
 		return BookmarkPreview{}, false
 	}
@@ -49,14 +60,11 @@ func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) 
 	h.previewCacheMu.Lock()
 	defer h.previewCacheMu.Unlock()
 
-	cache := readPreviewCacheFile()
-	if cache.Cache == nil {
-		cache.Cache = make(map[string]BookmarkPreview, len(updates))
-	}
+	h.ensurePreviewCacheLoadedLocked()
 	for key, entry := range updates {
-		cache.Cache[key] = entry
+		h.previewCache.Cache[key] = entry
 	}
-	return writePreviewCacheFile(cache)
+	return writePreviewCacheFile(h.previewCache)
 }
 
 func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
@@ -65,7 +73,9 @@ func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
 	if cache.Cache == nil {
 		cache.Cache = map[string]BookmarkPreview{}
 	}
-	return writePreviewCacheFile(cache)
+	h.previewCache = cache
+	h.previewLoaded = true
+	return writePreviewCacheFile(h.previewCache)
 }
 
 func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {

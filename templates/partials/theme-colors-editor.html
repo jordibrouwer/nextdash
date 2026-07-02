@@ -5,7 +5,8 @@
     <div class="config-tab-intro theme-colors-intro">
         <p class="config-tab-intro-lead" data-i18n="config.colorsTabIntro">Fine-tune dashboard and config colors here. Edit the default dark and light palettes, or create your own under Custom themes — then click Save colors to apply. Dozens of built-in themes are already available in General → Appearance if you want a ready-made look without editing every color.<br><span class="simple-tab-hint config-tab-intro-hint">Auto dark mode (General → Appearance) only works with built-in dark/light theme pairs — it is disabled when a custom theme is selected.</span></p>
     </div>
-    <div class="theme-colors-toolbar">
+    <div class="config-tab-surface theme-colors-tab-surface">
+    <div class="theme-colors-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
         <div class="theme-colors-actions">
             <button type="button" id="save-colors-btn" class="btn btn-success btn-small" data-i18n="colors.saveColorsButton">Save colors</button>
             <button type="button" id="colors-save-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.saveColorsInfoTitle">ℹ</button>
@@ -14,7 +15,6 @@
             <button type="button" id="import-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.importTheme">Import</button>
             <input type="file" id="colors-import-file" accept="application/json,.json" hidden>
             <button type="button" id="reset-colors-btn" class="btn btn-danger btn-small" data-i18n="colors.resetColorsShort">Reset defaults</button>
-            <span id="colors-unsaved-indicator" class="unsaved-badge colors-unsaved-indicator" hidden aria-live="polite" data-i18n="config.unsavedShort">unsaved</span>
         </div>
         <div class="colors-subtabs-header">
             <button type="button" id="colors-palettes-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.palettesInfoTitle">ℹ</button>
@@ -26,6 +26,7 @@
             </div>
         </div>
     </div>
+    <div class="theme-colors-body">
 <div class="colors-tab-panel" data-colors-tab-panel="dark" hidden>
             <div class="config-section">
                 <p class="help-text colors-panel-hint" data-i18n="colors.defaultDarkHint">Edits the default dark palette used when classic dark themes are active.</p>
@@ -502,5 +503,7 @@
                 </div>
             </div>
             </div>
+    </div><!-- end .theme-colors-body -->
+    </div><!-- end .theme-colors-tab-surface -->
 </div>
 {{end}}

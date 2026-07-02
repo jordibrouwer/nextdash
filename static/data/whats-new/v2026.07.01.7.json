@@ -1,0 +1,41 @@
+{
+  "tag": "v2026.07.01.7",
+  "date": "June 2026",
+  "releasedAt": "2026-07-03",
+  "sections": [
+    {
+      "title": "Config surfaces",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>General tab</strong> — layer toolbar and section cards fuse into one <code>general-tab-surface</code> card (classic, modern, and glass)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Theme tab (B10)</strong> — colors toolbar and palettes share <code>theme-colors-tab-surface</code>; unsaved state uses the shared save-mode pill and tab dot instead of a local badge."
+        }
+      ]
+    },
+    {
+      "title": "Server &amp; ops",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>GET /version</strong> — JSON endpoint with Docker <code>VERSION</code> / <code>COMMIT</code> build metadata for deploy checks."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Static cache headers</strong> — versioned <code>/static/</code> URLs (<code>?v=</code>) cache for one year; other assets get a one-day public max-age."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Request logging</strong> — structured access logs with <code>X-Request-ID</code> (skips <code>/static/</code> and <code>/locales/</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>P1 hardening</strong> — CORS allowlist, in-memory preview cache, health report TTL, structured backup/import logs, and graceful shutdown on SIGTERM/SIGINT."
+        }
+      ]
+    }
+  ]
+}

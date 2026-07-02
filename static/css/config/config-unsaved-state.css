@@ -112,6 +112,16 @@ body.colors-is-dirty .theme-colors-toolbar {
     border-bottom-color: var(--unsaved-border);
 }
 
+body.colors-is-dirty .theme-colors-tab-surface {
+    border-color: var(--unsaved-border);
+}
+
+body.colors-is-dirty .config-tab-save-mode--colors-save {
+    color: color-mix(in srgb, var(--unsaved-fg) 88%, var(--text-primary));
+    border-color: color-mix(in srgb, var(--unsaved-border) 70%, var(--border-primary));
+    background: color-mix(in srgb, var(--unsaved-surface) 65%, transparent);
+}
+
 /* Theme tab dot when colors palette is dirty */
 .tab-button.tab-has-unsaved::after {
     content: '';
