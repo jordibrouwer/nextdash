@@ -13,7 +13,11 @@ RUN go mod download
 COPY . .
 
 # Build the application (embedded files will be included)
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+ARG VERSION=dev
+ARG COMMIT=unknown
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+    -ldflags "-X main.buildVersion=${VERSION} -X main.buildCommit=${COMMIT}" \
+    -o main .
 
 # Final stage
 FROM alpine:latest
