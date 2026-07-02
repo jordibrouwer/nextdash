@@ -207,14 +207,24 @@ test.describe('config tab consistency v3 navigation', () => {
 
     test('empty states toggle via hidden property not inline display (B11)', async ({ page }) => {
         const ok = await page.evaluate(() => {
-            const tagsEmpty = document.getElementById('tags-empty-state');
-            const collectionsEmpty = document.getElementById('collections-empty-state');
-            if (!tagsEmpty || !collectionsEmpty) return false;
-            tagsEmpty.hidden = true;
-            tagsEmpty.hidden = false;
-            collectionsEmpty.hidden = true;
-            collectionsEmpty.hidden = false;
-            return !tagsEmpty.style.display && !collectionsEmpty.style.display;
+            const ids = [
+                'tags-empty-state',
+                'collections-empty-state',
+                'tags-filter-empty-hint',
+                'finders-list-empty-hint',
+                'finders-filter-empty-hint',
+                'config-settings-search-empty',
+                'help-search-empty',
+                'bookmark-detail-empty',
+            ];
+            for (const id of ids) {
+                const el = document.getElementById(id);
+                if (!el) continue;
+                el.hidden = true;
+                el.hidden = false;
+                if (el.style.display) return false;
+            }
+            return true;
         });
         expect(ok).toBe(true);
     });

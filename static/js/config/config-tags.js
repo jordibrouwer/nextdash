@@ -151,6 +151,7 @@ class ConfigTags {
 
         const container = document.getElementById('tags-list');
         const emptyState = document.getElementById('tags-empty-state');
+        const filterEmptyHint = document.getElementById('tags-filter-empty-hint');
         const tagsBody = document.getElementById('tags-body');
         const listPanel = document.getElementById('tags-list-panel');
         if (!container) return;
@@ -167,7 +168,7 @@ class ConfigTags {
         const maxCount = counts.length ? Math.max(...counts) : 1;
         const minCount = counts.length ? Math.min(...counts) : maxCount;
 
-        container.innerHTML = '';
+        [...container.children].forEach((child) => child.remove());
 
         const hasAnyTags = tagMap.size > 0;
         const hasFiltered = entries.length > 0;
@@ -176,6 +177,7 @@ class ConfigTags {
             if (emptyState) emptyState.hidden = false;
             if (tagsBody) tagsBody.hidden = true;
             if (listPanel) listPanel.hidden = true;
+            if (filterEmptyHint) filterEmptyHint.hidden = true;
             return;
         }
         if (emptyState) emptyState.hidden = true;
@@ -183,15 +185,13 @@ class ConfigTags {
         if (listPanel) listPanel.hidden = false;
 
         if (!hasFiltered) {
-            if (this._filterQuery) {
-                const hint = document.createElement('li');
-                hint.className = 'tags-filter-empty-hint';
-                hint.setAttribute('role', 'status');
-                hint.textContent = this.t('config.tagsFilterEmpty') || 'No tags match your filter.';
-                container.appendChild(hint);
+            if (filterEmptyHint) {
+                filterEmptyHint.hidden = !this._filterQuery;
             }
             return;
         }
+
+        if (filterEmptyHint) filterEmptyHint.hidden = true;
 
         entries.forEach(([tag, bookmarks]) => {
             const scale = ConfigTags.scaleForCount(bookmarks.length, minCount, maxCount);

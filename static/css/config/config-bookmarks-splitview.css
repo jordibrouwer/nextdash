@@ -570,7 +570,10 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
 }
 
 .bookmarks-splitview-detail.is-editing .bookmark-detail-empty,
-.bookmarks-splitview-detail:has(#bookmark-detail-form:not([hidden])) .bookmark-detail-empty,
+.bookmarks-splitview-detail:has(#bookmark-detail-form:not([hidden])) .bookmark-detail-empty {
+    display: none !important;
+}
+
 #bookmark-detail-empty[hidden] {
     display: none !important;
 }

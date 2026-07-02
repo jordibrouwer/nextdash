@@ -17,14 +17,14 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-label-width-a8-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-b11-empty-hidden-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-surface-b9-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-list-shell-b2b4-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=config-b11-empty-hidden-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
@@ -1197,6 +1197,7 @@
                     <ul id="pages-list" class="pages-list js-list simple-list" role="list">
                         <!-- Pages will be loaded here -->
                     </ul>
+                    <p id="pages-list-empty-hint" class="pages-list-empty-hint config-empty-state config-empty-state--inlist" hidden role="status"></p>
                 </div>
                 </div>
             </div>
@@ -1226,6 +1227,7 @@
                     <ul id="categories-list" class="categories-list js-list simple-list" role="list">
                         <!-- Categories will be loaded here -->
                     </ul>
+                    <p id="categories-list-empty-hint" class="categories-list-empty-hint config-empty-state config-empty-state--inlist" hidden role="status"></p>
                 </div>
                 </div>
             </div>
@@ -1253,6 +1255,7 @@
                             <span class="tags-list-header-actions" data-i18n="config.tagsListColActions">Actions</span>
                         </div>
                         <ul id="tags-list" class="tags-list" role="list"></ul>
+                        <p id="tags-filter-empty-hint" class="tags-filter-empty-hint config-empty-state config-empty-state--inlist" hidden role="status" data-i18n="config.tagsFilterEmpty">No tags match your filter.</p>
                     </div>
                 </div>
                 <div id="tags-empty-state" class="tags-empty-state config-empty-state" hidden>
@@ -1589,7 +1592,8 @@
                 </div>
                 <div class="finders-body">
                     <div id="finders-list" class="finders-list js-list simple-list">
-                        <!-- Finders will be loaded here -->
+                        <p id="finders-list-empty-hint" class="finders-list-empty-hint config-empty-state config-empty-state--inlist" hidden role="status" data-i18n="config.findersListEmptyHint">No finders yet. Click + Add finder to create a shortcut to an external search site.</p>
+                        <p id="finders-filter-empty-hint" class="finders-filter-empty-hint config-empty-state config-empty-state--inlist" hidden role="status" data-i18n="config.findersFilterEmpty">No finders match your filter.</p>
                     </div>
                 </div>
                 </div>
@@ -2421,8 +2425,8 @@
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>
     <script src="/static/js/config/config-bookmark-store.js"></script>
-    <script src="/static/js/config/config-pages.js?v=page-usage-bar-1"></script>
-    <script src="/static/js/config/config-categories.js?v=category-usage-bar-1"></script>
+    <script src="/static/js/config/config-pages.js?v=config-b11-empty-hidden-1"></script>
+    <script src="/static/js/config/config-categories.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
@@ -2430,7 +2434,7 @@
     <script src="/static/js/config/config-bookmarks.js?v=bookmarks-phase2-1"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-collections.js"></script>
-    <script src="/static/js/config/config-finders.js?v=finders-refresh-fix-1"></script>
+    <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-font.js"></script>
@@ -2466,7 +2470,7 @@
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
     <script src="/static/js/config/config-keyboard.js?v=keyboard-list-shell-1"></script>
-    <script src="/static/js/config/config-tags.js?v=tags-wordcloud-1"></script>
+    <script src="/static/js/config/config-tags.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v=search-commands-new-2"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
     <!-- Main config orchestrator -->

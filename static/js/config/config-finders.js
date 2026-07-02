@@ -181,27 +181,31 @@ class ConfigFinders {
         const list = Array.isArray(finders) ? finders : [];
         const duplicateShortcuts = this._getDuplicateShortcuts(manager);
 
+        const listEmptyHint = document.getElementById('finders-list-empty-hint');
+        const filterEmptyHint = document.getElementById('finders-filter-empty-hint');
+
         this._destroyFinderReorder();
-        container.innerHTML = '';
+        [...container.children].forEach((child) => {
+            if (child === listEmptyHint || child === filterEmptyHint) return;
+            child.remove();
+        });
+
+        if (listEmptyHint) listEmptyHint.hidden = true;
+        if (filterEmptyHint) filterEmptyHint.hidden = true;
 
         if (list.length === 0) {
-            const hint = document.createElement('p');
-            hint.className = 'finders-list-empty-hint config-empty-state config-empty-state--inlist';
-            hint.setAttribute('role', 'status');
-            hint.textContent = this.t('config.findersListEmptyHint')
-                || 'No finders yet. Click + Add finder to create a shortcut to an external search site.';
-            container.appendChild(hint);
+            if (listEmptyHint) {
+                listEmptyHint.textContent = this.t('config.findersListEmptyHint')
+                    || 'No finders yet. Click + Add finder to create a shortcut to an external search site.';
+                listEmptyHint.hidden = false;
+            }
             return;
         }
 
         const filtered = list.filter((finder) => this._finderMatchesFilter(finder));
 
         if (filtered.length === 0) {
-            const hint = document.createElement('p');
-            hint.className = 'finders-filter-empty-hint config-empty-state config-empty-state--inlist';
-            hint.setAttribute('role', 'status');
-            hint.textContent = this.t('config.findersFilterEmpty') || 'No finders match your filter.';
-            container.appendChild(hint);
+            if (filterEmptyHint) filterEmptyHint.hidden = false;
             return;
         }
 
