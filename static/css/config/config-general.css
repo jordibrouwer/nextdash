@@ -217,6 +217,7 @@ html:has(#config-main) .config-section.section-controls .config-controls-wrapper
 }
 
 #config-main > .tab-content > :is(
+    .config-list-tab,
     .simple-tab,
     .tags-tab,
     .collections-tab,

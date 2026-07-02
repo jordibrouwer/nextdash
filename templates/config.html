@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b1114-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-shell-a2b6-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -1082,6 +1082,7 @@
                                 <details class="tour-resets-details">
                                     <summary class="tour-resets-summary" data-i18n="config.tourResetsTitle">Tours &amp; onboarding</summary>
                                     <div class="tour-resets-body">
+                                        <div class="config-action-list">
                                         <div class="config-advanced-action-row">
                                             <p class="config-advanced-action-text config-onboarding-reset-hint" data-i18n="config.resetOnboardingHint">Run the first-run wizard again on the dashboard. Saves immediately.</p>
                                             <div class="config-advanced-action-actions">
@@ -1154,6 +1155,7 @@
                                                 <button type="button" id="config-show-whats-new-btn" class="btn btn-secondary btn-small" data-i18n="config.showWhatsNewLink">What's new</button>
                                             </div>
                                         </div>
+                                        </div>
                                         <p class="tour-resets-tab-label" data-i18n="config.tourResetsTabLabel">Reset individual tab tours:</p>
                                         <div class="tour-resets-grid">
                                             <button type="button" id="reset-config-general-tour-btn" class="btn btn-secondary btn-small" data-i18n="config.resetConfigGeneralTourButton">General</button>
@@ -1195,7 +1197,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="pages">
-            <div class="simple-tab config-tab-page">
+            <div class="simple-tab config-tab-page config-list-tab">
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.pagesIntro">Pages group your bookmarks. Each page has its own set of categories and bookmarks on the dashboard.<br><span class="simple-tab-hint config-tab-intro-hint">Drag the <span class="simple-tab-hint-handle">⠿</span> handle to reorder pages. Double-click a page tab on the dashboard to rename it.</span></p>
                 </div>
@@ -1218,7 +1220,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="categories">
-            <div class="simple-tab config-tab-page">
+            <div class="simple-tab config-tab-page config-list-tab">
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.categoriesIntro">Categories organise bookmarks within a page. Select a page to manage its categories.</p>
                 </div>
@@ -1247,7 +1249,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="tags">
-            <div class="tags-tab config-tab-page">
+            <div class="tags-tab config-tab-page config-list-tab">
                 <div class="config-tab-intro tags-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.tagsTabIntro">Manage tags across all bookmarks. Rename or delete tags globally, or see which bookmarks carry each tag. Changes save automatically.</p>
                 </div>
@@ -1589,7 +1591,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="finders">
-            <div class="simple-tab config-tab-page">
+            <div class="simple-tab config-tab-page config-list-tab">
                 <div class="config-tab-intro simple-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.findersIntro">A finder is a shortcut to a search engine. Set a search URL with %s where your query should go (e.g. https://www.google.com/search?q=%s), pick a short letter shortcut, and on the dashboard type ? plus that shortcut and your words — e.g. ?du linux opens DuckDuckGo with “linux” in your browser.</p>
                 </div>
@@ -1597,8 +1599,8 @@
                 <div class="simple-toolbar config-tab-toolbar config-tab-toolbar--with-filter config-tab-toolbar--in-surface">
                     <div class="finders-filter-wrap config-filter-field config-filter-field--wide">
                         <label class="visually-hidden" for="finders-filter-input" data-i18n="config.findersFilterLabel">Filter finders</label>
-                        <input type="search" id="finders-filter-input" class="finders-filter-input" data-i18n-placeholder="config.findersFilterPlaceholder" placeholder="Filter finders…" autocomplete="off">
-                        <button type="button" id="finders-filter-clear" class="finders-filter-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
+                        <input type="search" id="finders-filter-input" class="config-filter-input finders-filter-input" data-i18n-placeholder="config.findersFilterPlaceholder" placeholder="Filter finders…" autocomplete="off" spellcheck="false">
+                        <button type="button" id="finders-filter-clear" class="config-filter-clear finders-filter-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
                     </div>
                     <button type="button" id="add-finder-btn" class="btn btn-primary btn-small" data-i18n="config.addFinder">+ Add finder</button>
                 </div>
@@ -1612,7 +1614,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="collections">
-            <div class="collections-tab config-tab-page">
+            <div class="collections-tab config-tab-page config-list-tab">
                 <div class="config-tab-intro collections-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.collectionsTabIntro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</p>
                 </div>

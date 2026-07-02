@@ -1,4 +1,5 @@
 /* ── Simple tab layout (pages, categories, finders) ── */
+.config-list-tab,
 .simple-tab {
     display: flex;
     flex-direction: column;

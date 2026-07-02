@@ -568,6 +568,74 @@ test.describe('config tab surface box model', () => {
     });
 });
 
+test.describe('config list shell polish (A2/A6/A10/B6)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await waitForConfigReady(page);
+    });
+
+    test('list tabs expose canonical config-list-tab class (A2)', async ({ page }) => {
+        for (const tab of ['pages', 'categories', 'tags', 'finders', 'collections']) {
+            await page.evaluate((tabId) => window.configManager.ui.switchToTab(tabId), tab);
+            await expect(page.locator(`[data-tab-content="${tab}"] .config-list-tab`)).toBeVisible();
+        }
+    });
+
+    test('finders filter lives in toolbar with shared filter field (A6)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('finders'));
+        const toolbar = page.locator('[data-tab-content="finders"] .config-tab-toolbar--with-filter');
+        await expect(toolbar).toBeVisible();
+        await expect(toolbar.locator('#finders-filter-input.config-filter-input')).toBeVisible();
+        await expect(toolbar.locator('#finders-filter-clear.config-filter-clear')).toBeAttached();
+        await expect(page.locator('[data-tab-content="finders"] .finders-filter-wrap')).toHaveCount(1);
+    });
+
+    test('general layout uses config-tab-gap vertical rhythm (B6)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        const gaps = await page.evaluate(() => {
+            const layout = document.querySelector('.general-layout');
+            if (!layout) return null;
+            const layoutGap = parseFloat(getComputedStyle(layout).rowGap);
+            const probe = document.createElement('div');
+            probe.style.gap = 'var(--config-tab-gap, 0.85rem)';
+            document.body.appendChild(probe);
+            const tokenGap = parseFloat(getComputedStyle(probe).rowGap);
+            document.body.removeChild(probe);
+            return { layoutGap, tokenGap };
+        });
+        expect(gaps).not.toBeNull();
+        expect(gaps.layoutGap).toBeCloseTo(gaps.tokenGap, 0);
+        expect(gaps.layoutGap).toBeGreaterThan(12);
+    });
+
+    test('general action list rows match list-tab row rhythm (A10)', async ({ page }) => {
+        const metrics = await page.evaluate(() => {
+            const cm = window.configManager;
+            cm.ui.switchToTab('general');
+            cm.generalLayers?.switchLayer?.('advanced');
+            const details = document.querySelector('.tour-resets-details');
+            if (details) details.open = true;
+            const actionRow = document.querySelector('.config-action-list .config-advanced-action-row');
+            if (!actionRow) return null;
+            const actionStyle = getComputedStyle(actionRow);
+
+            cm.ui.switchToTab('pages');
+            const listRow = document.querySelector('#pages-list .page-item-row');
+            if (!listRow) return null;
+            const listStyle = getComputedStyle(listRow);
+            return {
+                actionMinHeight: parseFloat(actionStyle.minHeight),
+                listMinHeight: parseFloat(listStyle.minHeight),
+                actionPaddingTop: parseFloat(actionStyle.paddingTop),
+                listPaddingTop: parseFloat(listStyle.paddingTop),
+            };
+        });
+        expect(metrics).not.toBeNull();
+        expect(metrics.actionMinHeight).toBeCloseTo(metrics.listMinHeight, 0);
+        expect(metrics.actionPaddingTop).toBeCloseTo(metrics.listPaddingTop, 1);
+    });
+});
+
 test.describe('config tab groups (v5)', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
