@@ -109,28 +109,38 @@ body.config-is-dirty .general-layout {
     scroll-margin-top: 5rem;
 }
 
-/* Sticky layer toolbar + section nav while scrolling long General pages */
-[data-general-layer="advanced"] .general-config-chrome,
-[data-general-layer="all"] .general-config-chrome {
-    position: sticky;
-    top: var(--config-general-nav-sticky-top, 3.25rem);
-    z-index: 6;
-    margin: 0;
-    padding-bottom: 0.15rem;
-    background-color: var(--background-primary);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--border-primary) 45%, transparent);
-}
-
-[data-general-layer="advanced"] .general-config-chrome .general-advanced-nav-wrap,
-[data-general-layer="all"] .general-config-chrome .general-advanced-nav-wrap {
+/* Fused General surface: keep chrome + toolbar in normal flow (no sticky).
+ * Sticky on .general-config-chrome or .general-layer-toolbar inside overflow:hidden
+ * .general-tab-surface caused a gap above the layer buttons and overlapped bulk actions. */
+[data-general-layer="advanced"] .general-tab-surface .general-config-chrome,
+[data-general-layer="all"] .general-tab-surface .general-config-chrome,
+[data-general-layer="advanced"] .general-tab-surface .general-layer-toolbar,
+[data-general-layer="all"] .general-tab-surface .general-layer-toolbar {
     position: static;
     top: auto;
-    margin-bottom: 0;
+    z-index: auto;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+[data-general-layer="advanced"] .general-tab-surface .general-advanced-nav-wrap,
+[data-general-layer="all"] .general-tab-surface .general-advanced-nav-wrap {
+    position: static;
+    top: auto;
+    margin: 0;
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-bottom: none;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-primary);
     box-shadow: none;
+}
+
+.general-panels-bulk-actions[hidden] {
+    display: none !important;
 }
 
 .general-advanced-nav-wrap {

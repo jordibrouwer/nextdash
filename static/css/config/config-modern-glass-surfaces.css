@@ -253,6 +253,25 @@ body[data-layout-version="glass"] .general-tab-surface .general-config-chrome {
     background: transparent;
 }
 
+body[data-layout-version="modern"] .general-tab-surface .general-layer-toolbar,
+body[data-layout-version="glass"] .general-tab-surface .general-layer-toolbar {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    background: var(--config-surface-toolbar);
+}
+
+body[data-layout-version="modern"] .general-tab-surface .general-advanced-nav-wrap,
+body[data-layout-version="glass"] .general-tab-surface .general-advanced-nav-wrap {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0.45rem var(--config-toolbar-padding-inline, 0.75rem) 0.65rem;
+    background: transparent;
+}
+
 body[data-layout-version="modern"] .general-tab-surface .general-card,
 body[data-layout-version="glass"] .general-tab-surface .general-card {
     border-bottom-color: color-mix(in srgb, var(--border-primary) 35%, transparent);

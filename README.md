@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.8**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.9**.
 
 ---
 
@@ -199,13 +199,15 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 
 **Config polish continued (v2026.07.01.8)** — unsaved dot on **Extras ●** when only **Collections** changes (C14); broader `prefers-reduced-motion` coverage for tag cloud, keyboard pulse, health shimmer, and settings-search promo (C15).
 
+**General Advanced toolbar (v2026.07.01.9)** — Essentials / Advanced buttons align flush with the fused General surface; no gap or overlap with Expand/Collapse bulk actions on the Advanced layer.
+
 **Inline edit focus (v2026.07.01.8)** — long-press inline editor uses a nearly opaque panel and tour-like full-page blur so labels and fields stay readable on glass and launcher layouts.
 
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
 #### Config → General (for self-hosters)
 
-**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. **First visit** always opens **Essentials**; your Essentials / Advanced / **Show all** choice is remembered only after you pick a layer explicitly (toolbar buttons, **Advanced settings →** links, or settings-search navigation). Sticky section links jump and highlight as you scroll; in **Advanced** and **All**, the layer toolbar and nav stay pinned. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all** and an *Advanced sections* divider in the nav. Hash links (`#general/advanced/…`) restore layer and open collapsed panels once a preference exists. Save row and main tab bar use a solid background so scrolling content does not show through.
+**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. **First visit** always opens **Essentials**; your Essentials / Advanced / **Show all** choice is remembered only after you pick a layer explicitly (toolbar buttons, **Advanced settings →** links, or settings-search navigation). Sticky section links jump and highlight as you scroll. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all** and an *Advanced sections* divider in the nav. Hash links (`#general/advanced/…`) restore layer and open collapsed panels once a preference exists. Save row and main tab bar use a solid background so scrolling content does not show through.
 
 **Phone vs tablet** — Only phones (≤768px width) limit config to **General** + **Help** with language, theme, and layout panels, and use the reduced dashboard footer (**Search** + **+ Bookmark** only). Portrait tablets and wider touch layouts keep the full config, Essentials/Advanced layers, guided tours, and the desktop dashboard toolbar.
 
@@ -361,7 +363,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.8
+   ./scripts/release-to-main.sh v2026.07.01.9
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).

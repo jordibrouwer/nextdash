@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.9 — July 2026](#v202607019--july-2026)
 - [v2026.07.01.8 — July 2026](#v202607018--july-2026)
 - [v2026.07.01.7 — June 2026](#v202607017--june-2026)
 - [v2026.07.01.6 — July 2026](#v202607016--july-2026)
@@ -69,6 +70,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.01.9 — July 2026
+
+**General Advanced layer toolbar layout** — Essentials/Advanced row aligns flush with the fused General surface; no gap or overlap with bulk actions.
+
+### Config
+
+- **fix** **General → Advanced layer toolbar** — remove sticky positioning on `.general-config-chrome` / `.general-layer-toolbar` inside `overflow:hidden` `.general-tab-surface`; keep toolbar and section nav in normal flow; force-hide bulk actions when not on **Show all** (`config-general-layers.css`, `config-general.css`, `config-modern-glass-surfaces.css`).
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v115` data version and `2026.07-dashboard-release-v92` dashboard release token; `config-general-layer-toolbar-2` on config CSS bundles.
+
+### Developer & docs
+
+- **fix** **Playwright** — `config-tab-consistency.spec.js` asserts Advanced toolbar is flush to fused surface top and bulk actions stay hidden.
+- **fix** **CHANGELOG, What's new & README** — release notes for **v2026.07.01.9**.
 
 ---
 
