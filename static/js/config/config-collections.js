@@ -30,14 +30,14 @@ class ConfigCollections {
         const collections = this._getCollections(manager);
 
         list.innerHTML = '';
-        list.style.display = '';
+        list.hidden = false;
         if (editPanel) editPanel.hidden = true;
         this._editingId = null;
 
         if (collections.length === 0) {
-            if (emptyState) emptyState.style.display = '';
+            if (emptyState) emptyState.hidden = false;
         } else {
-            if (emptyState) emptyState.style.display = 'none';
+            if (emptyState) emptyState.hidden = true;
             collections.forEach(col => list.appendChild(this._createRow(col, manager)));
         }
     }
@@ -107,8 +107,8 @@ class ConfigCollections {
         const emptyState = document.getElementById('collections-empty-state');
         if (!panel) return;
 
-        if (list) list.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'none';
+        if (list) list.hidden = true;
+        if (emptyState) emptyState.hidden = true;
         panel.hidden = false;
 
         const titleEl = panel.querySelector('#col-edit-title');

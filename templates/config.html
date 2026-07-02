@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b13-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-surface-b48-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
@@ -1292,12 +1292,13 @@
                 </div>
                 <div id="bookmarks-tab-workspace" class="bookmarks-tab-workspace">
                 <div class="config-tab-surface bookmarks-tab-surface">
-                <div class="structure-workspace-card structure-workspace-in-surface is-collapsible is-collapsed" id="structure-workspace-card">
+                <div class="bookmarks-context-section structure-workspace-card structure-workspace-in-surface is-collapsible is-collapsed" id="structure-workspace-card">
                     <h3 class="structure-workspace-toggle section-title" id="structure-workspace-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="structure-workspace-panel">
                         <span data-i18n="config.structureWorkspaceTitle">Context</span>
                     </h3>
+                    <div class="structure-workspace-context-body" id="structure-workspace-panel">
                     <p class="structure-workspace-intro" data-i18n="config.structureWorkspaceIntro">Switch page and category for the bookmark list below. Restore archived pages or set favicon policy here.</p>
-                    <div class="structure-workspace" id="structure-workspace-panel">
+                    <div class="structure-workspace">
                     <section class="structure-column">
                         <div class="structure-column-header">
                             <h3 data-i18n="config.structurePages">Page</h3>
@@ -1332,6 +1333,7 @@
                     </section>
                     </div>
                     <p class="structure-workspace-footnote" data-i18n="config.structureWorkspaceFootnote">Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.</p>
+                    </div>
                 </div>
 
                 <div class="bookmarks-splitview">
@@ -1614,18 +1616,16 @@
                 <div class="config-tab-intro collections-tab-intro">
                     <p class="config-tab-intro-lead" data-i18n="config.collectionsTabIntro">Dynamic collections appear on the dashboard and show bookmarks matching the rules you define.</p>
                 </div>
-                <div class="config-tab-surface">
+                <div class="config-tab-surface collections-tab-surface">
                 <div class="collections-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
                     <button type="button" id="add-collection-btn" class="btn btn-primary btn-small" data-i18n="config.addCollectionBtn">+ Add collection</button>
                 </div>
                 <div id="collections-list" class="collections-list"></div>
-                <div id="collections-empty-state" class="collections-empty-state config-empty-state" style="display:none">
+                <div id="collections-empty-state" class="collections-empty-state config-empty-state" hidden>
                     <p data-i18n="config.collectionsEmptyHint">No collections yet. Create one to group bookmarks by tag, category, or shortcut.</p>
                     <button type="button" id="collections-empty-cta" class="btn btn-primary btn-small config-empty-state-cta" data-i18n="config.addCollectionBtn">+ Add collection</button>
                 </div>
-                </div>
 
-                <!-- Edit panel -->
                 <div id="collections-edit-panel" class="collections-edit-panel" hidden>
                     <div class="collections-edit-header">
                         <h3 class="collections-edit-title" id="col-edit-title" data-i18n="config.collectionEditNewTitle">New collection</h3>
@@ -1656,6 +1656,7 @@
                         <button type="button" id="col-edit-save" class="btn btn-primary btn-small" data-i18n="config.saveShort">Save</button>
                         <button type="button" id="col-edit-cancel" class="btn btn-secondary btn-small" data-i18n="config.cancel">Cancel</button>
                     </div>
+                </div>
                 </div>
             </div>
             </div>

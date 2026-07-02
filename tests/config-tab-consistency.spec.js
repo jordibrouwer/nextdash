@@ -398,6 +398,22 @@ test.describe('config tab surface box model', () => {
         await expectSurfaceToolbarFits(page, 'collections');
     });
 
+    test('collections editor lives inside fused surface (B8)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('collections'));
+        const surface = page.locator('.collections-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('#collections-edit-panel')).toBeAttached();
+
+        await page.locator('#add-collection-btn').click();
+        await expect(surface.locator('#collections-edit-panel')).toBeVisible();
+        await expect(surface.locator('#collections-list')).toBeHidden();
+
+        const nestedSurfaces = await page.evaluate(() => (
+            document.querySelectorAll('[data-tab-content="collections"] .config-tab-surface').length
+        ));
+        expect(nestedSurfaces).toBe(1);
+    });
+
     test('finders tab toolbar fits inside surface card', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('finders'));
         await expectSurfaceToolbarFits(page, 'finders');
@@ -640,6 +656,7 @@ test.describe('config bookmarks surface (v5)', () => {
     test('integrates context panel inside bookmarks surface (B4)', async ({ page }) => {
         const surface = page.locator('.bookmarks-tab-surface');
         await expect(surface.locator('#structure-workspace-card.structure-workspace-in-surface')).toBeVisible();
+        await expect(surface.locator('#structure-workspace-panel.structure-workspace-context-body')).toBeAttached();
         await expect(surface.locator('.bookmarks-splitview')).toBeVisible();
 
         const cardCount = await page.evaluate(() => {
