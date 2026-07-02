@@ -31,7 +31,8 @@ body[data-layout-version="modern"] .config-tab-surface > :is(
     .keyboard-body,
     .stats-layout,
     .help-layout,
-    .general-layout
+    .general-layout,
+    .theme-colors-body
 ),
 body[data-layout-version="glass"] .config-tab-surface > :is(
     .simple-list,
@@ -43,7 +44,8 @@ body[data-layout-version="glass"] .config-tab-surface > :is(
     .keyboard-body,
     .stats-layout,
     .help-layout,
-    .general-layout
+    .general-layout,
+    .theme-colors-body
 ) {
     border: none;
     border-radius: 0;
@@ -134,7 +136,9 @@ body[data-layout-version="modern"] .config-tab-surface :is(
     .collections-edit-panel,
     .config-empty-state,
     .general-config-chrome,
-    .general-card
+    .general-card,
+    .theme-colors-toolbar,
+    .colors-tab-panel
 ),
 body[data-layout-version="glass"] .config-tab-surface :is(
     .config-tab-toolbar,
@@ -161,7 +165,9 @@ body[data-layout-version="glass"] .config-tab-surface :is(
     .collections-edit-panel,
     .config-empty-state,
     .general-config-chrome,
-    .general-card
+    .general-card,
+    .theme-colors-toolbar,
+    .colors-tab-panel
 ) {
     border: none;
     border-radius: 0;
@@ -255,4 +261,9 @@ body[data-layout-version="glass"] .general-tab-surface .general-card {
 body[data-layout-version="modern"] .general-tab-surface .general-card-danger,
 body[data-layout-version="glass"] .general-tab-surface .general-card-danger {
     background: color-mix(in srgb, var(--accent-error) 7%, var(--layout-surface));
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel,
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel {
+    padding: 0.9rem 1rem;
 }

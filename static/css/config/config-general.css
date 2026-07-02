@@ -747,12 +747,7 @@ body.config-is-dirty .top-quick-action.is-visible {
     line-height: 1.45;
 }
 
-.pwa-install-steps ol {
-    margin: 0.35rem 0 0 1.1rem;
-    padding: 0;
-}
-
-/* General tab — fused surface (list-tab parity) */
+/* General tab — fused surface (C16/B6 parity with list tabs) */
 .general-tab-surface .general-config-chrome {
     display: flex;
     flex-direction: column;
@@ -794,4 +789,9 @@ body.config-is-dirty .top-quick-action.is-visible {
 
 .general-tab-surface .general-card-danger {
     background: color-mix(in srgb, var(--accent-error) 6%, transparent);
+}
+
+.pwa-install-steps ol {
+    margin: 0.35rem 0 0 1.1rem;
+    padding: 0;
 }

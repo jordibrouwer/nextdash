@@ -147,7 +147,8 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .config-empty-state,
 .config-tab-surface > .keyboard-body,
 .config-tab-surface > .stats-layout,
-.config-tab-surface > .general-layout {
+.config-tab-surface > .general-layout,
+.config-tab-surface > .theme-colors-body {
     border: none;
     border-radius: 0;
     background: transparent;

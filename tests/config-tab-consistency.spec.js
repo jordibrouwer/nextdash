@@ -175,6 +175,10 @@ test.describe('config tab consistency (v2 empty states & v2b save UX)', () => {
         await page.evaluate(() => window.configManager.ui.switchToTab('stats'));
         await expect(pill).toHaveClass(/config-tab-save-mode--read-only/);
         await expect(pill).toHaveText(/read-only/i);
+
+        await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
+        await expect(pill).toHaveClass(/config-tab-save-mode--colors-save/);
+        await expect(pill).toHaveText(/save colors/i);
     });
 });
 
@@ -879,7 +883,7 @@ test.describe('config help surface (B5)', () => {
     });
 });
 
-test.describe('config general surface', () => {
+test.describe('config general & theme surface (C16/B10)', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
         await waitForConfigReady(page);
@@ -901,5 +905,28 @@ test.describe('config general surface', () => {
             return tab?.querySelectorAll(':scope > .config-tab-surface').length ?? 0;
         });
         expect(surfaceCount).toBe(1);
+    });
+
+    test('theme tab uses fused surface without local unsaved badge (B10)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
+        await expect(page.locator('#theme-colors-editor.config-tab-page')).toBeVisible();
+        await expect(page.locator('.theme-colors-intro .config-tab-intro-lead')).toBeVisible();
+
+        const surface = page.locator('.theme-colors-tab-surface');
+        await expect(surface).toBeVisible();
+        await expect(surface.locator('.theme-colors-toolbar.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('.theme-colors-body .colors-tab-panel.active')).toBeVisible();
+        await expect(page.locator('#colors-unsaved-indicator')).toHaveCount(0);
+
+        const surfaceCount = await page.evaluate(() => {
+            const editor = document.getElementById('theme-colors-editor');
+            return editor?.querySelectorAll(':scope > .config-tab-surface').length ?? 0;
+        });
+        expect(surfaceCount).toBe(1);
+
+        await page.evaluate(() => window.configManager.colorsEditor?.markDirty?.());
+        await expect(page.locator('body')).toHaveClass(/colors-is-dirty/);
+        await expect(page.locator('#config-tab-save-mode')).toHaveClass(/config-tab-save-mode--colors-save/);
+        await expect(page.locator('.tab-button[data-tab="colors"]')).toHaveClass(/tab-has-unsaved/);
     });
 });
