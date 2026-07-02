@@ -2318,7 +2318,7 @@
         "fuzzySuggestionsStartWithInfoMessage": "Nur Treffer, die mit der Eingabe beginnen.",
         "generalEssentialsHint": "Tipp: ℹ neben einer Einstellung zeigt Hilfe. Wechseln Sie zu Erweitert oder zeigen Sie alle Bereiche.",
         "generalNestedTreeHint": "Eingerückte Optionen (├── / └──) gehören zur Einstellung direkt darüber.",
-        "generalAdvancedHint": "Nutzen Sie die Links oben. Essentials enthält Alltagsoptionen.",
+        "generalAdvancedHint": "Klicken Sie auf Abschnittsüberschriften (+/−), um Bereiche zu öffnen. Essentials enthält Alltagsoptionen.",
         "layoutPresetDescIntro": "Darstellung der Lesezeichen: Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets oder Launcher.",
         "densityDescIntro": "Dichte steuert Abstand und Typografie: Comfortable, Compact, Dense oder Auto.",
         "layoutVersionDescIntro": "Wähle zwischen klassischem, modernem und Glass-Layout-Stil.",

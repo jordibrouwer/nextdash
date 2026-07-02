@@ -2318,7 +2318,7 @@
         "fuzzySuggestionsStartWithInfoMessage": "N’affiche que les correspondances qui commencent par votre saisie.",
         "generalEssentialsHint": "Astuce : ℹ à côté d’un paramètre pour l’aide. Passez à Avancé ou affichez toutes les sections.",
         "generalNestedTreeHint": "Les options en retrait (├── / └──) dépendent du paramètre juste au-dessus.",
-        "generalAdvancedHint": "Utilisez les liens ci-dessus. Essentials couvre l’usage quotidien.",
+        "generalAdvancedHint": "Cliquez sur les titres de section (+/−) pour développer les panneaux. Essentials couvre l’usage quotidien.",
         "layoutPresetDescIntro": "Affichage des favoris : Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets ou Launcher.",
         "densityDescIntro": "La densité contrôle l’espacement et la typo : Comfortable, Compact, Dense ou Auto.",
         "layoutVersionDescIntro": "Choisissez entre les styles de mise en page classique, moderne et glass.",

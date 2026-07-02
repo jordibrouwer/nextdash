@@ -2337,7 +2337,7 @@
         "fuzzySuggestionsStartWithInfoMessage": "When fuzzy suggestions are on, only show matches that start with your query.\n\n• Off: also matches text in the middle of names",
         "generalEssentialsHint": "Tip: use ℹ next to a setting for help. Switch to Advanced for power features, or show all sections below.",
         "generalNestedTreeHint": "Indented options (├── / └──) belong to the setting directly above.",
-        "generalAdvancedHint": "Use the section links above to jump. Essentials covers everyday options.",
+        "generalAdvancedHint": "Click section titles (+/−) to expand panels. Essentials covers everyday options.",
         "layoutPresetDescIntro": "Choose how bookmarks are displayed: Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets, or Launcher.",
         "densityDescIntro": "Density controls spacing and typography: Comfortable, Compact, Dense, or Auto.",
         "layoutVersionDescIntro": "Choose between classic, modern, and glass layout styles.",

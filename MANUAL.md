@@ -843,11 +843,11 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 ### Essentials vs Advanced (general)
 
 - **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/health?filter=broken` when broken issues exist, otherwise `/health`). Language changes apply immediately; other changes need **Save**.
-- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Section nav links wrap on narrow widths; labels such as *Fine-tuning* and *Display options* group related panels. Sticky **section links** at the top jump to panels; the active section highlights while you scroll (`aria-current`).
-- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls; nav shows Essentials links, an *Advanced sections* divider, then Advanced links.
-- **Sticky chrome** — In Advanced and All, the layer toolbar and section nav stay pinned while you scroll. Save row and main tab bar use a solid background so content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
+- **Advanced** — Full status tuning, branding, search input, system tools (tours, onboarding replay, spotlight resets), feature tour, what’s new. Click a **section title** (+/−) to expand or collapse each panel.
+- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls.
+- **Save row chrome** — Save row and main tab bar use a solid background so scrolling content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
 - **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
-- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search or nav. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
+- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
 
 ### Find settings & quick actions (desktop config)
