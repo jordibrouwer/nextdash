@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.01.8 — July 2026](#v202607018--july-2026)
 - [v2026.07.01.7 — June 2026](#v202607017--june-2026)
 - [v2026.07.01.6 — July 2026](#v202607016--july-2026)
 - [v2026.07.01.5 — June 2026](#v202607015--june-2026)
@@ -68,6 +69,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.01.8 — July 2026
+
+**Inline edit readability + config C14/C15 completion** — Dashboard inline editor gets an opaque panel and tour-like background blur; Collections-only edits light **Extras ●**; reduced-motion covers more config animations.
+
+### Dashboard
+
+- **fix** **Inline edit focus** — `.bookmark-inline-form` background raised to ~96% opacity; input fields ~94%; full-page `backdrop-filter` overlay (same gradient/blur as feature tours) dims and blurs siblings while the editing row stays sharp (`dashboard.css`, `layout-modern.css`, `layout-glass.css`).
+
+### Config
+
+- **fix** **Collections unsaved dot (C14)** — `hasCollectionsChanges` / `hasNonCollectionSettingsChanges` split dirty detection; **Extras ●** when only Collections changes; **System** dot only for non-collection settings; `onSettingsAutosaved()` syncs snapshot and `syncUnsavedIndicators()` after autosave (`config-persistence.js`, `config-tab-groups.js`, `config-collections.js`).
+- **fix** **Reduced motion (C15)** — `config-reduced-motion.css` disables tag-cloud word animation, keyboard rebind pulse, health-link shimmer, reorder highlight, theme-preview dot, and settings-search promo when `prefers-reduced-motion: reduce` or `body.no-animations`.
+
+### Cache-bust
+
+- **fix** **Cache-bust** — `whats-new-v114` data version and `2026.07-dashboard-release-v91` dashboard release token; `inline-edit-focus-blur-1` on dashboard/layout CSS; `config-c14-c15-1` on `config-reduced-motion.css` import.
+
+### Developer & docs
+
+- **fix** **Playwright** — `config-tab-consistency.spec.js` adds Extras group dot (C14) and reduced-motion beyond chrome (C15).
+- **fix** **CHANGELOG, What's new, README, MANUAL & config help** — release notes for **v2026.07.01.8**.
 
 ---
 

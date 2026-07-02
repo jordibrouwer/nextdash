@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.6**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.01.8**.
 
 ---
 
@@ -197,6 +197,10 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 
 **Config surface polish (v2026.07.01.5)** — **Bookmarks** Context and **Collections** editor fused into tab surfaces; list tabs share the `config-list-tab` shell; breadcrumb shows Tags filter, Stats period, and Collections edit context; **Skip tour** always persists completion on the server. **Health** redirect check no longer freezes the app.
 
+**Config polish continued (v2026.07.01.8)** — unsaved dot on **Extras ●** when only **Collections** changes (C14); broader `prefers-reduced-motion` coverage for tag cloud, keyboard pulse, health shimmer, and settings-search promo (C15).
+
+**Inline edit focus (v2026.07.01.8)** — long-press inline editor uses a nearly opaque panel and tour-like full-page blur so labels and fields stay readable on glass and launcher layouts.
+
 Tours, rotating tips, discoverability promos, and promo banners do not run on the mobile layout. After first-run onboarding finishes or is skipped, **rotating footer tips** wait one minute before appearing (desktop).
 
 #### Config → General (for self-hosters)
@@ -239,7 +243,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; pages support **archive** (hide without deleting bookmarks); **Usage** column with popularity bar + bookmark count (Tags-style tier styling)
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
-- Long-press a bookmark row (~500 ms) to open inline edit — opaque panel with clear border (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels even when the inline-edit promo is open; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
+- Long-press a bookmark row (~500 ms) to open inline edit — nearly opaque panel with tour-like full-page blur behind it (including glass launcher); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels even when the inline-edit promo is open; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
 - Press and hold a category header (~500 ms, not on sort buttons) to rename it — double-click still works
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Collapsible categories with optional always-collapsed default
@@ -357,7 +361,7 @@ Issues and pull requests are welcome — bugs, features, and translations alike.
 
    ```bash
    git checkout dev
-   ./scripts/release-to-main.sh v2026.07.01.6
+   ./scripts/release-to-main.sh v2026.07.01.8
    ```
 
    That script merges, strips dev-only files from `main` (tests, Playwright, internal scripts), tags the release, pushes, and publishes a **GitHub Release** (sidebar “Latest”) via [`gh`](https://cli.github.com/).
