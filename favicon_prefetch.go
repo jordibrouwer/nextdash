@@ -264,7 +264,7 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool)
 }
 
 func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request) {
-	h.setCORSHeaders(w)
+	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
 		return
 	}

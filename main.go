@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"io/fs"
 	"log"
 	"mime"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -122,9 +126,31 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Server starting on port %s", port)
-	log.Printf("Dashboard: http://localhost:%s", port)
-	log.Printf("Configuration: http://localhost:%s/config", port)
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: securityHeaders(r),
+	}
 
-	log.Fatal(http.ListenAndServe(":"+port, securityHeaders(r)))
+	go func() {
+		log.Printf("Server starting on port %s", port)
+		log.Printf("Dashboard: http://localhost:%s", port)
+		log.Printf("Configuration: http://localhost:%s/config", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+
+	log.Printf("Shutting down server...")
+	handlers.FlushCaches()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Shutdown error: %v", err)
+	}
+	log.Printf("Server stopped")
 }

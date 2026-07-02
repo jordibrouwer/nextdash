@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -94,6 +95,7 @@ func resolveImportAllowLocalBookmarks(staged []stagedImportFile, fallback bool) 
 		}
 		allowLocal, err := allowLocalBookmarksFromSettingsJSON(item.content)
 		if err != nil {
+			log.Printf("import: could not read allowLocalBookmarks from settings.json: %v; using fallback", err)
 			return fallback
 		}
 		return allowLocal
@@ -244,11 +246,13 @@ func mergeImportCategoriesIntoPrepared(prepared []preparedImportFile, categories
 
 		var pageWithBookmarks PageWithBookmarks
 		if err := json.Unmarshal(file.content, &pageWithBookmarks); err != nil {
+			log.Printf("import: skip merging categories into %s: invalid bookmarks JSON: %v", file.relPath, err)
 			continue
 		}
 		pageWithBookmarks.Categories = cats
 		data, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
 		if err != nil {
+			log.Printf("import: skip merging categories into %s: marshal failed: %v", file.relPath, err)
 			continue
 		}
 		prepared[i].content = data
@@ -483,6 +487,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	// Ensure base data directory exists before writing imported files.
 	dataDir := ResolveDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		log.Printf("import: failed to prepare data directory: %v", err)
 		http.Error(w, "Failed to prepare data directory", http.StatusInternalServerError)
 		return
 	}
@@ -491,6 +496,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	// Keep this comfortably above typical icon-heavy backups.
 	err := r.ParseMultipartForm(256 << 20) // 256MB max
 	if err != nil {
+		log.Printf("import: failed to parse multipart form: %v", err)
 		http.Error(w, "Failed to parse form (backup may be too large)", http.StatusBadRequest)
 		return
 	}
@@ -504,10 +510,10 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	staged := make([]stagedImportFile, 0, len(files))
 	for _, fileHeader := range files {
 		filename := normalizeImportFilename(fileHeader.Filename)
-		fmt.Printf("Staging file: %s\n", filename)
+		log.Printf("import: staging %s", filename)
 
 		if !h.isValidImportFilename(filename) {
-			fmt.Printf("Invalid filename: %s\n", filename)
+			log.Printf("import: rejected invalid filename: %s", filename)
 			http.Error(w, fmt.Sprintf("Invalid filename: %s", filename), http.StatusBadRequest)
 			return
 		}
@@ -529,7 +535,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
-			fmt.Printf("Invalid JSON in file: %s\n", filename)
+			log.Printf("import: invalid JSON in file: %s", filename)
 			http.Error(w, fmt.Sprintf("Invalid JSON content in file: %s", filename), http.StatusBadRequest)
 			return
 		}
@@ -541,6 +547,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)
 	if err != nil {
+		log.Printf("import: prepare failed: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -548,16 +555,21 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
 
 	if err := commitPreparedImport(dataDir, prepared); err != nil {
+		log.Printf("import: commit failed: %v", err)
 		http.Error(w, "Failed to apply import", http.StatusInternalServerError)
 		return
 	}
 
 	for pageID, categories := range importedCategoriesByPage {
 		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
+			log.Printf("import: save categories for page %d failed: %v", pageID, err)
 			http.Error(w, "Failed to save imported categories", http.StatusInternalServerError)
 			return
 		}
 	}
+
+	h.invalidateHealthReportCache()
+	log.Printf("import: success (%d files, %d bookmarks skipped)", len(prepared), skippedBookmarks)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
