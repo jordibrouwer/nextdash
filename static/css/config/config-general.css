@@ -752,7 +752,12 @@ body.config-is-dirty .top-quick-action.is-visible {
     display: flex;
     flex-direction: column;
     gap: 0;
+    padding-top: 0;
     border-bottom: 1px solid var(--border-primary);
+}
+
+.general-tab-surface .general-layer-toolbar {
+    margin-top: 0;
 }
 
 .general-tab-surface .general-config-chrome > :not(.general-layer-toolbar) {

@@ -972,6 +972,36 @@ test.describe('config general & theme surface (C16/B10)', () => {
         expect(surfaceCount).toBe(1);
     });
 
+    test('advanced layer keeps layer toolbar flush to fused surface top', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('general'));
+        await page.evaluate(() => window.configManager.generalLayers?.applyLayer?.('advanced', { updateHash: false }));
+
+        const layout = await page.evaluate(() => {
+            const surface = document.querySelector('.general-tab-surface');
+            const toolbar = document.getElementById('general-layer-toolbar');
+            const bulk = document.getElementById('general-panels-bulk-actions');
+            if (!surface || !toolbar || !bulk) return null;
+            const surfaceRect = surface.getBoundingClientRect();
+            const toolbarRect = toolbar.getBoundingClientRect();
+            const bulkRect = bulk.getBoundingClientRect();
+            const bulkStyle = getComputedStyle(bulk);
+            return {
+                gap: Math.round(toolbarRect.top - surfaceRect.top),
+                bulkHidden: bulk.hidden,
+                bulkDisplay: bulkStyle.display,
+                bulkHeight: Math.round(bulkRect.height),
+                toolbarPosition: getComputedStyle(toolbar).position,
+            };
+        });
+
+        expect(layout).not.toBeNull();
+        expect(layout.gap).toBeLessThan(2);
+        expect(layout.bulkHidden).toBe(true);
+        expect(layout.bulkDisplay).toBe('none');
+        expect(layout.bulkHeight).toBe(0);
+        expect(layout.toolbarPosition).toBe('static');
+    });
+
     test('theme tab uses fused surface without local unsaved badge (B10)', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
         await expect(page.locator('#theme-colors-editor.config-tab-page')).toBeVisible();
