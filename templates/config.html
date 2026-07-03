@@ -6,8 +6,8 @@
     <title>Dashboard Configuration</title>
     <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
-    <script src="/static/js/theme-loader.js?v=theme-sync-1"></script>
-    <script src="/static/js/visual-settings.js?v=theme-sync-1"></script>
+    <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
+    <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
@@ -16,11 +16,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
-    <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-1">
+    <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
     <link rel="stylesheet" href="/static/css/config.css?v=config-c15-b11-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
-    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v5">
+    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-surface-b9-1">
@@ -43,13 +43,13 @@
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=config-label-width-a8-1">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
-    <link rel="stylesheet" href="/static/css/mobile-experience.css?v=phone-layout-1">
-    <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
+    <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
+    <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-general-theme-surface-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
-    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-phase6-1">
+    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/config-glass.css?v=config-general-theme-surface-1">
-    <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
+    <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-classic-separate-2">
@@ -927,7 +927,7 @@
                                 <select id="status-recheck-interval-select">
                                     <option value="1" data-i18n="config.statusRecheckInterval1">Every 1 minute</option>
                                     <option value="3" data-i18n="config.statusRecheckInterval3">Every 3 minutes</option>
-                                    <option value="5" data-i18n="config.statusRecheckInterval5">Every 5 minutes (default)</option>
+                                    <option value="5" selected data-i18n="config.statusRecheckInterval5">Every 5 minutes (default)</option>
                                     <option value="10" data-i18n="config.statusRecheckInterval10">Every 10 minutes</option>
                                     <option value="15" data-i18n="config.statusRecheckInterval15">Every 15 minutes</option>
                                     <option value="30" data-i18n="config.statusRecheckInterval30">Every 30 minutes</option>
@@ -2377,6 +2377,24 @@
                             </ul>
                         </section>
 
+                        <section id="help-extension" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageExtensionTitle">Browser extension</h3>
+                            <ul data-i18n="config.helpPageExtensionItems">
+                                <li>Install from the <code>extension/</code> folder via Chrome <em>Load unpacked</em>.</li>
+                                <li><strong>Settings:</strong> server URL, optional write token, default page.</li>
+                                <li><strong>Save tab:</strong> optional shortcut (auto-suggested from the name when empty), tags, note.</li>
+                            </ul>
+                        </section>
+
+                        <section id="help-security" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageSecurityTitle">Security &amp; self-hosting</h3>
+                            <ul data-i18n="config.helpPageSecurityItems">
+                                <li>No user accounts — protect with VPN, reverse-proxy auth, or local-only access.</li>
+                                <li><code>NEXTDASH_WRITE_TOKEN</code> protects write APIs; pages inject the token for same-origin browser use.</li>
+                                <li><code>NEXTDASH_CORS_ORIGINS</code> restricts API CORS — include <code>chrome-extension://…</code> for the extension.</li>
+                            </ul>
+                        </section>
+
                         <section id="help-troubleshoot" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageTroubleshootTitle">Troubleshooting</h3>
                             <ul data-i18n="config.helpPageTroubleshootItems">
@@ -2407,7 +2425,7 @@
     </div>
 
     <script src="/static/js/modal.js"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v118"></script>
+    <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}"></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/status.js"></script>
@@ -2416,12 +2434,12 @@
     <script src="/static/js/hypr-mode.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
-    <script src="/static/js/app-notification.js?v=toast-replace-1"></script>
+    <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-unsaved-1"></script>
     <script src="/static/js/config/config-ui.js?v=config-chrome-v5-4"></script>
     <script src="/static/js/device-settings-merge.js"></script>
-    <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
-    <script src="/static/js/discoverability-state.js?v=discoverability-state-1"></script>
+    <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
+    <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
     <script src="/static/js/config/config-storage.js"></script>
     <script src="/static/js/config/config-data.js"></script>
     <script src="/static/js/config/config-bookmark-store.js"></script>
@@ -2442,22 +2460,22 @@
     <script src="/static/js/config/config-settings-defaults.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
     <script src="/static/js/config/config-tab-tours.js?v=config-stats-tour-on-1"></script>
-    <script src="/static/js/config/config-persistence.js?v=config-unsaved-groups-1"></script>
+    <script src="/static/js/config/config-persistence.js?v=config-settings-guard-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=config-stats-tour-on-1"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-layer-scroll-anchor-1"></script>
-    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v5"></script>
+    <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
-    <script src="/static/js/config-general-tour.js?v=general-tour-v3"></script>
+    <script src="/static/js/config-general-tour.js?v=general-tour-v4"></script>
     <script src="/static/js/config-bookmarks-tour.js?v=bookmarks-phase5-1"></script>
-    <script src="/static/js/config-finders-tour.js"></script>
-    <script src="/static/js/config-stats-tour.js"></script>
-    <script src="/static/js/config-categories-tour.js"></script>
-    <script src="/static/js/config-tags-tour.js"></script>
-    <script src="/static/js/config-pages-tour.js"></script>
-    <script src="/static/js/config-collections-tour.js"></script>
-    <script src="/static/js/config-theme-tour.js"></script>
+    <script src="/static/js/config-finders-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-stats-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-categories-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-tags-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-pages-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-collections-tour.js?v=config-tours-v1"></script>
+    <script src="/static/js/config-theme-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config/config-help-search.js?v=config-help-surface-b5-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
@@ -2471,15 +2489,15 @@
     <script src="/static/js/config/config-stats.js?v=stats-wow-1"></script>
     <script src="/static/js/config/config-keyboard.js?v=keyboard-list-shell-1"></script>
     <script src="/static/js/config/config-tags.js?v=config-b11-empty-hidden-1"></script>
-    <script src="/static/js/search-commands/search-commands-new.js?v=search-commands-new-2"></script>
+    <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
     <!-- Main config orchestrator -->
     <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/mobile-experience.js?v=phone-layout-4"></script>
-    <script src="/static/js/feature-spotlight.js?v=paste-replay-v1"></script>
-    <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2"></script>
-    <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1"></script>
-    <script src="/static/js/health-badge-utils.js?v=health-badge-count-only-1"></script>
+    <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
+    <script src="/static/js/feature-spotlight.js?v={{.Assets.FeatureSpotlightJS}}"></script>
+    <script src="/static/js/layout-modern-nudge.js?v={{.Assets.LayoutModernNudgeJS}}"></script>
+    <script src="/static/js/preview-card-spotlight.js?v={{.Assets.PreviewCardSpotlightJS}}"></script>
+    <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
     <script src="/static/js/config.js?v=config-save-toast-1"></script>

@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.02**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.03**).
 
 ---
 
@@ -744,7 +744,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; older versions appear as you scroll (with a loading skeleton). The same recap — including **v2026.07.02** bookmark category and tag sync and data revision, **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15), **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion), **v2026.07.01.5** config surface polish, **v2026.07.01.4** config polish, **v2026.07.01.1** config surface parity, **v2026.07.01** config tab bar v5, and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** button (pinned at the bottom of the side rail, or opposite the bottom bar) opens release notes. The latest release loads first; scroll to load up to the **7 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -892,7 +892,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 | **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
 | **Collections** (11 steps) | First visit to **config → collections** | List, new collection, optional demo rules (tag/category/shortcut, AND/OR), save to dashboard, preview on dashboard, cleanup |
 | **Finders** (8 steps) | First visit to **config → finders** | Concept, fields, **+ Add finder**, optional **Google** example (`?g`), dashboard usage, reorder/remove, **Save** |
-| **Stats** (12 steps) | Temporarily disabled | Was: first visit to **config → stats** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, **tags**, rot & cleanup, conflicts (Health link), search/status settings |
+| **Stats** (12 steps) | First visit to **config → stats** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, **tags**, rot & cleanup, conflicts (Health link), search/status settings (re-enabled **v2026.07.02**) |
 | **Theme** (9 steps) | First visit to **config → theme** (`#colors`) | Editor, dark/light/custom subtabs, add custom theme, auto **Tour demo** palette, live preview, **Save colors**, **General → Appearance** to activate, confirm removal and restore previous theme |
 
 **Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.
@@ -908,7 +908,7 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 Available on every screen width (including phone). The **Help** tab uses the shared config shell (**v2026.07.01.4**): intro paragraph, filter toolbar, and one fused surface card containing the Quick links index and help sections (divided rows on all layout versions). Topics match this manual in shorter form:
 
 - **Quick links** — anchor jump list (quick start, onboarding, general, navigation, mobile, keyboard, bookmarks, search, tags, collections, health, backup, troubleshooting, …).
-- **What's new recap** — scrollable history of recent changes; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
+- **What's new recap** — scrollable history of up to **7 recent** releases in the ★ modal; **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
@@ -1001,11 +1001,18 @@ Folder: `extension/` (Chrome “Load unpacked”).
 ### Save tab
 
 - Pre-filled title and URL.  
+- Optional **shortcut** — leave empty for an auto-suggested key from the bookmark name (first free letter on the chosen page), or type your own single-character shortcut.  
 - Pick page/category, optional tags and note.  
 - Duplicate URL warning; **Save anyway** optional.  
+- **409** when the shortcut is already used on that page.  
 - After save: **Open in nextDash** deep link to the page.
 
 If a dashboard tab is open on the same server, it may toast and refresh.
+
+### Write token & CORS
+
+- If the server sets `NEXTDASH_WRITE_TOKEN`, paste the same value in extension **Settings → Write token**.  
+- If you set `NEXTDASH_CORS_ORIGINS` on the server, add your extension ID (`chrome-extension://…`) to the allowlist or cross-origin saves will fail.
 
 See `extension/README.md` for development notes.
 
@@ -1148,9 +1155,46 @@ By default nextDash stores pages, bookmarks, settings, and uploads under `./data
 
 **Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
 
-Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection).
+Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection). Resolved public IPs are **pinned for ~2 minutes** so a hostname cannot switch to a private address between the check and the TCP dial.
 
 Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/duplicates`) treats URLs as the same when they differ only by trailing slash, hash, or host letter-case (`https://Example.com` ≡ `https://example.com/`).
+
+### Optional `NEXTDASH_CORS_ORIGINS`
+
+Default API responses use `Access-Control-Allow-Origin: *` so the browser extension works without extra config. On a shared LAN/VPS, set a comma-separated allowlist:
+
+```bash
+NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+```
+
+Only matching `Origin` headers receive CORS headers. Include your extension origin when restricting CORS.
+
+### Activity log
+
+Structured JSON lines for bookmark mutations and status checks (opens optional). See [README.md → Activity log](README.md#activity-log-bookmark-events) for `NEXTDASH_ACTIVITY_LOG`, `NEXTDASH_ACTIVITY_LOG_PERSIST`, and example lines. Treat logs as sensitive — URLs are included.
+
+### Rate limits
+
+Per-client limits on outbound fetches and SSRF-sensitive APIs (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120; `NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60). Returns **429** when exceeded.
+
+### Content-Security-Policy
+
+HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when required by your proxy or integration.
+
+### Startup validation
+
+Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_DIR` is creatable and writable. Misconfiguration exits with a clear error.
+
+### Production Docker
+
+Use `docker-compose.prod.yml` for deployments: assets ship inside the image; only `./data` is mounted. See commented environment examples in that file and [README.md → Production Docker example](README.md#production-docker-example).
+
+### Build metadata & cross-tab sync
+
+- `GET /version` — version and commit string for ops/monitoring.  
+- `GET /api/data-revision` — hash of bookmark data; open dashboard tabs poll this to refresh after saves in config, the extension, or another tab (name, URL, shortcut, tags, and category placement).
+
+Preview metadata is cached in memory and flushed periodically (~30 s) and on shutdown so restarts do not serve stale OG tags indefinitely.
 
 ---
 
@@ -1166,7 +1210,7 @@ If bootstrap data cannot be fetched, you get an error toast with **Reload** and 
 
 ### Config sync from another tab
 
-When you save in config while the dashboard stays open, changes apply live. Settings-only updates refresh dashboard row chrome in place when possible (icons, shortcuts, status badges) without rebuilding the whole grid. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
+When you save in config while the dashboard stays open, changes apply live. The dashboard polls `GET /api/data-revision` and refreshes when bookmarks change (including name, URL, shortcut, tags, and category). Settings-only updates refresh dashboard row chrome in place when possible (icons, shortcuts, status badges) without rebuilding the whole grid. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
 
 ### Shortcut does not open bookmark
 
@@ -1210,7 +1254,11 @@ Set manual city or browser location permission; save general settings; check ref
 
 ### Extension cannot save
 
-Verify server URL, CORS/network, and that nextDash is running. Check browser console and server logs.
+- Verify server URL, network, and that nextDash is running.  
+- If `NEXTDASH_WRITE_TOKEN` is set, paste it in extension **Settings → Write token**.  
+- If `NEXTDASH_CORS_ORIGINS` is set, include `chrome-extension://your-extension-id` in the allowlist.  
+- **401** = missing/wrong write token; **403** = CORS origin not allowed; **409** = duplicate shortcut on that page.  
+- Check browser console and server logs (enable `NEXTDASH_ACTIVITY_LOG=security` for auth/rate-limit lines).
 
 ---
 
@@ -1252,9 +1300,9 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 ## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.01.5** (new / fix)  
-- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links and a **What's new** recap  
-- **In-app What's new (★)** — Latest release highlights first; older releases load as you scroll (skeleton while fetching)  
+- [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
+- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links, **Browser extension**, **Security & self-hosting**, and a **What's new** recap  
+- **In-app What's new (★)** — Latest release highlights first; scroll for up to **7 recent** versions (each loads on demand with a skeleton while fetching)  
 
 ---
 

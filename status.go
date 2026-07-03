@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // PingURL checks the status and response time of a bookmark URL
@@ -12,6 +13,9 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	applyCORSHeaders(w, r)
 
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireStatusPingRateLimit(w, r) {
 		return
 	}
 
@@ -48,7 +52,10 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := h.pingURLDetailed(urlParam)
+	result := h.pingURLDetailed(r.Context(), urlParam)
+	force := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
+		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
+	logBookmarkStatus(urlParam, result, activitySourceFromRequest(r), force)
 	if result.Status == "online" {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{

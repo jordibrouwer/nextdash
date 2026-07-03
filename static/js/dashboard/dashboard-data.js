@@ -542,7 +542,10 @@ class DashboardData {
     }
 
     _bookmarkStaleFingerprint(bookmark) {
-        return `${String(bookmark?.category ?? '').trim()}\x01${this._bookmarkTagsKey(bookmark?.tags)}`;
+        const name = String(bookmark?.name ?? '').trim();
+        const shortcut = String(bookmark?.shortcut ?? '').trim().toUpperCase();
+        const url = this._bookmarkUrlKey(bookmark?.url);
+        return `${name}\x01${url}\x01${shortcut}\x01${String(bookmark?.category ?? '').trim()}\x01${this._bookmarkTagsKey(bookmark?.tags)}`;
     }
 
     isPageBookmarksStale(pageId, bookmarks) {
@@ -747,8 +750,8 @@ class DashboardData {
                     return false;
                 }
                 this.setPageDataCache(targetPageId, bookmarks, categories);
-                await this.fetchAndStoreDataRevision();
             }
+            await this.fetchAndStoreDataRevision();
 
             this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate });
             return true;

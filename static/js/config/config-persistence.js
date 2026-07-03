@@ -300,12 +300,11 @@ class ConfigPersistence {
     }
 
     async autosaveLayoutSettings() {
-        if (!this.c.settings?.updateFromUI || this.c._layoutAutosaveInFlight) return false;
+        if (!this.c.settings?.saveSettingsToServer || this.c._layoutAutosaveInFlight) return false;
         this.c._layoutAutosaveInFlight = true;
         this.c.suppressDirtyTracking = true;
         let ok = false;
         try {
-            this.c.settings.updateFromUI(this.c.settingsData);
             if (this.c.deviceSpecific) {
                 this.c.storage.saveDeviceSettings(this.c.settingsData);
                 ok = true;
@@ -338,7 +337,6 @@ class ConfigPersistence {
         this.c.updateThemePreviewBadge({ saving: true });
 
         this.c.suppressDirtyTracking = true;
-        this.c.settings.updateFromUI(this.c.settingsData);
 
         let ok = false;
         try {
@@ -414,6 +412,23 @@ class ConfigPersistence {
         this.recomputeDirtyState();
         if (!this.c.isDirty) {
             this.flashSavedIndicator();
+        }
+    }
+
+    _shouldSyncSettingsFromUI(changeScope) {
+        return changeScope.hasSettingsChanges === true;
+    }
+
+    _syncSettingsFromUIForSave(changeScope) {
+        if (!this._shouldSyncSettingsFromUI(changeScope)) {
+            return;
+        }
+        if (this.c.settings?.updateFromUI) {
+            this.c.settings.updateFromUI(this.c.settingsData);
+        }
+        if (this.c.keyboard && typeof this.c.keyboard.getSaveData === 'function') {
+            const keyboardData = this.c.keyboard.getSaveData();
+            this.c.settingsData.customKeyBindings = keyboardData.customKeyBindings;
         }
     }
 
@@ -812,11 +827,12 @@ class ConfigPersistence {
             ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(this.c))
             : this.c.findersData;
         const changeScope = this.getPendingChangeScope();
+        const needsFullPersist = !this.c.savedSnapshot;
         this.updateSaveStatusUI('saving');
         this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
         try {
-            this.c.settings.updateFromUI(this.c.settingsData);
+            this._syncSettingsFromUIForSave(changeScope);
 
             const saveBookmarksPageId = this.c.getResolvedBookmarksPageId();
             this.c.currentPageId = saveBookmarksPageId;
@@ -826,16 +842,9 @@ class ConfigPersistence {
             }
 
             const duplicateUrls = this.c.findDuplicateBookmarkUrls(this.c.bookmarksData);
-            const needsFullPersist = !this.c.savedSnapshot;
-
-            // Merge keyboard custom bindings into settings before persisting settings.
-            if (this.c.keyboard && typeof this.c.keyboard.getSaveData === 'function') {
-                const keyboardData = this.c.keyboard.getSaveData();
-                this.c.settingsData.customKeyBindings = keyboardData.customKeyBindings;
-            }
 
             // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
-            if (needsFullPersist || changeScope.hasSettingsChanges) {
+            if (changeScope.hasSettingsChanges) {
                 if (this.c.deviceSpecific) {
                     this.c.storage.saveDeviceSettings(this.c.settingsData);
                 } else {

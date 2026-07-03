@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -132,7 +133,9 @@ func (h *Handlers) fetchAndStoreBookmarkIcon(bookmarkURL string) string {
 	}
 
 	allowLocal := h.allowLocalBookmarks()
-	preview := h.fetchBookmarkPreview(bookmarkURL, nil, false)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	preview := h.fetchBookmarkPreview(ctx, bookmarkURL, nil, false)
 	if iconURL := strings.TrimSpace(preview.Icon); iconURL != "" {
 		if fileName, err := downloadIconFromURL(iconURL, allowLocal); err == nil && fileName != "" {
 			return fileName
@@ -269,6 +272,9 @@ func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
 

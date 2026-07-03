@@ -401,19 +401,16 @@ class DashboardTagFilter {
         d.inlineEditingBookmarkIndex = null;
         d.renderDashboard();
 
-        try {
-            await d.saveBookmarkOrder();
-            d.showGroupedNotification(
-                'tag-filter-delete',
-                count,
-                (n) => d.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
-                'success'
-            );
-        } catch (_error) {
-            d.showErrorNotification(
-                d.formatDashboardLabel('tagFilterDeleteFailed', {}, 'Failed to delete bookmarks.')
-            );
+        const saved = await d.saveBookmarkOrder();
+        if (!saved) {
+            return;
         }
+        d.showGroupedNotification(
+            'tag-filter-delete',
+            count,
+            (n) => d.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
+            'success'
+        );
     }
 
 
@@ -474,6 +471,10 @@ class DashboardTagFilter {
             }
 
             d.bookmarks = remaining;
+            d.data?.invalidatePageDataCache?.(sourcePageId);
+            d.data?.invalidatePageDataCache?.(targetId);
+            d.data?.updatePageDataCache?.(sourcePageId, { bookmarks: remaining });
+            void d.data?.fetchAndStoreDataRevision?.();
             await d.loadAllBookmarks();
             d.renderDashboard();
 

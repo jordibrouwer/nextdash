@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.02**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix).
 
 ---
 
@@ -93,6 +93,90 @@ NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension
 ```
 
 Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response. Unset or empty keeps the default `*`.
+
+### Activity log (bookmark events)
+
+Structured JSON activity lines are written to the server log for bookmark mutations and status checks by default. Opens are off unless enabled.
+
+```bash
+# Default: mutate + status (opens off)
+NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
+NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
+
+# Optional rotating file under the data directory
+NEXTDASH_ACTIVITY_LOG_PERSIST=1
+NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/activity.log
+
+# Optional security events (auth denied, rate limits)
+NEXTDASH_ACTIVITY_LOG=mutate,status,security
+```
+
+Example log line:
+
+```text
+activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
+```
+
+Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
+
+### Rate limits (outbound & SSRF APIs)
+
+Optional per-IP limits on server-initiated fetches and user-triggered SSRF-sensitive endpoints:
+
+```bash
+NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120   # preview, ping, favicon, auto-heal (default 120)
+NEXTDASH_SSRF_API_RATE_PER_MIN=60        # /api/bookmark-preview, /api/ping, icon uploads (default 60)
+```
+
+When exceeded, the API returns **429** and (if enabled) logs a `security` activity event.
+
+### Content-Security-Policy
+
+nextDash sends a restrictive CSP on HTML pages by default. Set `NEXTDASH_CSP=off` only when a reverse proxy or custom integration requires it.
+
+### DNS rebinding (IP pinning)
+
+Outbound HTTP(S) dials pin resolved public IPs for ~2 minutes so a hostname cannot switch to a private address between the safety check and the connection (unless **allow localhost bookmarks** is enabled).
+
+### Startup validation
+
+On boot, nextDash validates `PORT` (1–65535, default `8080`) and ensures `NEXTDASH_DATA_DIR` exists and is writable. Invalid config exits with a clear error before listening.
+
+### Production Docker example
+
+`docker-compose.prod.yml` serves CSS/JS from the image (only `./data` is mounted). Recommended LAN/VPS environment block:
+
+```yaml
+environment:
+  - PORT=8080
+  - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+  - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+  - NEXTDASH_ACTIVITY_LOG=mutate,status,security
+  - NEXTDASH_ACTIVITY_LOG_PERSIST=1
+  # Optional tuning:
+  # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
+  # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
+  # - NEXTDASH_CSP=off
+  # - NEXTDASH_DISABLE_PREFETCH=1
+```
+
+`GET /version` returns build metadata (version, commit). `GET /api/data-revision` returns a hash so open dashboard tabs detect bookmark/settings changes without a full reload.
+
+### Environment variables (reference)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PORT` | `8080` | HTTP listen port (validated 1–65535) |
+| `NEXTDASH_DATA_DIR` | `./data` | Pages, bookmarks, settings, uploads |
+| `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
+| `NEXTDASH_CORS_ORIGINS` | `*` | Comma-separated `Origin` allowlist for API CORS |
+| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security` (comma-separated) |
+| `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
+| `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
+| `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for server outbound fetches |
+| `NEXTDASH_SSRF_API_RATE_PER_MIN` | `60` | Rate limit for preview/ping/icon APIs |
+| `NEXTDASH_CSP` | on | Set `off` to disable Content-Security-Policy headers |
+| `NEXTDASH_DISABLE_PREFETCH` | off | `1` = skip background favicon prefetch on startup |
 
 ---
 
@@ -181,7 +265,7 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
 
-**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Collections**, **Finders**, and **Theme**. The **Stats** tour is temporarily disabled. The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
+**Config guided tours** (desktop-width window, once per tab until completed or skipped) — spotlight walkthroughs on **General**, **Bookmarks**, **Pages**, **Categories**, **Tags**, **Stats**, **Collections**, **Finders**, and **Theme** (Stats tour re-enabled in **v2026.07.02**). The **General** tour is overview-only (Essentials / Advanced layers, no user input). Other tours may include optional hands-on demos (temporary pages, categories, tags, collections, bookmarks, finders, or a custom theme) with automatic cleanup. Replay any tour from **config → general → Advanced → System & tools → Tours & onboarding** (open the matching tab first).
 
 **Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; promo may appear on hold and retries when blocked by What's new), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismissed promos persist in **`settings.json`** (`discoverabilityState`) and sync across browsers (**v2026.07.01.1**). **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
 
@@ -200,6 +284,20 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 **Config polish continued (v2026.07.01.8)** — unsaved dot on **Extras ●** when only **Collections** changes (C14); broader `prefers-reduced-motion` coverage for tag cloud, keyboard pulse, health shimmer, and settings-search promo (C15).
 
 **General Advanced toolbar (v2026.07.01.9)** — Essentials / Advanced buttons align flush with the fused General surface; no gap or overlap with Expand/Collapse bulk actions on the Advanced layer.
+
+**Security & self-hosting (v2026.07.03)** — activity log (`NEXTDASH_ACTIVITY_LOG`), CSP headers, outbound/SSRF rate limits, DNS IP pinning, startup validation for `PORT` and `NEXTDASH_DATA_DIR`. README, MANUAL, and Config → Help document write token, CORS, and production Docker.
+
+**Activity log (v2026.07.03)** — structured JSON lines for bookmark mutations, status checks, optional opens, and security events; optional rotating `activity.log` under the data directory.
+
+**Extension shortcuts (v2026.07.03)** — optional shortcut when saving a tab; auto-suggest from bookmark name; **409** when the shortcut is already taken on that page.
+
+**Dashboard sync hardening (v2026.07.03)** — hash-based `GET /api/data-revision`; stale-cache detection for name, URL, and shortcut; preview metadata cache flushes periodically; shared cache-bust tokens across dashboard, config, and health.
+
+**What's new modal (v2026.07.03)** — scroll to load up to the **7 most recent** releases (lazy per-version JSON).
+
+**General layer scroll (v2026.07.03)** — Essentials/Advanced toggle preserves the General layer toolbar viewport position when scroll is within both layers.
+
+**Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
 
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
@@ -276,7 +374,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first, older notes on scroll
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **7 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay
@@ -346,7 +444,17 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 1. Click the extension icon
 2. Open the **Settings** tab
 3. Enter your nextDash server URL (e.g. `http://localhost:8080`)
-4. Choose a default page and save
+4. If the server uses `NEXTDASH_WRITE_TOKEN`, paste the same value under **Write token (optional)**
+5. Choose a default page and save
+
+### Save tab
+
+- Pre-filled title and URL; optional **shortcut** (auto-suggested from the name when left empty)
+- Pick page/category, tags, and note
+- Duplicate URL warning; **409** when the shortcut is already taken on that page
+- If a dashboard tab is open on the same server, it may toast and refresh
+
+When you restrict CORS with `NEXTDASH_CORS_ORIGINS`, include your extension origin (`chrome-extension://…` from `chrome://extensions`).
 
 See `extension/README.md` for full usage and development notes.
 

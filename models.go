@@ -2142,7 +2142,7 @@ type BookmarkPreview struct {
 }
 
 // GetDataRevision fingerprints bookmark, category, finder, page, and settings files.
-// Any write or server restart that changes file mtimes produces a new revision.
+// Content hashes change when data changes; mtimes alone do not affect the revision.
 func (fs *FileStore) GetDataRevision() string {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -2169,12 +2169,15 @@ func (fs *FileStore) GetDataRevision() string {
 
 	hash := sha256.New()
 	for _, path := range paths {
-		info, err := os.Stat(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
 			hash.Write([]byte(path + ":missing;"))
 			continue
 		}
-		fmt.Fprintf(hash, "%s:%d:%d;", path, info.Size(), info.ModTime().UnixNano())
+		fileHash := sha256.Sum256(data)
+		hash.Write([]byte(path + ":"))
+		hash.Write(fileHash[:])
+		hash.Write([]byte(";"))
 	}
 
 	sum := hash.Sum(nil)

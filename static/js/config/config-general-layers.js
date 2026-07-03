@@ -605,13 +605,14 @@ class ConfigGeneralLayers {
         }
 
         const prevLayer = this.layer;
-        const preserveScroll = prevLayer !== this.layer && !scrollPanel;
+        const nextLayer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
+        const preserveScroll = prevLayer !== nextLayer && !scrollPanel;
         const scrollAnchor = preserveScroll
             ? (document.getElementById('general-layer-toolbar') || document.querySelector('.general-tab-surface'))
             : null;
         const anchorTopBefore = scrollAnchor?.getBoundingClientRect().top ?? null;
 
-        this.layer = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
+        this.layer = nextLayer;
         if (persist) {
             this.persistLayerPreference(this.layer);
         }
@@ -793,10 +794,9 @@ class ConfigGeneralLayers {
                 window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
             }
         };
+        fix();
         if (typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => requestAnimationFrame(fix));
-        } else {
-            fix();
         }
     }
 

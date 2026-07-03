@@ -1403,6 +1403,8 @@ class DashboardInlineEdit {
 
             d._inlineEditGlobalCleanup?.();
             d.inlineEditingBookmarkIndex = null;
+            d.data?.invalidatePageDataCache?.(sourcePageId);
+            void d.data?.fetchAndStoreDataRevision?.();
             await d.loadAllBookmarks();
             d.renderDashboard();
 
@@ -1464,6 +1466,8 @@ class DashboardInlineEdit {
 
             Object.assign(bookmarkRef.bookmark, editedBookmark);
             d.syncEditedBookmarkAcrossCollections(bookmarkRef, bookmarkRef.original?.url || '');
+            d.data?.invalidatePageDataCache?.(pageId);
+            void d.data?.fetchAndStoreDataRevision?.();
             return true;
         } catch (error) {
             d.showErrorNotification(
@@ -1541,8 +1545,12 @@ class DashboardInlineEdit {
 
             if (isCurrentScope) {
                 d.data?.invalidatePageDataCache?.(Number(d.currentPageId));
+                void d.data?.fetchAndStoreDataRevision?.();
                 await d.loadPageBookmarks(d.currentPageId, { forceFetch: true });
             } else {
+                d.data?.invalidatePageDataCache?.(sourcePageId);
+                d.data?.invalidatePageDataCache?.(targetPageId);
+                void d.data?.fetchAndStoreDataRevision?.();
                 await d.loadAllBookmarks();
                 d.renderDashboard();
             }

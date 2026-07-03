@@ -1,0 +1,169 @@
+{
+  "tag": "v2026.07.03",
+  "date": "July 2026",
+  "releasedAt": "2026-07-07",
+  "sections": [
+    {
+      "title": "Security & server",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Activity log</strong> — structured JSON lines for bookmark mutations, status checks, opens (optional), and security events (auth denied, rate limits). Configure with <code>NEXTDASH_ACTIVITY_LOG</code>; optional rotating <code>activity.log</code> under the data directory (<code>NEXTDASH_ACTIVITY_LOG_PERSIST=1</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>CSP headers</strong> — restrictive Content-Security-Policy on HTML pages by default; set <code>NEXTDASH_CSP=off</code> only when a reverse proxy requires it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>CSP weather</strong> — <code>connect-src</code> allows Open-Meteo geocoding and forecast APIs so the dashboard date/weather line works under CSP."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Outbound &amp; SSRF rate limits</strong> — per-client caps on server fetches and user-triggered preview/icon APIs (<code>NEXTDASH_OUTBOUND_REQUESTS_PER_MIN</code>, <code>NEXTDASH_SSRF_API_RATE_PER_MIN</code>); returns <strong>429</strong> when exceeded."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Status ping rate limit</strong> — bookmark reachability checks use a separate, higher bucket (<code>NEXTDASH_STATUS_PING_RATE_PER_MIN</code>, default 300/min) so many status bookmarks are not all marked offline."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>DNS IP pinning</strong> — outbound HTTP(S) dials pin resolved public IPs for ~2&nbsp;minutes so hostnames cannot switch to private addresses between the safety check and the TCP connection (unless localhost bookmarks are allowed)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Startup validation</strong> — server exits with a clear error if <code>PORT</code> is outside 1–65535 or <code>NEXTDASH_DATA_DIR</code> is not creatable/writable."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Request context</strong> — ping and bookmark-preview outbound calls use the incoming HTTP request context so cancelled clients do not leave orphaned fetches."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard & sync",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Hash-based data revision</strong> — <code>GET /api/data-revision</code> fingerprints on-disk file contents instead of mtimes, so restarts and external edits are detected reliably."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stale cache detection</strong> — open tabs refresh when bookmark <strong>name</strong>, <strong>URL</strong>, or <strong>shortcut</strong> changes (in addition to category and tags)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview metadata cache</strong> — in-memory OG-tag cache flushes every ~30&nbsp;s and on shutdown instead of on every merge, reducing disk churn while staying fresh."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag popover save</strong> — quick-tag popover no longer reports success when the underlying bookmark save fails."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview save errors</strong> — users see a toast when bookmark link-preview metadata fails to persist."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag-filter bulk delete</strong> — success handling and page-cache sync after bulk delete from a tag filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shared cache-bust tokens</strong> — dashboard, config, and health templates read cross-page asset versions from one Go source (<code>asset_versions.go</code>) so tokens stay aligned."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → dashboard category sync</strong> — bookmark saves keep <strong>settings sync</strong> (layout chrome, date/weather, toolbar) and force a full dashboard render so category moves appear in the correct column; incremental patch also reparents rows across columns."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config save layout regression</strong> — saving bookmarks from Config no longer drops glass/modern layout or hides date, weather, and toolbar buttons; structure refresh still reapplies <code>setupDOM</code> for tags/finders updates."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config save settings guard</strong> — bookmark-only saves no longer read unchecked General-tab controls into settings, so layout and visibility flags are not accidentally reset."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Device layout overrides</strong> — bookmark-only config save no longer clears device-specific dashboard settings stored in the browser."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status ping UX</strong> — HTTP <strong>429</strong> from <code>/api/ping</code> shows as “checking”, not offline, until the rate window clears."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart-collection row lookup</strong> — category moves and incremental patches ignore duplicate rows in smart collections (e.g. Today) when reparenting bookmarks between columns."
+        }
+      ]
+    },
+    {
+      "title": "Browser extension",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Optional shortcut</strong> — Save tab includes a shortcut field; leave empty for an auto-suggested key from the bookmark name (first free letter on the page)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shortcut on save</strong> — extension posts the resolved shortcut to <code>POST /api/bookmarks/add</code> (no longer always empty)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Duplicate shortcut</strong> — server returns <strong>409</strong> with a clear message when the shortcut is already taken on that page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Extension i18n</strong> — shortcut placeholder and conflict strings in EN, NL, DE, and FR."
+        }
+      ]
+    },
+    {
+      "title": "What's new modal",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>7-release history</strong> — scroll the ★ modal to load up to the <strong>7 most recent</strong> versions; each release fetches its own JSON on demand."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>General layer scroll</strong> — Essentials ↔ Advanced keeps the layer toolbar at the same viewport position when scroll is within both layers; <code>preserveScroll</code> now compares the upcoming layer (was always false)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status re-check default</strong> — General → Status defaults to <strong>every 5 minutes</strong> for background bookmark reachability checks."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL &amp; Config Help</strong> — production Docker, environment-variable reference, browser extension, activity log, rate limits, and <strong>Security &amp; self-hosting</strong> help section (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>CI on <code>main</code></strong> — release script keeps tests and Playwright on <code>main</code> after dev-only prune."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run; config→dashboard category sync and bookmark-only settings-guard regression tests."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tests</strong> — activity log categories/dedupe, data-revision hash, stale-cache name/url/shortcut, asset-version drift check."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v124</code> data version; <code>config-settings-guard-1</code> on <code>config-persistence.js</code>; <code>status-rate-limit-1</code> on <code>status.js</code>; <code>config-category-sync-1</code> on dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
+        }
+      ]
+    }
+  ]
+}

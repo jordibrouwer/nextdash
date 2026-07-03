@@ -207,6 +207,13 @@ class DashboardConfigSync {
         try {
             d.data?.invalidatePageDataCache?.();
             await d.loadData({ skipPageBookmarks: true });
+            if (d.settings.language && d.settings.language !== d.language.currentLanguage) {
+                await d.language.loadTranslations(d.settings.language);
+            }
+            d.applyVisualSettings();
+            d.initializeAutoDarkMode();
+            d.setupDOM();
+            d.updateStatusMonitor();
             await d.withRetry(
                 () => d.loadPageBookmarks(d.currentPageId, { rethrow: true, skipRender: true }),
                 2,
@@ -222,6 +229,9 @@ class DashboardConfigSync {
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
+            }
+            if (d.statusMonitor && d.settings.showStatus) {
+                d.statusMonitor.refreshAllStatuses();
             }
             d.updateHealthBadge();
         } catch (error) {
@@ -263,7 +273,7 @@ class DashboardConfigSync {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
-            d.renderDashboard({ animate: false, incremental: 'settings' });
+            d.renderDashboard({ animate: false, incremental: false });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
