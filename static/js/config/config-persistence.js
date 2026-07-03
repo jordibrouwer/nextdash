@@ -840,7 +840,9 @@ class ConfigPersistence {
                     this.c.storage.saveDeviceSettings(this.c.settingsData);
                 } else {
                     await this.c.data.saveSettings(this.c.settingsData);
-                    this.c.storage.clearDeviceSettings();
+                    if (changeScope.hasSettingsChanges) {
+                        this.c.storage.clearDeviceSettings();
+                    }
                 }
             }
 
