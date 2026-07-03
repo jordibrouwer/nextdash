@@ -91,7 +91,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>20-release history</strong> — scroll the ★ modal to load up to the <strong>20 most recent</strong> versions; each release still fetches its own JSON on demand (no heavy upfront load)."
+          "text": "<strong>7-release history</strong> — scroll the ★ modal to load up to the <strong>7 most recent</strong> versions; each release fetches its own JSON on demand."
         }
       ]
     },

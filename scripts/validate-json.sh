@@ -17,3 +17,31 @@ for f in static/data/whats-new/*.json; do
 done
 
 echo "All JSON files valid."
+
+echo "Validating whats-new index matches release files…"
+python3 << 'PY'
+import json, os, sys
+out = "static/data/whats-new"
+with open(f"{out}/index.json", encoding="utf-8") as f:
+    manifest = json.load(f)
+files = {
+    name[:-5]
+    for name in os.listdir(out)
+    if name.endswith(".json") and name != "index.json"
+}
+ids = []
+for entry in manifest:
+    entry_id = entry.get("id") or entry.get("tag")
+    if not entry_id:
+        print("index entry missing id/tag", file=sys.stderr)
+        sys.exit(1)
+    ids.append(entry_id)
+    if entry_id not in files:
+        print(f"index lists {entry_id} but {entry_id}.json is missing", file=sys.stderr)
+        sys.exit(1)
+orphans = sorted(files - set(ids))
+if orphans:
+    print(f"orphan release JSON not in index: {', '.join(orphans[:5])}", file=sys.stderr)
+    sys.exit(1)
+print(f"  ok index.json ({len(manifest)} releases)")
+PY

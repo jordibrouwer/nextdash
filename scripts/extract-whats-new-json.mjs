@@ -21,11 +21,11 @@ function writePerRelease(releases) {
         return { id, tag: entry.tag, date: entry.date, releasedAt: entry.releasedAt };
     });
     manifest.sort((a, b) => {
-        const dateDiff = Date.parse(`${b.releasedAt}T12:00:00Z`) - Date.parse(`${a.releasedAt}T12:00:00Z`);
-        if (dateDiff !== 0) {
-            return dateDiff;
+        const tagDiff = b.tag.localeCompare(a.tag, undefined, { numeric: true });
+        if (tagDiff !== 0) {
+            return tagDiff;
         }
-        return b.tag.localeCompare(a.tag, undefined, { numeric: true });
+        return Date.parse(`${b.releasedAt}T12:00:00Z`) - Date.parse(`${a.releasedAt}T12:00:00Z`);
     });
     fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify(manifest, null, 2));
     console.log(`Wrote ${manifest.length} releases to ${outDir}/`);

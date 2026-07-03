@@ -5,7 +5,7 @@
     'use strict';
 
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
-    const MAX_VISIBLE_RELEASES = 20;
+    const MAX_VISIBLE_RELEASES = 7;
 
     let manifestCache = null;
     let manifestFetch = null;
@@ -59,6 +59,7 @@
     }
 
     function fetchRelease(id) {
+        id = String(id || '').trim();
         if (!id) {
             return Promise.reject(new Error('missing release id'));
         }
@@ -137,10 +138,16 @@
         `;
     }
 
+    function releaseId(entry) {
+        return (entry && (entry.id || entry.tag)) || '';
+    }
+
     function getVisibleManifest(manifest) {
         return manifest
+            .filter((entry) => releaseId(entry))
             .map((entry) => ({
                 ...entry,
+                id: releaseId(entry),
                 releasedAtMs: Date.parse(`${entry.releasedAt}T12:00:00Z`),
             }))
             .sort((a, b) => {
@@ -238,9 +245,10 @@
             }
             loading = true;
             const entry = manifestEntries[nextIndex];
+            const entryId = releaseId(entry);
             const placeholder = showReleaseLoading(releasesRoot, sentinel || null);
 
-            return fetchRelease(entry.id)
+            return fetchRelease(entryId)
                 .then((data) => {
                     placeholder.remove();
                     if (sessionId !== modalSessionId || !isModalStillOpen()) {
@@ -261,7 +269,7 @@
                     }
                     const err = document.createElement('p');
                     err.className = 'wn-empty';
-                    err.textContent = `Could not load ${entry.tag}.`;
+                    err.textContent = `Could not load ${entry.tag || entryId}.`;
                     releasesRoot.insertBefore(err, sentinel || null);
                     nextIndex += 1;
                 })

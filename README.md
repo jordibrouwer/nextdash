@@ -293,7 +293,7 @@ environment:
 
 **Dashboard sync hardening (v2026.07.03)** — hash-based `GET /api/data-revision`; stale-cache detection for name, URL, and shortcut; preview metadata cache flushes periodically; shared cache-bust tokens across dashboard, config, and health.
 
-**What's new modal (v2026.07.03)** — scroll to load up to the **20 most recent** releases (lazy per-version JSON).
+**What's new modal (v2026.07.03)** — scroll to load up to the **7 most recent** releases (lazy per-version JSON).
 
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
@@ -370,7 +370,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **20 recent versions** (each loads on demand)
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **7 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay

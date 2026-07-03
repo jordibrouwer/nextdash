@@ -106,7 +106,7 @@ Nothing yet.
 
 ### What's new modal
 
-- **new** **20-release history** — `MAX_VISIBLE_RELEASES = 20`; removed 7-day cutoff; lazy-load per-release JSON unchanged (`whats-new-modal.js`).
+- **new** **7-release history** — `MAX_VISIBLE_RELEASES = 7`; manifest sorted by version tag; lazy-load per-release JSON unchanged (`whats-new-v121`).
 
 ### Developer & docs
 
@@ -115,6 +115,7 @@ Nothing yet.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
 - **fix** **Cache-bust** — `whats-new-v119` data version and `2026.07-dashboard-release-v95` dashboard release token.
 - **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
+- **fix** **What's new manifest** — `index.json` regenerated from on-disk release JSON (tag order); CI checks index ↔ file parity; modal uses `id || tag` when fetching (`whats-new-v121`).
 
 ---
 
