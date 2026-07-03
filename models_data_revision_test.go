@@ -3,6 +3,8 @@ package main
 import (
 	"path/filepath"
 	"testing"
+	"os"
+	"time"
 )
 
 func TestGetDataRevisionChangesOnBookmarkWrite(t *testing.T) {
@@ -45,5 +47,30 @@ func TestGetDataRevisionStableWithoutWrites(t *testing.T) {
 	}
 	if first != second {
 		t.Fatalf("expected stable revision without writes (first=%q second=%q)", first, second)
+	}
+}
+
+func TestGetDataRevisionIgnoresMtimeOnly(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	store := &FileStore{
+		dataDir:       dir,
+		settingsFile:  settingsPath,
+		colorsFile:    filepath.Join(dir, "colors.json"),
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+	}
+	store.ensureDataDir()
+	if err := os.WriteFile(settingsPath, []byte(`{"language":"en"}`), 0o644); err != nil {
+		t.Fatalf("write settings: %v", err)
+	}
+
+	before := store.GetDataRevision()
+	past := time.Now().Add(-48 * time.Hour)
+	if err := os.Chtimes(settingsPath, past, past); err != nil {
+		t.Fatalf("Chtimes: %v", err)
+	}
+	after := store.GetDataRevision()
+	if before != after {
+		t.Fatalf("expected revision unchanged after mtime-only touch (before=%q after=%q)", before, after)
 	}
 }
