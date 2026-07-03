@@ -45,5 +45,5 @@ var sharedAssetVersions = pageAssetVersions{
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-2",
 	WhatsNewData:           "whats-new-v123",
-	DataRevision:           "data-revision-2",
+	DataRevision:           "data-revision-3",
 }

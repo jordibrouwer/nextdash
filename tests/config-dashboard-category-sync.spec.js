@@ -52,13 +52,15 @@ test.describe('config to dashboard category sync', () => {
         await page.goto(`/config#bookmarks?_=${Date.now()}`);
         await page.waitForFunction(() => typeof window.configManager?.saveChanges === 'function');
         await page.evaluate(async () => {
-            window.configManager.ui.switchToTab('bookmarks');
-            await window.configManager.loadPageBookmarks(window.configManager.currentPageId || 1);
+            const cm = window.configManager;
+            cm.ui.switchToTab('bookmarks');
+            await cm.loadPageBookmarks(1);
         });
         await page.waitForFunction(
-            ({ targetUrl }) => {
-                const list = window.configManager?.bookmarksData || [];
-                return list.some(
+            async ({ targetUrl }) => {
+                const cm = window.configManager;
+                await cm.bookmarkStore.loadAll();
+                return (cm.allBookmarksData || []).some(
                     (bm) => String(bm?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
                 );
             },
@@ -68,7 +70,9 @@ test.describe('config to dashboard category sync', () => {
 
         await page.evaluate(async ({ targetUrl }) => {
             const cm = window.configManager;
-            await cm.loadPageBookmarks(cm.currentPageId || 1);
+            await cm.loadPageBookmarks(1);
+            const categories = await fetch('/api/categories?page=1').then((r) => (r.ok ? r.json() : []));
+            const targetCategory = (Array.isArray(categories) && categories[0]?.id) ? String(categories[0].id) : 'media';
             const idx = (cm.bookmarksData || []).findIndex(
                 (bm) => String(bm?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
             );
@@ -77,24 +81,25 @@ test.describe('config to dashboard category sync', () => {
             }
             cm.bookmarks.openDetailPanel(idx, cm.bookmarksData, cm.bookmarksPageCategories);
             const bm = cm.bookmarksData[idx];
-            bm.category = 'media';
+            bm.category = targetCategory;
             const catEl = document.getElementById('detail-category');
             if (catEl) {
-                catEl.value = 'media';
+                catEl.value = targetCategory;
                 catEl.dispatchEvent(new Event('change', { bubbles: true }));
             }
             cm.markDirty();
             await cm.saveChanges();
-        }, { targetUrl: uniqueUrl });
+            return targetCategory;
+        }, { targetUrl: uniqueUrl }).then(async (targetCategory) => {
+            await page.goto(`/?_=${Date.now()}`);
+            await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
 
-        await page.goto(`/?_=${Date.now()}`);
-        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+            const mediaSelector = `.category[data-category-id="${targetCategory}"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
+            await expect(page.locator(mediaSelector)).toBeVisible({ timeout: 10_000 });
 
-        const mediaSelector = `.category[data-category-id="media"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
-        await expect(page.locator(mediaSelector)).toBeVisible({ timeout: 10_000 });
-
-        const uncategorizedSelector = `.category[data-category-id=""]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
-        await expect(page.locator(uncategorizedSelector)).toHaveCount(0);
+            const uncategorizedSelector = `.category[data-category-id=""]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
+            await expect(page.locator(uncategorizedSelector)).toHaveCount(0);
+        });
 
         await deleteBookmarkByUrl(page, pageId, uniqueUrl);
     });

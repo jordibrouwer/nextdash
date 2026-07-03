@@ -97,7 +97,8 @@ Nothing yet.
 - **fix** **Preview metadata save toast** — user notification when preview persist fails.
 - **fix** **Tag-filter bulk delete** — success check and page-cache sync after bulk delete.
 - **fix** **Shared cache-bust tokens** — `asset_versions.go` centralizes cross-page tokens; dashboard/config/health templates use `{{.Assets.*}}`.
-- **fix** **Config → dashboard category sync** — `saveChanges()` with bookmark/category/tag edits signals structure reload (`config-saved`), not settings-only; bookmarks land in the correct column after config save (`config-persistence.js`, `dashboard-config-sync.js`).
+- **fix** **Config → dashboard category sync** — bookmark saves keep settings sync (layout chrome) and force a full dashboard render so category moves appear in the correct column; incremental patch also reparents rows across columns (`config-persistence.js`, `dashboard-config-sync.js`, `dashboard-render-incremental.js`).
+- **fix** **Config save layout regression** — revert structure-only sync on `saveChanges()` (392c1f6); structure refresh still reapplies `setupDOM` for tags/finders updates (`dashboard-config-sync.js`).
 - **fix** **Incremental render fallback** — settings-derived DOM patch falls back to full render when category columns change (e.g. `hideEmptyCategories` reveals a column); cross-column row lookup excludes smart-collection duplicates (`dashboard-render-incremental.js`, `dashboard-bookmark-rows.js`).
 
 ### Browser extension

@@ -138,7 +138,7 @@ test.describe('config persistence (phase 2)', () => {
         expect(payload?.sourceTabId).toMatch(/^cfg-/);
     });
 
-    test('saveChanges with bookmark category edit signals structure sync', async ({ page }) => {
+    test('saveChanges with bookmark category edit signals settings sync', async ({ page }) => {
         await waitForConfigReady(page);
 
         const result = await page.evaluate(async () => {
@@ -172,14 +172,14 @@ test.describe('config persistence (phase 2)', () => {
 
             return {
                 ok: true,
-                structureType: structurePayload?.type,
-                hasSettingsPayload: Boolean(settingsPayload),
+                settingsType: settingsPayload?.type,
+                hasStructurePayload: Boolean(structurePayload),
             };
         });
 
         expect(result.ok).toBe(true);
-        expect(result.structureType).toBe('config-saved');
-        expect(result.hasSettingsPayload).toBe(false);
+        expect(result.settingsType).toBe('settings-saved');
+        expect(result.hasStructurePayload).toBe(false);
     });
 
     test('restoreUndoSnapshot reverts dirty settings change', async ({ page }) => {

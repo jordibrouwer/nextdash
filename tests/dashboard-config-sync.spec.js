@@ -54,4 +54,41 @@ test.describe('dashboard config sync reload', () => {
         await expect(page.locator('#dashboard-layout .empty-state')).toHaveCount(0);
         await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeVisible();
     });
+
+    test('structure refresh reapplies layout chrome after config bookmark save', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(async () => {
+            localStorage.setItem('deviceSpecificSettings', 'true');
+            localStorage.setItem('dashboardSettings', JSON.stringify({
+                layoutVersion: 'glass',
+                showTitle: true,
+                showDate: true,
+                showWeatherWithDate: true,
+                showSmartTodayCollection: true,
+                showSmartMostUsedCollection: true,
+                showIcons: true,
+            }));
+            document.body.setAttribute('data-layout-version', 'classic');
+            const d = window.dashboardInstance;
+            await d.configSync.refreshAfterConfigStructureUpdate({ type: 'config-saved' });
+            const layout = document.body.getAttribute('data-layout-version');
+            const smartCount = document.querySelectorAll('#dashboard-layout [data-smart-collection="true"]').length;
+            const titleText = document.querySelector('.title')?.textContent?.trim() || '';
+            return {
+                layout,
+                smartCount,
+                titleText,
+                showTitle: d.settings.showTitle,
+                layoutSetting: d.settings.layoutVersion,
+            };
+        });
+
+        expect(result.layoutSetting).toBe('glass');
+        expect(result.layout).toBe('glass');
+        expect(result.showTitle).toBe(true);
+        expect(result.smartCount).toBeGreaterThan(0);
+        expect(result.titleText.length).toBeGreaterThan(0);
+    });
 });
