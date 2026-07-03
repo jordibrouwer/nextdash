@@ -114,6 +114,7 @@ Nothing yet.
 - **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
 - **fix** **Cache-bust** — `whats-new-v119` data version and `2026.07-dashboard-release-v95` dashboard release token.
+- **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
 
 ---
 

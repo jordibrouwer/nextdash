@@ -144,11 +144,12 @@
                 releasedAtMs: Date.parse(`${entry.releasedAt}T12:00:00Z`),
             }))
             .sort((a, b) => {
-                const dateDiff = b.releasedAtMs - a.releasedAtMs;
-                if (dateDiff !== 0) {
-                    return dateDiff;
+                // Version tag is authoritative (v2026.07.03 > v2026.07.02); releasedAt is tie-breaker only.
+                const tagDiff = b.tag.localeCompare(a.tag, undefined, { numeric: true });
+                if (tagDiff !== 0) {
+                    return tagDiff;
                 }
-                return b.tag.localeCompare(a.tag, undefined, { numeric: true });
+                return b.releasedAtMs - a.releasedAtMs;
             })
             .slice(0, MAX_VISIBLE_RELEASES);
     }
