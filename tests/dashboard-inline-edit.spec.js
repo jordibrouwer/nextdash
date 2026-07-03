@@ -176,4 +176,32 @@ test.describe('dashboard inline edit', () => {
             page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count()
         )).toBe(countBefore - 1);
     });
+
+    test('inline form uses opaque surfaces above dimmed grid', async ({ page }) => {
+        await page.keyboard.press(';');
+        await expect(page.locator('.bookmark-inline-form')).toBeVisible({ timeout: 3000 });
+
+        const surfaces = await page.evaluate(() => {
+            const form = document.querySelector('.bookmark-inline-form');
+            const input = document.querySelector('.bookmark-inline-form .bookmark-inline-input');
+            const parseAlpha = (color) => {
+                const rgba = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/);
+                if (rgba) return Number(rgba[4]);
+                return color.startsWith('rgb(') ? 1 : null;
+            };
+            const formStyle = form ? getComputedStyle(form) : null;
+            const beforeStyle = getComputedStyle(document.body, '::before');
+            return {
+                hasBodyOverlay: beforeStyle.content !== 'none' && beforeStyle.backdropFilter !== 'none',
+                formBackdrop: formStyle?.backdropFilter || '',
+                formAlpha: formStyle ? parseAlpha(formStyle.backgroundColor) : null,
+                inputAlpha: input ? parseAlpha(getComputedStyle(input).backgroundColor) : null,
+            };
+        });
+
+        expect(surfaces.hasBodyOverlay).toBe(false);
+        expect(surfaces.formBackdrop).toBe('none');
+        expect(surfaces.formAlpha).toBe(1);
+        expect(surfaces.inputAlpha).toBe(1);
+    });
 });

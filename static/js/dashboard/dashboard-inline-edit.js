@@ -11,6 +11,47 @@ class DashboardInlineEdit {
         return d.inlineEditingBookmarkIndex !== null || Boolean(document.querySelector('.bookmark-inline-editing'));
     }
 
+    /** Resolve a theme surface to opaque rgb() — CSS vars may be rgba or color-mix. */
+    readSolidThemeSurface(varName, fallbackVar) {
+        const probe = document.createElement('span');
+        probe.style.cssText = [
+            'position:fixed',
+            'left:-9999px',
+            'top:0',
+            'width:1px',
+            'height:1px',
+            `background:var(${varName}, var(${fallbackVar}))`,
+        ].join(';');
+        document.body.appendChild(probe);
+        const computed = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        const match = computed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? `rgb(${match[1]}, ${match[2]}, ${match[3]})` : computed;
+    }
+
+    applySolidInlineEditSurfaces(row, form) {
+        if (!form) {
+            return;
+        }
+        const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
+        const fieldBg = this.readSolidThemeSurface('--background-secondary', '--background-primary');
+        document.body.style.setProperty('--inline-edit-panel-bg', panelBg);
+        document.body.style.setProperty('--inline-edit-field-bg', fieldBg);
+        form.style.background = panelBg;
+        if (row && !row.closest('.layout-launcher')) {
+            row.style.background = panelBg;
+        }
+        form.querySelectorAll(
+            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-action-btn, .bookmark-inline-icon-preview'
+        ).forEach((node) => {
+            node.style.background = fieldBg;
+        });
+    }
+
+    clearInlineEditSurfaceOverrides() {
+        document.body.style.removeProperty('--inline-edit-panel-bg');
+        document.body.style.removeProperty('--inline-edit-field-bg');
+    }
 
 
     snapshotInlineEditBaseline(bookmark, pageId) {
@@ -820,6 +861,7 @@ class DashboardInlineEdit {
         }
 
         row.appendChild(form);
+        this.applySolidInlineEditSurfaces(row, form);
         requestAnimationFrame(() => window.DashboardFeaturePromos?.reposition?.());
         d._inlineEditContext = {
             bookmarkRef,
@@ -1039,6 +1081,7 @@ class DashboardInlineEdit {
     leaveBookmarkInlineEditFocusMode() {
         const d = this.dash;
         document.body.classList.remove('bookmark-inline-edit-active');
+        this.clearInlineEditSurfaceOverrides();
         d.keyboardNavigation?.enable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
     }
