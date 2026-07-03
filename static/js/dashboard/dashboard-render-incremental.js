@@ -77,6 +77,11 @@ class DashboardRenderIncremental {
         });
 
         const blocks = this.core.buildCategoryColumnBlocks();
+        const existingCategories = this.getExistingCategories(container);
+        if (!this.categoryStructureMatches(blocks, existingCategories)) {
+            return false;
+        }
+
         const byCategoryId = new Map(blocks.map((block) => [String(block.category.id ?? ''), block]));
 
         container.querySelectorAll('.category[data-category-id]').forEach((categoryEl) => {
@@ -212,6 +217,11 @@ class DashboardRenderIncremental {
             let row = urlKey ? rowByUrl.get(urlKey) : null;
             if (!row && pageIndex >= 0) {
                 row = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
+            }
+            if (!row && urlKey) {
+                row = [...document.querySelectorAll(
+                    '#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]'
+                )].find((el) => this.normalizeUrl(el.getAttribute('data-bookmark-url')) === urlKey) || null;
             }
             const fingerprint = d.bookmarkRows.bookmarkRenderFingerprint(bookmark);
 

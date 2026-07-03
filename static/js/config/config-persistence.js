@@ -868,7 +868,11 @@ class ConfigPersistence {
 
             this.c.originalPagesData = JSON.parse(JSON.stringify(this.c.pagesData));
             this.c.refreshPageDropdowns();
-            this.signalDashboardSettingsUpdated('settings-saved');
+            if (changeScope.hasStructuralChanges) {
+                this.signalDashboardReload('config-saved');
+            } else {
+                this.signalDashboardSettingsUpdated('settings-saved');
+            }
             this._completeSaveUi({ changeScope, duplicateUrls });
             void this._refreshAfterSave(changeScope);
         } catch (error) {

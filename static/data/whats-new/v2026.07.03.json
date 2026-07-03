@@ -62,6 +62,14 @@
         {
           "badge": "fix",
           "text": "<strong>Shared cache-bust tokens</strong> — dashboard, config, and health templates read cross-page asset versions from one Go source (<code>asset_versions.go</code>) so tokens stay aligned."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → dashboard category sync</strong> — bookmark/category edits from Config → Bookmarks now trigger a <strong>structure</strong> dashboard reload (not settings-only), so bookmarks appear in the correct column after save; incremental render falls back when columns appear or move."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Smart-collection row lookup</strong> — category moves and incremental patches ignore duplicate rows in smart collections (e.g. Today) when reparenting bookmarks between columns."
         }
       ]
     },
@@ -117,7 +125,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run."
+          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run; config→dashboard category sync regression test."
         },
         {
           "badge": "fix",
@@ -125,7 +133,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v122</code> data version and <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v123</code> data version and <code>config-category-sync-1</code> on config/dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
         }
       ]
     }

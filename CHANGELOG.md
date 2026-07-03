@@ -77,7 +77,7 @@ Nothing yet.
 
 ## v2026.07.03 — July 2026
 
-**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the **7 most recent** releases on scroll. General Essentials/Advanced toggle preserves toolbar position; Playwright E2E suite fully green.
+**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Config bookmark category edits trigger structure sync so columns update on return. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the **7 most recent** releases on scroll. General Essentials/Advanced toggle preserves toolbar position; Playwright E2E suite fully green.
 
 ### Security & server
 
@@ -97,6 +97,8 @@ Nothing yet.
 - **fix** **Preview metadata save toast** — user notification when preview persist fails.
 - **fix** **Tag-filter bulk delete** — success check and page-cache sync after bulk delete.
 - **fix** **Shared cache-bust tokens** — `asset_versions.go` centralizes cross-page tokens; dashboard/config/health templates use `{{.Assets.*}}`.
+- **fix** **Config → dashboard category sync** — `saveChanges()` with bookmark/category/tag edits signals structure reload (`config-saved`), not settings-only; bookmarks land in the correct column after config save (`config-persistence.js`, `dashboard-config-sync.js`).
+- **fix** **Incremental render fallback** — settings-derived DOM patch falls back to full render when category columns change (e.g. `hideEmptyCategories` reveals a column); cross-column row lookup excludes smart-collection duplicates (`dashboard-render-incremental.js`, `dashboard-bookmark-rows.js`).
 
 ### Browser extension
 
@@ -116,9 +118,9 @@ Nothing yet.
 
 - **fix** **README, MANUAL, Config Help** — self-hosting security, env-var table, extension shortcuts, Help sections **Browser extension** and **Security & self-hosting** (EN/NL/DE/FR); `docker-compose.prod.yml` commented prod env block.
 - **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
-- **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run.
+- **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run; `config-dashboard-category-sync.spec.js` and structure-sync assertion on bookmark save.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
-- **fix** **Cache-bust** — `whats-new-v122` data version; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
+- **fix** **Cache-bust** — `whats-new-v123` data version; `config-category-sync-1` on `config-persistence.js`, `dashboard-render-incremental.js`, and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
 - **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
 - **fix** **What's new manifest** — `index.json` regenerated from on-disk release JSON (tag order); CI checks index ↔ file parity; modal uses `id || tag` when fetching (`whats-new-v121`).
 

@@ -138,6 +138,50 @@ test.describe('config persistence (phase 2)', () => {
         expect(payload?.sourceTabId).toMatch(/^cfg-/);
     });
 
+    test('saveChanges with bookmark category edit signals structure sync', async ({ page }) => {
+        await waitForConfigReady(page);
+
+        const result = await page.evaluate(async () => {
+            const cm = window.configManager;
+            cm.ui.switchToTab('bookmarks');
+            await cm.loadPageBookmarks(cm.currentPageId || 1);
+            const bm = cm.bookmarksData?.[0];
+            if (!bm) {
+                return { ok: false, reason: 'no-bookmarks' };
+            }
+            const originalCategory = bm.category;
+            const nextCategory = originalCategory === 'media' ? 'development' : 'media';
+            bm.category = nextCategory;
+            cm.markDirty();
+
+            const structureKey = cm.structureSyncEventKey;
+            const settingsKey = cm.settingsSyncEventKey;
+            localStorage.removeItem(structureKey);
+            localStorage.removeItem(settingsKey);
+            sessionStorage.removeItem('nextdash:pending-dashboard-structure-sync');
+            sessionStorage.removeItem('nextdash:pending-dashboard-settings-sync');
+
+            await cm.saveChanges();
+
+            const structurePayload = JSON.parse(localStorage.getItem(structureKey) || 'null');
+            const settingsPayload = JSON.parse(localStorage.getItem(settingsKey) || 'null');
+
+            bm.category = originalCategory;
+            cm.markDirty();
+            await cm.saveChanges();
+
+            return {
+                ok: true,
+                structureType: structurePayload?.type,
+                hasSettingsPayload: Boolean(settingsPayload),
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.structureType).toBe('config-saved');
+        expect(result.hasSettingsPayload).toBe(false);
+    });
+
     test('restoreUndoSnapshot reverts dirty settings change', async ({ page }) => {
         await waitForConfigReady(page);
 

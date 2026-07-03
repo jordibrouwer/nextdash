@@ -28,6 +28,44 @@ class DashboardBookmarkRows {
         return this.bookmarkDisplayLabel(bookmark);
     }
 
+    resolveDashboardBookmarkRow(ref, bookmark, options = {}) {
+        const excludeSmart = options.excludeSmart !== false;
+        const root = '#dashboard-layout';
+
+        if (ref?.scope === 'current' && Number.isInteger(ref.index) && ref.index >= 0) {
+            const rows = document.querySelectorAll(`${root} .bookmark-link[data-bookmark-index="${ref.index}"]`);
+            for (const row of rows) {
+                if (excludeSmart && row.closest('.category[data-smart-collection="true"]')) {
+                    continue;
+                }
+                return row;
+            }
+        }
+
+        const url = String(bookmark?.url || '').trim();
+        if (!url) {
+            return null;
+        }
+        const escaped = CSS.escape(url);
+        const selector = excludeSmart
+            ? `${root} .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${escaped}"]`
+            : `${root} .bookmark-link[data-bookmark-url="${escaped}"]`;
+        const candidates = document.querySelectorAll(selector);
+        if (candidates.length === 1) {
+            return candidates[0];
+        }
+        if (candidates.length > 1 && options.preferCategoryId != null) {
+            const prefer = String(options.preferCategoryId);
+            for (const row of candidates) {
+                const list = row.closest('.bookmarks-list');
+                if (list && String(list.getAttribute('data-category-id') ?? '') === prefer) {
+                    return row;
+                }
+            }
+        }
+        return candidates[0] || null;
+    }
+
     applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
         const d = this.dash;
         const refs = (Array.isArray(bookmarkRefs) ? bookmarkRefs : [bookmarkRefs])
@@ -102,14 +140,7 @@ class DashboardBookmarkRows {
                 return;
             }
 
-            let row = null;
-            if (ref.scope === 'current' && Number.isInteger(ref.index) && ref.index >= 0) {
-                row = document.querySelector(`[data-bookmark-index="${ref.index}"]`);
-            }
-            if (!row && bookmark.url) {
-                const url = String(bookmark.url).trim();
-                row = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(url)}"]`);
-            }
+            const row = this.resolveDashboardBookmarkRow(ref, bookmark);
             if (row) {
                 row.setAttribute('data-category-id', normalizedCategoryId);
             }
@@ -135,14 +166,7 @@ class DashboardBookmarkRows {
                 return;
             }
 
-            let row = null;
-            if (ref.scope === 'current' && Number.isInteger(ref.index) && ref.index >= 0) {
-                row = document.querySelector(`[data-bookmark-index="${ref.index}"]`);
-            }
-            if (!row && bookmark.url) {
-                const url = String(bookmark.url).trim();
-                row = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(url)}"]`);
-            }
+            const row = this.resolveDashboardBookmarkRow(ref, bookmark);
             if (!row) {
                 return;
             }
