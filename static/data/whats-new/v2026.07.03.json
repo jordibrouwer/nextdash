@@ -94,6 +94,14 @@
         {
           "badge": "fix",
           "text": "<strong>Smart-collection row lookup</strong> — category moves and incremental patches ignore duplicate rows in smart collections (e.g. Today) when reparenting bookmarks between columns."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit Delete</strong> — Delete in the long-press editor opens its confirm dialog reliably (<code>pointerdown</code>/<code>touchstart</code>, click-outside paused while the modal is open, higher delete-modal z-index); the shortcut hint no longer blocks the button."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inline edit focus panel</strong> — the editor form is fully opaque again in classic, modern, and glass layouts. A full-page blur overlay had been painting over the form in Safari and Chrome; blur and dimming now apply only to other bookmarks, with solid panel surfaces and a JS fallback."
         }
       ]
     },
@@ -161,7 +169,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v124</code> data version; <code>config-settings-guard-1</code> on <code>config-persistence.js</code>; <code>status-rate-limit-1</code> on <code>status.js</code>; <code>config-category-sync-1</code> on dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v125</code> data version; <code>config-settings-guard-1</code> on <code>config-persistence.js</code>; <code>status-rate-limit-1</code> on <code>status.js</code>; <code>config-category-sync-1</code> on dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>; <code>inline-edit-delete-1</code>, <code>inline-edit-stack-fix-1</code>, <code>inline-edit-surface-2</code>, and <code>opaque-panel-3</code> on inline-edit CSS/JS."
         }
       ]
     }
