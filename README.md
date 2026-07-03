@@ -295,6 +295,10 @@ environment:
 
 **What's new modal (v2026.07.03)** — scroll to load up to the **7 most recent** releases (lazy per-version JSON).
 
+**General layer scroll (v2026.07.03)** — Essentials/Advanced toggle preserves the General layer toolbar viewport position when scroll is within both layers.
+
+**Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
+
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
 **Bookmark tag sync (v2026.07.02)** — tag edits re-render smart collections and the tag-filter view; stale-cache detection includes tags.

@@ -77,7 +77,7 @@ Nothing yet.
 
 ## v2026.07.03 — July 2026
 
-**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the 20 latest releases on scroll.
+**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the **7 most recent** releases on scroll. General Essentials/Advanced toggle preserves toolbar position; Playwright E2E suite fully green.
 
 ### Security & server
 
@@ -108,12 +108,17 @@ Nothing yet.
 
 - **new** **7-release history** — `MAX_VISIBLE_RELEASES = 7`; manifest sorted by version tag; lazy-load per-release JSON unchanged (`whats-new-v121`).
 
+### Config
+
+- **fix** **General layer scroll** — `preserveScroll` compares `prevLayer` to `nextLayer` (was always false before assignment); `preserveScrollAnchor` runs a synchronous fix before `requestAnimationFrame` (`general-layer-scroll-anchor-2`).
+
 ### Developer & docs
 
 - **fix** **README, MANUAL, Config Help** — self-hosting security, env-var table, extension shortcuts, Help sections **Browser extension** and **Security & self-hosting** (EN/NL/DE/FR); `docker-compose.prod.yml` commented prod env block.
 - **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
+- **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
-- **fix** **Cache-bust** — `whats-new-v119` data version and `2026.07-dashboard-release-v95` dashboard release token.
+- **fix** **Cache-bust** — `whats-new-v122` data version; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
 - **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
 - **fix** **What's new manifest** — `index.json` regenerated from on-disk release JSON (tag order); CI checks index ↔ file parity; modal uses `id || tag` when fetching (`whats-new-v121`).
 

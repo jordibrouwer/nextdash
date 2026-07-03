@@ -96,6 +96,15 @@
       ]
     },
     {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>General layer scroll</strong> — Essentials ↔ Advanced keeps the layer toolbar at the same viewport position when scroll is within both layers; <code>preserveScroll</code> now compares the upcoming layer (was always false)."
+        }
+      ]
+    },
+    {
       "title": "Developer & docs",
       "items": [
         {
@@ -108,11 +117,15 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>Tests</strong> — activity log categories/dedupe, data-revision hash, stale-cache name/url/shortcut, asset-version drift check."
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v119</code> data version and <code>2026.07-dashboard-release-v95</code> dashboard release token."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v122</code> data version and <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
         }
       ]
     }
