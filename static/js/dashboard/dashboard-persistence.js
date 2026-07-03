@@ -95,8 +95,15 @@ class DashboardPersistence {
                 throw new Error('Failed to save bookmark preview metadata');
             }
             d.data?.updatePageDataCache?.(Number(d.currentPageId), { bookmarks: d.bookmarks });
-        } catch (error) {
-            console.error('Failed to save bookmark preview metadata:', error);
+            void d.data?.fetchAndStoreDataRevision?.();
+        } catch (_error) {
+            d.showErrorNotification(
+                d.formatDashboardLabel(
+                    'saveBookmarkPreviewFailed',
+                    {},
+                    'Failed to save bookmark preview metadata.'
+                )
+            );
         }
     }
 
