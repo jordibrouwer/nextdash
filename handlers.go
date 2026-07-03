@@ -1449,6 +1449,7 @@ func (h *Handlers) requireSSRFAPIRateLimit(w http.ResponseWriter, r *http.Reques
 	if h.ssrfAPILimiter == nil || h.ssrfAPILimiter.allow(clientIP(r)) {
 		return true
 	}
+	logRateLimitHit(r, r.URL.Path)
 	w.Header().Set("Retry-After", "60")
 	http.Error(w, "Too many requests", http.StatusTooManyRequests)
 	return false

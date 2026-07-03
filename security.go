@@ -212,6 +212,7 @@ func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bo
 		return true
 	}
 	if r.Header.Get("X-NextDash-Token") != token {
+		logAuthDenied(r, "missing_or_invalid_write_token")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
 	}
