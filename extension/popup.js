@@ -11,7 +11,7 @@ function getExtDraftBookmark() {
     return {
         name: document.getElementById('bookmark-name')?.value || '',
         url: document.getElementById('bookmark-url')?.value || '',
-        shortcut: '',
+        shortcut: document.getElementById('bookmark-shortcut')?.value || '',
         note: document.getElementById('bookmark-note')?.value || '',
         icon: extDraftState.icon || '',
         pinned: false,
@@ -315,6 +315,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         extFormPreview?.updateAll(getExtDraftBookmark());
     });
 
+    document.getElementById('bookmark-shortcut')?.addEventListener('input', (event) => {
+        const input = event.target;
+        const normalized = typeof normalizeShortcutValue === 'function'
+            ? normalizeShortcutValue(input.value)
+            : String(input.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+        if (input.value !== normalized) input.value = normalized;
+    });
+
     document.getElementById('bookmark-url-save-anyway')?.addEventListener('click', () => {
         void saveBookmarkAnyway();
     });
@@ -565,7 +573,8 @@ function collectSaveFormData() {
     const note = document.getElementById('bookmark-note')?.value || '';
     const tagsRaw = document.getElementById('bookmark-tags')?.value || '';
     const tags = tagsRaw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
-    return { serverUrl, name, url, pageId, category, note, tags };
+    const shortcut = document.getElementById('bookmark-shortcut')?.value || '';
+    return { serverUrl, name, url, pageId, category, note, tags, shortcut };
 }
 
 async function saveBookmark(event, options = {}) {
@@ -600,7 +609,8 @@ async function saveBookmark(event, options = {}) {
         data.url,
         data.category,
         data.note,
-        data.tags
+        data.tags,
+        data.shortcut
     );
 }
 
@@ -622,7 +632,8 @@ async function saveBookmarkAnyway() {
         data.url,
         data.category,
         data.note,
-        data.tags
+        data.tags,
+        data.shortcut
     );
 }
 
@@ -685,15 +696,33 @@ async function showSaveSuccess(serverUrl, pageId, bookmarkName) {
     }
 }
 
-async function performSave(serverUrl, pageId, name, url, category, note, tags) {
+async function performSave(serverUrl, pageId, name, url, category, note, tags, shortcut = '') {
     try {
         const extras = {
             icon: extDraftState.icon || undefined,
             previewTitle: extDraftState.previewTitle || undefined,
             previewDesc: extDraftState.previewDesc || undefined,
             previewImage: extDraftState.previewImage || undefined,
+            shortcut,
         };
         const response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras);
+        if (response.status === 409) {
+            let body = {};
+            try {
+                body = await response.json();
+            } catch (_error) {
+                // ignore parse errors
+            }
+            if (body.error === 'duplicate_shortcut') {
+                showMessage(
+                    extT('msgShortcutConflict', 'Shortcut "{shortcut}" is already in use.', {
+                        shortcut: String(body.shortcut || shortcut || ''),
+                    }),
+                    'error'
+                );
+                return;
+            }
+        }
         if (!response.ok) throw new Error('Failed to save bookmark');
 
         await persistLastSaveContext(serverUrl, pageId, category);

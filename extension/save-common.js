@@ -123,13 +123,69 @@ async function findDuplicateBookmark(serverUrl, pageId, bookmarkUrl) {
   }) || null;
 }
 
+async function loadAllBookmarks(serverUrl) {
+  const base = normalizeServerUrl(serverUrl);
+  const response = await fetch(new URL('/api/bookmarks?all=true', base));
+  if (!response.ok) return [];
+  const bookmarks = await response.json();
+  return Array.isArray(bookmarks) ? bookmarks : [];
+}
+
+function normalizeShortcutValue(raw) {
+  return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+}
+
+function collectUsedShortcuts(bookmarks) {
+  const used = new Set();
+  (bookmarks || []).forEach((bookmark) => {
+    const shortcut = normalizeShortcutValue(bookmark?.shortcut);
+    if (shortcut) used.add(shortcut);
+  });
+  return used;
+}
+
+function suggestBookmarkShortcut(name, bookmarks) {
+  const used = collectUsedShortcuts(bookmarks);
+  const candidates = [];
+  const seen = new Set();
+
+  const addCandidate = (value) => {
+    const shortcut = normalizeShortcutValue(value);
+    if (!shortcut || seen.has(shortcut)) return;
+    seen.add(shortcut);
+    candidates.push(shortcut);
+  };
+
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const alnum = String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (let len = 1; len <= Math.min(5, alnum.length); len += 1) {
+    addCandidate(alnum.slice(0, len));
+  }
+  if (words.length >= 2) {
+    addCandidate(words.map((word) => word.replace(/[^a-zA-Z0-9]/g, '').charAt(0)).join(''));
+  }
+
+  for (const shortcut of candidates) {
+    if (!used.has(shortcut)) return shortcut;
+  }
+  return '';
+}
+
+async function resolveBookmarkShortcut(serverUrl, name, explicitShortcut) {
+  const normalized = normalizeShortcutValue(explicitShortcut);
+  if (normalized) return normalized;
+  const bookmarks = await loadAllBookmarks(serverUrl);
+  return suggestBookmarkShortcut(name, bookmarks);
+}
+
 async function postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras = {}) {
   const base = normalizeServerUrl(serverUrl);
+  const shortcut = await resolveBookmarkShortcut(serverUrl, name, extras.shortcut);
   const bookmark = {
     name,
     url,
     category: category || '',
-    shortcut: '',
+    shortcut,
     checkStatus: false,
     note: note || '',
     tags: Array.isArray(tags) ? tags : [],
