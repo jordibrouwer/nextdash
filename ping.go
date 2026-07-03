@@ -19,12 +19,18 @@ type PingResult struct {
 	HTTPStatus  int
 }
 
-func (h *Handlers) pingURL(urlStr string) (string, int) {
-	result := h.pingURLDetailed(urlStr)
+func (h *Handlers) pingURL(ctx context.Context, urlStr string) (string, int) {
+	result := h.pingURLDetailed(ctx, urlStr)
 	return result.Status, result.PingMs
 }
 
-func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
+func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResult {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
 	urlStr = strings.TrimSpace(urlStr)
 	if urlStr == "" {
 		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
@@ -46,7 +52,7 @@ func (h *Handlers) pingURLDetailed(urlStr string) PingResult {
 		CheckRedirect: safeRedirectCheck(allowLocal, 5),
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, urlStr, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
 		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
 	}

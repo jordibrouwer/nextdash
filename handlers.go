@@ -1457,7 +1457,10 @@ func (h *Handlers) requireSSRFAPIRateLimit(w http.ResponseWriter, r *http.Reques
 	return false
 }
 
-func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
+func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	rawURL = strings.TrimSpace(rawURL)
 	if err := validateHTTPURL(rawURL, h.allowLocalBookmarks()); err != nil {
 		return BookmarkPreview{URL: rawURL, FetchedAt: time.Now().UnixMilli()}
@@ -1478,7 +1481,7 @@ func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, 
 	}
 
 	client := h.outboundHTTPClient(8*time.Second, 5)
-	req, err := http.NewRequest("GET", rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return preview
 	}
@@ -1579,7 +1582,7 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	localCache := &PreviewCacheFile{Cache: make(map[string]BookmarkPreview)}
-	preview := h.fetchBookmarkPreview(rawURL, localCache, false)
+	preview := h.fetchBookmarkPreview(r.Context(), rawURL, localCache, false)
 	_ = h.mergePreviewCacheUpdates(localCache.Cache)
 
 	w.WriteHeader(http.StatusOK)
@@ -1659,7 +1662,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 				skipped++
 				continue
 			}
-			preview := h.fetchBookmarkPreview(rawURL, &cache, false)
+			preview := h.fetchBookmarkPreview(r.Context(), rawURL, &cache, false)
 			key := canonicalBookmarkURLKey(rawURL)
 			if key != "" {
 				previewByKey[key] = preview
@@ -2022,7 +2025,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			result := h.pingURLDetailed(bm.URL)
+			result := h.pingURLDetailed(r.Context(), bm.URL)
 			tested++
 			if result.Status == "online" {
 				onlineCount++

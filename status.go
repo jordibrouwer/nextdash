@@ -52,7 +52,7 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := h.pingURLDetailed(urlParam)
+	result := h.pingURLDetailed(r.Context(), urlParam)
 	force := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("refresh"), "true")
 	logBookmarkStatus(urlParam, result, activitySourceFromRequest(r), force)
