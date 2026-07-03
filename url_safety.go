@@ -155,9 +155,14 @@ func newSSRFSafeTransport(allowLocal bool, dialTimeout time.Duration) *http.Tran
 }
 
 func newOutboundHTTPClient(allowLocal bool, timeout time.Duration, maxRedirects int) *http.Client {
+	baseTransport := newSSRFSafeTransport(allowLocal, 0)
+	transport := http.RoundTripper(&rateLimitedTransport{
+		base:    baseTransport,
+		limiter: globalOutboundLimiter,
+	})
 	return &http.Client{
 		Timeout:       timeout,
-		Transport:     newSSRFSafeTransport(allowLocal, 0),
+		Transport:     transport,
 		CheckRedirect: safeRedirectCheck(allowLocal, maxRedirects),
 	}
 }

@@ -207,6 +207,9 @@ func (h *Handlers) UploadIconFromURL(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
 	type iconURLRequest struct {
 		URL string `json:"url"`
 	}

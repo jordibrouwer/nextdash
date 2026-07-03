@@ -165,10 +165,33 @@ func sanitizeColorTheme(c ColorTheme) ColorTheme {
 
 const jsonBodyLimit = 4 << 20 // 4 MB for JSON endpoints
 
+func contentSecurityPolicy() string {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("NEXTDASH_CSP")), "off") {
+		return ""
+	}
+	return strings.Join([]string{
+		"default-src 'self'",
+		"base-uri 'self'",
+		"form-action 'self'",
+		"frame-ancestors 'self'",
+		"object-src 'none'",
+		"script-src 'self' https://cdnjs.cloudflare.com",
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+		"img-src 'self' data: blob: https: http:",
+		"font-src 'self' data: https://fonts.gstatic.com",
+		"connect-src 'self'",
+		"manifest-src 'self'",
+	}, "; ")
+}
+
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		if csp := contentSecurityPolicy(); csp != "" {
+			w.Header().Set("Content-Security-Policy", csp)
+		}
 		// Apply body size limit to non-multipart requests so JSON endpoints
 		// cannot be fed unlimited data. File upload and backup handlers set
 		// their own limits via ParseMultipartForm and are excluded here.

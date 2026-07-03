@@ -271,6 +271,9 @@ func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request)
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
 
 	var req struct {
 		PageID    int  `json:"pageId"`

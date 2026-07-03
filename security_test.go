@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -117,5 +118,39 @@ func TestDeletePageRequiresTokenWhenConfigured(t *testing.T) {
 	h.DeletePage(rec, req)
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+}
+
+func TestSecurityHeadersIncludeCSP(t *testing.T) {
+	t.Setenv("NEXTDASH_CSP", "")
+
+	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	securityHeaders(inner).ServeHTTP(rec, req)
+
+	csp := rec.Header().Get("Content-Security-Policy")
+	if csp == "" {
+		t.Fatal("expected Content-Security-Policy header")
+	}
+	if !strings.Contains(csp, "default-src 'self'") {
+		t.Fatalf("unexpected CSP: %q", csp)
+	}
+}
+
+func TestSecurityHeadersOmitCSPWhenDisabled(t *testing.T) {
+	t.Setenv("NEXTDASH_CSP", "off")
+
+	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	securityHeaders(inner).ServeHTTP(rec, req)
+
+	if csp := rec.Header().Get("Content-Security-Policy"); csp != "" {
+		t.Fatalf("expected no CSP header, got %q", csp)
 	}
 }

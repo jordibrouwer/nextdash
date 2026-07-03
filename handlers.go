@@ -33,7 +33,8 @@ type Handlers struct {
 	healthReport   BookmarkHealthReport
 	healthReportAt time.Time
 	healthReportOK bool
-	prefetchMu     sync.Mutex
+	prefetchMu       sync.Mutex
+	ssrfAPILimiter   *slidingWindowLimiter
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -162,8 +163,9 @@ func (h *Handlers) FlushCaches() {
 
 func NewHandlers(store Store, files embed.FS) *Handlers {
 	h := &Handlers{
-		store: store,
-		files: files,
+		store:          store,
+		files:          files,
+		ssrfAPILimiter: newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 	}
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
@@ -1432,6 +1434,15 @@ func (h *Handlers) outboundHTTPClient(timeout time.Duration, maxRedirects int) *
 	return newOutboundHTTPClient(h.allowLocalBookmarks(), timeout, maxRedirects)
 }
 
+func (h *Handlers) requireSSRFAPIRateLimit(w http.ResponseWriter, r *http.Request) bool {
+	if h.ssrfAPILimiter == nil || h.ssrfAPILimiter.allow(clientIP(r)) {
+		return true
+	}
+	w.Header().Set("Retry-After", "60")
+	http.Error(w, "Too many requests", http.StatusTooManyRequests)
+	return false
+}
+
 func (h *Handlers) fetchBookmarkPreview(rawURL string, cache *PreviewCacheFile, useCache bool) BookmarkPreview {
 	rawURL = strings.TrimSpace(rawURL)
 	if err := validateHTTPURL(rawURL, h.allowLocalBookmarks()); err != nil {
@@ -1525,6 +1536,9 @@ func (h *Handlers) GetBookmarkPreview(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
@@ -1611,6 +1625,9 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -1957,6 +1974,9 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
 

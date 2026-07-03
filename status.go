@@ -14,6 +14,9 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
 
 	// Get URL from query parameter
 	urlParam := r.URL.Query().Get("url")
