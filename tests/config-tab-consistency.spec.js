@@ -45,6 +45,9 @@ async function waitForConfigReady(page) {
         cm._configTagsTourActive = false;
         cm._configCollectionsTourActive = false;
         cm.ui.switchToTab('general');
+        cm.persistence?.syncSavedSettingsSnapshot?.();
+        cm.persistence?.recomputeDirtyState?.();
+        window.ConfigTabGroups?.syncUnsavedIndicators?.(cm);
     });
     await page.waitForSelector('#columns-input', { timeout: 15_000 });
 }
@@ -1107,7 +1110,7 @@ test.describe('config general & theme surface (C16/B10)', () => {
 
         const drift = await page.evaluate(() => {
             window.configManager.generalLayers?.applyLayer?.('essentials', { updateHash: false });
-            window.scrollTo(0, 520);
+            window.scrollTo(0, 200);
             const toolbar = document.getElementById('general-layer-toolbar');
             if (!toolbar) return null;
 

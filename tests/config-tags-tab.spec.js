@@ -181,7 +181,7 @@ test.describe('config tags tab UI', () => {
         await expect(page.locator(`#tags-list .tag-item[data-tag="${alpha}"]`)).toBeVisible();
 
         await page.locator('#tags-filter-input').fill('no-such-tag-xyz');
-        await expect(page.locator('#tags-list .tags-filter-empty-hint')).toBeVisible();
+        await expect(page.locator('#tags-filter-empty-hint')).toBeVisible();
         await expect(page.locator('#tags-cloud')).toBeHidden();
     });
 

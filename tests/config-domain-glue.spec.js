@@ -48,8 +48,8 @@ test.describe('config domain glue (phase 4–6 controllers)', () => {
 
         await expect.poll(async () => page.locator('#finders-list .finder-item').count())
             .toBe(beforeCount + 1);
-        await expect(page.locator('#finders-list .finders-list-empty-hint')).toHaveCount(0);
-        await expect(page.locator('#finders-list .finders-filter-empty-hint')).toHaveCount(0);
+        await expect(page.locator('#finders-list .finders-list-empty-hint')).toBeHidden();
+        await expect(page.locator('#finders-list .finders-filter-empty-hint')).toBeHidden();
     });
 
     test('categories controller tracks last categories page id', async ({ page }) => {

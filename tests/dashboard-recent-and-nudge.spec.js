@@ -131,7 +131,7 @@ test.describe('recent bookmarks modal', () => {
 });
 
 test.describe('layout modern nudge after onboarding', () => {
-    test('shows layout spotlight when nudge key cleared after onboarding skip', async ({ page }) => {
+    test('shows layout spotlight when nudge key cleared for manual replay', async ({ page }) => {
         const pageErrors = [];
         page.on('pageerror', (e) => pageErrors.push(e.message));
 
@@ -145,26 +145,14 @@ test.describe('layout modern nudge after onboarding', () => {
             window.dashboardInstance?.settings?.onboardingCompleted === true
         ))).toBe(true);
         await expect.poll(async () => page.evaluate(() => (
-            localStorage.getItem('nextdash:layout-modern-nudge-v1') === '1'
+            window.DiscoverabilityState?.isStorageKeyConfirmed?.('nextdash:layout-modern-nudge-v1') === true
         ))).toBe(true);
 
         await page.evaluate(() => {
             const dash = window.dashboardInstance;
             if (!dash) throw new Error('dashboardInstance missing');
 
-            try {
-                localStorage.removeItem('nextdash:layout-modern-nudge-v1');
-                localStorage.setItem('nextdash:feature-spotlight-paste-v1', '1');
-                localStorage.setItem('nextdash:feature-spotlight-preview-cards-v1', '1');
-                if (window.NEXTDASH_WHATS_NEW_RELEASE) {
-                    localStorage.setItem(
-                        'nextdash:last-whats-new-dashboard-release',
-                        window.NEXTDASH_WHATS_NEW_RELEASE
-                    );
-                }
-            } catch {
-                // ignore
-            }
+            window.DiscoverabilityState?.clearStorageKey?.('nextdash:layout-modern-nudge-v1');
 
             dash.settings.layoutVersion = 'classic';
             dash.settings.onboardingCompleted = true;
@@ -172,13 +160,13 @@ test.describe('layout modern nudge after onboarding', () => {
             document.documentElement.setAttribute('data-layout-version', 'classic');
             document.body.setAttribute('data-layout-version', 'classic');
 
-            dash.schedulePostOnboardingPrompts({
-                delay: 0,
-                resetAttempts: true,
-                skipWhatsNew: true,
-                skipPasteSpotlight: true,
-                skipPreviewCardSpotlight: true,
-            });
+            if (!window.LayoutVersionNudge?.shouldOffer?.(dash)) {
+                throw new Error('LayoutVersionNudge.shouldOffer expected true after clear');
+            }
+            const spotlight = window.LayoutVersionNudge.create(dash);
+            if (!spotlight?.show(0, { canShow: () => true })) {
+                throw new Error('LayoutVersionNudge spotlight failed to start');
+            }
         });
 
         const spotlight = page.locator('.feature-spotlight.show');
