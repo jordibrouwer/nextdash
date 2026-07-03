@@ -26,6 +26,9 @@ func main() {
 	mime.AddExtensionType(".js", "application/javascript")
 
 	// Initialize the data store
+	if err := validateDataDirAtStartup(); err != nil {
+		log.Fatalf("%v", err)
+	}
 	store := NewStore()
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		log.Printf("Using data directory: %s", ResolveDataDir())
@@ -124,9 +127,9 @@ func main() {
 	})))
 
 	// Get port from environment or use default
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	port, err := validateListenPort(os.Getenv("PORT"))
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
 
 	srv := &http.Server{
