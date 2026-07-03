@@ -15,8 +15,16 @@
           "text": "<strong>CSP headers</strong> — restrictive Content-Security-Policy on HTML pages by default; set <code>NEXTDASH_CSP=off</code> only when a reverse proxy requires it."
         },
         {
+          "badge": "fix",
+          "text": "<strong>CSP weather</strong> — <code>connect-src</code> allows Open-Meteo geocoding and forecast APIs so the dashboard date/weather line works under CSP."
+        },
+        {
           "badge": "new",
-          "text": "<strong>Outbound &amp; SSRF rate limits</strong> — per-client caps on server fetches and user-triggered preview/ping/icon APIs (<code>NEXTDASH_OUTBOUND_REQUESTS_PER_MIN</code>, <code>NEXTDASH_SSRF_API_RATE_PER_MIN</code>); returns <strong>429</strong> when exceeded."
+          "text": "<strong>Outbound &amp; SSRF rate limits</strong> — per-client caps on server fetches and user-triggered preview/icon APIs (<code>NEXTDASH_OUTBOUND_REQUESTS_PER_MIN</code>, <code>NEXTDASH_SSRF_API_RATE_PER_MIN</code>); returns <strong>429</strong> when exceeded."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Status ping rate limit</strong> — bookmark reachability checks use a separate, higher bucket (<code>NEXTDASH_STATUS_PING_RATE_PER_MIN</code>, default 300/min) so many status bookmarks are not all marked offline."
         },
         {
           "badge": "fix",
@@ -65,7 +73,23 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Config → dashboard category sync</strong> — bookmark/category edits from Config → Bookmarks now trigger a <strong>structure</strong> dashboard reload (not settings-only), so bookmarks appear in the correct column after save; incremental render falls back when columns appear or move."
+          "text": "<strong>Config → dashboard category sync</strong> — bookmark saves keep <strong>settings sync</strong> (layout chrome, date/weather, toolbar) and force a full dashboard render so category moves appear in the correct column; incremental patch also reparents rows across columns."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config save layout regression</strong> — saving bookmarks from Config no longer drops glass/modern layout or hides date, weather, and toolbar buttons; structure refresh still reapplies <code>setupDOM</code> for tags/finders updates."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config save settings guard</strong> — bookmark-only saves no longer read unchecked General-tab controls into settings, so layout and visibility flags are not accidentally reset."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Device layout overrides</strong> — bookmark-only config save no longer clears device-specific dashboard settings stored in the browser."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status ping UX</strong> — HTTP <strong>429</strong> from <code>/api/ping</code> shows as “checking”, not offline, until the rate window clears."
         },
         {
           "badge": "fix",
@@ -109,6 +133,10 @@
         {
           "badge": "fix",
           "text": "<strong>General layer scroll</strong> — Essentials ↔ Advanced keeps the layer toolbar at the same viewport position when scroll is within both layers; <code>preserveScroll</code> now compares the upcoming layer (was always false)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status re-check default</strong> — General → Status defaults to <strong>every 5 minutes</strong> for background bookmark reachability checks."
         }
       ]
     },
@@ -125,7 +153,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run; config→dashboard category sync regression test."
+          "text": "<strong>Playwright E2E</strong> — full suite green: finders empty hints (<code>toBeHidden</code>), config C14 unsaved baseline after tour skip, tags filter empty-hint selector, layout-nudge manual replay (auto promos disabled), General toolbar scroll within Advanced max range; isolated temp <code>NEXTDASH_DATA_DIR</code> per managed run; config→dashboard category sync and bookmark-only settings-guard regression tests."
         },
         {
           "badge": "fix",
@@ -133,7 +161,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v123</code> data version and <code>config-category-sync-1</code> on config/dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v124</code> data version; <code>config-settings-guard-1</code> on <code>config-persistence.js</code>; <code>status-rate-limit-1</code> on <code>status.js</code>; <code>config-category-sync-1</code> on dashboard sync bundles; <code>general-layer-scroll-anchor-2</code> on <code>config-general-layers.js</code>."
         }
       ]
     }

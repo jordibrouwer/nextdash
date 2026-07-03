@@ -77,12 +77,13 @@ Nothing yet.
 
 ## v2026.07.03 — July 2026
 
-**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Config bookmark category edits trigger structure sync so columns update on return. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the **7 most recent** releases on scroll. General Essentials/Advanced toggle preserves toolbar position; Playwright E2E suite fully green.
+**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits (plus a dedicated status-ping bucket), DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Config bookmark saves keep layout and weather settings intact while category moves sync to the dashboard. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the **7 most recent** releases on scroll. General Essentials/Advanced toggle preserves toolbar position; Playwright E2E suite fully green.
 
 ### Security & server
 
 - **new** **Activity log** — `activity_log.go`: JSON lines for `bookmark.add` / `edit` / `delete` / `move` / `import`, status pings (10-minute dedupe unless `refresh=1`), optional opens, and security events. Env: `NEXTDASH_ACTIVITY_LOG` (`mutate`, `status`, `open`, `security`, `off`), `NEXTDASH_ACTIVITY_LOG_PERSIST`, `NEXTDASH_ACTIVITY_LOG_FILE`.
-- **new** **CSP weather** — `connect-src` allows Open-Meteo geocoding and forecast APIs (`security.go`).
+- **new** **CSP headers** — `security.go` sends Content-Security-Policy on HTML responses; `NEXTDASH_CSP=off` disables.
+- **fix** **CSP weather** — `connect-src` allows Open-Meteo geocoding and forecast APIs so the dashboard weather widget works under CSP (`security.go`).
 - **new** **Rate limits** — `rate_limit.go`: per-IP limits on outbound fetches (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120) and SSRF-sensitive APIs (`NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60); separate status ping bucket (`NEXTDASH_STATUS_PING_RATE_PER_MIN`, default 300); HTTP 429 + optional security activity event.
 - **fix** **DNS IP pinning** — `host_ip_pin.go`: pin resolved public IPs for ~2 minutes on outbound dials (`url_safety.go`).
 - **fix** **Startup validation** — `startup_validate.go`: validate `PORT` (1–65535) and writable `NEXTDASH_DATA_DIR` before listen (`main.go`).
@@ -99,6 +100,7 @@ Nothing yet.
 - **fix** **Shared cache-bust tokens** — `asset_versions.go` centralizes cross-page tokens; dashboard/config/health templates use `{{.Assets.*}}`.
 - **fix** **Config → dashboard category sync** — bookmark saves keep settings sync (layout chrome) and force a full dashboard render so category moves appear in the correct column; incremental patch also reparents rows across columns (`config-persistence.js`, `dashboard-config-sync.js`, `dashboard-render-incremental.js`).
 - **fix** **Config save layout regression** — revert structure-only sync on `saveChanges()` (392c1f6); structure refresh still reapplies `setupDOM` for tags/finders updates (`dashboard-config-sync.js`).
+- **fix** **Device layout overrides** — bookmark-only config save no longer clears device-specific dashboard settings when server settings are unchanged (`config-persistence.js`).
 - **fix** **Config save settings guard** — `saveChanges()` syncs General UI and POSTs settings only when settings actually changed; theme/layout autosave skips `updateFromUI`; regression test for bookmark-only save (`config-persistence.js`, `config-settings-guard-1`).
 - **fix** **Status ping rate limit** — bookmark `/api/ping` uses dedicated limiter; client treats HTTP 429 as rate-limited instead of offline (`status.go`, `status.js`, `status-rate-limit-1`).
 
@@ -115,6 +117,7 @@ Nothing yet.
 ### Config
 
 - **fix** **General layer scroll** — `preserveScroll` compares `prevLayer` to `nextLayer` (was always false before assignment); `preserveScrollAnchor` runs a synchronous fix before `requestAnimationFrame` (`general-layer-scroll-anchor-2`).
+- **fix** **Status re-check default** — General → Status defaults to every **5 minutes** for background bookmark reachability checks (`status-recheck-interval-select`).
 
 ### Developer & docs
 
@@ -122,7 +125,7 @@ Nothing yet.
 - **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
 - **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run; `config-dashboard-category-sync.spec.js` and structure-sync assertion on bookmark save.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
-- **fix** **Cache-bust** — `whats-new-v123` data version; `config-category-sync-1` on `config-persistence.js`, `dashboard-render-incremental.js`, and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
+- **fix** **Cache-bust** — `whats-new-v124` data version; `config-settings-guard-1` on `config-persistence.js`; `status-rate-limit-1` on `status.js`; `config-category-sync-1` on `dashboard-render-incremental.js` and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
 - **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
 - **fix** **What's new manifest** — `index.json` regenerated from on-disk release JSON (tag order); CI checks index ↔ file parity; modal uses `id || tag` when fetching (`whats-new-v121`).
 
