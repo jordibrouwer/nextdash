@@ -153,4 +153,27 @@ test.describe('dashboard inline edit', () => {
             !document.querySelector('.bookmark-inline-editing')
         ))).toBe(true);
     });
+
+    test('delete button opens confirm modal and removes bookmark', async ({ page }) => {
+        await page.keyboard.press(';');
+        await expect(page.locator('.bookmark-inline-form')).toBeVisible({ timeout: 3000 });
+        await page.waitForTimeout(700);
+
+        const countBefore = await page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count();
+        const deleteBtn = page.locator('.bookmark-inline-delete');
+        await expect(deleteBtn).toBeVisible();
+        await deleteBtn.click();
+
+        const modal = page.locator('#app-modal.show');
+        await expect(modal).toBeVisible({ timeout: 3000 });
+        await expect(modal.locator('.inline-edit-confirm-modal')).toBeVisible();
+        await modal.locator('.modal-button.danger').click();
+
+        await expect.poll(async () => page.evaluate(() => (
+            !document.querySelector('.bookmark-inline-editing')
+        ))).toBe(true);
+        await expect.poll(async () => (
+            page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count()
+        )).toBe(countBefore - 1);
+    });
 });

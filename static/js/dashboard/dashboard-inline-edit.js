@@ -241,9 +241,11 @@ class DashboardInlineEdit {
         const insideAuxUi = (node) => node instanceof Element && (
             node.classList?.contains('bookmark-inline-form')
             || node.classList?.contains('bookmark-inline-field')
+            || node.classList?.contains('bookmark-inline-action-btn')
             || node.classList?.contains('tag-ac-dropdown')
             || node.classList?.contains('dashboard-feature-promo')
             || node.classList?.contains('dashboard-grid-kbd-promo')
+            || node.closest?.('#app-modal')
         );
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         if (path.includes(editingRow) || path.some(insideAuxUi)) {
@@ -253,7 +255,7 @@ class DashboardInlineEdit {
         if (target instanceof Node && (
             editingRow.contains(target)
             || Boolean(target.closest?.(
-                '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+                '.bookmark-inline-form, .bookmark-inline-action-btn, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
             ))
         )) {
             return true;
@@ -264,7 +266,7 @@ class DashboardInlineEdit {
             if (hit instanceof Node && (
                 editingRow.contains(hit)
                 || Boolean(hit.closest?.(
-                    '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+                    '.bookmark-inline-form, .bookmark-inline-action-btn, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
                 ))
             )) {
                 return true;
@@ -751,9 +753,12 @@ class DashboardInlineEdit {
         cancelBtn.type = 'button';
         cancelBtn.className = 'bookmark-inline-action-btn';
         cancelBtn.textContent = d.formatDashboardLabel('cancel', {}, 'Cancel');
-        cancelBtn.addEventListener('mousedown', (e) => {
+        const stopActionPointer = (e) => {
             e.stopPropagation();
-        });
+        };
+        cancelBtn.addEventListener('mousedown', stopActionPointer);
+        cancelBtn.addEventListener('pointerdown', stopActionPointer);
+        cancelBtn.addEventListener('touchstart', stopActionPointer, { passive: true });
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -764,13 +769,18 @@ class DashboardInlineEdit {
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
         deleteBtn.textContent = cfg('delete', 'Delete');
-        deleteBtn.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-        });
+        deleteBtn.addEventListener('mousedown', stopActionPointer);
+        deleteBtn.addEventListener('pointerdown', stopActionPointer);
+        deleteBtn.addEventListener('touchstart', stopActionPointer, { passive: true });
         deleteBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            await this.deleteBookmarkInline(bookmarkRef);
+            d._inlineEditConfirmOpen = true;
+            try {
+                await this.deleteBookmarkInline(bookmarkRef);
+            } finally {
+                d._inlineEditConfirmOpen = false;
+            }
         });
 
         actions.appendChild(saveBtn);
@@ -857,6 +867,9 @@ class DashboardInlineEdit {
                 return;
             }
             if (Date.now() - openedAt < DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS) {
+                return;
+            }
+            if (d._inlineEditConfirmOpen) {
                 return;
             }
             if (this.isPointerInsideInlineEdit(e)) {
@@ -1269,7 +1282,8 @@ class DashboardInlineEdit {
                 title: d.configLabel('removeBookmarkTitle', 'Remove bookmark'),
                 message: d.formatDashboardLabel('deleteBookmarkConfirm', { name: safeName }, `Remove "${safeName}"?`),
                 confirmText: d.configLabel('delete', 'Delete'),
-                cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel')
+                cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel'),
+                modalClass: 'inline-edit-confirm-modal'
             });
         }
         return window.confirm(d.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));

@@ -2538,7 +2538,7 @@ body.bookmark-inline-edit-active .bookmark-inline-form {
     filter: none;
 }
 
-body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-discard-modal) {
+body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     z-index: 10050;
 }
 
@@ -2689,10 +2689,14 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-
 }
 
 .bookmark-inline-hint {
+    flex: 1 1 auto;
+    min-width: 0;
     margin-left: auto;
     font-size: 0.7rem;
     color: var(--text-tertiary);
     white-space: nowrap;
+    pointer-events: none;
+    text-align: right;
 }
 
 .bookmark-inline-hint kbd {
@@ -2770,7 +2774,6 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show:has(.inline-edit-
 
 .bookmark-inline-delete {
     color: var(--text-secondary);
-    margin-left: auto;
 }
 
 @keyframes bookmarkMoveOut {
