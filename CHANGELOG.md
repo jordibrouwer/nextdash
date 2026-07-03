@@ -82,8 +82,8 @@ Nothing yet.
 ### Security & server
 
 - **new** **Activity log** — `activity_log.go`: JSON lines for `bookmark.add` / `edit` / `delete` / `move` / `import`, status pings (10-minute dedupe unless `refresh=1`), optional opens, and security events. Env: `NEXTDASH_ACTIVITY_LOG` (`mutate`, `status`, `open`, `security`, `off`), `NEXTDASH_ACTIVITY_LOG_PERSIST`, `NEXTDASH_ACTIVITY_LOG_FILE`.
-- **new** **CSP headers** — `security.go` sends Content-Security-Policy on HTML responses; `NEXTDASH_CSP=off` disables.
-- **new** **Rate limits** — `rate_limit.go`: per-IP limits on outbound fetches (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120) and SSRF-sensitive APIs (`NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60); HTTP 429 + optional security activity event.
+- **new** **CSP weather** — `connect-src` allows Open-Meteo geocoding and forecast APIs (`security.go`).
+- **new** **Rate limits** — `rate_limit.go`: per-IP limits on outbound fetches (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120) and SSRF-sensitive APIs (`NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60); separate status ping bucket (`NEXTDASH_STATUS_PING_RATE_PER_MIN`, default 300); HTTP 429 + optional security activity event.
 - **fix** **DNS IP pinning** — `host_ip_pin.go`: pin resolved public IPs for ~2 minutes on outbound dials (`url_safety.go`).
 - **fix** **Startup validation** — `startup_validate.go`: validate `PORT` (1–65535) and writable `NEXTDASH_DATA_DIR` before listen (`main.go`).
 - **fix** **Request context** — `pingURLDetailed(ctx)`, `fetchBookmarkPreview(ctx)`; `status.go`, `handlers.go`, `favicon_prefetch.go` pass `r.Context()`.
@@ -99,7 +99,8 @@ Nothing yet.
 - **fix** **Shared cache-bust tokens** — `asset_versions.go` centralizes cross-page tokens; dashboard/config/health templates use `{{.Assets.*}}`.
 - **fix** **Config → dashboard category sync** — bookmark saves keep settings sync (layout chrome) and force a full dashboard render so category moves appear in the correct column; incremental patch also reparents rows across columns (`config-persistence.js`, `dashboard-config-sync.js`, `dashboard-render-incremental.js`).
 - **fix** **Config save layout regression** — revert structure-only sync on `saveChanges()` (392c1f6); structure refresh still reapplies `setupDOM` for tags/finders updates (`dashboard-config-sync.js`).
-- **fix** **Incremental render fallback** — settings-derived DOM patch falls back to full render when category columns change (e.g. `hideEmptyCategories` reveals a column); cross-column row lookup excludes smart-collection duplicates (`dashboard-render-incremental.js`, `dashboard-bookmark-rows.js`).
+- **fix** **Config save settings guard** — `saveChanges()` syncs General UI and POSTs settings only when settings actually changed; theme/layout autosave skips `updateFromUI`; regression test for bookmark-only save (`config-persistence.js`, `config-settings-guard-1`).
+- **fix** **Status ping rate limit** — bookmark `/api/ping` uses dedicated limiter; client treats HTTP 429 as rate-limited instead of offline (`status.go`, `status.js`, `status-rate-limit-1`).
 
 ### Browser extension
 

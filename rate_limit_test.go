@@ -22,6 +22,27 @@ func TestSlidingWindowLimiterBlocksAfterLimit(t *testing.T) {
 	}
 }
 
+func TestRequireStatusPingRateLimitReturns429(t *testing.T) {
+	h := NewHandlers(NewStore(), embeddedFiles)
+	h.statusPingLimiter = newSlidingWindowLimiter(1, time.Minute)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ping?url=https://example.com", nil)
+	req.RemoteAddr = "203.0.113.11:1234"
+
+	rec := httptest.NewRecorder()
+	if !h.requireStatusPingRateLimit(rec, req) {
+		t.Fatal("expected first request to pass rate limit")
+	}
+
+	rec = httptest.NewRecorder()
+	if h.requireStatusPingRateLimit(rec, req) {
+		t.Fatal("expected second request to be rate limited")
+	}
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429", rec.Code)
+	}
+}
+
 func TestRequireSSRFAPIRateLimitReturns429(t *testing.T) {
 	h := NewHandlers(NewStore(), embeddedFiles)
 	h.ssrfAPILimiter = newSlidingWindowLimiter(1, time.Minute)

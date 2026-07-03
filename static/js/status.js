@@ -294,6 +294,14 @@ class StatusMonitor {
 
             clearTimeout(timeoutId);
 
+            if (response.status === 429) {
+                return {
+                    status: 'rate_limited',
+                    ping: null,
+                    errorDetail: 'Rate limited'
+                };
+            }
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -397,6 +405,10 @@ class StatusMonitor {
         try {
         for (let attempt = 1; attempt <= this.offlineRetryCount; attempt += 1) {
             lastResult = await this.pingBookmarkOnce(bookmark);
+            if (lastResult.status === 'rate_limited') {
+                this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
+                return null;
+            }
             if (lastResult.status === 'online') {
                 this.cacheStatusResult(bookmark.url, {
                     status: 'online',

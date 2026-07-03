@@ -300,12 +300,11 @@ class ConfigPersistence {
     }
 
     async autosaveLayoutSettings() {
-        if (!this.c.settings?.updateFromUI || this.c._layoutAutosaveInFlight) return false;
+        if (!this.c.settings?.saveSettingsToServer || this.c._layoutAutosaveInFlight) return false;
         this.c._layoutAutosaveInFlight = true;
         this.c.suppressDirtyTracking = true;
         let ok = false;
         try {
-            this.c.settings.updateFromUI(this.c.settingsData);
             if (this.c.deviceSpecific) {
                 this.c.storage.saveDeviceSettings(this.c.settingsData);
                 ok = true;
@@ -338,7 +337,6 @@ class ConfigPersistence {
         this.c.updateThemePreviewBadge({ saving: true });
 
         this.c.suppressDirtyTracking = true;
-        this.c.settings.updateFromUI(this.c.settingsData);
 
         let ok = false;
         try {
@@ -417,12 +415,12 @@ class ConfigPersistence {
         }
     }
 
-    _shouldSyncSettingsFromUI(changeScope, needsFullPersist) {
-        return needsFullPersist || changeScope.hasSettingsChanges;
+    _shouldSyncSettingsFromUI(changeScope) {
+        return changeScope.hasSettingsChanges === true;
     }
 
-    _syncSettingsFromUIForSave(changeScope, needsFullPersist) {
-        if (!this._shouldSyncSettingsFromUI(changeScope, needsFullPersist)) {
+    _syncSettingsFromUIForSave(changeScope) {
+        if (!this._shouldSyncSettingsFromUI(changeScope)) {
             return;
         }
         if (this.c.settings?.updateFromUI) {
@@ -834,7 +832,7 @@ class ConfigPersistence {
         this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
         try {
-            this._syncSettingsFromUIForSave(changeScope, needsFullPersist);
+            this._syncSettingsFromUIForSave(changeScope);
 
             const saveBookmarksPageId = this.c.getResolvedBookmarksPageId();
             this.c.currentPageId = saveBookmarksPageId;
@@ -846,14 +844,12 @@ class ConfigPersistence {
             const duplicateUrls = this.c.findDuplicateBookmarkUrls(this.c.bookmarksData);
 
             // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
-            if (needsFullPersist || changeScope.hasSettingsChanges) {
+            if (changeScope.hasSettingsChanges) {
                 if (this.c.deviceSpecific) {
                     this.c.storage.saveDeviceSettings(this.c.settingsData);
                 } else {
                     await this.c.data.saveSettings(this.c.settingsData);
-                    if (changeScope.hasSettingsChanges) {
-                        this.c.storage.clearDeviceSettings();
-                    }
+                    this.c.storage.clearDeviceSettings();
                 }
             }
 

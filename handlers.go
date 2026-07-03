@@ -35,7 +35,8 @@ type Handlers struct {
 	healthReportAt time.Time
 	healthReportOK bool
 	prefetchMu       sync.Mutex
-	ssrfAPILimiter   *slidingWindowLimiter
+	ssrfAPILimiter     *slidingWindowLimiter
+	statusPingLimiter  *slidingWindowLimiter
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -164,7 +165,8 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 	h := &Handlers{
 		store:          store,
 		files:          files,
-		ssrfAPILimiter: newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
+		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
+		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
 	h.startPreviewCacheFlushLoop()
 	if store.TakeDefaultBookmarkIconPrefetch() {
@@ -1449,6 +1451,16 @@ func (h *Handlers) outboundHTTPClient(timeout time.Duration, maxRedirects int) *
 
 func (h *Handlers) requireSSRFAPIRateLimit(w http.ResponseWriter, r *http.Request) bool {
 	if h.ssrfAPILimiter == nil || h.ssrfAPILimiter.allow(clientIP(r)) {
+		return true
+	}
+	logRateLimitHit(r, r.URL.Path)
+	w.Header().Set("Retry-After", "60")
+	http.Error(w, "Too many requests", http.StatusTooManyRequests)
+	return false
+}
+
+func (h *Handlers) requireStatusPingRateLimit(w http.ResponseWriter, r *http.Request) bool {
+	if h.statusPingLimiter == nil || h.statusPingLimiter.allow(clientIP(r)) {
 		return true
 	}
 	logRateLimitHit(r, r.URL.Path)

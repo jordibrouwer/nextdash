@@ -15,7 +15,7 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	if !h.requireSSRFAPIRateLimit(w, r) {
+	if !h.requireStatusPingRateLimit(w, r) {
 		return
 	}
 

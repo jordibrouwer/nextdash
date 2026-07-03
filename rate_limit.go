@@ -81,6 +81,10 @@ func ssrfAPIRequestsPerMinute() int {
 	return envIntPositive("NEXTDASH_SSRF_API_RATE_PER_MIN", 60)
 }
 
+func statusPingRequestsPerMinute() int {
+	return envIntPositive("NEXTDASH_STATUS_PING_RATE_PER_MIN", 300)
+}
+
 func clientIP(r *http.Request) string {
 	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
 		parts := strings.Split(xff, ",")
