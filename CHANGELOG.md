@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.03 — July 2026](#v20260703--july-2026)
 - [v2026.07.02 — July 2026](#v20260702--july-2026)
 - [v2026.07.01.9 — July 2026](#v202607019--july-2026)
 - [v2026.07.01.8 — July 2026](#v202607018--july-2026)
@@ -71,6 +72,48 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.03 — July 2026
+
+**Security hardening, activity log, extension shortcuts, and sync reliability** — Structured server-side activity logging, CSP and SSRF rate limits, DNS IP pinning, and startup validation for self-hosters. Dashboard data revision uses content hashes and detects name/URL/shortcut drift. Browser extension can save optional shortcuts with auto-suggest. What's new modal shows the 20 latest releases on scroll.
+
+### Security & server
+
+- **new** **Activity log** — `activity_log.go`: JSON lines for `bookmark.add` / `edit` / `delete` / `move` / `import`, status pings (10-minute dedupe unless `refresh=1`), optional opens, and security events. Env: `NEXTDASH_ACTIVITY_LOG` (`mutate`, `status`, `open`, `security`, `off`), `NEXTDASH_ACTIVITY_LOG_PERSIST`, `NEXTDASH_ACTIVITY_LOG_FILE`.
+- **new** **CSP headers** — `security.go` sends Content-Security-Policy on HTML responses; `NEXTDASH_CSP=off` disables.
+- **new** **Rate limits** — `rate_limit.go`: per-IP limits on outbound fetches (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120) and SSRF-sensitive APIs (`NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60); HTTP 429 + optional security activity event.
+- **fix** **DNS IP pinning** — `host_ip_pin.go`: pin resolved public IPs for ~2 minutes on outbound dials (`url_safety.go`).
+- **fix** **Startup validation** — `startup_validate.go`: validate `PORT` (1–65535) and writable `NEXTDASH_DATA_DIR` before listen (`main.go`).
+- **fix** **Request context** — `pingURLDetailed(ctx)`, `fetchBookmarkPreview(ctx)`; `status.go`, `handlers.go`, `favicon_prefetch.go` pass `r.Context()`.
+
+### Dashboard & sync
+
+- **fix** **Hash-based data revision** — `GetDataRevision` hashes file contents instead of mtimes (`handlers.go`, `models.go`).
+- **fix** **Stale cache: name, URL, shortcut** — `isPageBookmarksStale()` compares all bookmark fields; tests in `dashboard-data` coverage.
+- **fix** **Preview metadata cache** — in-memory cache with `previewCacheDirty`, periodic flush (~30 s) and shutdown flush (`cache_store.go`, `handlers.go`).
+- **fix** **Tag popover save contract** — popover reports failure when bookmark save fails.
+- **fix** **Preview metadata save toast** — user notification when preview persist fails.
+- **fix** **Tag-filter bulk delete** — success check and page-cache sync after bulk delete.
+- **fix** **Shared cache-bust tokens** — `asset_versions.go` centralizes cross-page tokens; dashboard/config/health templates use `{{.Assets.*}}`.
+
+### Browser extension
+
+- **new** **Optional shortcut field** — `extension/popup.html/js`; auto-suggest via `suggestBookmarkShortcut()` in `save-common.js`.
+- **fix** **Shortcut on save** — `postAddBookmark` sends resolved shortcut (no longer always `''`).
+- **fix** **409 duplicate shortcut** — conflict handling in popup; i18n in `extension/locales/{en,nl,de,fr}.json`.
+
+### What's new modal
+
+- **new** **20-release history** — `MAX_VISIBLE_RELEASES = 20`; removed 7-day cutoff; lazy-load per-release JSON unchanged (`whats-new-modal.js`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, Config Help** — self-hosting security, env-var table, extension shortcuts, Help sections **Browser extension** and **Security & self-hosting** (EN/NL/DE/FR); `docker-compose.prod.yml` commented prod env block.
+- **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
+- **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
+- **fix** **Cache-bust** — `whats-new-v119` data version and `2026.07-dashboard-release-v95` dashboard release token.
 
 ---
 

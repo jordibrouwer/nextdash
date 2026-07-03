@@ -5,8 +5,7 @@
     'use strict';
 
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
-    const RELEASE_HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
-    const MAX_VISIBLE_RELEASES = 5;
+    const MAX_VISIBLE_RELEASES = 20;
 
     let manifestCache = null;
     let manifestFetch = null;
@@ -139,13 +138,11 @@
     }
 
     function getVisibleManifest(manifest) {
-        const cutoff = Date.now() - RELEASE_HISTORY_MS;
         return manifest
             .map((entry) => ({
                 ...entry,
                 releasedAtMs: Date.parse(`${entry.releasedAt}T12:00:00Z`),
             }))
-            .filter((entry) => entry.releasedAtMs >= cutoff)
             .sort((a, b) => {
                 const dateDiff = b.releasedAtMs - a.releasedAtMs;
                 if (dateDiff !== 0) {
@@ -400,7 +397,7 @@
                 }
                 const visible = getVisibleManifest(manifest);
                 if (visible.length === 0) {
-                    showEmptyMessage('No release notes in the last 7 days. See <strong>CHANGELOG.md</strong> in Config → Help.');
+                    showEmptyMessage('No release notes found. See <strong>CHANGELOG.md</strong> in Config → Help.');
                     return;
                 }
                 return fetchRelease(visible[0].id).then((first) => {

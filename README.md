@@ -285,6 +285,16 @@ environment:
 
 **General Advanced toolbar (v2026.07.01.9)** — Essentials / Advanced buttons align flush with the fused General surface; no gap or overlap with Expand/Collapse bulk actions on the Advanced layer.
 
+**Security & self-hosting (v2026.07.03)** — activity log (`NEXTDASH_ACTIVITY_LOG`), CSP headers, outbound/SSRF rate limits, DNS IP pinning, startup validation for `PORT` and `NEXTDASH_DATA_DIR`. README, MANUAL, and Config → Help document write token, CORS, and production Docker.
+
+**Activity log (v2026.07.03)** — structured JSON lines for bookmark mutations, status checks, optional opens, and security events; optional rotating `activity.log` under the data directory.
+
+**Extension shortcuts (v2026.07.03)** — optional shortcut when saving a tab; auto-suggest from bookmark name; **409** when the shortcut is already taken on that page.
+
+**Dashboard sync hardening (v2026.07.03)** — hash-based `GET /api/data-revision`; stale-cache detection for name, URL, and shortcut; preview metadata cache flushes periodically; shared cache-bust tokens across dashboard, config, and health.
+
+**What's new modal (v2026.07.03)** — scroll to load up to the **20 most recent** releases (lazy per-version JSON).
+
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
 **Bookmark tag sync (v2026.07.02)** — tag edits re-render smart collections and the tag-filter view; stale-cache detection includes tags.
@@ -360,7 +370,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first, older notes on scroll
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **20 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay

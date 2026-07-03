@@ -1,0 +1,120 @@
+{
+  "tag": "v2026.07.03",
+  "date": "July 2026",
+  "releasedAt": "2026-07-03",
+  "sections": [
+    {
+      "title": "Security & server",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Activity log</strong> — structured JSON lines for bookmark mutations, status checks, opens (optional), and security events (auth denied, rate limits). Configure with <code>NEXTDASH_ACTIVITY_LOG</code>; optional rotating <code>activity.log</code> under the data directory (<code>NEXTDASH_ACTIVITY_LOG_PERSIST=1</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>CSP headers</strong> — restrictive Content-Security-Policy on HTML pages by default; set <code>NEXTDASH_CSP=off</code> only when a reverse proxy requires it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Outbound &amp; SSRF rate limits</strong> — per-client caps on server fetches and user-triggered preview/ping/icon APIs (<code>NEXTDASH_OUTBOUND_REQUESTS_PER_MIN</code>, <code>NEXTDASH_SSRF_API_RATE_PER_MIN</code>); returns <strong>429</strong> when exceeded."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>DNS IP pinning</strong> — outbound HTTP(S) dials pin resolved public IPs for ~2&nbsp;minutes so hostnames cannot switch to private addresses between the safety check and the TCP connection (unless localhost bookmarks are allowed)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Startup validation</strong> — server exits with a clear error if <code>PORT</code> is outside 1–65535 or <code>NEXTDASH_DATA_DIR</code> is not creatable/writable."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Request context</strong> — ping and bookmark-preview outbound calls use the incoming HTTP request context so cancelled clients do not leave orphaned fetches."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard & sync",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Hash-based data revision</strong> — <code>GET /api/data-revision</code> fingerprints on-disk file contents instead of mtimes, so restarts and external edits are detected reliably."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stale cache detection</strong> — open tabs refresh when bookmark <strong>name</strong>, <strong>URL</strong>, or <strong>shortcut</strong> changes (in addition to category and tags)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview metadata cache</strong> — in-memory OG-tag cache flushes every ~30&nbsp;s and on shutdown instead of on every merge, reducing disk churn while staying fresh."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag popover save</strong> — quick-tag popover no longer reports success when the underlying bookmark save fails."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Preview save errors</strong> — users see a toast when bookmark link-preview metadata fails to persist."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag-filter bulk delete</strong> — success handling and page-cache sync after bulk delete from a tag filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shared cache-bust tokens</strong> — dashboard, config, and health templates read cross-page asset versions from one Go source (<code>asset_versions.go</code>) so tokens stay aligned."
+        }
+      ]
+    },
+    {
+      "title": "Browser extension",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Optional shortcut</strong> — Save tab includes a shortcut field; leave empty for an auto-suggested key from the bookmark name (first free letter on the page)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shortcut on save</strong> — extension posts the resolved shortcut to <code>POST /api/bookmarks/add</code> (no longer always empty)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Duplicate shortcut</strong> — server returns <strong>409</strong> with a clear message when the shortcut is already taken on that page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Extension i18n</strong> — shortcut placeholder and conflict strings in EN, NL, DE, and FR."
+        }
+      ]
+    },
+    {
+      "title": "What's new modal",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>20-release history</strong> — scroll the ★ modal to load up to the <strong>20 most recent</strong> versions; each release still fetches its own JSON on demand (no heavy upfront load)."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL &amp; Config Help</strong> — production Docker, environment-variable reference, browser extension, activity log, rate limits, and <strong>Security &amp; self-hosting</strong> help section (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>CI on <code>main</code></strong> — release script keeps tests and Playwright on <code>main</code> after dev-only prune."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tests</strong> — activity log categories/dedupe, data-revision hash, stale-cache name/url/shortcut, asset-version drift check."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v119</code> data version and <code>2026.07-dashboard-release-v95</code> dashboard release token."
+        }
+      ]
+    }
+  ]
+}
