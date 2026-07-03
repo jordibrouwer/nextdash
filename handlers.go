@@ -1996,6 +1996,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	pages := h.store.GetPages()
 	var results []map[string]interface{}
 	healthUpdates := make(map[string]HealthScanCache)
+	var tested, onlineCount, offlineCount int
 
 	// Retest all bookmarks with checkStatus=true
 	for _, page := range pages {
@@ -2012,6 +2013,12 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			}
 
 			result := h.pingURLDetailed(bm.URL)
+			tested++
+			if result.Status == "online" {
+				onlineCount++
+			} else {
+				offlineCount++
+			}
 			errMsg := ""
 			if result.Status != "online" {
 				errMsg = result.ErrorDetail
@@ -2080,6 +2087,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.mergeHealthCacheUpdates(healthUpdates)) {
 		return
 	}
+
+	logBookmarkStatusBatch(tested, onlineCount, offlineCount, activitySourceFromRequest(r))
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
