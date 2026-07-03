@@ -417,6 +417,23 @@ class ConfigPersistence {
         }
     }
 
+    _shouldSyncSettingsFromUI(changeScope, needsFullPersist) {
+        return needsFullPersist || changeScope.hasSettingsChanges;
+    }
+
+    _syncSettingsFromUIForSave(changeScope, needsFullPersist) {
+        if (!this._shouldSyncSettingsFromUI(changeScope, needsFullPersist)) {
+            return;
+        }
+        if (this.c.settings?.updateFromUI) {
+            this.c.settings.updateFromUI(this.c.settingsData);
+        }
+        if (this.c.keyboard && typeof this.c.keyboard.getSaveData === 'function') {
+            const keyboardData = this.c.keyboard.getSaveData();
+            this.c.settingsData.customKeyBindings = keyboardData.customKeyBindings;
+        }
+    }
+
     getPendingChangeScope() {
         if (!this.c.savedSnapshot) {
             return {
@@ -812,11 +829,12 @@ class ConfigPersistence {
             ? window.ConfigFinders.normalizeFinders(this.c.findersData, this.c.generateId.bind(this.c))
             : this.c.findersData;
         const changeScope = this.getPendingChangeScope();
+        const needsFullPersist = !this.c.savedSnapshot;
         this.updateSaveStatusUI('saving');
         this.c.ui.showNotification(this.c.language.t('config.savingChanges'), 'info', { persist: true });
 
         try {
-            this.c.settings.updateFromUI(this.c.settingsData);
+            this._syncSettingsFromUIForSave(changeScope, needsFullPersist);
 
             const saveBookmarksPageId = this.c.getResolvedBookmarksPageId();
             this.c.currentPageId = saveBookmarksPageId;
@@ -826,13 +844,6 @@ class ConfigPersistence {
             }
 
             const duplicateUrls = this.c.findDuplicateBookmarkUrls(this.c.bookmarksData);
-            const needsFullPersist = !this.c.savedSnapshot;
-
-            // Merge keyboard custom bindings into settings before persisting settings.
-            if (this.c.keyboard && typeof this.c.keyboard.getSaveData === 'function') {
-                const keyboardData = this.c.keyboard.getSaveData();
-                this.c.settingsData.customKeyBindings = keyboardData.customKeyBindings;
-            }
 
             // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
             if (needsFullPersist || changeScope.hasSettingsChanges) {

@@ -138,6 +138,76 @@ test.describe('config persistence (phase 2)', () => {
         expect(payload?.sourceTabId).toMatch(/^cfg-/);
     });
 
+    test('bookmark-only save keeps settingsData when general UI is out of sync', async ({ page }) => {
+        await waitForConfigReady(page);
+
+        const result = await page.evaluate(async () => {
+            const cm = window.configManager;
+            cm.settingsData.layoutVersion = 'glass';
+            cm.settingsData.showTitle = true;
+            cm.settingsData.showIcons = true;
+            if (typeof cm.syncSavedSettingsSnapshot === 'function') {
+                cm.syncSavedSettingsSnapshot();
+            } else {
+                cm.savedSnapshot = cm.captureUndoSnapshot();
+            }
+            cm.recomputeDirtyState();
+
+            const showTitleCb = document.getElementById('show-title-checkbox');
+            const layoutSelect = document.getElementById('layout-version-select');
+            const showIconsCb = document.getElementById('show-icons-checkbox');
+            if (showTitleCb) showTitleCb.checked = false;
+            if (showIconsCb) showIconsCb.checked = false;
+            if (layoutSelect) {
+                layoutSelect.value = 'classic';
+                layoutSelect.__customSelectInstance?.refresh?.();
+            }
+
+            cm.ui.switchToTab('bookmarks');
+            await cm.loadPageBookmarks(cm.currentPageId || 1);
+            const bm = cm.bookmarksData?.[0];
+            if (!bm) {
+                return { ok: false, reason: 'no-bookmarks' };
+            }
+            const originalName = bm.name;
+            bm.name = `${originalName || 'bookmark'}-ui-drift-probe`;
+            cm.markDirty();
+
+            let settingsPostsOnBookmarkSave = 0;
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = (input, init = {}) => {
+                const url = String(input || '');
+                const method = String(init.method || 'GET').toUpperCase();
+                if (url.includes('/api/settings') && method === 'POST') {
+                    settingsPostsOnBookmarkSave += 1;
+                }
+                return originalFetch(input, init);
+            };
+
+            await cm.saveChanges();
+            const settingsPosts = settingsPostsOnBookmarkSave;
+
+            window.fetch = originalFetch;
+            bm.name = originalName;
+            cm.markDirty();
+            await cm.saveChanges();
+
+            return {
+                ok: true,
+                layoutVersion: cm.settingsData.layoutVersion,
+                showTitle: cm.settingsData.showTitle,
+                showIcons: cm.settingsData.showIcons,
+                settingsPosts,
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.layoutVersion).toBe('glass');
+        expect(result.showTitle).toBe(true);
+        expect(result.showIcons).toBe(true);
+        expect(result.settingsPosts).toBe(0);
+    });
+
     test('saveChanges with bookmark category edit signals settings sync', async ({ page }) => {
         await waitForConfigReady(page);
 
