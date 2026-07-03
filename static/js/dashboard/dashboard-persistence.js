@@ -105,7 +105,7 @@ class DashboardPersistence {
         const d = this.dash;
         const pageId = Number(options.pageId ?? d.currentPageId);
         if (!Number.isFinite(pageId)) {
-            return;
+            return false;
         }
 
         const payload = Array.isArray(options.payload)
@@ -194,8 +194,9 @@ class DashboardPersistence {
         d._bookmarkOrderSaveInFlight = saveTask;
         try {
             await saveTask;
+            return true;
         } catch (_error) {
-            // Notification shown in saveTask.
+            return false;
         } finally {
             if (d._bookmarkOrderSaveInFlight === saveTask) {
                 d._bookmarkOrderSaveInFlight = null;

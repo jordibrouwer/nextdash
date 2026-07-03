@@ -1513,7 +1513,7 @@ class DashboardBookmarkRows {
         const d = this.dash;
         const tag = String(tagName || '').trim().toLowerCase();
         if (!tag || !bookmarkRef?.bookmark) {
-            return false;
+            return Promise.resolve(false);
         }
 
         const bookmark = bookmarkRef.bookmark;
@@ -1521,27 +1521,34 @@ class DashboardBookmarkRows {
             .map((raw) => String(raw || '').trim().toLowerCase())
             .filter(Boolean);
         const idx = tags.indexOf(tag);
+        const previousTags = [...tags];
         const newTags = idx >= 0 ? tags.filter((t) => t !== tag) : [...tags, tag];
-        bookmark.tags = newTags;
-        if (bookmarkRef.original) {
-            bookmarkRef.original.tags = [...newTags];
-        }
-
-        d.syncEditedBookmarkAcrossCollections(bookmarkRef, String(bookmark.url || '').trim());
-
-        if (anchorEl instanceof HTMLElement) {
-            if (newTags.length) {
-                anchorEl.setAttribute('data-bookmark-tags', newTags.join(','));
-            } else {
-                anchorEl.removeAttribute('data-bookmark-tags');
-            }
-        }
-
         const pageId = Number(bookmarkRef.pageId || d.currentPageId);
+
+        if (bookmarkRef.scope === 'current') {
+            d.inlineEdit?.ensureBookmarkMutationSnapshot?.();
+        }
+
+        const applyTags = (tagList) => {
+            bookmark.tags = [...tagList];
+            if (bookmarkRef.original) {
+                bookmarkRef.original.tags = [...tagList];
+            }
+            d.syncEditedBookmarkAcrossCollections(bookmarkRef, String(bookmark.url || '').trim());
+            if (anchorEl instanceof HTMLElement) {
+                if (tagList.length) {
+                    anchorEl.setAttribute('data-bookmark-tags', tagList.join(','));
+                } else {
+                    anchorEl.removeAttribute('data-bookmark-tags');
+                }
+            }
+        };
+
+        applyTags(newTags);
+
         const persist = (async () => {
             if (bookmarkRef.scope === 'current') {
-                await d.saveBookmarkOrder({ pageId });
-                return true;
+                return d.saveBookmarkOrder({ pageId });
             }
             const inlineEdit = d.inlineEdit;
             if (inlineEdit?.saveRemoteBookmarkEdit) {
@@ -1558,10 +1565,21 @@ class DashboardBookmarkRows {
                 if (ok) {
                     void d.data?.fetchAndStoreDataRevision?.();
                     d.renderDashboard({ incremental: false });
+                    return true;
                 }
-                return ok;
+                applyTags(previousTags);
+                if (bookmarkRef.scope === 'current') {
+                    d.pendingReorderSnapshot = null;
+                }
+                return false;
             })
-            .catch(() => false);
+            .catch(() => {
+                applyTags(previousTags);
+                if (bookmarkRef.scope === 'current') {
+                    d.pendingReorderSnapshot = null;
+                }
+                return false;
+            });
     }
 
 
