@@ -94,6 +94,31 @@ NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension
 
 Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response. Unset or empty keeps the default `*`.
 
+### Activity log (bookmark events)
+
+Structured JSON activity lines are written to the server log for bookmark mutations and status checks by default. Opens are off unless enabled.
+
+```bash
+# Default: mutate + status (opens off)
+NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
+NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
+
+# Optional rotating file under the data directory
+NEXTDASH_ACTIVITY_LOG_PERSIST=1
+NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/activity.log
+
+# Optional security events (auth denied, rate limits)
+NEXTDASH_ACTIVITY_LOG=mutate,status,security
+```
+
+Example log line:
+
+```text
+activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
+```
+
+Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
+
 ---
 
 ## Features
