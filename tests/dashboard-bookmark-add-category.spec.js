@@ -209,4 +209,47 @@ test.describe('dashboard bookmark add category placement', () => {
         expect(result.stale).toBe(true);
         expect(result.notStale).toBe(false);
     });
+
+    test('isPageBookmarksStale detects name and shortcut divergence', async ({ page }) => {
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const pageId = Number(d.currentPageId) || 1;
+            const source = Array.isArray(d.bookmarks) && d.bookmarks.length
+                ? d.bookmarks[0]
+                : null;
+            if (!source) {
+                return { ok: false, reason: 'no-bookmarks' };
+            }
+
+            const urlKey = String(source.url || '').trim().toLowerCase();
+            const staleName = d.bookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, name: 'Stale name probe' } : bm
+            ));
+            const staleShortcut = d.bookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, shortcut: 'ZZ' } : bm
+            ));
+            const freshAll = (d.allBookmarks || []).map((bm) => (
+                String(bm?.url || '').trim().toLowerCase() === urlKey
+                    && Number(bm.pageId) === pageId
+                    ? { ...bm, name: source.name, shortcut: source.shortcut }
+                    : bm
+            ));
+
+            d.allBookmarks = freshAll;
+            return {
+                ok: true,
+                nameStale: d.data.isPageBookmarksStale(pageId, staleName),
+                shortcutStale: d.data.isPageBookmarksStale(pageId, staleShortcut),
+                fresh: d.data.isPageBookmarksStale(pageId, d.bookmarks),
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.nameStale).toBe(true);
+        expect(result.shortcutStale).toBe(true);
+        expect(result.fresh).toBe(false);
+    });
 });
