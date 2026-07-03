@@ -1,0 +1,41 @@
+/* Inline edit opaque surfaces — loaded last; wins over layout/glass tokens. */
+
+body.bookmark-inline-edit-active {
+    --inline-edit-panel-bg: var(--background-primary);
+    --inline-edit-field-bg: var(--background-secondary);
+}
+
+@supports (background: rgb(from red r g b)) {
+    body.bookmark-inline-edit-active {
+        --inline-edit-panel-bg: rgb(from var(--background-primary) r g b / 1);
+        --inline-edit-field-bg: rgb(from var(--background-secondary) r g b / 1);
+    }
+}
+
+body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
+    background: var(--inline-edit-panel-bg);
+    border-radius: 8px;
+    padding: 0.35rem;
+    box-shadow: 0 16px 48px color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+
+body.bookmark-inline-edit-active .layout-launcher .bookmark-link.bookmark-inline-editing {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.bookmark-inline-edit-active .bookmark-inline-form {
+    background: var(--inline-edit-panel-bg);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.bookmark-inline-edit-active .bookmark-inline-form .bookmark-inline-input,
+body.bookmark-inline-edit-active .bookmark-inline-form .bookmark-inline-select,
+body.bookmark-inline-edit-active .bookmark-inline-form .bookmark-inline-textarea,
+body.bookmark-inline-edit-active .bookmark-inline-form .bookmark-inline-action-btn,
+body.bookmark-inline-edit-active .bookmark-inline-form .bookmark-inline-icon-preview {
+    background: var(--inline-edit-field-bg);
+}

@@ -967,14 +967,14 @@ body[data-layout-version="glass"] .layout-launcher .bookmark-link.bookmark-inlin
     padding: 0;
 }
 
+body[data-layout-version="glass"].bookmark-inline-edit-active {
+    --inline-edit-overlay-blur: 7.5px;
+}
+
 body[data-layout-version="glass"] .bookmark-inline-form {
     padding: 0.7rem 0.8rem;
     border-radius: var(--layout-radius-md);
-    background-color: color-mix(
-        in srgb,
-        var(--background-secondary) 96%,
-        var(--background-primary) 4%
-    );
+    background-color: var(--inline-edit-panel-bg);
     border: 2px solid color-mix(in srgb, var(--layout-surface-border) 65%, var(--border-primary));
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--accent-primary) 20%, var(--layout-surface-border)),
@@ -990,7 +990,21 @@ body[data-layout-version="glass"] .bookmark-inline-action-btn,
 body[data-layout-version="glass"] .bookmark-inline-icon-preview {
     border-radius: var(--layout-radius-sm);
     border: 1px solid var(--layout-surface-border);
-    background: var(--layout-surface-inset);
+    background-color: var(--inline-edit-field-bg);
+}
+
+/* Win over generic glass surface tokens when inline edit is open. */
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form {
+    background-color: var(--inline-edit-panel-bg);
+    background-image: none;
+}
+
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form .bookmark-inline-input,
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form .bookmark-inline-select,
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form .bookmark-inline-textarea,
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form .bookmark-inline-action-btn,
+body.bookmark-inline-edit-active[data-layout-version="glass"] .bookmark-inline-form .bookmark-inline-icon-preview {
+    background-color: var(--inline-edit-field-bg);
 }
 
 body[data-layout-version="glass"] .bookmark-inline-input:focus,

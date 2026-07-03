@@ -11,6 +11,47 @@ class DashboardInlineEdit {
         return d.inlineEditingBookmarkIndex !== null || Boolean(document.querySelector('.bookmark-inline-editing'));
     }
 
+    /** Resolve a theme surface to opaque rgb() — CSS vars may be rgba or color-mix. */
+    readSolidThemeSurface(varName, fallbackVar) {
+        const probe = document.createElement('span');
+        probe.style.cssText = [
+            'position:fixed',
+            'left:-9999px',
+            'top:0',
+            'width:1px',
+            'height:1px',
+            `background:var(${varName}, var(${fallbackVar}))`,
+        ].join(';');
+        document.body.appendChild(probe);
+        const computed = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        const match = computed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? `rgb(${match[1]}, ${match[2]}, ${match[3]})` : computed;
+    }
+
+    applySolidInlineEditSurfaces(row, form) {
+        if (!form) {
+            return;
+        }
+        const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
+        const fieldBg = this.readSolidThemeSurface('--background-secondary', '--background-primary');
+        document.body.style.setProperty('--inline-edit-panel-bg', panelBg);
+        document.body.style.setProperty('--inline-edit-field-bg', fieldBg);
+        form.style.background = panelBg;
+        if (row && !row.closest('.layout-launcher')) {
+            row.style.background = panelBg;
+        }
+        form.querySelectorAll(
+            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-action-btn, .bookmark-inline-icon-preview'
+        ).forEach((node) => {
+            node.style.background = fieldBg;
+        });
+    }
+
+    clearInlineEditSurfaceOverrides() {
+        document.body.style.removeProperty('--inline-edit-panel-bg');
+        document.body.style.removeProperty('--inline-edit-field-bg');
+    }
 
 
     snapshotInlineEditBaseline(bookmark, pageId) {
@@ -241,9 +282,11 @@ class DashboardInlineEdit {
         const insideAuxUi = (node) => node instanceof Element && (
             node.classList?.contains('bookmark-inline-form')
             || node.classList?.contains('bookmark-inline-field')
+            || node.classList?.contains('bookmark-inline-action-btn')
             || node.classList?.contains('tag-ac-dropdown')
             || node.classList?.contains('dashboard-feature-promo')
             || node.classList?.contains('dashboard-grid-kbd-promo')
+            || node.closest?.('#app-modal')
         );
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         if (path.includes(editingRow) || path.some(insideAuxUi)) {
@@ -253,7 +296,7 @@ class DashboardInlineEdit {
         if (target instanceof Node && (
             editingRow.contains(target)
             || Boolean(target.closest?.(
-                '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+                '.bookmark-inline-form, .bookmark-inline-action-btn, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
             ))
         )) {
             return true;
@@ -264,7 +307,7 @@ class DashboardInlineEdit {
             if (hit instanceof Node && (
                 editingRow.contains(hit)
                 || Boolean(hit.closest?.(
-                    '.bookmark-inline-form, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
+                    '.bookmark-inline-form, .bookmark-inline-action-btn, .tag-ac-dropdown, .dashboard-feature-promo, .dashboard-grid-kbd-promo, #app-modal'
                 ))
             )) {
                 return true;
@@ -751,9 +794,12 @@ class DashboardInlineEdit {
         cancelBtn.type = 'button';
         cancelBtn.className = 'bookmark-inline-action-btn';
         cancelBtn.textContent = d.formatDashboardLabel('cancel', {}, 'Cancel');
-        cancelBtn.addEventListener('mousedown', (e) => {
+        const stopActionPointer = (e) => {
             e.stopPropagation();
-        });
+        };
+        cancelBtn.addEventListener('mousedown', stopActionPointer);
+        cancelBtn.addEventListener('pointerdown', stopActionPointer);
+        cancelBtn.addEventListener('touchstart', stopActionPointer, { passive: true });
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -764,13 +810,18 @@ class DashboardInlineEdit {
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
         deleteBtn.textContent = cfg('delete', 'Delete');
-        deleteBtn.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-        });
+        deleteBtn.addEventListener('mousedown', stopActionPointer);
+        deleteBtn.addEventListener('pointerdown', stopActionPointer);
+        deleteBtn.addEventListener('touchstart', stopActionPointer, { passive: true });
         deleteBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            await this.deleteBookmarkInline(bookmarkRef);
+            d._inlineEditConfirmOpen = true;
+            try {
+                await this.deleteBookmarkInline(bookmarkRef);
+            } finally {
+                d._inlineEditConfirmOpen = false;
+            }
         });
 
         actions.appendChild(saveBtn);
@@ -810,6 +861,7 @@ class DashboardInlineEdit {
         }
 
         row.appendChild(form);
+        this.applySolidInlineEditSurfaces(row, form);
         requestAnimationFrame(() => window.DashboardFeaturePromos?.reposition?.());
         d._inlineEditContext = {
             bookmarkRef,
@@ -857,6 +909,9 @@ class DashboardInlineEdit {
                 return;
             }
             if (Date.now() - openedAt < DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS) {
+                return;
+            }
+            if (d._inlineEditConfirmOpen) {
                 return;
             }
             if (this.isPointerInsideInlineEdit(e)) {
@@ -1026,6 +1081,7 @@ class DashboardInlineEdit {
     leaveBookmarkInlineEditFocusMode() {
         const d = this.dash;
         document.body.classList.remove('bookmark-inline-edit-active');
+        this.clearInlineEditSurfaceOverrides();
         d.keyboardNavigation?.enable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();
     }
@@ -1269,7 +1325,8 @@ class DashboardInlineEdit {
                 title: d.configLabel('removeBookmarkTitle', 'Remove bookmark'),
                 message: d.formatDashboardLabel('deleteBookmarkConfirm', { name: safeName }, `Remove "${safeName}"?`),
                 confirmText: d.configLabel('delete', 'Delete'),
-                cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel')
+                cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel'),
+                modalClass: 'inline-edit-confirm-modal'
             });
         }
         return window.confirm(d.configLabel('removeBookmarkMessage', 'Delete this bookmark?'));

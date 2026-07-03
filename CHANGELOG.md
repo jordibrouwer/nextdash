@@ -103,6 +103,8 @@ Nothing yet.
 - **fix** **Device layout overrides** — bookmark-only config save no longer clears device-specific dashboard settings when server settings are unchanged (`config-persistence.js`).
 - **fix** **Config save settings guard** — `saveChanges()` syncs General UI and POSTs settings only when settings actually changed; theme/layout autosave skips `updateFromUI`; regression test for bookmark-only save (`config-persistence.js`, `config-settings-guard-1`).
 - **fix** **Status ping rate limit** — bookmark `/api/ping` uses dedicated limiter; client treats HTTP 429 as rate-limited instead of offline (`status.go`, `status.js`, `status-rate-limit-1`).
+- **fix** **Inline edit Delete** — Delete in the long-press editor opens its confirm dialog reliably (`pointerdown`/`touchstart`, click-outside paused while modal is open, raised delete-modal z-index); shortcut hint no longer blocks the button (`dashboard-inline-edit.js`, `dashboard.css`, Playwright).
+- **fix** **Inline edit focus panel** — editor form is fully opaque in classic, modern, and glass layouts; removed full-page `body::before` backdrop overlay that frosted the form in Safari and Chrome; blur/dim applies only to non-editing bookmarks with solid panel surfaces (`dashboard-inline-edit-surface.css`, `dashboard-inline-edit.js`, layout CSS).
 
 ### Browser extension
 
@@ -122,10 +124,10 @@ Nothing yet.
 ### Developer & docs
 
 - **fix** **README, MANUAL, Config Help** — self-hosting security, env-var table, extension shortcuts, Help sections **Browser extension** and **Security & self-hosting** (EN/NL/DE/FR); `docker-compose.prod.yml` commented prod env block.
-- **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
+- **fix** **CI on `dev`** — `release-to-main.sh` prunes `tests/`, `scripts/`, `.github/workflows/`, Playwright, and `*_test.go` from `main`; GitHub Actions runs on `dev` only.
 - **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run; `config-dashboard-category-sync.spec.js` and structure-sync assertion on bookmark save.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
-- **fix** **Cache-bust** — `whats-new-v124` data version; `config-settings-guard-1` on `config-persistence.js`; `status-rate-limit-1` on `status.js`; `config-category-sync-1` on `dashboard-render-incremental.js` and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
+- **fix** **Cache-bust** — `whats-new-v125` data version; `config-settings-guard-1` on `config-persistence.js`; `status-rate-limit-1` on `status.js`; `config-category-sync-1` on `dashboard-render-incremental.js` and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`; `inline-edit-delete-1`, `inline-edit-stack-fix-1`, `inline-edit-surface-2`, and `opaque-panel-3` on inline-edit CSS/JS.
 - **fix** **What's new sort order** — manifest sorts by version tag first (`v2026.07.03` before `v2026.07.02`); `releasedAt` is tie-breaker only (`whats-new-v120`).
 - **fix** **What's new manifest** — `index.json` regenerated from on-disk release JSON (tag order); CI checks index ↔ file parity; modal uses `id || tag` when fetching (`whats-new-v121`).
 
