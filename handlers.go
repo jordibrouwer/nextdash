@@ -564,12 +564,14 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
+	Assets     pageAssetVersions
 }
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:   settings,
 		WriteToken: writeAccessToken(),
+		Assets:     sharedAssetVersions,
 	}
 }
 

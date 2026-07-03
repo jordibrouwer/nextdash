@@ -8,9 +8,9 @@
     <script src="/static/js/write-api.js"></script>
     <script src="/static/js/font-presets.js"></script>
     <script src="/static/js/device-settings-merge.js"></script>
-    <script src="/static/js/settings-sanitize.js?v=settings-sanitize-1"></script>
-    <script src="/static/js/discoverability-state.js?v=discoverability-state-1"></script>
-    <script src="/static/js/theme-loader.js?v=theme-sync-1"></script>
+    <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
+    <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
+    <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
-    <link rel="stylesheet" href="/static/css/theme.css?v=bg-dots-layer-2">
+    <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
     <link rel="stylesheet" href="/static/css/dashboard.css?v=inline-edit-focus-blur-1">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/app-notification.css">
@@ -41,18 +41,18 @@
     <link rel="stylesheet" href="/static/css/dashboard-g-jump-promo.css?v=g-jump-promo-1">
     <link rel="stylesheet" href="/static/css/dashboard-smart-collection-promo.css?v=smart-collection-promo-2">
     <link rel="stylesheet" href="/static/css/dashboard-feature-promos.css?v=tag-filter-fix-1">
-    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v=guided-flow-v4">
-    <link rel="stylesheet" href="/static/css/feature-spotlight.css?v=layout-versions-1">
+    <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
+    <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
     <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v=status-hover-row-3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
-    <link rel="stylesheet" href="/static/css/mobile-experience.css">
+    <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v=inline-edit-focus-blur-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css">
-    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v=glass-row-selection-1">
+    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/layout-glass.css?v=inline-edit-focus-blur-1">
     <link rel="stylesheet" href="/static/css/layout-side-rail.css?v=side-rail-tag-cloud-1">
-    <link rel="stylesheet" href="/static/css/overlays-glass.css?v=glass-phase6-1">
+    <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
 </head>
@@ -238,14 +238,14 @@
     <script src="/static/js/dashboard-feature-flags.js?v=pin-notes-off-1"></script>
     <script src="/static/js/modal.js?v=modal-inert-sync-1"></script>
     <script src="/static/js/focus-trap-utils.js?v=inline-edit-inert-fix-1"></script>
-    <script src="/static/js/whats-new-stub.js?v=whats-new-v118" defer></script>
+    <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}" defer></script>
     <script src="/static/js/layout-version-utils.js"></script>
     <script src="/static/js/layout-utils.js"></script>
     <script src="/static/js/config/config-language.js"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
-    <script src="/static/js/search-commands/search-commands-new.js?v=bookmark-add-refresh-1"></script>
+    <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>
     <script src="/static/js/search-commands/search-commands-remove.js"></script>
     <script src="/static/js/search-commands/search-commands-columns.js"></script>
     <script src="/static/js/search-commands/search-commands-fontsize.js"></script>
@@ -267,27 +267,27 @@
     <script src="/static/js/swipe-navigation.js?v=nav-fix-4"></script>
     <script src="/static/js/hypr-mode.js"></script>
     <script src="/static/js/reorder.js"></script>
-    <script src="/static/js/guided-flow-guard.js?v=guided-flow-v3" defer></script>
+    <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}" defer></script>
     <script src="/static/js/onboarding.js?v=cat-longpress-1" defer></script>
     <script src="/static/js/feature-tour.js?v=focus-ring-1" defer></script>
     <script src="/static/js/config-bookmarks-tour.js" defer></script>
-    <script src="/static/js/feature-spotlight.js?v=paste-replay-v1" defer></script>
-    <script src="/static/js/layout-modern-nudge.js?v=layout-versions-2" defer></script>
-    <script src="/static/js/preview-card-spotlight.js?v=preview-cards-v1" defer></script>
+    <script src="/static/js/feature-spotlight.js?v={{.Assets.FeatureSpotlightJS}}" defer></script>
+    <script src="/static/js/layout-modern-nudge.js?v={{.Assets.LayoutModernNudgeJS}}" defer></script>
+    <script src="/static/js/preview-card-spotlight.js?v={{.Assets.PreviewCardSpotlightJS}}" defer></script>
     <script src="/static/js/weather.js?v=weather-geolocation-1"></script>
     <script src="/static/js/tag-autocomplete.js"></script>
-    <script src="/static/js/quick-add.js?v=bookmark-add-refresh-1"></script>
+    <script src="/static/js/quick-add.js?v={{.Assets.SearchCommandsNewJS}}"></script>
     <script src="/static/js/skeleton-loading.js"></script>
     <script src="/static/js/shortcut-format.js"></script>
-    <script src="/static/js/app-notification.js?v=toast-grouped-1"></script>
+    <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/pwa-install-hint.js" defer></script>
-    <script src="/static/js/mobile-experience.js?v=phone-layout-2"></script>
+    <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/dashboard-tag-cloud.js?v=tag-filter-fix-6"></script>
     <script src="/static/js/dashboard-deep-link.js"></script>
-    <script src="/static/js/health-badge-utils.js?v=health-badge-count-only-1"></script>
-    <script src="/static/js/visual-settings.js?v=theme-sync-1"></script>
+    <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
+    <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
     <script src="/static/js/dashboard/dashboard-data.js?v=bookmark-stale-v1"></script>
-    <script src="/static/js/dashboard/dashboard-config-sync.js?v=data-revision-2"></script>
+    <script src="/static/js/dashboard/dashboard-config-sync.js?v={{.Assets.DataRevision}}"></script>
     <script src="/static/js/dashboard/dashboard-page-nav.js?v=page-cache-1"></script>
     <script src="/static/js/dashboard/dashboard-tag-filter.js?v=tag-filter-bulk-sync-1"></script>
     <script src="/static/js/dashboard/dashboard-inline-edit.js?v=inline-edit-tag-sync-2"></script>
@@ -308,7 +308,7 @@
     <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=config-tab-groups-kbd-1"></script>
     <script src="/static/js/dashboard/dashboard-setup.js?v=pin-notes-off-1"></script>
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
-    <script src="/static/js/dashboard.js?v=data-revision-2"></script>
+    <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
     <script src="/static/js/analytics.js" defer></script>
 </body>
 </html>

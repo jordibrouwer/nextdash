@@ -1,6 +1,8 @@
 /**
  * Lightweight What's new bootstrap — token, search promo, dynamic loader.
  * Heavy modal logic lives in whats-new-modal.js (loaded on first open).
+ *
+ * Cache-bust tokens: keep NEXTDASH_WHATS_NEW_DATA_VERSION in sync with asset_versions.go (WhatsNewData).
  */
 (function () {
     'use strict';
