@@ -1001,11 +1001,18 @@ Folder: `extension/` (Chrome “Load unpacked”).
 ### Save tab
 
 - Pre-filled title and URL.  
+- Optional **shortcut** — leave empty for an auto-suggested key from the bookmark name (first free letter on the chosen page), or type your own single-character shortcut.  
 - Pick page/category, optional tags and note.  
 - Duplicate URL warning; **Save anyway** optional.  
+- **409** when the shortcut is already used on that page.  
 - After save: **Open in nextDash** deep link to the page.
 
 If a dashboard tab is open on the same server, it may toast and refresh.
+
+### Write token & CORS
+
+- If the server sets `NEXTDASH_WRITE_TOKEN`, paste the same value in extension **Settings → Write token**.  
+- If you set `NEXTDASH_CORS_ORIGINS` on the server, add your extension ID (`chrome-extension://…`) to the allowlist or cross-origin saves will fail.
 
 See `extension/README.md` for development notes.
 
@@ -1148,9 +1155,46 @@ By default nextDash stores pages, bookmarks, settings, and uploads under `./data
 
 **Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
 
-Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection).
+Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection). Resolved public IPs are **pinned for ~2 minutes** so a hostname cannot switch to a private address between the check and the TCP dial.
 
 Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/duplicates`) treats URLs as the same when they differ only by trailing slash, hash, or host letter-case (`https://Example.com` ≡ `https://example.com/`).
+
+### Optional `NEXTDASH_CORS_ORIGINS`
+
+Default API responses use `Access-Control-Allow-Origin: *` so the browser extension works without extra config. On a shared LAN/VPS, set a comma-separated allowlist:
+
+```bash
+NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+```
+
+Only matching `Origin` headers receive CORS headers. Include your extension origin when restricting CORS.
+
+### Activity log
+
+Structured JSON lines for bookmark mutations and status checks (opens optional). See [README.md → Activity log](README.md#activity-log-bookmark-events) for `NEXTDASH_ACTIVITY_LOG`, `NEXTDASH_ACTIVITY_LOG_PERSIST`, and example lines. Treat logs as sensitive — URLs are included.
+
+### Rate limits
+
+Per-client limits on outbound fetches and SSRF-sensitive APIs (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120; `NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60). Returns **429** when exceeded.
+
+### Content-Security-Policy
+
+HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when required by your proxy or integration.
+
+### Startup validation
+
+Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_DIR` is creatable and writable. Misconfiguration exits with a clear error.
+
+### Production Docker
+
+Use `docker-compose.prod.yml` for deployments: assets ship inside the image; only `./data` is mounted. See commented environment examples in that file and [README.md → Production Docker example](README.md#production-docker-example).
+
+### Build metadata & cross-tab sync
+
+- `GET /version` — version and commit string for ops/monitoring.  
+- `GET /api/data-revision` — hash of bookmark data; open dashboard tabs poll this to refresh after saves in config, the extension, or another tab (name, URL, shortcut, tags, and category placement).
+
+Preview metadata is cached in memory and flushed periodically (~30 s) and on shutdown so restarts do not serve stale OG tags indefinitely.
 
 ---
 
@@ -1166,7 +1210,7 @@ If bootstrap data cannot be fetched, you get an error toast with **Reload** and 
 
 ### Config sync from another tab
 
-When you save in config while the dashboard stays open, changes apply live. Settings-only updates refresh dashboard row chrome in place when possible (icons, shortcuts, status badges) without rebuilding the whole grid. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
+When you save in config while the dashboard stays open, changes apply live. The dashboard polls `GET /api/data-revision` and refreshes when bookmarks change (including name, URL, shortcut, tags, and category). Settings-only updates refresh dashboard row chrome in place when possible (icons, shortcuts, status badges) without rebuilding the whole grid. If sync fails, use **Retry** on the error toast instead of a full page reload — unsaved inline edits are less likely to be lost.
 
 ### Shortcut does not open bookmark
 
@@ -1210,7 +1254,11 @@ Set manual city or browser location permission; save general settings; check ref
 
 ### Extension cannot save
 
-Verify server URL, CORS/network, and that nextDash is running. Check browser console and server logs.
+- Verify server URL, network, and that nextDash is running.  
+- If `NEXTDASH_WRITE_TOKEN` is set, paste it in extension **Settings → Write token**.  
+- If `NEXTDASH_CORS_ORIGINS` is set, include `chrome-extension://your-extension-id` in the allowlist.  
+- **401** = missing/wrong write token; **403** = CORS origin not allowed; **409** = duplicate shortcut on that page.  
+- Check browser console and server logs (enable `NEXTDASH_ACTIVITY_LOG=security` for auth/rate-limit lines).
 
 ---
 
@@ -1252,8 +1300,8 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 ## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history through **v2026.07.02** (new / fix)  
-- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links and a **What's new** recap  
+- [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
+- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links, **Browser extension**, **Security & self-hosting**, and a **What's new** recap  
 - **In-app What's new (★)** — Latest release highlights first; older releases load as you scroll (skeleton while fetching)  
 
 ---

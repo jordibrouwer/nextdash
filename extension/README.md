@@ -26,7 +26,9 @@ A browser extension that allows you to save bookmarks directly to your nextDash 
 3. In the **Save** tab:
    - The current page title and URL will be pre-filled
    - Edit the name if desired
+   - Optional **shortcut** — leave empty for an auto-suggested key from the name, or type your own single-character shortcut
    - Select the page to save to (or use default)
+   - Optional tags and note
    - Click "Save Bookmark"
 
 ## API Integration

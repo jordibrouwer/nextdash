@@ -9,7 +9,15 @@ services:
       - ./data:/app/data
     environment:
       - PORT=8080
-      # Optional: require X-NextDash-Token on destructive/write API calls
-      # - NEXTDASH_WRITE_TOKEN=change-me
+      # LAN/VPS hardening (see README.md → Security):
+      # - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+      # - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+      # - NEXTDASH_ACTIVITY_LOG=mutate,status,security
+      # - NEXTDASH_ACTIVITY_LOG_PERSIST=1
+      # Optional tuning:
+      # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
+      # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
+      # - NEXTDASH_CSP=off
+      # - NEXTDASH_DISABLE_PREFETCH=1
     restart: unless-stopped
     container_name: nextdash

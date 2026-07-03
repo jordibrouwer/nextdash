@@ -6,7 +6,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
-📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix), from early foundation through **v2026.07.02**.
+📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix).
 
 ---
 
@@ -118,6 +118,65 @@ activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":
 ```
 
 Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
+
+### Rate limits (outbound & SSRF APIs)
+
+Optional per-IP limits on server-initiated fetches and user-triggered SSRF-sensitive endpoints:
+
+```bash
+NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120   # preview, ping, favicon, auto-heal (default 120)
+NEXTDASH_SSRF_API_RATE_PER_MIN=60        # /api/bookmark-preview, /api/ping, icon uploads (default 60)
+```
+
+When exceeded, the API returns **429** and (if enabled) logs a `security` activity event.
+
+### Content-Security-Policy
+
+nextDash sends a restrictive CSP on HTML pages by default. Set `NEXTDASH_CSP=off` only when a reverse proxy or custom integration requires it.
+
+### DNS rebinding (IP pinning)
+
+Outbound HTTP(S) dials pin resolved public IPs for ~2 minutes so a hostname cannot switch to a private address between the safety check and the connection (unless **allow localhost bookmarks** is enabled).
+
+### Startup validation
+
+On boot, nextDash validates `PORT` (1–65535, default `8080`) and ensures `NEXTDASH_DATA_DIR` exists and is writable. Invalid config exits with a clear error before listening.
+
+### Production Docker example
+
+`docker-compose.prod.yml` serves CSS/JS from the image (only `./data` is mounted). Recommended LAN/VPS environment block:
+
+```yaml
+environment:
+  - PORT=8080
+  - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+  - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+  - NEXTDASH_ACTIVITY_LOG=mutate,status,security
+  - NEXTDASH_ACTIVITY_LOG_PERSIST=1
+  # Optional tuning:
+  # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
+  # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
+  # - NEXTDASH_CSP=off
+  # - NEXTDASH_DISABLE_PREFETCH=1
+```
+
+`GET /version` returns build metadata (version, commit). `GET /api/data-revision` returns a hash so open dashboard tabs detect bookmark/settings changes without a full reload.
+
+### Environment variables (reference)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PORT` | `8080` | HTTP listen port (validated 1–65535) |
+| `NEXTDASH_DATA_DIR` | `./data` | Pages, bookmarks, settings, uploads |
+| `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
+| `NEXTDASH_CORS_ORIGINS` | `*` | Comma-separated `Origin` allowlist for API CORS |
+| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security` (comma-separated) |
+| `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
+| `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
+| `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for server outbound fetches |
+| `NEXTDASH_SSRF_API_RATE_PER_MIN` | `60` | Rate limit for preview/ping/icon APIs |
+| `NEXTDASH_CSP` | on | Set `off` to disable Content-Security-Policy headers |
+| `NEXTDASH_DISABLE_PREFETCH` | off | `1` = skip background favicon prefetch on startup |
 
 ---
 
@@ -371,7 +430,17 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 1. Click the extension icon
 2. Open the **Settings** tab
 3. Enter your nextDash server URL (e.g. `http://localhost:8080`)
-4. Choose a default page and save
+4. If the server uses `NEXTDASH_WRITE_TOKEN`, paste the same value under **Write token (optional)**
+5. Choose a default page and save
+
+### Save tab
+
+- Pre-filled title and URL; optional **shortcut** (auto-suggested from the name when left empty)
+- Pick page/category, tags, and note
+- Duplicate URL warning; **409** when the shortcut is already taken on that page
+- If a dashboard tab is open on the same server, it may toast and refresh
+
+When you restrict CORS with `NEXTDASH_CORS_ORIGINS`, include your extension origin (`chrome-extension://…` from `chrome://extensions`).
 
 See `extension/README.md` for full usage and development notes.
 

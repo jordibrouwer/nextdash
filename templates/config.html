@@ -2377,6 +2377,24 @@
                             </ul>
                         </section>
 
+                        <section id="help-extension" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageExtensionTitle">Browser extension</h3>
+                            <ul data-i18n="config.helpPageExtensionItems">
+                                <li>Install from the <code>extension/</code> folder via Chrome <em>Load unpacked</em>.</li>
+                                <li><strong>Settings:</strong> server URL, optional write token, default page.</li>
+                                <li><strong>Save tab:</strong> optional shortcut (auto-suggested from the name when empty), tags, note.</li>
+                            </ul>
+                        </section>
+
+                        <section id="help-security" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageSecurityTitle">Security &amp; self-hosting</h3>
+                            <ul data-i18n="config.helpPageSecurityItems">
+                                <li>No user accounts — protect with VPN, reverse-proxy auth, or local-only access.</li>
+                                <li><code>NEXTDASH_WRITE_TOKEN</code> protects write APIs; pages inject the token for same-origin browser use.</li>
+                                <li><code>NEXTDASH_CORS_ORIGINS</code> restricts API CORS — include <code>chrome-extension://…</code> for the extension.</li>
+                            </ul>
+                        </section>
+
                         <section id="help-troubleshoot" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageTroubleshootTitle">Troubleshooting</h3>
                             <ul data-i18n="config.helpPageTroubleshootItems">
