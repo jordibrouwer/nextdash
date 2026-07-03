@@ -1862,12 +1862,19 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing := h.store.GetBookmarksByPage(pageID)
+	var bookmark Bookmark
+	if index >= 0 && index < len(existing) {
+		bookmark = existing[index]
+	}
+
 	if err := h.store.TrackBookmarkOpen(pageID, index); err != nil {
 		if !respondBookmarkMutationError(w, err) {
 			return
 		}
 	}
 
+	logBookmarkOpen(pageID, index, bookmark, r)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
