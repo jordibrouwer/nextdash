@@ -156,10 +156,7 @@ if ! git merge dev --no-edit; then
 fi
 
 PRUNE_DIRS=(
-  tests
   docs
-  scripts
-  .github/workflows
   test-results
   playwright-report
   node_modules
@@ -171,17 +168,10 @@ done
 
 git rm --ignore-unmatch \
   .github/pull_request_template.md \
-  package.json \
-  package-lock.json \
-  playwright.config.js \
   ca_profile.xml \
   favicon.ico \
   favicon.png \
   >/dev/null 2>&1 || true
-
-while IFS= read -r file; do
-  [[ -n "$file" ]] && git rm --ignore-unmatch "$file" >/dev/null 2>&1 || true
-done < <(git ls-files '*_test.go')
 
 if ! git diff --cached --quiet; then
   git commit -m "Prune dev-only files after merge from dev."
