@@ -672,6 +672,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	// Validate shortcut uniqueness in payload first.
 	if duplicateShortcut := findDuplicateShortcutInList(bookmarks); duplicateShortcut != "" {
+		logBookmarkSaveFailed(pageID, "duplicate_shortcut_in_payload", r)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -697,6 +698,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if conflict := findShortcutConflictWithExisting(existingOtherPages, shortcut); conflict != nil {
+			logBookmarkSaveFailed(pageID, "duplicate_shortcut", r)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]any{
@@ -718,9 +720,11 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
 	}
 
+	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
 	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(pageID, bookmarks)) {
 		return
 	}
+	logBookmarkSaveDiff(pageID, beforeBookmarks, bookmarks, r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -761,6 +765,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	shortcut := normalizeShortcut(request.Bookmark.Shortcut)
 	if shortcut != "" {
 		if conflict := findShortcutConflictWithExisting(h.store.GetAllBookmarks(), shortcut); conflict != nil {
+			logBookmarkSaveFailed(request.Page, "duplicate_shortcut", r)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]any{
@@ -788,6 +793,8 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
 		return
 	}
+	request.Bookmark.PageID = request.Page
+	logBookmarkAdd(request.Bookmark, r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -923,6 +930,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped})
+	logBrowserImport(request.PageID, imported, skipped, r)
 }
 
 func (h *Handlers) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
@@ -954,6 +962,7 @@ func (h *Handlers) DeleteBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logBookmarkDelete(request.Bookmark, r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1027,6 +1036,7 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
 		return
 	}
+	logCategoriesSave(pageID, len(categories), r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1133,6 +1143,7 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error resetting data", http.StatusInternalServerError)
 		return
 	}
+	logDataReset(r)
 	if h.store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}
@@ -2278,8 +2289,18 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	existing := h.store.GetBookmarksByPage(req.PageID)
+	var deleted Bookmark
+	if req.Index < len(existing) {
+		deleted = existing[req.Index]
+	}
+
 	if !respondBookmarkMutationError(w, h.store.DeleteBookmarkAt(req.PageID, req.Index)) {
 		return
+	}
+	if deleted.URL != "" || deleted.Name != "" {
+		deleted.PageID = req.PageID
+		logBookmarkDelete(deleted, r)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -570,6 +570,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	h.invalidateHealthReportCache()
 	log.Printf("import: success (%d files, %d bookmarks skipped)", len(prepared), skippedBookmarks)
+	logDataImport("backup_zip", len(prepared), skippedBookmarks, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
