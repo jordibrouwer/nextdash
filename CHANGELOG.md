@@ -122,7 +122,7 @@ Nothing yet.
 ### Developer & docs
 
 - **fix** **README, MANUAL, Config Help** — self-hosting security, env-var table, extension shortcuts, Help sections **Browser extension** and **Security & self-hosting** (EN/NL/DE/FR); `docker-compose.prod.yml` commented prod env block.
-- **fix** **CI on `main`** — `release-to-main.sh` + `ci.yml` keep tests on `main` after prune.
+- **fix** **CI on `dev`** — `release-to-main.sh` prunes `tests/`, `scripts/`, `.github/workflows/`, Playwright, and `*_test.go` from `main`; GitHub Actions runs on `dev` only.
 - **fix** **Playwright E2E** — full suite green: finders `toBeHidden`, config C14 snapshot baseline in `waitForConfigReady`, tags `#tags-filter-empty-hint` selector, layout-nudge manual replay (`AUTO_PROMO_DISABLED`), General toolbar scroll within Advanced max range; fresh temp `NEXTDASH_DATA_DIR` per managed run; `config-dashboard-category-sync.spec.js` and structure-sync assertion on bookmark save.
 - **fix** **Tests** — activity log, data-revision hash, stale name/url/shortcut, `asset_versions_test.go` drift check.
 - **fix** **Cache-bust** — `whats-new-v124` data version; `config-settings-guard-1` on `config-persistence.js`; `status-rate-limit-1` on `status.js`; `config-category-sync-1` on `dashboard-render-incremental.js` and `dashboard-bookmark-rows.js`; `general-layer-scroll-anchor-2` on `config-general-layers.js`.
