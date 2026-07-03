@@ -25,6 +25,31 @@ func writePreviewCacheFile(cache PreviewCacheFile) error {
 	return writeIndentJSONFile(previewCacheFilePath(), cache)
 }
 
+const previewCacheFlushInterval = 30 * time.Second
+
+func (h *Handlers) flushPreviewCacheLocked() error {
+	if !h.previewLoaded || !h.previewCacheDirty {
+		return nil
+	}
+	err := writePreviewCacheFile(h.previewCache)
+	if err == nil {
+		h.previewCacheDirty = false
+	}
+	return err
+}
+
+func (h *Handlers) startPreviewCacheFlushLoop() {
+	go func() {
+		ticker := time.NewTicker(previewCacheFlushInterval)
+		defer ticker.Stop()
+		for range ticker.C {
+			h.previewCacheMu.Lock()
+			_ = h.flushPreviewCacheLocked()
+			h.previewCacheMu.Unlock()
+		}
+	}()
+}
+
 func previewCacheEntryValid(entry BookmarkPreview) bool {
 	return time.Now().UnixMilli()-entry.FetchedAt < previewCacheTTLMs
 }
@@ -64,7 +89,8 @@ func (h *Handlers) mergePreviewCacheUpdates(updates map[string]BookmarkPreview) 
 	for key, entry := range updates {
 		h.previewCache.Cache[key] = entry
 	}
-	return writePreviewCacheFile(h.previewCache)
+	h.previewCacheDirty = true
+	return nil
 }
 
 func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
@@ -75,7 +101,8 @@ func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
 	}
 	h.previewCache = cache
 	h.previewLoaded = true
-	return writePreviewCacheFile(h.previewCache)
+	h.previewCacheDirty = true
+	return nil
 }
 
 func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {

@@ -25,9 +25,10 @@ import (
 type Handlers struct {
 	store          Store
 	files          embed.FS
-	previewCacheMu sync.RWMutex
-	previewCache   PreviewCacheFile
-	previewLoaded  bool
+	previewCacheMu   sync.RWMutex
+	previewCache     PreviewCacheFile
+	previewLoaded    bool
+	previewCacheDirty bool
 	healthCacheMu  sync.RWMutex
 	healthReportMu sync.RWMutex
 	healthReport   BookmarkHealthReport
@@ -155,10 +156,8 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 
 func (h *Handlers) FlushCaches() {
 	h.previewCacheMu.Lock()
-	if h.previewLoaded {
-		_ = writePreviewCacheFile(h.previewCache)
-	}
-	h.previewCacheMu.Unlock()
+	defer h.previewCacheMu.Unlock()
+	_ = h.flushPreviewCacheLocked()
 }
 
 func NewHandlers(store Store, files embed.FS) *Handlers {
@@ -167,6 +166,7 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 		files:          files,
 		ssrfAPILimiter: newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 	}
+	h.startPreviewCacheFlushLoop()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}

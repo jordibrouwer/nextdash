@@ -24,6 +24,7 @@ func TestMergePreviewCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+	h.FlushCaches()
 
 	cache := readPreviewCacheFile()
 	if len(cache.Cache) != 25 {
@@ -100,7 +101,9 @@ func TestReplacePreviewCache(t *testing.T) {
 	h.mergePreviewCacheUpdates(map[string]BookmarkPreview{
 		"https://example.com": {URL: "https://example.com", Title: "keep briefly"},
 	})
+	h.FlushCaches()
 	h.replacePreviewCache(PreviewCacheFile{Cache: map[string]BookmarkPreview{}})
+	h.FlushCaches()
 
 	cache := readPreviewCacheFile()
 	if len(cache.Cache) != 0 {
