@@ -45,6 +45,7 @@ func isPublicHostCtx(ctx context.Context, host string) bool {
 		}
 	}
 
+	pinHostAddrs(host, netIPAddrsToPin(ips))
 	return true
 }
 
@@ -118,24 +119,13 @@ func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(contex
 			return dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
 		}
 
-		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		addrs, err := resolvePinnedHostAddrs(ctx, host, allowLocal)
 		if err != nil {
 			return nil, err
 		}
-		if len(ips) == 0 {
-			return nil, fmt.Errorf("no addresses for host")
-		}
-
-		for _, ipAddr := range ips {
-			addr, ok := netip.AddrFromSlice(ipAddr.IP)
-			if !ok || !isAllowedDialIP(addr, allowLocal) {
-				return nil, fmt.Errorf("dial to disallowed IP")
-			}
-		}
 
 		var lastErr error
-		for _, ipAddr := range ips {
-			addr, _ := netip.AddrFromSlice(ipAddr.IP)
+		for _, addr := range addrs {
 			conn, dialErr := dialer.DialContext(ctx, network, net.JoinHostPort(addr.String(), port))
 			if dialErr == nil {
 				return conn, nil
