@@ -747,8 +747,8 @@ class DashboardData {
                     return false;
                 }
                 this.setPageDataCache(targetPageId, bookmarks, categories);
-                await this.fetchAndStoreDataRevision();
             }
+            await this.fetchAndStoreDataRevision();
 
             this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate });
             return true;
