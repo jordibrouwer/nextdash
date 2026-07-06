@@ -303,6 +303,7 @@ body {
     font-size: calc(var(--font-size-controls) * 0.9);
     font-family: var(--font-family-main);
     border: 1px solid var(--border-primary);
+    border-radius: var(--header-chip-radius, 999px);
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;

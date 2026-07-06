@@ -286,6 +286,7 @@
             return true;
         }
 
+        global.DashboardPromoRegistry?.dismissCompetingBalloonPromos?.('gJump');
         removePromoFromDom();
         anchorEl = element;
         promoEl = buildPromoElement();

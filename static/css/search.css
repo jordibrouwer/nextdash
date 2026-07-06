@@ -689,6 +689,23 @@ body.no-animations .search-button[data-tooltip]::after {
     color: var(--text-primary);
 }
 
+.add-bookmark-button.search-button {
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.add-bookmark-button.search-button .search-button-icon {
+    color: var(--accent-primary);
+}
+
+.btn-group-secondary .search-button {
+    background: color-mix(in srgb, var(--background-secondary) 50%, transparent);
+    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    opacity: 0.92;
+}
+
 .search-button-icon {
     display: inline-block; /* required for transform to work on <span> */
     color: var(--accent-primary);
@@ -781,6 +798,12 @@ body[data-button-position="bottom-right"] .btn-group {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+}
+
+body[data-button-position="bottom-left"] .btn-group-secondary,
+body[data-button-position="bottom-right"] .btn-group-secondary {
+    padding-top: 0.35rem;
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
 }
 
 

@@ -273,6 +273,7 @@
             return;
         }
 
+        global.DashboardPromoRegistry?.dismissCompetingBalloonPromos?.('smartCollection');
         removePromoFromDom();
         categoryEl = element;
         promoEl = buildPromoElement();

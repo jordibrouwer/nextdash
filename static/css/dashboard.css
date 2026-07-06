@@ -1198,8 +1198,9 @@ body {
 }
 
 .dashboard-grid.layout-cards .bookmark-link {
-    border: 1px solid transparent;
-    border-radius: 8px;
+    border: none;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
     padding: var(--cards-pad-block, 0.45rem) 0.55rem;
 }
 

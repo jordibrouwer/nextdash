@@ -23,18 +23,22 @@
     }
 
     function dismissAllDiscoverabilityOverlays() {
-        global.DashboardFeaturePromos?.dismissOpen?.();
-        global.DashboardGridKeyboardPromo?.dismissPopover?.();
-        global.DashboardSearchPromo?.dismissPopover?.();
-        global.DashboardGJumpPromo?.dismissPopover?.();
-        global.DashboardSmartCollectionPromo?.dismissPopover?.();
+        dismissCompetingBalloonPromos();
         document.querySelectorAll('.feature-spotlight').forEach((el) => {
             el.classList.remove('show');
             el.remove();
         });
-        document.querySelectorAll('.dashboard-feature-promo, .dashboard-grid-kbd-promo, .dashboard-search-promo').forEach((el) => {
+        document.querySelectorAll('.dashboard-feature-promo, .dashboard-grid-kbd-promo, .dashboard-search-promo, .dashboard-g-jump-promo, .dashboard-smart-collection-promo').forEach((el) => {
             el.remove();
         });
+    }
+
+    function dismissCompetingBalloonPromos(except) {
+        if (except !== 'search') global.DashboardSearchPromo?.dismissPopover?.();
+        if (except !== 'gridKeyboard') global.DashboardGridKeyboardPromo?.dismissPopover?.();
+        if (except !== 'gJump') global.DashboardGJumpPromo?.dismissPopover?.();
+        if (except !== 'smartCollection') global.DashboardSmartCollectionPromo?.dismissPopover?.();
+        if (except !== 'feature') global.DashboardFeaturePromos?.dismissOpen?.();
     }
 
     const ENTRIES = [
@@ -102,6 +106,7 @@
         isPaused: areDiscoverabilityPromosPaused,
         isAutoPromoDisabled,
         dismissAllDiscoverabilityOverlays,
+        dismissCompetingBalloonPromos,
         clearAll,
         clearById,
         listIds() {

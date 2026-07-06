@@ -141,6 +141,10 @@ class DashboardUiHelpers {
         if (document.getElementById('delete-popover')) return true;
         if (document.getElementById('tag-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
+        if (document.querySelector(
+            '.dashboard-search-promo, .dashboard-feature-promo, .dashboard-grid-kbd-promo, '
+            + '.dashboard-g-jump-promo, .dashboard-smart-collection-promo'
+        )) return true;
         const blockingSelectors = [
             '.onboarding-overlay',
             '.onboarding-card',

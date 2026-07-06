@@ -16,19 +16,19 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
+        color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 6%, var(--background-primary)) 100%
     );
-    border-radius: 4px;
+    border-radius: var(--layout-radius-sm, 8px);
 }
 
 .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
+        color-mix(in srgb, var(--accent-primary) 30%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary)) 100%
     );
 }
 
