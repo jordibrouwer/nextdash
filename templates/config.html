@@ -24,12 +24,12 @@
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-split-b10-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-master-b11-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
-    <link rel="stylesheet" href="/static/css/config/config-collections.css?v=collections-surface-1">
+    <link rel="stylesheet" href="/static/css/config/config-collections.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/config/config-backups.css?v=backups-surface-b9-1">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
@@ -2129,12 +2129,13 @@
                     </div>
                     <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
                 </div>
-                <div class="help-layout">
-                    <aside class="help-index">
-                        <h3 class="section-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
-                        <ul data-i18n="config.helpPageNavItems"></ul>
+                <div class="help-layout config-split-layout">
+                    <nav id="help-chip-nav" class="help-chip-nav config-split-mobile-nav" data-i18n-aria="config.helpPageIndexTitle" aria-label="Help quick links"></nav>
+                    <aside class="help-index config-split-index">
+                        <h3 class="section-title config-split-index-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
+                        <ul class="help-index-list config-split-index-list" data-i18n="config.helpPageNavItems"></ul>
                     </aside>
-                    <div class="help-content">
+                    <div class="help-content config-split-content">
                         <section id="help-quick-start" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageQuickStartTitle">Quick Start (30 sec)</h3>
                             <ul data-i18n="config.helpPageQuickStartItems">
@@ -2461,7 +2462,7 @@
     <script src="/static/js/config-pages-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-collections-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-theme-tour.js?v=config-tours-v1"></script>
-    <script src="/static/js/config/config-help-search.js?v=config-help-surface-b5-1"></script>
+    <script src="/static/js/config/config-help-search.js?v=help-split-b12-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>

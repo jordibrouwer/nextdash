@@ -481,6 +481,33 @@ test.describe('config tab surface box model', () => {
         await expectSurfaceToolbarFits(page, 'collections');
     });
 
+    test('collections list rows match shared list rhythm', async ({ page }) => {
+        await page.evaluate(() => {
+            const cm = window.configManager;
+            cm.settingsData.collections = [{
+                id: 'rhythm-collection',
+                name: 'Rhythm collection',
+                icon: '▤',
+                logic: 'and',
+                rules: [{ field: 'tag', operator: 'includes', value: 'work' }],
+            }];
+            cm.ui.switchToTab('collections');
+            cm.collections.refresh(cm);
+        });
+        const metrics = await page.evaluate(() => {
+            const row = document.querySelector('#collections-list .collection-item-row');
+            if (!row) return null;
+            const style = getComputedStyle(row);
+            return {
+                minHeight: parseFloat(style.minHeight),
+                paddingTop: parseFloat(style.paddingTop),
+            };
+        });
+        expect(metrics).not.toBeNull();
+        expect(metrics.minHeight).toBeCloseTo(44, 0);
+        expect(metrics.paddingTop).toBeCloseTo(8.8, 1);
+    });
+
     test('collections editor lives inside fused surface (B8)', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('collections'));
         const surface = page.locator('.collections-tab-surface');
@@ -932,6 +959,21 @@ test.describe('config bookmarks surface (v5)', () => {
         expect(toolbarAboveSplit).toBe(true);
     });
 
+    test('bookmarks master rows match shared list rhythm', async ({ page }) => {
+        const metrics = await page.evaluate(() => {
+            const row = document.querySelector('.bookmarks-splitview-list .bookmark-item');
+            if (!row) return null;
+            const style = getComputedStyle(row);
+            return {
+                minHeight: parseFloat(style.minHeight),
+                paddingTop: parseFloat(style.paddingTop),
+            };
+        });
+        expect(metrics).not.toBeNull();
+        expect(metrics.minHeight).toBeCloseTo(44, 0);
+        expect(metrics.paddingTop).toBeCloseTo(8.8, 1);
+    });
+
     test('integrates context panel inside bookmarks surface (B4)', async ({ page }) => {
         const surface = page.locator('.bookmarks-tab-surface');
         await expect(surface.locator('#structure-workspace-card.structure-workspace-in-surface')).toBeVisible();
@@ -1017,9 +1059,10 @@ test.describe('config help surface (B5)', () => {
         await expect(surface.locator('.help-filter-bar.config-tab-toolbar--in-surface')).toBeVisible();
         await expect(surface.locator('#help-search-filter.config-filter-input')).toBeVisible();
         await expect(surface.locator('#help-search-clear.config-filter-clear')).toBeAttached();
-        await expect(surface.locator('.help-layout')).toBeVisible();
-        await expect(surface.locator('.help-index')).toBeVisible();
-        await expect(surface.locator('.help-content .help-block').first()).toBeVisible();
+        await expect(surface.locator('.help-layout.config-split-layout')).toBeVisible();
+        await expect(surface.locator('.help-index.config-split-index')).toBeVisible();
+        await expect(surface.locator('.help-index-list.config-split-index-list')).toBeVisible();
+        await expect(surface.locator('.help-content.config-split-content .help-block').first()).toBeVisible();
 
         const surfaceCount = await page.evaluate(() => {
             const tab = document.querySelector('[data-tab-content="help"] .help-tab');

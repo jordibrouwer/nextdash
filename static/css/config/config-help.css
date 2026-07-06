@@ -1,5 +1,5 @@
 /* Code styling for help section */
-code {
+.help-tab code {
     background-color: var(--background-secondary);
     color: var(--text-primary);
     padding: 0.125rem 0.25rem;
@@ -11,18 +11,25 @@ code {
 }
 
 /* Link styling for help section */
-.tab-content a {
-    color: var(--accent-primary);
-    text-decoration: none;
+.help-tab a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-underline-offset: 0.14em;
+    text-decoration-thickness: 0.08em;
+}
+
+.help-tab a:hover,
+.help-tab a:focus-visible {
+    color: var(--text-primary);
 }
 
 /* Help section list spacing */
-.tab-content ul li {
+.help-tab ul li {
     margin-bottom: 0.75rem;
     line-height: 1.6;
 }
 
-.tab-content ul {
+.help-tab ul {
     padding-left: 1.5rem;
 }
 
@@ -42,22 +49,26 @@ code {
     /* shell: config-tab-shell.css (.config-filter-field) */
 }
 
-.help-tab-surface .help-layout {
+.help-tab-surface .help-layout,
+.help-tab-surface .config-split-layout {
     padding: 0;
     gap: 0;
 }
 
-.help-tab-surface .help-index {
+.help-tab-surface .help-index,
+.help-tab-surface .config-split-index {
     border: none;
     border-right: 1px solid var(--border-primary);
     border-radius: 0;
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     padding: 0.75rem;
     margin: 0;
-    top: 0;
+    top: calc(var(--config-toolbar-min-height, 2.75rem) + 0.65rem);
+    max-height: calc(100vh - (var(--config-toolbar-min-height, 2.75rem) + 1.3rem));
 }
 
-.help-tab-surface .help-content {
+.help-tab-surface .help-content,
+.help-tab-surface .config-split-content {
     gap: 0;
 }
 
@@ -90,32 +101,12 @@ code {
     font-size: var(--font-size-controls);
 }
 
-.help-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 1.5rem;
-    align-items: start;
-}
-
-.help-index {
-    position: sticky;
-    top: 8rem;
-    border: 1px solid var(--border-primary);
-    padding: 0.75rem;
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
-}
-
 .help-index ul {
     margin-top: 0.5rem;
 }
 
 .help-index li {
     margin-bottom: 0.45rem !important;
-}
-
-.help-content {
-    display: grid;
-    gap: 1rem;
 }
 
 .help-block {
@@ -174,10 +165,6 @@ code {
 }
 
 @media (max-width: 1024px) {
-    .help-layout {
-        grid-template-columns: 1fr;
-    }
-
     .help-index {
         position: static;
     }
