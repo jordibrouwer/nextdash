@@ -35,7 +35,7 @@ var sharedAssetVersions = pageAssetVersions{
 	GuidedFlowCSS:          "guided-flow-v5",
 	GuidedFlowJS:           "guided-flow-v5",
 	GlassTokensCSS:         "dashboard-d12-row-tokens-1",
-	OverlaysGlassCSS:       "glass-phase6-1",
+	OverlaysGlassCSS:       "whats-new-config-parity-1",
 	MobileExperienceCSS:    "phone-layout-6",
 	MobileExperienceJS:     "phone-layout-5",
 	FeatureSpotlightCSS:    "c15-reduced-motion-1",
@@ -46,6 +46,6 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-2",
-	WhatsNewData:           "whats-new-v127",
+	WhatsNewData:           "whats-new-v128",
 	DataRevision:           "data-revision-3",
 }

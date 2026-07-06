@@ -392,8 +392,6 @@
             htmlMessage: buildSkeletonHtml(),
             confirmText: 'close',
             showCancel: false,
-            modalMaxWidth: '640px',
-            modalWidth: '96vw',
             modalClass: 'whats-new-modal',
             onConfirm: finish,
             onCancel: finish,

@@ -158,10 +158,11 @@ body[data-layout-version="glass"] .modal .btn {
     border-radius: var(--layout-radius-sm);
 }
 
-/* Dashboard toolbar modals — surface parity with search overlay */
+/* Dashboard + config toolbar modals — surface parity with search overlay */
 body[data-layout-version="glass"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
 body[data-layout-version="glass"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body[data-layout-version="glass"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+body[data-layout-version="glass"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body[data-layout-version="glass"]:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     border-radius: var(--layout-radius-lg);
     border-color: var(--layout-surface-border);
     background: var(--layout-modal-bg);

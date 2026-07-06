@@ -56,6 +56,35 @@
     padding-right: 0.25rem;
 }
 
+/* Config → Help: same What's new shell as dashboard toolbar modals (centered) */
+body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) {
+    justify-content: center;
+    align-items: center;
+    padding: max(1.25rem, 2vw);
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
+    margin: 0;
+    max-height: min(70vh, calc(100vh - 4rem));
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#config-main) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
 .wn-skeleton-stack {
     display: flex;
     flex-direction: column;

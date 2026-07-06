@@ -1179,13 +1179,15 @@ class ConfigSetup {
         if (saveBtn) saveBtn.addEventListener('click', () => this.c.saveChanges());
     
         const showWhatsNewBtn = document.getElementById('config-show-whats-new-btn');
-        if (showWhatsNewBtn) {
-            showWhatsNewBtn.addEventListener('click', () => {
+        const helpWhatsNewBtn = document.getElementById('help-open-whats-new-link');
+        [showWhatsNewBtn, helpWhatsNewBtn].forEach((btn) => {
+            if (!btn) return;
+            btn.addEventListener('click', () => {
                 if (typeof window.openWhatsNewModal === 'function') {
                     window.openWhatsNewModal({ force: true });
                 }
             });
-        }
+        });
     
         const undoTopBtn = document.getElementById('undo-top-btn');
         if (undoTopBtn) {
