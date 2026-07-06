@@ -188,10 +188,6 @@
                 <span class="search-button-icon">!</span>
                 <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
             </button>
-            <button id="whats-new-btn" type="button" class="search-button search-button-labeled whats-new-button" data-i18n-aria="dashboard.whatsNewAria" aria-label="What's new" data-tooltip="what's new">
-                <span class="search-button-icon" aria-hidden="true">★</span>
-                <span class="search-button-label" data-i18n="dashboard.whatsNewShort">new</span>
-            </button>
         </div>
     </div>
 
@@ -231,6 +227,13 @@
             </div>
         </div>
     </div>
+
+    <!-- What's new FAB (below tag cloud; opposite corner from button bar when docked left/right) -->
+    <button id="whats-new-btn" type="button" class="whats-new-btn" data-i18n-aria="dashboard.whatsNewAria" aria-label="What's new" data-tooltip="what's new">
+        <svg class="whats-new-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+    </button>
 
     <script src="/static/js/tips-policy.js?v=tips-onboarding-delay-1"></script>
     <script src="/static/js/dashboard-feature-flags.js?v=pin-notes-off-1"></script>
