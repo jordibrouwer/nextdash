@@ -3338,14 +3338,14 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 .recent-bookmarks-modal-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-primary);
-    padding: 0.5rem 0.625rem;
+    padding: 0.55rem 0.7rem;
     color: var(--text-primary);
     text-decoration: none;
     transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
@@ -3357,10 +3357,61 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
+.recent-bookmarks-modal-rank {
+    flex-shrink: 0;
+    min-width: 1.35rem;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.recent-bookmarks-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    min-width: 0;
+}
+
 .recent-bookmarks-modal-name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--font-weight-medium);
+}
+
+.recent-bookmarks-modal-detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+}
+
+.recent-bookmarks-modal-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.18rem;
+    flex-shrink: 0;
+}
+
+.recent-bookmarks-modal-recency {
+    padding: 0.12rem 0.45rem;
+    border-radius: var(--layout-radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.recent-bookmarks-modal-opens {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
@@ -3446,18 +3497,41 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 }
 
 .recent-bookmarks-skeleton-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
-    padding: 0.5rem 0.625rem;
+    padding: 0.55rem 0.7rem;
     border-radius: var(--layout-radius-sm, 8px);
 }
 
+.recent-bookmarks-skeleton-rank {
+    width: 1.35rem;
+    height: 0.75em;
+    border-radius: 3px;
+    background: var(--background-secondary);
+}
+
+.recent-bookmarks-skeleton-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.recent-bookmarks-skeleton-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+}
+
 .recent-bookmarks-skeleton-name,
-.recent-bookmarks-skeleton-meta {
+.recent-bookmarks-skeleton-detail,
+.recent-bookmarks-skeleton-recency,
+.recent-bookmarks-skeleton-opens {
     display: block;
     border-radius: 3px;
     background: linear-gradient(
@@ -3472,13 +3546,22 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 
 .recent-bookmarks-skeleton-name {
     height: 0.85em;
-    width: 55%;
+    width: 72%;
 }
 
-.recent-bookmarks-skeleton-meta {
-    height: 0.75em;
-    width: 18%;
-    flex-shrink: 0;
+.recent-bookmarks-skeleton-detail {
+    height: 0.72em;
+    width: 42%;
+}
+
+.recent-bookmarks-skeleton-recency {
+    height: 1.15rem;
+    width: 3.25rem;
+}
+
+.recent-bookmarks-skeleton-opens {
+    height: 0.72em;
+    width: 1.5rem;
 }
 
 @keyframes skeletonShimmer {
@@ -3628,7 +3711,9 @@ body.no-animations .bookmark-move-out {
     }
     /* Skeleton shimmer → static bar */
     .recent-bookmarks-skeleton-name,
-    .recent-bookmarks-skeleton-meta { animation: none !important; }
+    .recent-bookmarks-skeleton-detail,
+    .recent-bookmarks-skeleton-recency,
+    .recent-bookmarks-skeleton-opens { animation: none !important; }
     /* Page / category / bookmark entrance animations */
     #dashboard-layout.page-transition,
     .category.animate-enter,

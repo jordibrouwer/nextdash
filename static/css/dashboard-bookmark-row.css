@@ -1,5 +1,26 @@
 /* Bookmark row hover / selection — loaded after dashboard.css so layout presets cannot override */
 
+:root {
+    --bookmark-row-hover-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 6%, var(--background-primary)) 100%
+    );
+    --bookmark-row-selected-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 30%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary)) 100%
+    );
+    --bookmark-row-dimmed-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
+    );
+}
+
 .bookmark-link:not(.bookmark-inline-editing) {
     transition:
         background 0.16s ease,
@@ -14,22 +35,12 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
 
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 6%, var(--background-primary)) 100%
-    );
+    background: var(--bookmark-row-hover-bg);
     border-radius: var(--layout-radius-sm, 8px);
 }
 
 .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 30%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary)) 100%
-    );
+    background: var(--bookmark-row-selected-bg);
 }
 
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge,
@@ -58,12 +69,7 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
 
 /* While the mouse explores bookmarks, soften the stale keyboard selection until the next keyboard move. */
 body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
-    );
+    background: var(--bookmark-row-dimmed-bg);
 }
 
 body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-superscript-badge,
@@ -77,20 +83,10 @@ body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):
 /* Status rows — explicit interaction chrome (wins over idle status tint / color-lock) */
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
-    );
+    background: var(--bookmark-row-hover-bg);
     box-shadow: none;
 }
 
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
-    );
+    background: var(--bookmark-row-selected-bg);
 }

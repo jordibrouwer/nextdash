@@ -92,8 +92,15 @@ class DashboardRecent {
         const skeletonHtml = `<div class="recent-bookmarks-skeleton" aria-hidden="true">${
             Array.from({ length: skeletonCount }, () =>
                 `<div class="recent-bookmarks-skeleton-row">
-                    <span class="recent-bookmarks-skeleton-name"></span>
-                    <span class="recent-bookmarks-skeleton-meta"></span>
+                    <span class="recent-bookmarks-skeleton-rank"></span>
+                    <span class="recent-bookmarks-skeleton-body">
+                        <span class="recent-bookmarks-skeleton-name"></span>
+                        <span class="recent-bookmarks-skeleton-detail"></span>
+                    </span>
+                    <span class="recent-bookmarks-skeleton-stats">
+                        <span class="recent-bookmarks-skeleton-recency"></span>
+                        <span class="recent-bookmarks-skeleton-opens"></span>
+                    </span>
                 </div>`
             ).join('')
         }</div>`;
@@ -164,10 +171,22 @@ class DashboardRecent {
                        const safeName = d.escapeHtml(bookmark.name || d.bookmarkFallbackName());
                        const safeUrl = this.safeHttpBookmarkHref(bookmark.url);
                        const safeCategory = d.escapeHtml(bookmark.category || (d.language.t('dashboard.uncategorized') || 'Other'));
+                       const recency = d.escapeHtml(this.formatRecentRecency(bookmark.lastOpened));
+                       const openCount = this.formatRecentOpenCount(bookmark.openCount);
+                       const openCountHtml = openCount
+                           ? `<span class="recent-bookmarks-modal-opens">${d.escapeHtml(openCount)}</span>`
+                           : '';
                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
                        return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
-                                   <span class="recent-bookmarks-modal-name">${safeName}</span>
-                                   <span class="recent-bookmarks-modal-meta">${safeCategory}</span>
+                                   <span class="recent-bookmarks-modal-rank" aria-hidden="true">${index + 1}</span>
+                                   <span class="recent-bookmarks-modal-body">
+                                       <span class="recent-bookmarks-modal-name">${safeName}</span>
+                                       <span class="recent-bookmarks-modal-detail">${safeCategory}</span>
+                                   </span>
+                                   <span class="recent-bookmarks-modal-stats">
+                                       <span class="recent-bookmarks-modal-recency">${recency}</span>
+                                       ${openCountHtml}
+                                   </span>
                                </a>`;
                    }).join('')}
                </div>`
@@ -259,6 +278,42 @@ class DashboardRecent {
             .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
         if (limit == null || limit <= 0) return sorted;
         return sorted.slice(0, limit);
+    }
+
+
+    formatRecentRecency(lastOpened) {
+        const d = this.dash;
+        if (!lastOpened) return '';
+        const diffMs = Math.max(0, Date.now() - new Date(lastOpened).getTime());
+        const diffMinutes = Math.floor(diffMs / 60000);
+        if (diffMinutes < 1) {
+            return d.formatDashboardLabel('recentModalRecencyJustNow', {}, 'just now');
+        }
+        if (diffMinutes < 60) {
+            return d.formatDashboardLabel(
+                'recentModalRecencyMinutesAgo',
+                { count: diffMinutes },
+                `${diffMinutes}m ago`
+            );
+        }
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) {
+            return d.formatDashboardLabel(
+                'recentModalRecencyHoursAgo',
+                { count: diffHours },
+                `${diffHours}h ago`
+            );
+        }
+        const diffDays = Math.floor(diffHours / 24);
+        return d.formatPreviewLastOpened(diffDays);
+    }
+
+
+    formatRecentOpenCount(openCount) {
+        const d = this.dash;
+        const count = Number(openCount || 0);
+        if (count <= 0) return '';
+        return d.formatDashboardLabel('recentModalOpenCount', { count }, `${count}×`);
     }
 
 

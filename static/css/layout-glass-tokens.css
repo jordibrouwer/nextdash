@@ -52,6 +52,9 @@ body[data-layout-version="glass"] {
         color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
         color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
     );
+    --bookmark-row-hover-bg: var(--glass-bookmark-row-hover-bg);
+    --bookmark-row-selected-bg: var(--glass-bookmark-row-selected-bg);
+    --bookmark-row-dimmed-bg: var(--glass-bookmark-row-dimmed-bg);
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {

@@ -34,7 +34,7 @@ var sharedAssetVersions = pageAssetVersions{
 	DiscoverabilityJS:      "discoverability-state-2",
 	GuidedFlowCSS:          "guided-flow-v5",
 	GuidedFlowJS:           "guided-flow-v5",
-	GlassTokensCSS:         "glass-row-selection-1",
+	GlassTokensCSS:         "dashboard-d12-row-tokens-1",
 	OverlaysGlassCSS:       "glass-phase6-1",
 	MobileExperienceCSS:    "phone-layout-5",
 	MobileExperienceJS:     "phone-layout-5",

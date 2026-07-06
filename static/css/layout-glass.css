@@ -1210,18 +1210,6 @@ body[data-layout-version="glass"].bookmark-kbd-selection-dimmed .dashboard-grid:
     color: var(--text-tertiary);
 }
 
-/* Status rows — interaction chrome matches normal bookmarks (idle tint is inactive-only) */
-body[data-layout-version="glass"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--text-primary);
-    background: var(--glass-bookmark-row-hover-bg);
-    box-shadow: none;
-}
-
-body[data-layout-version="glass"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    background: var(--glass-bookmark-row-selected-bg);
-    box-shadow: none;
-}
-
 /* ─── Empty dashboard states (page / fresh) ───────────────────────────────── */
 
 body[data-layout-version="glass"] #dashboard-layout > .empty-state {

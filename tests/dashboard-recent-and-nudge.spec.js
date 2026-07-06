@@ -128,6 +128,21 @@ test.describe('recent bookmarks modal', () => {
         await expect(modal.locator('.recent-bookmarks-modal-item')).toHaveCount(10);
         await expect(modal.locator('.recent-bookmarks-open-btn').first()).toBeVisible({ timeout: 5000 });
     });
+
+    test('shows recency and open count on recent modal rows (D8)', async ({ page }) => {
+        await seedRecentBookmarks(page, 3);
+
+        await closeDashboardOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.toggleRecentBookmarksModal());
+        const modal = page.locator('#app-modal.show .recent-bookmarks-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        const first = modal.locator('.recent-bookmarks-modal-item').first();
+        await expect(first.locator('.recent-bookmarks-modal-rank')).toHaveText('1');
+        await expect(first.locator('.recent-bookmarks-modal-recency')).not.toBeEmpty();
+        await expect(first.locator('.recent-bookmarks-modal-opens')).toContainText('×');
+        await expect(first.locator('.recent-bookmarks-modal-detail')).toBeVisible();
+    });
 });
 
 test.describe('layout modern nudge after onboarding', () => {
