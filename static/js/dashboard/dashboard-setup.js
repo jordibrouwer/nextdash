@@ -28,6 +28,7 @@ class DashboardSetup {
         document.body.setAttribute('data-button-position', d.settings.buttonBarPosition || 'bottom');
 
         d.syncTagCloudButtonPlacement();
+        d.syncSideRailDiscoverability?.();
 
         document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
         document.body.setAttribute('data-pin-notes-disabled', 'true');
@@ -612,7 +613,10 @@ class DashboardSetup {
             hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
         }
 
-        const storageKey = 'nextdash:search-flow-hint-v2';
+        const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+        const storageKey = isSideRail
+            ? 'nextdash:search-flow-hint-side-rail-v1'
+            : 'nextdash:search-flow-hint-v2';
         try {
             if (localStorage.getItem(storageKey)) return;
         } catch {}

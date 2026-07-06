@@ -3345,6 +3345,11 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"] .btn-
     display: none !important;
 }
 
+/* Side rail: / tag cloud is a direct .button-container child (not inside secondary group) */
+body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn.is-eligible {
+    display: flex !important;
+}
+
 /* Hide bookmark shortcuts when showShortcuts is false */
 body[data-show-shortcuts="false"] .bookmark-shortcut {
     display: none;

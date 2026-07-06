@@ -9,6 +9,7 @@ class DashboardToolbar {
     setupToolbarActions() {
         const d = this.dash;
         this.setupToolbarKbdTooltips();
+        this.syncSideRailDiscoverability();
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
             helpButton.addEventListener('click', () => {
@@ -128,7 +129,8 @@ class DashboardToolbar {
             { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
             { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] }
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
+            { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] }
         ];
 
         const toolbarButtons = [];
@@ -157,8 +159,12 @@ class DashboardToolbar {
             labelSpan.textContent = label;
             const keysSpan = document.createElement('span');
             keysSpan.className = 'toolbar-kbd-tooltip-keys';
-            keysSpan.innerHTML = formatKeys(keys);
-            tip.append(labelSpan, keysSpan);
+            if (keys.length) {
+                keysSpan.innerHTML = formatKeys(keys);
+                tip.append(labelSpan, keysSpan);
+            } else {
+                tip.append(labelSpan);
+            }
             const rect = btn.getBoundingClientRect();
             tip.classList.add('is-visible');
             tip.setAttribute('aria-hidden', 'false');
@@ -231,20 +237,162 @@ class DashboardToolbar {
         const d = this.dash;
         const toggle = document.getElementById('tag-cloud-toggle-btn');
         const wrap = document.getElementById('dashboard-tag-cloud-wrap');
-        const recentBtn = document.getElementById('recent-bookmarks-button');
         if (!toggle || !wrap) return;
 
+        const container = document.querySelector('.button-container');
         const isSideRail = (d.settings?.buttonBarPosition || document.body.getAttribute('data-button-position')) === 'side-left';
-        if (isSideRail && recentBtn?.parentElement) {
-            if (toggle.parentElement !== recentBtn.parentElement || toggle.previousElementSibling !== recentBtn) {
-                recentBtn.insertAdjacentElement('afterend', toggle);
+        if (isSideRail && container) {
+            // Direct child of .button-container — not inside .btn-group-secondary, which is
+            // display:none when Recent and Help are both hidden (fresh-install defaults).
+            if (toggle.parentElement !== container) {
+                container.appendChild(toggle);
             }
+            this.syncSideRailDiscoverability();
             return;
         }
 
         if (toggle.parentElement !== wrap) {
             wrap.insertBefore(toggle, wrap.firstChild);
         }
+        this.syncSideRailDiscoverability();
+    }
+
+
+    syncSideRailDiscoverability() {
+        const d = this.dash;
+        const legendId = 'side-rail-legend';
+        const storageKey = 'nextdash:side-rail-legend-v1';
+        const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+        const canShow = isSideRail
+            && !d.isCoarsePointer()
+            && window.MobileExperience?.isMobileLayout?.() !== true
+            && window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false;
+
+        let legend = document.getElementById(legendId);
+        if (!canShow) {
+            if (legend) legend.hidden = true;
+            if (d._sideRailLegendTimer) {
+                clearTimeout(d._sideRailLegendTimer);
+                d._sideRailLegendTimer = null;
+            }
+            return;
+        }
+
+        const dismissLegend = ({ persist = true } = {}) => {
+            if (!legend) return;
+            legend.classList.add('is-dismissing');
+            if (d._sideRailLegendTimer) {
+                clearTimeout(d._sideRailLegendTimer);
+                d._sideRailLegendTimer = null;
+            }
+            setTimeout(() => {
+                legend.hidden = true;
+                legend.classList.remove('is-dismissing');
+            }, 360);
+            if (persist) {
+                try { localStorage.setItem(storageKey, '1'); } catch { /* ignore */ }
+            }
+        };
+
+        const isToolbarControlVisible = (btn) => {
+            if (!btn) return false;
+            const style = window.getComputedStyle(btn);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        };
+
+        const buildLegendItems = () => {
+            const t = (key, fallback) => {
+                const fullKey = `dashboard.${key}`;
+                const value = d.language?.t?.(fullKey);
+                return value && value !== fullKey ? value : fallback;
+            };
+            const defs = [
+                { id: 'quick-add-toolbar-btn', key: '+', labelKey: 'addBookmarkShort', fallback: 'bookmark' },
+                { id: 'search-button', key: '>', labelKey: 'searchLabel', fallback: 'search' },
+                { id: 'finders-button', key: '?', labelKey: 'findersLabel', fallback: 'finders' },
+                { id: 'commands-button', key: ':', labelKey: 'commandsLabel', fallback: 'commands' },
+                { id: 'recent-bookmarks-button', key: '*', labelKey: 'tooltipRecent', fallback: 'recent' },
+                { id: 'tag-cloud-toggle-btn', key: '/', labelKey: 'tagCloudToggleAria', fallback: 'tag cloud' },
+                { id: 'help-button', key: '!', labelKey: 'tooltipCheatsheet', fallback: 'cheatsheet' },
+                { id: 'whats-new-btn', key: '★', labelKey: 'whatsNewAria', fallback: "what's new" },
+            ];
+            return defs
+                .map((def) => {
+                    const btn = document.getElementById(def.id);
+                    if (!isToolbarControlVisible(btn)) return null;
+                    return {
+                        key: def.key,
+                        label: t(def.labelKey, def.fallback),
+                    };
+                })
+                .filter(Boolean);
+        };
+
+        if (!legend) {
+            legend = document.createElement('aside');
+            legend.id = legendId;
+            legend.className = 'side-rail-legend';
+            legend.setAttribute('role', 'complementary');
+            legend.hidden = true;
+            document.body.appendChild(legend);
+        }
+
+        const items = buildLegendItems();
+        if (!items.length) {
+            legend.hidden = true;
+            return;
+        }
+
+        legend.replaceChildren();
+        const title = document.createElement('p');
+        title.className = 'side-rail-legend-title';
+        title.textContent = d.language?.t('dashboard.sideRailLegendTitle') || 'Side rail';
+        legend.appendChild(title);
+
+        const list = document.createElement('ul');
+        list.className = 'side-rail-legend-list';
+        items.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'side-rail-legend-item';
+            const key = document.createElement('span');
+            key.className = 'side-rail-legend-key';
+            key.textContent = item.key;
+            const label = document.createElement('span');
+            label.className = 'side-rail-legend-label';
+            label.textContent = item.label;
+            li.append(key, label);
+            list.appendChild(li);
+        });
+        legend.appendChild(list);
+
+        const foot = document.createElement('p');
+        foot.className = 'side-rail-legend-foot';
+        foot.textContent = d.language?.t('dashboard.sideRailLegendHover') || 'Hover any icon for shortcuts';
+        legend.appendChild(foot);
+
+        const dismissBtn = document.createElement('button');
+        dismissBtn.type = 'button';
+        dismissBtn.className = 'side-rail-legend-dismiss';
+        dismissBtn.textContent = d.language?.t('dashboard.sideRailLegendDismiss') || 'Got it';
+        dismissBtn.addEventListener('click', () => dismissLegend());
+        legend.appendChild(dismissBtn);
+
+        let shouldShow = false;
+        try {
+            shouldShow = !localStorage.getItem(storageKey);
+        } catch {
+            shouldShow = true;
+        }
+
+        if (!shouldShow || d.onboardingStartedInSession || d.settings?.onboardingCompleted !== true) {
+            legend.hidden = true;
+            return;
+        }
+
+        legend.hidden = false;
+        legend.classList.remove('is-dismissing');
+        if (d._sideRailLegendTimer) clearTimeout(d._sideRailLegendTimer);
+        d._sideRailLegendTimer = setTimeout(() => dismissLegend(), 14_000);
     }
 
 
