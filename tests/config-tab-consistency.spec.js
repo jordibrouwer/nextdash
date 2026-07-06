@@ -914,11 +914,22 @@ test.describe('config bookmarks surface (v5)', () => {
         await page.evaluate(() => window.configManager.ui.switchToTab('bookmarks'));
     });
 
-    test('wraps split view in bookmarks-tab-surface', async ({ page }) => {
+    test('wraps split view in bookmarks-tab-surface with master/detail layout', async ({ page }) => {
         const surface = page.locator('.bookmarks-tab-surface');
         await expect(surface).toBeVisible();
-        await expect(surface.locator('.bookmarks-splitview')).toBeVisible();
-        await expect(surface.locator('.config-tab-toolbar--in-surface')).toBeVisible();
+        await expect(surface.locator('.bookmarks-list-controls.config-tab-toolbar--in-surface')).toBeVisible();
+
+        const layout = surface.locator('.bookmarks-splitview.config-master-detail-layout');
+        await expect(layout).toBeVisible();
+        await expect(layout.locator('.bookmarks-splitview-list.config-master-pane')).toBeVisible();
+        await expect(layout.locator('#bookmark-detail-panel.config-detail-pane')).toBeVisible();
+
+        const toolbarAboveSplit = await page.evaluate(() => {
+            const toolbar = document.querySelector('.bookmarks-tab-surface > .bookmarks-list-controls');
+            const split = document.querySelector('.bookmarks-splitview.config-master-detail-layout');
+            return Boolean(toolbar && split && !split.contains(toolbar));
+        });
+        expect(toolbarAboveSplit).toBe(true);
     });
 
     test('integrates context panel inside bookmarks surface (B4)', async ({ page }) => {

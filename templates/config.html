@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-split-b10-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=config-b11-empty-hidden-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=bookmarks-master-b11-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
@@ -1312,58 +1312,56 @@
                     </div>
                 </div>
 
-                <div class="bookmarks-splitview">
-
-                    <!-- Linker kolom: lijst + controls -->
-                    <div class="bookmarks-splitview-list">
-                        <div class="bookmarks-list-controls config-tab-toolbar config-tab-toolbar--bookmarks config-tab-toolbar--in-surface">
-                            <div class="bookmarks-list-controls-row">
-                                <div class="page-selector-inline">
-                                    <select id="page-selector" class="page-selector" title="Bookmarks page" aria-label="Bookmarks page">
-                                        <!-- Pages will be loaded here -->
-                                    </select>
-                                </div>
-                                <div class="bookmarks-filter-inline">
-                                    <select id="bookmarks-category-filter" class="page-selector" title="Filter category" aria-label="Filter by category">
-                                        <option value="__all__">All categories</option>
-                                    </select>
-                                </div>
-                                <div class="bookmarks-filter-inline">
-                                    <select id="bookmarks-sort" class="page-selector" title="Sort" aria-label="Sort order" data-no-custom>
-                                        <option value="default">Default</option>
-                                        <option value="name-az">Name A–Z</option>
-                                        <option value="category-az">Category A–Z</option>
-                                        <option value="opens-desc">Most opened</option>
-                                        <option value="last-opened-desc">Last opened</option>
-                                    </select>
-                                </div>
-                                <details class="bookmark-add-menu" id="bookmark-add-menu">
-                                    <summary class="bookmark-add-menu-trigger btn btn-primary btn-small" data-i18n-aria="config.addBookmarkMenuAria" aria-label="Add bookmark">
-                                        <span data-i18n="config.addBookmarkMenuLabel">+ Bookmark</span>
-                                        <span class="bookmark-add-menu-chevron" aria-hidden="true">▾</span>
-                                    </summary>
-                                    <div class="bookmark-add-menu-panel" role="menu">
-                                        <button type="button" class="bookmark-add-menu-item" id="add-bookmark-btn" role="menuitem">
-                                            <span class="bookmark-add-menu-item-title" data-i18n="config.addBookmarkEditOption">Add &amp; edit</span>
-                                            <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkEditHint">Opens in the panel — save with Save above</span>
-                                        </button>
-                                        <button type="button" class="bookmark-add-menu-item" id="config-quick-add-btn" role="menuitem">
-                                            <span class="bookmark-add-menu-item-title"><span class="config-quick-add-icon" aria-hidden="true">⚡</span> <span data-i18n="config.quickAddBookmarkLabel">Quick add</span></span>
-                                            <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkQuickHint">Saves immediately</span>
-                                        </button>
-                                    </div>
-                                </details>
-                            </div>
-                            <div class="bookmarks-list-controls-row bookmarks-list-controls-row--filter">
-                                <div class="bookmarks-filter-wrap config-filter-field config-filter-field--wide">
-                                    <label class="visually-hidden" for="bookmarks-search" data-i18n="config.filterBookmarks">Filter bookmarks</label>
-                                    <input type="search" id="bookmarks-search" class="config-filter-input bookmarks-search-input" data-i18n-placeholder="config.filterBookmarks" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
-                                    <button type="button" id="bookmarks-search-clear" class="config-filter-clear bookmarks-search-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
-                                </div>
-                            </div>
+                <div class="bookmarks-list-controls config-tab-toolbar config-tab-toolbar--bookmarks config-tab-toolbar--in-surface">
+                    <div class="bookmarks-list-controls-row">
+                        <div class="page-selector-inline">
+                            <select id="page-selector" class="page-selector" title="Bookmarks page" aria-label="Bookmarks page">
+                                <!-- Pages will be loaded here -->
+                            </select>
                         </div>
+                        <div class="bookmarks-filter-inline">
+                            <select id="bookmarks-category-filter" class="page-selector" title="Filter category" aria-label="Filter by category">
+                                <option value="__all__">All categories</option>
+                            </select>
+                        </div>
+                        <div class="bookmarks-filter-inline">
+                            <select id="bookmarks-sort" class="page-selector" title="Sort" aria-label="Sort order" data-no-custom>
+                                <option value="default">Default</option>
+                                <option value="name-az">Name A–Z</option>
+                                <option value="category-az">Category A–Z</option>
+                                <option value="opens-desc">Most opened</option>
+                                <option value="last-opened-desc">Last opened</option>
+                            </select>
+                        </div>
+                        <details class="bookmark-add-menu" id="bookmark-add-menu">
+                            <summary class="bookmark-add-menu-trigger btn btn-primary btn-small" data-i18n-aria="config.addBookmarkMenuAria" aria-label="Add bookmark">
+                                <span data-i18n="config.addBookmarkMenuLabel">+ Bookmark</span>
+                                <span class="bookmark-add-menu-chevron" aria-hidden="true">▾</span>
+                            </summary>
+                            <div class="bookmark-add-menu-panel" role="menu">
+                                <button type="button" class="bookmark-add-menu-item" id="add-bookmark-btn" role="menuitem">
+                                    <span class="bookmark-add-menu-item-title" data-i18n="config.addBookmarkEditOption">Add &amp; edit</span>
+                                    <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkEditHint">Opens in the panel — save with Save above</span>
+                                </button>
+                                <button type="button" class="bookmark-add-menu-item" id="config-quick-add-btn" role="menuitem">
+                                    <span class="bookmark-add-menu-item-title"><span class="config-quick-add-icon" aria-hidden="true">⚡</span> <span data-i18n="config.quickAddBookmarkLabel">Quick add</span></span>
+                                    <span class="bookmark-add-menu-item-hint" data-i18n="config.addBookmarkQuickHint">Saves immediately</span>
+                                </button>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="bookmarks-list-controls-row bookmarks-list-controls-row--filter">
+                        <div class="bookmarks-filter-wrap config-filter-field config-filter-field--wide">
+                            <label class="visually-hidden" for="bookmarks-search" data-i18n="config.filterBookmarks">Filter bookmarks</label>
+                            <input type="search" id="bookmarks-search" class="config-filter-input bookmarks-search-input" data-i18n-placeholder="config.filterBookmarks" placeholder="Filter bookmarks…" autocomplete="off" spellcheck="false">
+                            <button type="button" id="bookmarks-search-clear" class="config-filter-clear bookmarks-search-clear" data-i18n-aria="config.findersFilterClear" aria-label="Clear filter" hidden>✕</button>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Bulk toolbar: alleen zichtbaar bij selectie -->
+                <div class="bookmarks-splitview config-master-detail-layout">
+
+                    <div class="bookmarks-splitview-list config-master-pane">
                         <div class="bulk-toolbar" id="bookmarks-bulk-toolbar">
                             <div class="bulk-toolbar-left">
                                 <span id="bulk-selection-count" class="bulk-count">0</span>
@@ -1408,7 +1406,7 @@
                     </div>
 
                     <!-- Rechter kolom: detail paneel -->
-                    <div class="bookmarks-splitview-detail" id="bookmark-detail-panel">
+                    <div class="bookmarks-splitview-detail config-detail-pane" id="bookmark-detail-panel">
                         <div class="bookmark-detail-empty" id="bookmark-detail-empty">
                             <span class="bookmark-detail-empty-icon">←</span>
                             <span class="bookmark-detail-empty-title" data-i18n="config.selectBookmarkToEdit">Select a bookmark to edit</span>

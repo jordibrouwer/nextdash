@@ -817,7 +817,9 @@ body[data-layout-version="modern"] .bookmarks-splitview {
 }
 
 body[data-layout-version="modern"] .bookmarks-splitview-list,
-body[data-layout-version="modern"] .bookmarks-splitview-detail {
+body[data-layout-version="modern"] .config-master-pane,
+body[data-layout-version="modern"] .bookmarks-splitview-detail,
+body[data-layout-version="modern"] .config-detail-pane {
     border-radius: 0;
     box-shadow: none;
     border: none;
@@ -827,7 +829,8 @@ body[data-layout-version="modern"] .bookmarks-splitview-list {
     overflow: hidden;
 }
 
-body[data-layout-version="modern"] .bookmarks-splitview-detail {
+body[data-layout-version="modern"] .bookmarks-splitview-detail,
+body[data-layout-version="modern"] .config-detail-pane {
     overflow: visible;
 }
 
@@ -843,7 +846,8 @@ body[data-layout-version="modern"] .bookmarks-splitview-list .bookmark-item {
     background: transparent;
 }
 
-body[data-layout-version="modern"] .bookmarks-splitview-detail {
+body[data-layout-version="modern"] .bookmarks-splitview-detail,
+body[data-layout-version="modern"] .config-detail-pane {
     background: var(--layout-surface-inset);
 }
 
@@ -951,7 +955,8 @@ body[data-layout-version="modern"] .bookmarks-list-scroll-area {
     overflow-y: auto !important;
 }
 
-body[data-layout-version="modern"] .bookmarks-splitview-detail {
+body[data-layout-version="modern"] .bookmarks-splitview-detail,
+body[data-layout-version="modern"] .config-detail-pane {
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;

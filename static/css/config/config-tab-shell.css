@@ -170,13 +170,6 @@ html:has(#config-main) #config-main :is(
     display: none;
 }
 
-.config-tab-surface > .bookmarks-splitview {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-}
-
 .config-tab-toolbar-tools,
 .simple-toolbar-right {
     display: flex;
@@ -563,6 +556,85 @@ html:has(#config-main) #config-main :is(
 
     .config-split-index {
         display: none;
+    }
+}
+
+/* ── Master/detail layout (Bookmarks) — list pane + editor pane ── */
+.config-master-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px);
+    grid-template-rows: minmax(calc(100vh - 180px), max-content);
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-master-pane {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border-primary);
+    box-sizing: border-box;
+}
+
+.config-detail-pane {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    background: var(--config-surface-inset, color-mix(in srgb, var(--background-secondary) 55%, var(--background-primary)));
+    box-sizing: border-box;
+}
+
+.config-tab-surface > .bookmarks-list-controls.config-tab-toolbar--in-surface {
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface .config-master-detail-layout,
+.config-tab-surface > .bookmarks-splitview {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.config-tab-surface .config-master-pane {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface .config-detail-pane {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (max-width: 1024px) {
+    .config-master-detail-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, auto) minmax(0, max-content);
+    }
+
+    .config-master-pane {
+        width: 100%;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .config-detail-pane {
+        width: 100%;
     }
 }
 

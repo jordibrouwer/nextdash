@@ -828,7 +828,9 @@ body[data-layout-version="glass"] .bookmarks-splitview {
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list,
-body[data-layout-version="glass"] .bookmarks-splitview-detail {
+body[data-layout-version="glass"] .config-master-pane,
+body[data-layout-version="glass"] .bookmarks-splitview-detail,
+body[data-layout-version="glass"] .config-detail-pane {
     border-radius: 0;
     box-shadow: none;
     border: none;

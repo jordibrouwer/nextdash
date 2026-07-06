@@ -116,11 +116,14 @@ body[data-layout-version="classic"] .bookmarks-tab-surface .config-tab-toolbar--
     border-bottom: 1px solid var(--border-primary);
 }
 
-body[data-layout-version="classic"] .bookmarks-splitview-list {
+body[data-layout-version="classic"] .bookmarks-tab-surface > .bookmarks-list-controls,
+body[data-layout-version="classic"] .bookmarks-tab-surface .config-master-pane,
+body[data-layout-version="classic"] .bookmarks-tab-surface .bookmarks-splitview-list {
     border: none;
     border-right: 1px solid var(--border-primary);
 }
 
+body[data-layout-version="classic"] .bookmarks-tab-surface .config-detail-pane,
 body[data-layout-version="classic"] .bookmarks-splitview-detail {
     border: none;
 }

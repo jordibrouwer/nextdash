@@ -27,7 +27,9 @@ body[data-layout-version="modern"] .config-tab-surface > :is(
     .collections-list,
     .tags-body,
     .config-empty-state,
+    .bookmarks-list-controls,
     .bookmarks-splitview,
+    .config-master-detail-layout,
     .keyboard-body,
     .stats-layout,
     .help-layout,
@@ -40,7 +42,9 @@ body[data-layout-version="glass"] .config-tab-surface > :is(
     .collections-list,
     .tags-body,
     .config-empty-state,
+    .bookmarks-list-controls,
     .bookmarks-splitview,
+    .config-master-detail-layout,
     .keyboard-body,
     .stats-layout,
     .help-layout,
@@ -71,7 +75,9 @@ body[data-layout-version="glass"] .config-tab-surface .finders-body .simple-list
 }
 
 body[data-layout-version="modern"] .bookmarks-tab-surface .bookmarks-splitview,
-body[data-layout-version="glass"] .bookmarks-tab-surface .bookmarks-splitview {
+body[data-layout-version="modern"] .bookmarks-tab-surface .config-master-detail-layout,
+body[data-layout-version="glass"] .bookmarks-tab-surface .bookmarks-splitview,
+body[data-layout-version="glass"] .bookmarks-tab-surface .config-master-detail-layout {
     gap: 0;
     border: none;
     border-radius: 0;
@@ -81,7 +87,9 @@ body[data-layout-version="glass"] .bookmarks-tab-surface .bookmarks-splitview {
 }
 
 body[data-layout-version="modern"] .bookmarks-tab-surface .bookmarks-splitview-list,
-body[data-layout-version="glass"] .bookmarks-tab-surface .bookmarks-splitview-list {
+body[data-layout-version="modern"] .bookmarks-tab-surface .config-master-pane,
+body[data-layout-version="glass"] .bookmarks-tab-surface .bookmarks-splitview-list,
+body[data-layout-version="glass"] .bookmarks-tab-surface .config-master-pane {
     border-right: 1px solid var(--layout-surface-border);
 }
 
