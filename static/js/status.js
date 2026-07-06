@@ -149,7 +149,7 @@ class StatusMonitor {
         }
 
         // Hide loading indicator if the option is disabled
-        if (!this.settings.showStatusLoading) {
+        if (this.settings.showStatusLoading !== true) {
             this.hideLoadingIndicator();
         }
     }
@@ -647,7 +647,7 @@ class StatusMonitor {
 
     // Show loading indicator
     showLoadingIndicator() {
-        if (this.settings.showStatusLoading && this.loadingIndicator) {
+        if (this.settings.showStatusLoading === true && this.loadingIndicator) {
             this.loadingIndicator.classList.add('show');
         }
     }

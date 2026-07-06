@@ -1452,7 +1452,7 @@ class ConfigSettings {
         // Show status loading checkbox
         const showStatusLoadingCheckbox = document.getElementById('show-status-loading-checkbox');
         if (showStatusLoadingCheckbox) {
-            showStatusLoadingCheckbox.checked = settings.showStatusLoading;
+            showStatusLoadingCheckbox.checked = settings.showStatusLoading === true;
             showStatusLoadingCheckbox.addEventListener('change', (e) => {
                 settings.showStatusLoading = e.target.checked;
             });
@@ -2810,6 +2810,7 @@ class ConfigSettings {
             showStatus: true,
             colorizeStatus: true,
             showPing: true,
+            showStatusLoading: false,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
             statusRecheckIntervalMinutes: 5,

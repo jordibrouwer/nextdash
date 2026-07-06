@@ -1621,6 +1621,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showPing"]; !ok {
 			settings.ShowPing = true
 		}
+		if _, ok := rawSettings["showStatusLoading"]; !ok {
+			settings.ShowStatusLoading = false
+		}
 		if _, ok := rawSettings["statusOfflineRetries"]; !ok || settings.StatusOfflineRetries < 1 || settings.StatusOfflineRetries > 10 {
 			settings.StatusOfflineRetries = 3
 		}

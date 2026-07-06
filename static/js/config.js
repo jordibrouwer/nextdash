@@ -84,6 +84,7 @@ class ConfigManager {
             showStatus: true,
             colorizeStatus: true,
             showPing: true,
+            showStatusLoading: false,
             skipFastPing: false,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,

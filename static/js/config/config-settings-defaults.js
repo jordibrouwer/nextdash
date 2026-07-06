@@ -45,6 +45,9 @@ class ConfigSettingsDefaults {
         if (typeof settingsData.showPing === 'undefined') {
             settingsData.showPing = true;
         }
+        if (typeof settingsData.showStatusLoading === 'undefined') {
+            settingsData.showStatusLoading = false;
+        }
         if (typeof settingsData.showLinkPreviewCards === 'undefined') {
             settingsData.showLinkPreviewCards = false;
         }
