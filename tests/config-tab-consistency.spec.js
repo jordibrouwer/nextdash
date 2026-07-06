@@ -894,6 +894,25 @@ test.describe('config tab groups (v5)', () => {
         if (barTransition !== null) {
             expect(barTransition.split(',').every((d) => parseFloat(d) === 0)).toBeTruthy();
         }
+
+        const skeletonAnim = await page.evaluate(() => {
+            const shimmer = document.querySelector('#config-main .skeleton-shimmer');
+            return shimmer ? getComputedStyle(shimmer).animationName : '';
+        });
+        if (skeletonAnim !== '') {
+            expect(skeletonAnim === 'none' || skeletonAnim === '').toBeTruthy();
+        }
+
+        const spotlightTransition = await page.evaluate(() => {
+            const card = document.createElement('div');
+            card.className = 'feature-spotlight show';
+            document.body.appendChild(card);
+            const style = getComputedStyle(card);
+            const result = style.transitionDuration;
+            card.remove();
+            return result;
+        });
+        expect(spotlightTransition.split(',').every((d) => parseFloat(d) === 0)).toBeTruthy();
     });
 
     test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {
@@ -1301,6 +1320,7 @@ test.describe('config general & theme surface (C16/B10)', () => {
         await expect(page.locator('body')).toHaveClass(/colors-is-dirty/);
         await expect(page.locator('#config-tab-save-mode')).toHaveClass(/config-tab-save-mode--colors-save/);
         await expect(page.locator('.tab-button[data-tab="colors"]')).toHaveClass(/tab-has-unsaved/);
+        await expect(page.locator('#save-colors-btn')).not.toHaveClass(/has-unsaved/);
     });
 
     test('theme color rows use divided list rhythm inside fused surface (C11)', async ({ page }) => {

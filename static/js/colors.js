@@ -38,14 +38,12 @@ class ColorsEditor {
 
     markDirty() {
         this.hasUnsavedColorChanges = true;
-        this.root?.querySelector('#save-colors-btn')?.classList.add('has-unsaved');
         this.onDirtyChange(true);
         this.updateUndoButton();
     }
 
     clearDirty() {
         this.hasUnsavedColorChanges = false;
-        this.root?.querySelector('#save-colors-btn')?.classList.remove('has-unsaved');
         this.onDirtyChange(false);
         this._undoStack = [];
         this.updateUndoButton();

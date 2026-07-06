@@ -38,7 +38,7 @@ var sharedAssetVersions = pageAssetVersions{
 	OverlaysGlassCSS:       "glass-phase6-1",
 	MobileExperienceCSS:    "phone-layout-5",
 	MobileExperienceJS:     "phone-layout-5",
-	FeatureSpotlightCSS:    "layout-versions-1",
+	FeatureSpotlightCSS:    "c15-reduced-motion-1",
 	FeatureSpotlightJS:     "paste-replay-v1",
 	LayoutModernNudgeJS:    "layout-versions-2",
 	LayoutBetaToastJS:      "layout-beta-toast-1",
