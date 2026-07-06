@@ -27,8 +27,8 @@ body[data-button-position="side-left"] .button-container {
     justify-content: flex-start;
     align-items: stretch;
 
-    /* bottom room for ! + ★ fixed elements */
-    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 2 + 0.3rem);
+    /* bottom room for help + what's new in rail flow */
+    padding: 0;
     gap: 0;
 
     background: var(--rail-bg);
@@ -61,26 +61,14 @@ body[data-button-position="side-left"] #finders-button          { order: 3; }
 body[data-button-position="side-left"] #commands-button         { order: 4; }
 body[data-button-position="side-left"] #recent-bookmarks-button { order: 5; }
 body[data-button-position="side-left"] #tag-cloud-toggle-btn { order: 6; }
-
-/* cheatsheet: fixed directly above the what's new button */
 body[data-button-position="side-left"] #help-button {
-    position: fixed;
-    bottom: var(--corner-fab-height, 2.75rem);
-    left: 0;
-    width: var(--rail-width);
-    height: var(--corner-fab-height, 2.75rem);
-    padding: 0;
-    justify-content: center;
-    border-radius: 0;
+    order: 7;
+    margin-top: auto;
     border-top: 1px solid var(--rail-sep-color);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    background: transparent;
-    transform: none;
-    z-index: 1004;
-    order: unset;
-    margin-top: 0;
+}
+body[data-button-position="side-left"] #whats-new-btn {
+    order: 8;
+    border-top: 1px solid var(--rail-sep-color);
 }
 
 /* ── Individual buttons: same style as what's new ────────────────────────────── */
@@ -166,39 +154,6 @@ body[data-button-position="side-left"] #tag-cloud-toggle-btn:hover {
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
-/* ── What's new button: anchor to rail bottom ────────────────────────────────── */
-body[data-button-position="side-left"] .whats-new-btn {
-    left: 0;
-    right: auto;
-    bottom: 0;
-    width: var(--rail-width);
-    height: calc(var(--corner-fab-height, 2.75rem));
-    padding: 0;
-    justify-content: center;
-    border-radius: 0;
-    border-top: 1px solid var(--rail-sep-color);
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    background: transparent;
-    z-index: 1004;
-}
-
-body[data-button-position="side-left"] .whats-new-btn:hover {
-    transform: translateX(2px);
-    box-shadow: none;
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
-}
-
-body[data-button-position="side-left"] .whats-new-btn[data-tooltip]::after {
-    bottom: auto;
-    top: 50%;
-    left: calc(100% + 8px);
-    right: auto;
-    transform: translateY(-50%);
-}
-
 /* ── Hints: hidden in rail mode ──────────────────────────────────────────────── */
 body[data-button-position="side-left"] .button-hint,
 body[data-button-position="side-left"] .search-flow-hint {
@@ -278,8 +233,8 @@ body[data-layout-version="modern"][data-button-position="side-left"] .search-but
         transform var(--layout-transition);
 }
 
-body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn {
-    background: transparent;
+body[data-layout-version="modern"][data-button-position="side-left"] #help-button,
+body[data-layout-version="modern"][data-button-position="side-left"] #whats-new-btn {
     border-top-color: var(--layout-surface-border);
 }
 
@@ -302,8 +257,8 @@ body[data-layout-version="glass"][data-button-position="side-left"] .search-butt
         transform var(--layout-transition);
 }
 
-body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-btn {
-    background: transparent;
+body[data-layout-version="glass"][data-button-position="side-left"] #help-button,
+body[data-layout-version="glass"][data-button-position="side-left"] #whats-new-btn {
     border-top-color: var(--layout-surface-border);
 }
 
@@ -348,7 +303,8 @@ body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-b
     body[data-button-position="side-left"] #commands-button,
     body[data-button-position="side-left"] #recent-bookmarks-button,
     body[data-button-position="side-left"] #tag-cloud-toggle-btn,
-    body[data-button-position="side-left"] #help-button {
+    body[data-button-position="side-left"] #help-button,
+    body[data-button-position="side-left"] #whats-new-btn {
         order: unset;
         margin-top: 0;
     }
@@ -366,13 +322,15 @@ body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-b
         border-top: none;
     }
 
-    /* cheatsheet: back into normal flow on mobile */
-    body[data-button-position="side-left"] #help-button {
+    /* help + what's new: back into normal flow on mobile */
+    body[data-button-position="side-left"] #help-button,
+    body[data-button-position="side-left"] #whats-new-btn {
         position: static;
         bottom: auto;
         left: auto;
         width: auto;
         z-index: auto;
+        border-top: none;
     }
 
     body[data-button-position="side-left"] .search-button {
@@ -431,17 +389,6 @@ body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-b
         position: static;
         right: auto;
         bottom: auto;
-    }
-
-    body[data-button-position="side-left"] .whats-new-btn {
-        left: auto;
-        right: var(--corner-fab-edge, 1.5rem);
-        bottom: var(--corner-fab-edge, 1.5rem);
-        width: auto;
-        height: auto;
-        padding: 0.62rem 0.72rem;
-        border-radius: 0.65rem;
-        border-top: 1px solid var(--border-primary);
     }
 
     body.no-animations[data-button-position="side-left"] .button-container {

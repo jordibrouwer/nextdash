@@ -312,6 +312,8 @@ class ConfigManager {
         if (params.get('configTour') === '1') {
             void this.maybeStartConfigGeneralTour({ force: true });
         }
+
+        window.LayoutBetaToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
     }
 
     async loadData() {

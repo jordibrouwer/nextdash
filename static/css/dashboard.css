@@ -1652,89 +1652,10 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     }
 }
 
-/* ─── What's new FAB ──────────────────────────────────────────────────────── */
-.whats-new-btn {
-    position: fixed;
-    bottom: var(--corner-fab-edge);
-    left: var(--corner-fab-edge);
-    z-index: 1001;
-    padding: 0.62rem 0.72rem;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
-    color: var(--accent-primary);
-    font-size: var(--font-size-controls);
-    font-family: var(--font-family-main);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.65rem;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-.whats-new-btn-icon {
-    display: block;
-    flex-shrink: 0;
-}
-.whats-new-btn:hover {
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
-    border-color: var(--accent-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
-}
-.whats-new-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-/* Tooltip */
-.whats-new-btn[data-tooltip] {
-    position: fixed;
-}
-.whats-new-btn[data-tooltip]::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 0;
-    white-space: nowrap;
-    padding: 0.2rem 0.5rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 0.3rem;
-    color: var(--text-secondary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-controls) * 0.85);
-    font-weight: var(--font-weight-normal);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.15s ease, visibility 0.15s ease;
-    z-index: 1001;
-}
-.whats-new-btn[data-tooltip]:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-@media (pointer: coarse) {
-    .whats-new-btn[data-tooltip]::after {
-        display: none;
-    }
-}
-/* Linker-dock: what's new naar rechts (tegenover de knoppenbalk) */
-body[data-button-position="bottom-left"] .whats-new-btn {
-    left: auto;
-    right: var(--corner-fab-edge);
-}
-body[data-button-position="bottom-left"] .whats-new-btn[data-tooltip]::after {
-    left: auto;
-    right: 0;
-}
-
-/* Rechter-dock: what's new expliciet links (tegenover de knoppenbalk) */
-body[data-button-position="bottom-right"] .whats-new-btn {
-    left: var(--corner-fab-edge);
-    right: auto;
+/* ─── What's new toolbar button (unified with .search-button) ─────────────── */
+.whats-new-button .search-button-icon {
+    font-size: calc(var(--font-size-category) * 0.9);
+    line-height: 1;
 }
 
 /* Density overrides (can be combined with layout presets) */
@@ -3370,6 +3291,8 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 .modal.recent-bookmarks-modal {
     max-height: 88vh;
     overflow: hidden;
+    max-width: min(52rem, calc(100vw - 2.5rem));
+    width: min(52rem, calc(100vw - 2.5rem));
 }
 
 .modal.recent-bookmarks-modal .modal-body {
@@ -3420,16 +3343,18 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     justify-content: space-between;
     gap: 1rem;
     border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-primary);
     padding: 0.5rem 0.625rem;
     color: var(--text-primary);
     text-decoration: none;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
 }
 
 .recent-bookmarks-modal-item:hover {
-    transform: translateX(3px);
-    border-color: var(--text-secondary);
+    transform: none;
+    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
 .recent-bookmarks-modal-name {
@@ -3452,6 +3377,68 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     text-align: center;
 }
 
+/* Dashboard toolbar modals — same placement and chrome as search overlay */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal),
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
+    margin: 0;
+    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) {
+    justify-content: center;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+}
+
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    max-height: calc(100vh - 2rem);
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
 .recent-bookmarks-skeleton {
     display: flex;
     flex-direction: column;
@@ -3466,7 +3453,7 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     padding: 0.5rem 0.625rem;
-    border-radius: var(--layout-radius-xs, 4px);
+    border-radius: var(--layout-radius-sm, 8px);
 }
 
 .recent-bookmarks-skeleton-name,

@@ -147,44 +147,6 @@ class Onboarding {
                 ]
             },
             {
-                title: this.t('onboarding.layoutStepTitle', 'Layout version'),
-                body: this.t(
-                    'onboarding.layoutStepBody',
-                    'Choose classic, modern, or glass dashboard styling. Same structure — only visuals change.'
-                ),
-                selector: '#dashboard-layout',
-                placement: 'bottom',
-                optionalNote: this.t(
-                    'onboarding.layoutStepOptional',
-                    'Optional — change anytime in config → General → Layout.'
-                ),
-                fields: [
-                    {
-                        id: 'layoutVersion',
-                        type: 'radio',
-                        label: this.t('onboarding.layoutVersionLabel', 'Layout version'),
-                        hint: this.t(
-                            'onboarding.layoutStepHint',
-                            'Modern refreshes spacing and surfaces; glass adds translucent blur; classic keeps the original look.'
-                        ),
-                        options: [
-                            {
-                                value: 'classic',
-                                label: this.t('onboarding.layoutClassicLabel', 'Classic — original styling'),
-                            },
-                            {
-                                value: 'modern',
-                                label: this.t('onboarding.layoutModernLabel', 'Modern — refreshed visuals'),
-                            },
-                            {
-                                value: 'glass',
-                                label: this.t('onboarding.layoutGlassLabel', 'Glass — translucent iOS-style surfaces'),
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
                 title: this.t('onboarding.searchTipsStepTitle', 'Search & tips'),
                 body: this.t('onboarding.searchTipsStepBody', 'Tune keyboard flow and footer hints.'),
                 selector: '#button-hint-text',
@@ -446,11 +408,7 @@ class Onboarding {
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
             statusMonitorSelection: this.buildStatusMonitorSelection(this.statusMonitorBookmarks),
-            layoutVersion: window.LayoutVersionUtils
-                ? window.LayoutVersionUtils.normalizeLayoutVersion(settings.layoutVersion)
-                : (['classic', 'modern', 'glass'].includes((settings.layoutVersion || '').toLowerCase())
-                    ? (settings.layoutVersion || 'classic').toLowerCase()
-                    : 'classic'),
+            layoutVersion: 'classic',
         };
     }
 
@@ -660,9 +618,6 @@ class Onboarding {
                     radio.checked = String(value) === String(radio.value);
                     radio.addEventListener('change', () => {
                         this.localSettings[field.id] = this.parseFieldValue(field.id, radio.value);
-                        if (field.id === 'layoutVersion' && window.LayoutVersionUtils) {
-                            window.LayoutVersionUtils.applyLayoutVersionToDOM(this.localSettings.layoutVersion);
-                        }
                         this.refreshDependentFields(container);
                     });
                 });
@@ -857,7 +812,7 @@ class Onboarding {
             showTips: this.localSettings.showTips,
             showSmartTodayCollection: this.localSettings.showSmartTodayCollection,
             showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection,
-            layoutVersion: this.localSettings.layoutVersion || 'classic',
+            layoutVersion: 'classic',
         };
         const bookmarkSelection = { ...(this.localSettings.statusMonitorSelection || {}) };
         const shouldApplyBookmarks = this.onApplyBookmarks && this.statusMonitorBookmarks.length > 0;

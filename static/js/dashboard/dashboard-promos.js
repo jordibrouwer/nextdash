@@ -169,6 +169,8 @@ class DashboardPromos {
         if (!options.skipPreviewCardSpotlight && this.shouldShowPreviewCardSpotlightPrompt()) {
             this.maybeShowPreviewCardSpotlight();
         }
+
+        window.LayoutBetaToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
     }
 
 
@@ -374,7 +376,7 @@ class DashboardPromos {
                 try {
                     window.DiscoverabilityState?.markStorageKeyConfirmed?.('nextdash:layout-modern-nudge-v1');
                     localStorage.setItem('nextdash:layout-modern-nudge-v1', '1');
-                } catch { /* layout chosen in onboarding */ }
+                } catch { /* skip layout nudge after first-run setup */ }
                 if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false) {
                     d.schedulePostOnboardingPrompts({
                         delay: 600,

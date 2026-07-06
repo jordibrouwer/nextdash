@@ -8,7 +8,6 @@ body[data-layout-version="glass"] .page-overview-header-btn:focus-visible,
 body[data-layout-version="glass"] .health-link a:focus-visible,
 body[data-layout-version="glass"] .config-link a:focus-visible,
 body[data-layout-version="glass"] .search-button:focus-visible,
-body[data-layout-version="glass"] .whats-new-btn:focus-visible,
 body[data-layout-version="glass"] .tag-filter-indicator-chip:focus-visible,
 body[data-layout-version="glass"] .tag-filter-indicator-clear:focus-visible,
 body[data-layout-version="glass"] .page-overview-close:focus-visible,
@@ -274,10 +273,6 @@ body[data-layout-version="glass"][data-show-add-bookmark-button="false"][data-sh
     display: none !important;
 }
 
-body[data-layout-version="glass"][data-show-recent-button="false"][data-show-cheatsheet-button="false"] .btn-group-secondary {
-    display: none !important;
-}
-
 body[data-layout-version="glass"] .button-hint {
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-sm);
@@ -310,8 +305,7 @@ body[data-layout-version="glass"] .search-button:active {
     box-shadow: none;
 }
 
-body[data-layout-version="glass"] .search-button[data-tooltip]::after,
-body[data-layout-version="glass"] .whats-new-btn[data-tooltip]::after {
+body[data-layout-version="glass"] .search-button[data-tooltip]::after {
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-sm);
 }
@@ -340,21 +334,7 @@ body[data-layout-version="glass"][data-button-position="bottom-right"] .btn-grou
     -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
 }
 
-/* ─── Corner FABs ────────────────────────────────────────────────────────── */
-
-body[data-layout-version="glass"] .whats-new-btn {
-    border-radius: var(--layout-radius-md);
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    box-shadow: var(--glass-panel-shadow);
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"] .whats-new-btn:hover {
-    background: color-mix(in srgb, var(--background-primary) 90%, transparent);
-    box-shadow: var(--layout-shadow-lg);
-}
+/* ─── Tag cloud toggle (corner when not in rail) ─────────────────────────── */
 
 body[data-layout-version="glass"] .tag-cloud-toggle-btn.search-button {
     border-radius: var(--layout-radius-md);
@@ -369,7 +349,7 @@ body[data-layout-version="glass"] .tag-cloud-toggle-btn.search-button {
 body[data-layout-version="glass"][data-button-position="side-left"] .button-container {
     width: var(--rail-width, 44px);
     max-width: var(--rail-width, 44px);
-    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 2 + 0.3rem);
+    padding: 0;
     border-radius: 0;
     border-top: none;
     border-bottom: none;
@@ -395,17 +375,12 @@ body[data-layout-version="glass"][data-button-position="side-left"] .search-butt
     transform: translateX(0);
 }
 
-body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-btn,
 body[data-layout-version="glass"][data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-}
-
-body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-btn:hover {
-    box-shadow: none;
 }
 
 /* ─── Page overview overlay ───────────────────────────────────────────────── */
