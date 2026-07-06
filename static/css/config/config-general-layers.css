@@ -2,6 +2,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem 0.75rem;
     margin: 0;
     min-height: var(--config-toolbar-min-height, 2.75rem);
@@ -61,26 +62,16 @@
     font-weight: var(--font-weight-bold, 600);
 }
 
-.general-layer-show-all {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+.general-layer-toolbar-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.5rem;
     margin-left: auto;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: inherit;
 }
 
-.general-layer-show-all:hover {
-    color: var(--accent-primary);
-}
-
-.general-layer-show-all.is-active {
-    color: var(--accent-primary);
-    font-weight: var(--font-weight-bold, 600);
+.general-layer-toolbar-tools[hidden] {
+    display: none !important;
 }
 
 .general-layer-intro {
@@ -116,15 +107,6 @@ body.config-is-dirty .general-layout {
     position: static;
     top: auto;
     z-index: auto;
-}
-
-.general-panels-bulk-actions[hidden] {
-    display: none !important;
-}
-
-/* Section jump nav removed — collapsible panel headers are enough. */
-.general-advanced-nav-wrap {
-    display: none !important;
 }
 
 .general-panels-bulk-actions {
@@ -180,7 +162,7 @@ body[data-phone-layout="true"] .general-mobile-intro {
 }
 
 @media (max-width: 640px) {
-    .general-layer-show-all {
+    .general-layer-toolbar-tools {
         margin-left: 0;
         width: 100%;
     }

@@ -463,15 +463,7 @@ class ConfigGeneralLayers {
             });
         });
 
-        const showAllLink = document.getElementById('general-layer-show-all');
-        if (showAllLink) {
-            showAllLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.applyLayer('all', { updateHash: true, persist: true });
-            });
-        }
-
-        this.setupLayerToolbarA11y(buttons, showAllLink);
+        this.setupLayerToolbarA11y(buttons);
     }
 
     setupExpandCollapseAll() {
@@ -502,10 +494,8 @@ class ConfigGeneralLayers {
         });
     }
 
-    setupLayerToolbarA11y(layerButtons, showAllLink) {
-        const layerBtnList = Array.from(layerButtons);
-        const focusables = [...layerBtnList];
-        if (showAllLink) focusables.push(showAllLink);
+    setupLayerToolbarA11y(layerButtons) {
+        const focusables = Array.from(layerButtons);
 
         const syncTabIndex = (activeEl) => {
             focusables.forEach((el) => {
@@ -516,16 +506,12 @@ class ConfigGeneralLayers {
         this._toolbarFocusables = focusables;
         this.syncToolbarTabIndex = syncTabIndex;
 
-        const initial = layerBtnList.find((btn) => btn.classList.contains('is-active')) || layerBtnList[0];
-        if (this.layer === 'all' && showAllLink) syncTabIndex(showAllLink);
-        else if (initial) syncTabIndex(initial);
+        const initial = focusables.find((btn) => btn.classList.contains('is-active')) || focusables[0];
+        if (initial) syncTabIndex(initial);
 
-        layerBtnList.forEach((btn) => {
+        layerButtons.forEach((btn) => {
             btn.addEventListener('click', () => syncTabIndex(btn));
         });
-        if (showAllLink) {
-            showAllLink.addEventListener('click', () => syncTabIndex(showAllLink));
-        }
 
         this.toolbar.addEventListener('keydown', (e) => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
@@ -647,16 +633,9 @@ class ConfigGeneralLayers {
             btn.classList.toggle('is-active', active);
             btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
-        const showAllLink = document.getElementById('general-layer-show-all');
-        if (showAllLink) {
-            showAllLink.classList.toggle('is-active', this.layer === 'all');
-            showAllLink.setAttribute('aria-pressed', this.layer === 'all' ? 'true' : 'false');
-        }
 
         const layerBtns = Array.from(this.toolbar.querySelectorAll('[data-general-layer]'));
-        const activeToolbarEl = this.layer === 'all'
-            ? showAllLink
-            : layerBtns.find((b) => b.getAttribute('data-general-layer') === this.layer) || layerBtns[0];
+        const activeToolbarEl = layerBtns.find((b) => b.getAttribute('data-general-layer') === this.layer) || layerBtns[0];
         if (activeToolbarEl) this.syncToolbarTabIndex?.(activeToolbarEl);
 
         if (updateHash) {

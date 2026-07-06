@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=config-general-b7-1">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=config-general-c4-1">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=config-label-width-a8-1">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -185,12 +185,12 @@
                     <div class="general-layer-switch" role="group" data-i18n-aria="config.generalLayerSwitchAria">
                         <button type="button" class="general-layer-btn is-active" data-general-layer="essentials" aria-pressed="true" data-i18n="config.generalLayerEssentials">Essentials</button>
                         <button type="button" class="general-layer-btn" data-general-layer="advanced" aria-pressed="false" data-i18n="config.generalLayerAdvanced">Advanced</button>
+                        <button type="button" class="general-layer-btn" data-general-layer="all" aria-pressed="false" data-i18n="config.generalLayerAll">All sections</button>
                     </div>
-                    <button type="button" id="general-layer-show-all" class="general-layer-show-all" aria-pressed="false" data-i18n="config.generalLayerShowAll">Show all sections on one page</button>
-                </div>
-                <div id="general-panels-bulk-actions" class="general-panels-bulk-actions" hidden>
-                    <button type="button" id="general-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
-                    <button type="button" id="general-collapse-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalCollapseAll">Collapse all sections</button>
+                    <div id="general-panels-bulk-actions" class="general-layer-toolbar-tools general-panels-bulk-actions" hidden>
+                        <button type="button" id="general-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
+                        <button type="button" id="general-collapse-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalCollapseAll">Collapse all sections</button>
+                    </div>
                 </div>
                 <p id="general-layer-intro-essentials" class="general-layer-intro">
                     <span data-i18n="config.generalEssentialsIntro">Core dashboard settings — language, appearance, layout, and everyday bookmark options.</span>
@@ -200,7 +200,7 @@
                     <span data-i18n="config.generalAdvancedLayerIntro">Power-user options: smart collections, diagnostics, branding, search behavior, and system tools.</span>
                 </p>
                 <p id="general-layer-intro-all" class="general-layer-intro" hidden>
-                    <span data-i18n="config.generalLayerAllIntro">Every Essentials and Advanced section on one scrollable page — use Expand all / Collapse all below, or click a section header.</span>
+                    <span data-i18n="config.generalLayerAllIntro">Every Essentials and Advanced section on one scrollable page — use Expand all / Collapse all in the toolbar, or click a section header.</span>
                 </p>
                 </div>
 
@@ -2175,7 +2175,7 @@
                             <ul data-i18n="config.helpPageConfigGeneralItems">
                                 <li><strong>Essentials</strong> shows everyday settings: language, theme, font, favicon styling, layout, bookmarks, smart collections, and footer buttons.</li>
                                 <li><strong>Advanced</strong> shows power options: background and font fine-tuning, bookmark display details, status monitoring, branding, search behavior, and system tools. Use the section links at the top of the Advanced layer to jump directly to a section.</li>
-                                <li><strong>Show all sections on one page</strong> — the button in the layer toolbar renders Essentials and Advanced sections together in one scrollable list.</li>
+                                <li><strong>All sections</strong> — the third layer tab in the toolbar shows Essentials and Advanced together; use <strong>Expand all</strong> / <strong>Collapse all</strong> on the right.</li>
                                 <li><strong>Bookmarks</strong> — display options (icons, shortcuts, badges, link preview) and behavior options (sorting, tab behavior, page tabs) live in a single section. A divider separates the two groups.</li>
                                 <li><strong>Tours &amp; onboarding</strong> — in Advanced → System, the collapsible <em>Tours &amp; onboarding</em> block holds all tour-reset buttons. Expand it to reset the onboarding wizard, the feature tour, context tips, or any individual tab tour.</li>
                                 <li>Changes only apply after clicking <strong>Save</strong>. The dashboard updates without a full page reload.</li>
@@ -2464,10 +2464,10 @@
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=config-stats-tour-on-1"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
-    <script src="/static/js/config/config-general-layers.js?v=general-layer-scroll-anchor-1"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-layer-c4-1"></script>
     <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
-    <script src="/static/js/config-general-tour.js?v=general-tour-v4"></script>
+    <script src="/static/js/config-general-tour.js?v=general-tour-c4-1"></script>
     <script src="/static/js/config-bookmarks-tour.js?v=bookmarks-phase5-1"></script>
     <script src="/static/js/config-finders-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-stats-tour.js?v=config-tours-v1"></script>
