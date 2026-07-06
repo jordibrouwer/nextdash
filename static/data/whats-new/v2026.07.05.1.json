@@ -1,0 +1,50 @@
+{
+  "tag": "v2026.07.05.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-06",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>What's new FAB placement</strong> — ★ is a corner FAB again, stacked below the <code>/</code> tag cloud (left by default; mirrored for left/right docks; anchored to the side-rail bottom). It no longer sits in the centre dock toolbar."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status-row highlight</strong> — bookmark hover and keyboard selection on status rows use the shared row tokens again; config save-mode pill shows translated labels after tab switches."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Merge regressions</strong> — dashboard static assets and config page load (<code>config-persistence.js</code>) restored after main/dev merge conflicts."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help</strong> — <em>Show what's new</em> at the top of the Help tab opens the ★ modal; the overlay uses the same wide shell and layout tokens as on the dashboard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Save indicator</strong> — unsaved-changes feedback on the save row is visible again when edits are pending."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, Config Help &amp; What's new</strong> — hotfix notes for <strong>v2026.07.05.1</strong> (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v129</code> data version; <code>2026.07-dashboard-release-v98</code> dashboard release token; FAB and config-help CSS query strings."
+        }
+      ]
+    }
+  ]
+}

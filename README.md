@@ -299,13 +299,15 @@ environment:
 
 **Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
 
+**What's new hotfixes (v2026.07.05.1)** — ★ corner FAB below `/` tag cloud again (not in the centre dock toolbar); Config → Help *Show what's new* with dashboard-matching modal chrome; status-row hover/selection and config save-indicator fixes; merge-regression restores for config load and dashboard assets.
+
 **Config shell & polish (v2026.07.05)** — Help split-shell with chip nav (B5); Tags/Backups divided rows; Theme Colors toolbar matches General chrome; Theme dirty state via save row only (B10); broader `prefers-reduced-motion` (C15).
 
 **Dashboard chrome (v2026.07.05)** — unified header chips and toolbar hierarchy; theme surface tokens on footer buttons; lighter card rows; shared toolbar modal chrome; polished empty states, search overlay anchoring, and layout radii; page overview icons and tag-filter recovery.
 
 **Recent modal & status rows (v2026.07.05)** — rank, recency badge, and open count in recent bookmarks (D8); status-row hover/selection via shared bookmark-row tokens (D12).
 
-**Fresh-install toolbar (v2026.07.05)** — new installs show Search, Commands, Finders, What's new (★), and + Add bookmark only; Recent and cheat sheet off until enabled in Config → General → Header & buttons (existing installs unchanged).
+**Fresh-install toolbar (v2026.07.05)** — new installs show Search, Commands, Finders, and + Add bookmark in the centre dock only; Recent and cheat sheet off until enabled in Config → General → Header & buttons (★ What's new is a separate corner FAB — see **v2026.07.05.1**).
 
 **Status loading default (v2026.07.05)** — show status loading indicator is off unless explicitly enabled.
 
