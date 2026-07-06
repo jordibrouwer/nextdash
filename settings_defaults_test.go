@@ -20,11 +20,11 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("fresh install: showHealthDashboard should be true")
 	}
-	if !settings.ShowRecentButton {
-		t.Fatal("fresh install: showRecentButton should be true")
+	if settings.ShowRecentButton {
+		t.Fatal("fresh install: showRecentButton should be false")
 	}
-	if !settings.ShowCheatSheetButton {
-		t.Fatal("fresh install: showCheatSheetButton should be true")
+	if settings.ShowCheatSheetButton {
+		t.Fatal("fresh install: showCheatSheetButton should be false")
 	}
 	if !settings.ShowIcons {
 		t.Fatal("fresh install: showIcons should be true")
@@ -66,6 +66,9 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	}
 	if !settings.ShowRecentButton {
 		t.Fatal("migration: missing showRecentButton should default to true")
+	}
+	if !settings.ShowCheatSheetButton {
+		t.Fatal("migration: missing showCheatSheetButton should default to true")
 	}
 }
 

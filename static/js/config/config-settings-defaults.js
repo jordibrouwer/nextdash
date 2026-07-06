@@ -27,6 +27,9 @@ class ConfigSettingsDefaults {
         if (typeof settingsData.showRecentButton === 'undefined') {
             settingsData.showRecentButton = true;
         }
+        if (typeof settingsData.showCheatSheetButton === 'undefined') {
+            settingsData.showCheatSheetButton = true;
+        }
         if (typeof settingsData.showHealthDashboard === 'undefined') {
             settingsData.showHealthDashboard = true;
         }

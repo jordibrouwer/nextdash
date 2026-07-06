@@ -199,6 +199,9 @@ class DashboardData {
             if (typeof d.settings.showRecentButton === 'undefined') {
                 d.settings.showRecentButton = true;
             }
+            if (typeof d.settings.showCheatSheetButton === 'undefined') {
+                d.settings.showCheatSheetButton = true;
+            }
             if (typeof d.settings.pasteUrlQuickAdd === 'undefined') {
                 d.settings.pasteUrlQuickAdd = true;
             }
