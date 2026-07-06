@@ -765,9 +765,45 @@ body {
 }
 
 .empty-state--tag-filter {
-    padding: 1.5rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.5rem 0.75rem;
     color: var(--text-tertiary);
     font-size: var(--font-size-text);
+}
+
+.empty-state--tag-filter-text {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.empty-state--tag-filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.empty-state--tag-filter-btn {
+    appearance: none;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--header-chip-radius, 999px);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.8rem;
+    font: inherit;
+    font-size: var(--font-size-controls);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.empty-state--tag-filter-btn:hover,
+.empty-state--tag-filter-btn:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+    background: var(--background-secondary);
+    outline: none;
 }
 
 /* ── Page navigation ─────────────────────────────────────────────────────── */
@@ -1406,7 +1442,9 @@ body {
 }
 .dashboard-grid.layout-widgets .bookmark-link {
     padding: 0.6rem;
-    border-radius: 8px;
+    border: none;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
 }
 
 /* Preset-driven CSS variables applied via body attributes */
@@ -3083,7 +3121,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
 
 .page-overview-link {
     display: grid;
-    grid-template-columns: 1.6rem 1fr auto;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 0.5rem;
     width: 100%;
@@ -3115,6 +3153,14 @@ body.no-animations .bookmarks-list.reorder-container::after {
 .page-overview-item.is-current .page-overview-name {
     color: var(--accent-primary);
     font-weight: var(--font-weight-semibold);
+}
+
+.page-overview-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 1.6rem;
+    justify-content: flex-end;
 }
 
 .page-overview-num {

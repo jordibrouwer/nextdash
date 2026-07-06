@@ -474,9 +474,27 @@ class DashboardUiHelpers {
                 this.formatDashboardLabel('pageOverviewItemAria', { name: pageName, count }, `${pageName}, ${count} bookmarks`)
             );
 
-            const numSpan = document.createElement('span');
-            numSpan.className = 'page-overview-num';
-            numSpan.textContent = String(idx + 1);
+            const lead = document.createElement('span');
+            lead.className = 'page-overview-lead';
+
+            if (page.icon) {
+                const iconEl = document.createElement('span');
+                iconEl.className = 'page-tab-icon';
+                iconEl.textContent = page.icon;
+                lead.appendChild(iconEl);
+            } else {
+                const numSpan = document.createElement('span');
+                numSpan.className = 'page-overview-num';
+                numSpan.textContent = String(idx + 1);
+                lead.appendChild(numSpan);
+            }
+
+            if (page.color) {
+                const dot = document.createElement('span');
+                dot.className = 'page-tab-dot';
+                dot.style.background = page.color;
+                lead.appendChild(dot);
+            }
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'page-overview-name';
@@ -486,7 +504,7 @@ class DashboardUiHelpers {
             countSpan.className = 'page-overview-count';
             countSpan.textContent = String(count);
 
-            link.appendChild(numSpan);
+            link.appendChild(lead);
             link.appendChild(nameSpan);
             link.appendChild(countSpan);
 

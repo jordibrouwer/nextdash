@@ -208,6 +208,8 @@
         "tagCloudBadgeMore": "#{tag} +{count}",
         "tagFilterBanner": "tags: {tags} — {count} Lesezeichen",
         "tagFilterEmpty": "Keine Lesezeichen mit {tags} auf dieser Seite.",
+        "tagFilterEmptyClear": "Tag-Filter löschen",
+        "tagFilterEmptyBrowseTags": "Tags durchsuchen",
         "tagFilterChipAria": "Tag-Filter aktiv: {tag}, {count} auf dieser Seite",
         "tagFilterChipTagAria": "Tag-Filter #{tag}, zum Bearbeiten klicken",
         "tagFilterChipRemoveAria": "Tag {tag} aus Filter entfernen",

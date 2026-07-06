@@ -200,7 +200,31 @@ class DashboardTagFilter {
             const emptyText = (d.language?.t?.('dashboard.tagFilterEmpty', 'No bookmarks with {tags} on this page.')
                 || 'No bookmarks with {tags} on this page.')
                 .replace('{tags}', tagsLabel);
-            empty.textContent = emptyText;
+            const text = document.createElement('p');
+            text.className = 'empty-state--tag-filter-text';
+            text.textContent = emptyText;
+            empty.appendChild(text);
+
+            const actions = document.createElement('div');
+            actions.className = 'empty-state--tag-filter-actions';
+
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'empty-state--tag-filter-btn';
+            clearBtn.textContent = d.language?.t?.('dashboard.tagFilterEmptyClear', 'Clear tag filter') || 'Clear tag filter';
+            clearBtn.addEventListener('click', () => this.clearTagFilter());
+            actions.appendChild(clearBtn);
+
+            if (window.DashboardTagCloud?.openModal) {
+                const browseBtn = document.createElement('button');
+                browseBtn.type = 'button';
+                browseBtn.className = 'empty-state--tag-filter-btn';
+                browseBtn.textContent = d.language?.t?.('dashboard.tagFilterEmptyBrowseTags', 'Browse tags') || 'Browse tags';
+                browseBtn.addEventListener('click', () => window.DashboardTagCloud.openModal());
+                actions.appendChild(browseBtn);
+            }
+
+            empty.appendChild(actions);
             container.appendChild(empty);
             if (d.language?.applyTranslations) {
                 d.language.applyTranslations();

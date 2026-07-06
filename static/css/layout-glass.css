@@ -809,21 +809,27 @@ body[data-layout-version="glass"] .dashboard-grid.layout-widgets .category {
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: var(--layout-surface);
-    border: 1px solid var(--layout-surface-border);
-    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link:hover:not(.bookmark-inline-editing) {
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
-    box-shadow: var(--layout-shadow-sm);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    border-color: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="glass"] .dashboard-grid.layout-widgets .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--glass-bookmark-row-selected-bg);
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
+    border-color: transparent;
     box-shadow: none;
 }
 

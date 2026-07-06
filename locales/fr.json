@@ -208,6 +208,8 @@
         "tagCloudBadgeMore": "#{tag} +{count}",
         "tagFilterBanner": "tags : {tags} — {count} favoris",
         "tagFilterEmpty": "Aucun favori avec {tags} sur cette page.",
+        "tagFilterEmptyClear": "Effacer le filtre de tags",
+        "tagFilterEmptyBrowseTags": "Parcourir les tags",
         "tagFilterChipAria": "Filtre tag actif : {tag}, {count} sur cette page",
         "tagFilterChipTagAria": "Filtre tag #{tag}, cliquer pour modifier",
         "tagFilterChipRemoveAria": "Retirer le tag {tag} du filtre",

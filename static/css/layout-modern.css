@@ -761,19 +761,25 @@ body[data-layout-version="modern"] .dashboard-grid.layout-widgets .category {
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link:hover:not(.bookmark-inline-editing) {
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
-    box-shadow: var(--layout-shadow-sm);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    border-color: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--modern-bookmark-row-selected-bg);
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
+    border-color: transparent;
     box-shadow: none;
 }
 

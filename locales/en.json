@@ -211,6 +211,8 @@
         "tagCloudBadgeMore": "#{tag} +{count}",
         "tagFilterBanner": "tags: {tags} — {count} bookmarks",
         "tagFilterEmpty": "No bookmarks with {tags} on this page.",
+        "tagFilterEmptyClear": "Clear tag filter",
+        "tagFilterEmptyBrowseTags": "Browse tags",
         "tagFilterChipAria": "Tag filter active: {tag}, {count} on this page",
         "tagFilterChipTagAria": "Tag filter #{tag}, click to edit",
         "tagFilterChipRemoveAria": "Remove tag {tag} from filter",

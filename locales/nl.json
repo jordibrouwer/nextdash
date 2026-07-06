@@ -211,6 +211,8 @@
         "tagCloudBadgeMore": "#{tag} +{count}",
         "tagFilterBanner": "tags: {tags} — {count} bladwijzers",
         "tagFilterEmpty": "Geen bladwijzers met {tags} op deze pagina.",
+        "tagFilterEmptyClear": "Tagfilter wissen",
+        "tagFilterEmptyBrowseTags": "Tags bekijken",
         "tagFilterChipAria": "Tagfilter actief: {tag}, {count} op deze pagina",
         "tagFilterChipTagAria": "Tagfilter #{tag}, klik om te bewerken",
         "tagFilterChipRemoveAria": "Tag {tag} uit filter verwijderen",
