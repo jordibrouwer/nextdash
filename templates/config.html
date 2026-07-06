@@ -27,10 +27,10 @@
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
-    <link rel="stylesheet" href="/static/css/config/config-tags.css?v=tags-surface-1">
+    <link rel="stylesheet" href="/static/css/config/config-tags.css?v=config-polish-c2-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css?v=help-split-b12-1">
-    <link rel="stylesheet" href="/static/css/config/config-backups.css?v=backups-surface-b9-1">
+    <link rel="stylesheet" href="/static/css/config/config-backups.css?v=config-polish-c2-1">
     <link rel="stylesheet" href="/static/css/search.css">
     <link rel="stylesheet" href="/static/css/search-commands-new.css">
     <link rel="stylesheet" href="/static/css/status.css">
@@ -1648,15 +1648,19 @@
                     <h3 class="section-title" data-i18n="config.backupsZipSectionTitle">ZIP Backup &amp; Restore</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.backupDescription">Export your data</p>
+                                <p id="backup-last-date" class="backups-last-date" hidden></p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <button type="button" id="backup-info-btn" class="info-button" data-i18n-aria="config.backupInfoTitle">ℹ</button>
                                 <button type="button" id="backup-btn" class="btn btn-primary btn-small" data-i18n="config.createBackup">Create Backup</button>
                             </div>
-                            <p id="backup-last-date" class="backups-last-date" hidden></p>
                         </div>
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.importDescription">Import your data</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.importDescription">Import your data</p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <button type="button" id="import-info-btn" class="info-button" data-i18n-aria="config.importInfoTitle">ℹ</button>
                                 <input type="file" id="import-file" accept=".zip" style="display: none;">
@@ -1670,16 +1674,20 @@
                     <h3 class="section-title" data-i18n="config.backupsImportExportSectionTitle">Import &amp; Export</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
-                            <p class="backups-action-hint" data-i18n="config.backupsBrowserImportHint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped. Missing icons are fetched automatically with a progress bar.</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.browserImportDescription">Import bookmarks from browser</p>
+                                <p class="backups-action-hint" data-i18n="config.backupsBrowserImportHint">Export bookmarks from Chrome, Firefox, or Edge as HTML and import here. Folders become categories; duplicate URLs are skipped. Missing icons are fetched automatically with a progress bar.</p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <input type="file" id="browser-import-file" accept=".html,.htm" style="display: none;">
                                 <button type="button" id="browser-import-btn" class="btn btn-secondary btn-small" data-i18n="config.browserImportBtn">Import from Browser</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
-                            <p class="backups-action-hint" data-i18n="config.backupsCsvExportHint">Downloads all bookmarks from all pages as a single CSV file (name, URL, category, page, shortcut, tags, notes). Opens in Excel, Google Sheets, or any text editor.</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.csvExportDescription">Export bookmarks to CSV</p>
+                                <p class="backups-action-hint" data-i18n="config.backupsCsvExportHint">Downloads all bookmarks from all pages as a single CSV file (name, URL, category, page, shortcut, tags, notes). Opens in Excel, Google Sheets, or any text editor.</p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <button type="button" id="csv-export-btn" class="btn btn-secondary btn-small" data-i18n="config.csvExportBtn">Export to CSV</button>
                             </div>
@@ -1691,15 +1699,19 @@
                     <h3 class="section-title" data-i18n="config.settingsSection">Settings</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.settingsExportDescription">Export settings</p>
-                            <p class="backups-action-hint" data-i18n="config.settingsExportHint">Downloads your current settings as JSON. Does not include bookmarks, pages, or themes.</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.settingsExportDescription">Export settings</p>
+                                <p class="backups-action-hint" data-i18n="config.settingsExportHint">Downloads your current settings as JSON. Does not include bookmarks, pages, or themes.</p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <button type="button" id="settings-export-btn" class="btn btn-secondary btn-small" data-i18n="config.settingsExportBtn">Export Settings</button>
                             </div>
                         </div>
                         <div class="backups-action-item">
-                            <p class="backups-action-label" data-i18n="config.settingsImportDescription">Import settings</p>
-                            <p class="backups-action-hint" data-i18n="config.settingsImportHint">Overwrites current settings with a previously exported JSON file.</p>
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.settingsImportDescription">Import settings</p>
+                                <p class="backups-action-hint" data-i18n="config.settingsImportHint">Overwrites current settings with a previously exported JSON file.</p>
+                            </div>
                             <div class="backups-action-buttons">
                                 <input type="file" id="settings-import-file" accept=".json" style="display: none;">
                                 <button type="button" id="settings-import-btn" class="btn btn-danger btn-small" data-i18n="config.settingsImportBtn">Import Settings</button>

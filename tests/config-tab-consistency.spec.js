@@ -559,6 +559,34 @@ test.describe('config tab surface box model', () => {
         await expectSurfaceToolbarFits(page, 'tags');
     });
 
+    test('tags tab keeps cloud and list flush inside one fused surface', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('tags'));
+        const shell = await page.evaluate(() => {
+            const cloud = document.getElementById('tags-cloud');
+            const listPanel = document.getElementById('tags-list-panel');
+            if (!cloud || !listPanel) return null;
+            const cloudStyle = getComputedStyle(cloud);
+            const listStyle = getComputedStyle(listPanel);
+            return {
+                cloudBorderTop: cloudStyle.borderTopWidth,
+                cloudBorderLeft: cloudStyle.borderLeftWidth,
+                cloudBorderRight: cloudStyle.borderRightWidth,
+                listBorderTop: listStyle.borderTopWidth,
+                listBorderLeft: listStyle.borderLeftWidth,
+                listBorderRight: listStyle.borderRightWidth,
+                listBackground: listStyle.backgroundColor,
+            };
+        });
+        expect(shell).not.toBeNull();
+        expect(shell.cloudBorderTop).toBe('0px');
+        expect(shell.cloudBorderLeft).toBe('0px');
+        expect(shell.cloudBorderRight).toBe('0px');
+        expect(shell.listBorderTop).toBe('0px');
+        expect(shell.listBorderLeft).toBe('0px');
+        expect(shell.listBorderRight).toBe('0px');
+        expect(shell.listBackground).toBe('rgba(0, 0, 0, 0)');
+    });
+
     test('categories list action buttons fit inside surface card', async ({ page }) => {
         await page.evaluate(async () => {
             const cm = window.configManager;
@@ -1042,6 +1070,30 @@ test.describe('config stats & backups surface (B9)', () => {
         });
         expect(sectionCount).toBe(1);
     });
+
+    test('backups actions use divided row rhythm inside each section', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('backups'));
+        const metrics = await page.evaluate(() => {
+            const row = document.querySelector('.backups-section .backups-action-item');
+            const list = document.querySelector('.backups-section .backups-actions-row');
+            if (!row || !list) return null;
+            const rowStyle = getComputedStyle(row);
+            const listStyle = getComputedStyle(list);
+            return {
+                rowMinHeight: parseFloat(rowStyle.minHeight),
+                rowPaddingTop: parseFloat(rowStyle.paddingTop),
+                rowBorderRadius: rowStyle.borderRadius,
+                listGap: listStyle.gap,
+                listBorderTop: listStyle.borderTopWidth,
+            };
+        });
+        expect(metrics).not.toBeNull();
+        expect(metrics.rowMinHeight).toBeCloseTo(44, 0);
+        expect(metrics.rowPaddingTop).toBeCloseTo(10.4, 1);
+        expect(metrics.rowBorderRadius).toBe('0px');
+        expect(metrics.listGap).toBe('0px');
+        expect(metrics.listBorderTop).not.toBe('0px');
+    });
 });
 
 test.describe('config help surface (B5)', () => {
@@ -1275,6 +1327,25 @@ test.describe('config general & theme surface (C16/B10)', () => {
         expect(rhythm.itemMarginBottom).toBe('0px');
         expect(rhythm.itemBoxShadow).toBe('none');
         expect(rhythm.gridBorderWidth).not.toBe('0px');
+
+        const subtabs = await page.evaluate(() => {
+            const list = document.querySelector('.colors-subtabs');
+            const active = document.querySelector('.colors-tab-button.active');
+            if (!list || !active) return null;
+            const listStyle = getComputedStyle(list);
+            const activeStyle = getComputedStyle(active);
+            return {
+                listBorderRadius: listStyle.borderRadius,
+                listBorderTop: listStyle.borderTopWidth,
+                activeBorderRadius: activeStyle.borderRadius,
+                activeBackground: activeStyle.backgroundColor,
+            };
+        });
+        expect(subtabs).not.toBeNull();
+        expect(subtabs.listBorderRadius).not.toBe('0px');
+        expect(subtabs.listBorderTop).not.toBe('0px');
+        expect(subtabs.activeBorderRadius).not.toBe('0px');
+        expect(subtabs.activeBackground).not.toBe('rgba(0, 0, 0, 0)');
 
         await page.evaluate(() => window.configManager.colorsEditor?.switchSubTab?.('custom'));
         const nestedCards = await page.evaluate(() => {
