@@ -1,5 +1,6 @@
 /* Code styling for help section */
-.help-tab code {
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) code,
+.help-tab-surface .help-filter-bar code {
     background-color: var(--background-secondary);
     color: var(--text-primary);
     padding: 0.125rem 0.25rem;
@@ -11,25 +12,28 @@
 }
 
 /* Link styling for help section */
-.help-tab a {
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) a,
+.help-tab-surface .help-filter-bar a {
     color: var(--text-secondary);
     text-decoration: underline;
     text-underline-offset: 0.14em;
     text-decoration-thickness: 0.08em;
 }
 
-.help-tab a:hover,
-.help-tab a:focus-visible {
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) a:hover,
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) a:focus-visible,
+.help-tab-surface .help-filter-bar a:hover,
+.help-tab-surface .help-filter-bar a:focus-visible {
     color: var(--text-primary);
 }
 
 /* Help section list spacing */
-.help-tab ul li {
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) ul li {
     margin-bottom: 0.75rem;
     line-height: 1.6;
 }
 
-.help-tab ul {
+.help-tab-surface :is(.help-block, .help-index, .config-split-content) ul {
     padding-left: 1.5rem;
 }
 

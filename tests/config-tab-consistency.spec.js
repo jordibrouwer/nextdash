@@ -1342,10 +1342,15 @@ test.describe('config general & theme surface (C16/B10)', () => {
             };
         });
         expect(subtabs).not.toBeNull();
-        expect(subtabs.listBorderRadius).not.toBe('0px');
+        expect(subtabs.listBorderRadius).toBe('4px');
         expect(subtabs.listBorderTop).not.toBe('0px');
-        expect(subtabs.activeBorderRadius).not.toBe('0px');
+        expect(subtabs.activeBorderRadius).toBe('0px');
         expect(subtabs.activeBackground).not.toBe('rgba(0, 0, 0, 0)');
+
+        await expect(page.locator('#save-colors-btn')).toHaveClass(/btn-secondary/);
+        await expect(page.locator('#save-colors-btn')).not.toHaveClass(/btn-success/);
+        await expect(page.locator('.theme-colors-toolbar .colors-subtabs-header')).toBeVisible();
+        await expect(page.locator('.theme-colors-toolbar .config-tab-toolbar-tools')).toBeVisible();
 
         await page.evaluate(() => window.configManager.colorsEditor?.switchSubTab?.('custom'));
         const nestedCards = await page.evaluate(() => {
