@@ -16,10 +16,15 @@ body[data-layout-version="glass"] .shortcut-search {
 body[data-layout-version="glass"] .search-container {
     border-radius: var(--layout-radius-lg);
     border: 1px solid var(--layout-surface-border);
-    background: var(--layout-overlay-bg);
-    box-shadow: var(--layout-shadow-lg);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-md);
     backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"]:not([data-button-position="side-left"]):not([data-button-position="bottom-left"]):not([data-button-position="bottom-right"]) .search-container {
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
 }
 
 body[data-layout-version="glass"] .search-prefix {

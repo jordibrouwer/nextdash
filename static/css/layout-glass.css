@@ -1246,3 +1246,28 @@ body[data-layout-version="glass"] .bookmarks-list[data-bookmarks-list="true"]:no
     background: var(--glass-bookmark-row-selected-bg);
     box-shadow: none;
 }
+
+/* ─── Empty dashboard states (page / fresh) ───────────────────────────────── */
+
+body[data-layout-version="glass"] #dashboard-layout > .empty-state {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+}
+
+body[data-layout-version="glass"] .dashboard-grid.layout-cards .smart-collection-empty,
+body[data-layout-version="glass"] .dashboard-grid.layout-widgets .smart-collection-empty {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--layout-surface-border) 85%, transparent);
+    background: color-mix(in srgb, var(--layout-surface) 55%, transparent);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+}

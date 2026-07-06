@@ -1100,3 +1100,24 @@ body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:n
     background: var(--modern-bookmark-row-selected-bg);
     box-shadow: none;
 }
+
+/* ─── Empty dashboard states (page / fresh) ───────────────────────────────── */
+
+body[data-layout-version="modern"] #dashboard-layout > .empty-state {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .dashboard-grid.layout-cards .smart-collection-empty,
+body[data-layout-version="modern"] .dashboard-grid.layout-widgets .smart-collection-empty {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--layout-surface-border) 85%, transparent);
+    background: color-mix(in srgb, var(--layout-surface) 72%, transparent);
+}
