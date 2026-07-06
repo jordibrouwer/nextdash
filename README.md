@@ -299,6 +299,18 @@ environment:
 
 **Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
 
+**Config shell & polish (v2026.07.05)** — Help split-shell with chip nav (B5); Tags/Backups divided rows; Theme Colors toolbar matches General chrome; Theme dirty state via save row only (B10); broader `prefers-reduced-motion` (C15).
+
+**Dashboard chrome (v2026.07.05)** — unified header chips and toolbar hierarchy; theme surface tokens on footer buttons; lighter card rows; shared toolbar modal chrome; polished empty states, search overlay anchoring, and layout radii; page overview icons and tag-filter recovery.
+
+**Recent modal & status rows (v2026.07.05)** — rank, recency badge, and open count in recent bookmarks (D8); status-row hover/selection via shared bookmark-row tokens (D12).
+
+**Fresh-install toolbar (v2026.07.05)** — new installs show Search, Commands, Finders, What's new (★), and + Add bookmark only; Recent and cheat sheet off until enabled in Config → General → Header & buttons (existing installs unchanged).
+
+**Status loading default (v2026.07.05)** — show status loading indicator is off unless explicitly enabled.
+
+**Classic layout default (v2026.07.05)** — onboarding keeps Classic; Modern/Glass show a one-time early-beta notice. Classic config header stays separate from save row and tabs (**v2026.07.01.3** — C10 reverted).
+
 **Config surface polish (v2026.07.04)** — General layer switcher (Essentials / Advanced / Show all in one row); stronger active tab group styling; list tabs share `config-list-tab` intro shell; button visibility as divided rows.
 
 **Bookmarks master/detail (v2026.07.04)** — filters and bulk actions above a split view: bookmark list (master) + detail editor (pane) inside one fused surface.

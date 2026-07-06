@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.05 — July 2026](#v20260705--july-2026)
 - [v2026.07.04 — July 2026](#v20260704--july-2026)
 - [v2026.07.03 — July 2026](#v20260703--july-2026)
 - [v2026.07.02 — July 2026](#v20260702--july-2026)
@@ -73,6 +74,38 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.05 — July 2026
+
+**Config shell polish & dashboard chrome** — Help split-shell, flattened nested config cards, unified dashboard toolbar/modals, recent-modal usage, fresh-install footer defaults, and Classic layout guidance with C10 header rollback retained.
+
+### Config
+
+- **fix** **Config shell parity (B5)** — Help split-shell with chip navigation; Bookmarks and Collections row rhythm aligned (`templates/config.html`, `config-tab-shell.css`, `config-help.css`).
+- **fix** **Flattened nested cards** — Tags and Backups divided rows inside fused surfaces; Theme Colors subtabs match General layer switcher; scoped Help link/code styles (`config-tags.css`, `config-backups.css`, `colors.css`, `config-help.css`).
+- **fix** **Theme dirty state (B10)** — remove local `has-unsaved` on **Save colors**; dirty state via save row only (`static/js/colors.js`, `templates/config.html`).
+- **fix** **Reduced motion (C15)** — skeleton loaders, spotlight tours, and chip nav respect `prefers-reduced-motion` (`config-reduced-motion.css`, `feature-spotlight.css`).
+
+### Dashboard
+
+- **fix** **Unified chrome** — shared header chip tokens, clearer toolbar hierarchy, lighter card rows (`layout-modern.css`, `dashboard.css`, `layout-glass-tokens.css`).
+- **fix** **Toolbar surface tokens** — footer buttons use theme surface colors instead of custom accent tints (`dashboard.css`, `layout-modern.css`).
+- **fix** **Toolbar modals** — What's new (★), recent, and help modals share search-overlay chrome; search anchors above toolbar (`dashboard.js`, `dashboard-recent.js`, `whats-new-modal.js`).
+- **fix** **Empty states & polish** — smart-collection empties, Modern/Glass page-level empty chrome, tag-filter recovery, page overview icons, shared radii tokens (`dashboard-empty.css`, `search-overlay.css`, `layout-radii.css`).
+- **fix** **Widgets & overview** — flatter widgets preset rows; classic header chips harmonized; responsive grid overrides scoped to Classic (`layout-widgets.css`, `page-overview.js`).
+- **fix** **Recent modal (D8)** — rank, recency badge, and open count (`dashboard-recent.js`, locales).
+- **fix** **Status-row hover (D12)** — shared `--bookmark-row-hover-bg` / selection tokens (`dashboard-bookmark-row.css`, `layout-modern.css`, `layout-glass-tokens.css`).
+- **fix** **Status loading default** — `showStatusLoading` false when unset (`models.go`, `config-settings.js`, `dashboard-data.js`).
+- **new** **Fresh-install toolbar** — Search, Commands, Finders, What's new (★), and + Add bookmark only; Recent and cheat sheet off by default (`models.go`, `settings_defaults_test.go`, `config-settings-defaults.js`).
+- **fix** **Classic default** — onboarding keeps Classic; one-time Modern/Glass early-beta toast and config notice; layout picker removed from onboarding (`layout-modern-nudge.js`, `layout-beta-toast.js`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, Config Help & What's new** — release notes for **v2026.07.05** (EN/NL/DE/FR); Classic **C10** fused-header rollback wording corrected in Help locales.
+- **fix** **Playwright** — Classic C10 separate-header test retained; recent-modal and Help-shell coverage.
+- **fix** **Cache-bust** — `whats-new-v127` data version and `2026.07-dashboard-release-v97` dashboard release token.
 
 ---
 
