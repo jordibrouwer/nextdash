@@ -787,62 +787,50 @@
                     <section class="general-card" data-general-panel="search-buttons">
                         <h3 class="section-title" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</h3>
                         <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer.</p>
-                        <table class="buttons-visibility-table">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="config.buttonsTableHeaderButton">Button</th>
-                                    <th data-i18n="config.buttonsTableHeaderShow">Show</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td data-i18n="config.addBookmarkButtonLabel">Add bookmark</td>
-                                    <td><input type="checkbox" id="show-add-bookmark-button-checkbox"></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.searchButtonLabel">Search</td>
-                                    <td><input type="checkbox" id="show-search-button-checkbox"></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.findersButtonLabel">Finders</td>
-                                    <td><input type="checkbox" id="show-finders-button-checkbox"></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.commandsButtonLabel">Commands</td>
-                                    <td><input type="checkbox" id="show-commands-button-checkbox"></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.cheatsheetButtonLabel">Cheatsheet</td>
-                                    <td><input type="checkbox" id="show-cheatsheet-button-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.recentButtonLabel">Recent</td>
-                                    <td><input type="checkbox" id="show-recent-button-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
-                                </tr>
-                                <tr>
-                                    <td class="buttons-visibility-name">
-                                        <span class="buttons-visibility-label">
-                                            <span data-i18n="config.tagCloudButtonLabel">Tag cloud (/)</span>
-                                            <button type="button" id="show-tag-cloud-button-info-btn" class="info-button" data-i18n-aria="config.showTagCloudButtonInfoTitle">ℹ</button>
-                                        </span>
-                                    </td>
-                                    <td class="buttons-visibility-show"><input type="checkbox" id="show-tag-cloud-button-checkbox"></td>
-                                </tr>
-                                <tr>
-                                    <td data-i18n="config.configButtonLabel">Config</td>
-                                    <td><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
-                                </tr>
-                                <tr>
-                                    <td class="buttons-visibility-name">
-                                        <span class="buttons-visibility-label">
-                                            <span data-i18n="config.healthLinkButtonLabel">Health link</span>
-                                            <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
-                                        </span>
-                                    </td>
-                                    <td class="buttons-visibility-show"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="config-action-list buttons-visibility-list" role="list">
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.addBookmarkButtonLabel">Add bookmark</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-add-bookmark-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.searchButtonLabel">Search</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-search-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.findersButtonLabel">Finders</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-finders-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.commandsButtonLabel">Commands</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-commands-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.cheatsheetButtonLabel">Cheatsheet</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-cheatsheet-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.recentButtonLabel">Recent</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-recent-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text buttons-visibility-label">
+                                    <span data-i18n="config.tagCloudButtonLabel">Tag cloud (/)</span>
+                                    <button type="button" id="show-tag-cloud-button-info-btn" class="info-button" data-i18n-aria="config.showTagCloudButtonInfoTitle">ℹ</button>
+                                </span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-tag-cloud-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.configButtonLabel">Config</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text buttons-visibility-label">
+                                    <span data-i18n="config.healthLinkButtonLabel">Health link</span>
+                                    <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
+                                </span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                        </div>
                         <div class="form-group" style="margin-top:1rem">
                             <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
                             <button type="button" id="button-bar-position-info-btn" class="info-button" data-i18n-aria="config.buttonBarPositionInfoTitle">ℹ</button>

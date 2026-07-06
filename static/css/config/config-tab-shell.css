@@ -376,6 +376,40 @@ html:has(#config-main) #config-main :is(
     margin-left: auto;
 }
 
+/* Header & Buttons visibility (General → Advanced) — divided list rows */
+.buttons-visibility-list.config-action-list {
+    margin-top: 0.25rem;
+}
+
+.buttons-visibility-row .config-advanced-action-text {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.buttons-visibility-row .config-advanced-action-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex: 0 0 auto;
+    min-width: 3.5rem;
+}
+
+.buttons-visibility-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.4em;
+    line-height: 1.35;
+}
+
+.buttons-visibility-label .info-button {
+    flex-shrink: 0;
+    margin: 0;
+}
+
 .config-empty-state p,
 .tags-empty-state p,
 .collections-empty-state p {
