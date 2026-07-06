@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.05.1 — July 2026](#v202607051--july-2026)
 - [v2026.07.05 — July 2026](#v20260705--july-2026)
 - [v2026.07.04 — July 2026](#v20260704--july-2026)
 - [v2026.07.03 — July 2026](#v20260703--july-2026)
@@ -74,6 +75,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.05.1 — July 2026
+
+**Hotfixes after v2026.07.05** — restore the ★ corner FAB below the tag cloud, Config Help What's new entry with dashboard-matching modal chrome, and several merge-regression fixes.
+
+### Dashboard
+
+- **fix** **What's new FAB placement** — ★ corner FAB below `/` tag cloud again (mirrored for dock positions; side-rail bottom anchor); removed from centre dock toolbar (`templates/dashboard.html`, `dashboard.css`, `layout-side-rail.css`).
+- **fix** **Status-row highlight** — hover/selection on status bookmarks uses shared row tokens again (`dashboard-bookmark-row.css`, related layout CSS).
+- **fix** **Merge regressions** — dashboard static assets restored after dev merge conflict resolution (`f11974a`).
+
+### Config
+
+- **fix** **Config → Help** — *Show what's new* button at top of Help tab; modal overlay matches dashboard wide shell and Modern/Glass tokens (`templates/config.html`, `modal.css`, `overlays-modern.css`, `overlays-glass.css`, `config-setup.js`).
+- **fix** **Save indicator** — save-row unsaved feedback visible when edits are pending (`7c47b8a`).
+- **fix** **Save-mode pill i18n** — translated labels after tab switch instead of raw keys (`d87d05f`).
+- **fix** **Config page load** — `config-persistence.js` script reference restored on main (`54e11ab`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, Config Help & What's new** — **v2026.07.05.1** hotfix notes (EN/NL/DE/FR).
+- **fix** **Cache-bust** — `whats-new-v129` data version and `2026.07-dashboard-release-v98` dashboard release token; `dashboard-whats-new-fab-1`, `whats-new-config-parity-1`, and `config-help-whats-new-link-1` query strings.
 
 ---
 
