@@ -146,6 +146,16 @@
     background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary));
 }
 
+.help-intro-action {
+    margin: 0 0 0.5rem;
+}
+
+.help-whats-new-cta {
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.03em;
+    text-transform: lowercase;
+}
+
 .help-keyboard-cta {
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.03em;

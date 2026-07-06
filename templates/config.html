@@ -17,12 +17,12 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-b5-b10-c15-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=config-help-whats-new-link-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
     <link rel="stylesheet" href="/static/css/reorder.css">
-    <link rel="stylesheet" href="/static/css/modal.css">
+    <link rel="stylesheet" href="/static/css/modal.css?v=whats-new-config-parity-1">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-split-b10-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-polish-c2-2">
-    <link rel="stylesheet" href="/static/css/overlays-modern.css">
+    <link rel="stylesheet" href="/static/css/overlays-modern.css?v=whats-new-config-parity-1">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/config-glass.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
@@ -2129,6 +2129,9 @@
             <div class="tab-content" data-tab-content="help">
             <div class="help-tab config-tab-page">
                 <div class="config-tab-intro">
+                    <p class="help-intro-action">
+                        <button type="button" id="help-open-whats-new-link" class="btn btn-secondary btn-small help-whats-new-cta" data-i18n="config.showWhatsNewLink">Show what's new</button>
+                    </p>
                     <p class="config-tab-intro-lead" data-i18n="config.helpIntro">Browse setup guides, shortcuts, and troubleshooting. Use the filter to narrow sections, or jump via Quick links on the left.</p>
                 </div>
                 <div class="config-tab-surface help-tab-surface">
@@ -2461,7 +2464,7 @@
     <script src="/static/js/config/config-tab-tours.js?v=config-stats-tour-on-1"></script>
     <script src="/static/js/config/config-persistence.js?v=config-settings-guard-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=config-stats-tour-on-1"></script>
+    <script src="/static/js/config/config-setup.js?v=config-help-whats-new-link-1"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-layer-c4-1"></script>
     <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}"></script>
