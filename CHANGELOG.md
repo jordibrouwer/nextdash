@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.04 — July 2026](#v20260704--july-2026)
 - [v2026.07.03 — July 2026](#v20260703--july-2026)
 - [v2026.07.02 — July 2026](#v20260702--july-2026)
 - [v2026.07.01.9 — July 2026](#v202607019--july-2026)
@@ -72,6 +73,28 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.04 — July 2026
+
+**Config surface polish** — General layer switcher, stronger active tab styling, unified list-tab shell, Stats split-layout, Bookmarks master/detail, and Theme colors divided-list rhythm inside fused surfaces.
+
+### Config
+
+- **fix** **General layer toolbar (C4)** — Essentials, Advanced, and Show all in one segmented row on the fused General surface; dead Advanced section-jump nav CSS removed (`config-general-layers.css`, `config-general.css`).
+- **fix** **Button visibility rows** — General bookmark button visibility uses divided list rows instead of a table card (`config-buttons.css`, `config-general.css`).
+- **fix** **Active tab styling (C2/C13)** — stronger active tab group and selected tab highlight on Classic, Modern, and Glass (`config-tabs.css`, `config-tab-groups.js`).
+- **fix** **List-tab shell (A2)** — `config-list-tab` and `config-tab-intro` on Pages, Categories, Tags, Finders, and Collections (`templates/config.html`, `config-tab-shell.css`, `config-lists.css`).
+- **fix** **Stats split-layout (B10)** — chip-nav and sidebar index inside `.stats-tab-surface` using shared `config-split-*` primitives (`templates/config.html`, `config-tab-shell.css`, `config-stats.css`).
+- **fix** **Bookmarks master/detail (B11)** — toolbar above split; master list pane + detail editor pane via `config-master-detail-*` (`templates/config.html`, `config-bookmarks-splitview.css`, `config-tab-shell.css`).
+- **fix** **Theme colors divided list (C11)** — color rows, custom themes, page selector, and preview flattened inside `.theme-colors-tab-surface` (`colors.css`, `config-modern-glass-surfaces.css`, `config-modern.css`, `config-glass.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, Config Help & What's new** — release notes for **v2026.07.04** (EN/NL/DE/FR).
+- **fix** **Playwright** — config tab consistency tests for Stats split shell, Bookmarks master/detail, Theme divided-list rhythm.
+- **fix** **Cache-bust** — `whats-new-v126` data version and `2026.07-dashboard-release-v96` dashboard release token; `theme-colors-divided-c11-1`, `bookmarks-master-b11-1`, `stats-split-b10-1`, `config-tab-active-c2-1`, `config-polish-c4-1` on config CSS bundles.
 
 ---
 

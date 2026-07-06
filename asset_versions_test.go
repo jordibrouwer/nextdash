@@ -15,7 +15,7 @@ func TestSharedAssetVersionsMatchWhatsNewStub(t *testing.T) {
 	if !strings.Contains(src, sharedAssetVersions.WhatsNewData) {
 		t.Fatalf("whats-new-stub.js missing data version %q (update asset_versions.go and whats-new-stub.js together)", sharedAssetVersions.WhatsNewData)
 	}
-	if !strings.Contains(src, "2026.07-dashboard-release-v95") {
+	if !strings.Contains(src, "2026.07-dashboard-release-v96") {
 		t.Fatal("whats-new-stub.js dashboard release token drifted from expected v95")
 	}
 }
