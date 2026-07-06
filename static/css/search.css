@@ -720,8 +720,7 @@ body.no-animations .search-button[data-tooltip]::after {
 .commands-button .search-button-icon,
 .finders-button .search-button-icon,
 .recent-button .search-button-icon,
-.help-button .search-button-icon,
-.whats-new-button .search-button-icon {
+.help-button .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
 }
 #search-button .search-button-icon         { animation-delay: 1s;   }
@@ -730,15 +729,13 @@ body.no-animations .search-button[data-tooltip]::after {
 .finders-button .search-button-icon        { animation-delay: 6.4s; }
 .recent-button .search-button-icon         { animation-delay: 8.2s; }
 .help-button .search-button-icon           { animation-delay: 9.4s; }
-.whats-new-button .search-button-icon      { animation-delay: 10.2s; }
 
 body.no-animations #search-button .search-button-icon,
 body.no-animations .add-bookmark-button .search-button-icon,
 body.no-animations .commands-button .search-button-icon,
 body.no-animations .finders-button .search-button-icon,
 body.no-animations .recent-button .search-button-icon,
-body.no-animations .help-button .search-button-icon,
-body.no-animations .whats-new-button .search-button-icon {
+body.no-animations .help-button .search-button-icon {
     animation: none !important;
 }
 

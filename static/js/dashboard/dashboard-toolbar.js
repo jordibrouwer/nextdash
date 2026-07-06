@@ -34,7 +34,7 @@ class DashboardToolbar {
             });
         }
 
-        // What's new (toolbar button, same row as search/commands)
+        // What's new (corner FAB below tag cloud)
         const whatsNewBtn = document.getElementById('whats-new-btn');
         if (whatsNewBtn) {
             whatsNewBtn.addEventListener('click', () => {
