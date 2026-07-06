@@ -1207,4 +1207,51 @@ test.describe('config general & theme surface (C16/B10)', () => {
         await expect(page.locator('#config-tab-save-mode')).toHaveClass(/config-tab-save-mode--colors-save/);
         await expect(page.locator('.tab-button[data-tab="colors"]')).toHaveClass(/tab-has-unsaved/);
     });
+
+    test('theme color rows use divided list rhythm inside fused surface (C11)', async ({ page }) => {
+        await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
+        await page.evaluate(() => window.configManager.colorsEditor?.switchSubTab?.('dark'));
+
+        const rhythm = await page.evaluate(() => {
+            const panel = document.querySelector('.theme-colors-tab-surface .colors-tab-panel.active');
+            if (!panel) return null;
+            const grid = panel.querySelector('.colors-grid');
+            const item = panel.querySelector('.color-item');
+            if (!grid || !item) return null;
+            const gridStyle = getComputedStyle(grid);
+            const itemStyle = getComputedStyle(item);
+            return {
+                gridGap: gridStyle.gap,
+                itemMarginBottom: itemStyle.marginBottom,
+                itemBoxShadow: itemStyle.boxShadow,
+                gridBorderWidth: gridStyle.borderTopWidth,
+            };
+        });
+        expect(rhythm).not.toBeNull();
+        expect(rhythm.gridGap).toBe('0px');
+        expect(rhythm.itemMarginBottom).toBe('0px');
+        expect(rhythm.itemBoxShadow).toBe('none');
+        expect(rhythm.gridBorderWidth).not.toBe('0px');
+
+        await page.evaluate(() => window.configManager.colorsEditor?.switchSubTab?.('custom'));
+        const nestedCards = await page.evaluate(() => {
+            const surface = document.querySelector('.theme-colors-tab-surface');
+            if (!surface) return { ok: false };
+            const selectors = [
+                '.page-selector-wrapper',
+                '.theme-preview-card',
+                '#custom-themes-list.categories-list',
+            ];
+            for (const sel of selectors) {
+                const el = surface.querySelector(sel);
+                if (!el) continue;
+                const style = getComputedStyle(el);
+                if (style.boxShadow !== 'none') {
+                    return { ok: false, sel, boxShadow: style.boxShadow };
+                }
+            }
+            return { ok: true };
+        });
+        expect(nestedCards.ok).toBe(true);
+    });
 });

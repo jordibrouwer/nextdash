@@ -689,11 +689,26 @@ body[data-layout-version="modern"] .colors-tab-panel .page-selector-wrapper {
     box-shadow: none;
 }
 
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel .page-selector-wrapper {
+    margin-bottom: 0.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
 body[data-layout-version="modern"] .colors-tab-panel #custom-themes-list.categories-list {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-sm);
     background: var(--layout-surface-inset);
     overflow: hidden;
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel #custom-themes-list.categories-list {
+    border: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .colors-tab-panel .custom-theme-colors-section {
@@ -702,6 +717,13 @@ body[data-layout-version="modern"] .colors-tab-panel .custom-theme-colors-sectio
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel .custom-theme-colors-section {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0.9rem;
+    padding-left: 1rem;
 }
 
 body[data-layout-version="modern"] .colors-subtabs {
@@ -740,6 +762,11 @@ body[data-layout-version="modern"] .theme-preview-card {
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
     border-color: var(--border-primary);
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .theme-preview-card {
+    border-radius: 0;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .help-support-block {

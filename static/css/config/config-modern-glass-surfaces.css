@@ -286,5 +286,40 @@ body[data-layout-version="glass"] .general-tab-surface .general-card-danger {
 
 body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel,
 body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel {
-    padding: 0.9rem 1rem;
+    padding: 0;
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel .page-selector-wrapper,
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel .page-selector-wrapper {
+    margin-bottom: 0.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .colors-tab-panel #custom-themes-list.categories-list,
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel #custom-themes-list.categories-list {
+    border: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .custom-theme-colors-section,
+body[data-layout-version="glass"] .theme-colors-tab-surface .custom-theme-colors-section {
+    border-left: none;
+    padding-left: 1rem;
+    margin-top: 0;
+    padding-top: 0.9rem;
+    border-top: none;
+}
+
+body[data-layout-version="modern"] .theme-colors-tab-surface .theme-preview-card,
+body[data-layout-version="glass"] .theme-colors-tab-surface .theme-preview-card {
+    border-radius: 0;
+    box-shadow: none;
+    border-color: color-mix(in srgb, var(--border-primary) 40%, transparent);
 }
