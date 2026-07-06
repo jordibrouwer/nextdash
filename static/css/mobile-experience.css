@@ -240,9 +240,7 @@ body[data-phone-layout="true"] .config-keyboard-chip {
 }
 
 body[data-phone-layout="true"] [data-general-panel][data-mobile-panel-hidden="true"],
-body[data-phone-layout="true"] #general-layer-toolbar,
-body[data-phone-layout="true"] #general-layer-show-all,
-body[data-phone-layout="true"] #general-advanced-nav-wrap {
+body[data-phone-layout="true"] #general-layer-toolbar {
     display: none !important;
 }
 

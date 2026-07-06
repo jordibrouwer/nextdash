@@ -147,6 +147,7 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .config-empty-state,
 .config-tab-surface > .keyboard-body,
 .config-tab-surface > .stats-layout,
+.config-tab-surface > .help-layout,
 .config-tab-surface > .general-layout,
 .config-tab-surface > .theme-colors-body {
     border: none;
@@ -167,13 +168,6 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-surface > .collections-list:empty {
     display: none;
-}
-
-.config-tab-surface > .bookmarks-splitview {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
 }
 
 .config-tab-toolbar-tools,
@@ -374,6 +368,274 @@ html:has(#config-main) #config-main :is(
 
 .config-action-list .config-advanced-action-actions {
     margin-left: auto;
+}
+
+/* Header & Buttons visibility (General → Advanced) — divided list rows */
+.buttons-visibility-list.config-action-list {
+    margin-top: 0.25rem;
+}
+
+.buttons-visibility-row .config-advanced-action-text {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.buttons-visibility-row .config-advanced-action-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex: 0 0 auto;
+    min-width: 3.5rem;
+}
+
+.buttons-visibility-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.4em;
+    line-height: 1.35;
+}
+
+.buttons-visibility-label .info-button {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* ── Split layout (Stats, Help) — sidebar index + scrollable sections ── */
+.config-split-layout {
+    display: grid;
+    grid-template-columns: min(260px, 34%) 1fr;
+    grid-template-areas: "index content";
+    gap: 0;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-split-layout > .config-split-mobile-nav {
+    display: none;
+}
+
+.config-split-index {
+    grid-area: index;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: min(70vh, calc(100vh - 12rem));
+    overflow: auto;
+    border-right: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    padding: 0.75rem;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.config-split-index-title {
+    margin: 0 0 0.35rem;
+    padding: 0 0.35rem;
+}
+
+.config-split-index-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-primary);
+    background: var(--config-surface-list, transparent);
+}
+
+.config-split-index-list a {
+    display: block;
+    padding: 0.5rem 0.65rem;
+    min-height: 2.25rem;
+    box-sizing: border-box;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.config-split-index-list li:last-child a {
+    border-bottom: none;
+}
+
+.config-split-index-list a:hover {
+    color: var(--text-primary);
+    background: var(--config-row-hover, color-mix(in srgb, var(--accent-primary) 8%, transparent));
+}
+
+.config-split-index-list a.is-active,
+.config-split-index-list a:focus-visible {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-split-content {
+    grid-area: content;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+}
+
+.config-split-mobile-nav {
+    display: none;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.45rem 0.75rem;
+    margin: 0;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.config-split-mobile-nav .stats-chip {
+    flex: 0 0 auto;
+    padding: 0.32rem 0.7rem;
+    min-height: 2rem;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.config-split-mobile-nav .stats-chip:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.config-split-mobile-nav .stats-chip.is-active {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-tab-surface .config-split-layout {
+    padding: 0;
+}
+
+.config-tab-surface .config-split-index {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+    top: 0;
+}
+
+.config-tab-surface .config-split-mobile-nav {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .config-split-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "mobile-nav"
+            "content";
+    }
+
+    .config-split-layout > .config-split-mobile-nav {
+        display: flex;
+        grid-area: mobile-nav;
+    }
+
+    .config-split-index {
+        display: none;
+    }
+}
+
+/* ── Master/detail layout (Bookmarks) — list pane + editor pane ── */
+.config-master-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px);
+    grid-template-rows: minmax(calc(100vh - 180px), max-content);
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-master-pane {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border-primary);
+    box-sizing: border-box;
+}
+
+.config-detail-pane {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    background: var(--config-surface-inset, color-mix(in srgb, var(--background-secondary) 55%, var(--background-primary)));
+    box-sizing: border-box;
+}
+
+.config-tab-surface > .bookmarks-list-controls.config-tab-toolbar--in-surface {
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface .config-master-detail-layout,
+.config-tab-surface > .bookmarks-splitview {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.config-tab-surface .config-master-pane {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-tab-surface .config-detail-pane {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (max-width: 1024px) {
+    .config-master-detail-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, auto) minmax(0, max-content);
+    }
+
+    .config-master-pane {
+        width: 100%;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .config-detail-pane {
+        width: 100%;
+    }
 }
 
 .config-empty-state p,

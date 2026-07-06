@@ -318,7 +318,7 @@ class ConfigGeneralTour {
                 title: this.t('configGeneralTourLayersTitle', 'Essentials and Advanced'),
                 body: this.t(
                     'configGeneralTourLayersBody',
-                    'Everyday options live under Essentials. Power features (smart collections, status checks, branding, search behavior) are under Advanced. Use “Show all sections” to scroll everything on one page.'
+                    'Everyday options live under Essentials. Power features (smart collections, status checks, branding, search behavior) are under Advanced. Choose All sections for one scrollable page — Expand all / Collapse all appear in the toolbar.'
                 ),
                 selector: '#general-layer-toolbar',
                 layer: 'essentials',

@@ -93,16 +93,19 @@ body[data-layout-version="glass"] .config-tab-group-label {
 }
 
 body[data-layout-version="glass"] .config-tab-group--active {
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--layout-surface));
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface));
+    box-shadow: inset 3px 0 0 var(--accent-primary);
 }
 
 body[data-layout-version="glass"] .config-tab-group--active .config-tab-group-label {
-    color: color-mix(in srgb, var(--accent-primary) 70%, var(--text-primary));
-    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent-primary) 75%, transparent);
+    color: color-mix(in srgb, var(--accent-primary) 80%, var(--text-primary));
+    opacity: 1;
+    font-weight: var(--font-weight-bold);
+    box-shadow: inset 0 -3px 0 var(--accent-primary);
 }
 
 body[data-layout-version="glass"] .config-tab-group--active .tab-button:not(.active) {
-    opacity: 0.76;
+    opacity: 0.7;
 }
 
 body[data-layout-version="glass"] .config-tab-group[data-tab-group="help"] {
@@ -184,8 +187,6 @@ body[data-layout-version="glass"] .tab-button.active {
 body[data-layout-version="glass"] :is(
     .general-card,
     .general-layer-toolbar,
-    .general-advanced-nav-wrap,
-    .general-advanced-nav,
     .stats-index,
     .stats-block,
     .help-index,
@@ -225,8 +226,7 @@ body[data-layout-version="glass"] .tab-content[data-tab-content="general"] > .ge
 }
 
 body[data-layout-version="glass"] .general-layer-toolbar,
-body[data-layout-version="glass"] .general-layer-intro,
-body[data-layout-version="glass"] .general-advanced-nav-wrap {
+body[data-layout-version="glass"] .general-layer-intro {
     margin: 0;
 }
 
@@ -270,39 +270,6 @@ body[data-layout-version="glass"] .general-layer-intro {
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     line-height: 1.5;
-}
-
-body[data-layout-version="glass"] .general-advanced-nav-wrap {
-    padding: 0.75rem 1rem;
-    background: var(--layout-surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-bottom: 1px solid var(--layout-surface-border);
-}
-
-body[data-layout-version="glass"] .general-advanced-nav {
-    padding: 0;
-}
-
-body[data-layout-version="glass"] .general-advanced-nav a {
-    border-radius: var(--layout-radius-pill);
-    padding: 0.32rem 0.65rem;
-    transition:
-        color var(--layout-transition),
-        background-color var(--layout-transition),
-        border-color var(--layout-transition),
-        box-shadow var(--layout-transition);
-}
-
-body[data-layout-version="glass"] .general-advanced-nav a:hover {
-    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
-    border-color: var(--layout-surface-border);
-}
-
-body[data-layout-version="glass"] .general-advanced-nav a.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--layout-surface));
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, transparent);
-    box-shadow: var(--layout-shadow-sm);
 }
 
 /* ─── List tabs (pages, categories, finders, tags, collections) ─────────────
@@ -450,14 +417,14 @@ body[data-layout-version="glass"] .keyboard-tab {
 }
 
 body[data-layout-version="glass"] .stats-filter-bar,
-body[data-layout-version="glass"] .stats-chip-nav {
+body[data-layout-version="glass"] .config-split-mobile-nav {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-body[data-layout-version="glass"] .stats-layout {
-    gap: var(--config-tab-gap);
+body[data-layout-version="glass"] .stats-tab-surface .stats-layout {
+    gap: 0;
     padding: 0;
 }
 
@@ -723,11 +690,26 @@ body[data-layout-version="glass"] .colors-tab-panel .page-selector-wrapper {
     box-shadow: none;
 }
 
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel .page-selector-wrapper {
+    margin-bottom: 0.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
 body[data-layout-version="glass"] .colors-tab-panel #custom-themes-list.categories-list {
     border: 1px solid var(--layout-surface-border);
     border-radius: var(--layout-radius-sm);
     background: var(--layout-surface-inset);
     overflow: hidden;
+}
+
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel #custom-themes-list.categories-list {
+    border: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="glass"] .colors-tab-panel .custom-theme-colors-section {
@@ -736,6 +718,13 @@ body[data-layout-version="glass"] .colors-tab-panel .custom-theme-colors-section
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+}
+
+body[data-layout-version="glass"] .theme-colors-tab-surface .colors-tab-panel .custom-theme-colors-section {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0.9rem;
+    padding-left: 1rem;
 }
 
 body[data-layout-version="glass"] .colors-subtabs {
@@ -774,6 +763,11 @@ body[data-layout-version="glass"] .theme-preview-card {
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-sm);
     border-color: var(--border-primary);
+}
+
+body[data-layout-version="glass"] .theme-colors-tab-surface .theme-preview-card {
+    border-radius: 0;
+    box-shadow: none;
 }
 
 body[data-layout-version="glass"] .help-support-block {
@@ -861,7 +855,9 @@ body[data-layout-version="glass"] .bookmarks-splitview {
 }
 
 body[data-layout-version="glass"] .bookmarks-splitview-list,
-body[data-layout-version="glass"] .bookmarks-splitview-detail {
+body[data-layout-version="glass"] .config-master-pane,
+body[data-layout-version="glass"] .bookmarks-splitview-detail,
+body[data-layout-version="glass"] .config-detail-pane {
     border-radius: 0;
     box-shadow: none;
     border: none;

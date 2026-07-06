@@ -198,8 +198,6 @@
         }
         const toolbar = document.getElementById('general-layer-toolbar');
         if (toolbar) toolbar.hidden = true;
-        const showAll = document.getElementById('general-layer-show-all');
-        if (showAll) showAll.hidden = true;
         const introAdv = document.getElementById('general-layer-intro-advanced');
         if (introAdv) introAdv.hidden = true;
         const introEss = document.getElementById('general-layer-intro-essentials');
@@ -210,8 +208,6 @@
         if (tabIntro) tabIntro.hidden = true;
         const mobileIntro = document.getElementById('general-layer-intro-mobile');
         if (mobileIntro) mobileIntro.hidden = false;
-        const navWrap = document.getElementById('general-advanced-nav-wrap');
-        if (navWrap) navWrap.hidden = true;
         const bulkBar = document.getElementById('general-panels-bulk-actions');
         if (bulkBar) bulkBar.hidden = true;
         const mobileSearchHost = document.getElementById('general-mobile-settings-search-host');
@@ -228,8 +224,6 @@
         });
         const toolbar = document.getElementById('general-layer-toolbar');
         if (toolbar) toolbar.hidden = false;
-        const showAll = document.getElementById('general-layer-show-all');
-        if (showAll) showAll.hidden = false;
         const mobileIntro = document.getElementById('general-layer-intro-mobile');
         if (mobileIntro) mobileIntro.hidden = true;
         const tabIntro = document.querySelector('[data-tab-content="general"] .config-tab-intro');

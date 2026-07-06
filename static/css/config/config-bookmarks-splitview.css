@@ -2,27 +2,14 @@
    Bookmarks Split-View Layout
    ============================================================ */
 
-/* Grid: beide kolommen altijd even hoog (min. viewport); lijst scrollt binnen cel */
+/* Grid: shell .config-master-detail-layout; legacy hook .bookmarks-splitview */
 .bookmarks-splitview {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(380px, 35vw, 560px);
-    grid-template-rows: minmax(calc(100vh - 180px), max-content);
-    align-items: stretch;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-/* ── Lijst kolom ── */
-.bookmarks-splitview-list {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border-primary);
-    border-right: none;
-    overflow: hidden;
-}
+/* ── Lijst kolom (master pane; shell: .config-master-pane) ── */
 
 .bookmarks-list-scroll-area {
     flex: 1 1 0;
@@ -193,10 +180,12 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     /* padding + border: config-tab-shell.css */
 }
 
+.bookmarks-tab-surface .config-master-pane,
 .bookmarks-tab-surface .bookmarks-splitview-list {
     border: none;
 }
 
+.bookmarks-tab-surface .config-detail-pane,
 .bookmarks-tab-surface .bookmarks-splitview-detail {
     border: none;
     background: transparent;
@@ -552,16 +541,7 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     text-align: center;
 }
 
-/* ── Detail paneel ── */
-.bookmarks-splitview-detail {
-    min-width: 0;
-    min-height: 0;
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    overflow: visible;
-    display: flex;
-    flex-direction: column;
-}
+/* ── Detail paneel (detail pane; shell: .config-detail-pane) ── */
 
 .bookmarks-splitview-detail.is-editing .bookmark-detail-form,
 .bookmarks-splitview-detail:has(#bookmark-detail-form:not([hidden])) .bookmark-detail-form {
@@ -1234,21 +1214,8 @@ body[data-mobile-layout="true"] .bookmark-detail-empty-hints--desktop {
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
-    .bookmarks-splitview {
-        grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, auto) minmax(0, max-content);
-    }
-
-    .bookmarks-splitview-list {
-        width: 100%;
-        border-right: 1px solid var(--border-primary);
-        max-height: 50vh;
-    }
-
     .bookmarks-splitview-detail {
-        width: 100%;
         border-top: none;
-        border-left: 1px solid var(--border-primary);
     }
 
     .bookmark-detail-header {

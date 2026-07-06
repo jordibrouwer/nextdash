@@ -26,7 +26,8 @@ html:has(#config-save-sticky) body.config-is-dirty {
 }
 
 /* Bookmarks split-view — shorten when the sticky save bar can appear */
-body.config-is-dirty .bookmarks-splitview {
+body.config-is-dirty .bookmarks-splitview,
+body.config-is-dirty .config-master-detail-layout {
     grid-template-rows: minmax(
         calc(100vh - 180px - var(--config-save-sticky-height) - env(safe-area-inset-bottom, 0px)),
         max-content
@@ -91,7 +92,8 @@ body.config-is-dirty .config-save-sticky.is-scroll-active {
 }
 
 @media (max-width: 1024px) {
-    body.config-is-dirty .bookmarks-splitview {
+    body.config-is-dirty .bookmarks-splitview,
+    body.config-is-dirty .config-master-detail-layout {
         margin-bottom: var(--config-save-sticky-reserve);
     }
 }
