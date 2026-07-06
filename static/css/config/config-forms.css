@@ -68,6 +68,15 @@
     line-height: 1.35;
 }
 
+.setting-description--beta {
+    margin-top: -0.35rem;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    border-left: 3px solid var(--accent-warning);
+    padding: 0.35rem 0 0.35rem 0.75rem;
+    background: color-mix(in srgb, var(--accent-warning) 8%, transparent);
+}
+
 .setting-preview {
     display: flex;
     flex-wrap: wrap;

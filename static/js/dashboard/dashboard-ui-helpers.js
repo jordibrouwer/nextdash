@@ -141,6 +141,10 @@ class DashboardUiHelpers {
         if (document.getElementById('delete-popover')) return true;
         if (document.getElementById('tag-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
+        if (document.querySelector(
+            '.dashboard-search-promo, .dashboard-feature-promo, .dashboard-grid-kbd-promo, '
+            + '.dashboard-g-jump-promo, .dashboard-smart-collection-promo'
+        )) return true;
         const blockingSelectors = [
             '.onboarding-overlay',
             '.onboarding-card',
@@ -470,9 +474,27 @@ class DashboardUiHelpers {
                 this.formatDashboardLabel('pageOverviewItemAria', { name: pageName, count }, `${pageName}, ${count} bookmarks`)
             );
 
-            const numSpan = document.createElement('span');
-            numSpan.className = 'page-overview-num';
-            numSpan.textContent = String(idx + 1);
+            const lead = document.createElement('span');
+            lead.className = 'page-overview-lead';
+
+            if (page.icon) {
+                const iconEl = document.createElement('span');
+                iconEl.className = 'page-tab-icon';
+                iconEl.textContent = page.icon;
+                lead.appendChild(iconEl);
+            } else {
+                const numSpan = document.createElement('span');
+                numSpan.className = 'page-overview-num';
+                numSpan.textContent = String(idx + 1);
+                lead.appendChild(numSpan);
+            }
+
+            if (page.color) {
+                const dot = document.createElement('span');
+                dot.className = 'page-tab-dot';
+                dot.style.background = page.color;
+                lead.appendChild(dot);
+            }
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'page-overview-name';
@@ -482,7 +504,7 @@ class DashboardUiHelpers {
             countSpan.className = 'page-overview-count';
             countSpan.textContent = String(count);
 
-            link.appendChild(numSpan);
+            link.appendChild(lead);
             link.appendChild(nameSpan);
             link.appendChild(countSpan);
 

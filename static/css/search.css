@@ -1,6 +1,6 @@
 /* Search Component Styles */
 
-/* Shortcut Search - Con fondo sutil pero visible */
+/* Shortcut Search - anchored above bottom toolbar (classic + shared) */
 .shortcut-search {
     position: fixed;
     top: 0;
@@ -10,7 +10,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
+    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
@@ -28,21 +30,21 @@
 
 .search-container {
     padding: 1rem 1.25rem 0.75rem;
-    max-width: 420px;
-    width: 90%;
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: 12px;
+    border-radius: var(--layout-radius-md, 12px);
     background: color-mix(in srgb, var(--background-modal) 90%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 2rem);
+    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
     overflow: hidden;
     box-sizing: border-box;
-    /* exit: snel weg */
-    transform: translateY(20px) scale(0.95);
+    /* exit: slide down toward toolbar */
+    transform: translateY(10px) scale(0.98);
     opacity: 0;
     transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
@@ -71,7 +73,7 @@
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.06em;
     padding: 0.15em 0.45em;
-    border-radius: 4px;
+    border-radius: var(--layout-radius-sm, 8px);
     background: color-mix(in srgb, var(--accent-success) 15%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent-success) 35%, transparent);
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -655,7 +657,7 @@ body.no-animations .search-button[data-tooltip]::after {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border-radius: 0.65rem;
+    border-radius: var(--layout-radius-md, 0.65rem);
     
     /* Transitions */
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -670,8 +672,8 @@ body.no-animations .search-button[data-tooltip]::after {
 }
 
 .search-button:hover {
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: var(--background-secondary);
+    border-color: var(--border-primary);
     color: var(--text-primary);
     transform: none;
     box-shadow: none;
@@ -679,21 +681,28 @@ body.no-animations .search-button[data-tooltip]::after {
 
 .search-button:active {
     transform: none;
-    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    background: var(--background-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-primary);
     box-shadow: none;
 }
 
 .search-button:focus-visible {
-    outline: 2px solid var(--accent-primary);
+    outline: 2px solid var(--border-primary);
     outline-offset: 2px;
     color: var(--text-primary);
 }
 
 .search-button-icon {
     display: inline-block; /* required for transform to work on <span> */
-    color: var(--accent-primary);
+    color: var(--text-secondary);
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-category);
+}
+
+.search-button:hover .search-button-icon,
+.search-button:focus-visible .search-button-icon {
+    color: var(--text-primary);
 }
 
 /* ── Periodic attention pulse on search / commands / finders icons ───────
@@ -709,18 +718,27 @@ body.no-animations .search-button[data-tooltip]::after {
 #search-button .search-button-icon,
 .add-bookmark-button .search-button-icon,
 .commands-button .search-button-icon,
-.finders-button .search-button-icon {
+.finders-button .search-button-icon,
+.recent-button .search-button-icon,
+.help-button .search-button-icon,
+.whats-new-button .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
 }
 #search-button .search-button-icon         { animation-delay: 1s;   }
 .add-bookmark-button .search-button-icon  { animation-delay: 2.8s; }
 .commands-button .search-button-icon       { animation-delay: 4.6s; }
-.finders-button .search-button-icon        { animation-delay: 8.2s; }
+.finders-button .search-button-icon        { animation-delay: 6.4s; }
+.recent-button .search-button-icon         { animation-delay: 8.2s; }
+.help-button .search-button-icon           { animation-delay: 9.4s; }
+.whats-new-button .search-button-icon      { animation-delay: 10.2s; }
 
 body.no-animations #search-button .search-button-icon,
 body.no-animations .add-bookmark-button .search-button-icon,
 body.no-animations .commands-button .search-button-icon,
-body.no-animations .finders-button .search-button-icon {
+body.no-animations .finders-button .search-button-icon,
+body.no-animations .recent-button .search-button-icon,
+body.no-animations .help-button .search-button-icon,
+body.no-animations .whats-new-button .search-button-icon {
     animation: none !important;
 }
 
@@ -781,6 +799,12 @@ body[data-button-position="bottom-right"] .btn-group {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+}
+
+body[data-button-position="bottom-left"] .btn-group-secondary,
+body[data-button-position="bottom-right"] .btn-group-secondary {
+    padding-top: 0;
+    border-top: none;
 }
 
 
@@ -1061,6 +1085,20 @@ body.no-animations .search-history-chip,
 body.no-animations .search-history-chip-remove,
 body.no-animations .search-history-remove {
     transition: none !important;
+}
+
+/* Side rail / corner docks: keep centered placement */
+body[data-button-position="side-left"] .shortcut-search,
+body[data-button-position="bottom-left"] .shortcut-search,
+body[data-button-position="bottom-right"] .shortcut-search {
+    justify-content: center;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+}
+
+body[data-button-position="side-left"] .shortcut-search .search-container,
+body[data-button-position="bottom-left"] .shortcut-search .search-container,
+body[data-button-position="bottom-right"] .shortcut-search .search-container {
+    max-height: calc(100vh - 2rem);
 }
 
 .search-command-chip {

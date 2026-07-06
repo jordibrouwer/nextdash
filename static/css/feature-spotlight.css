@@ -178,3 +178,31 @@
         width: calc(100vw - 1.5rem);
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .feature-spotlight {
+        transition: none !important;
+        transform: none !important;
+    }
+
+    .feature-spotlight.show {
+        transform: none !important;
+    }
+
+    .feature-spotlight-close {
+        transition: none !important;
+    }
+}
+
+body.no-animations .feature-spotlight {
+    transition: none !important;
+    transform: none !important;
+}
+
+body.no-animations .feature-spotlight.show {
+    transform: none !important;
+}
+
+body.no-animations .feature-spotlight-close {
+    transition: none !important;
+}

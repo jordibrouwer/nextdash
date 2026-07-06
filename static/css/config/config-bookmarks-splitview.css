@@ -352,12 +352,12 @@ body[data-mobile-layout="true"] .bookmarks-list-controls-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.75rem;
+    padding: 0.55rem 0.75rem;
     border-bottom: 1px solid var(--border-primary);
     cursor: pointer;
     background: transparent;
     transition: background 0.12s ease;
-    min-height: 2.4rem;
+    min-height: 2.75rem;
 }
 
 .bookmarks-splitview-list .bookmark-item:last-child {

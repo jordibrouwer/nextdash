@@ -170,3 +170,8 @@ body.loading .colors-main > :not([data-skeleton-root]) {
         background: color-mix(in srgb, var(--text-secondary, #888) 18%, transparent);
     }
 }
+
+body.no-animations .skeleton-shimmer {
+    animation: none;
+    background: color-mix(in srgb, var(--text-secondary, #888) 18%, transparent);
+}

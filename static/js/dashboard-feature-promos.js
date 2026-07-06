@@ -776,6 +776,7 @@
             return false;
         }
 
+        global.DashboardPromoRegistry?.dismissCompetingBalloonPromos?.('feature');
         removePromoFromDom();
         openKind = kind;
         anchorEl = anchor;

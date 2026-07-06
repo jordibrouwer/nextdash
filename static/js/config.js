@@ -74,9 +74,9 @@ class ConfigManager {
             weatherLocation: '',
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
-            showCheatSheetButton: true,
+            showCheatSheetButton: false,
             showAddBookmarkButton: true,
-            showRecentButton: true,
+            showRecentButton: false,
             showHealthDashboard: true,
             showTips: true,
             showSearchFlowBanner: true,
@@ -84,6 +84,7 @@ class ConfigManager {
             showStatus: true,
             colorizeStatus: true,
             showPing: true,
+            showStatusLoading: false,
             skipFastPing: false,
             statusOfflineRetries: 3,
             statusOfflineRetryDelayMs: 450,
@@ -312,6 +313,8 @@ class ConfigManager {
         if (params.get('configTour') === '1') {
             void this.maybeStartConfigGeneralTour({ force: true });
         }
+
+        window.LayoutBetaToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
     }
 
     async loadData() {

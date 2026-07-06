@@ -150,9 +150,7 @@
     }
 
     function dismissCompetingDiscoverabilityPromos() {
-        global.DashboardGridKeyboardPromo?.dismissPopover?.();
-        global.DashboardGJumpPromo?.dismissPopover?.();
-        global.DashboardSmartCollectionPromo?.dismissPopover?.();
+        global.DashboardPromoRegistry?.dismissCompetingBalloonPromos?.('search');
     }
 
     function getSearchContainer() {

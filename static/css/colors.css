@@ -86,8 +86,8 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem 1.5rem;
-    padding-bottom: 0.75rem;
+    gap: 0.75rem 1rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-primary);
 }
 
@@ -230,11 +230,17 @@
     }
 }
 
+.theme-colors-toolbar {
+    justify-content: space-between;
+}
+
 .theme-colors-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.5rem;
+    margin-left: auto;
 }
 
 .theme-colors-info-btn {
@@ -246,7 +252,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.5rem;
 }
 
 .theme-colors-section-heading {
@@ -272,36 +278,49 @@
 /* colors unsaved badge: config-unsaved-state.css (.unsaved-badge) */
 
 .colors-subtabs {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: 0;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    overflow: visible;
+    background: transparent;
 }
 
 .colors-tab-button {
-    border: 1px solid var(--border-primary);
+    appearance: none;
+    border: none;
+    border-radius: 0;
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
-    font-size: var(--font-size-controls);
+    font-size: 0.85rem;
+    font-weight: inherit;
     padding: 0.35rem 0.75rem;
     cursor: pointer;
     text-transform: lowercase;
-    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    transition: background 0.15s ease, color 0.15s ease;
+    position: relative;
+}
+
+.colors-tab-button + .colors-tab-button {
+    border-left: 1px solid var(--border-primary);
 }
 
 .colors-tab-button:hover {
-    border-color: var(--text-secondary);
     color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .colors-tab-button.active {
-    border-color: var(--text-primary);
     color: var(--text-primary);
-    background: var(--background-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    font-weight: var(--font-weight-bold, 600);
 }
 
 .colors-tab-button:focus-visible {
-    outline: 2px solid var(--text-primary);
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
 }
 

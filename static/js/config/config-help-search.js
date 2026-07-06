@@ -15,6 +15,7 @@
         const q = (filterInput?.value || '').toLowerCase().trim();
         const blocks = document.querySelectorAll('.help-content .help-block');
         const navItems = document.querySelectorAll('.help-index ul li');
+        const mobileLinks = document.querySelectorAll('#help-chip-nav a');
         let visibleCount = 0;
 
         blocks.forEach((block) => {
@@ -30,6 +31,13 @@
             li.hidden = Boolean(q && block?.hidden);
         });
 
+        mobileLinks.forEach((link) => {
+            const href = link.getAttribute('href') || '';
+            const targetId = href.startsWith('#') ? href.slice(1) : '';
+            const block = targetId ? document.getElementById(targetId) : null;
+            link.hidden = Boolean(q && block?.hidden);
+        });
+
         if (emptyEl) {
             emptyEl.hidden = !q || visibleCount > 0;
         }
@@ -43,6 +51,7 @@
             const filterInput = document.getElementById('help-search-filter');
             const emptyEl = document.getElementById('help-search-empty');
             const clearBtn = document.getElementById('help-search-clear');
+            const mobileNav = document.getElementById('help-chip-nav');
             if (!filterInput) return;
 
             const placeholder = t(language, 'helpFilterPlaceholder', 'Filter help sections…');
@@ -51,6 +60,15 @@
 
             if (emptyEl) {
                 emptyEl.textContent = t(language, 'helpFilterNoResults', 'No sections match your search.');
+            }
+
+            if (mobileNav) {
+                const navLinks = [...document.querySelectorAll('.help-index ul a')];
+                mobileNav.replaceChildren(...navLinks.map((link) => {
+                    const clone = link.cloneNode(true);
+                    clone.classList.add('help-chip');
+                    return clone;
+                }));
             }
 
             const runFilter = () => applyFilter(filterInput, emptyEl, clearBtn);

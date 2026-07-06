@@ -248,6 +248,7 @@
             return;
         }
 
+        global.DashboardPromoRegistry?.dismissCompetingBalloonPromos?.('gridKeyboard');
         removePromoFromDom();
         anchorEl = element;
         promoEl = buildPromoElement();

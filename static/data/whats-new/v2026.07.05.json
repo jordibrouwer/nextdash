@@ -1,0 +1,82 @@
+{
+  "tag": "v2026.07.05",
+  "date": "July 2026",
+  "releasedAt": "2026-07-06",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config shell parity (B5)</strong> — Help uses the split-shell pattern with chip navigation; Bookmarks and Collections share normalized row rhythm inside fused surfaces."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Flattened nested cards</strong> — Tags and Backups use divided rows inside fused surfaces; Theme Colors subtabs match the General layer switcher; Help link/code styles stay scoped to the help surface."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Theme dirty state (B10)</strong> — unsaved Theme changes rely on the save row only; local <code>has-unsaved</code> styling removed from <strong>Save colors</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Reduced motion (C15)</strong> — broader <code>prefers-reduced-motion</code> coverage for skeleton loaders, spotlight tours, and chip navigation."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Unified chrome</strong> — shared header chip tokens; clearer toolbar hierarchy; lighter card rows; footer buttons follow theme surface tokens instead of custom accent tints."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Toolbar modals</strong> — What's new (★), recent, and help modals share search-overlay chrome; search anchors above the toolbar with matching width."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Empty states &amp; polish</strong> — clearer smart-collection empties; page-level empty chrome on Modern/Glass; tag-filter recovery actions; page icons in the overview overlay; shared layout radii tokens."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Recent modal (D8)</strong> — rank, recency badge, and open count per bookmark on the current page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status-row hover (D12)</strong> — hover and selection use shared <code>--bookmark-row-*</code> tokens across Classic, Modern, and Glass."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status loading default</strong> — <em>Show status loading indicator</em> is off unless explicitly enabled."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Fresh-install toolbar</strong> — new installs show Search, Commands, Finders, What's new (★), and + Add bookmark only; Recent and cheat sheet stay hidden until enabled in Config → General → Header &amp; buttons."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Classic default</strong> — onboarding keeps Classic layout; Modern/Glass show a one-time early-beta notice. Classic config header stays separate from save row and tabs (<strong>v2026.07.01.3</strong> — C10 reverted)."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, Config Help &amp; What's new</strong> — release notes for <strong>v2026.07.05</strong>; Help recap and locales updated (EN/NL/DE/FR); Classic C10 rollback wording corrected."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Playwright</strong> — config tab consistency retains Classic C10 separate-header test; dashboard recent-modal and config Help-shell coverage."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v127</code> data version; <code>2026.07-dashboard-release-v97</code> dashboard release token."
+        }
+      ]
+    }
+  ]
+}

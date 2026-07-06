@@ -251,7 +251,7 @@ html:has(#config-main) .config-section.section-controls .config-controls-wrapper
     margin-bottom: 0;
 }
 
-.tab-content[data-tab-content="help"] .help-tab-intro {
+.tab-content[data-tab-content="help"] .config-tab-intro {
     margin-bottom: 0;
 }
 

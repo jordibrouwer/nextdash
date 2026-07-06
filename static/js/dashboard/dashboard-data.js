@@ -199,6 +199,9 @@ class DashboardData {
             if (typeof d.settings.showRecentButton === 'undefined') {
                 d.settings.showRecentButton = true;
             }
+            if (typeof d.settings.showCheatSheetButton === 'undefined') {
+                d.settings.showCheatSheetButton = true;
+            }
             if (typeof d.settings.pasteUrlQuickAdd === 'undefined') {
                 d.settings.pasteUrlQuickAdd = true;
             }
@@ -250,6 +253,9 @@ class DashboardData {
             }
             if (typeof d.settings.showPing === 'undefined') {
                 d.settings.showPing = true;
+            }
+            if (typeof d.settings.showStatusLoading === 'undefined') {
+                d.settings.showStatusLoading = false;
             }
             if (typeof window.normalizeStatusOfflineRetries === 'function') {
                 d.settings.statusOfflineRetries = window.normalizeStatusOfflineRetries(d.settings.statusOfflineRetries);

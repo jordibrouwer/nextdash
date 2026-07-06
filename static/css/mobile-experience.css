@@ -162,7 +162,8 @@ body[data-mobile-layout="true"] .config-link a {
     min-width: 44px;
     padding: 0.55rem 0.9rem;
     border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
-    border-radius: 2px;
+    border-radius: var(--header-chip-radius, var(--layout-radius-pill, 999px));
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     text-transform: capitalize;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;

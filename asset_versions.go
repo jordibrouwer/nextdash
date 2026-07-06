@@ -17,6 +17,7 @@ type pageAssetVersions struct {
 	FeatureSpotlightCSS    string
 	FeatureSpotlightJS     string
 	LayoutModernNudgeJS    string
+	LayoutBetaToastJS      string
 	PreviewCardSpotlightJS string
 	HealthBadgeJS          string
 	AppNotificationJS      string
@@ -30,20 +31,21 @@ var sharedAssetVersions = pageAssetVersions{
 	ThemeJS:                "theme-sync-1",
 	VisualSettingsJS:       "theme-sync-1",
 	SettingsSanitizeJS:     "settings-sanitize-1",
-	DiscoverabilityJS:      "discoverability-state-1",
+	DiscoverabilityJS:      "discoverability-state-2",
 	GuidedFlowCSS:          "guided-flow-v5",
 	GuidedFlowJS:           "guided-flow-v5",
-	GlassTokensCSS:         "glass-row-selection-1",
+	GlassTokensCSS:         "dashboard-d12-row-tokens-1",
 	OverlaysGlassCSS:       "glass-phase6-1",
-	MobileExperienceCSS:    "phone-layout-4",
-	MobileExperienceJS:     "phone-layout-4",
-	FeatureSpotlightCSS:    "layout-versions-1",
+	MobileExperienceCSS:    "phone-layout-5",
+	MobileExperienceJS:     "phone-layout-5",
+	FeatureSpotlightCSS:    "c15-reduced-motion-1",
 	FeatureSpotlightJS:     "paste-replay-v1",
 	LayoutModernNudgeJS:    "layout-versions-2",
+	LayoutBetaToastJS:      "layout-beta-toast-1",
 	PreviewCardSpotlightJS: "preview-cards-v1",
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-2",
-	WhatsNewData:           "whats-new-v126",
+	WhatsNewData:           "whats-new-v127",
 	DataRevision:           "data-revision-3",
 }

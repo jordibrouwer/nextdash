@@ -1,5 +1,15 @@
 /* Dashboard discoverability: header, mobile bar, mini status, a11y, kbd tooltips */
 
+:root {
+    --header-chip-radius: 999px;
+    --header-chip-pad-block: 0.38rem;
+    --header-chip-pad-inline: 0.8rem;
+    --layout-radius-xs: 4px;
+    --layout-radius-sm: 8px;
+    --layout-radius-md: 12px;
+    --dashboard-toolbar-stack: 5.75rem;
+}
+
 kbd,
 .keyboard-cheat-sheet-keys kbd {
     display: inline-block;
@@ -123,15 +133,25 @@ kbd,
     margin: 0 0.35em;
 }
 
+body[data-layout-version="classic"] .dashboard-mini-status,
+body[data-layout-version="classic"] .status-loading-indicator.show,
+body[data-layout-version="classic"] .date-badge-mobile:not(:empty),
+body[data-layout-version="classic"] .page-swipe-hint {
+    padding: var(--header-chip-pad-block, 0.38rem) var(--header-chip-pad-inline, 0.8rem);
+    border-radius: var(--header-chip-radius, 999px);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+}
+
 .page-overview-header-btn {
     font-family: var(--font-family-main);
     font-size: calc(var(--font-size-controls) * 0.95);
     color: var(--text-secondary);
-    background: transparent;
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
-    padding: 0.25rem 0.55rem;
+    padding: var(--header-chip-pad-block, 0.38rem) var(--header-chip-pad-inline, 0.8rem);
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: var(--header-chip-radius, 999px);
 }
 
 .page-overview-header-btn:hover,
@@ -205,4 +225,20 @@ kbd,
     0% { opacity: 0.5; transform: scale(0.96); }
     30% { opacity: 1; transform: scale(1.02); color: var(--accent-success, #00ff9c); }
     100% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    :root {
+        --dashboard-toolbar-stack: 6.75rem;
+    }
+}
+
+:is(
+    .dashboard-search-promo,
+    .dashboard-g-jump-promo,
+    .dashboard-grid-kbd-promo,
+    .dashboard-smart-collection-promo,
+    .dashboard-feature-promo
+) kbd {
+    border-radius: 0.2em;
 }

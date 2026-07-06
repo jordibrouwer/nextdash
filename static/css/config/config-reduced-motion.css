@@ -57,6 +57,21 @@
     .stats-score-bar-fill {
         transition: none !important;
     }
+
+    /* List reorder flash (pages, categories, bookmarks) */
+    .bookmark-item.reorder-highlight {
+        animation: none !important;
+    }
+
+    /* Stats / Help mobile chip nav */
+    .config-split-mobile-nav :is(.stats-chip, .help-chip, a) {
+        transition: none !important;
+    }
+
+    /* Config loading skeleton */
+    #config-main .skeleton-shimmer {
+        animation: none !important;
+    }
 }
 
 body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word,
@@ -99,4 +114,16 @@ body.no-animations .btn.btn-loading::before {
 body.no-animations .tag-popularity-bar,
 body.no-animations .stats-score-bar-fill {
     transition: none !important;
+}
+
+body.no-animations .bookmark-item.reorder-highlight {
+    animation: none !important;
+}
+
+body.no-animations .config-split-mobile-nav :is(.stats-chip, .help-chip, a) {
+    transition: none !important;
+}
+
+body.no-animations #config-main .skeleton-shimmer {
+    animation: none !important;
 }

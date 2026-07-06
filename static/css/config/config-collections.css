@@ -44,8 +44,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.75rem;
-    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    min-height: 2.75rem;
     background: transparent;
     transition: background-color 0.12s ease;
 }

@@ -32,6 +32,9 @@ body[data-layout-version="modern"] {
         color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
         color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
     );
+    --bookmark-row-hover-bg: var(--modern-bookmark-row-hover-bg);
+    --bookmark-row-selected-bg: var(--modern-bookmark-row-selected-bg);
+    --bookmark-row-dimmed-bg: var(--modern-bookmark-row-dimmed-bg);
 }
 
 /* ─── Shared focus ring ──────────────────────────────────────────────────── */
@@ -41,7 +44,6 @@ body[data-layout-version="modern"] .page-overview-header-btn:focus-visible,
 body[data-layout-version="modern"] .health-link a:focus-visible,
 body[data-layout-version="modern"] .config-link a:focus-visible,
 body[data-layout-version="modern"] .search-button:focus-visible,
-body[data-layout-version="modern"] .whats-new-btn:focus-visible,
 body[data-layout-version="modern"] .tag-filter-indicator-chip:focus-visible,
 body[data-layout-version="modern"] .tag-filter-indicator-clear:focus-visible,
 body[data-layout-version="modern"] .page-overview-close:focus-visible,
@@ -265,10 +267,6 @@ body[data-layout-version="modern"][data-show-add-bookmark-button="false"][data-s
     display: none !important;
 }
 
-body[data-layout-version="modern"][data-show-recent-button="false"][data-show-cheatsheet-button="false"] .btn-group-secondary {
-    display: none !important;
-}
-
 body[data-layout-version="modern"] .button-hint {
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-sm);
@@ -286,8 +284,9 @@ body[data-layout-version="modern"] .search-button {
 }
 
 body[data-layout-version="modern"] .search-button:hover {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: var(--layout-surface);
+    border-color: var(--layout-surface-border);
+    color: var(--text-primary);
     transform: translateY(-1px);
     box-shadow: var(--layout-shadow-sm);
 }
@@ -297,8 +296,7 @@ body[data-layout-version="modern"] .search-button:active {
     box-shadow: none;
 }
 
-body[data-layout-version="modern"] .search-button[data-tooltip]::after,
-body[data-layout-version="modern"] .whats-new-btn[data-tooltip]::after {
+body[data-layout-version="modern"] .search-button[data-tooltip]::after {
     border-radius: var(--layout-radius-sm);
     box-shadow: var(--layout-shadow-sm);
 }
@@ -327,21 +325,7 @@ body[data-layout-version="modern"][data-button-position="bottom-right"] .btn-gro
     -webkit-backdrop-filter: blur(16px);
 }
 
-/* ─── Corner FABs ────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .whats-new-btn {
-    border-radius: var(--layout-radius-md);
-    background: var(--layout-surface);
-    border-color: var(--layout-surface-border);
-    box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-body[data-layout-version="modern"] .whats-new-btn:hover {
-    background: color-mix(in srgb, var(--background-primary) 90%, transparent);
-    box-shadow: var(--layout-shadow-lg);
-}
+/* ─── Tag cloud toggle (corner when not in rail) ─────────────────────────── */
 
 body[data-layout-version="modern"] .tag-cloud-toggle-btn.search-button {
     border-radius: var(--layout-radius-md);
@@ -356,7 +340,7 @@ body[data-layout-version="modern"] .tag-cloud-toggle-btn.search-button {
 body[data-layout-version="modern"][data-button-position="side-left"] .button-container {
     width: var(--rail-width, 44px);
     max-width: var(--rail-width, 44px);
-    padding: 0 0 calc(var(--corner-fab-height, 2.75rem) * 2 + 0.3rem);
+    padding: 0;
     border-radius: 0;
     border-top: none;
     border-bottom: none;
@@ -382,17 +366,12 @@ body[data-layout-version="modern"][data-button-position="side-left"] .search-but
     transform: translateX(0);
 }
 
-body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn,
 body[data-layout-version="modern"][data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-}
-
-body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn:hover {
-    box-shadow: none;
 }
 
 /* ─── Page overview overlay ───────────────────────────────────────────────── */
@@ -639,7 +618,9 @@ body[data-layout-version="modern"] .dashboard-grid.layout-cards .category {
 
 body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    background: transparent;
+    border: none;
+    box-shadow: none;
     transition:
         background-color var(--layout-transition),
         border-color var(--layout-transition),
@@ -647,9 +628,9 @@ body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link {
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link:hover:not(.bookmark-inline-editing) {
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
-    box-shadow: var(--layout-shadow-sm);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    border-color: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
@@ -758,19 +739,25 @@ body[data-layout-version="modern"] .dashboard-grid.layout-widgets .category {
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link {
     border-radius: var(--layout-radius-sm);
-    background: color-mix(in srgb, var(--background-primary) 50%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link:hover:not(.bookmark-inline-editing) {
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
-    box-shadow: var(--layout-shadow-sm);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    border-color: transparent;
+    box-shadow: none;
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--modern-bookmark-row-selected-bg);
-    border-color: color-mix(in srgb, var(--accent-primary) 32%, var(--border-primary));
+    border-color: transparent;
     box-shadow: none;
 }
 
@@ -1080,14 +1067,23 @@ body[data-layout-version="modern"].bookmark-kbd-selection-dimmed .dashboard-grid
     color: var(--text-tertiary);
 }
 
-/* Status rows — interaction chrome matches normal bookmarks (idle tint is inactive-only) */
-body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    color: var(--text-primary);
-    background: var(--modern-bookmark-row-hover-bg);
-    box-shadow: none;
+/* ─── Empty dashboard states (page / fresh) ───────────────────────────────── */
+
+body[data-layout-version="modern"] #dashboard-layout > .empty-state {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
 }
 
-body[data-layout-version="modern"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
-    background: var(--modern-bookmark-row-selected-bg);
-    box-shadow: none;
+body[data-layout-version="modern"] .dashboard-grid.layout-cards .smart-collection-empty,
+body[data-layout-version="modern"] .dashboard-grid.layout-widgets .smart-collection-empty {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--layout-surface-border) 85%, transparent);
+    background: color-mix(in srgb, var(--layout-surface) 72%, transparent);
 }

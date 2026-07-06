@@ -25,8 +25,11 @@
     padding: 1.5rem 2rem;
     max-width: 400px;
     width: 90%;
-    border: 1px solid var(--border-primary);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
     background: var(--background-modal);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
     transform: scale(0.98) translateY(8px);
     opacity: 0;
     transition: transform 0.2s ease, opacity 0.2s ease;
@@ -39,6 +42,8 @@
 
 .modal.whats-new-modal {
     max-height: 90vh;
+    max-width: min(52rem, calc(100vw - 2.5rem));
+    width: min(52rem, calc(100vw - 2.5rem));
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -118,7 +123,8 @@ body.no-animations .wn-skeleton-line {
     padding: 0.8rem 1rem;
     margin-bottom: 1.5rem;
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 30%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
     flex-wrap: wrap;
 }
 
@@ -251,8 +257,8 @@ body.no-animations .wn-skeleton-line {
 }
 
 .modal.keyboard-cheat-sheet-modal {
-    max-width: 480px;
-    width: min(96vw, 480px);
+    max-width: min(52rem, calc(100vw - 2.5rem));
+    width: min(52rem, calc(100vw - 2.5rem));
     margin: auto;
     max-height: 90vh;
     overflow: hidden;
@@ -327,6 +333,7 @@ body.no-animations .wn-skeleton-line {
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
     background: transparent;
     text-align: center;
     display: flex;
@@ -486,7 +493,7 @@ body.no-animations .modal-button.danger.selected {
     box-sizing: border-box;
     background: transparent;
     border: 1px solid var(--border-primary);
-    border-radius: 6px;
+    border-radius: var(--layout-radius-sm, 8px);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 0.82rem;

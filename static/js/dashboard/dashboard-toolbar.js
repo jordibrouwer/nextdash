@@ -34,7 +34,7 @@ class DashboardToolbar {
             });
         }
 
-        // What's new FAB (opposite corner from button bar)
+        // What's new (toolbar button, same row as search/commands)
         const whatsNewBtn = document.getElementById('whats-new-btn');
         if (whatsNewBtn) {
             whatsNewBtn.addEventListener('click', () => {

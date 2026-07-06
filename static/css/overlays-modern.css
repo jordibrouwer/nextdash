@@ -11,6 +11,7 @@ body[data-layout-version="modern"] {
     --layout-shadow-lg: 0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent);
     --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --layout-overlay-bg: var(--background-modal, var(--background-secondary));
+    --layout-modal-bg: var(--background-modal, var(--background-secondary));
 }
 
 /* ─── Search overlay ───────────────────────────────────────────────────────── */
@@ -22,11 +23,16 @@ body[data-layout-version="modern"] .shortcut-search {
 
 body[data-layout-version="modern"] .search-container {
     border-radius: var(--layout-radius-lg);
-    border-color: var(--border-primary);
-    background: var(--layout-overlay-bg);
-    box-shadow: var(--layout-shadow-lg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-md);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+body[data-layout-version="modern"]:not([data-button-position="side-left"]):not([data-button-position="bottom-left"]):not([data-button-position="bottom-right"]) .search-container {
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
 }
 
 body[data-layout-version="modern"] .search-prefix {
@@ -112,7 +118,9 @@ body[data-layout-version="modern"] .modal {
     border-radius: var(--layout-radius-lg);
     box-shadow: var(--layout-shadow-lg);
     overflow: hidden;
-    background: var(--layout-overlay-bg);
+    background: var(--layout-modal-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 body[data-layout-version="modern"] .modal-header {
@@ -155,6 +163,27 @@ body[data-layout-version="modern"] .wn-release-tag {
 body[data-layout-version="modern"] .modal-button,
 body[data-layout-version="modern"] .modal .btn {
     border-radius: var(--layout-radius-sm);
+}
+
+/* Dashboard toolbar modals — surface parity with search overlay */
+body[data-layout-version="modern"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+body[data-layout-version="modern"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
+body[data-layout-version="modern"]:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    border-radius: var(--layout-radius-lg);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-modal-bg);
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="modern"] .recent-bookmarks-modal-item,
+body[data-layout-version="modern"] .recent-bookmarks-skeleton-row {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .recent-bookmarks-modal-item:hover {
+    background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
 /* ─── Toasts ─────────────────────────────────────────────────────────────── */

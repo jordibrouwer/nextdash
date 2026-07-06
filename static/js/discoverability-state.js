@@ -35,6 +35,7 @@
         'nextdash:dashboard-cheatsheet-promo-confirmed-v1': 'feature:cheatsheet',
         'nextdash:feature-spotlight-paste-v1': 'spotlight:paste',
         'nextdash:layout-modern-nudge-v1': 'spotlight:layoutNudge',
+        'nextdash:layout-beta-toast-v1': 'toast:layoutBeta',
         'nextdash:feature-spotlight-preview-cards-v1': 'spotlight:previewCards',
     };
 

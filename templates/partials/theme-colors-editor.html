@@ -7,15 +7,6 @@
     </div>
     <div class="config-tab-surface theme-colors-tab-surface">
     <div class="theme-colors-toolbar config-tab-toolbar config-tab-toolbar--in-surface">
-        <div class="theme-colors-actions">
-            <button type="button" id="save-colors-btn" class="btn btn-success btn-small" data-i18n="colors.saveColorsButton">Save colors</button>
-            <button type="button" id="colors-save-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.saveColorsInfoTitle">ℹ</button>
-            <button type="button" id="undo-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.undoColors">Undo</button>
-            <button type="button" id="export-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.exportTheme">Export</button>
-            <button type="button" id="import-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.importTheme">Import</button>
-            <input type="file" id="colors-import-file" accept="application/json,.json" hidden>
-            <button type="button" id="reset-colors-btn" class="btn btn-danger btn-small" data-i18n="colors.resetColorsShort">Reset defaults</button>
-        </div>
         <div class="colors-subtabs-header">
             <button type="button" id="colors-palettes-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.palettesInfoTitle">ℹ</button>
             <div class="colors-subtabs" role="tablist" data-i18n-aria="colors.palettesTablistAria">
@@ -24,6 +15,15 @@
             <button type="button" class="colors-tab-button active" data-colors-tab="custom" data-i18n="colors.customThemesTab">Custom themes</button>
             <button type="button" class="colors-tab-button" data-colors-tab="builtin" data-i18n="colors.builtinThemesTab">Packaged themes</button>
             </div>
+        </div>
+        <div class="theme-colors-actions config-tab-toolbar-tools">
+            <button type="button" id="save-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.saveColorsButton">Save colors</button>
+            <button type="button" id="colors-save-info-btn" class="info-button theme-colors-info-btn" data-i18n-aria="colors.saveColorsInfoTitle">ℹ</button>
+            <button type="button" id="undo-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.undoColors">Undo</button>
+            <button type="button" id="export-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.exportTheme">Export</button>
+            <button type="button" id="import-colors-btn" class="btn btn-secondary btn-small" data-i18n="colors.importTheme">Import</button>
+            <input type="file" id="colors-import-file" accept="application/json,.json" hidden>
+            <button type="button" id="reset-colors-btn" class="btn btn-danger btn-small" data-i18n="colors.resetColorsShort">Reset defaults</button>
         </div>
     </div>
     <div class="theme-colors-body">

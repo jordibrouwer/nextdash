@@ -42,11 +42,11 @@ class Dashboard {
             timeFormat: '24h',
             showConfigButton: true,
             showHealthDashboard: true,
-            showRecentButton: true,
+            showRecentButton: false,
             showTips: false,
 
             showSyncToasts: false,
-            showCheatSheetButton: true,
+            showCheatSheetButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
             colorizeStatus: true,

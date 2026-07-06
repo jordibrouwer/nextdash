@@ -497,7 +497,7 @@ html:has(#config-main) #config-main :is(
     scrollbar-width: thin;
 }
 
-.config-split-mobile-nav .stats-chip {
+.config-split-mobile-nav :is(.stats-chip, .help-chip, a) {
     flex: 0 0 auto;
     padding: 0.32rem 0.7rem;
     min-height: 2rem;
@@ -512,15 +512,19 @@ html:has(#config-main) #config-main :is(
     transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
 }
 
-.config-split-mobile-nav .stats-chip:hover {
+.config-split-mobile-nav :is(.stats-chip, .help-chip, a):hover {
     color: var(--text-primary);
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
-.config-split-mobile-nav .stats-chip.is-active {
+.config-split-mobile-nav :is(.stats-chip, .help-chip, a).is-active {
     color: var(--accent-primary);
     border-color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-split-mobile-nav:empty {
+    display: none !important;
 }
 
 .config-tab-surface .config-split-layout {
