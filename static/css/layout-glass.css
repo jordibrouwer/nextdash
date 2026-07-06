@@ -298,8 +298,9 @@ body[data-layout-version="glass"] .search-button {
 }
 
 body[data-layout-version="glass"] .search-button:hover {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: var(--layout-surface);
+    border-color: var(--layout-surface-border);
+    color: var(--text-primary);
     transform: translateY(-1px);
     box-shadow: var(--layout-shadow-sm);
 }
@@ -307,19 +308,6 @@ body[data-layout-version="glass"] .search-button:hover {
 body[data-layout-version="glass"] .search-button:active {
     transform: translateY(0);
     box-shadow: none;
-}
-
-body[data-layout-version="glass"] .add-bookmark-button.search-button {
-    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary));
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    color: var(--text-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-body[data-layout-version="glass"] .btn-group-secondary .search-button {
-    background: color-mix(in srgb, var(--background-primary) 45%, transparent);
-    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
-    opacity: 0.94;
 }
 
 body[data-layout-version="glass"] .search-button[data-tooltip]::after,
