@@ -147,6 +147,7 @@ html:has(#config-main) #config-main :is(
 .config-tab-surface > .config-empty-state,
 .config-tab-surface > .keyboard-body,
 .config-tab-surface > .stats-layout,
+.config-tab-surface > .help-layout,
 .config-tab-surface > .general-layout,
 .config-tab-surface > .theme-colors-body {
     border: none;
@@ -408,6 +409,161 @@ html:has(#config-main) #config-main :is(
 .buttons-visibility-label .info-button {
     flex-shrink: 0;
     margin: 0;
+}
+
+/* ── Split layout (Stats, Help) — sidebar index + scrollable sections ── */
+.config-split-layout {
+    display: grid;
+    grid-template-columns: min(260px, 34%) 1fr;
+    grid-template-areas: "index content";
+    gap: 0;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-split-layout > .config-split-mobile-nav {
+    display: none;
+}
+
+.config-split-index {
+    grid-area: index;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: min(70vh, calc(100vh - 12rem));
+    overflow: auto;
+    border-right: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    padding: 0.75rem;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.config-split-index-title {
+    margin: 0 0 0.35rem;
+    padding: 0 0.35rem;
+}
+
+.config-split-index-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-primary);
+    background: var(--config-surface-list, transparent);
+}
+
+.config-split-index-list a {
+    display: block;
+    padding: 0.5rem 0.65rem;
+    min-height: 2.25rem;
+    box-sizing: border-box;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.config-split-index-list li:last-child a {
+    border-bottom: none;
+}
+
+.config-split-index-list a:hover {
+    color: var(--text-primary);
+    background: var(--config-row-hover, color-mix(in srgb, var(--accent-primary) 8%, transparent));
+}
+
+.config-split-index-list a.is-active,
+.config-split-index-list a:focus-visible {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-split-content {
+    grid-area: content;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+}
+
+.config-split-mobile-nav {
+    display: none;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.45rem 0.75rem;
+    margin: 0;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.config-split-mobile-nav .stats-chip {
+    flex: 0 0 auto;
+    padding: 0.32rem 0.7rem;
+    min-height: 2rem;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.config-split-mobile-nav .stats-chip:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.config-split-mobile-nav .stats-chip.is-active {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.config-tab-surface .config-split-layout {
+    padding: 0;
+}
+
+.config-tab-surface .config-split-index {
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: none;
+    top: 0;
+}
+
+.config-tab-surface .config-split-mobile-nav {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .config-split-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "mobile-nav"
+            "content";
+    }
+
+    .config-split-layout > .config-split-mobile-nav {
+        display: flex;
+        grid-area: mobile-nav;
+    }
+
+    .config-split-index {
+        display: none;
+    }
 }
 
 .config-empty-state p,

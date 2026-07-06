@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css">
-    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-surface-b9-1">
+    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-split-b10-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=config-b11-empty-hidden-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
@@ -1716,7 +1716,7 @@
             </div>
 
             <div class="tab-content" data-tab-content="stats">
-            <div class="stats-tab config-tab-page">
+            <div class="config-tab-page">
             <div class="config-tab-intro">
                 <p class="config-tab-intro-lead" data-i18n="config.statsPageIntro">Read-only insights for your bookmark library. Use Refresh to update numbers after saving elsewhere, or the index on the left to jump to any section.</p>
             </div>
@@ -1733,12 +1733,11 @@
                 </div>
                 <p id="stats-filter-hint" class="stats-filter-hint" hidden></p>
             </div>
-            <nav id="stats-chip-nav" class="stats-chip-nav" data-i18n-aria="config.statsChipNavAria" aria-label="Stats sections"></nav>
-            <div class="stats-layout">
-
-                <aside class="stats-index">
-                    <h3 class="section-title" data-i18n="config.statsIndexTitle">quick links</h3>
-                    <ul class="stats-index-list">
+            <div class="stats-layout config-split-layout">
+                <nav id="stats-chip-nav" class="stats-chip-nav config-split-mobile-nav" data-i18n-aria="config.statsChipNavAria" aria-label="Stats sections"></nav>
+                <aside class="stats-index config-split-index">
+                    <h3 class="section-title config-split-index-title" data-i18n="config.statsIndexTitle">quick links</h3>
+                    <ul class="stats-index-list config-split-index-list">
                         <li><a href="#stats-overview" data-i18n="config.statsNavOverview">overview</a></li>
                         <li><a href="#stats-insights" data-i18n="config.statsNavInsights">insights</a></li>
                         <li><a href="#stats-score" data-i18n="config.statsNavScore">cleanup score</a></li>
@@ -1755,7 +1754,7 @@
                     </ul>
                 </aside>
 
-                <div class="stats-content">
+                <div class="stats-content config-split-content">
 
                     <section id="stats-overview" class="stats-block">
                         <div class="stats-block-title-row">

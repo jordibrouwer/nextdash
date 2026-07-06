@@ -950,14 +950,25 @@ test.describe('config stats & backups surface (B9)', () => {
         await waitForConfigReady(page);
     });
 
-    test('stats tab fuses filter toolbar and layout in one surface', async ({ page }) => {
+    test('stats tab fuses filter toolbar and split layout in one surface', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('stats'));
         const surface = page.locator('.stats-tab-surface');
         await expect(surface).toBeVisible();
         await expect(surface.locator('.stats-filter-bar.config-tab-toolbar--in-surface')).toBeVisible();
         await expect(surface.locator('#stats-filter-input.config-filter-input')).toBeVisible();
         await expect(surface.locator('#stats-refresh-btn')).toBeVisible();
-        await expect(surface.locator('.stats-layout')).toBeVisible();
+
+        const layout = surface.locator('.stats-layout.config-split-layout');
+        await expect(layout).toBeVisible();
+        await expect(layout.locator('#stats-chip-nav.config-split-mobile-nav')).toBeAttached();
+        await expect(layout.locator('.stats-index.config-split-index .config-split-index-list')).toBeVisible();
+        await expect(layout.locator('.stats-content.config-split-content .stats-block').first()).toBeVisible();
+
+        const chipInsideLayout = await page.evaluate(() => {
+            const nav = document.getElementById('stats-chip-nav');
+            return nav?.closest('.stats-layout.config-split-layout') != null;
+        });
+        expect(chipInsideLayout).toBe(true);
 
         const nestedCards = await page.evaluate(() => {
             const blocks = [...document.querySelectorAll('.stats-tab-surface .stats-block')];
@@ -989,7 +1000,7 @@ test.describe('config help surface (B5)', () => {
 
     test('help tab uses shared intro and fused surface shell', async ({ page }) => {
         await expect(page.locator('.help-tab.config-tab-page')).toBeVisible();
-        await expect(page.locator('.help-tab-intro .config-tab-intro-lead')).toBeVisible();
+        await expect(page.locator('.help-tab.config-tab-page .config-tab-intro-lead')).toBeVisible();
         const surface = page.locator('.help-tab-surface');
         await expect(surface).toBeVisible();
         await expect(surface.locator('.help-filter-bar.config-tab-toolbar--in-surface')).toBeVisible();

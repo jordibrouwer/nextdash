@@ -74,8 +74,9 @@ body[data-layout-version="classic"] .general-tab-surface .general-layer-toolbar.
 }
 
 body[data-layout-version="classic"] .stats-tab-surface .stats-filter-bar,
-body[data-layout-version="classic"] .stats-tab-surface .stats-chip-nav,
+body[data-layout-version="classic"] .stats-tab-surface .config-split-mobile-nav,
 body[data-layout-version="classic"] .stats-tab-surface .stats-block,
+body[data-layout-version="classic"] .stats-tab-surface .config-split-index,
 body[data-layout-version="classic"] .stats-tab-surface .stats-index,
 body[data-layout-version="classic"] .backups-tab-surface > .backups-section,
 body[data-layout-version="classic"] .collections-tab-surface > .collections-edit-panel,

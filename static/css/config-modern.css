@@ -416,14 +416,14 @@ body[data-layout-version="modern"] .keyboard-tab {
 }
 
 body[data-layout-version="modern"] .stats-filter-bar,
-body[data-layout-version="modern"] .stats-chip-nav {
+body[data-layout-version="modern"] .config-split-mobile-nav {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-body[data-layout-version="modern"] .stats-layout {
-    gap: var(--config-tab-gap);
+body[data-layout-version="modern"] .stats-tab-surface .stats-layout {
+    gap: 0;
     padding: 0;
 }
 
