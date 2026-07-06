@@ -299,6 +299,14 @@ environment:
 
 **Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
 
+**Config surface polish (v2026.07.04)** — General layer switcher (Essentials / Advanced / Show all in one row); stronger active tab group styling; list tabs share `config-list-tab` intro shell; button visibility as divided rows.
+
+**Bookmarks master/detail (v2026.07.04)** — filters and bulk actions above a split view: bookmark list (master) + detail editor (pane) inside one fused surface.
+
+**Stats split-layout (v2026.07.04)** — chip navigation and sidebar index inside one fused Stats surface (Help-style split shell).
+
+**Theme colors divided list (v2026.07.04)** — color rows, custom themes, and preview use divided-list rhythm inside the fused Theme surface (no nested cards on Modern, Glass, or Classic).
+
 **Bookmark category sync (v2026.07.02)** — new bookmarks and category changes appear in the correct dashboard column right away; `GET /api/data-revision` keeps open tabs in sync after saves and server restarts.
 
 **Bookmark tag sync (v2026.07.02)** — tag edits re-render smart collections and the tag-filter view; stale-cache detection includes tags.

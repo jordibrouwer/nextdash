@@ -1,0 +1,57 @@
+{
+  "tag": "v2026.07.04",
+  "date": "July 2026",
+  "releasedAt": "2026-07-06",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>General layer toolbar (C4)</strong> — <strong>Essentials</strong>, <strong>Advanced</strong>, and <strong>Show all</strong> sit in one segmented row at the top of the fused General surface; legacy Advanced section-jump nav removed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Button visibility rows</strong> — General → Bookmarks → Button visibility uses divided list rows instead of a nested table card."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Active tab styling (C2)</strong> — stronger highlight on the active tab group label and selected tab so the current location is easier to see on Classic, Modern, and Glass."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>List-tab shell (A2)</strong> — Pages, Categories, Tags, Finders, and Collections share <code>config-list-tab</code> markup and <code>config-tab-intro</code> intro copy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Stats split-layout (B10)</strong> — chip navigation and sidebar index move inside the fused Stats surface (same split-shell pattern as Help)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks master/detail (B11)</strong> — filters and bulk actions sit above a split view: bookmark list (master pane) + detail editor (detail pane) inside one fused surface."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Theme colors divided list (C11)</strong> — color rows, custom themes list, page selector, and live preview use divided-list rhythm inside the fused Theme surface — no nested cards on Modern, Glass, or Classic."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, Config Help &amp; What's new</strong> — release notes for <strong>v2026.07.04</strong>; Help recap and config-tab help sections updated (EN/NL/DE/FR)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Playwright</strong> — config tab consistency tests for Stats split shell, Bookmarks master/detail, and Theme divided-list rhythm."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v126</code> data version; <code>theme-colors-divided-c11-1</code>, <code>bookmarks-master-b11-1</code>, <code>stats-split-b10-1</code>, <code>config-tab-active-c2-1</code>, and <code>config-polish-c4-1</code> on config CSS bundles."
+        }
+      ]
+    }
+  ]
+}
