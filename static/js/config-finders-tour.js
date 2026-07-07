@@ -432,7 +432,7 @@ class ConfigFindersTour {
                     'configFindersTourWelcomeBody',
                     'Finders are quick-search shortcuts to external sites — Google, DuckDuckGo, Wikipedia, and more. You trigger them from the dashboard with ? plus a shortcut key.'
                 ),
-                selector: '[data-tab-content="finders"] .simple-tab',
+                selector: '[data-tab-content="finders"] .config-tab-intro',
                 scrollBlock: 'start',
             },
             {
@@ -441,7 +441,7 @@ class ConfigFindersTour {
                     'configFindersTourConceptBody',
                     'Each finder has a name, a search URL with %s as the placeholder for your query, and a one-letter shortcut. nextDash opens the finished URL in your browser — it does not search inside your bookmark list.'
                 ),
-                selector: '.simple-tab-intro',
+                selector: '[data-tab-content="finders"] .config-tab-intro-lead',
                 scrollBlock: 'start',
             },
             {

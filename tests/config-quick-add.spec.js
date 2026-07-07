@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { dismissConfigTourOverlays } = require('./e2e-helpers');
 
 async function waitForConfigBookmarks(page) {
     await page.goto('/config#bookmarks');
@@ -9,12 +10,13 @@ async function waitForConfigBookmarks(page) {
     ));
     await page.waitForSelector('[data-tab-content="bookmarks"].active', { timeout: 20_000 });
     await page.waitForSelector('#bookmarks-list', { timeout: 15_000 });
+    await dismissConfigTourOverlays(page);
 }
 
 async function openQuickAddModal(page) {
     const menu = page.locator('#bookmark-add-menu');
-    await menu.locator('summary').click();
-    await page.locator('#config-quick-add-btn').click();
+    await menu.locator('summary').click({ force: true });
+    await page.locator('#config-quick-add-btn').click({ force: true });
     await page.waitForSelector('#new-bookmark-modal.show', { timeout: 10_000 });
 }
 

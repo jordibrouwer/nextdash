@@ -4,6 +4,7 @@ const {
     markWhatsNewSeen,
     dismissBlockingOverlays,
     dismissOnboardingIfPresent,
+    ensureSortableCategory,
 } = require('./e2e-helpers');
 
 test.describe('dashboard per-category sort', () => {
@@ -22,7 +23,9 @@ test.describe('dashboard per-category sort', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        const category = page.locator('#dashboard-layout .category[data-category-id="development"]');
+        const categoryId = await ensureSortableCategory(page);
+        expect(categoryId).not.toBe('');
+        const category = page.locator(`#dashboard-layout .category[data-category-id="${categoryId}"]`);
         const azBtn = category.locator('.category-sort-btn[data-sort-mode="az"]');
         await category.locator('.category-title').hover();
         await expect(azBtn).toBeVisible();

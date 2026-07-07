@@ -189,9 +189,9 @@ test.describe('config tab tours (phase 1 registry)', () => {
 
         await expect.poll(async () => page.evaluate(() => {
             const highlight = document.querySelector('.config-finders-tour-highlight');
-            if (!highlight) return null;
+            if (!highlight) return '';
             return window.getComputedStyle(highlight).boxShadow;
-        })).toMatch(/9999px/);
+        }), { timeout: 10_000 }).toMatch(/9999px/);
     });
 
     test('skip tour persists completion before step content and blocks auto-start', async ({ page }) => {

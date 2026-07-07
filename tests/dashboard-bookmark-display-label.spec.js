@@ -4,7 +4,10 @@ const { test, expect } = require('@playwright/test');
 test.describe('dashboard bookmark display label', () => {
     test('nameless bookmarks strip www from hostname label', async ({ page }) => {
         await page.goto('/');
-        await page.waitForFunction(() => typeof window.BookmarkUrlUtils?.bookmarkDisplayHostnameFromUrl === 'function');
+        await page.waitForFunction(() => (
+            typeof window.BookmarkUrlUtils?.bookmarkDisplayHostnameFromUrl === 'function'
+            && typeof window.dashboardInstance?.bookmarkRows?.bookmarkDisplayLabel === 'function'
+        ));
 
         const labels = await page.evaluate(() => ({
             www: window.BookmarkUrlUtils.bookmarkDisplayHostnameFromUrl('https://www.github.com/foo'),

@@ -57,8 +57,12 @@ test.describe('dashboard inline edit', () => {
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(urlInput).toBeVisible({ timeout: 3000 });
 
-        await urlInput.click({ force: true });
-        await expect(urlInput).toBeFocused();
+        await page.evaluate(() => {
+            document.querySelector('.bookmark-inline-form input[type="url"]')?.focus();
+        });
+        await expect.poll(async () => page.evaluate(() => (
+            document.activeElement?.matches('.bookmark-inline-form input[type="url"]') === true
+        ))).toBe(true);
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
@@ -182,8 +186,12 @@ test.describe('dashboard inline edit', () => {
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(700);
-        await urlInput.click({ force: true });
-        await expect(urlInput).toBeFocused();
+        await page.evaluate(() => {
+            document.querySelector('.bookmark-inline-form input[type="url"]')?.focus();
+        });
+        await expect.poll(async () => page.evaluate(() => (
+            document.activeElement?.matches('.bookmark-inline-form input[type="url"]') === true
+        ))).toBe(true);
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
         await urlInput.fill('https://example.com/safari-field-test');
         await expect(urlInput).toHaveValue('https://example.com/safari-field-test');

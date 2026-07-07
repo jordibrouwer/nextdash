@@ -177,6 +177,107 @@ async function advanceOnboardingToStep(page, targetStep) {
 }
 
 /** @param {import('@playwright/test').Page} page */
+async function dismissConfigTourOverlays(page) {
+    await page.evaluate(() => {
+        window.configManager?.dismissOtherConfigTabTours?.();
+        [
+            'ConfigGeneralTour',
+            'ConfigFindersTour',
+            'ConfigBookmarksTour',
+            'ConfigCategoriesTour',
+            'ConfigTagsTour',
+            'ConfigPagesTour',
+            'ConfigCollectionsTour',
+            'ConfigThemeTour',
+            'ConfigStatsTour',
+        ].forEach((name) => window[name]?.teardownStaleDom?.());
+    });
+}
+
+/**
+ * Earlier config tests can replace the default category list; ensure a column exists.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} categoryId
+ * @param {string} [categoryName]
+ */
+async function ensurePageCategory(page, categoryId, categoryName = categoryId) {
+    await page.evaluate(async ({ id, name }) => {
+        const pageId = Number(window.dashboardInstance?.currentPageId) || 1;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await api(`/api/categories?page=${pageId}`);
+        let categories = res.ok ? await res.json() : [];
+        if (!Array.isArray(categories)) {
+            categories = [];
+        }
+        if (!categories.some((category) => category.id === id)) {
+            categories.push({ id, name, icon: '' });
+            await api(`/api/categories?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(categories),
+            });
+        }
+    }, { id: categoryId, name: categoryName });
+}
+
+/**
+ * Return a dashboard category id with at least two bookmarks, seeding one if needed.
+ * @param {import('@playwright/test').Page} page
+ */
+async function ensureSortableCategory(page) {
+    return page.evaluate(async () => {
+        const pickFromDom = () => {
+            for (const category of document.querySelectorAll('#dashboard-layout .category:not([data-smart-collection="true"])')) {
+                const count = category.querySelectorAll('.bookmark-link .bookmark-text').length;
+                if (count > 1) {
+                    return category.getAttribute('data-category-id') || '';
+                }
+            }
+            return '';
+        };
+
+        let categoryId = pickFromDom();
+        if (categoryId) {
+            return categoryId;
+        }
+
+        const pageId = Number(window.dashboardInstance?.currentPageId) || 1;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const catRes = await api(`/api/categories?page=${pageId}`);
+        let categories = catRes.ok ? await catRes.json() : [];
+        if (!Array.isArray(categories) || categories.length === 0) {
+            categories = [{ id: 'sort-test', name: 'Sort Test', icon: '' }];
+            await api(`/api/categories?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(categories),
+            });
+            categoryId = 'sort-test';
+        } else {
+            categoryId = String(categories[0]?.id || '').trim();
+        }
+        if (!categoryId) {
+            return '';
+        }
+
+        const stamp = Date.now();
+        const seeds = [
+            { name: `Zebra ${stamp}`, url: `https://sort-test-z-${stamp}.example`, category: categoryId },
+            { name: `Alpha ${stamp}`, url: `https://sort-test-a-${stamp}.example`, category: categoryId },
+        ];
+        for (const bookmark of seeds) {
+            await api('/api/bookmarks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: pageId, bookmark }),
+            });
+        }
+        await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(pageId);
+        return pickFromDom() || categoryId;
+    });
+}
+
+/** @param {import('@playwright/test').Page} page */
 async function dismissOnboardingIfPresent(page) {
     const card = page.locator('.onboarding-card');
     if (await card.count()) {
@@ -201,4 +302,7 @@ module.exports = {
     getOnboardingProgress,
     advanceOnboardingToStep,
     dismissOnboardingIfPresent,
+    dismissConfigTourOverlays,
+    ensurePageCategory,
+    ensureSortableCategory,
 };
