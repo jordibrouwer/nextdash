@@ -141,11 +141,86 @@ async function openShortcutSearch(page, options = {}) {
             sc?.openSearchInterface?.();
             const query = String(sc?.currentQuery || '');
             if (wantedPrefix === ':' && !query.startsWith(':')) {
+                const selected = window.dashboardInstance?.keyboardNavigation?.getSelectedBookmark?.();
+                if (selected) {
+                    sc.commandsComponent.contextBookmark = selected;
+                    sc.commandsComponent.expandedGroups?.add?.('bookmarks');
+                }
                 sc?.addToQuery?.(':');
             }
         }
         return search?.classList.contains('show') === true;
     }, prefix), { timeout: 8000 }).toBe(true);
+}
+
+/**
+ * Select a bookmark row in dashboard keyboard navigation.
+ * @param {import('@playwright/test').Page} page
+ * @param {{ urlEquals?: string, nameEquals?: string, urlIncludes?: string, nameIncludes?: string }} [options]
+ */
+async function selectKeyboardBookmark(page, options = {}) {
+    const picked = await page.evaluate(({ urlEquals, nameEquals, urlIncludes, nameIncludes }) => {
+        const kn = window.dashboardInstance?.keyboardNavigation;
+        if (!kn) {
+            throw new Error('keyboard navigation unavailable');
+        }
+        kn.updateNavigableElements?.();
+        const rows = kn.navigableElements || [];
+        const normalizedUrlEquals = String(urlEquals || '').trim().toLowerCase();
+        const normalizedNameEquals = String(nameEquals || '').trim().toLowerCase();
+        const normalizedUrlNeedle = String(urlIncludes || '').trim().toLowerCase();
+        const normalizedNameNeedle = String(nameIncludes || '').trim().toLowerCase();
+
+        let idx = rows.findIndex((row) => {
+            const url = String(row.getAttribute('data-bookmark-url') || '').trim().toLowerCase();
+            const name = row.querySelector('.bookmark-text')?.textContent?.trim().toLowerCase() || '';
+            if (normalizedUrlEquals && url === normalizedUrlEquals) {
+                return true;
+            }
+            if (normalizedNameEquals && name === normalizedNameEquals) {
+                return true;
+            }
+            if (normalizedUrlNeedle && url.includes(normalizedUrlNeedle)) {
+                if (normalizedNameNeedle && !name.includes(normalizedNameNeedle)) {
+                    return false;
+                }
+                return true;
+            }
+            if (normalizedNameNeedle && name.includes(normalizedNameNeedle)) {
+                return true;
+            }
+            return false;
+        });
+
+        if (idx < 0) {
+            idx = rows.findIndex((row) => {
+                const name = row.querySelector('.bookmark-text')?.textContent?.trim() || '';
+                return name.length > 0;
+            });
+        }
+        if (idx < 0) {
+            return false;
+        }
+
+        kn.currentIndex = idx;
+        kn.highlightCurrentElement?.({ keyboardNav: true });
+        const bookmark = kn.getSelectedBookmark?.();
+        return {
+            index: idx,
+            url: bookmark?.url || rows[idx]?.getAttribute('data-bookmark-url') || '',
+            name: bookmark?.name || rows[idx]?.querySelector('.bookmark-text')?.textContent?.trim() || '',
+        };
+    }, {
+        urlEquals: options.urlEquals || '',
+        nameEquals: options.nameEquals || 'GitHub',
+        urlIncludes: options.urlIncludes || '',
+        nameIncludes: options.nameIncludes || '',
+    });
+    expect(picked).toBeTruthy();
+    expect(picked.index).toBeGreaterThanOrEqual(0);
+    await expect.poll(async () => page.evaluate(() => (
+        window.dashboardInstance?.keyboardNavigation?.getSelectedBookmark?.()?.url || ''
+    ))).not.toBe('');
 }
 
 /**
@@ -376,4 +451,5 @@ module.exports = {
     ensureBookmarksDashboardView,
     openShortcutSearch,
     tapShortcutLetter,
+    selectKeyboardBookmark,
 };

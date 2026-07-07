@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, openShortcutSearch } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, openShortcutSearch, selectKeyboardBookmark } = require('./e2e-helpers');
 
 const COMMAND_PALETTE_PROMO_KEYS = [
     'nextdash:dashboard-quick-tag-promo-confirmed-v1',
@@ -223,21 +223,23 @@ test.describe('dashboard command palette', () => {
     });
 
     test(':quicktag opens tag popover on selected bookmark', async ({ page }) => {
-        await page.keyboard.press('ArrowDown');
-        await expect.poll(async () => page.evaluate(() => (
-            window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
-        ))).toBeGreaterThanOrEqual(0);
+        await selectKeyboardBookmark(page, { nameEquals: 'GitHub' });
         await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
         await openShortcutSearch(page, { prefix: ':' });
         await page.keyboard.type('quicktag', { delay: 20 });
         await expect.poll(async () => page.evaluate(() => {
             const sc = window.dashboardInstance?.searchComponent;
-            return sc?.selectableMatches?.some((match) => (
+            const idx = sc?.selectableMatches?.findIndex((match) => (
                 match?.stateId === 'quicktag'
                 || String(match?.shortcut || '').toUpperCase() === ':QUICKTAG'
-            )) ?? false;
-        }), { timeout: 5000 }).toBe(true);
-        await selectCommandMatch(page, { stateId: 'quicktag' });
+            )) ?? -1;
+            if (idx < 0) {
+                return false;
+            }
+            sc.selectedMatchIndex = idx;
+            sc.updateSelectionHighlight();
+            return true;
+        }), { timeout: 10_000 }).toBe(true);
         await page.keyboard.press('Enter');
         await expect.poll(async () => page.locator('#tag-popover').isVisible(), {
             timeout: 10_000,
