@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.06.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-07",
+  "sections": [
+    {
+      "title": "Security",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>CSP blob workers</strong> — added <code>worker-src</code> and <code>child-src</code> with <code>blob:</code> so Safari/WebKit no longer blocks blob workers on page load (<code>security.go</code>)."
+        }
+      ]
+    }
+  ]
+}

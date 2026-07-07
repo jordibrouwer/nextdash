@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.06.1 — July 2026](#v202607061--july-2026)
 - [v2026.07.06 — July 2026](#v20260706--july-2026)
 - [v2026.07.05.1 — July 2026](#v202607051--july-2026)
 - [v2026.07.05 — July 2026](#v20260705--july-2026)
@@ -76,6 +77,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.06.1 — July 2026
+
+**CSP hotfix** — allow blob workers under Content-Security-Policy so Safari/WebKit no longer logs worker-src violations on page load.
+
+### Security
+
+- **fix** **CSP blob workers** — add `worker-src 'self' blob:` and `child-src 'self' blob:` (`security.go`; Safari falls back through `child-src` / `script-src` when `worker-src` is absent).
 
 ---
 
