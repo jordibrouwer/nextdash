@@ -12,13 +12,47 @@ class DashboardPageNav {
         if (!Number.isFinite(targetPageId)) {
             return false;
         }
-        if (targetPageId === Number(d.currentPageId)) {
-            return true;
-        }
+        const leavingInbox = d.activeView === 'inbox';
+
         if (!(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
+
+        if (leavingInbox) {
+            d.activeView = 'bookmarks';
+        }
+
+        if (targetPageId === Number(d.currentPageId)) {
+            if (leavingInbox) {
+                return this.restoreBookmarksViewForPage(targetPageId);
+            }
+            return true;
+        }
+
         return d.loadPageBookmarks(targetPageId, { skipInlineEditConfirm: true });
+    }
+
+
+    restoreBookmarksViewForPage(pageId) {
+        const d = this.dash;
+        d.activeView = 'bookmarks';
+        const targetPageId = Number(pageId);
+        const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
+        if (pageIndex >= 0) {
+            const nextHash = `#${pageIndex + 1}`;
+            if (window.location.hash !== nextHash) {
+                window.location.hash = nextHash;
+            }
+        }
+        const page = d.pages.find((entry) => Number(entry.id) === targetPageId);
+        if (page) {
+            d.updatePageTitle(page.name);
+        }
+        d.updateDocumentTitle();
+        d.setActivePageNavButton(targetPageId);
+        d.renderDashboard({ animate: false });
+        d.keyboardNavigation?.clearSelection?.();
+        return true;
     }
 
 
@@ -35,6 +69,23 @@ class DashboardPageNav {
 
     updateDocumentTitle() {
         const d = this.dash;
+        if (d.activeView === 'inbox') {
+            const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
+            const inboxName = inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+            if (d.settings?.enableCustomTitle) {
+                const base = (d.settings.customTitle || '').trim();
+                if (base) {
+                    document.title = d.settings.showPageInTitle
+                        ? `${inboxName} — ${base}`
+                        : base;
+                } else {
+                    document.title = `${inboxName} — nextDash`;
+                }
+            } else {
+                document.title = `${inboxName} — nextDash`;
+            }
+            return;
+        }
         const currentPage = d.pages && d.currentPageId
             ? d.pages.find((p) => d.samePageId(p.id, d.currentPageId))
             : null;
@@ -71,11 +122,42 @@ class DashboardPageNav {
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
-            const selected = index === pageIndex;
+            const isInbox = btn.getAttribute('data-inbox-tab') === 'true';
+            const selected = !isInbox && index === pageIndex && d.activeView !== 'inbox';
             btn.classList.toggle('active', selected);
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
         });
+        const inboxBtn = document.getElementById('page-nav-inbox-btn');
+        if (inboxBtn) {
+            const inboxSelected = d.activeView === 'inbox';
+            inboxBtn.classList.toggle('active', inboxSelected);
+            inboxBtn.setAttribute('aria-selected', inboxSelected ? 'true' : 'false');
+            inboxBtn.tabIndex = inboxSelected ? 0 : -1;
+        }
+    }
+
+
+    setActiveInboxTab() {
+        this.setActivePageNavButton(this.dash.currentPageId);
+        this.updateDocumentTitle();
+    }
+
+
+    updateInboxTabBadge() {
+        const d = this.dash;
+        const badge = document.getElementById('page-inbox-badge');
+        if (!badge) {
+            return;
+        }
+        const unread = d.inbox?.unreadCount?.() || 0;
+        if (unread > 0) {
+            badge.textContent = String(unread);
+            badge.hidden = false;
+        } else {
+            badge.textContent = '';
+            badge.hidden = true;
+        }
     }
 
 
@@ -95,7 +177,7 @@ class DashboardPageNav {
             pageBtn.type = 'button';
             pageBtn.className = 'page-nav-btn';
             pageBtn.setAttribute('role', 'tab');
-            const isActive = d.samePageId(page.id, d.currentPageId);
+            const isActive = d.activeView !== 'inbox' && d.samePageId(page.id, d.currentPageId);
             pageBtn.setAttribute('aria-selected', isActive ? 'true' : 'false');
             pageBtn.tabIndex = isActive ? 0 : -1;
             if (isActive) {
@@ -129,6 +211,44 @@ class DashboardPageNav {
             });
             container.appendChild(pageBtn);
         });
+
+        if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+            const inboxBtn = document.createElement('button');
+            inboxBtn.type = 'button';
+            inboxBtn.className = 'page-nav-btn page-nav-btn--inbox';
+            inboxBtn.id = 'page-nav-inbox-btn';
+            inboxBtn.setAttribute('role', 'tab');
+            inboxBtn.setAttribute('data-inbox-tab', 'true');
+            const inboxActive = d.activeView === 'inbox';
+            inboxBtn.setAttribute('aria-selected', inboxActive ? 'true' : 'false');
+            inboxBtn.tabIndex = inboxActive ? 0 : -1;
+            if (inboxActive) {
+                inboxBtn.classList.add('active');
+                activeBtn = inboxBtn;
+            }
+            const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
+            const inboxName = inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+            inboxBtn.innerHTML = `
+                <span class="page-tab-icon" aria-hidden="true">📥</span>
+                <span class="page-tab-label">${d.escapeHtml(inboxName)}</span>
+                <span class="page-inbox-badge" id="page-inbox-badge" hidden></span>
+            `;
+            inboxBtn.addEventListener('click', async () => {
+                const opened = await d.inbox?.openInboxView?.();
+                if (opened) {
+                    inboxBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+                }
+            });
+            inboxBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    inboxBtn.click();
+                }
+            });
+            container.appendChild(inboxBtn);
+            this.updateInboxTabBadge();
+        }
+
         if (activeBtn) {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
         }

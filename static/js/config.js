@@ -133,7 +133,9 @@ class ConfigManager {
             smartMostUsedPageIds: [],
             archivedPageIds: [],
             faviconRefreshPolicy: 'on-save',
-            pasteUrlQuickAdd: true
+            pasteUrlQuickAdd: true,
+            inboxEnabled: true,
+            pasteDestination: 'ask',
             ,themeIconStyling: {}
         };
         this.deviceSpecific = false;

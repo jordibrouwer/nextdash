@@ -432,6 +432,7 @@ class DashboardToolbar {
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.searchComponent && d.searchComponent.isActive()) return;
             if (d.isInlineEditActive()) return;
+            if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return;
 
             const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
             const trimmed = text.trim().split(/\s/)[0];
@@ -442,6 +443,11 @@ class DashboardToolbar {
             if (!looksLikeUrl) return;
 
             e.preventDefault();
+
+            if (d.pasteChoice?.isEnabled?.()) {
+                d.pasteChoice.handlePasteUrl(trimmed);
+                return;
+            }
 
             const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
             if (!handler) {

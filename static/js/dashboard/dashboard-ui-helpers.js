@@ -157,6 +157,8 @@ class DashboardUiHelpers {
                 if (this.isVisibleBlockingOverlay(el)) return true;
             }
         }
+        if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
         return false;
     }
 
@@ -179,6 +181,9 @@ class DashboardUiHelpers {
         const sections = [
             section('sectionNavigation', 'Navigation', [
                 item('1–9', 'navPageTab', 'Switch to page tab'),
+                ...(d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false
+                    ? [item('0', 'navInbox', 'Open Inbox page')]
+                    : []),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
                 item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),

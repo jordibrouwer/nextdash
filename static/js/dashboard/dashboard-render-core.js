@@ -229,6 +229,14 @@ class DashboardRenderCore {
 
     renderDashboard(options = {}) {
         const d = this.dash;
+        if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
+            d.data?.schedulePageBookmarksHealIfNeeded?.();
+            if (d.isInlineEditActive()) {
+                return;
+            }
+            d.inbox.render();
+            return;
+        }
         d.data?.schedulePageBookmarksHealIfNeeded?.();
         if (d.isInlineEditActive()) {
             if (options.incremental === 'status') {
@@ -251,6 +259,7 @@ class DashboardRenderCore {
         d._renderAnimationsEnabled = animate;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        container.classList.remove('inbox-layout');
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

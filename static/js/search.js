@@ -507,6 +507,20 @@ class SearchComponent {
             return;
         }
 
+        // 0 opens Inbox when enabled (never feeds into search)
+        if (e.key === '0' && !this.searchActive) {
+            const dash = window.dashboardInstance;
+            if (dash?.inbox?.isEnabled?.() && dash.settings?.inboxShowInPageTabs !== false) {
+                if (dash.keyboardNavigation?.isGChordActive?.()) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                void dash.inbox.openInboxView();
+                return;
+            }
+        }
+
         // Handle space key for commands, finders, global search, and normal-search filters
         if (key === ' ' && (
             this.currentQuery.startsWith(':')

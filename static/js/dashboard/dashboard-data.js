@@ -646,6 +646,7 @@ class DashboardData {
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
+        d.activeView = 'bookmarks';
         d.refreshButtonTipsOnPageChange?.();
 
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);

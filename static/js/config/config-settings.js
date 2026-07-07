@@ -989,6 +989,23 @@ class ConfigSettings {
             });
         }
 
+        const inboxEnabledCheckbox = document.getElementById('inbox-enabled-checkbox');
+        if (inboxEnabledCheckbox) {
+            inboxEnabledCheckbox.checked = settings.inboxEnabled !== false;
+            inboxEnabledCheckbox.addEventListener('change', (e) => {
+                settings.inboxEnabled = e.target.checked;
+            });
+        }
+
+        const pasteDestinationSelect = document.getElementById('paste-destination-select');
+        if (pasteDestinationSelect) {
+            const dest = String(settings.pasteDestination || 'ask').toLowerCase();
+            pasteDestinationSelect.value = ['bookmark', 'inbox'].includes(dest) ? dest : 'ask';
+            pasteDestinationSelect.addEventListener('change', (e) => {
+                settings.pasteDestination = e.target.value;
+            });
+        }
+
         // HyprMode checkbox
         const allowLocalBookmarksCheckbox = document.getElementById('allow-local-bookmarks-checkbox');
         if (allowLocalBookmarksCheckbox) {
@@ -1888,6 +1905,10 @@ class ConfigSettings {
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
         const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
+        const inboxEnabledEl = document.getElementById('inbox-enabled-checkbox');
+        if (inboxEnabledEl) settings.inboxEnabled = inboxEnabledEl.checked;
+        const pasteDestinationEl = document.getElementById('paste-destination-select');
+        if (pasteDestinationEl) settings.pasteDestination = pasteDestinationEl.value;
         const allowLocalEl = document.getElementById('allow-local-bookmarks-checkbox');
         if (allowLocalEl) settings.allowLocalBookmarks = allowLocalEl.checked;
         if (hyprModeCheckbox) settings.hyprMode = hyprModeCheckbox.checked;
@@ -2753,6 +2774,8 @@ class ConfigSettings {
         watch('bg-image-url-input', 'backgroundImageUrl');
         watch('auto-dark-mode-checkbox', 'autoDarkMode');
         watch('paste-url-quick-add-checkbox', 'pasteUrlQuickAdd');
+        watch('inbox-enabled-checkbox', 'inboxEnabled');
+        watch('paste-destination-select', 'pasteDestination');
         watch('show-status-checkbox', 'showStatus');
         watch('show-ping-checkbox', 'showPing');
         watch('colorize-status-checkbox', 'colorizeStatus');
@@ -2833,6 +2856,8 @@ class ConfigSettings {
             layoutVersion: 'classic',
             layoutPreset: 'default',
             pasteUrlQuickAdd: true,
+            inboxEnabled: true,
+            pasteDestination: 'ask',
             skipFastPing: false,
             interleaveMode: false,
             fuzzySuggestionsStartWith: false,

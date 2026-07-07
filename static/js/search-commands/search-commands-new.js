@@ -702,6 +702,10 @@ class SearchCommandNew {
         if (opts.name && nameInput) {
             nameInput.value = opts.name;
         }
+        const noteInput = document.getElementById('new-bookmark-note');
+        if (opts.note && noteInput) {
+            noteInput.value = opts.note;
+        }
 
         this.updatePreviews();
         this.updateShortcutConflictHint();
@@ -856,6 +860,12 @@ class SearchCommandNew {
                     }
                 }
                 this.notify(this.t('config.bookmarkCreated', 'Bookmark created successfully!'), 'success');
+                const dashAfter = window.dashboardInstance;
+                if (dashAfter?._pendingInboxPromoteId && dashAfter.inbox) {
+                    const promoteId = dashAfter._pendingInboxPromoteId;
+                    dashAfter._pendingInboxPromoteId = null;
+                    await dashAfter.inbox.completePromote(promoteId);
+                }
                 return { ok: true, pageId, bookmark: { ...bookmark, pageId } };
             } else if (response.status === 409) {
                 let conflictMessage = this.duplicateBookmarkUrlMessage();

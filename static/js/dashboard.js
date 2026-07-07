@@ -192,6 +192,9 @@ class Dashboard {
         this.uiHelpers = new DashboardUiHelpers(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
+        this.inbox = new DashboardInbox(this);
+        this.pasteChoice = new DashboardPasteChoice(this);
+        this.activeView = 'bookmarks';
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
         this.weatherRefreshTimer = null;
         this.dateTimeRefreshTimer = null;
@@ -265,12 +268,16 @@ class Dashboard {
             this.initializeSwipeNavigation();
             this.initializeHyprMode();
             this.renderPageNavigation();
+            void this.inbox.loadItems().then(() => {
+                this.pageNav?.updateInboxTabBadge?.();
+            });
             this.renderDashboard({ animate: true });
             this.setupPageShortcuts();
             this.setupTagFilterEscapeShortcut();
             this.setupTagFilterIndicator();
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
+            this.inbox.setupEscapeShortcut();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);
             }
@@ -290,10 +297,19 @@ class Dashboard {
 
             window.addEventListener('hashchange', () => {
                 const hash = window.location.hash.substring(1);
+                if (hash === 'inbox') {
+                    if (this.activeView !== 'inbox') {
+                        void this.inbox?.openInboxView?.();
+                    }
+                    return;
+                }
                 if (hash && /^\d+$/.test(hash)) {
                     const pageIndex = parseInt(hash) - 1;
-                    if (pageIndex >= 0 && pageIndex < this.pages.length && !this.samePageId(this.pages[pageIndex].id, this.currentPageId)) {
-                        void this.requestPageNavigation(this.pages[pageIndex].id);
+                    if (pageIndex >= 0 && pageIndex < this.pages.length) {
+                        const page = this.pages[pageIndex];
+                        if (this.activeView === 'inbox' || !this.samePageId(page.id, this.currentPageId)) {
+                            void this.requestPageNavigation(page.id);
+                        }
                     }
                 }
             });

@@ -497,6 +497,22 @@
                                     <button type="button" id="paste-url-quick-add-info-btn" class="info-button" data-i18n-aria="config.pasteUrlQuickAddInfoTitle">ℹ</button>
                                 </label>
                             </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="inbox-enabled-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.inboxEnabled">Enable Inbox page</span>
+                                </label>
+                            </div>
+                            <div class="config-row checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label class="config-label" for="paste-destination-select" data-i18n="config.pasteDestination">Paste URL default</label>
+                                <select id="paste-destination-select" class="config-select">
+                                    <option value="ask" data-i18n="config.pasteDestinationAsk">Ask each time</option>
+                                    <option value="bookmark" data-i18n="config.pasteDestinationBookmark">Always add bookmark</option>
+                                    <option value="inbox" data-i18n="config.pasteDestinationInbox">Always save to Inbox</option>
+                                </select>
+                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="hide-empty-categories-checkbox">

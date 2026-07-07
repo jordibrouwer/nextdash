@@ -207,6 +207,12 @@ type Settings struct {
 	BackgroundImageUrl          string                           `json:"backgroundImageUrl"`          // URL used when type="image"
 	ThemeIconStyling            map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd            bool                             `json:"pasteUrlQuickAdd"`            // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled                bool                             `json:"inboxEnabled"`                // Enable inbox page and paste-to-inbox flow
+	PasteDestination            string                           `json:"pasteDestination"`            // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls             bool                             `json:"inboxDedupeUrls"`             // Skip duplicate URLs in inbox
+	InboxMaxItems               int                              `json:"inboxMaxItems"`               // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs         bool                             `json:"inboxShowInPageTabs"`         // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote     bool                             `json:"inboxDeleteAfterPromote"`     // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
 	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
 }
@@ -318,6 +324,11 @@ type Store interface {
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
+	// Inbox
+	GetInboxItems() []InboxLink
+	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error)
+	DeleteInboxLink(id string) error
+	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 }
 
 // PrefetchIconUpdate is a merge-safe favicon write keyed by bookmark index and canonical URL.
@@ -483,6 +494,12 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ButtonBarPosition:           "bottom",
 			ShowDockLayoutSelector:      true,
 			PasteUrlQuickAdd:            true,
+			InboxEnabled:                true,
+			PasteDestination:            "ask",
+			InboxDedupeUrls:             true,
+			InboxMaxItems:               500,
+			InboxShowInPageTabs:         true,
+			InboxDeleteAfterPromote:     true,
 			AllowLocalBookmarks:         true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
@@ -497,6 +514,14 @@ func (fs *FileStore) initializeDefaultFiles() {
 		}
 		data, _ := json.MarshalIndent(defaultFinders, "", "  ")
 		writeFileAtomic(findersFile, data, 0644)
+	}
+
+	// Initialize inbox if file doesn't exist
+	inboxFile := inboxFilePath(fs.dataDir)
+	if _, err := os.Stat(inboxFile); os.IsNotExist(err) {
+		defaultInbox := InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
+		data, _ := json.MarshalIndent(defaultInbox, "", "  ")
+		writeFileAtomic(inboxFile, data, 0644)
 	}
 
 	// Initialize colors if file doesn't exist
@@ -1400,6 +1425,7 @@ func (fs *FileStore) resetAllDataLocked() error {
 	writeFileAtomic(fs.pageOrderFile, data, 0644)
 
 	os.Remove(fs.settingsFile)
+	os.Remove(inboxFilePath(fs.dataDir))
 
 	return nil
 }
@@ -1600,6 +1626,12 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundImageUrl:        "",
 			ThemeIconStyling:          map[string]ThemeIconStylingEntry{},
 			PasteUrlQuickAdd:          true,
+			InboxEnabled:              true,
+			PasteDestination:          "ask",
+			InboxDedupeUrls:           true,
+			InboxMaxItems:             500,
+			InboxShowInPageTabs:       true,
+			InboxDeleteAfterPromote:   true,
 			AllowLocalBookmarks:       true,
 		}
 	}
@@ -1789,6 +1821,25 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["pasteUrlQuickAdd"]; !ok {
 			settings.PasteUrlQuickAdd = true
 		}
+		if _, ok := rawSettings["inboxEnabled"]; !ok {
+			settings.InboxEnabled = true
+		}
+		if _, ok := rawSettings["pasteDestination"]; !ok {
+			settings.PasteDestination = "ask"
+		}
+		settings.PasteDestination = normalizePasteDestination(settings.PasteDestination)
+		if _, ok := rawSettings["inboxDedupeUrls"]; !ok {
+			settings.InboxDedupeUrls = true
+		}
+		if _, ok := rawSettings["inboxMaxItems"]; !ok {
+			settings.InboxMaxItems = 500
+		}
+		if _, ok := rawSettings["inboxShowInPageTabs"]; !ok {
+			settings.InboxShowInPageTabs = true
+		}
+		if _, ok := rawSettings["inboxDeleteAfterPromote"]; !ok {
+			settings.InboxDeleteAfterPromote = true
+		}
 		if _, ok := rawSettings["allowLocalBookmarks"]; !ok {
 			settings.AllowLocalBookmarks = true
 		}
@@ -1826,6 +1877,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
+	settings.PasteDestination = normalizePasteDestination(settings.PasteDestination)
 
 	return writeIndentJSONFile(fs.settingsFile, settings)
 }
@@ -2157,6 +2209,7 @@ func (fs *FileStore) GetDataRevision() string {
 		fs.colorsFile,
 		fs.pageOrderFile,
 		filepath.Join(fs.dataDir, "finders.json"),
+		filepath.Join(fs.dataDir, "inbox.json"),
 	}
 
 	if entries, err := os.ReadDir(fs.dataDir); err == nil {

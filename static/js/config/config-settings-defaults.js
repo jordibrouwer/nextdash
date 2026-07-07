@@ -111,6 +111,12 @@ class ConfigSettingsDefaults {
         if (typeof settingsData.pasteUrlQuickAdd === 'undefined') {
             settingsData.pasteUrlQuickAdd = true;
         }
+        if (typeof settingsData.inboxEnabled === 'undefined') {
+            settingsData.inboxEnabled = true;
+        }
+        if (!settingsData.pasteDestination) {
+            settingsData.pasteDestination = 'ask';
+        }
         if (!settingsData.dateFormat) {
             settingsData.dateFormat = 'short-slash';
         }

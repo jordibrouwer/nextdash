@@ -283,6 +283,17 @@ class DashboardSetup {
             if (key === '>') this.markInlineTipUsed('search_open');
             if (key === '?') this.markInlineTipUsed('finder_open');
             if (key === ':') this.markInlineTipUsed('command_open');
+            if (key === '0') {
+                if (d.keyboardNavigation?.isGChordActive?.()) {
+                    return;
+                }
+                if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void d.inbox.openInboxView();
+                }
+                return;
+            }
             if (key >= '1' && key <= '9') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
