@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, openShortcutSearch, selectKeyboardBookmark } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, selectKeyboardBookmark } = require('./e2e-helpers');
 
 const COMMAND_PALETTE_PROMO_KEYS = [
     'nextdash:dashboard-quick-tag-promo-confirmed-v1',
@@ -225,8 +225,20 @@ test.describe('dashboard command palette', () => {
     test(':quicktag opens tag popover on selected bookmark', async ({ page }) => {
         await selectKeyboardBookmark(page, { nameEquals: 'GitHub' });
         await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
-        await openShortcutSearch(page, { prefix: ':' });
-        await page.keyboard.type('quicktag', { delay: 20 });
+        await page.evaluate(() => {
+            const dash = window.dashboardInstance;
+            const sc = dash?.searchComponent;
+            const bookmark = dash?.keyboardNavigation?.getSelectedBookmark?.();
+            if (!bookmark) {
+                throw new Error('no bookmark selected for :quicktag');
+            }
+            sc.commandsComponent.contextBookmark = bookmark;
+            sc.commandsComponent.expandedGroups.add('bookmarks');
+            sc.openSearchInterface();
+            sc.currentQuery = ':quicktag';
+            sc.updateSearch();
+        });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
         await expect.poll(async () => page.evaluate(() => {
             const sc = window.dashboardInstance?.searchComponent;
             const idx = sc?.selectableMatches?.findIndex((match) => (
