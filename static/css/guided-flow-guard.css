@@ -23,6 +23,7 @@ body.guided-flow-locked .feature-tour-card,
 body.guided-flow-locked .feature-spotlight,
 body.guided-flow-locked [class$="-tour-card"],
 body.guided-flow-locked .modal.whats-new-modal,
+body.guided-flow-locked .modal.inbox-intro-modal,
 body.guided-flow-locked .config-settings-search-promo {
     pointer-events: auto;
 }

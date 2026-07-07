@@ -267,6 +267,7 @@ class DashboardInbox {
             return false;
         }
         if (d.activeView === DashboardInbox.VIEW) {
+            window.InboxIntroModal?.scheduleShow?.();
             return true;
         }
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
@@ -280,6 +281,7 @@ class DashboardInbox {
         d.pageNav?.updateDocumentTitle?.();
         d.pageNav?.markInboxTabDiscovered?.();
         await this.loadAndRender();
+        window.InboxIntroModal?.scheduleShow?.();
         this.restoreInboxHash();
         return true;
     }
@@ -659,6 +661,7 @@ class DashboardInbox {
         if (!active || active === document.body || focusInToolbar) {
             container.focus({ preventScroll: true });
         }
+        window.InboxIntroModal?.scheduleShow?.();
     }
 
     render() {

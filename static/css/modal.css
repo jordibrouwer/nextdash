@@ -446,6 +446,177 @@ body.no-animations .wn-kofi-star {
     padding-right: 0.25rem;
 }
 
+.modal.inbox-intro-modal {
+    max-width: min(40rem, calc(100vw - 2.5rem));
+    width: min(40rem, calc(100vw - 2.5rem));
+    margin: auto;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.2rem;
+}
+
+.modal.inbox-intro-modal .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.inbox-intro-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.inbox-intro-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
+    border-left: 3px solid var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.inbox-intro-hero-icon {
+    flex-shrink: 0;
+    font-size: 1.65rem;
+    line-height: 1;
+    margin-top: 0.05rem;
+}
+
+.inbox-intro-hero-text {
+    min-width: 0;
+}
+
+.inbox-intro-lead {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-controls);
+    line-height: 1.55;
+}
+
+.inbox-intro-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+}
+
+.inbox-intro-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+.inbox-intro-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.95rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.inbox-intro-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.inbox-intro-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    line-height: 1.5;
+}
+
+.inbox-intro-item-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 0.4rem;
+    font-size: 1rem;
+    line-height: 1;
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+}
+
+.inbox-intro-item-text {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+}
+
+.inbox-intro-item-text strong {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.inbox-intro-item-text code,
+.inbox-intro-item-text kbd,
+.inbox-intro-shortcut code,
+.inbox-intro-shortcut kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.88em;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+}
+
+.inbox-intro-shortcuts {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.inbox-intro-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--background-secondary));
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.inbox-intro-shortcut kbd,
+.inbox-intro-shortcut code {
+    flex-shrink: 0;
+    font-weight: var(--font-weight-semibold);
+}
+
+.modal.inbox-intro-modal .modal-header .modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
 /* Fix hidden attribute override */
 .modal-overlay[hidden] {
     display: none !important;

@@ -804,6 +804,32 @@ class ConfigSetup {
                 this.c.ui.showNotification(message, 'success');
             });
         }
+
+        const resetInboxIntroModalBtn = document.getElementById('reset-inbox-intro-modal-btn');
+        if (resetInboxIntroModalBtn) {
+            resetInboxIntroModalBtn.addEventListener('click', () => {
+                window.DiscoverabilityState?.clearStorageKey?.('nextdash:inbox-intro-modal-v2');
+                window.DiscoverabilityState?.clearConfirmed?.('modal:inboxIntroGuide');
+                try {
+                    localStorage.removeItem('nextdash:inbox-intro-modal-v2');
+                    localStorage.removeItem('nextdash:inbox-intro-modal-v1');
+                } catch { /* ignore */ }
+                const dash = window.dashboardInstance;
+                let message;
+                if (dash?.activeView === 'inbox' && window.InboxIntroModal) {
+                    const shown = window.InboxIntroModal.replay({ delay: 0 }) === true;
+                    message = shown
+                        ? (this.c.language.t('config.resetInboxIntroModalSuccessShown')
+                            || 'Inbox intro modal reset — it opened on the dashboard.')
+                        : (this.c.language.t('config.resetInboxIntroModalSuccessOpenDashboard')
+                            || 'Inbox intro modal reset — open Inbox on the dashboard (0 or the Inbox tab).');
+                } else {
+                    message = this.c.language.t('config.resetInboxIntroModalSuccessOpenDashboard')
+                        || 'Inbox intro modal reset — open Inbox on the dashboard (0 or the Inbox tab).';
+                }
+                this.c.ui.showNotification(message, 'success');
+            });
+        }
     
         const resetWeatherGeolocationPromoBtn = document.getElementById('reset-weather-geolocation-promo-btn');
         if (resetWeatherGeolocationPromoBtn) {

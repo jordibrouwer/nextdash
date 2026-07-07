@@ -37,6 +37,7 @@
         'nextdash:layout-modern-nudge-v1': 'spotlight:layoutNudge',
         'nextdash:layout-beta-toast-v1': 'toast:layoutBeta',
         'nextdash:inbox-intro-toast-v1': 'toast:inboxIntro',
+        'nextdash:inbox-intro-modal-v2': 'modal:inboxIntroGuide',
         'nextdash:feature-spotlight-preview-cards-v1': 'spotlight:previewCards',
     };
 

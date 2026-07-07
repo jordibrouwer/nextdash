@@ -42,6 +42,21 @@
     }
 
     const ENTRIES = [
+        { id: 'inboxIntro', priority: 12, storageKeys: [
+            'nextdash:inbox-intro-modal-v2',
+            'nextdash:inbox-intro-modal-v1',
+            'nextdash:inbox-intro-toast-v1',
+            'nextdash:inbox-tab-opened-v1',
+        ], clear: () => {
+            global.InboxIntroModal?.reset?.();
+            global.InboxIntroToast?.reset?.();
+            try {
+                localStorage.removeItem('nextdash:inbox-tab-opened-v1');
+            } catch {
+                // Ignore storage errors.
+            }
+            global.dashboardInstance?.pageNav?.syncInboxTabHighlight?.();
+        } },
         { id: 'search', priority: 10, storageKeys: [
             'nextdash:dashboard-search-promo-search-v2',
             'nextdash:dashboard-search-promo-command-v1',

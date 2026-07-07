@@ -3579,6 +3579,40 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
     transition: opacity 0.15s ease !important;
 }
 
+/* Inbox intro modal — centered above the inbox feed */
+body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) {
+    z-index: 13000 !important;
+    justify-content: center;
+    align-items: center;
+    padding: max(1.25rem, 2vw);
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay.show:has(.inbox-intro-modal) {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
+    width: min(40rem, calc(100vw - 2.5rem));
+    max-width: 100%;
+    margin: 0;
+    max-height: min(85vh, calc(100vh - 2.5rem));
+    transform: translateY(0) scale(1);
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
 .recent-bookmarks-skeleton {
     display: flex;
     flex-direction: column;

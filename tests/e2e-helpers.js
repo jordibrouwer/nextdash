@@ -21,6 +21,8 @@ const DASHBOARD_WHATS_NEW_RELEASE = (() => {
 /** Discoverability keys dismissed before navigation in most dashboard e2e runs. */
 const DEFAULT_DISCOVERABILITY_KEYS = [
     'nextdash:inbox-intro-toast-v1',
+    'nextdash:inbox-intro-modal-v1',
+    'nextdash:inbox-intro-modal-v2',
 ];
 
 /** Env vars for the Playwright-managed `go run .` server. */
