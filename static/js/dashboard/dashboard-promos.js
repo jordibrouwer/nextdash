@@ -171,6 +171,7 @@ class DashboardPromos {
         }
 
         window.LayoutBetaToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
+        window.InboxIntroToast?.scheduleShow?.({ delay: 1400, resetAttempts: true });
     }
 
 
@@ -358,17 +359,6 @@ class DashboardPromos {
             },
             onPersist: async () => {
                 d.settings.onboardingCompleted = true;
-                if (d.settings.showTips !== false) {
-                    d.settings.showTips = true;
-                }
-                if (
-                    d.settings.showTips !== false &&
-                    window.TipsPolicy &&
-                    typeof window.TipsPolicy.startPromoPeriod === 'function' &&
-                    window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false
-                ) {
-                    window.TipsPolicy.startPromoPeriod();
-                }
                 document.body.setAttribute('data-show-tips', d.shouldShowRotatingTipsNow() ? 'true' : 'false');
                 await d.saveSettings();
                 d.initializeButtonTipsRotation();

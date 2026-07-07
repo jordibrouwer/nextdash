@@ -18,6 +18,7 @@ type pageAssetVersions struct {
 	FeatureSpotlightJS     string
 	LayoutModernNudgeJS    string
 	LayoutBetaToastJS      string
+	InboxIntroToastJS      string
 	PreviewCardSpotlightJS string
 	HealthBadgeJS          string
 	AppNotificationJS      string

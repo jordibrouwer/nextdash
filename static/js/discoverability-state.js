@@ -36,6 +36,7 @@
         'nextdash:feature-spotlight-paste-v1': 'spotlight:paste',
         'nextdash:layout-modern-nudge-v1': 'spotlight:layoutNudge',
         'nextdash:layout-beta-toast-v1': 'toast:layoutBeta',
+        'nextdash:inbox-intro-toast-v1': 'toast:inboxIntro',
         'nextdash:feature-spotlight-preview-cards-v1': 'spotlight:previewCards',
     };
 

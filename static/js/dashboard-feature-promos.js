@@ -85,7 +85,7 @@
             titleKey: 'categoryRenamePromoTitle',
             titleFallback: 'Rename category',
             bodyKey: 'categoryRenamePromoBody',
-            bodyFallback: 'Press and hold a category title (~500 ms) to rename on the dashboard · <kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel · double-click still works',
+            bodyFallback: 'Press and hold a category title (~500 ms) to rename on the dashboard · <kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel',
             dismissKey: 'categoryRenamePromoDismiss',
         },
         quickMove: {
