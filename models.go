@@ -112,6 +112,7 @@ type Settings struct {
 	ShowCommandsButton          bool                             `json:"showCommandsButton"`
 	ShowRecentButton            bool                             `json:"showRecentButton"`
 	ShowTips                    bool                             `json:"showTips"`
+	ShowTipsOffMigrated         bool                             `json:"showTipsOffMigrated,omitempty"` // one-time: default rotating tips to off
 	ShowTagCloudButton          bool                             `json:"showTagCloudButton"` // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated     bool                             `json:"tagCloudDefaultMigrated,omitempty"` // one-time: enable tag cloud for existing installs
 	LinkPreviewCardsOffMigrated bool                             `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
@@ -425,7 +426,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowFindersButton:           true,
 			ShowCommandsButton:          true,
 			ShowRecentButton:            false,
-			ShowTips:                    true,
+			ShowTips:                    false,
 			ShowTagCloudButton:          true,
 			ShowSearchFlowBanner:        true,
 			ShowCheatSheetButton:        false,
@@ -536,6 +537,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
 	fs.migrateHideEmptyCategoriesDefaultOn()
+	fs.migrateShowTipsDefaultOff()
 
 }
 
@@ -585,6 +587,38 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 
 	raw["showLinkPreviewCards"] = json.RawMessage(`false`)
 	raw["linkPreviewCardsOffMigrated"] = json.RawMessage(`true`)
+
+	out, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
+}
+
+func (fs *FileStore) migrateShowTipsDefaultOff() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	if migrated, ok := raw["showTipsOffMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
+	}
+
+	raw["showTips"] = json.RawMessage(`false`)
+	raw["showTipsOffMigrated"] = json.RawMessage(`true`)
 
 	out, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
@@ -1705,8 +1739,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showIcons"]; !ok {
 			settings.ShowIcons = true
 		}
-		if _, ok := rawSettings["showTips"]; !ok {
+		if !settings.ShowTipsOffMigrated {
 			settings.ShowTips = false
+			settings.ShowTipsOffMigrated = true
 		}
 		if !settings.TagCloudDefaultMigrated {
 			settings.ShowTagCloudButton = true
@@ -1879,6 +1914,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
 			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
+			settings.ShowTipsOffMigrated = stored.ShowTipsOffMigrated
 		}
 	}
 

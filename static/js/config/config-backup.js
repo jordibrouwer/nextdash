@@ -892,7 +892,7 @@ class ConfigBackup {
         try {
             // Strip one-time migration markers so server-side migrations run correctly
             // on the destination instance regardless of the source's migration state.
-            const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, ...cleanSettings } = settings;
+            const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, showTipsOffMigrated, ...cleanSettings } = settings;
             const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

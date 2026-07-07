@@ -223,6 +223,10 @@ class DashboardData {
             if (typeof d.settings.showTips === 'undefined') {
                 d.settings.showTips = false;
             }
+            if (!d.settings.showTipsOffMigrated) {
+                d.settings.showTips = false;
+                d.settings.showTipsOffMigrated = true;
+            }
 
             if (typeof d.settings.showLinkPreviewCards === 'undefined') {
                 d.settings.showLinkPreviewCards = false;

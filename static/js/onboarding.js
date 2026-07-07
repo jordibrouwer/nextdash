@@ -160,15 +160,6 @@ class Onboarding {
                             { value: 'false', label: this.t('onboarding.searchModeDefault', 'Default: typing = shortcut search, "/" = fuzzy') },
                             { value: 'true', label: this.t('onboarding.searchModeInterleave', 'Interleave: typing = fuzzy, "/" = shortcuts') }
                         ]
-                    },
-                    {
-                        id: 'showTips',
-                        type: 'radio',
-                        label: this.t('onboarding.showTipsLabel', 'Show rotating tips above buttons'),
-                        options: [
-                            { value: 'true', label: this.t('onboarding.yes', 'Yes') },
-                            { value: 'false', label: this.t('onboarding.no', 'No') }
-                        ]
                     }
                 ]
             },
@@ -404,7 +395,6 @@ class Onboarding {
             weatherLocation: settings.weatherLocation || '',
             packedColumns: settings.packedColumns !== false,
             interleaveMode: settings.interleaveMode === true,
-            showTips: settings.onboardingCompleted ? settings.showTips === true : false,
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
             statusMonitorSelection: this.buildStatusMonitorSelection(this.statusMonitorBookmarks),
@@ -654,7 +644,7 @@ class Onboarding {
     }
 
     parseFieldValue(fieldId, value) {
-        if (['openInNewTab', 'autoDarkMode', 'showWeatherWithDate', 'packedColumns', 'interleaveMode', 'showTips', 'showSmartTodayCollection', 'showSmartMostUsedCollection'].includes(fieldId)) {
+        if (['openInNewTab', 'autoDarkMode', 'showWeatherWithDate', 'packedColumns', 'interleaveMode', 'showSmartTodayCollection', 'showSmartMostUsedCollection'].includes(fieldId)) {
             return String(value) === 'true';
         }
         return value;
@@ -809,7 +799,6 @@ class Onboarding {
             weatherLocation: this.localSettings.weatherLocation,
             packedColumns: this.localSettings.packedColumns,
             interleaveMode: this.localSettings.interleaveMode,
-            showTips: this.localSettings.showTips,
             showSmartTodayCollection: this.localSettings.showSmartTodayCollection,
             showSmartMostUsedCollection: this.localSettings.showSmartMostUsedCollection,
             layoutVersion: 'classic',

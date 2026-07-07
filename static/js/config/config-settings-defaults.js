@@ -36,6 +36,10 @@ class ConfigSettingsDefaults {
         if (typeof settingsData.showTips === 'undefined') {
             settingsData.showTips = false;
         }
+        if (!settingsData.showTipsOffMigrated) {
+            settingsData.showTips = false;
+            settingsData.showTipsOffMigrated = true;
+        }
         if (typeof settingsData.showSearchFlowBanner === 'undefined') {
             settingsData.showSearchFlowBanner = true;
         }
