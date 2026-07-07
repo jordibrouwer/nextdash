@@ -182,7 +182,7 @@
     function isPromoDeferred(pendingKind) {
         if (document.body.classList.contains('loading')) return true;
         if (global.DashboardTagCloud?.modalOpen && pendingKind !== 'tagCloud') return true;
-        if (document.getElementById('page-overview-overlay') && pendingKind !== 'pageOverview') return true;
+        if (document.querySelector('#app-modal.show .page-overview-modal') && pendingKind !== 'pageOverview') return true;
         if (document.body.classList.contains('bookmark-inline-edit-active') && pendingKind !== 'inlineEdit') return true;
         if (document.querySelector('.category-title--renaming') && pendingKind !== 'categoryRename') return true;
         if (document.getElementById('move-popover') && pendingKind !== 'quickMove') return true;
@@ -504,11 +504,11 @@
     }
 
     function getPageOverviewPanelElement() {
-        if (anchorEl instanceof HTMLElement && anchorEl.classList.contains('page-overview-panel')) {
+        if (anchorEl instanceof HTMLElement && anchorEl.classList.contains('page-overview-modal')) {
             return anchorEl;
         }
-        return anchorEl?.closest?.('.page-overview-panel')
-            || document.querySelector('#page-overview-overlay .page-overview-panel');
+        return anchorEl?.closest?.('.page-overview-modal')
+            || document.querySelector('#app-modal.show .page-overview-modal');
     }
 
     function getPageOverviewPanelRect() {

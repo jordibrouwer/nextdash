@@ -136,7 +136,6 @@ class DashboardUiHelpers {
         if (appModal?.classList.contains('show')) return true;
         if (window.DashboardTagCloud?.modalOpen) return true;
         if (document.getElementById('omnibox-overlay')) return true;
-        if (document.getElementById('page-overview-overlay')) return true;
         if (document.getElementById('date-popover')) return true;
         if (document.getElementById('move-popover')) return true;
         if (document.getElementById('delete-popover')) return true;
@@ -408,137 +407,65 @@ class DashboardUiHelpers {
     }
 
 
-    async showPageOverlay() {
+    isPageOverviewModalOpen() {
+        const overlay = document.getElementById('app-modal');
+        return overlay?.classList.contains('show') === true
+            && Boolean(overlay.querySelector('.page-overview-modal'));
+    }
+
+
+    _cleanupPageOverviewKeyHandler() {
+        if (this._pageOverviewKeyHandler) {
+            document.removeEventListener('keydown', this._pageOverviewKeyHandler, true);
+            this._pageOverviewKeyHandler = null;
+        }
+    }
+
+
+    _buildPageOverviewHtml(pages, allBookmarks) {
         const d = this.dash;
-        if (document.getElementById('page-overview-overlay')) return;
+        const listLabel = this.formatDashboardLabel('pagesOverviewAria', {}, 'Page overview');
+        const items = pages.map((page, idx) => {
+            const count = allBookmarks.filter((b) => String(b.pageId) === String(page.id)).length;
+            const isCurrent = d.samePageId(page.id, d.currentPageId);
+            const pageName = page.name || this.formatDashboardLabel('pageOverviewFallbackName', { index: idx + 1 }, `Page ${idx + 1}`);
+            const ariaLabel = this.formatDashboardLabel('pageOverviewItemAria', { name: pageName, count }, `${pageName}, ${count} bookmarks`);
+            const leadParts = [];
+            if (page.icon) {
+                leadParts.push(`<span class="page-tab-icon" aria-hidden="true">${d.escapeHtml(page.icon)}</span>`);
+            } else {
+                leadParts.push(`<span class="page-overview-modal-num" aria-hidden="true">${idx + 1}</span>`);
+            }
+            if (page.color) {
+                leadParts.push(`<span class="page-tab-dot" style="background:${d.escapeHtml(page.color)}" aria-hidden="true"></span>`);
+            }
+            return `
+                <li class="page-overview-modal-item${isCurrent ? ' is-current' : ''}" data-page-idx="${idx}">
+                    <button type="button" class="page-overview-modal-link" data-page-id="${d.escapeHtml(String(page.id))}" aria-current="${isCurrent ? 'page' : 'false'}" aria-label="${d.escapeHtml(ariaLabel)}">
+                        <span class="page-overview-modal-lead">${leadParts.join('')}</span>
+                        <span class="page-overview-modal-body">
+                            <span class="page-overview-modal-name">${d.escapeHtml(pageName)}</span>
+                        </span>
+                        <span class="page-overview-modal-count">${count}</span>
+                    </button>
+                </li>
+            `;
+        }).join('');
+        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`;
+    }
 
-        const pages = Array.isArray(d.pages) ? d.pages : [];
-        if (pages.length === 0) return;
 
-        if (pages.length > 1 && (!Array.isArray(d.allBookmarks) || d.allBookmarks.length === 0)) {
-            await d.loadAllBookmarks();
+    _setupPageOverviewKeyboardNav(pages, listRoot) {
+        const d = this.dash;
+        this._cleanupPageOverviewKeyHandler();
+        if (!listRoot || pages.length === 0) {
+            return;
         }
-
-        const previousFocus = document.activeElement;
-        const allBookmarks = Array.isArray(d.allBookmarks) ? d.allBookmarks : [];
-
-        const overlay = document.createElement('div');
-        overlay.id = 'page-overview-overlay';
-        overlay.className = 'page-overview-overlay';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-
-        const isMobileLayout = window.MobileExperience?.isMobileLayout?.() === true;
-        if (isMobileLayout) {
-            overlay.classList.add('page-overview-overlay--mobile');
-        }
-
-        const panel = document.createElement('div');
-        panel.className = 'page-overview-panel';
-
-        const header = document.createElement('div');
-        header.className = 'page-overview-header';
-        const headerTitle = document.createElement('span');
-        headerTitle.className = 'page-overview-header-title';
-        const pagesLabel = d.language?.t('dashboard.pagesOverview');
-        headerTitle.textContent = pagesLabel && pagesLabel !== 'dashboard.pagesOverview'
-            ? pagesLabel
-            : 'Pages';
-        header.appendChild(headerTitle);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'page-overview-close';
-        const closeLabel = d.language?.t('dashboard.closePageOverview');
-        closeBtn.setAttribute(
-            'aria-label',
-            closeLabel && closeLabel !== 'dashboard.closePageOverview' ? closeLabel : 'Close'
-        );
-        closeBtn.textContent = '×';
-        header.appendChild(closeBtn);
-
-        const ariaLabel = d.language?.t('dashboard.pagesOverviewAria');
-        overlay.setAttribute(
-            'aria-label',
-            ariaLabel && ariaLabel !== 'dashboard.pagesOverviewAria' ? ariaLabel : 'Page overview'
-        );
-        panel.appendChild(header);
-
-        const list = document.createElement('ul');
-        list.className = 'page-overview-list';
 
         let focusedIndex = pages.findIndex((p) => d.samePageId(p.id, d.currentPageId));
         if (focusedIndex < 0) focusedIndex = 0;
 
-        pages.forEach((page, idx) => {
-            const count = allBookmarks.filter(b => String(b.pageId) === String(page.id)).length;
-            const li = document.createElement('li');
-            li.className = 'page-overview-item' + (d.samePageId(page.id, d.currentPageId) ? ' is-current' : '');
-            li.setAttribute('data-idx', String(idx));
-
-            const link = document.createElement('button');
-            link.type = 'button';
-            link.className = 'page-overview-link';
-            link.setAttribute('aria-current', d.samePageId(page.id, d.currentPageId) ? 'page' : 'false');
-            const pageName = page.name || this.formatDashboardLabel('pageOverviewFallbackName', { index: idx + 1 }, `Page ${idx + 1}`);
-            link.setAttribute(
-                'aria-label',
-                this.formatDashboardLabel('pageOverviewItemAria', { name: pageName, count }, `${pageName}, ${count} bookmarks`)
-            );
-
-            const lead = document.createElement('span');
-            lead.className = 'page-overview-lead';
-
-            if (page.icon) {
-                const iconEl = document.createElement('span');
-                iconEl.className = 'page-tab-icon';
-                iconEl.textContent = page.icon;
-                lead.appendChild(iconEl);
-            } else {
-                const numSpan = document.createElement('span');
-                numSpan.className = 'page-overview-num';
-                numSpan.textContent = String(idx + 1);
-                lead.appendChild(numSpan);
-            }
-
-            if (page.color) {
-                const dot = document.createElement('span');
-                dot.className = 'page-tab-dot';
-                dot.style.background = page.color;
-                lead.appendChild(dot);
-            }
-
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'page-overview-name';
-            nameSpan.textContent = pageName;
-
-            const countSpan = document.createElement('span');
-            countSpan.className = 'page-overview-count';
-            countSpan.textContent = String(count);
-
-            link.appendChild(lead);
-            link.appendChild(nameSpan);
-            link.appendChild(countSpan);
-
-            link.addEventListener('click', async () => {
-                const switched = await d.requestPageNavigation(page.id);
-                if (!switched) {
-                    return;
-                }
-                close();
-            });
-
-            li.appendChild(link);
-            list.appendChild(li);
-        });
-
-        panel.appendChild(list);
-        overlay.appendChild(panel);
-        document.body.appendChild(overlay);
-        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
-        window.FocusTrapUtils?.syncDashboardInert?.();
-
-        const items = () => list.querySelectorAll('.page-overview-item');
+        const items = () => Array.from(listRoot.querySelectorAll('.page-overview-modal-item'));
 
         const setFocus = (idx) => {
             if (pages.length === 0) {
@@ -547,82 +474,116 @@ class DashboardUiHelpers {
             focusedIndex = ((idx % pages.length) + pages.length) % pages.length;
             items().forEach((el, i) => {
                 el.classList.toggle('is-focused', i === focusedIndex);
-                const btn = el.querySelector('.page-overview-link');
                 if (i === focusedIndex) {
+                    const btn = el.querySelector('.page-overview-modal-link');
                     btn?.focus({ preventScroll: true });
                     el.scrollIntoView({ block: 'nearest' });
                 }
             });
         };
 
-        const close = () => {
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('pageOverview')) {
-                window.DashboardFeaturePromos?.dismissOpen?.();
+        const navigateTo = async (page) => {
+            if (!page) {
+                return;
             }
-            overlay.remove();
-            document.removeEventListener('keydown', onKey, true);
-            window.FocusTrapUtils?.syncDashboardInert?.();
-            const restoreTarget = (previousFocus && previousFocus.isConnected)
-                ? previousFocus
-                : document.getElementById('page-overview-header-btn');
-            if (restoreTarget && typeof restoreTarget.focus === 'function') {
-                restoreTarget.focus({ preventScroll: true });
+            const switched = await d.requestPageNavigation(page.id);
+            if (switched) {
+                window.AppModal?.hide?.();
             }
         };
 
-        header.querySelector('.page-overview-close')?.addEventListener('click', close);
+        listRoot.querySelectorAll('.page-overview-modal-link').forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                void navigateTo(pages[idx]);
+            });
+        });
 
-        const onKey = (e) => {
-            if (e.key === 'Escape' || e.key === ',') {
+        this._pageOverviewKeyHandler = (e) => {
+            if (!this.isPageOverviewModalOpen()) {
+                this._cleanupPageOverviewKeyHandler();
+                return;
+            }
+            if (e.key === ',') {
                 e.preventDefault();
                 e.stopPropagation();
-                close();
-            } else if (e.key === 'Tab') {
-                e.preventDefault();
-                e.stopPropagation();
-                window.FocusTrapUtils?.trapTabKey(e, panel);
-            } else if (e.key === 'ArrowDown') {
+                window.AppModal?.hide?.();
+                return;
+            }
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setFocus(focusedIndex + 1);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 setFocus(focusedIndex - 1);
             } else if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const page = pages[focusedIndex];
-                if (page) {
-                    void d.requestPageNavigation(page.id).then((switched) => {
-                        if (switched) {
-                            close();
-                        }
-                    });
+                if (e.target?.classList?.contains('page-overview-modal-link')) {
+                    e.preventDefault();
+                    void navigateTo(pages[focusedIndex]);
                 }
             } else if (e.key >= '1' && e.key <= '9') {
-                const idx = parseInt(e.key) - 1;
+                const idx = parseInt(e.key, 10) - 1;
                 if (idx < pages.length) {
                     e.preventDefault();
-                    void d.requestPageNavigation(pages[idx].id).then((switched) => {
-                        if (switched) {
-                            close();
-                        }
-                    });
+                    void navigateTo(pages[idx]);
                 }
             }
         };
-
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-        document.addEventListener('keydown', onKey, true);
-
+        document.addEventListener('keydown', this._pageOverviewKeyHandler, true);
         setFocus(focusedIndex);
+    }
+
+
+    async showPageOverlay() {
+        const d = this.dash;
+        if (this.isPageOverviewModalOpen() || !window.AppModal) {
+            return;
+        }
+
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        if (pages.length === 0) {
+            return;
+        }
+
+        if (pages.length > 1 && (!Array.isArray(d.allBookmarks) || d.allBookmarks.length === 0)) {
+            await d.loadAllBookmarks();
+        }
+
+        const allBookmarks = Array.isArray(d.allBookmarks) ? d.allBookmarks : [];
+        const pagesLabel = d.language?.t('dashboard.pagesOverview');
+        const title = pagesLabel && pagesLabel !== 'dashboard.pagesOverview' ? pagesLabel : 'Pages';
+        const closeLabel = d.language?.t('dashboard.closePageOverview');
+        const confirmText = closeLabel && closeLabel !== 'dashboard.closePageOverview' ? closeLabel : 'Close';
+
+        d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+
+        window.AppModal.show({
+            title,
+            htmlMessage: this._buildPageOverviewHtml(pages, allBookmarks),
+            confirmText,
+            showCancel: false,
+            modalClass: 'page-overview-modal',
+            modalMaxWidth: '22rem',
+            modalWidth: 'min(22rem, calc(100vw - 2.5rem))',
+            onHide: () => {
+                if (window.DashboardFeaturePromos?.isPromoOpen?.('pageOverview')) {
+                    window.DashboardFeaturePromos?.dismissOpen?.();
+                }
+                this._cleanupPageOverviewKeyHandler();
+                const restoreTarget = document.getElementById('page-overview-header-btn');
+                if (restoreTarget && typeof restoreTarget.focus === 'function') {
+                    restoreTarget.focus({ preventScroll: true });
+                }
+            },
+        });
+
+        const listRoot = document.querySelector('#app-modal .page-overview-modal-list');
+        this._setupPageOverviewKeyboardNav(pages, listRoot);
+
         requestAnimationFrame(() => {
-            overlay.classList.add('is-visible');
-            setFocus(focusedIndex);
-            requestAnimationFrame(() => {
+            const panel = document.querySelector('#app-modal.show .page-overview-modal');
+            if (panel) {
                 window.DashboardFeaturePromos?.tryShow?.('pageOverview', panel);
-            });
-            overlay.addEventListener('transitionend', () => {
-                window.DashboardFeaturePromos?.reposition?.();
-            }, { once: true });
+            }
         });
     }
 

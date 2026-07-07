@@ -171,11 +171,14 @@ body[data-layout-version="glass"]:has(#config-main) #app-modal.modal-overlay:has
 }
 
 body[data-layout-version="glass"] .recent-bookmarks-modal-item,
-body[data-layout-version="glass"] .recent-bookmarks-skeleton-row {
+body[data-layout-version="glass"] .recent-bookmarks-skeleton-row,
+body[data-layout-version="glass"] .page-overview-modal-link {
     border-radius: var(--layout-radius-sm);
 }
 
-body[data-layout-version="glass"] .recent-bookmarks-modal-item:hover {
+body[data-layout-version="glass"] .recent-bookmarks-modal-item:hover,
+body[data-layout-version="glass"] .page-overview-modal-link:hover,
+body[data-layout-version="glass"] .page-overview-modal-item.is-focused .page-overview-modal-link {
     background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
     border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);

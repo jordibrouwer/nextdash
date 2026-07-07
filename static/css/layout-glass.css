@@ -12,6 +12,7 @@ body[data-layout-version="glass"] .tag-filter-indicator-chip:focus-visible,
 body[data-layout-version="glass"] .tag-filter-indicator-clear:focus-visible,
 body[data-layout-version="glass"] .page-overview-close:focus-visible,
 body[data-layout-version="glass"] .page-overview-link:focus-visible,
+body[data-layout-version="glass"] .page-overview-modal-link:focus-visible,
 body[data-layout-version="glass"] .skip-to-content:focus-visible {
     outline: var(--layout-focus-ring);
     outline-offset: 2px;

@@ -361,7 +361,7 @@ class SearchComponent {
         if (window.DashboardTagCloud?.modalOpen) {
             return true;
         }
-        if (document.getElementById('page-overview-overlay')) {
+        if (window.dashboardInstance?.uiHelpers?.isPageOverviewModalOpen?.()) {
             return true;
         }
         if (document.getElementById('omnibox-overlay')) {

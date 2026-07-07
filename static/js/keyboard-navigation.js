@@ -71,7 +71,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (document.getElementById('page-overview-overlay')) {
+            if (window.dashboardInstance?.uiHelpers?.isPageOverviewModalOpen?.()) {
                 return;
             }
 
@@ -186,7 +186,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (document.getElementById('page-overview-overlay')) {
+            if (window.dashboardInstance?.uiHelpers?.isPageOverviewModalOpen?.()) {
                 return;
             }
 

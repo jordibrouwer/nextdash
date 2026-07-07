@@ -68,7 +68,9 @@
     }
 
     function isPageOverviewOpen() {
-        return document.getElementById('page-overview-overlay') != null;
+        const overlay = document.getElementById('app-modal');
+        return overlay?.classList.contains('show') === true
+            && Boolean(overlay.querySelector('.page-overview-modal'));
     }
 
     function isOmniboxOpen() {
@@ -161,7 +163,7 @@
                     const cls = mutation.target.classList;
                     return id === 'shortcut-search' || id === 'app-modal' || id === 'tag-cloud-modal'
                         || id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
-                        || id === 'date-popover' || id === 'page-overview-overlay' || id === 'omnibox-overlay'
+                        || id === 'date-popover' || id === 'omnibox-overlay'
                         || (mutation.attributeName === 'class' && mutation.target === document.body);
                 }
                 if (mutation.type === 'childList') {
@@ -172,7 +174,7 @@
                         const el = /** @type {Element} */ (node);
                         const id = el.id || '';
                         return id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
-                            || id === 'date-popover' || id === 'page-overview-overlay' || id === 'omnibox-overlay'
+                            || id === 'date-popover' || id === 'omnibox-overlay'
                             || el.id === 'shortcut-search' || el.id === 'app-modal';
                     });
                 }

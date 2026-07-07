@@ -23,7 +23,6 @@ async function closeDashboardOverlays(page) {
     await page.evaluate(() => {
         window.AppModal?.hide?.();
         window.dashboardInstance?.searchComponent?.closeSearch?.();
-        document.getElementById('page-overview-overlay')?.remove();
         document.getElementById('omnibox-overlay')?.remove();
         document.getElementById('tag-popover')?.remove();
         document.getElementById('move-popover')?.remove();
@@ -98,8 +97,8 @@ test.describe('dashboard overlay focus', () => {
     test('page overview shortcut moves focus into overlay', async ({ page }) => {
         await closeDashboardOverlays(page);
         await page.keyboard.press(',');
-        await expect(page.locator('#page-overview-overlay')).toBeVisible({ timeout: 5000 });
-        await expect(page.locator('.page-overview-item.is-focused .page-overview-link')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('#app-modal.show .page-overview-modal')).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('.page-overview-modal-item.is-focused .page-overview-modal-link')).toBeVisible({ timeout: 10_000 });
     });
 
     test('omnibox shortcut moves focus into overlay input', async ({ page }) => {

@@ -77,7 +77,7 @@ test.describe('dashboard inert after overlays', () => {
 
     test('dashboard is clickable after closing page overview', async ({ page }) => {
         await page.keyboard.press(',');
-        const overlay = page.locator('#page-overview-overlay');
+        const overlay = page.locator('#app-modal.show .page-overview-modal');
         await expect(overlay).toBeVisible({ timeout: 3000 });
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === true

@@ -48,6 +48,7 @@ body[data-layout-version="modern"] .tag-filter-indicator-chip:focus-visible,
 body[data-layout-version="modern"] .tag-filter-indicator-clear:focus-visible,
 body[data-layout-version="modern"] .page-overview-close:focus-visible,
 body[data-layout-version="modern"] .page-overview-link:focus-visible,
+body[data-layout-version="modern"] .page-overview-modal-link:focus-visible,
 body[data-layout-version="modern"] .skip-to-content:focus-visible {
     outline: var(--layout-focus-ring);
     outline-offset: 2px;

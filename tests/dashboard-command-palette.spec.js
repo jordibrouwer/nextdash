@@ -162,7 +162,7 @@ test.describe('dashboard command palette', () => {
         await page.keyboard.press('Enter');
 
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
-        await expect(page.locator('#page-overview-overlay')).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('#app-modal.show .page-overview-modal')).toBeVisible({ timeout: 5000 });
     });
 
     test(':find clear removes find-hidden tiles', async ({ page }) => {

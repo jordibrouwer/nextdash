@@ -72,7 +72,7 @@ async function closeDashboardOverlays(page) {
     await page.evaluate(() => {
         window.AppModal?.hide?.();
         window.dashboardInstance?.searchComponent?.closeSearch?.();
-        document.getElementById('page-overview-overlay')?.remove();
+        document.querySelector('#app-modal.show .page-overview-modal') && window.AppModal?.hide?.();
         document.getElementById('omnibox-overlay')?.remove();
         document.getElementById('tag-popover')?.remove();
         document.getElementById('move-popover')?.remove();
