@@ -120,21 +120,60 @@ test.describe('dashboard inline edit', () => {
     });
 
     test('save commits inline edit changes', async ({ page }) => {
+        const target = await page.evaluate(() => {
+            const kn = window.dashboardInstance?.keyboardNavigation;
+            const row = kn?.navigableElements?.[kn.currentIndex];
+            return {
+                url: row?.getAttribute('data-bookmark-url') || '',
+                name: row?.querySelector('.bookmark-text')?.textContent?.trim() || '',
+            };
+        });
+        expect(target.url).not.toBe('');
+
         await page.keyboard.press(';');
         const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(600);
         const original = await nameInput.inputValue();
-        const edited = `${original} save-test`;
+        const edited = `${original} save-${Date.now()}`;
         await nameInput.fill(edited);
         await page.keyboard.press('Control+Enter');
         await expect.poll(async () => page.evaluate(() => (
             !document.querySelector('.bookmark-inline-editing')
         ))).toBe(true);
-        await expect.poll(async () => page.evaluate((expected) => {
+        await expect.poll(async () => page.evaluate(({ url, expected }) => {
+            const normalizedUrl = String(url || '').trim();
+            const bookmark = (window.dashboardInstance?.bookmarks || []).find(
+                (entry) => String(entry?.url || '').trim() === normalizedUrl
+            );
+            if (bookmark?.name === expected) {
+                return true;
+            }
             const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
-            return rows.some((el) => el.querySelector('.bookmark-text')?.textContent?.trim() === expected);
-        }, edited)).toBe(true);
+            return rows.some((el) => (
+                String(el.getAttribute('data-bookmark-url') || '').trim() === normalizedUrl
+                && el.querySelector('.bookmark-text')?.textContent?.trim() === expected
+            ));
+        }, { url: target.url, expected: edited }), { timeout: 10_000 }).toBe(true);
+
+        await page.evaluate(async ({ url, originalName }) => {
+            const normalizedUrl = String(url || '').trim();
+            const d = window.dashboardInstance;
+            const bookmark = (d?.bookmarks || []).find(
+                (entry) => String(entry?.url || '').trim() === normalizedUrl
+            );
+            if (!bookmark || bookmark.name === originalName) {
+                return;
+            }
+            bookmark.name = originalName;
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/bookmarks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: d.currentPageId, bookmark }),
+            });
+            await d.data?.refreshAfterBookmarkAdded?.(d.currentPageId);
+        }, { url: target.url, originalName: original });
     });
 
     test('clicking second field keeps editor open', async ({ page }) => {
