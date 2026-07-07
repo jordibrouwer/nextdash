@@ -193,7 +193,7 @@ class DashboardVisual {
         const titleElement = document.querySelector('.title');
         if (titleElement && d.settings.showTitle) {
             const currentPage = d.pages.find(p => p.id === d.currentPageId);
-            titleElement.textContent = currentPage ? currentPage.name : d.language.t('dashboard.defaultPageTitle');
+            d.updatePageTitle(currentPage ? currentPage.name : '');
         }
     }
 

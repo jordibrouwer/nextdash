@@ -60,12 +60,31 @@ class DashboardPageNav {
 
 
 
+    /** Lowercase header label on the inbox view (same in all locales). */
+    inboxHeaderTitle() {
+        return 'inbox';
+    }
+
+
+    inboxPageLabel() {
+        const d = this.dash;
+        const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
+        return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+    }
+
+
     updatePageTitle(pageName) {
         const d = this.dash;
         const titleElement = document.querySelector('.title');
         if (titleElement) {
-            const defaultTitle = d.language.t('dashboard.defaultPageTitle');
-            titleElement.textContent = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
+            let displayName;
+            if (d.activeView === 'inbox') {
+                displayName = this.inboxHeaderTitle();
+            } else {
+                const defaultTitle = d.language.t('dashboard.defaultPageTitle');
+                displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
+            }
+            titleElement.textContent = displayName;
         }
     }
 
@@ -73,8 +92,7 @@ class DashboardPageNav {
     updateDocumentTitle() {
         const d = this.dash;
         if (d.activeView === 'inbox') {
-            const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
-            const inboxName = inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+            const inboxName = this.inboxPageLabel();
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
                 if (base) {
@@ -143,6 +161,7 @@ class DashboardPageNav {
 
     setActiveInboxTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
+        this.updatePageTitle();
         this.updateDocumentTitle();
     }
 

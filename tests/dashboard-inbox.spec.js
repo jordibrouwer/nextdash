@@ -215,6 +215,49 @@ test.describe('dashboard inbox phase 1', () => {
         await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#inbox');
     });
 
+    test('shows inbox in header title on the inbox page', async ({ page }) => {
+        const pageName = await page.evaluate(() => {
+            window.dashboardInstance.settings.inboxEnabled = true;
+            const dash = window.dashboardInstance;
+            const current = dash.pages.find((p) => dash.samePageId(p.id, dash.currentPageId));
+            return current?.name || '';
+        });
+        expect(pageName.length).toBeGreaterThan(0);
+
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        await expect(page.locator('.title')).toHaveText('inbox');
+
+        await page.locator('.page-nav-btn').first().click();
+        await expect(page.locator('.inbox-layout')).toHaveCount(0);
+        await expect(page.locator('.title')).toHaveText(pageName);
+    });
+
+    test('shows one-time inbox intro modal on the inbox page', async ({ page }) => {
+        await page.evaluate(() => {
+            window.DiscoverabilityState?.clearStorageKey?.('nextdash:inbox-intro-modal-v2');
+            try {
+                localStorage.removeItem('nextdash:inbox-intro-modal-v2');
+                localStorage.removeItem('nextdash:inbox-intro-modal-v1');
+            } catch { /* ignore */ }
+            window.dashboardInstance.settings.inboxEnabled = true;
+        });
+
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+
+        const modal = page.locator('#app-modal.show .inbox-intro-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+        await expect(modal.locator('.inbox-intro-lead')).toContainText(/read|lezen|later/i);
+        await modal.locator('.modal-button').click();
+        await expect(page.locator('#app-modal.show .inbox-intro-modal')).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.InboxIntroModal.hasShown())).toBe(true);
+
+        await page.evaluate(() => window.InboxIntroModal.scheduleShow({ delay: 0 }));
+        await page.waitForTimeout(400);
+        await expect(page.locator('#app-modal.show .inbox-intro-modal')).toHaveCount(0);
+    });
+
     test('shows one-time inbox intro toast for existing users', async ({ page }) => {
         await page.evaluate(() => {
             window.DiscoverabilityState?.markStorageKeyConfirmed?.('nextdash:layout-beta-toast-v1');
