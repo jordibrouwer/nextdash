@@ -141,6 +141,9 @@ func TestSecurityHeadersIncludeCSP(t *testing.T) {
 	if !strings.Contains(csp, "https://api.open-meteo.com") {
 		t.Fatalf("expected open-meteo in connect-src, got %q", csp)
 	}
+	if !strings.Contains(csp, "worker-src 'self' blob:") {
+		t.Fatalf("expected worker-src blob in CSP, got %q", csp)
+	}
 }
 
 func TestSecurityHeadersOmitCSPWhenDisabled(t *testing.T) {

@@ -181,6 +181,8 @@ func contentSecurityPolicy() string {
 		"font-src 'self' data: https://fonts.gstatic.com",
 		"connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com",
 		"manifest-src 'self'",
+		"child-src 'self' blob:",
+		"worker-src 'self' blob:",
 	}, "; ")
 }
 
