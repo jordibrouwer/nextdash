@@ -237,6 +237,9 @@ class DashboardRenderCore {
             d.inbox.render();
             return;
         }
+        if (d.activeView === 'inbox') {
+            d.activeView = 'bookmarks';
+        }
         d.data?.schedulePageBookmarksHealIfNeeded?.();
         if (d.isInlineEditActive()) {
             if (options.incremental === 'status') {

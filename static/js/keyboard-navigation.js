@@ -41,6 +41,19 @@ class KeyboardNavigation {
                 return;
             }
 
+            const inbox = this.dashboard.inbox;
+            const layoutEl = document.getElementById('dashboard-layout');
+            const inboxDomActive = layoutEl?.classList.contains('inbox-layout');
+            if (inboxDomActive && inbox?.isEnabled?.()) {
+                if (this.dashboard.activeView !== 'inbox') {
+                    this.dashboard.activeView = 'inbox';
+                }
+                if (inbox.handleKeyboardNavigation?.(e)) {
+                    return;
+                }
+                return;
+            }
+
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;
@@ -75,7 +88,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen({ excludeDiscoverabilityPromos: true })) {
                 return;
             }
 
@@ -181,7 +194,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen({ excludeDiscoverabilityPromos: true })) {
                 return;
             }
 
@@ -1175,7 +1188,7 @@ class KeyboardNavigation {
 
     highlightCurrentElement(options = {}) {
         const doFocus = options.focus !== false;
-        if (options.keyboardNav) {
+        if (this.currentIndex >= 0) {
             this.restoreKbdSelection();
         }
         // Dismiss any open keyboard-triggered preview card when moving to a new row

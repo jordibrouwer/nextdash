@@ -20,6 +20,7 @@ class DashboardPageNav {
 
         if (leavingInbox) {
             d.activeView = 'bookmarks';
+            d.inbox?.clearKeyboardSelection?.();
         }
 
         if (targetPageId === Number(d.currentPageId)) {
@@ -52,6 +53,8 @@ class DashboardPageNav {
         d.setActivePageNavButton(targetPageId);
         d.renderDashboard({ animate: false });
         d.keyboardNavigation?.clearSelection?.();
+        d.keyboardNavigation?.scheduleUpdate?.();
+        d.inbox?.clearKeyboardSelection?.();
         return true;
     }
 
@@ -228,9 +231,10 @@ class DashboardPageNav {
             }
             const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
             const inboxName = inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+            inboxBtn.setAttribute('aria-label', inboxName);
+            inboxBtn.title = inboxName;
             inboxBtn.innerHTML = `
                 <span class="page-tab-icon" aria-hidden="true">📥</span>
-                <span class="page-tab-label">${d.escapeHtml(inboxName)}</span>
                 <span class="page-inbox-badge" id="page-inbox-badge" hidden></span>
             `;
             inboxBtn.addEventListener('click', async () => {

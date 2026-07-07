@@ -334,7 +334,11 @@ button[type="submit"].btn-primary {
   border: none;
 }
 
-.save-success-panel {
+.ext-save-inbox-btn {
+    width: 100%;
+    margin-top: 0.45rem;
+}
+
   margin-top: var(--padding-medium);
   padding: var(--padding-medium);
   border: var(--border-width) solid var(--accent-success);

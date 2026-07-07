@@ -37,7 +37,7 @@ class SearchCommandsComponent {
                 id: 'navigate-search',
                 label: 'Search & navigate',
                 labelKey: 'commands.groupNavigateSearch',
-                commands: ['save', 'saved', 'history', 'sort', 'page', 'category', 'recent', 'overview', 'filter'],
+                commands: ['save', 'saved', 'history', 'sort', 'page', 'category', 'recent', 'overview', 'inbox', 'filter'],
             },
             {
                 id: 'look-and-feel',
@@ -101,6 +101,7 @@ class SearchCommandsComponent {
             'page': this.handlePageCommand.bind(this),
             'recent': this.handleRecentCommand.bind(this),
             'overview': this.handleOverviewCommand.bind(this),
+            'inbox': this.handleInboxCommand.bind(this),
             'cheat': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
@@ -906,6 +907,55 @@ class SearchCommandsComponent {
                 this._closeCommandPalette();
                 return dash.showPageOverlay().then(() => ({ refresh: false }));
             },
+        }];
+    }
+
+    handleInboxCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        const inbox = dash?.inbox;
+        if (!inbox?.isEnabled?.()) {
+            return [{
+                name: this._t('commands.inboxDisabled', 'Inbox is disabled in settings'),
+                shortcut: ':INBOX',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+
+        const sub = String(args[0] || '').trim().toLowerCase();
+        if (!sub || sub === 'open') {
+            return [{
+                name: this._t('commands.inboxOpenLabel', 'Open Inbox page'),
+                shortcut: ':INBOX',
+                type: 'command',
+                action: () => this._runOverlayAction(async () => {
+                    await inbox.openInboxView();
+                }),
+            }];
+        }
+        if (sub === 'triage' || sub.startsWith('triage')) {
+            return [{
+                name: this._t('commands.inboxTriageLabel', 'Triage inbox items'),
+                shortcut: ':INBOX TRIAGE',
+                type: 'command',
+                action: () => this._runOverlayAction(async () => {
+                    await inbox.startTriage();
+                }),
+            }];
+        }
+        if ('triage'.startsWith(sub)) {
+            return [{
+                name: '',
+                shortcut: ':INBOX',
+                completion: ':inbox triage ',
+                type: 'command-completion',
+            }];
+        }
+        return [{
+            name: '',
+            shortcut: ':INBOX',
+            completion: ':inbox ',
+            type: 'command-completion',
         }];
     }
 
@@ -2030,7 +2080,7 @@ class SearchCommandsComponent {
         }
 
         const stateArg = (args[0] || '').toLowerCase();
-        const enabled = dashboard.settings.showTips !== false;
+        const enabled = dashboard.settings.showTips === true;
         const apply = (value) => this.setTipsVisibility(dashboard, value);
 
         if (!stateArg) {

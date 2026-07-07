@@ -72,6 +72,53 @@ func TestInboxMaxItemsTrim(t *testing.T) {
 	}
 }
 
+func TestInboxRestoreLink(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+		dataDir:       dir,
+	}
+	store.initializeDefaultFiles()
+
+	original := InboxLink{
+		ID:      "inl_restore1",
+		URL:     "https://example.com/restore",
+		Title:   "Restore me",
+		AddedAt: 123,
+		Source:  "test",
+	}
+	created, err := store.AddInboxLink(original, false, 500)
+	if err != nil {
+		t.Fatalf("AddInboxLink: %v", err)
+	}
+	if err := store.DeleteInboxLink(created.ID); err != nil {
+		t.Fatalf("DeleteInboxLink: %v", err)
+	}
+	restored, err := store.RestoreInboxLink(created, 500)
+	if err != nil {
+		t.Fatalf("RestoreInboxLink: %v", err)
+	}
+	if restored.ID != created.ID {
+		t.Fatalf("id = %q", restored.ID)
+	}
+	items := store.GetInboxItems()
+	if len(items) != 1 || items[0].URL != created.URL {
+		t.Fatalf("unexpected items after restore: %+v", items)
+	}
+	again, err := store.RestoreInboxLink(created, 500)
+	if err != nil {
+		t.Fatalf("RestoreInboxLink second: %v", err)
+	}
+	if again.ID != created.ID {
+		t.Fatal("expected existing item on second restore")
+	}
+	if len(store.GetInboxItems()) != 1 {
+		t.Fatal("expected single item after duplicate restore")
+	}
+}
+
 func TestNormalizePasteDestination(t *testing.T) {
 	if normalizePasteDestination("bookmark") != "bookmark" {
 		t.Fatal("bookmark")

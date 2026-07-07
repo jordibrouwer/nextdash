@@ -12,6 +12,14 @@ async function selectFirstBookmark(page) {
     await expect.poll(async () => page.evaluate(() => (
         window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
     ))).toBeGreaterThanOrEqual(0);
+    await expect.poll(async () => page.evaluate(() => {
+        const row = document.querySelector('.bookmark-link.keyboard-selected');
+        if (!row) {
+            return false;
+        }
+        const style = window.getComputedStyle(row);
+        return style.backgroundImage !== 'none' || style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+    })).toBe(true);
 }
 
 test.describe('dashboard grid shortcuts', () => {

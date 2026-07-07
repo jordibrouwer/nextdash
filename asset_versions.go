@@ -43,10 +43,11 @@ var sharedAssetVersions = pageAssetVersions{
 	FeatureSpotlightJS:     "paste-replay-v1",
 	LayoutModernNudgeJS:    "layout-versions-2",
 	LayoutBetaToastJS:      "layout-beta-toast-1",
+	InboxIntroToastJS:      "inbox-intro-toast-2",
 	PreviewCardSpotlightJS: "preview-cards-v1",
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-2",
 	WhatsNewData:           "whats-new-v129",
-	DataRevision:           "data-revision-3",
+	DataRevision:           "data-revision-4",
 }

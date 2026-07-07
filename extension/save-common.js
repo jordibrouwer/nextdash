@@ -204,6 +204,20 @@ async function postAddBookmark(serverUrl, pageId, name, url, category, note, tag
   });
 }
 
+async function postInboxLink(serverUrl, url, options = {}) {
+  const base = normalizeServerUrl(serverUrl);
+  return fetch(new URL('/api/inbox', base), {
+    method: 'POST',
+    headers: await apiWriteHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      url,
+      title: options.title || '',
+      note: options.note || '',
+      source: options.source || 'extension',
+    }),
+  });
+}
+
 async function resolveSaveTarget(serverUrl, syncDefaults, lastCtx) {
   const pages = await loadPagesList(serverUrl);
   if (!pages.length) throw new Error('no_pages');

@@ -151,8 +151,13 @@ class SearchComponent {
 
         // Add keyboard event listener
         document.addEventListener('keydown', (e) => {
+            if (this._isInboxSearchContext(e)) {
+                return;
+            }
+
             // Don't trigger shortcuts if user is typing in an input, except when search is active and it's a navigation key
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            const tag = e.target?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
                 if (!this.searchActive || !['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'].includes(e.key)) {
                     return;
                 }
@@ -307,6 +312,41 @@ class SearchComponent {
         this.updateSelectionHighlight();
     }
 
+    _isInboxSearchTarget(el) {
+        return el?.classList?.contains('inbox-search-input') || !!el?.closest?.('.inbox-search-input');
+    }
+
+    _isInboxSearchContext(e) {
+        const target = e?.target;
+        if (this._isInboxSearchTarget(target)) {
+            return true;
+        }
+        return this._isInboxSearchTarget(document.activeElement);
+    }
+
+    _isInboxViewActive() {
+        const dash = window.dashboardInstance;
+        if (dash?.inbox?.triage?.isOpen?.()) {
+            return true;
+        }
+        if (dash?.activeView === 'inbox') {
+            return true;
+        }
+        return document.getElementById('dashboard-layout')?.classList.contains('inbox-layout') ?? false;
+    }
+
+    _isInboxLauncherKey(e, key) {
+        return key === '>'
+            || key === ':'
+            || key === '?'
+            || e.key === '@'
+            || e.key === ','
+            || e.key === '+'
+            || e.key === '&'
+            || e.key === '0'
+            || (key >= '1' && key <= '9');
+    }
+
     shouldDeferToDashboardOverlay() {
         const dash = window.dashboardInstance;
         if (document.body.classList.contains('bookmark-inline-edit-active')) {
@@ -345,6 +385,16 @@ class SearchComponent {
                 this.closeSearch();
             }
             return;
+        }
+
+        if (!this.searchActive && this._isInboxSearchContext(e)) {
+            return;
+        }
+
+        if (!this.searchActive && this._isInboxViewActive() && !this._isInboxLauncherKey(e, key)) {
+            if (e.key.length === 1 && /^[A-Za-z0-9]$/.test(e.key)) {
+                return;
+            }
         }
 
         if (!this.searchActive && this.shouldDeferToDashboardOverlay()) {
@@ -584,6 +634,9 @@ class SearchComponent {
             return false;
         }
         if (this.shouldDeferToDashboardOverlay()) {
+            return false;
+        }
+        if (this._isInboxViewActive()) {
             return false;
         }
         this.addToQuery(key);

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -80,10 +81,27 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Best-effort preview enrichment (non-blocking for response if slow — sync for MVP).
-	preview := h.fetchBookmarkPreview(r.Context(), url, &PreviewCacheFile{Cache: map[string]BookmarkPreview{}}, true)
-	if strings.TrimSpace(preview.Title) != "" || strings.TrimSpace(preview.Image) != "" {
-		updated, updateErr := h.store.UpdateInboxLink(created.ID, func(item *InboxLink) error {
+	// Respond immediately; enrich preview metadata asynchronously.
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"status": "success",
+		"item":   created,
+	})
+	h.enrichInboxPreviewAsync(created.ID, url)
+}
+
+func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
+	itemID = strings.TrimSpace(itemID)
+	url = strings.TrimSpace(url)
+	if itemID == "" || url == "" {
+		return
+	}
+	go func() {
+		preview := h.fetchBookmarkPreview(context.Background(), url, &PreviewCacheFile{Cache: map[string]BookmarkPreview{}}, true)
+		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" {
+			return
+		}
+		_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
 			if strings.TrimSpace(preview.Title) != "" {
 				item.PreviewTitle = preview.Title
 				if strings.TrimSpace(item.Title) == "" || item.Title == item.Domain {
@@ -101,15 +119,45 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 			}
 			return nil
 		})
-		if updateErr == nil {
-			created = updated
+	}()
+}
+
+func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var request struct {
+		Item InboxLink `json:"item"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	settings := h.store.GetSettings()
+	maxItems := settings.InboxMaxItems
+	if maxItems <= 0 {
+		maxItems = 500
+	}
+
+	restored, err := h.store.RestoreInboxLink(request.Item, maxItems)
+	if err != nil {
+		if !respondStorePersistError(w, err) {
+			return
 		}
+		http.Error(w, "Failed to restore inbox item", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"status": "success",
-		"item":   created,
+		"item":   restored,
 	})
 }
 

@@ -193,6 +193,48 @@ func (fs *FileStore) DeleteInboxLink(id string) error {
 	return fs.saveInboxDataLocked(inbox)
 }
 
+func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error) {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	id := strings.TrimSpace(link.ID)
+	if id == "" {
+		return InboxLink{}, fmt.Errorf("invalid inbox id")
+	}
+
+	inbox := fs.readInboxDataLocked()
+	for _, existing := range inbox.Items {
+		if existing.ID == id {
+			return existing, nil
+		}
+	}
+
+	link.ID = id
+	link.URL = strings.TrimSpace(link.URL)
+	if link.URL == "" {
+		return InboxLink{}, fmt.Errorf("invalid inbox url")
+	}
+	if link.AddedAt == 0 {
+		link.AddedAt = time.Now().UnixMilli()
+	}
+	link.Domain = inboxDomainFromURL(link.URL)
+	if strings.TrimSpace(link.Title) == "" {
+		if domain := link.Domain; domain != "" {
+			link.Title = domain
+		} else {
+			link.Title = link.URL
+		}
+	}
+	link.Tags = normalizeTags(link.Tags)
+
+	inbox.Items = append([]InboxLink{link}, inbox.Items...)
+	inbox.Items = trimInboxItems(inbox.Items, maxItems)
+	if err := fs.saveInboxDataLocked(inbox); err != nil {
+		return InboxLink{}, err
+	}
+	return link, nil
+}
+
 func (fs *FileStore) UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()

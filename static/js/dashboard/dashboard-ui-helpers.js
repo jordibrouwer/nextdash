@@ -129,8 +129,9 @@ class DashboardUiHelpers {
     }
 
 
-    isModalOpen() {
+    isModalOpen(options = {}) {
         const d = this.dash;
+        const excludeDiscoverabilityPromos = options.excludeDiscoverabilityPromos === true;
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
         if (window.DashboardTagCloud?.modalOpen) return true;
@@ -141,10 +142,15 @@ class DashboardUiHelpers {
         if (document.getElementById('delete-popover')) return true;
         if (document.getElementById('tag-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
-        if (document.querySelector(
-            '.dashboard-search-promo, .dashboard-feature-promo, .dashboard-grid-kbd-promo, '
-            + '.dashboard-g-jump-promo, .dashboard-smart-collection-promo'
-        )) return true;
+        if (!excludeDiscoverabilityPromos) {
+            const promoSelectors = (
+                '.dashboard-search-promo, .dashboard-feature-promo, .dashboard-grid-kbd-promo, '
+                + '.dashboard-g-jump-promo, .dashboard-smart-collection-promo'
+            );
+            for (const el of document.querySelectorAll(promoSelectors)) {
+                if (this.isVisibleBlockingOverlay(el)) return true;
+            }
+        }
         const blockingSelectors = [
             '.onboarding-overlay',
             '.onboarding-card',
@@ -158,6 +164,7 @@ class DashboardUiHelpers {
             }
         }
         if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
+        if (this.dash.inbox?.triage?.isOpen?.()) return true;
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
         return false;
     }
@@ -221,7 +228,7 @@ class DashboardUiHelpers {
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
-                item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons; double-click still works)'),
+                item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
                 item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
             ]),
             section('sectionSearchModes', 'Search modes', [
@@ -268,6 +275,8 @@ class DashboardUiHelpers {
             ]),
             section('sectionCommandsNavigation', 'Commands — navigation', [
                 item(':page', 'cnPage', 'Switch page by name or number — palette stays open, ✓ on current page'),
+                item(':inbox', 'cnInbox', 'Open Inbox page (0)'),
+                item(':inbox triage', 'cnInboxTriage', 'Triage inbox items one by one'),
                 item(':recent', 'cnRecent', 'Open recent bookmarks modal (same as *)'),
                 item(':overview', 'cnOverview', 'Open page overview with bookmark counts (same as ,)'),
                 item(':cheat', 'cnCheat', 'Open keyboard cheat sheet (same as ! or F1)'),

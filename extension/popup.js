@@ -294,6 +294,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Save form
     document.getElementById('save-form').addEventListener('submit', saveBookmark);
+    document.getElementById('save-inbox-btn')?.addEventListener('click', () => {
+        void saveToInbox();
+    });
 
     document.getElementById('bookmark-url').addEventListener('input', (e) => {
         updateUrlGuard(e.target.value);
@@ -612,6 +615,48 @@ async function saveBookmark(event, options = {}) {
         data.tags,
         data.shortcut
     );
+}
+
+async function saveToInbox() {
+    const data = collectSaveFormData();
+    if (!data.serverUrl) {
+        showMessage(extT('msgSetServerUrl', 'Please set the nextDash URL in settings first.'), 'error');
+        return;
+    }
+    if (!isBookmarkableUrl(data.url)) {
+        showMessage(extT('msgUrlNotSavable', 'This URL cannot be saved. Use a normal http(s) page.'), 'error');
+        return;
+    }
+    try {
+        const response = await postInboxLink(data.serverUrl, data.url, {
+            title: data.name,
+            note: data.note,
+            source: 'extension',
+        });
+        if (response.status === 409) {
+            showMessage(extT('msgInboxDuplicate', 'This URL is already in Inbox.'), 'info');
+            return;
+        }
+        if (!response.ok) throw new Error('inbox save failed');
+        const base = normalizeServerUrl(data.serverUrl);
+        const panel = document.getElementById('save-success-panel');
+        const text = document.getElementById('save-success-text');
+        const link = document.getElementById('open-nextdash-link');
+        const form = document.getElementById('save-form');
+        hideMessage();
+        if (form) form.classList.add('hidden');
+        if (text) {
+            text.textContent = extT('saveInboxSuccess', 'Link saved to Inbox.');
+        }
+        if (panel) panel.classList.remove('hidden');
+        if (link) {
+            link.textContent = extT('openInboxInNextdash', 'Open Inbox in nextDash');
+            link.href = `${base}/#inbox`;
+        }
+    } catch (error) {
+        console.error('Error saving to inbox:', error);
+        showMessage(extT('msgFailedInboxSave', 'Failed to save to Inbox. Check console for details.'), 'error');
+    }
 }
 
 async function saveBookmarkAnyway() {
