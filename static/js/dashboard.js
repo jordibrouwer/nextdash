@@ -127,6 +127,7 @@ class Dashboard {
             }
             this.renderDateWeatherLine();
             this.updateHealthBadge();
+            this.inbox?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -304,10 +305,14 @@ class Dashboard {
                     return;
                 }
                 if (hash && /^\d+$/.test(hash)) {
+                    if (this.activeView === 'inbox') {
+                        this.inbox?.restoreInboxHash?.();
+                        return;
+                    }
                     const pageIndex = parseInt(hash) - 1;
                     if (pageIndex >= 0 && pageIndex < this.pages.length) {
                         const page = this.pages[pageIndex];
-                        if (this.activeView === 'inbox' || !this.samePageId(page.id, this.currentPageId)) {
+                        if (!this.samePageId(page.id, this.currentPageId)) {
                             void this.requestPageNavigation(page.id);
                         }
                     }

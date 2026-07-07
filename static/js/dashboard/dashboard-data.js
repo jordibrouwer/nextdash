@@ -359,6 +359,11 @@ class DashboardData {
                 }
 
                 await d.consumeDashboardDeepLink();
+
+                const initialHash = window.location.hash.substring(1);
+                if (initialHash === 'inbox' && d.inbox?.isEnabled?.()) {
+                    await d.inbox.openInboxView();
+                }
             }
         } catch (error) {
             const msg = d.language?.t?.('dashboard.loadFailed')
@@ -513,6 +518,10 @@ class DashboardData {
         if (!changed) {
             return false;
         }
+        if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
+            await d.inbox.loadAndRender();
+            return true;
+        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -594,6 +603,9 @@ class DashboardData {
 
     schedulePageBookmarksHealIfNeeded() {
         const d = this.dash;
+        if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
+            return;
+        }
         const pid = Number(d.currentPageId);
         if (!Number.isFinite(pid) || pid < 1) {
             return;
@@ -642,15 +654,18 @@ class DashboardData {
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
         const d = this.dash;
         const { skipRender = false, animate = false } = options;
+        const preserveInboxView = d.activeView === 'inbox' && d.inbox?.isEnabled?.();
 
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
-        d.activeView = 'bookmarks';
+        if (!preserveInboxView) {
+            d.activeView = 'bookmarks';
+        }
         d.refreshButtonTipsOnPageChange?.();
 
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
-        if (pageIndex !== -1) {
+        if (!preserveInboxView && pageIndex !== -1) {
             window.location.hash = `#${pageIndex + 1}`;
         }
 

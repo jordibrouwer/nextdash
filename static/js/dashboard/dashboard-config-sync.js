@@ -94,6 +94,9 @@ class DashboardConfigSync {
         document.getElementById('bookmark-grid')?.removeAttribute('aria-activedescendant');
 
         d.initializeKeyboardNavigation();
+        d.inbox?.setupKeyboardNavigation?.();
+        d.inbox?.clearKeyboardSelection?.();
+        d.inbox?.restoreViewIfNeeded?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.swipeNavigation?.cleanup?.();
         d.initializeSwipeNavigation();
@@ -225,6 +228,7 @@ class DashboardConfigSync {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
+            d.inbox?.applySettingsChange?.();
             d.renderDashboard({ animate: false });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
@@ -273,6 +277,7 @@ class DashboardConfigSync {
                 d.allBookmarks = [];
             }
             d.renderPageNavigation();
+            d.inbox?.applySettingsChange?.();
             d.renderDashboard({ animate: false, incremental: false });
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
