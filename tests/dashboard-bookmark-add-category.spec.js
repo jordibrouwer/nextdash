@@ -20,12 +20,34 @@ async function deleteBookmarkByUrl(page, pageId, url) {
     }, { targetPageId: pageId, targetUrl: url });
 }
 
+/** Earlier config-tab tests can replace the default category list; ensure a column exists. */
+async function ensurePageCategory(page, categoryId, categoryName = categoryId) {
+    await page.evaluate(async ({ id, name }) => {
+        const pageId = Number(window.dashboardInstance?.currentPageId) || 1;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await api(`/api/categories?page=${pageId}`);
+        let categories = res.ok ? await res.json() : [];
+        if (!Array.isArray(categories)) {
+            categories = [];
+        }
+        if (!categories.some((category) => category.id === id)) {
+            categories.push({ id, name, icon: '' });
+            await api(`/api/categories?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(categories),
+            });
+        }
+    }, { id: categoryId, name: categoryName });
+}
+
 test.describe('dashboard bookmark add category placement', () => {
     test('new bookmark appears in assigned category column after modal save', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
         await prepareDashboardInteraction(page);
+        await ensurePageCategory(page, 'media', 'Media');
 
         const uniqueUrl = `https://example.com/category-placement-${Date.now()}.test`;
         const uniqueName = `Category placement ${Date.now()}`;
@@ -56,6 +78,7 @@ test.describe('dashboard bookmark add category placement', () => {
     test('refreshAfterBookmarkAdded bypasses stale page cache', async ({ page }) => {
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+        await ensurePageCategory(page, 'media', 'Media');
 
         const uniqueUrl = `https://example.com/cache-bypass-${Date.now()}.test`;
         const pageId = await page.evaluate(() => Number(window.dashboardInstance?.currentPageId) || 1);
@@ -116,6 +139,7 @@ test.describe('dashboard bookmark add category placement', () => {
     test('stale page cache is bypassed when allBookmarks is newer', async ({ page }) => {
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+        await ensurePageCategory(page, 'media', 'Media');
 
         const uniqueUrl = `https://example.com/cache-heal-${Date.now()}.test`;
         const pageId = await page.evaluate(() => Number(window.dashboardInstance?.currentPageId) || 1);
