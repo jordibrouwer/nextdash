@@ -327,6 +327,7 @@ type Store interface {
 	// Inbox
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error)
+	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 }
@@ -1823,6 +1824,12 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["inboxEnabled"]; !ok {
 			settings.InboxEnabled = true
+		}
+		if settings.InboxEnabled {
+			settings.PasteUrlQuickAdd = true
+		}
+		if !settings.InboxEnabled && normalizePasteDestination(settings.PasteDestination) == "inbox" {
+			settings.PasteDestination = "ask"
 		}
 		if _, ok := rawSettings["pasteDestination"]; !ok {
 			settings.PasteDestination = "ask"

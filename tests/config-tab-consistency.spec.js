@@ -1347,6 +1347,57 @@ test.describe('config general & theme surface (C16/B10)', () => {
         await expect(panel).not.toHaveClass(/is-collapsed/);
     });
 
+    test('inbox enabled setting lives in bookmarks essentials panel', async ({ page }) => {
+        await page.evaluate(() => {
+            window.configManager.ui.switchToTab('general');
+            window.configManager.generalLayers?.applyLayer?.('essentials', { updateHash: false });
+            document.querySelector('[data-general-panel="bookmarks-essentials"]')?.classList.remove('is-collapsed');
+        });
+
+        const panel = page.locator('[data-general-panel="bookmarks-essentials"]');
+        await expect(panel).toBeVisible();
+        const inboxCheckbox = panel.locator('#inbox-enabled-checkbox');
+        await expect(inboxCheckbox).toBeVisible();
+        await expect(inboxCheckbox).toBeChecked();
+
+        await expect(page.locator('[data-general-panel="search-buttons"] #inbox-enabled-checkbox')).toHaveCount(0);
+    });
+
+    test('enabling inbox turns on paste URL and locks paste while inbox is active', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            window.configManager.ui.switchToTab('general');
+            const s = window.configManager.settingsData;
+            const cm = window.configManager.settings;
+            s.inboxEnabled = false;
+            s.pasteUrlQuickAdd = false;
+            cm.syncPasteInboxControls(s);
+            s.inboxEnabled = true;
+            cm.normalizePasteInboxSettings(s);
+            cm.syncPasteInboxControls(s);
+            const pasteCheckbox = document.getElementById('paste-url-quick-add-checkbox');
+            return {
+                pasteUrlQuickAdd: s.pasteUrlQuickAdd,
+                inboxEnabled: s.inboxEnabled,
+                pasteChecked: pasteCheckbox?.checked === true,
+                pasteDisabled: pasteCheckbox?.disabled === true,
+            };
+        });
+
+        expect(result.pasteUrlQuickAdd).toBe(true);
+        expect(result.inboxEnabled).toBe(true);
+        expect(result.pasteChecked).toBe(true);
+        expect(result.pasteDisabled).toBe(true);
+
+        const unlocked = await page.evaluate(() => {
+            const s = window.configManager.settingsData;
+            s.inboxEnabled = false;
+            window.configManager.settings.syncPasteInboxControls(s);
+            const pasteCheckbox = document.getElementById('paste-url-quick-add-checkbox');
+            return pasteCheckbox?.disabled === false;
+        });
+        expect(unlocked).toBe(true);
+    });
+
     test('theme tab uses fused surface without local unsaved badge (B10)', async ({ page }) => {
         await page.evaluate(() => window.configManager.ui.switchToTab('colors'));
         await expect(page.locator('#theme-colors-editor.config-tab-page')).toBeVisible();

@@ -25,6 +25,7 @@ const SETTING_INFO_DEFS = [
     { type: 'labelFor', labelFor: 'link-preview-hover-delay-select', btnId: 'link-preview-hover-delay-info-btn', title: 'linkPreviewHoverDelayInfoTitle', message: 'linkPreviewHoverDelayInfoMessage' },
     { type: 'checkbox', targetId: 'new-tab-checkbox', btnId: 'new-tab-info-btn', title: 'openLinksInNewTabInfoTitle', message: 'openLinksInNewTabInfoMessage' },
     { type: 'checkbox', targetId: 'paste-url-quick-add-checkbox', btnId: 'paste-url-quick-add-info-btn', title: 'pasteUrlQuickAddInfoTitle', message: 'pasteUrlQuickAddInfoMessage' },
+    { type: 'checkbox', targetId: 'inbox-enabled-checkbox', btnId: 'inbox-enabled-info-btn', title: 'inboxEnabledInfoTitle', message: 'inboxEnabledInfoMessage' },
     { type: 'checkbox', targetId: 'allow-local-bookmarks-checkbox', btnId: 'allow-local-bookmarks-info-btn', title: 'allowLocalBookmarksInfoTitle', message: 'allowLocalBookmarksInfoMessage' },
     { type: 'labelFor', labelFor: 'language-select', btnId: 'language-select-info-btn', title: 'languageInfoTitle', message: 'languageInfoMessage' },
     { type: 'checkbox', targetId: 'show-date-checkbox', btnId: 'show-date-info-btn', title: 'showDateInfoTitle', message: 'showDateInfoMessage' },

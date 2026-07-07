@@ -88,9 +88,18 @@ class ConfigGeneralLayers {
         this.root.dataset.layersReady = '1';
     }
 
-    /**
-     * Set ├── / └── on consecutive .checkbox-tree-child runs so nesting reads clearly.
-     */
+    appendCheckboxTreeItemWithChildren(tree, checkboxId, scope) {
+        const item = scope?.querySelector(`#${checkboxId}`)?.closest('.checkbox-tree-item');
+        if (!item || !tree) return;
+        const nodes = [item];
+        let sibling = item.nextElementSibling;
+        while (sibling?.classList.contains('checkbox-tree-child')) {
+            nodes.push(sibling);
+            sibling = sibling.nextElementSibling;
+        }
+        nodes.forEach((node) => tree.appendChild(node));
+    }
+
     refreshCheckboxTreeSymbols(scope = this.root) {
         if (!scope) return;
         scope.querySelectorAll('.checkbox-tree').forEach((tree) => {
@@ -239,10 +248,11 @@ class ConfigGeneralLayers {
         const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
         if (iconsItem) tree.appendChild(iconsItem);
 
-        ['new-tab-checkbox', 'paste-url-quick-add-checkbox', 'hide-empty-categories-checkbox'].forEach((id) => {
+        ['new-tab-checkbox', 'hide-empty-categories-checkbox'].forEach((id) => {
             const item = display.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
             if (item) tree.appendChild(item);
         });
+        this.appendCheckboxTreeItemWithChildren(tree, 'paste-url-quick-add-checkbox', display);
         const pageTabsItem = display.querySelector('#show-page-tabs-checkbox')?.closest('.checkbox-tree-item');
         if (pageTabsItem) tree.appendChild(pageTabsItem);
         const pageNamesItem = display.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');

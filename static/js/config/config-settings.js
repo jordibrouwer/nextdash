@@ -985,7 +985,14 @@ class ConfigSettings {
         if (pasteUrlQuickAddCheckbox) {
             pasteUrlQuickAddCheckbox.checked = settings.pasteUrlQuickAdd !== false;
             pasteUrlQuickAddCheckbox.addEventListener('change', (e) => {
+                if (settings.inboxEnabled !== false && !e.target.checked) {
+                    e.target.checked = true;
+                    settings.pasteUrlQuickAdd = true;
+                    this.syncPasteInboxControls(settings);
+                    return;
+                }
                 settings.pasteUrlQuickAdd = e.target.checked;
+                this.syncPasteInboxControls(settings);
             });
         }
 
@@ -994,6 +1001,10 @@ class ConfigSettings {
             inboxEnabledCheckbox.checked = settings.inboxEnabled !== false;
             inboxEnabledCheckbox.addEventListener('change', (e) => {
                 settings.inboxEnabled = e.target.checked;
+                if (e.target.checked && settings.pasteUrlQuickAdd === false) {
+                    settings.pasteUrlQuickAdd = true;
+                }
+                this.syncPasteInboxControls(settings);
             });
         }
 
@@ -1005,6 +1016,7 @@ class ConfigSettings {
                 settings.pasteDestination = e.target.value;
             });
         }
+        this.syncPasteInboxControls(settings);
 
         // HyprMode checkbox
         const allowLocalBookmarksCheckbox = document.getElementById('allow-local-bookmarks-checkbox');
@@ -1053,6 +1065,7 @@ class ConfigSettings {
         this.bindInfoButton('keep-search-open-when-empty-info-btn', 'config.keepSearchOpenWhenEmptyInfoTitle', 'config.keepSearchOpenWhenEmptyInfoMessage');
         this.bindInfoButton('show-status-info-btn', 'config.showBookmarkStatusInfoTitle', 'config.showBookmarkStatusInfoMessage');
         this.bindInfoButton('show-health-dashboard-info-btn', 'config.showHealthDashboardInfoTitle', 'config.showHealthDashboardInfoMessage');
+        this.bindInfoButton('inbox-enabled-info-btn', 'config.inboxEnabledInfoTitle', 'config.inboxEnabledInfoMessage');
         this.bindInfoButton('skip-fast-ping-info-btn', 'config.skipFastPingInfoTitle', 'config.skipFastPingInfoMessage');
         this.bindInfoButton('status-offline-retries-info-btn', 'config.statusOfflineRetriesInfoTitle', 'config.statusOfflineRetriesInfoMessage');
         this.bindInfoButton('status-offline-retry-delay-info-btn', 'config.statusOfflineRetryDelayInfoTitle', 'config.statusOfflineRetryDelayInfoMessage');
@@ -1299,7 +1312,7 @@ class ConfigSettings {
 
         const showHealthDashboardCheckbox = document.getElementById('show-health-dashboard-checkbox');
         if (showHealthDashboardCheckbox) {
-            showHealthDashboardCheckbox.checked = settings.showHealthDashboard !== false;
+            showHealthDashboardCheckbox.checked = settings.showHealthDashboard === true;
             showHealthDashboardCheckbox.addEventListener('change', (e) => {
                 settings.showHealthDashboard = e.target.checked;
             });
@@ -1405,7 +1418,7 @@ class ConfigSettings {
 
         const showTipsCheckbox = document.getElementById('show-tips-checkbox');
         if (showTipsCheckbox) {
-            showTipsCheckbox.checked = settings.showTips !== false;
+            showTipsCheckbox.checked = settings.showTips === true;
             showTipsCheckbox.addEventListener('change', (e) => {
                 settings.showTips = e.target.checked;
                 window.TipsPolicy?.onUserPreference?.(e.target.checked);
@@ -2086,6 +2099,81 @@ class ConfigSettings {
         }
 
         window.configManager?.generalLayers?.syncSmartCollectionsMasterFromChildren?.();
+        this.normalizePasteInboxSettings(settings);
+    }
+
+    normalizePasteInboxSettings(settings) {
+        if (!settings || typeof settings !== 'object') return settings;
+        if (settings.inboxEnabled !== false) {
+            settings.pasteUrlQuickAdd = true;
+        }
+        if (settings.inboxEnabled === false && String(settings.pasteDestination || '').toLowerCase() === 'inbox') {
+            settings.pasteDestination = 'ask';
+        }
+        return settings;
+    }
+
+    syncPasteInboxControls(settings) {
+        const normalized = this.normalizePasteInboxSettings(settings);
+        const pasteCheckbox = document.getElementById('paste-url-quick-add-checkbox');
+        const inboxCheckbox = document.getElementById('inbox-enabled-checkbox');
+        const pasteDestinationSelect = document.getElementById('paste-destination-select');
+        const inboxEnabled = normalized.inboxEnabled !== false;
+        const pasteEnabled = normalized.pasteUrlQuickAdd !== false;
+
+        if (pasteCheckbox) {
+            pasteCheckbox.checked = pasteEnabled;
+            pasteCheckbox.disabled = inboxEnabled;
+            const pasteItem = pasteCheckbox.closest('.checkbox-tree-item');
+            if (pasteItem) {
+                pasteItem.classList.toggle('is-disabled', inboxEnabled);
+            }
+        }
+
+        if (inboxCheckbox) {
+            inboxCheckbox.checked = inboxEnabled;
+            const inboxRow = inboxCheckbox.closest('.checkbox-tree-child');
+            if (inboxRow) {
+                inboxRow.style.display = pasteEnabled ? '' : 'none';
+                inboxRow.classList.toggle('is-disabled', !pasteEnabled);
+            }
+            inboxCheckbox.disabled = !pasteEnabled;
+        }
+
+        const pasteDestinationRow = pasteDestinationSelect?.closest('.checkbox-tree-child');
+        if (pasteDestinationRow) {
+            pasteDestinationRow.style.display = pasteEnabled ? '' : 'none';
+            pasteDestinationRow.classList.toggle('is-disabled', !pasteEnabled);
+        }
+        if (pasteDestinationSelect) {
+            pasteDestinationSelect.disabled = !pasteEnabled;
+            const inboxOption = pasteDestinationSelect.querySelector('option[value="inbox"]');
+            if (inboxOption) {
+                inboxOption.hidden = !inboxEnabled;
+                inboxOption.disabled = !inboxEnabled;
+            }
+            if (!inboxEnabled && pasteDestinationSelect.value === 'inbox') {
+                pasteDestinationSelect.value = 'ask';
+                normalized.pasteDestination = 'ask';
+            }
+        }
+
+        this.toggleCheckboxTreeChildren('paste-url-quick-add-checkbox', pasteEnabled);
+        window.configManager?.generalLayers?.refreshCheckboxTreeSymbols?.();
+    }
+
+    toggleCheckboxTreeChildren(checkboxId, enabled) {
+        const checkbox = document.getElementById(checkboxId);
+        const parentItem = checkbox?.closest('.checkbox-tree-item');
+        if (!parentItem?.parentElement) return;
+
+        const siblings = Array.from(parentItem.parentElement.children);
+        const startIndex = siblings.indexOf(parentItem);
+        for (let i = startIndex + 1; i < siblings.length; i += 1) {
+            const sibling = siblings[i];
+            if (!sibling.classList.contains('checkbox-tree-child')) break;
+            sibling.style.display = enabled ? '' : 'none';
+        }
     }
 
     /**
@@ -2820,7 +2908,7 @@ class ConfigSettings {
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
             showConfigButton: true,
-            showHealthDashboard: true,
+            showHealthDashboard: false,
             showSearchButton: true,
             showAddBookmarkButton: true,
             showFindersButton: true,
@@ -2828,7 +2916,7 @@ class ConfigSettings {
             showCheatSheetButton: false,
             showRecentButton: false,
             showTagCloudButton: true,
-            showTips: true,
+            showTips: false,
             showSearchFlowBanner: true,
             showStatus: true,
             colorizeStatus: true,

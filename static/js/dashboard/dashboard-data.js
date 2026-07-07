@@ -205,8 +205,17 @@ class DashboardData {
             if (typeof d.settings.pasteUrlQuickAdd === 'undefined') {
                 d.settings.pasteUrlQuickAdd = true;
             }
+            if (typeof d.settings.inboxEnabled === 'undefined') {
+                d.settings.inboxEnabled = true;
+            }
+            if (d.settings.inboxEnabled !== false) {
+                d.settings.pasteUrlQuickAdd = true;
+            }
+            if (d.settings.inboxEnabled === false && String(d.settings.pasteDestination || '').toLowerCase() === 'inbox') {
+                d.settings.pasteDestination = 'ask';
+            }
             if (typeof d.settings.showHealthDashboard === 'undefined') {
-                d.settings.showHealthDashboard = true;
+                d.settings.showHealthDashboard = false;
             }
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;

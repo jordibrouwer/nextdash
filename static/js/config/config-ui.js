@@ -185,6 +185,8 @@ class ConfigUI {
                     ) {
                         void mgr.onConfigCollectionsTabOpened();
                     }
+                } else if (targetTab === 'help') {
+                    void window.DashboardTipsCatalog?.ensureHelpTipsOverview?.();
                 } else if (targetTab === 'colors') {
                     void mgr.ensureColorsEditor?.().then(() => {
                         mgr.colorsEditor?.applyReadonlyMode?.();
