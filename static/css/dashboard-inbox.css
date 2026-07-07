@@ -73,6 +73,99 @@
     margin-left: 0;
 }
 
+/* Discoverability: gentle motion on the new Inbox tab until opened or intro toast seen */
+@keyframes inbox-tab-icon-attention {
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+    18% {
+        transform: scale(1.14) rotate(-7deg);
+    }
+    36% {
+        transform: scale(1.08) rotate(6deg);
+    }
+    54% {
+        transform: scale(1.12) rotate(-4deg);
+    }
+    72% {
+        transform: scale(1.06) rotate(2deg);
+    }
+}
+
+@keyframes inbox-tab-button-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    }
+}
+
+@keyframes inbox-badge-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    }
+}
+
+@keyframes inbox-badge-pop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.28);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.page-nav-btn--inbox.is-inbox-new {
+    animation: inbox-tab-button-glow 2.8s ease-in-out infinite;
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
+.page-nav-btn--inbox.is-inbox-new .page-tab-icon {
+    display: inline-block;
+    transform-origin: center bottom;
+    animation: inbox-tab-icon-attention 2.8s ease-in-out infinite;
+}
+
+.page-nav-btn--inbox.is-inbox-new .page-inbox-badge:not([hidden]),
+.page-inbox-badge.is-inbox-badge-live {
+    animation: inbox-badge-pulse 2.2s ease-in-out infinite;
+}
+
+.page-inbox-badge.is-inbox-badge-pop,
+.page-nav-btn--inbox .page-inbox-badge.is-inbox-badge-pop {
+    animation: inbox-badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+body.no-animations .page-nav-btn--inbox.is-inbox-new,
+body.no-animations .page-nav-btn--inbox.is-inbox-new .page-tab-icon,
+body.no-animations .page-nav-btn--inbox.is-inbox-new .page-inbox-badge,
+body.no-animations .page-inbox-badge.is-inbox-badge-live,
+body.no-animations .page-inbox-badge.is-inbox-badge-pop {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-nav-btn--inbox.is-inbox-new,
+    .page-nav-btn--inbox.is-inbox-new .page-tab-icon,
+    .page-nav-btn--inbox.is-inbox-new .page-inbox-badge,
+    .page-inbox-badge.is-inbox-badge-live,
+    .page-inbox-badge.is-inbox-badge-pop {
+        animation: none !important;
+    }
+}
+
 .inbox-feed {
     display: flex;
     flex-direction: column;

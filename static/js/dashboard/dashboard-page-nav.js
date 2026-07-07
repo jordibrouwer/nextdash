@@ -154,13 +154,67 @@ class DashboardPageNav {
             return;
         }
         const unread = d.inbox?.unreadCount?.() || 0;
+        const previous = Number(this._lastInboxBadgeCount) || 0;
         if (unread > 0) {
             badge.textContent = String(unread);
             badge.hidden = false;
+            badge.classList.add('is-inbox-badge-live');
+            if (unread > previous) {
+                badge.classList.remove('is-inbox-badge-pop');
+                // Force reflow so repeated increases replay the pop animation.
+                void badge.offsetWidth;
+                badge.classList.add('is-inbox-badge-pop');
+                badge.addEventListener('animationend', () => {
+                    badge.classList.remove('is-inbox-badge-pop');
+                }, { once: true });
+            }
         } else {
             badge.textContent = '';
             badge.hidden = true;
+            badge.classList.remove('is-inbox-badge-live', 'is-inbox-badge-pop');
         }
+        this._lastInboxBadgeCount = unread;
+        this.syncInboxTabHighlight();
+    }
+
+
+    isInboxTabHighlightActive() {
+        const d = this.dash;
+        if (!d.inbox?.isEnabled?.() || d.settings?.inboxShowInPageTabs === false) {
+            return false;
+        }
+        if (window.DiscoverabilityState?.isStorageKeyConfirmed?.('nextdash:inbox-intro-toast-v1')) {
+            return false;
+        }
+        if (window.InboxIntroToast?.hasShown?.()) {
+            return false;
+        }
+        try {
+            if (localStorage.getItem('nextdash:inbox-tab-opened-v1') === '1') {
+                return false;
+            }
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+
+    syncInboxTabHighlight() {
+        const btn = document.getElementById('page-nav-inbox-btn');
+        if (!btn) {
+            return;
+        }
+        btn.classList.toggle('is-inbox-new', this.isInboxTabHighlightActive());
+    }
+
+
+    markInboxTabDiscovered() {
+        try {
+            localStorage.setItem('nextdash:inbox-tab-opened-v1', '1');
+        } catch { /* ignore */ }
+        window.InboxIntroToast?.markShown?.();
+        this.syncInboxTabHighlight();
     }
 
 
@@ -251,6 +305,7 @@ class DashboardPageNav {
             });
             container.appendChild(inboxBtn);
             this.updateInboxTabBadge();
+            this.syncInboxTabHighlight();
         }
 
         if (activeBtn) {

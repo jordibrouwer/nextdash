@@ -278,6 +278,7 @@ class DashboardInbox {
         d.activeView = DashboardInbox.VIEW;
         d.pageNav?.setActiveInboxTab?.();
         d.pageNav?.updateDocumentTitle?.();
+        d.pageNav?.markInboxTabDiscovered?.();
         await this.loadAndRender();
         this.restoreInboxHash();
         return true;

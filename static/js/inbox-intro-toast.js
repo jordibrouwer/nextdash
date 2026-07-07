@@ -101,6 +101,7 @@
         }
 
         markShown();
+        window.dashboardInstance?.pageNav?.syncInboxTabHighlight?.();
         return true;
     }
 
