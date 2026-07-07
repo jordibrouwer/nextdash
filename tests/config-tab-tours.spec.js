@@ -187,12 +187,11 @@ test.describe('config tab tours (phase 1 registry)', () => {
         const activeTours = await tourActiveAttributes(page);
         expect(activeTours).toEqual(['data-config-finders-tour-active']);
 
-        const dimming = await page.evaluate(() => {
+        await expect.poll(async () => page.evaluate(() => {
             const highlight = document.querySelector('.config-finders-tour-highlight');
             if (!highlight) return null;
             return window.getComputedStyle(highlight).boxShadow;
-        });
-        expect(dimming).toMatch(/9999px/);
+        })).toMatch(/9999px/);
     });
 
     test('skip tour persists completion before step content and blocks auto-start', async ({ page }) => {

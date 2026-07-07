@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers');
 
 async function deleteBookmarkByUrl(page, pageId, url) {
     await page.evaluate(async ({ targetPageId, targetUrl }) => {
@@ -21,8 +22,10 @@ async function deleteBookmarkByUrl(page, pageId, url) {
 
 test.describe('dashboard bookmark add category placement', () => {
     test('new bookmark appears in assigned category column after modal save', async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
 
         const uniqueUrl = `https://example.com/category-placement-${Date.now()}.test`;
         const uniqueName = `Category placement ${Date.now()}`;

@@ -1,12 +1,13 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers');
 
 test('search promo shows after grid keyboard promo when opening >', async ({ page }) => {
     await markWhatsNewSeen(page);
 
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
+    await prepareDashboardInteraction(page);
     await page.evaluate(() => {
         [
             'nextdash:dashboard-search-promo-search-v2',

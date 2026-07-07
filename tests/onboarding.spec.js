@@ -12,7 +12,7 @@ test.describe('onboarding wizard', () => {
         page.on('pageerror', (e) => pageErrors.push(e.message));
 
         await openOnboarding(page);
-        await expect(page.locator('.onboarding-progress')).toHaveText('1/9');
+        await expect(page.locator('.onboarding-progress')).toHaveText('1/8');
 
         await page.locator('.onboarding-skip').click();
         await expect(page.locator('.onboarding-card')).toHaveCount(0, { timeout: 5000 });

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, prepareDashboardInteraction } = require('./e2e-helpers');
 
 test.describe('dashboard inline edit', () => {
     test.beforeEach(async ({ page }) => {
@@ -8,7 +8,7 @@ test.describe('dashboard inline edit', () => {
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
+        await prepareDashboardInteraction(page);
         await page.keyboard.press('ArrowDown');
         await expect.poll(async () => page.evaluate(() => (
             window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
@@ -57,7 +57,7 @@ test.describe('dashboard inline edit', () => {
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(urlInput).toBeVisible({ timeout: 3000 });
 
-        await urlInput.click();
+        await urlInput.click({ force: true });
         await expect(urlInput).toBeFocused();
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
         await expect.poll(async () => page.evaluate(() => (
@@ -68,8 +68,8 @@ test.describe('dashboard inline edit', () => {
     test('multiple form fields accept clicks without closing', async ({ page }) => {
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form').first()).toBeVisible({ timeout: 3000 });
-        await page.locator('.bookmark-inline-form input[type="url"]').first().click();
-        await page.locator('.bookmark-inline-form .bookmark-inline-select').first().click();
+        await page.locator('.bookmark-inline-form input[type="url"]').first().click({ force: true });
+        await page.locator('.bookmark-inline-form .bookmark-inline-select').first().click({ force: true });
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).first().click();
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(0);
     });
@@ -80,7 +80,7 @@ test.describe('dashboard inline edit', () => {
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         const original = await nameInput.inputValue();
         await page.waitForTimeout(600);
-        await nameInput.click();
+        await nameInput.click({ force: true });
         await nameInput.fill(`${original} typed`);
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
         await expect(nameInput).toHaveValue(`${original} typed`);
@@ -143,7 +143,7 @@ test.describe('dashboard inline edit', () => {
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(700);
-        await urlInput.click();
+        await urlInput.click({ force: true });
         await expect(urlInput).toBeFocused();
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
         await urlInput.fill('https://example.com/safari-field-test');

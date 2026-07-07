@@ -22,7 +22,7 @@ test.describe('dashboard per-category sort', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        const category = page.locator('#dashboard-layout .category:not([data-smart-collection="true"])').first();
+        const category = page.locator('#dashboard-layout .category[data-category-id="development"]');
         const azBtn = category.locator('.category-sort-btn[data-sort-mode="az"]');
         await category.locator('.category-title').hover();
         await expect(azBtn).toBeVisible();

@@ -18,6 +18,11 @@ const DASHBOARD_WHATS_NEW_RELEASE = (() => {
     return match[1];
 })();
 
+/** Discoverability keys dismissed before navigation in most dashboard e2e runs. */
+const DEFAULT_DISCOVERABILITY_KEYS = [
+    'nextdash:inbox-intro-toast-v1',
+];
+
 /** Env vars for the Playwright-managed `go run .` server. */
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
@@ -34,8 +39,8 @@ async function markWhatsNewSeen(page, options = {}) {
     const release = DASHBOARD_WHATS_NEW_RELEASE;
     const confirmCheatsheetPromo = options.confirmCheatsheetPromo === true;
     const extraPromoConfirmedKeys = Array.isArray(options.extraPromoConfirmedKeys)
-        ? options.extraPromoConfirmedKeys
-        : [];
+        ? [...new Set([...DEFAULT_DISCOVERABILITY_KEYS, ...options.extraPromoConfirmedKeys])]
+        : [...DEFAULT_DISCOVERABILITY_KEYS];
     await page.addInitScript(({ rel, confirmCheatsheet, extraKeys }) => {
         try {
             localStorage.setItem('nextdash:last-whats-new-dashboard-release', rel);
@@ -49,6 +54,25 @@ async function markWhatsNewSeen(page, options = {}) {
             // ignore
         }
     }, { rel: release, confirmCheatsheet: confirmCheatsheetPromo, extraKeys: extraPromoConfirmedKeys });
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function dismissAppNotificationIfPresent(page) {
+    const toast = page.locator('#app-notification.show');
+    if (await toast.count()) {
+        await page.evaluate(() => window.AppNotification?.hide?.());
+        await expect(toast).toHaveCount(0, { timeout: 5000 });
+    }
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function suppressStatusEmptyHint(page) {
+    await page.evaluate(() => {
+        const monitor = window.dashboardInstance?.statusMonitor;
+        if (monitor) {
+            monitor.emptyStatusHintShown = true;
+        }
+    });
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -66,6 +90,8 @@ async function dismissWhatsNewIfPresent(page) {
  */
 async function dismissBlockingOverlays(page) {
     await dismissWhatsNewIfPresent(page);
+    await dismissAppNotificationIfPresent(page);
+    await suppressStatusEmptyHint(page);
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -76,6 +102,16 @@ async function dismissBlockingOverlays(page) {
         await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
         await expect(page.locator('.dashboard-grid-kbd-promo')).toHaveCount(0, { timeout: 3000 });
     }
+    await dismissAppNotificationIfPresent(page);
+}
+
+/**
+ * Dismiss onboarding, promos, and toasts that steal clicks from dashboard tests.
+ * @param {import('@playwright/test').Page} page
+ */
+async function prepareDashboardInteraction(page) {
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -152,10 +188,14 @@ async function dismissOnboardingIfPresent(page) {
 module.exports = {
     WRITE_TOKEN,
     DASHBOARD_WHATS_NEW_RELEASE,
+    DEFAULT_DISCOVERABILITY_KEYS,
     E2E_WEB_SERVER_ENV,
     markWhatsNewSeen,
     dismissWhatsNewIfPresent,
+    dismissAppNotificationIfPresent,
+    suppressStatusEmptyHint,
     dismissBlockingOverlays,
+    prepareDashboardInteraction,
     resetOnboarding,
     openOnboarding,
     getOnboardingProgress,

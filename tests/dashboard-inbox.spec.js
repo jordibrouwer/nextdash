@@ -28,6 +28,16 @@ test.describe('dashboard inbox phase 1', () => {
             window.dashboardInstance.settings.inboxEnabled = true;
         });
 
+        const seedUrl = `https://triage-seed-${Date.now()}.example.com`;
+        await page.evaluate(async (url) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, title: 'Triage seed' }),
+            });
+        }, seedUrl);
+
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
         await page.locator('.inbox-triage-btn').click();
@@ -214,6 +224,10 @@ test.describe('dashboard inbox phase 1', () => {
             } catch { /* ignore */ }
             window.dashboardInstance.settings.onboardingCompleted = true;
             window.dashboardInstance.settings.inboxEnabled = true;
+            if (window.dashboardInstance.statusMonitor) {
+                window.dashboardInstance.statusMonitor.emptyStatusHintShown = true;
+            }
+            window.AppNotification?.hide?.();
         });
 
         await page.evaluate(() => window.InboxIntroToast.scheduleShow({ delay: 0, resetAttempts: true }));
