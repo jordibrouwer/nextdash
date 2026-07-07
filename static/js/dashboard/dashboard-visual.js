@@ -221,7 +221,7 @@ class DashboardVisual {
         const d = this.dash;
         let healthLink = document.querySelector('.health-link');
 
-        if (d.settings.showHealthDashboard !== false) {
+        if (d.settings.showHealthDashboard === true) {
             if (!healthLink) {
                 healthLink = document.createElement('div');
                 healthLink.className = 'health-link';
