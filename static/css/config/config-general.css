@@ -94,6 +94,10 @@ body {
 
 :root {
     --config-general-nav-sticky-top: 3.25rem;
+    /* Help quick links: sit below sticky save/tabs/breadcrumb chrome */
+    --config-help-index-sticky-top: calc(
+        var(--config-toolbar-min-height, 2.75rem) + 1.35rem + 0.85rem + (var(--config-toolbar-padding-block, 0.5rem) * 2)
+    );
 }
 
 .config-section.section-controls {

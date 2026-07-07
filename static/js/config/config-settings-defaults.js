@@ -31,10 +31,10 @@ class ConfigSettingsDefaults {
             settingsData.showCheatSheetButton = true;
         }
         if (typeof settingsData.showHealthDashboard === 'undefined') {
-            settingsData.showHealthDashboard = true;
+            settingsData.showHealthDashboard = false;
         }
         if (typeof settingsData.showTips === 'undefined') {
-            settingsData.showTips = true;
+            settingsData.showTips = false;
         }
         if (typeof settingsData.showSearchFlowBanner === 'undefined') {
             settingsData.showSearchFlowBanner = true;
@@ -113,6 +113,12 @@ class ConfigSettingsDefaults {
         }
         if (typeof settingsData.inboxEnabled === 'undefined') {
             settingsData.inboxEnabled = true;
+        }
+        if (settingsData.inboxEnabled !== false) {
+            settingsData.pasteUrlQuickAdd = true;
+        }
+        if (settingsData.inboxEnabled === false && String(settingsData.pasteDestination || '').toLowerCase() === 'inbox') {
+            settingsData.pasteDestination = 'ask';
         }
         if (!settingsData.pasteDestination) {
             settingsData.pasteDestination = 'ask';

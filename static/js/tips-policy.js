@@ -1,5 +1,5 @@
 /**
- * Rotating footer tips: on for 7 days after onboarding, then auto-off unless user re-enables.
+ * Rotating footer tips: off unless the user enables them in config (or :tips on).
  */
 (function () {
     'use strict';
@@ -97,11 +97,9 @@
             return true;
         },
 
-        /** User config wins; promo only applies when showTips was never set (undefined). */
+        /** Only explicit user preference (config checkbox or :tips on). */
         shouldShowRotatingTips(settings) {
-            if (settings?.showTips === false) return false;
-            if (settings?.showTips === true) return true;
-            return this.isPromoActive();
+            return settings?.showTips === true;
         },
 
         onUserPreference(enabled) {

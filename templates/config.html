@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=config-help-whats-new-link-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=help-prose-collapsible-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
@@ -502,6 +502,7 @@
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="inbox-enabled-checkbox">
                                     <span class="checkbox-text" data-i18n="config.inboxEnabled">Enable Inbox page</span>
+                                    <button type="button" id="inbox-enabled-info-btn" class="info-button" data-i18n-aria="config.inboxEnabledInfoTitle">ℹ</button>
                                 </label>
                             </div>
                             <div class="config-row checkbox-tree-child">
@@ -803,7 +804,7 @@
                     <!-- 7. Header & Buttons -->
                     <section class="general-card" data-general-panel="search-buttons">
                         <h3 class="section-title" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</h3>
-                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer.</p>
+                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer and header.</p>
                         <div class="config-action-list buttons-visibility-list" role="list">
                             <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
                                 <span class="config-advanced-action-text" data-i18n="config.addBookmarkButtonLabel">Add bookmark</span>
@@ -2170,69 +2171,52 @@
                     <div class="help-content config-split-content">
                         <section id="help-quick-start" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageQuickStartTitle">Quick Start (30 sec)</h3>
-                            <ul data-i18n="config.helpPageQuickStartItems">
-                                <li>Open search with <code>&gt;</code>, type a bookmark, press <code>Enter</code>.</li>
-                                <li>Open recent bookmarks with <code>*</code>.</li>
-                                <li>Open keyboard cheatsheet with <code>!</code> or <code>F1</code>.</li>
-                                <li>Open config and tune dashboard layout, sorting, and smart collections.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageQuickStartBody"></div>
                         </section>
 
                         <section id="help-onboarding" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageOnboardingTitle">First-Run Onboarding</h3>
-                            <ul data-i18n="config.helpPageOnboardingItems">
-                                <li>On first launch, a short guided setup helps configure the dashboard in minutes.</li>
-                                <li>You can choose language, link behavior, weather/date preferences, search mode, and how to use bookmarks from the keyboard and mouse.</li>
-                                <li>The wizard supports live language switching while you are in onboarding.</li>
-                                <li>You can always skip and change everything later in <code>config#general</code>.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageOnboardingBody"></div>
+                        </section>
+
+                        <section id="help-tips" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageTipsTitle">Rotating tips</h3>
+                            <p class="help-block-intro" data-i18n="config.helpPageTipsIntro">Same tips as above the dashboard footer when enabled. Off by default — turn on under General → Dashboard.</p>
+                            <details class="help-tips-disclosure" id="help-tips-disclosure">
+                                <summary class="help-tips-disclosure-summary" data-i18n="config.helpPageTipsToggle">Show the full tip list</summary>
+                                <div id="help-tips-catalog" class="help-tips-catalog">
+                                    <h4 class="help-tips-group-title" data-i18n="config.helpPageTipsPriorityLabel">Priority tips</h4>
+                                    <ul id="help-tips-priority-list" class="help-tips-list help-tips-list--priority" aria-label="Priority tips"></ul>
+                                    <h4 class="help-tips-group-title" data-i18n="config.helpPageTipsNormalLabel">More tips</h4>
+                                    <ul id="help-tips-normal-list" class="help-tips-list help-tips-list--normal" aria-label="More tips"></ul>
+                                </div>
+                            </details>
                         </section>
 
                         <section id="help-config-general" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageConfigGeneralTitle">Config → General</h3>
-                            <ul data-i18n="config.helpPageConfigGeneralItems">
-                                <li><strong>Essentials</strong> shows everyday settings: language, theme, font, favicon styling, layout, bookmarks, smart collections, and footer buttons.</li>
-                                <li><strong>Advanced</strong> shows power options: background and font fine-tuning, bookmark display details, status monitoring, branding, search behavior, and system tools. Use the section links at the top of the Advanced layer to jump directly to a section.</li>
-                                <li><strong>All sections</strong> — the third layer tab in the toolbar shows Essentials and Advanced together; use <strong>Expand all</strong> / <strong>Collapse all</strong> on the right.</li>
-                                <li><strong>Bookmarks</strong> — display options (icons, shortcuts, badges, link preview) and behavior options (sorting, tab behavior, page tabs) live in a single section. A divider separates the two groups.</li>
-                                <li><strong>Tours &amp; onboarding</strong> — in Advanced → System, the collapsible <em>Tours &amp; onboarding</em> block holds all tour-reset buttons. Expand it to reset the onboarding wizard, the feature tour, context tips, or any individual tab tour.</li>
-                                <li>Changes only apply after clicking <strong>Save</strong>. The dashboard updates without a full page reload.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageConfigGeneralBody"></div>
                         </section>
 
                         <section id="help-config-tabs" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageConfigTabsTitle">Config tab bar</h3>
-                            <p class="help-block-intro" data-i18n="config.helpPageConfigTabsIntro">How config tabs are grouped on desktop and phone (v2026.07.01.1).</p>
-                            <ul data-i18n="config.helpPageConfigTabsItems"></ul>
+                            <div class="help-prose" data-i18n="config.helpPageConfigTabsBody"></div>
                         </section>
 
                         <section id="help-navigation" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageNavigationTitle">Navigation</h3>
-                            <ul data-i18n="config.helpPageNavigationItems">
-                                <li>Switch pages with number keys <code>1-9</code>.</li>
-                                <li>Press <code>,</code> to open the page overview — shows all pages with bookmark counts. Navigate with <code>↑/↓</code>, jump directly with <code>1-9</code>, confirm with <code>Enter</code>, close with <code>Esc</code> or <code>,</code>.</li>
-                                <li>Move between pages with <code>Shift + Left/Right</code>.</li>
-                                <li>Navigate bookmarks with <code>Up/Down</code> and <code>Left/Right</code>.</li>
-                                <li>Open selected bookmark with <code>Enter</code> or <code>Space</code>.</li>
-                                <li>Clear keyboard selection with <code>Esc</code> (also undoes the latest drag reorder when applicable).</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageNavigationBody"></div>
                         </section>
 
                         <section id="help-mobile" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageMobileTitle">Phone vs desktop</h3>
-                            <p class="help-block-intro" data-i18n="config.helpPageMobileIntro">On narrow or touch layouts, nextDash uses a simplified dashboard and config.</p>
-                            <ul data-i18n="config.helpPageMobileItems">
-                                <li><strong>Footer — phone:</strong> Search and + Bookmark only.</li>
-                                <li><strong>Commands &amp; finders — phone:</strong> open Search, then use overlay tabs <code>&gt;</code> / <code>:</code> / <code>?</code>.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageMobileBody"></div>
                         </section>
 
                         <section id="help-keyboard" class="help-block help-block--spotlight">
                             <h3 class="section-title" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</h3>
                             <p class="help-block-intro" data-i18n="config.helpPageKeyboardIntro">Rebind search, navigation, and dashboard keys. Open the keyboard tab under System in the tab bar, or use the button below.</p>
-                            <ul data-i18n="config.helpPageKeyboardItems">
-                                <li>Open the cheat sheet on the dashboard with <code>!</code> or <code>F1</code>.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageKeyboardBody"></div>
                             <p class="help-block-action">
                                 <a href="#keyboard" id="help-open-keyboard-link" class="btn btn-primary help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
                             </p>
@@ -2240,188 +2224,88 @@
 
                         <section id="help-bookmarks-dashboard" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageBookmarksDashboardTitle">Dashboard bookmarks (keyboard &amp; mouse)</h3>
-                            <ul data-i18n="config.helpPageBookmarksDashboardItems">
-                                <li><strong>Keyboard:</strong> arrow keys move the highlight; <code>;</code> (semicolon) opens inline edit on the highlighted row or when focus is on a bookmark link (e.g. after Tab).</li>
-                                <li><strong>Mouse — left strip:</strong> the narrow drag handle on the left of each row is for dragging: reorder inside a category or drop into another category column.</li>
-                                <li><strong>Mouse — long-press:</strong> press and hold about half a second on the bookmark row (not on the drag strip) to open the same inline edit form.</li>
-                                <li><strong>Hover:</strong> hovering a bookmark can load preview metadata when that behavior is enabled in settings.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageBookmarksDashboardBody"></div>
                         </section>
 
                         <section id="help-search" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageSearchTitle">Search & Input Modes</h3>
-                            <ul data-i18n="config.helpPageSearchItems">
-                                <li><code>&gt;</code> open normal search, <code>:</code> commands, <code>?</code> finders.</li>
-                                <li><code>/</code> on dashboard (tag cloud on, desktop) opens tag word cloud; otherwise fuzzy per search mode.</li>
-                                <li><code>:tag work</code> browses by tag in the command palette only; dashboard stays complete.</li>
-                                <li>Use commands like <code>:layout</code>, <code>:density</code>, <code>:packed</code> (tight columns), and <code>:buttons</code> for quick UI changes.</li>
-                                <li>Use filters in search: <code>tag:work</code>, <code>category:work</code>, <code>status:online</code>, <code>page:2</code>.</li>
-                                <li>Turn on "Keep search open when empty" for fast repeated searches.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageSearchBody"></div>
                         </section>
 
                         <section id="help-date-weather" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageDateWeatherTitle">Date & Weather</h3>
-                            <ul data-i18n="config.helpPageDateWeatherItems">
-                                <li>Toggle date and time independently, and choose date format: <code>short slash</code>, <code>short dash</code>, <code>MM/DD/YYYY</code>, <code>YYYY-MM-DD</code>, <code>weekday only</code>, or <code>long weekday</code>.</li>
-                                <li>Choose time format: <code>24-hour</code> or <code>12-hour AM/PM</code>.</li>
-                                <li>Date/time render on one line as <code>13:35 @ 30-04-2026</code>; weather renders on the next line.</li>
-                                <li>Weather line includes a small icon per condition (clear/cloudy/rain/snow/fog/drizzle/thunderstorm/unknown).</li>
-                                <li>Enable weather display and select location source (browser or manual city).</li>
-                                <li>Set Celsius/Fahrenheit and weather refresh interval from the Date &amp; Weather card in general settings.</li>
-                                <li>If weather does not show, verify manual location text and save once.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageDateWeatherBody"></div>
                         </section>
 
                         <section id="help-smart" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageSmartTitle">Smart Collections</h3>
-                            <ul data-i18n="config.helpPageSmartItems">
-                                <li><strong>Recently opened</strong>, <strong>Stale bookmarks</strong>, and <strong>Most used</strong> are generated automatically.</li>
-                                <li>Each smart collection can be enabled per page and limited in visible items.</li>
-                                <li>Set limit to <code>0</code> for unlimited items.</li>
-                                <li>Smart sections support collapse/expand on dashboard.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageSmartBody"></div>
                         </section>
 
                         <section id="help-tags" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageTagsTitle">Tags</h3>
-                            <ul data-i18n="config.helpPageTagsItems">
-                                <li>Add tags to any bookmark in config → Bookmarks (comma-separated).</li>
-                                <li>Tags are normalised: trimmed, lowercased, and deduplicated on save.</li>
-                                <li><code>tag:work</code> in search filters overlay results; <code>/</code> tag cloud filters dashboard tiles (desktop).</li>
-                                <li><code>:tag work</code> lists bookmarks by tag in the command palette without changing the dashboard.</li>
-                                <li>Enable tag collections in config → General → Smart Collections to auto-generate one collection per tag.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageTagsBody"></div>
                         </section>
 
                         <section id="help-collections" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageCollectionsTitle">Dynamic Collections</h3>
-                            <ul data-i18n="config.helpPageCollectionsItems">
-                                <li>Create custom collections in config → Collections.</li>
-                                <li>Each collection has one or more rules: match by tag, category, or shortcut.</li>
-                                <li>Choose AND (all rules must match) or OR (any rule matches) logic.</li>
-                                <li>Collections appear as read-only smart sections on the dashboard.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageCollectionsBody"></div>
                         </section>
 
                         <section id="help-sorting" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageSortingTitle">Sorting, Pinned & Categories</h3>
-                            <ul data-i18n="config.helpPageSortingItems">
-                                <li>Pinned bookmarks always stay on top of non-pinned bookmarks.</li>
-                                <li>Pinned state is shown with a compact pin icon on dashboard rows.</li>
-                                <li>Pinned bookmarks are always sorted alphabetically.</li>
-                                <li>Non-pinned bookmarks use your selected sort mode (manual, A-Z, recent, pinned-first behavior).</li>
-                                <li>Categories can be collapsed and can default to collapsed.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageSortingBody"></div>
                         </section>
 
                         <section id="help-manage" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageManageTitle">Manage Bookmarks</h3>
-                            <ul data-i18n="config.helpPageManageItems">
-                                <li>Add, edit, reorder, move, and remove bookmarks in config.</li>
-                                <li>Bookmarks can include a short note; it shows as a badge on the dashboard, appears in hover previews, and can be edited from the new-bookmark modal, inline edit, or config.</li>
-                                <li>Set bookmark icons in config via file upload or icon URL; use <strong>Clear</strong> to remove and <strong>Undo</strong> in the toast to restore.</li>
-                                <li>Bulk actions: select, move category, toggle pin, delete.</li>
-                                <li>On the dashboard, drag the <strong>left strip</strong> handle to reorder or move bookmarks; long-press the <strong>row</strong> (not the strip) to open inline edit.</li>
-                                <li>Use <code>Alt+Up</code> / <code>Alt+Down</code> to reorder quickly in config lists.</li>
-                                <li>Conflict highlighting warns about duplicate URLs and shortcuts before save.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageManageBody"></div>
                         </section>
 
                         <section id="help-finders" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageFindersTitle">Finders</h3>
-                            <ul data-i18n="config.helpPageFindersItems">
-                                <li>Format: <code>?shortcut your query</code> (example: <code>?g nextdash</code>).</li>
-                                <li>Use <code>%s</code> in finder URL where query should be inserted.</li>
-                                <li>If bookmark and finder share a shortcut, both options are shown in search context.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageFindersBody"></div>
                         </section>
 
                         <section id="help-status" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageStatusTitle">Status Monitor</h3>
-                            <ul data-i18n="config.helpPageStatusItems">
-                                <li>Enable status checks to display online/offline state.</li>
-                                <li>Optionally show ping and loading indicators.</li>
-                                <li>Use "Skip fast ping check" to reduce noise and speed up checks.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageStatusBody"></div>
                         </section>
 
                         <section id="help-health" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageHealthTitle">Bookmark Health Monitoring</h3>
-                            <ul data-i18n="config.helpPageHealthItems">
-                                <li>Visit the <strong>health page</strong> (accessible from dashboard header) to monitor all your bookmarks in one place.</li>
-                                <li>Each bookmark gets a <strong>0-100 health score</strong> based on multiple factors: broken status, duplicates, staleness (unused time), missing metadata.</li>
-                                <li>View <strong>8 summary statistics</strong>: total bookmarks, healthy, broken, duplicates, unchecked, stale, missing preview, and unused.</li>
-                                <li>Use <strong>filter pills</strong> to focus on specific issue types (broken, duplicate, stale, etc.).</li>
-                                <li><strong>Search bookmarks</strong> by name, URL, category, or page to find items quickly.</li>
-                                <li>Click the <strong>refresh</strong> button to re-scan all bookmarks and detect the latest issues.</li>
-                                <li><strong>Bulk actions</strong>: retest all checked bookmarks, open all broken links at once, or merge duplicate groups.</li>
-                                <li>Ping results are <strong>cached</strong> to avoid repeatedly checking the same URLs.</li>
-                            </ul>
-                        </section>
-
-                        <section id="help-tips" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageTipsTitle">Tips Rotation Above Buttons</h3>
-                            <ul data-i18n="config.helpPageTipsItems">
-                                <li>Tips rotate every 5 to 8 seconds above the dashboard button bar.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageHealthBody"></div>
                         </section>
 
                         <section id="help-backup" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageBackupTitle">Backup &amp; import</h3>
-                            <ul data-i18n="config.helpPageBackupItems">
-                                <li>ZIP backup exports pages, bookmarks, categories, settings, and themes. Importing ZIP replaces all current data — always create a backup first.</li>
-                                <li><strong>Browser import</strong>: export bookmarks from Chrome, Firefox, or Edge as an HTML file and import via config → backups → "Import from Browser". Bookmark folders become categories; duplicate URLs are skipped automatically.</li>
-                                <li><strong>CSV export</strong>: download all bookmarks from all pages as a single CSV (Name, URL, Category, Page, Shortcut) via config → backups → "Export to CSV". Opens in Excel, Google Sheets, or any text editor.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageBackupBody"></div>
                         </section>
 
                         <section id="help-branding" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageBrandingTitle">Theme, Layout & Branding</h3>
-                            <ul data-i18n="config.helpPageBrandingItems">
-                                <li>Choose theme, font size, font weight, and layout preset.</li>
-                                <li>Enable auto dark mode to follow system appearance and switch between the default dark/light variants instantly.</li>
-                                <li>Pick a UI font from the dropdown in Essentials, or upload a custom font — it stays available as <em>Custom font (uploaded)</em> in that list.</li>
-                                <li>Upload custom favicon in Advanced → Branding.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageBrandingBody"></div>
                         </section>
 
                         <section id="help-data" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageDataTitle">Data, Storage & Device-Specific Settings</h3>
-                            <ul data-i18n="config.helpPageDataItems">
-                                <li>Server-side data is stored in <code>/data</code>.</li>
-                                <li>Device-specific settings are stored in browser local storage.</li>
-                                <li>When device-specific mode is enabled, visual behavior can differ between devices.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageDataBody"></div>
                         </section>
 
                         <section id="help-extension" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageExtensionTitle">Browser extension</h3>
-                            <ul data-i18n="config.helpPageExtensionItems">
-                                <li>Install from the <code>extension/</code> folder via Chrome <em>Load unpacked</em>.</li>
-                                <li><strong>Settings:</strong> server URL, optional write token, default page.</li>
-                                <li><strong>Save tab:</strong> optional shortcut (auto-suggested from the name when empty), tags, note.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageExtensionBody"></div>
                         </section>
 
                         <section id="help-security" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageSecurityTitle">Security &amp; self-hosting</h3>
-                            <ul data-i18n="config.helpPageSecurityItems">
-                                <li>No user accounts — protect with VPN, reverse-proxy auth, or local-only access.</li>
-                                <li><code>NEXTDASH_WRITE_TOKEN</code> protects write APIs; pages inject the token for same-origin browser use.</li>
-                                <li><code>NEXTDASH_CORS_ORIGINS</code> restricts API CORS — include <code>chrome-extension://…</code> for the extension.</li>
-                            </ul>
+                            <div class="help-prose" data-i18n="config.helpPageSecurityBody"></div>
                         </section>
 
                         <section id="help-troubleshoot" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageTroubleshootTitle">Troubleshooting</h3>
-                            <ul data-i18n="config.helpPageTroubleshootItems">
-                                <li><strong>No bookmarks visible:</strong> check page selector and category filter in config.</li>
-                                <li><strong>Sorting seems wrong:</strong> verify sort mode and pin state.</li>
-                                <li><strong>Tips not visible:</strong> enable "Show tips above buttons" in Dashboard settings.</li>
-                                <li><strong>Search misses items:</strong> try fuzzy search and filter syntax.</li>
-                            </ul>
-                            <p data-i18n="config.helpPageTroubleshootFooter">Found a bug or have feedback? Visit the <a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><code>GitHub repository</code></a> to report issues or suggest improvements.</p>
+                            <div class="help-prose" data-i18n="config.helpPageTroubleshootBody"></div>
+                            <p class="help-prose-footer" data-i18n="config.helpPageTroubleshootFooter">Found a bug or have feedback? Visit the <a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><code>GitHub repository</code></a> to report issues or suggest improvements.</p>
                         </section>
 
                         <div class="help-support-block">
@@ -2474,15 +2358,16 @@
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-font.js"></script>
-    <script src="/static/js/config/config-settings.js?v=status-loading-default-off-1"></script>
-    <script src="/static/js/config/config-settings-defaults.js?v=status-loading-default-off-1"></script>
+    <script src="/static/js/config/config-settings.js?v=inbox-paste-coupling-1"></script>
+    <script src="/static/js/config/config-settings-defaults.js?v=inbox-paste-coupling-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
     <script src="/static/js/config/config-tab-tours.js?v=config-stats-tour-on-1"></script>
     <script src="/static/js/config/config-persistence.js?v=config-settings-guard-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=config-help-whats-new-link-1"></script>
+    <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
-    <script src="/static/js/config/config-general-layers.js?v=general-layer-c4-1"></script>
+    <script src="/static/js/config/config-general-layers.js?v=inbox-paste-coupling-1"></script>
     <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
     <script src="/static/js/config-general-tour.js?v=general-tour-c4-1"></script>
@@ -2519,7 +2404,7 @@
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
-    <script src="/static/js/config.js?v=status-loading-default-off-1"></script>
+    <script src="/static/js/config.js?v=help-tips-overview-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

@@ -229,7 +229,7 @@ class Dashboard {
         if (window.TipsPolicy && typeof window.TipsPolicy.shouldShowRotatingTips === 'function') {
             return window.TipsPolicy.shouldShowRotatingTips(this.settings);
         }
-        return this.settings.showTips !== false;
+        return this.settings.showTips === true;
     }
 
     shouldShowRotatingTipsNow() {

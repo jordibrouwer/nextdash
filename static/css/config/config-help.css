@@ -57,18 +57,32 @@
 .help-tab-surface .config-split-layout {
     padding: 0;
     gap: 0;
+    overflow: visible;
+}
+
+/* overflow:hidden on fused surfaces breaks position:sticky for the index column */
+body[data-layout-version="classic"] .help-tab-surface,
+body[data-layout-version="modern"] .help-tab-surface,
+body[data-layout-version="glass"] .help-tab-surface {
+    overflow: visible;
 }
 
 .help-tab-surface .help-index,
 .help-tab-surface .config-split-index {
+    position: sticky;
+    top: var(--config-help-index-sticky-top, 5.75rem);
+    align-self: start;
+    z-index: 4;
     border: none;
     border-right: 1px solid var(--border-primary);
     border-radius: 0;
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     padding: 0.75rem;
     margin: 0;
-    top: calc(var(--config-toolbar-min-height, 2.75rem) + 0.65rem);
-    max-height: calc(100vh - (var(--config-toolbar-min-height, 2.75rem) + 1.3rem));
+    max-height: calc(100vh - var(--config-help-index-sticky-top, 5.75rem) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .help-tab-surface .help-content,
@@ -137,6 +151,67 @@
     line-height: 1.5;
 }
 
+.help-prose {
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.65;
+}
+
+.help-prose p {
+    margin: 0 0 0.85rem;
+}
+
+.help-prose p:last-child {
+    margin-bottom: 0;
+}
+
+.help-prose-footer {
+    margin: 0.85rem 0 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.65;
+}
+
+.help-tips-disclosure {
+    margin-top: 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--background-primary) 35%, transparent);
+}
+
+.help-tips-disclosure-summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.55rem 0.75rem;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.help-tips-disclosure-summary::-webkit-details-marker {
+    display: none;
+}
+
+.help-tips-disclosure-summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 0.4rem;
+    transition: transform 0.15s ease;
+}
+
+.help-tips-disclosure[open] .help-tips-disclosure-summary::before {
+    transform: rotate(90deg);
+}
+
+.help-tips-disclosure .help-tips-catalog {
+    padding: 0 0.75rem 0.75rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.help-block-intro:empty {
+    display: none;
+}
+
 .help-block-action {
     margin: 0.75rem 0 0;
 }
@@ -154,6 +229,27 @@
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.03em;
     text-transform: lowercase;
+}
+
+.help-tips-catalog {
+    display: grid;
+    gap: 0.75rem 1.25rem;
+}
+
+.help-tips-group-title {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.help-tips-list {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.help-tips-list li + li {
+    margin-top: 0.35rem;
 }
 
 .help-keyboard-cta {
@@ -178,8 +274,10 @@
     text-align: center;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
     .help-index {
         position: static;
+        max-height: none;
+        overflow: visible;
     }
 }

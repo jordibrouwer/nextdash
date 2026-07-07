@@ -404,7 +404,7 @@ class Onboarding {
             weatherLocation: settings.weatherLocation || '',
             packedColumns: settings.packedColumns !== false,
             interleaveMode: settings.interleaveMode === true,
-            showTips: settings.onboardingCompleted ? (settings.showTips !== false) : true,
+            showTips: settings.onboardingCompleted ? settings.showTips === true : false,
             showSmartTodayCollection: settings.showSmartTodayCollection === true,
             showSmartMostUsedCollection: settings.showSmartMostUsedCollection === true,
             statusMonitorSelection: this.buildStatusMonitorSelection(this.statusMonitorBookmarks),

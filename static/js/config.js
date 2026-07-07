@@ -77,8 +77,8 @@ class ConfigManager {
             showCheatSheetButton: false,
             showAddBookmarkButton: true,
             showRecentButton: false,
-            showHealthDashboard: true,
-            showTips: true,
+            showHealthDashboard: false,
+            showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,
             showStatus: true,
@@ -136,7 +136,7 @@ class ConfigManager {
             pasteUrlQuickAdd: true,
             inboxEnabled: true,
             pasteDestination: 'ask',
-            ,themeIconStyling: {}
+            themeIconStyling: {}
         };
         this.deviceSpecific = false;
         this.isDirty = false;
@@ -306,6 +306,13 @@ class ConfigManager {
         } else {
             this.scheduleConfigThemeTour();
         }
+
+        const includeTagCloud = this.settingsData?.showTagCloudButton === true
+            && window.MobileExperience?.isMobileLayout?.() !== true;
+        window.DashboardTipsCatalog?.renderHelpOverview?.({
+            language: this.language,
+            includeTagCloud,
+        });
 
         window.ConfigSettingsSearch?.refreshIndex?.();
         window.ConfigSettingsSearch?.bootPromoAutoStart?.();

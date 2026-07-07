@@ -1147,6 +1147,54 @@ test.describe('config help surface (B5)', () => {
         });
         expect(nestedCards).toBe(true);
     });
+
+    test('help tab lists rotating tips from shared catalog', async ({ page }) => {
+        const disclosure = page.locator('#help-tips-disclosure');
+        await expect(disclosure).toBeVisible();
+        await expect(disclosure).not.toHaveAttribute('open', '');
+
+        await disclosure.locator('summary').click();
+
+        const priorityCount = await page.locator('#help-tips-catalog .help-tips-list--priority li').count();
+        const normalCount = await page.locator('#help-tips-catalog .help-tips-list--normal li').count();
+        expect(priorityCount).toBeGreaterThan(5);
+        expect(normalCount).toBeGreaterThan(10);
+        await expect(page.locator('#help-tips-catalog .help-tips-list--priority li').first()).toContainText(/Tip:/i);
+    });
+
+    test('help sections use narrative prose instead of bullet lists', async ({ page }) => {
+        const general = page.locator('#help-config-general .help-prose');
+        await expect(general).toBeVisible();
+        await expect(general.locator('p').first()).toBeVisible();
+        await expect(general.locator('li')).toHaveCount(0);
+        await expect(general).not.toContainText(/v2026\./);
+    });
+
+    test('help quick links column stays sticky while scrolling content', async ({ page }) => {
+        const index = page.locator('.help-tab-surface .help-index');
+        await expect(index).toBeVisible();
+
+        const beforeScroll = await index.evaluate((el) => {
+            const style = getComputedStyle(el);
+            return {
+                position: style.position,
+                top: parseFloat(style.top) || 0,
+                rectTop: el.getBoundingClientRect().top,
+            };
+        });
+        expect(beforeScroll.position).toBe('sticky');
+
+        await page.evaluate(() => window.scrollTo(0, 2400));
+        await page.waitForTimeout(150);
+
+        const afterScroll = await index.evaluate((el) => ({
+            rectTop: el.getBoundingClientRect().top,
+            scrollY: window.scrollY,
+        }));
+
+        expect(afterScroll.scrollY).toBeGreaterThan(500);
+        expect(Math.abs(afterScroll.rectTop - beforeScroll.top)).toBeLessThanOrEqual(24);
+    });
 });
 
 test.describe('config general & theme surface (C16/B10)', () => {
