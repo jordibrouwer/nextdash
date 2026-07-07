@@ -185,7 +185,8 @@ environment:
 ### Keyboard-first workflow
 
 **Navigation**
-- `1–9` — jump directly to a page tab
+- `0` — open **Inbox** (when search is closed)
+- `1–9` — jump directly to a bookmark page tab
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
@@ -203,7 +204,7 @@ environment:
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
 - `&` — quick-add omnibox: type `name | url | shortcut` in one line
 - `Ctrl + Shift + A` — same full new-bookmark modal from anywhere
-- `Ctrl + V` — paste a URL anywhere on the dashboard to open the new-bookmark modal pre-filled (blocked while inline edit or the tag word cloud is open)
+- `Ctrl + V` — paste a URL on the dashboard: choose **Save to Inbox** or open the new-bookmark modal (blocked while inline edit or the tag word cloud is open; default under General → *Paste URL default*)
 - `;` — inline-edit the focused bookmark
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
 - `Shift + T` — *Quick tag* popover beside the focused bookmark: `↑`/`↓` navigate ranked tags; `Enter`/`Space` toggle a tag and advance to the next; `✓` shows tags already on the bookmark
@@ -236,6 +237,7 @@ environment:
 - `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
 - `:page` — switch page by name or number (palette stays open, `✓` on current)
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
+- `:inbox` / `:inbox triage` — open Inbox page (`0`) or start triage on unread items
 - `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — per focused category: `order` / `az` / `recent` (palette shows the category name)
@@ -298,6 +300,10 @@ environment:
 **General layer scroll (v2026.07.03)** — Essentials/Advanced toggle preserves the General layer toolbar viewport position when scroll is within both layers.
 
 **Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
+
+**Inbox (v2026.07.06)** — lightweight link capture page separate from bookmark pages: save via paste (`Ctrl+V`), browser extension, or API; filter unread, triage one-by-one (`J`/`K`/`O`/`P`/`R`/`D`), promote to a full bookmark; shortcuts `0`, `:inbox`, `:inbox triage`; one-time intro modal; EN/NL/DE/FR.
+
+**Page overview & tips (v2026.07.06)** — pages button opens a centered `AppModal` with card-style rows; rotating footer tips off by default (`:tips on` to enable); `:quicktag` removed from the command palette.
 
 **What's new hotfixes (v2026.07.05.1)** — ★ corner FAB below `/` tag cloud again (not in the centre dock toolbar); Config → Help *Show what's new* with dashboard-matching modal chrome; status-row hover/selection and config save-indicator fixes; merge-regression restores for config load and dashboard assets.
 
@@ -472,7 +478,7 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 ### Save tab
 
 - Pre-filled title and URL; optional **shortcut** (auto-suggested from the name when left empty)
-- Pick page/category, tags, and note
+- Pick page/category, tags, and note — or **Save to Inbox** for a quick capture without choosing a page
 - Duplicate URL warning; **409** when the shortcut is already taken on that page
 - If a dashboard tab is open on the same server, it may toast and refresh
 

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.06 — July 2026](#v20260706--july-2026)
 - [v2026.07.05.1 — July 2026](#v202607051--july-2026)
 - [v2026.07.05 — July 2026](#v20260705--july-2026)
 - [v2026.07.04 — July 2026](#v20260704--july-2026)
@@ -75,6 +76,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.06 — July 2026
+
+**Inbox & dashboard polish** — lightweight Inbox capture page with triage and promote-to-bookmark; paste/extension save paths; pages overview AppModal redesign; rotating tips off by default; full EN/NL/DE/FR documentation.
+
+### Inbox
+
+- **new** **Inbox page** — save links in `data/inbox.json` without a page or category; header tab, `0` shortcut, and `:inbox` command (`inbox.go`, `dashboard-inbox.js`, `templates/dashboard.html`).
+- **new** **Paste choice** — `Ctrl+V` offers *Save to Inbox* or *Add bookmark* with optional *Remember my choice*; default under General → *Paste URL default* (`dashboard-paste-choice.js`, `models.go`).
+- **new** **Extension** — *Save to Inbox* on the browser extension popup with duplicate detection (`extension/popup.js`, extension locales).
+- **new** **Inbox UI** — All/Unread filters, search, date groups, load more, open/promote/delete with undo toast; unread tab badge and discoverability animation only when `unreadCount > 0`.
+- **new** **Triage** — one-by-one overlay with `J`/`K`/`O`/`P`/`R`/`D` shortcuts; `:inbox triage` command (`dashboard-inbox-triage.js`).
+- **new** **Onboarding** — one-time intro modal on the Inbox page; optional toast for existing users; reset from Config → System → *Reset Inbox intro modal*; lowercase `inbox` header title on the Inbox view.
+- **new** **i18n** — Inbox strings, paste choice, commands, cheatsheet, extension, and Config → Help → *Inbox* in EN/NL/DE/FR.
+
+### Dashboard
+
+- **fix** **Page overview** — centered `AppModal` with card-style rows, keyboard navigation, and updated focus/keyboard integration (`dashboard-ui-helpers.js`, `modal.css`, e2e selectors).
+- **fix** **Rotating tips** — disabled by default for all installs (`migrateShowTipsDefaultOff()` in `models.go`; enable in General or `:tips on`).
+- **fix** **Command palette** — `:quicktag` / `:qt` removed from the palette; cheat sheet documents `0 = Inbox`.
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.06** release notes and Inbox help (EN/NL/DE/FR).
+- **fix** **What's new modal** — featured Inbox lead paragraph above release list; lazy-load **v2026.07.06** JSON.
+- **fix** **Cache-bust** — `whats-new-v130` data version and `2026.07-dashboard-release-v99` dashboard release token; inbox and page-overview asset query strings.
 
 ---
 

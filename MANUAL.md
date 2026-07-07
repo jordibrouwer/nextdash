@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.05.1**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.06**).
 
 ---
 
@@ -140,7 +140,7 @@ Install → Open URL in browser → Onboarding wizard (optional)
 
 ## 4. Core concepts
 
-Understanding four ideas makes everything else click.
+Understanding five ideas makes everything else click.
 
 ### 4.1 Pages
 
@@ -150,7 +150,7 @@ A **page** is a separate tab on the dashboard (e.g. `main`, `Work`, `Home lab`).
 - Category list  
 - Optional page emoji and colour dot (double-click the tab to edit)
 
-Switch pages with `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`). Recently visited pages are kept in memory (and prefetched when you hover a tab), so switching back is usually instant without reloading every bookmark from the server.
+Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`). Recently visited pages are kept in memory (and prefetched when you hover a tab), so switching back is usually instant without reloading every bookmark from the server.
 
 ### 4.2 Categories
 
@@ -180,7 +180,16 @@ Each bookmark has:
 
 Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sort). Notes remain searchable in fuzzy search and editable via `:note` or inline edit. Pin and note row icons were removed from the dashboard and from **Config → General**; there are no pin/note badges on bookmark rows.
 
-### 4.4 Config vs dashboard
+### 4.4 Inbox
+
+**Inbox** is a separate capture list for links you want to read or sort later — not bookmark pages. Items live in `data/inbox.json` on the server.
+
+- Open with the **Inbox** header tab, **`0`** (when search is closed), or **`:inbox`**.  
+- Add links by pasting a URL on the dashboard (`Ctrl+V`) and choosing **Save to Inbox**, via the browser extension, or through the API.  
+- Filter **All** / **Unread**, search, and browse date groups. **Promote** turns a link into a full bookmark; **Triage** walks unread items one by one.  
+- Toggle under **Config → General → Enable Inbox page**; set **Paste URL default** to skip the choice dialog.
+
+### 4.5 Config vs dashboard
 
 | Dashboard `/` | Config `/config` |
 |-----------------|------------------|
@@ -319,7 +328,7 @@ The modal includes page, category, preview, tags, note, pin, and status options.
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. The new-bookmark modal opens with the URL pre-filled. Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, or the feature is disabled in config), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → General → Paste URL default** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
@@ -341,11 +350,23 @@ The first time you open this tab on a desktop-width window, a **10-step guided t
 
 ### 7.6 Browser extension
 
-Save the current tab to a chosen page (see [Browser extension](#18-browser-extension)).
+Save the current tab to a chosen page or to **Inbox** (see [Browser extension](#18-browser-extension)).
 
 ### 7.7 Import
 
 HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-import-export-and-backup)).
+
+### 7.8 Inbox — capture links for later
+
+**Inbox** is for links you have not sorted into pages yet.
+
+1. Open **Inbox** — header tab, **`0`**, or **`:inbox`**.  
+2. **Add** — paste `Ctrl+V` on the dashboard and choose *Save to Inbox*, use the extension **Save to Inbox**, or rely on *Always save to Inbox* in General settings.  
+3. **Browse** — filter *All* / *Unread*, search, and scroll date groups. Unread items show a badge on the Inbox tab.  
+4. **Act on a row** — *Open* in a new tab, *Promote* to open the new-bookmark form pre-filled, or *Delete* (undo in the toast).  
+5. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
+
+The first visit may show a short intro modal. Replay it from **Config → Advanced → System → Reset Inbox intro modal**.
 
 ### Duplicate URLs
 
@@ -392,7 +413,8 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 | Keys | Action |
 |------|--------|
-| `1`–`9` | Jump to page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
+| `0` | Open **Inbox** (when search is closed) |
+| `1`–`9` | Jump to bookmark page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
@@ -529,6 +551,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
 | `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload |
+| `:inbox` / `:inbox triage` | Open Inbox (`0`) or triage unread items one by one |
 | `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
 | `:stale [days]` | List stale bookmarks |
 | `:health [filter]` | Open health page — `broken`, `duplicate`, `stale`, `refresh`, … |
@@ -1003,10 +1026,11 @@ Folder: `extension/` (Chrome “Load unpacked”).
 
 - Pre-filled title and URL.  
 - Optional **shortcut** — leave empty for an auto-suggested key from the bookmark name (first free letter on the chosen page), or type your own single-character shortcut.  
-- Pick page/category, optional tags and note.  
+- **Save to Inbox** — quick capture without choosing a page or category.  
+- Pick page/category, optional tags and note (bookmark save).  
 - Duplicate URL warning; **Save anyway** optional.  
 - **409** when the shortcut is already used on that page.  
-- After save: **Open in nextDash** deep link to the page.
+- After save: **Open in nextDash** or **Open Inbox in nextDash**.
 
 If a dashboard tab is open on the same server, it may toast and refresh.
 
