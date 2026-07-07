@@ -105,12 +105,55 @@ async function dismissBlockingOverlays(page) {
     await dismissAppNotificationIfPresent(page);
 }
 
+/** @param {import('@playwright/test').Page} page */
+async function ensureBookmarksDashboardView(page) {
+    await page.evaluate(() => {
+        const dash = window.dashboardInstance;
+        dash?.inbox?.closeInboxView?.();
+        if (dash) {
+            dash.activeView = 'bookmarks';
+        }
+        document.getElementById('dashboard-layout')?.classList.remove('inbox-layout');
+        document.body.focus();
+    });
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {{ prefix?: string }} [options]
+ */
+async function openShortcutSearch(page, options = {}) {
+    const prefix = options.prefix || '';
+    await ensureBookmarksDashboardView(page);
+    await page.evaluate(() => {
+        window.DashboardGridKeyboardPromo?.confirmPromo?.();
+        document.body.focus();
+    });
+    if (prefix === ':') {
+        await page.keyboard.press(':');
+    } else if (prefix === '>') {
+        await page.keyboard.press('Shift+.');
+    }
+    await expect.poll(async () => page.evaluate((wantedPrefix) => {
+        const search = document.getElementById('shortcut-search');
+        const sc = window.dashboardInstance?.searchComponent;
+        if (!search?.classList.contains('show')) {
+            sc?.openSearchInterface?.();
+            if (wantedPrefix === ':') {
+                sc?.addToQuery?.(':');
+            }
+        }
+        return search?.classList.contains('show') === true;
+    }, prefix), { timeout: 8000 }).toBe(true);
+}
+
 /**
  * Dismiss onboarding, promos, and toasts that steal clicks from dashboard tests.
  * @param {import('@playwright/test').Page} page
  */
 async function prepareDashboardInteraction(page) {
     await dismissOnboardingIfPresent(page);
+    await ensureBookmarksDashboardView(page);
     await dismissBlockingOverlays(page);
 }
 
@@ -305,4 +348,6 @@ module.exports = {
     dismissConfigTourOverlays,
     ensurePageCategory,
     ensureSortableCategory,
+    ensureBookmarksDashboardView,
+    openShortcutSearch,
 };

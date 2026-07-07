@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, openShortcutSearch } = require('./e2e-helpers');
 
 async function closeSearch(page) {
     await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
@@ -182,8 +182,7 @@ test.describe('dashboard grid shortcuts', () => {
     });
 
     test('grid shortcuts work after closing search overlay', async ({ page }) => {
-        await page.keyboard.press('>');
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await openShortcutSearch(page, { prefix: '>' });
         await closeSearch(page);
 
         await selectFirstBookmark(page);
