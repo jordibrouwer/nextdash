@@ -29,7 +29,7 @@ class SearchCommandsComponent {
                 label: 'Bookmarks',
                 labelKey: 'commands.groupBookmarks',
                 commands: [
-                    'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'quicktag', 'tag',
+                    'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
                     'open', 'goto', 'find', 'stale', 'duplicates',
                 ],
             },
@@ -95,7 +95,6 @@ class SearchCommandsComponent {
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
             'move': this.handleMoveCommand.bind(this),
-            'quicktag': this.handleQuickTagCommand.bind(this),
             'edit': this.handleEditCommand.bind(this),
             'copy': this.handleCopyCommand.bind(this),
             'page': this.handlePageCommand.bind(this),
@@ -472,7 +471,6 @@ class SearchCommandsComponent {
         if (potentialCommand === 'language') potentialCommand = 'lang';
         if (potentialCommand === 'animation') potentialCommand = 'animations';
         if (potentialCommand === 'collection') potentialCommand = 'collections';
-        if (potentialCommand === 'qt') potentialCommand = 'quicktag';
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
         const tagShorthand = potentialCommand.match(/^tag:(.+)$/i);
@@ -516,7 +514,7 @@ class SearchCommandsComponent {
      */
     getAvailableCommands() {
         // Commands that act on a specific bookmark and benefit from a pre-filled name
-        const bookmarkContextCmds = new Set(['remove', 'note', 'move', 'edit', 'copy', 'quicktag']);
+        const bookmarkContextCmds = new Set(['remove', 'note', 'move', 'edit', 'copy']);
         const ctxName = this.contextBookmark ? this.contextBookmark.name : null;
 
         const result = [];
@@ -722,37 +720,6 @@ class SearchCommandsComponent {
                     }
                 } else {
                     dash.keyboardNavigation?.openMovePopoverForCurrent?.();
-                }
-                return { refresh: false };
-            },
-        }];
-    }
-
-    handleQuickTagCommand(args, fullQuery) {
-        const dash = window.dashboardInstance;
-        if (!dash) return [];
-
-        const target = this._resolveBookmarkActionTarget();
-        if (!target?.bookmark) {
-            return this._noBookmarkSelectionRow(':QUICKTAG');
-        }
-
-        const name = target.bookmark.name || target.bookmark.url || '';
-        return [{
-            name: this._t('commands.quicktagLabel', 'Quick-tag "{name}"… (Shift+T)').replace('{name}', name),
-            shortcut: ':QUICKTAG',
-            stateId: 'quicktag',
-            type: 'command',
-            action: () => {
-                if (target.row) {
-                    this._ensureKeyboardSelectionForRow(target.row);
-                    if (typeof dash.showTagPopover === 'function') {
-                        dash.showTagPopover(target.row, target.bookmark, target.bookmarkIndex);
-                    } else {
-                        dash.keyboardNavigation?.openTagPopoverForCurrent?.();
-                    }
-                } else {
-                    dash.keyboardNavigation?.openTagPopoverForCurrent?.();
                 }
                 return { refresh: false };
             },

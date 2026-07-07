@@ -248,7 +248,6 @@ class DashboardUiHelpers {
                 item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Ctrl+Shift+A) or quick-add omnibox (&)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':move / :edit / :copy', 'cbMoveEditCopy', 'Move, inline-edit, or copy URL of the keyboard-selected bookmark'),
-                item(':quicktag (:qt)', 'cbQuicktag', 'Open quick-tag popover on the keyboard-selected bookmark (same as Shift+T)'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
                 item(':tag', 'cbTagList', 'List all tags in the command palette (dashboard layout unchanged)'),
                 item(':tag <name>', 'cbTagBrowse', 'Browse bookmarks by tag in the palette — :tag work or :tag:work'),

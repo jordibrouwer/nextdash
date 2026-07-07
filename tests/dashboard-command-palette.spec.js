@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, selectKeyboardBookmark } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 const COMMAND_PALETTE_PROMO_KEYS = [
     'nextdash:dashboard-quick-tag-promo-confirmed-v1',
@@ -220,43 +220,6 @@ test.describe('dashboard command palette', () => {
         await page.keyboard.press(':');
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('.search-command-group-header')).toHaveCount(5);
-    });
-
-    test(':quicktag opens tag popover on selected bookmark', async ({ page }) => {
-        await selectKeyboardBookmark(page, { nameEquals: 'GitHub' });
-        await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
-        await page.evaluate(() => {
-            const dash = window.dashboardInstance;
-            const sc = dash?.searchComponent;
-            const bookmark = dash?.keyboardNavigation?.getSelectedBookmark?.();
-            if (!bookmark) {
-                throw new Error('no bookmark selected for :quicktag');
-            }
-            sc.commandsComponent.contextBookmark = bookmark;
-            sc.commandsComponent.expandedGroups.add('bookmarks');
-            sc.openSearchInterface();
-            sc.currentQuery = ':quicktag';
-            sc.updateSearch();
-        });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
-        await expect.poll(async () => page.evaluate(() => {
-            const sc = window.dashboardInstance?.searchComponent;
-            const idx = sc?.selectableMatches?.findIndex((match) => (
-                match?.stateId === 'quicktag'
-                || String(match?.shortcut || '').toUpperCase() === ':QUICKTAG'
-            )) ?? -1;
-            if (idx < 0) {
-                return false;
-            }
-            sc.selectedMatchIndex = idx;
-            sc.updateSelectionHighlight();
-            return true;
-        }), { timeout: 10_000 }).toBe(true);
-        await page.keyboard.press('Enter');
-        await expect.poll(async () => page.locator('#tag-popover').isVisible(), {
-            timeout: 10_000,
-        }).toBe(true);
-        await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
     });
 
     test(':dark toggles auto dark mode', async ({ page }) => {
