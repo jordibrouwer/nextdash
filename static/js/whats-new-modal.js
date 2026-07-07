@@ -113,6 +113,18 @@
         `;
     }
 
+    function buildFeatureLeadHtml(lead) {
+        const text = String(lead || '').trim();
+        if (!text) {
+            return '';
+        }
+        return `
+            <div class="wn-feature-lead" role="note">
+                <p class="wn-feature-lead-text">${text}</p>
+            </div>
+        `;
+    }
+
     function buildIntroHtml() {
         return `
             <div class="wn-intro">
@@ -179,7 +191,7 @@
         return document.getElementById('app-modal')?.classList.contains('show') === true;
     }
 
-    function buildShellHtml(manifestEntries, firstReleaseHtml) {
+    function buildShellHtml(manifestEntries, firstReleaseHtml, featureLead) {
         const hiddenCount = Math.max(0, manifestEntries.length - 1);
         const moreHtml = hiddenCount > 0
             ? `<p class="wn-load-more-hint" data-wn-load-hint>Scroll for ${hiddenCount} more release${hiddenCount === 1 ? '' : 's'}…</p>`
@@ -189,6 +201,7 @@
             : '';
         return `
             <div class="wn-content" data-wn-content tabindex="-1">
+                ${buildFeatureLeadHtml(featureLead)}
                 ${buildIntroHtml()}
                 <div class="wn-releases-root" data-wn-releases-root>
                     ${firstReleaseHtml || ''}
@@ -421,7 +434,7 @@
                     if (!textEl) {
                         return;
                     }
-                    textEl.innerHTML = buildShellHtml(visible, renderRelease(first));
+                    textEl.innerHTML = buildShellHtml(visible, renderRelease(first), first.modalLead);
                     textEl.querySelector('.wn-content')?.removeAttribute('aria-busy');
                     const contentRoot = textEl.querySelector('[data-wn-content]');
                     if (contentRoot && typeof contentRoot.focus === 'function') {

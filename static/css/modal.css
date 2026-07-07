@@ -145,6 +145,21 @@ body.no-animations .wn-skeleton-line {
 }
 
 /* ── What's New intro block ─────────────────────────────────────── */
+.wn-feature-lead {
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.wn-feature-lead-text {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
 .wn-intro {
     display: flex;
     align-items: center;

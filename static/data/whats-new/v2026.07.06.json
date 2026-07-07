@@ -1,0 +1,67 @@
+{
+  "tag": "v2026.07.06",
+  "date": "July 2026",
+  "releasedAt": "2026-07-07",
+  "modalLead": "<strong>📥 Inbox is here</strong> — a lightweight place to save links you want to read or sort later, separate from your bookmark pages. Press <code>0</code> to open it, paste a URL with <code>Ctrl+V</code>, or choose <strong>Save to Inbox</strong> in the browser extension. <strong>Triage</strong> walks unread items one by one; <strong>Promote</strong> turns a link into a full bookmark when you are ready.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Inbox page</strong> — capture links in <code>data/inbox.json</code> without a page or category. Open from the header tab, <code>0</code> (search closed), or <code>:inbox</code>. Disable under Config → General → <em>Enable Inbox page</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Paste &amp; extension</strong> — <code>Ctrl+V</code> on the dashboard offers <em>Save to Inbox</em> or <em>Add bookmark</em>; set a default under <em>Paste URL default</em>. Browser extension adds <strong>Save to Inbox</strong> with duplicate detection."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Inbox UI</strong> — filter <strong>All</strong> / <strong>Unread</strong>, search, date groups (Today → Older), load more, open / promote / delete with undo toast. Unread tab badge and discoverability glow only when <code>unreadCount &gt; 0</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Triage</strong> — one-by-one overlay: <code>J</code>/<code>K</code> move, <code>O</code>/<code>Enter</code> open, <code>P</code> promote, <code>R</code>/<code>Space</code> keep (mark read), <code>D</code>/<code>Delete</code> remove. Start from the page or <code>:inbox triage</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Onboarding</strong> — one-time intro modal on the Inbox page; optional toast for existing users. Reset from Config → Advanced → System → <em>Reset Inbox intro modal</em>. Header shows lowercase <code>inbox</code> on the Inbox view."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>i18n</strong> — Inbox UI, paste choice, commands, cheatsheet, extension strings, and Config → Help → <em>Inbox</em> in EN / NL / DE / FR."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Page overview</strong> — migrated to the shared <code>AppModal</code> shell: narrow centered panel, card-style rows with counts, keyboard nav, and focus-trap parity with recent / what's new modals."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Rotating tips</strong> — off by default for new and existing installs (<code>showTips</code> migration in <code>models.go</code>); enable under General → Dashboard or <code>:tips on</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Command palette</strong> — <code>:quicktag</code> / <code>:qt</code> entry removed from the palette (use <code>Shift+T</code> on a selected row). Cheat sheet documents <code>0 = Inbox</code>."
+        }
+      ]
+    },
+    {
+      "title": "Developer & docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL, CHANGELOG &amp; Config Help</strong> — <strong>v2026.07.06</strong> release notes and Inbox documentation (EN/NL/DE/FR help prose)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v130</code> data version and <code>2026.07-dashboard-release-v99</code> dashboard release token; page-overview and inbox asset query strings."
+        }
+      ]
+    }
+  ]
+}
