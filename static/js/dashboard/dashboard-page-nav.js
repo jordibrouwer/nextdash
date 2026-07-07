@@ -169,6 +169,7 @@ class DashboardPageNav {
     updateInboxTabBadge() {
         const d = this.dash;
         const badge = document.getElementById('page-inbox-badge');
+        const inboxBtn = document.getElementById('page-nav-inbox-btn');
         if (!badge) {
             return;
         }
@@ -177,7 +178,7 @@ class DashboardPageNav {
         if (unread > 0) {
             badge.textContent = String(unread);
             badge.hidden = false;
-            badge.classList.add('is-inbox-badge-live');
+            badge.classList.add('is-inbox-badge-visible', 'is-inbox-badge-live');
             if (unread > previous) {
                 badge.classList.remove('is-inbox-badge-pop');
                 // Force reflow so repeated increases replay the pop animation.
@@ -190,7 +191,8 @@ class DashboardPageNav {
         } else {
             badge.textContent = '';
             badge.hidden = true;
-            badge.classList.remove('is-inbox-badge-live', 'is-inbox-badge-pop');
+            badge.classList.remove('is-inbox-badge-visible', 'is-inbox-badge-live', 'is-inbox-badge-pop');
+            inboxBtn?.classList.remove('is-inbox-new');
         }
         this._lastInboxBadgeCount = unread;
         this.syncInboxTabHighlight();
@@ -200,6 +202,9 @@ class DashboardPageNav {
     isInboxTabHighlightActive() {
         const d = this.dash;
         if (!d.inbox?.isEnabled?.() || d.settings?.inboxShowInPageTabs === false) {
+            return false;
+        }
+        if ((d.inbox?.unreadCount?.() || 0) <= 0) {
             return false;
         }
         if (window.DiscoverabilityState?.isStorageKeyConfirmed?.('nextdash:inbox-intro-toast-v1')) {

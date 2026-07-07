@@ -38,8 +38,7 @@
     flex-shrink: 0;
 }
 
-.inbox-count-badge,
-.page-inbox-badge {
+.inbox-count-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -70,7 +69,28 @@
 }
 
 .page-nav-btn--inbox .page-inbox-badge {
+    display: none !important;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+.page-nav-btn--inbox .page-inbox-badge.is-inbox-badge-visible {
+    display: inline-flex !important;
+    min-width: 1.35rem;
+    padding: 0.1rem 0.4rem;
     margin-left: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    align-items: center;
+    justify-content: center;
 }
 
 /* Discoverability: gentle motion on the new Inbox tab until opened or intro toast seen */
@@ -127,41 +147,40 @@
     }
 }
 
-.page-nav-btn--inbox.is-inbox-new {
+.page-nav-btn--inbox.is-inbox-new:not(.active) {
     animation: inbox-tab-button-glow 2.8s ease-in-out infinite;
     border-radius: var(--layout-radius-sm, 8px);
 }
 
-.page-nav-btn--inbox.is-inbox-new .page-tab-icon {
+.page-nav-btn--inbox.is-inbox-new:not(.active) .page-tab-icon {
     display: inline-block;
     transform-origin: center bottom;
     animation: inbox-tab-icon-attention 2.8s ease-in-out infinite;
 }
 
-.page-nav-btn--inbox.is-inbox-new .page-inbox-badge:not([hidden]),
-.page-inbox-badge.is-inbox-badge-live {
+.page-nav-btn--inbox.is-inbox-new:not(.active) .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-live,
+.page-nav-btn--inbox .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-live {
     animation: inbox-badge-pulse 2.2s ease-in-out infinite;
 }
 
-.page-inbox-badge.is-inbox-badge-pop,
-.page-nav-btn--inbox .page-inbox-badge.is-inbox-badge-pop {
+.page-nav-btn--inbox .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     animation: inbox-badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 body.no-animations .page-nav-btn--inbox.is-inbox-new,
 body.no-animations .page-nav-btn--inbox.is-inbox-new .page-tab-icon,
-body.no-animations .page-nav-btn--inbox.is-inbox-new .page-inbox-badge,
-body.no-animations .page-inbox-badge.is-inbox-badge-live,
-body.no-animations .page-inbox-badge.is-inbox-badge-pop {
+body.no-animations .page-nav-btn--inbox.is-inbox-new .page-inbox-badge.is-inbox-badge-visible,
+body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-live,
+body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .page-nav-btn--inbox.is-inbox-new,
     .page-nav-btn--inbox.is-inbox-new .page-tab-icon,
-    .page-nav-btn--inbox.is-inbox-new .page-inbox-badge,
-    .page-inbox-badge.is-inbox-badge-live,
-    .page-inbox-badge.is-inbox-badge-pop {
+    .page-nav-btn--inbox.is-inbox-new .page-inbox-badge.is-inbox-badge-visible,
+    .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-live,
+    .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
         animation: none !important;
     }
 }
