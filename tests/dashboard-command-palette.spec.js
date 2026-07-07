@@ -230,18 +230,14 @@ test.describe('dashboard command palette', () => {
         await page.evaluate(() => window.DashboardGridKeyboardPromo?.confirmPromo?.());
         await openShortcutSearch(page, { prefix: ':' });
         await page.keyboard.type('quicktag', { delay: 20 });
-        await page.evaluate(() => {
+        await expect.poll(async () => page.evaluate(() => {
             const sc = window.dashboardInstance?.searchComponent;
-            const idx = sc?.selectableMatches?.findIndex((match) => (
+            return sc?.selectableMatches?.some((match) => (
                 match?.stateId === 'quicktag'
                 || String(match?.shortcut || '').toUpperCase() === ':QUICKTAG'
-            )) ?? -1;
-            if (idx < 0) {
-                throw new Error('quicktag command match not found');
-            }
-            sc.selectedMatchIndex = idx;
-            sc.updateSelectionHighlight();
-        });
+            )) ?? false;
+        }), { timeout: 5000 }).toBe(true);
+        await selectCommandMatch(page, { stateId: 'quicktag' });
         await page.keyboard.press('Enter');
         await expect.poll(async () => page.locator('#tag-popover').isVisible(), {
             timeout: 10_000,

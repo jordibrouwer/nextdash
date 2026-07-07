@@ -139,12 +139,37 @@ async function openShortcutSearch(page, options = {}) {
         const sc = window.dashboardInstance?.searchComponent;
         if (!search?.classList.contains('show')) {
             sc?.openSearchInterface?.();
-            if (wantedPrefix === ':') {
+            const query = String(sc?.currentQuery || '');
+            if (wantedPrefix === ':' && !query.startsWith(':')) {
                 sc?.addToQuery?.(':');
             }
         }
         return search?.classList.contains('show') === true;
     }, prefix), { timeout: 8000 }).toBe(true);
+}
+
+/**
+ * Quick-tap a letter shortcut (e.g. G) to open shortcut search with that prefix.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} letter
+ */
+async function tapShortcutLetter(page, letter) {
+    const expected = String(letter || '').toUpperCase();
+    expect(expected).toMatch(/^[A-Z]$/);
+    await ensureBookmarksDashboardView(page);
+    await page.evaluate(() => {
+        window.DashboardGridKeyboardPromo?.confirmPromo?.();
+        document.body.focus();
+    });
+    await page.keyboard.press(expected.toLowerCase());
+    await expect.poll(async () => page.evaluate((wanted) => {
+        const search = document.getElementById('shortcut-search');
+        if (!search?.classList.contains('show')) {
+            return false;
+        }
+        const query = String(window.dashboardInstance?.searchComponent?.currentQuery || '').toUpperCase();
+        return query.startsWith(wanted);
+    }, expected), { timeout: 5000 }).toBe(true);
 }
 
 /**
@@ -350,4 +375,5 @@ module.exports = {
     ensureSortableCategory,
     ensureBookmarksDashboardView,
     openShortcutSearch,
+    tapShortcutLetter,
 };

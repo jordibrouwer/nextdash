@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, openShortcutSearch } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, openShortcutSearch, ensureBookmarksDashboardView, tapShortcutLetter } = require('./e2e-helpers');
 
 async function closeSearch(page) {
     await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
@@ -31,6 +31,7 @@ test.describe('dashboard grid shortcuts', () => {
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
+        await ensureBookmarksDashboardView(page);
         await selectFirstBookmark(page);
     });
 
@@ -206,16 +207,14 @@ test.describe('dashboard grid shortcuts', () => {
     });
 
     test('quick tap G opens shortcut search for g bookmarks', async ({ page }) => {
-        await page.keyboard.press('g');
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await tapShortcutLetter(page, 'G');
         await expect.poll(async () => page.evaluate(() => (
             window.dashboardInstance?.searchComponent?.currentQuery || ''
         ))).toBe('G');
     });
 
     test('G then digit without hold feeds shortcut query, not category jump', async ({ page }) => {
-        await page.keyboard.press('g');
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await tapShortcutLetter(page, 'G');
         await page.keyboard.press('1');
         await expect.poll(async () => page.evaluate(() => (
             window.dashboardInstance?.searchComponent?.currentQuery || ''
