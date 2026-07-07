@@ -183,6 +183,7 @@ class ConfigManager {
         await this.loadData();
         this.currentCategoriesPageId = this.getLastCategoriesPageId();
         await this.language.init(this.settingsData.language);
+        this.ui?.updateTabSaveMode?.(this.ui._currentTab);
         this.backup.updateLastBackupDisplay(this.settingsData.language);
         window.MobileExperience?.refreshBannerTranslations?.();
         if (typeof ConfigStats === 'function') {

@@ -1,0 +1,20 @@
+# Keep main lean when merging from dev.
+# Requires: git config merge.ours.driver true
+# (scripts/release-to-main.sh on dev sets this automatically.)
+
+tests/** merge=ours
+docs/** merge=ours
+scripts/** merge=ours
+.github/workflows/** merge=ours
+.github/pull_request_template.md merge=ours
+test-results/** merge=ours
+playwright-report/** merge=ours
+node_modules/** merge=ours
+
+*_test.go merge=ours
+package.json merge=ours
+package-lock.json merge=ours
+playwright.config.js merge=ours
+ca_profile.xml merge=ours
+favicon.ico merge=ours
+favicon.png merge=ours

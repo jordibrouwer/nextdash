@@ -562,18 +562,18 @@ class ConfigUI {
         if (!el) return;
         const lang = window.configManager?.language;
         const modes = {
-            general: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
-            bookmarks: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
-            keyboard: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save' },
-            tags: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
-            collections: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
-            pages: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
-            categories: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
-            finders: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save' },
-            stats: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
-            backups: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
-            help: { key: 'config.tabSaveModeReadOnly', mod: 'read-only' },
-            colors: { key: 'config.tabSaveModeColorsSave', mod: 'colors-save' },
+            general: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save', label: 'Requires Save' },
+            bookmarks: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save', label: 'Requires Save' },
+            keyboard: { key: 'config.tabSaveModeRequiresSave', mod: 'requires-save', label: 'Requires Save' },
+            tags: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save', label: 'Auto-save' },
+            collections: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save', label: 'Auto-save' },
+            pages: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save', label: 'Auto-save' },
+            categories: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save', label: 'Auto-save' },
+            finders: { key: 'config.tabSaveModeAutoSave', mod: 'auto-save', label: 'Auto-save' },
+            stats: { key: 'config.tabSaveModeReadOnly', mod: 'read-only', label: 'Read-only' },
+            backups: { key: 'config.tabSaveModeReadOnly', mod: 'read-only', label: 'Read-only' },
+            help: { key: 'config.tabSaveModeReadOnly', mod: 'read-only', label: 'Read-only' },
+            colors: { key: 'config.tabSaveModeColorsSave', mod: 'colors-save', label: 'Save colors' },
         };
         const mode = modes[tab];
         if (!mode) {
@@ -581,7 +581,14 @@ class ConfigUI {
             return;
         }
         el.hidden = false;
-        el.textContent = lang?.t(mode.key) || mode.mod;
+        let text = mode.label;
+        if (lang?.t) {
+            const translated = lang.t(mode.key);
+            if (translated && translated !== mode.key) {
+                text = translated;
+            }
+        }
+        el.textContent = text;
         el.className = `config-tab-save-mode config-tab-save-mode--${mode.mod}`;
     }
 

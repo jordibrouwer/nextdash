@@ -142,6 +142,10 @@ class ConfigLanguage {
             });
             document.dispatchEvent(new CustomEvent('nextdash:translations-applied'));
             this.scheduleSearchIndexRefresh();
+            const tab = window.configManager?.ui?._currentTab;
+            if (tab) {
+                window.configManager.ui.updateTabSaveMode(tab);
+            }
         }
     }
 
