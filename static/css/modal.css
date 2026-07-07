@@ -180,7 +180,7 @@ body.no-animations .wn-skeleton-line {
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-normal);
     white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     flex-shrink: 0;
 }
 
@@ -194,8 +194,151 @@ body.no-animations .wn-skeleton-line {
     transform: translateY(0);
 }
 
-.wn-kofi-icon {
+.wn-kofi-icon,
+.wn-kofi-label {
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
+}
+
+/* What's new modal — animated donate CTA with twinkling stars */
+.wn-kofi-btn--animated {
+    position: relative;
+    overflow: visible;
+    isolation: isolate;
+    animation: wn-kofi-btn-glow 3.2s ease-in-out infinite;
+}
+
+.wn-kofi-btn--animated::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+        105deg,
+        transparent 35%,
+        color-mix(in srgb, var(--accent-primary) 28%, transparent) 50%,
+        transparent 65%
+    );
+    background-size: 220% 100%;
+    animation: wn-kofi-btn-shimmer 3.2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.85;
+}
+
+.wn-kofi-stars {
+    position: absolute;
+    inset: -0.55rem -0.75rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.wn-kofi-star {
+    position: absolute;
+    line-height: 1;
+    color: color-mix(in srgb, var(--accent-primary) 88%, #fff 12%);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+    animation: wn-kofi-star-twinkle 2.6s ease-in-out infinite;
+}
+
+.wn-kofi-star::before {
+    content: '★';
+    display: block;
+    font-size: 0.62rem;
+}
+
+.wn-kofi-star:nth-child(1) {
+    top: -0.1rem;
+    left: 6%;
+    animation-delay: 0s;
+}
+
+.wn-kofi-star:nth-child(2) {
+    top: -0.35rem;
+    right: 10%;
+    animation-delay: 0.65s;
+}
+
+.wn-kofi-star:nth-child(2)::before {
+    content: '✦';
+    font-size: 0.5rem;
+}
+
+.wn-kofi-star:nth-child(3) {
+    bottom: -0.15rem;
+    left: 18%;
+    animation-delay: 1.3s;
+}
+
+.wn-kofi-star:nth-child(3)::before {
+    font-size: 0.48rem;
+}
+
+.wn-kofi-star:nth-child(4) {
+    bottom: 0;
+    right: 4%;
+    animation-delay: 1.95s;
+}
+
+.wn-kofi-star:nth-child(4)::before {
+    content: '✦';
+    font-size: 0.54rem;
+}
+
+@keyframes wn-kofi-star-twinkle {
+    0%, 100% {
+        opacity: 0;
+        transform: scale(0.45) rotate(-12deg);
+    }
+    45%, 55% {
+        opacity: 1;
+        transform: scale(1.15) rotate(10deg);
+    }
+}
+
+@keyframes wn-kofi-btn-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 0.65rem 0.12rem color-mix(in srgb, var(--accent-primary) 32%, transparent);
+    }
+}
+
+@keyframes wn-kofi-btn-shimmer {
+    0%, 100% {
+        background-position: 120% 0;
+    }
+    50% {
+        background-position: -20% 0;
+    }
+}
+
+.wn-kofi-btn--animated:hover {
+    animation: none;
+    box-shadow: 0 0 0.75rem 0.15rem color-mix(in srgb, var(--accent-primary) 38%, transparent);
+}
+
+.wn-kofi-btn--animated:hover .wn-kofi-star {
+    animation-duration: 1.4s;
+}
+
+body.no-animations .wn-kofi-btn--animated,
+body.no-animations .wn-kofi-btn--animated::before,
+body.no-animations .wn-kofi-star {
+    animation: none;
+}
+
+body.no-animations .wn-kofi-btn--animated {
+    box-shadow: 0 0 0.5rem 0.1rem color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+body.no-animations .wn-kofi-star {
+    opacity: 0.75;
+    transform: scale(1);
 }
 
 /* ── What's New release blocks ─────────────────────────────────── */
@@ -628,4 +771,16 @@ body.no-animations .modal-button.danger.selected {
     .modal-button.selected,
     .modal-button.danger:hover,
     .modal-button.danger.selected { transition: none !important; transform: none !important; }
+    .wn-kofi-btn--animated,
+    .wn-kofi-btn--animated::before,
+    .wn-kofi-star {
+        animation: none !important;
+    }
+    .wn-kofi-btn--animated {
+        box-shadow: 0 0 0.5rem 0.1rem color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    }
+    .wn-kofi-star {
+        opacity: 0.75;
+        transform: scale(1);
+    }
 }
