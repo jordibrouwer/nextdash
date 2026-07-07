@@ -51,11 +51,11 @@ test.describe('dashboard per-category sort', () => {
         const sorted = [...namesAfter].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         expect(namesAfter).toEqual(sorted);
 
-        const result = await page.evaluate(() => {
+        const result = await page.evaluate((targetCategoryId) => {
             const list = document.querySelector(
-                '#dashboard-layout .category:not([data-smart-collection="true"]) .bookmarks-list'
+                `#dashboard-layout .category[data-category-id="${targetCategoryId}"] .bookmarks-list`
             );
-            const categoryId = list?.getAttribute('data-category-id') || '';
+            const categoryId = list?.getAttribute('data-category-id') || targetCategoryId;
             const mode = window.DashboardCategorySort?.getCategorySortMode?.(
                 window.dashboardInstance,
                 { id: categoryId }
@@ -63,7 +63,7 @@ test.describe('dashboard per-category sort', () => {
             const handle = list?.querySelector('.bookmark-reorder-handle');
             const handleDisplay = handle ? getComputedStyle(handle).display : null;
             return { mode, handleDisplay };
-        });
+        }, categoryId);
         expect(result.mode).toBe('az');
         expect(result.handleDisplay).toBe('none');
 

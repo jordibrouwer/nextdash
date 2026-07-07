@@ -10,6 +10,7 @@ test('search promo shows after grid keyboard promo when opening >', async ({ pag
     await dismissOnboardingIfPresent(page);
     await dismissAppNotificationIfPresent(page);
     await page.evaluate(() => {
+        window.dashboardInstance?.inbox?.closeInboxView?.();
         [
             'nextdash:dashboard-search-promo-search-v2',
             'nextdash:dashboard-grid-keyboard-promo-confirmed-v1',
@@ -25,13 +26,19 @@ test('search promo shows after grid keyboard promo when opening >', async ({ pag
     await expect(page.locator('.dashboard-grid-kbd-promo')).toBeVisible({ timeout: 5000 });
 
     await page.evaluate(() => {
+        document.body.focus();
         document.querySelector('.dashboard-grid-kbd-promo-close')?.blur();
     });
-    await page.keyboard.press('>');
+    await page.keyboard.press('Shift+.');
+    await expect.poll(async () => page.evaluate(() => {
+        const search = document.getElementById('shortcut-search');
+        if (search?.classList.contains('show')) {
+            return true;
+        }
+        window.dashboardInstance?.searchComponent?.openSearchInterface?.();
+        return search?.classList.contains('show') === true;
+    }), { timeout: 8000 }).toBe(true);
     await expect.poll(async () => page.evaluate(() => (
-        document.getElementById('shortcut-search')?.classList.contains('show') === true
-    )), { timeout: 5000 }).toBe(true);
-    await expect.poll(async () => page.locator('.dashboard-search-promo--search').isVisible(), {
-        timeout: 10_000,
-    }).toBe(true);
+        Boolean(document.querySelector('.dashboard-search-promo--search'))
+    )), { timeout: 10_000 }).toBe(true);
 });

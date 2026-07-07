@@ -127,9 +127,15 @@ test.describe('dashboard inline edit', () => {
         const target = await page.evaluate(() => {
             const kn = window.dashboardInstance?.keyboardNavigation;
             const row = kn?.navigableElements?.[kn.currentIndex];
+            const url = row?.getAttribute('data-bookmark-url') || '';
+            const normalizedUrl = String(url).trim();
+            const bookmark = (window.dashboardInstance?.bookmarks || []).find(
+                (entry) => String(entry?.url || '').trim() === normalizedUrl
+            );
             return {
-                url: row?.getAttribute('data-bookmark-url') || '',
-                name: row?.querySelector('.bookmark-text')?.textContent?.trim() || '',
+                url,
+                storedName: String(bookmark?.name || '').trim(),
+                label: row?.querySelector('.bookmark-text')?.textContent?.trim() || '',
             };
         });
         expect(target.url).not.toBe('');
@@ -138,8 +144,10 @@ test.describe('dashboard inline edit', () => {
         const nameInput = page.locator('.bookmark-inline-form .bookmark-inline-input').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         await page.waitForTimeout(600);
-        const original = await nameInput.inputValue();
-        const edited = `${original} save-${Date.now()}`;
+        const inputName = (await nameInput.inputValue()).trim();
+        const baseName = inputName || target.storedName || target.label;
+        const suffix = `save-${Date.now()}`;
+        const edited = baseName ? `${baseName} ${suffix}` : suffix;
         await nameInput.fill(edited);
         await page.keyboard.press('Control+Enter');
         await expect.poll(async () => page.evaluate(() => (
@@ -147,16 +155,17 @@ test.describe('dashboard inline edit', () => {
         ))).toBe(true);
         await expect.poll(async () => page.evaluate(({ url, expected }) => {
             const normalizedUrl = String(url || '').trim();
+            const normalizedExpected = String(expected || '').trim();
             const bookmark = (window.dashboardInstance?.bookmarks || []).find(
                 (entry) => String(entry?.url || '').trim() === normalizedUrl
             );
-            if (bookmark?.name === expected) {
+            if (bookmark?.name?.trim() === normalizedExpected) {
                 return true;
             }
             const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
             return rows.some((el) => (
                 String(el.getAttribute('data-bookmark-url') || '').trim() === normalizedUrl
-                && el.querySelector('.bookmark-text')?.textContent?.trim() === expected
+                && el.querySelector('.bookmark-text')?.textContent?.trim() === normalizedExpected
             ));
         }, { url: target.url, expected: edited }), { timeout: 10_000 }).toBe(true);
 
@@ -166,7 +175,7 @@ test.describe('dashboard inline edit', () => {
             const bookmark = (d?.bookmarks || []).find(
                 (entry) => String(entry?.url || '').trim() === normalizedUrl
             );
-            if (!bookmark || bookmark.name === originalName) {
+            if (!bookmark || String(bookmark.name || '').trim() === String(originalName || '').trim()) {
                 return;
             }
             bookmark.name = originalName;
@@ -177,7 +186,7 @@ test.describe('dashboard inline edit', () => {
                 body: JSON.stringify({ page: d.currentPageId, bookmark }),
             });
             await d.data?.refreshAfterBookmarkAdded?.(d.currentPageId);
-        }, { url: target.url, originalName: original });
+        }, { url: target.url, originalName: target.storedName });
     });
 
     test('clicking second field keeps editor open', async ({ page }) => {
