@@ -1,5 +1,5 @@
 /* Code styling for help section */
-.help-tab-surface :is(.help-block, .help-index, .config-split-content) code,
+.help-tab-surface :is(.help-block, .config-split-content) code,
 .help-tab-surface .help-filter-bar code {
     background-color: var(--background-secondary);
     color: var(--text-primary);
@@ -11,8 +11,9 @@
     white-space: nowrap;
 }
 
-/* Link styling for help section */
-.help-tab-surface :is(.help-block, .help-index, .config-split-content) a,
+/* Link styling for help section prose (not the quick-links nav — that follows the shared
+   .config-split-index-list styling used by Stats/General, with no underline). */
+.help-tab-surface .help-block a,
 .help-tab-surface .help-filter-bar a {
     color: var(--text-secondary);
     text-decoration: underline;
@@ -20,8 +21,8 @@
     text-decoration-thickness: 0.08em;
 }
 
-.help-tab-surface :is(.help-block, .help-index, .config-split-content) a:hover,
-.help-tab-surface :is(.help-block, .help-index, .config-split-content) a:focus-visible,
+.help-tab-surface .help-block a:hover,
+.help-tab-surface .help-block a:focus-visible,
 .help-tab-surface .help-filter-bar a:hover,
 .help-tab-surface .help-filter-bar a:focus-visible {
     color: var(--text-primary);
@@ -74,7 +75,6 @@ body[data-layout-version="glass"] .help-tab-surface {
     align-self: start;
     z-index: 4;
     border: none;
-    border-right: 1px solid var(--border-primary);
     border-radius: 0;
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     padding: 0.75rem;
@@ -128,6 +128,7 @@ body[data-layout-version="glass"] .help-tab-surface {
 }
 
 .help-block {
+    scroll-margin-top: calc(var(--config-help-index-sticky-top, 5.75rem) + 0.5rem);
     border: 1px solid var(--border-primary);
     background: color-mix(in srgb, var(--background-primary) 25%, transparent);
     padding: 0.9rem 1rem;
@@ -142,6 +143,43 @@ body[data-layout-version="glass"] .help-tab-surface {
 
 .help-block .section-title {
     margin-bottom: 0.5rem;
+}
+
+/* ── Collapsible blocks (accordion — same pattern as General's .general-card.is-collapsible) ── */
+.help-block.is-collapsible .section-title {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+}
+
+.help-block.is-collapsible .section-title:hover {
+    color: var(--text-primary);
+}
+
+.help-block.is-collapsible .section-title::before {
+    content: '−';
+    font-size: 1em;
+    font-weight: var(--font-weight-bold);
+    width: 1em;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--accent-primary);
+}
+
+.help-block.is-collapsible.is-collapsed .section-title {
+    color: var(--text-secondary);
+}
+
+.help-block.is-collapsible.is-collapsed .section-title::before {
+    content: '+';
+}
+
+.help-block.is-collapsible.is-collapsed > *:not(.section-title) {
+    display: none;
 }
 
 .help-block-intro {
@@ -272,6 +310,19 @@ body[data-layout-version="glass"] .help-tab-surface {
     margin-top: 0.5rem;
     color: var(--text-secondary);
     text-align: center;
+    font-size: 1.05rem;
+}
+
+.help-signature-link {
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-bold);
+    text-decoration: none;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.help-signature-link:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {

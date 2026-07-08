@@ -129,7 +129,6 @@ body[data-layout-version="glass"] .general-tab-surface {
     align-self: start;
     z-index: 4;
     border: none;
-    border-right: 1px solid var(--border-primary);
     border-radius: 0;
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     padding: 0.75rem;

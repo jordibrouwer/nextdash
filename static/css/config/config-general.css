@@ -760,6 +760,7 @@ body.config-is-dirty .top-quick-action.is-visible {
     box-shadow: none;
     background: transparent;
     margin: 0;
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .general-tab-surface .general-card:last-child {

@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=section-title-revert-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=split-divider-full-height-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-split-shell-1">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=split-divider-full-height-1">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -2276,21 +2276,26 @@
                     <nav id="help-chip-nav" class="help-chip-nav config-split-mobile-nav" data-i18n-aria="config.helpPageIndexTitle" aria-label="Help quick links"></nav>
                     <aside class="help-index config-split-index">
                         <h3 class="section-title config-split-index-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
-                        <ul class="help-index-list config-split-index-list" data-i18n="config.helpPageNavItems"></ul>
+                        <ul class="help-index-list config-split-index-list">
+                            <li><a href="#help-getting-started" data-i18n="config.helpPageGettingStartedTitle">Getting started</a></li>
+                            <li><a href="#help-configuring" data-i18n="config.helpPageConfiguringTitle">Configuring nextDash</a></li>
+                            <li><a href="#help-keyboard" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</a></li>
+                            <li><a href="#help-search-toolbar" data-i18n="config.helpPageSearchToolbarTitle">Search, commands &amp; toolbar</a></li>
+                            <li><a href="#help-finders" data-i18n="config.helpPageFindersTitle">Finders</a></li>
+                            <li><a href="#help-appearance" data-i18n="config.helpPageAppearanceTitle">Appearance &amp; display</a></li>
+                            <li><a href="#help-organizing" data-i18n="config.helpPageOrganizingTitle">Organizing bookmarks</a></li>
+                            <li><a href="#help-workspace" data-i18n="config.helpPageWorkspaceTitle">Pages, categories &amp; bulk editing</a></li>
+                            <li><a href="#help-tags-collections" data-i18n="config.helpPageTagsCollectionsTitle">Tags &amp; collections</a></li>
+                            <li><a href="#help-inbox" data-i18n="config.helpPageInboxTitle">Inbox</a></li>
+                            <li><a href="#help-health-status" data-i18n="config.helpPageHealthStatusTitle">Health &amp; status</a></li>
+                            <li><a href="#help-data-backups" data-i18n="config.helpPageDataBackupsTitle">Data &amp; backups</a></li>
+                            <li><a href="#help-self-hosting" data-i18n="config.helpPageSelfHostingTitle">Self-hosting &amp; troubleshooting</a></li>
+                        </ul>
                     </aside>
                     <div class="help-content config-split-content">
-                        <section id="help-quick-start" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageQuickStartTitle">Quick Start (30 sec)</h3>
-                            <div class="help-prose" data-i18n="config.helpPageQuickStartBody"></div>
-                        </section>
-
-                        <section id="help-onboarding" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageOnboardingTitle">First-Run Onboarding</h3>
-                            <div class="help-prose" data-i18n="config.helpPageOnboardingBody"></div>
-                        </section>
-
-                        <section id="help-tips" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageTipsTitle">Rotating tips</h3>
+                        <section id="help-getting-started" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageGettingStartedTitle">Getting started</h3>
+                            <div class="help-prose" data-i18n="config.helpPageGettingStartedBody"></div>
                             <p class="help-block-intro" data-i18n="config.helpPageTipsIntro">Same tips as above the dashboard footer when enabled. Off by default — turn on under General → Dashboard.</p>
                             <details class="help-tips-disclosure" id="help-tips-disclosure">
                                 <summary class="help-tips-disclosure-summary" data-i18n="config.helpPageTipsToggle">Show the full tip list</summary>
@@ -2303,78 +2308,22 @@
                             </details>
                         </section>
 
-                        <section id="help-config-general" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageConfigGeneralTitle">Config → General</h3>
-                            <div class="help-prose" data-i18n="config.helpPageConfigGeneralBody"></div>
-                        </section>
-
-                        <section id="help-config-tabs" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageConfigTabsTitle">Config tab bar</h3>
-                            <div class="help-prose" data-i18n="config.helpPageConfigTabsBody"></div>
-                        </section>
-
-                        <section id="help-navigation" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageNavigationTitle">Navigation</h3>
-                            <div class="help-prose" data-i18n="config.helpPageNavigationBody"></div>
-                        </section>
-
-                        <section id="help-inbox" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageInboxTitle">Inbox</h3>
-                            <div class="help-prose" data-i18n="config.helpPageInboxBody"></div>
-                        </section>
-
-                        <section id="help-mobile" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageMobileTitle">Phone vs desktop</h3>
-                            <div class="help-prose" data-i18n="config.helpPageMobileBody"></div>
+                        <section id="help-configuring" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageConfiguringTitle">Configuring nextDash</h3>
+                            <div class="help-prose" data-i18n="config.helpPageConfiguringBody"></div>
                         </section>
 
                         <section id="help-keyboard" class="help-block help-block--spotlight">
                             <h3 class="section-title" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</h3>
-                            <p class="help-block-intro" data-i18n="config.helpPageKeyboardIntro">Rebind search, navigation, and dashboard keys. Open the keyboard tab under System in the tab bar, or use the button below.</p>
                             <div class="help-prose" data-i18n="config.helpPageKeyboardBody"></div>
                             <p class="help-block-action">
                                 <a href="#keyboard" id="help-open-keyboard-link" class="btn btn-primary help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
                             </p>
                         </section>
 
-                        <section id="help-bookmarks-dashboard" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageBookmarksDashboardTitle">Dashboard bookmarks (keyboard &amp; mouse)</h3>
-                            <div class="help-prose" data-i18n="config.helpPageBookmarksDashboardBody"></div>
-                        </section>
-
-                        <section id="help-search" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageSearchTitle">Search & Input Modes</h3>
-                            <div class="help-prose" data-i18n="config.helpPageSearchBody"></div>
-                        </section>
-
-                        <section id="help-date-weather" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageDateWeatherTitle">Date & Weather</h3>
-                            <div class="help-prose" data-i18n="config.helpPageDateWeatherBody"></div>
-                        </section>
-
-                        <section id="help-smart" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageSmartTitle">Smart Collections</h3>
-                            <div class="help-prose" data-i18n="config.helpPageSmartBody"></div>
-                        </section>
-
-                        <section id="help-tags" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageTagsTitle">Tags</h3>
-                            <div class="help-prose" data-i18n="config.helpPageTagsBody"></div>
-                        </section>
-
-                        <section id="help-collections" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageCollectionsTitle">Dynamic Collections</h3>
-                            <div class="help-prose" data-i18n="config.helpPageCollectionsBody"></div>
-                        </section>
-
-                        <section id="help-sorting" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageSortingTitle">Sorting, Pinned & Categories</h3>
-                            <div class="help-prose" data-i18n="config.helpPageSortingBody"></div>
-                        </section>
-
-                        <section id="help-manage" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageManageTitle">Manage Bookmarks</h3>
-                            <div class="help-prose" data-i18n="config.helpPageManageBody"></div>
+                        <section id="help-search-toolbar" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageSearchToolbarTitle">Search, commands &amp; toolbar</h3>
+                            <div class="help-prose" data-i18n="config.helpPageSearchToolbarBody"></div>
                         </section>
 
                         <section id="help-finders" class="help-block">
@@ -2382,55 +2331,61 @@
                             <div class="help-prose" data-i18n="config.helpPageFindersBody"></div>
                         </section>
 
-                        <section id="help-status" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageStatusTitle">Status Monitor</h3>
-                            <div class="help-prose" data-i18n="config.helpPageStatusBody"></div>
+                        <section id="help-appearance" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageAppearanceTitle">Appearance &amp; display</h3>
+                            <div class="help-prose" data-i18n="config.helpPageAppearanceBody"></div>
                         </section>
 
-                        <section id="help-health" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageHealthTitle">Bookmark Health Monitoring</h3>
-                            <div class="help-prose" data-i18n="config.helpPageHealthBody"></div>
+                        <section id="help-organizing" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageOrganizingTitle">Organizing bookmarks</h3>
+                            <div class="help-prose" data-i18n="config.helpPageOrganizingBody"></div>
                         </section>
 
-                        <section id="help-backup" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageBackupTitle">Backup &amp; import</h3>
-                            <div class="help-prose" data-i18n="config.helpPageBackupBody"></div>
+                        <section id="help-workspace" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageWorkspaceTitle">Pages, categories &amp; bulk editing</h3>
+                            <div class="help-prose" data-i18n="config.helpPageWorkspaceBody"></div>
                         </section>
 
-                        <section id="help-branding" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageBrandingTitle">Theme, Layout & Branding</h3>
-                            <div class="help-prose" data-i18n="config.helpPageBrandingBody"></div>
+                        <section id="help-tags-collections" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageTagsCollectionsTitle">Tags &amp; collections</h3>
+                            <div class="help-prose" data-i18n="config.helpPageTagsCollectionsBody"></div>
                         </section>
 
-                        <section id="help-data" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageDataTitle">Data, Storage & Device-Specific Settings</h3>
-                            <div class="help-prose" data-i18n="config.helpPageDataBody"></div>
+                        <section id="help-inbox" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageInboxTitle">Inbox</h3>
+                            <div class="help-prose" data-i18n="config.helpPageInboxBody"></div>
                         </section>
 
-                        <section id="help-extension" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageExtensionTitle">Browser extension</h3>
-                            <div class="help-prose" data-i18n="config.helpPageExtensionBody"></div>
+                        <section id="help-health-status" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageHealthStatusTitle">Health &amp; status</h3>
+                            <div class="help-prose" data-i18n="config.helpPageHealthStatusBody"></div>
                         </section>
 
-                        <section id="help-security" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageSecurityTitle">Security &amp; self-hosting</h3>
-                            <div class="help-prose" data-i18n="config.helpPageSecurityBody"></div>
+                        <section id="help-data-backups" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageDataBackupsTitle">Data &amp; backups</h3>
+                            <div class="help-prose" data-i18n="config.helpPageDataBackupsBody"></div>
                         </section>
 
-                        <section id="help-troubleshoot" class="help-block">
-                            <h3 class="section-title" data-i18n="config.helpPageTroubleshootTitle">Troubleshooting</h3>
-                            <div class="help-prose" data-i18n="config.helpPageTroubleshootBody"></div>
+                        <section id="help-self-hosting" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageSelfHostingTitle">Self-hosting &amp; troubleshooting</h3>
+                            <div class="help-prose" data-i18n="config.helpPageSelfHostingBody"></div>
                             <p class="help-prose-footer" data-i18n="config.helpPageTroubleshootFooter">Found a bug or have feedback? Visit the <a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><code>GitHub repository</code></a> to report issues or suggest improvements.</p>
                         </section>
 
                         <div class="help-support-block">
                             <span class="help-support-label">nextDash is free and open-source.</span>
-                            <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn">
+                            <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener" class="wn-kofi-btn wn-kofi-btn--animated">
+                                <span class="wn-kofi-stars" aria-hidden="true">
+                                    <span class="wn-kofi-star"></span>
+                                    <span class="wn-kofi-star"></span>
+                                    <span class="wn-kofi-star"></span>
+                                    <span class="wn-kofi-star"></span>
+                                </span>
                                 <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                                Support me on Ko-fi
+                                <span class="wn-kofi-label">Support me on Ko-fi</span>
                             </a>
                         </div>
-                        <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">jordibrw.nl</a></p>
+                        <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer" class="help-signature-link">jordibrw.nl</a></p>
                     </div>
                 </div>
                 </div>
@@ -2494,7 +2449,7 @@
     <script src="/static/js/config-pages-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-collections-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-theme-tour.js?v=config-tours-v1"></script>
-    <script src="/static/js/config/config-help-search.js?v=help-split-b12-1"></script>
+    <script src="/static/js/config/config-help-search.js?v=help-accordion-nav-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>

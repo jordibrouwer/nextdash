@@ -1166,7 +1166,8 @@ test.describe('config help surface (B5)', () => {
     });
 
     test('help sections use narrative prose instead of bullet lists', async ({ page }) => {
-        const general = page.locator('#help-config-general .help-prose');
+        await page.locator('#help-configuring .section-title').click();
+        const general = page.locator('#help-configuring .help-prose');
         await expect(general).toBeVisible();
         await expect(general.locator('p').first()).toBeVisible();
         await expect(general.locator('li')).toHaveCount(0);
@@ -1187,7 +1188,7 @@ test.describe('config help surface (B5)', () => {
         });
         expect(beforeScroll.position).toBe('sticky');
 
-        await page.evaluate(() => window.scrollTo(0, 2400));
+        await page.evaluate(() => window.scrollTo(0, 600));
         await page.waitForTimeout(150);
 
         const afterScroll = await index.evaluate((el) => ({
@@ -1195,7 +1196,7 @@ test.describe('config help surface (B5)', () => {
             scrollY: window.scrollY,
         }));
 
-        expect(afterScroll.scrollY).toBeGreaterThan(500);
+        expect(afterScroll.scrollY).toBeGreaterThan(300);
         expect(Math.abs(afterScroll.rectTop - beforeScroll.top)).toBeLessThanOrEqual(24);
     });
 });
