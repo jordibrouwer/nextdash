@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.08 — July 2026](#v20260708--july-2026)
 - [v2026.07.07 — July 2026](#v20260707--july-2026)
 - [v2026.07.06.1 — July 2026](#v202607061--july-2026)
 - [v2026.07.06 — July 2026](#v20260706--july-2026)
@@ -78,6 +79,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.08 — July 2026
+
+**Config → Help rework & split-shell border fixes** — Help reorganised into fewer, reordered sections with the same sticky quick-links + single-open accordion pattern as General/Stats; animated Ko-fi CTA; General card borders and a full-height split-shell divider.
+
+### Config → Help
+
+- **new** **Help sections consolidated & reordered** — the help topics are grouped into fewer, broader sections and reordered to *Getting started, Configuring nextDash, Keyboard shortcuts, Search/commands/toolbar, Finders, Appearance & display, Organizing bookmarks, Pages/categories/bulk editing, Tags & collections, Inbox, Health & status, Data & backups, Self-hosting & troubleshooting* — quick links and section order now match (`templates/config.html`, help locale keys in EN/NL/DE/FR).
+- **new** **Sticky accordion & scrollspy** — Help now uses the same sticky **quick links** sidebar, single-open section accordion, and scroll-position highlighting as Config → General and Stats (`config-help-search.js`).
+- **new** **Animated Ko-fi support button** — the *Support me on Ko-fi* button at the bottom of Help now has the same twinkling-star glow animation as the What's New modal's donate CTA, centered on its own row below the "free and open-source" label; the **jordibrw.nl** signature link is larger and themed in the accent color (`templates/config.html`, `config-forms.css`, `config-help.css`).
+- **fix** **Quick-link scroll offset** — clicking a quick link could land partway into a section, hiding its title and first lines behind the sticky toolbar; sections now reserve scroll space for that chrome so a jump always lands on the section title (`config-help.css`).
+
+### Config → General
+
+- **fix** **Missing section borders** — General's sections had no dividing line between them, unlike Help's bordered blocks; each section now gets a bottom border matching Help's visual rhythm, across Classic/Modern/Glass (`config-general.css`).
+
+### Config shell
+
+- **fix** **Split-shell divider now spans the full page** — the vertical line between the sticky quick-links sidebar and the content column used to stop wherever the sidebar's own sticky box ended, well short of the page bottom, instead of running the full height of the section content and meeting the shell's bottom border. The divider moved from the sticky sidebar onto the content column, which isn't height-capped, so it now runs edge-to-edge on both Help and General (`config-tab-shell.css`, `config-help.css`, `config-general-layers.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.08** release notes and updated Help section list.
+- **fix** **What's new modal** — **v2026.07.08** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v133` data version and `2026.07-dashboard-release-v102` dashboard release token; `split-divider-full-height-1`, `general-card-borders-1`, and `help-kofi-stacked-1` config asset query strings.
 
 ---
 
