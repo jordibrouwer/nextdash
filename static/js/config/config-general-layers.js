@@ -144,6 +144,20 @@ class ConfigGeneralLayers {
         if (title) title.setAttribute('aria-expanded', 'false');
         window.configManager?._persistGeneralPanelState?.();
         window.configManager?.syncResetPanelGuard?.();
+        this.syncActiveNavFromOpenPanel();
+    }
+
+    /**
+     * Highlight the nav link for whichever section is currently open (accordion guarantees at
+     * most one). Called right after any accordion state change instead of relying solely on the
+     * scrollspy IntersectionObserver, which may not re-fire when the open section was already
+     * inside its trigger zone before the change (e.g. no real scroll distance to cross).
+     */
+    syncActiveNavFromOpenPanel() {
+        const open = this.root?.querySelector(
+            '.general-content .general-card[data-general-panel]:not([hidden]):not(.is-collapsed)'
+        );
+        this.setActiveNavSection(open ? open.getAttribute('data-general-panel') : null);
     }
 
     /** Navigating to a section via a quick link: collapse every other open section first (accordion). */
@@ -600,6 +614,7 @@ class ConfigGeneralLayers {
             window.configManager?._persistGeneralPanelState?.();
             window.configManager?.syncResetPanelGuard?.();
         }
+        this.syncActiveNavFromOpenPanel();
         const tourActive = document.body.hasAttribute('data-config-general-tour-active');
         card.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
     }

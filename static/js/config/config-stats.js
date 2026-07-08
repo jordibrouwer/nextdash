@@ -411,6 +411,108 @@ class ConfigStats {
         this._scrollspyObs = obs;
     }
 
+    // ── Collapsible blocks (accordion) ───────────────────────────────────────
+
+    setupBlockCollapsible() {
+        document.querySelectorAll('.stats-content .stats-block[id]').forEach((block) => {
+            const title = block.querySelector('.stats-block-title-row .section-title');
+            if (!title || title.dataset.collapseWired === '1') return;
+            title.dataset.collapseWired = '1';
+            block.classList.add('is-collapsible');
+            title.setAttribute('role', 'button');
+            title.setAttribute('tabindex', '0');
+            title.setAttribute('aria-expanded', 'true');
+            const toggle = () => this.toggleBlock(block.id);
+            title.addEventListener('click', toggle);
+            title.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle();
+                }
+            });
+        });
+    }
+
+    toggleBlock(blockId) {
+        const block = document.getElementById(blockId);
+        if (!block) return;
+        block.classList.toggle('is-collapsed');
+        const expanded = !block.classList.contains('is-collapsed');
+        const title = block.querySelector('.stats-block-title-row .section-title');
+        if (title) title.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (expanded) {
+            this.collapseOtherBlocks(blockId);
+        }
+        this.syncActiveNavFromOpenBlock();
+    }
+
+    /** Opening a block via title click or quick link collapses whichever other block was open. */
+    collapseOtherBlocks(exceptBlockId) {
+        document.querySelectorAll('.stats-content .stats-block[id]').forEach((block) => {
+            if (block.id === exceptBlockId || block.classList.contains('is-collapsed')) return;
+            block.classList.add('is-collapsed');
+            const title = block.querySelector('.stats-block-title-row .section-title');
+            if (title) title.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    /**
+     * Highlight the nav link for whichever block is currently open (accordion guarantees at most
+     * one). Called right after any accordion state change instead of relying solely on the
+     * scrollspy IntersectionObserver, which may not re-fire when the open block was already
+     * inside its trigger zone before the change (e.g. no real scroll distance to cross).
+     */
+    syncActiveNavFromOpenBlock() {
+        const open = document.querySelector('.stats-content .stats-block[id]:not(.is-collapsed)');
+        this.setActiveNavSection(open ? open.id : null);
+    }
+
+    /** Same trigger as the quick-link click handling in config-general-layers.js. */
+    isBlockInViewport(block) {
+        const rect = block.getBoundingClientRect();
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        return rect.top > -40 && rect.top < vh * 0.6;
+    }
+
+    scrollToBlock(blockId) {
+        const block = document.getElementById(blockId);
+        if (!block) return;
+        block.classList.remove('is-collapsed');
+        const title = block.querySelector('.stats-block-title-row .section-title');
+        if (title) title.setAttribute('aria-expanded', 'true');
+        this.syncActiveNavFromOpenBlock();
+        const tourActive = document.body.hasAttribute('data-config-general-tour-active');
+        block.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    setupNavClicks() {
+        const indexEl = document.querySelector('.stats-index');
+        const chipEl = document.getElementById('stats-chip-nav');
+        const handler = (e) => {
+            const a = e.target.closest('.stats-index-list a, #stats-chip-nav a');
+            if (!a) return;
+            const id = (a.getAttribute('href') || '').replace(/^#/, '');
+            const block = id ? document.getElementById(id) : null;
+            if (!block) return;
+            e.preventDefault();
+            const isOpen = !block.classList.contains('is-collapsed');
+            if (isOpen && this.isBlockInViewport(block)) {
+                this.toggleBlock(id);
+                return;
+            }
+            this.collapseOtherBlocks(id);
+            this.scrollToBlock(id);
+        };
+        if (indexEl && indexEl.dataset.navClicksBound !== '1') {
+            indexEl.dataset.navClicksBound = '1';
+            indexEl.addEventListener('click', handler);
+        }
+        if (chipEl && chipEl.dataset.navClicksBound !== '1') {
+            chipEl.dataset.navClicksBound = '1';
+            chipEl.addEventListener('click', handler);
+        }
+    }
+
     // ── Overview ───────────────────────────────────────────────────────────
 
     renderOverview(bookmarks, pages, manager) {
@@ -1542,6 +1644,8 @@ class ConfigStats {
         this.bindExportButton(manager);
         this.bindTableFilter();
         this.applyTableFilter();
+        this.setupBlockCollapsible();
+        this.setupNavClicks();
         this.initScrollspy();
         window.configManager?.ui?.refreshTabBreadcrumb?.('stats');
     }

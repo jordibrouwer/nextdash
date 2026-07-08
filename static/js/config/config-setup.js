@@ -1480,6 +1480,7 @@ class ConfigSetup {
                 syncTitleA11y(card, title);
                 if (card.getAttribute('data-general-panel')) persistState();
                 if (panelId === 'reset') this.c.syncResetPanelGuard();
+                this.c.generalLayers?.syncActiveNavFromOpenPanel?.();
             };
             title.addEventListener('click', toggleCard);
             title.addEventListener('keydown', (e) => {
