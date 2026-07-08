@@ -97,7 +97,7 @@ body.config-is-dirty .general-layout {
 }
 
 .general-card[data-general-panel] {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: calc(var(--config-general-index-sticky-top, 5.75rem) + 0.5rem);
 }
 
 /* Fused General surface: keep chrome + toolbar in normal flow on every layer (no sticky).

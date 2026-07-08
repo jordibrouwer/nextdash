@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.08.1 — July 2026](#v2026070081--july-2026)
 - [v2026.07.08 — July 2026](#v20260708--july-2026)
 - [v2026.07.07 — July 2026](#v20260707--july-2026)
 - [v2026.07.06.1 — July 2026](#v202607061--july-2026)
@@ -79,6 +80,22 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.08.1 — July 2026
+
+**Hotfix after v2026.07.08** — General quick-link clicks now land on the section title instead of scrolling a few lines past it.
+
+### Config → General
+
+- **fix** **Quick-link scroll offset** — clicking a quick link (e.g. *Appearance & Style*) scrolled the section title a few lines behind the sticky toolbar instead of stopping right below it; `scroll-margin-top` was hardcoded to `5rem` while the sticky toolbar is `5.75rem` tall. Now derived from the same sticky-height variable as the toolbar itself, matching Help's fix in **v2026.07.08** (`config-general-layers.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.08.1** hotfix notes.
+- **fix** **What's new modal** — **v2026.07.08.1** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v134` data version and `2026.07-dashboard-release-v103` dashboard release token; `general-scroll-margin-1` config asset query string.
 
 ---
 

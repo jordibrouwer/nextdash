@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.08.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-08",
+  "sections": [
+    {
+      "title": "Config → General",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Quick-link scroll offset</strong> — clicking a quick link (e.g. <em>Appearance &amp; Style</em>) scrolled the section title a few lines behind the sticky toolbar instead of landing right below it; jumps now land on the section title, matching Help's fix in <strong>v2026.07.08</strong>."
+        }
+      ]
+    }
+  ]
+}
