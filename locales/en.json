@@ -2499,6 +2499,7 @@
         "advancedNavBookmarksEssentials": "Bookmarks",
         "advancedNavHeaderButtons": "Header & buttons",
         "generalLayerAllIntro": "Every Essentials and Advanced section on one scrollable page — use Expand all / Collapse all in the toolbar, or click a section header.",
+        "generalIndexTitle": "quick links",
         "breadcrumbAria": "Current location in config",
         "customTitleInputAria": "Custom dashboard title (max 100 characters)",
         "bgPresetAria": "Background preset: {name}",

@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=help-prose-collapsible-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=section-title-revert-1">
     <link rel="stylesheet" href="/static/css/onboarding.css">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=config-sticky-solid-1">
-    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=config-general-c4-1">
+    <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-split-shell-1">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css">
@@ -204,366 +204,32 @@
                 </p>
                 </div>
 
-                <div class="general-layout">
-                    <!-- 1. Appearance & Style: theme, background, font, animations -->
-                    <section class="general-card" data-general-panel="basics">
-                        <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
-                        <p class="general-card-intro" data-i18n="config.generalAppearanceIntro">Theme, background, font, animations, and visual polish.</p>
-                        <div class="form-group form-group--theme-select">
-                            <label for="theme-select" data-i18n="config.themeLabel">Theme:</label>
-                            <button type="button" id="theme-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.themeInfoTitle">ℹ</button>
-                            <select id="theme-select" class="config-select-wide">
-                                <option value="dark" data-i18n="dashboard.darkTheme">Dark</option>
-                                <option value="light" data-i18n="dashboard.lightTheme">Light</option>
-                            </select>
-                            <span id="theme-preview-badge" class="theme-preview-badge" hidden aria-live="polite" data-i18n="config.themePreviewSaveHint">Preview — click Save to keep</span>
-                        </div>
-                        <div class="form-group" id="auto-dark-mode-form-group">
-                            <div class="auto-dark-mode-row">
-                                <label class="checkbox-label" for="auto-dark-mode-checkbox">
-                                    <input type="checkbox" id="auto-dark-mode-checkbox">
-                                    <span class="checkbox-text" data-i18n="onboarding.autoDarkModeLabel"></span>
-                                    <button type="button" id="auto-dark-mode-info-btn" class="info-button" data-i18n-aria="config.autoDarkModeInfoTitle">ℹ</button>
-                                </label>
-                                <span id="system-appearance-badge" class="system-appearance-badge" aria-live="polite" hidden></span>
-                            </div>
-                            <p id="auto-dark-mode-unavailable-hint" class="form-hint auto-dark-mode-hint" hidden data-i18n="config.autoDarkModeUnavailableHint">Auto dark mode is not available for custom themes. Custom themes use one fixed palette instead of separate dark and light variants.</p>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="config.backgroundLabel">Background:</label>
-                            <button type="button" id="background-picker-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundPickerInfoTitle">ℹ</button>
-                            <div class="bg-picker-wrapper">
-                                <div class="bg-type-selector">
-                                    <button type="button" class="bg-type-btn" data-bg-type="none" data-i18n="config.backgroundNone">None</button>
-                                    <button type="button" class="bg-type-btn" data-bg-type="auto" data-i18n="config.backgroundAuto">Auto</button>
-                                    <button type="button" class="bg-type-btn" data-bg-type="gradient" data-i18n="config.backgroundGradient">Gradient</button>
-                                    <button type="button" class="bg-type-btn" data-bg-type="image" data-i18n="config.backgroundImage">Image</button>
-                                </div>
-                                <div id="bg-auto-section" class="bg-sub-section" hidden>
-                                    <p class="form-hint" data-i18n="config.backgroundAutoHint">A gradient matched to your active theme.</p>
-                                    <div class="bg-auto-preview" id="bg-auto-preview"></div>
-                                </div>
-                                <div id="bg-gradient-section" class="bg-sub-section" hidden>
-                                    <div class="bg-preset-grid" id="bg-preset-grid"></div>
-                                </div>
-                                <div id="bg-image-section" class="bg-sub-section" hidden>
-                                    <input type="url" id="bg-image-url-input"
-                                        data-i18n-placeholder="config.backgroundImageUrlPlaceholder"
-                                        placeholder="https://example.com/image.jpg">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="background-opacity-input" data-i18n="config.backgroundOpacityLabel">Background opacity</label>
-                            <button type="button" id="background-opacity-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundOpacityInfoTitle">ℹ</button>
-                            <div class="control-slider">
-                                <input type="range" id="background-opacity-input" class="slider-input" min="0.65" max="1" step="0.01" value="1">
-                                <span id="background-opacity-value" class="slider-value">100%</span>
-                            </div>
-                        </div>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-background-dots-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showBackgroundDots">Show background dots</span>
-                                    <button type="button" id="show-background-dots-info-btn" class="info-button" data-i18n-aria="config.showBackgroundDotsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="animations-enabled-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.enableAnimations">Enable animations</span>
-                                    <button type="button" id="animations-enabled-info-btn" class="info-button" data-i18n-aria="config.enableAnimationsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="font-preset-select" data-i18n="config.fontPresetLabel">UI font</label>
-                            <button type="button" id="font-preset-info-btn" class="info-button" data-i18n-aria="config.fontPresetInfoTitle">ℹ</button>
-                            <select id="font-preset-select" class="font-preset-select">
-                                <option value="source-code-pro" data-i18n="config.fontPresetSourceCodePro">Source Code Pro (mono)</option>
-                                <option value="jetbrains-mono" data-i18n="config.fontPresetJetBrainsMono">JetBrains Mono (mono)</option>
-                                <option value="ibm-plex-mono" data-i18n="config.fontPresetIbmPlexMono">IBM Plex Mono (mono)</option>
-                                <option value="inter" data-i18n="config.fontPresetInter">Inter (sans)</option>
-                                <option value="ibm-plex-sans" data-i18n="config.fontPresetIbmPlexSans">IBM Plex Sans (sans)</option>
-                                <option value="dm-sans" data-i18n="config.fontPresetDmSans">DM Sans (sans)</option>
-                                <option value="system" data-i18n="config.fontPresetSystem">System UI (sans)</option>
-                            </select>
-                            <div class="font-upload-row">
-                                <label for="custom-font-input" data-i18n="config.uploadFontLabel">Upload font:</label>
-                                <label for="custom-font-input" class="btn btn-secondary btn-small file-input-btn" data-i18n="config.chooseFile">Choose file</label>
-                                <input type="file" id="custom-font-input" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden>
-                                <span id="custom-font-status" class="setting-hint font-upload-status" aria-live="polite"></span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="config.fontSizeLabel">Font size:</label>
-                            <button type="button" id="font-size-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.fontSizeInfoTitle">ℹ</button>
-                            <div class="font-size-selector">
-                                <button type="button" class="font-size-option" data-size="xs">xs</button>
-                                <button type="button" class="font-size-option" data-size="s">s</button>
-                                <button type="button" class="font-size-option" data-size="sm">sm</button>
-                                <button type="button" class="font-size-option active" data-size="m">m</button>
-                                <button type="button" class="font-size-option" data-size="lg">lg</button>
-                                <button type="button" class="font-size-option" data-size="l">l</button>
-                                <button type="button" class="font-size-option" data-size="xl">xl</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="font-weight-select" data-i18n="config.fontWeightLabel">Font weight:</label>
-                            <button type="button" id="font-weight-info-btn" class="info-button" data-i18n-aria="config.fontWeightInfoTitle">ℹ</button>
-                            <select id="font-weight-select">
-                                <option value="normal" data-i18n="config.fontWeightNormal">Normal</option>
-                                <option value="600" data-i18n="config.fontWeightSemiBold">Semi-bold</option>
-                                <option value="bold" data-i18n="config.fontWeightBold">Bold</option>
-                            </select>
-                        </div>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item" id="theme-iconstyling-group">
-                                <label class="checkbox-label" for="theme-iconstyling-enable">
-                                    <input type="checkbox" id="theme-iconstyling-enable">
-                                    <span class="checkbox-text" data-i18n="config.iconStylingLabel">Favicon harmonization (per theme)</span>
-                                    <button type="button" id="theme-iconstyling-info-btn" class="info-button" data-i18n-aria="config.iconStylingInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div id="theme-iconstyling-controls" hidden>
-                                <div class="checkbox-tree-item checkbox-tree-child">
-                                    <span class="tree-symbol">├──</span>
-                                    <label for="theme-iconstyling-style" data-i18n="config.iconStylingStyleLabel">Style</label>
-                                    <select id="theme-iconstyling-style">
-                                        <option value="muted" data-i18n="config.iconStylingStyleMuted">Muted</option>
-                                        <option value="tinted" data-i18n="config.iconStylingStyleTinted">Tinted</option>
-                                        <option value="overlay" data-i18n="config.iconStylingStyleOverlay">Overlay</option>
-                                    </select>
-                                </div>
-                                <div class="checkbox-tree-item checkbox-tree-child">
-                                    <span class="tree-symbol">├──</span>
-                                    <label for="theme-iconstyling-intensity" data-i18n="config.iconStylingIntensityLabel">Intensity</label>
-                                    <input type="range" id="theme-iconstyling-intensity" min="0" max="1" step="0.05" value="0.5">
-                                </div>
-                                <div class="checkbox-tree-item checkbox-tree-child theme-iconstyling-preview-row">
-                                    <span class="tree-symbol">└──</span>
-                                    <div id="theme-iconstyling-preview" class="theme-icon-preview" aria-hidden="true">
-                                        <span class="preview-icon"></span>
-                                        <span class="preview-icon"></span>
-                                        <span class="preview-icon"></span>
-                                    </div>
-                                </div>
-                                <p class="form-hint theme-iconstyling-preview-hint" data-i18n="config.themeIconStylingPreviewHint">Preview only — click Save to apply on the dashboard.</p>
-                            </div>
-                        </div>
-                        <div class="checkbox-tree" style="margin-top:0.6rem">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-tips-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showTipsAboveButtons">Show tips above buttons</span>
-                                    <button type="button" id="show-tips-info-btn" class="info-button" data-i18n-aria="config.showTipsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- 2. Layout: columns, preset, density, packed columns, title -->
-                    <section class="general-card" data-general-panel="layout">
-                        <h3 class="section-title" data-i18n="config.generalLayoutTitle">Layout</h3>
-                        <p class="general-card-intro" data-i18n="config.generalLayoutIntro">Grid structure, column count, layout preset, and density.</p>
-                        <div class="form-group">
-                            <label for="columns-input" data-i18n="config.columnsLabel">Columns per row:</label>
-                            <div class="number-input-wrapper">
-                                <input type="number" id="columns-input" data-i18n-aria="config.columnsInputAria" min="1" max="6" value="3">
-                                <div class="number-input-controls">
-                                    <button type="button" class="number-input-btn number-input-up" data-input="columns-input" data-i18n-aria="config.columnsIncreaseAria">▲</button>
-                                    <button type="button" class="number-input-btn number-input-down" data-input="columns-input" data-i18n-aria="config.columnsDecreaseAria">▼</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="layout-version-select" data-i18n="config.layoutVersionLabel">Layout version:</label>
-                            <button type="button" id="layout-version-info-btn" class="info-button" data-i18n-aria="config.layoutVersionInfoTitle">ℹ</button>
-                            <select id="layout-version-select"></select>
-                        </div>
-                        <p id="layout-version-beta-notice" class="setting-description setting-description--beta" data-i18n="config.layoutVersionBetaNotice">Modern and Glass are still in early beta and not finished yet. Classic is recommended for the best experience.</p>
-                        <p id="layout-version-description" class="setting-description" aria-live="polite"></p>
-                        <div class="form-group">
-                            <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
-                            <button type="button" id="layout-preset-info-btn" class="info-button" data-i18n-aria="config.layoutPresetInfoTitle">ℹ</button>
-                            <select id="layout-preset-select"></select>
-                        </div>
-                        <p id="layout-preset-description" class="setting-description" aria-live="polite"></p>
-                        <div class="form-group">
-                            <label for="density-mode-select" data-i18n="config.densityLabel">Density:</label>
-                            <button type="button" id="density-mode-info-btn" class="info-button" data-i18n-aria="config.densityModeInfoTitle">ℹ</button>
-                            <select id="density-mode-select"></select>
-                        </div>
-                        <p id="density-mode-description" class="setting-description" aria-live="polite"></p>
-                        <div class="setting-preview" role="status" aria-live="polite">
-                            <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
-                            <span id="layout-density-preview-text"></span>
-                        </div>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label" for="packed-columns-checkbox">
-                                    <input type="checkbox" id="packed-columns-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.packedColumns">Tight column stack (fill vertical space)</span>
-                                    <button type="button" id="packed-columns-info-btn" class="info-button" data-i18n-aria="config.packedColumnsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-title-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showDashboardTitle">Show dashboard title</span>
-                                    <button type="button" id="show-title-info-btn" class="info-button" data-i18n-aria="config.showDashboardTitleInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group" id="launcher-icon-size-group">
-                            <label for="launcher-icon-size-select" data-i18n="config.launcherIconSizeLabel">Launcher icon size:</label>
-                            <button type="button" id="launcher-icon-size-info-btn" class="info-button" data-i18n-aria="config.launcherIconSizeInfoTitle">ℹ</button>
-                            <select id="launcher-icon-size-select">
-                                <option value="small" data-i18n="config.launcherIconSizeSmall">Small</option>
-                                <option value="normal" data-i18n="config.launcherIconSizeNormal">Normal</option>
-                                <option value="large" data-i18n="config.launcherIconSizeLarge">Large</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="calendar-url-input" data-i18n="config.calendarUrlLabel">Calendar URL:</label>
-                            <button type="button" id="calendar-url-info-btn" class="info-button" data-i18n-aria="config.calendarUrlInfoTitle">ℹ</button>
-                            <input type="url" id="calendar-url-input"
-                                   data-i18n-placeholder="config.calendarUrlPlaceholder"
-                                   placeholder="https://calendar.google.com"
-                                   autocomplete="off" spellcheck="false">
-                        </div>
-                    </section>
-
-                    <!-- 3. Bookmarks — Display & Behavior -->
-                    <section class="general-card" data-general-panel="bookmarks-display">
-                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks</h3>
-                        <p class="general-card-intro" data-i18n="config.generalBookmarksDisplayIntro">Icons, shortcuts, badges, link preview, sorting, and navigation.</p>
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-icons-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showIcons">Show favicons</span>
-                                    <button type="button" id="show-icons-info-btn" class="info-button" data-i18n-aria="config.showIconsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-shortcuts-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showShortcuts">Show bookmark shortcuts</span>
-                                    <button type="button" id="show-shortcuts-info-btn" class="info-button" data-i18n-aria="config.showShortcutsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-link-preview-cards-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showLinkPreviewCards">Show link preview cards on hover</span>
-                                    <button type="button" id="show-link-preview-cards-info-btn" class="info-button" data-i18n-aria="config.showLinkPreviewCardsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label for="link-preview-hover-delay-select" data-i18n="config.linkPreviewHoverDelayLabel">Preview hover delay:</label>
-                                <button type="button" id="link-preview-hover-delay-info-btn" class="info-button" data-i18n-aria="config.linkPreviewHoverDelayInfoTitle">ℹ</button>
-                                <select id="link-preview-hover-delay-select">
-                                    <option value="100" data-i18n="config.linkPreviewDelayFast">Fast (100ms)</option>
-                                    <option value="150" data-i18n="config.linkPreviewDelayBalanced">Balanced (150ms)</option>
-                                    <option value="250" data-i18n="config.linkPreviewDelaySlow">Calm (250ms)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group bookmark-preview-maintenance">
-                            <label class="bookmark-detail-label" data-i18n="config.bookmarkPreviewMaintenanceLabel">Stored preview metadata</label>
-                            <button type="button" id="bookmark-preview-maintenance-info-btn" class="info-button" data-i18n-aria="config.bookmarkPreviewMaintenanceInfoTitle">ℹ</button>
-                            <p class="form-hint" data-i18n="config.bookmarkPreviewMaintenanceHint">Refresh or clear title, description and image stored on bookmarks for hover cards and tooltips on the dashboard.</p>
-                            <div class="bookmark-preview-maintenance-actions">
-                                <button type="button" id="refresh-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewRefreshAll">Refresh all previews</button>
-                                <button type="button" id="clear-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewClearAll">Clear all previews</button>
-                            </div>
-                        </div>
-                        <hr class="section-group-divider" aria-hidden="true">
-                        <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="new-tab-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.openLinksInNewTab">Open links in new tab</span>
-                                    <button type="button" id="new-tab-info-btn" class="info-button" data-i18n-aria="config.openLinksInNewTabInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="paste-url-quick-add-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.pasteUrlQuickAdd">Paste URL to quick-add bookmark</span>
-                                    <button type="button" id="paste-url-quick-add-info-btn" class="info-button" data-i18n-aria="config.pasteUrlQuickAddInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="inbox-enabled-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.inboxEnabled">Enable Inbox page</span>
-                                    <button type="button" id="inbox-enabled-info-btn" class="info-button" data-i18n-aria="config.inboxEnabledInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="config-row checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="config-label" for="paste-destination-select" data-i18n="config.pasteDestination">Paste URL default</label>
-                                <select id="paste-destination-select" class="config-select">
-                                    <option value="ask" data-i18n="config.pasteDestinationAsk">Ask each time</option>
-                                    <option value="bookmark" data-i18n="config.pasteDestinationBookmark">Always add bookmark</option>
-                                    <option value="inbox" data-i18n="config.pasteDestinationInbox">Always save to Inbox</option>
-                                </select>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="hide-empty-categories-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.hideEmptyCategories">Hide empty categories</span>
-                                    <button type="button" id="hide-empty-categories-info-btn" class="info-button" data-i18n-aria="config.hideEmptyCategoriesInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="always-collapse-categories-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.alwaysCollapseCategories">Always collapse categories</span>
-                                    <button type="button" id="always-collapse-categories-info-btn" class="info-button" data-i18n-aria="config.alwaysCollapseCategoriesInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="global-shortcuts-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.globalShortcuts">Use shortcuts from all pages</span>
-                                    <button type="button" id="global-shortcuts-info-btn" class="info-button" data-i18n-aria="config.globalShortcutsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row general-keyboard-link-row">
-                                <span class="tree-symbol">└──</span>
-                                <div class="config-advanced-action-row">
-                                    <p class="config-advanced-action-text" data-i18n="config.keyboardTabHint">Customize which keys trigger search, navigation, and other dashboard actions.</p>
-                                    <div class="config-advanced-action-actions">
-                                        <a href="#keyboard" id="general-keyboard-link" class="btn btn-primary btn-small help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-page-tabs-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showPageTabs">Show page tabs</span>
-                                    <button type="button" id="show-page-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageTabsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item checkbox-tree-child">
-                                <span class="tree-symbol">└──</span>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-page-names-in-tabs-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showPageNamesInTabs">Show page names in tabs</span>
-                                    <button type="button" id="show-page-names-in-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageNamesInTabsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- 5. Localization: language, date/time, weather -->
-                    <section class="general-card" data-general-panel="localization">
+                <div class="general-layout config-split-layout">
+                    <nav id="general-chip-nav" class="general-chip-nav config-split-mobile-nav" aria-label="General sections"></nav>
+                    <aside class="general-index config-split-index">
+                        <h3 class="section-title config-split-index-title" data-i18n="config.generalIndexTitle">quick links</h3>
+                        <ul class="general-index-list config-split-index-list">
+                            <li><a href="#general-localization" data-nav-panel="localization" data-i18n="config.localizationTitle">Localization</a></li>
+                            <li><a href="#general-basics-core" data-nav-panel="basics-core" data-i18n="config.generalAppearanceTitle">Appearance & Style</a></li>
+                            <li><a href="#general-layout" data-nav-panel="layout" data-i18n="config.generalLayoutTitle">Layout</a></li>
+                            <li><a href="#general-bookmarks-essentials" data-nav-panel="bookmarks-essentials" data-i18n="config.generalBookmarksEssentialsTitle">Bookmarks</a></li>
+                            <li><a href="#general-smart-collections-summary" data-nav-panel="smart-collections-summary" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</a></li>
+                            <li><a href="#general-status-essentials-summary" data-nav-panel="status-essentials-summary" data-i18n="config.statusEssentialsTitle">Status monitoring</a></li>
+                            <li><a href="#general-search-buttons" data-nav-panel="search-buttons" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</a></li>
+                            <li><a href="#general-appearance-advanced" data-nav-panel="appearance-advanced" data-i18n="config.generalAppearanceAdvancedTitle">Appearance — fine-tuning</a></li>
+                            <li><a href="#general-bookmarks-display" data-nav-panel="bookmarks-display" data-i18n="config.generalBookmarksTitle">Bookmarks</a></li>
+                            <li><a href="#general-smart-collections" data-nav-panel="smart-collections" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</a></li>
+                            <li><a href="#general-status" data-nav-panel="status" data-i18n="config.generalDiagnosticsTitle">Diagnostics & Status</a></li>
+                            <li><a href="#general-branding" data-nav-panel="branding" data-i18n="config.generalBrandingTitle">Branding & Identity</a></li>
+                            <li><a href="#general-search-input" data-nav-panel="search-input" data-i18n="config.generalSearchInputTitle">Search & input</a></li>
+                            <li><a href="#general-system-tools" data-nav-panel="system-tools" data-i18n="config.generalSystemToolsTitle">System & tools</a></li>
+                            <li><a href="#general-tours-resets" data-nav-panel="tours-resets" data-i18n="config.tourResetsTitle">Tours & onboarding</a></li>
+                            <li><a href="#general-reset" data-nav-panel="reset" class="general-index-danger-link" data-i18n="config.resetSectionTitle">Reset</a></li>
+                        </ul>
+                    </aside>
+                    <div class="general-content config-split-content">
+                    <!-- Localization: language, date/time, weather -->
+                    <section class="general-card" id="general-localization" data-general-panel="localization" data-config-tier="essentials">
                         <h3 class="section-title" data-i18n="config.localizationTitle">Localization</h3>
                         <p class="general-card-intro" data-i18n="config.localizationIntro">Language, date and time display, and weather source.</p>
                         <div class="form-group">
@@ -658,8 +324,491 @@
                         </div>
                     </section>
 
-                    <!-- 6. Smart Collections -->
-                    <section class="general-card" data-general-panel="smart-collections">
+                    <!-- Appearance & Style — essentials -->
+                    <section class="general-card" id="general-basics-core" data-general-panel="basics-core" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
+                        <p class="general-card-intro" data-i18n="config.generalEssentialsAppearanceIntro">Theme, font size, favicon styling, animations, and tips.</p>
+                        <p class="general-card-intro general-appearance-actions"><a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a></p>
+                        <div class="form-group form-group--theme-select">
+                            <label for="theme-select" data-i18n="config.themeLabel">Theme:</label>
+                            <button type="button" id="theme-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.themeInfoTitle">ℹ</button>
+                            <select id="theme-select" class="config-select-wide">
+                                <option value="dark" data-i18n="dashboard.darkTheme">Dark</option>
+                                <option value="light" data-i18n="dashboard.lightTheme">Light</option>
+                            </select>
+                            <span id="theme-preview-badge" class="theme-preview-badge" hidden aria-live="polite" data-i18n="config.themePreviewSaveHint">Preview — click Save to keep</span>
+                        </div>
+                        <div class="form-group" id="auto-dark-mode-form-group">
+                            <div class="auto-dark-mode-row">
+                                <label class="checkbox-label" for="auto-dark-mode-checkbox">
+                                    <input type="checkbox" id="auto-dark-mode-checkbox">
+                                    <span class="checkbox-text" data-i18n="onboarding.autoDarkModeLabel"></span>
+                                    <button type="button" id="auto-dark-mode-info-btn" class="info-button" data-i18n-aria="config.autoDarkModeInfoTitle">ℹ</button>
+                                </label>
+                                <span id="system-appearance-badge" class="system-appearance-badge" aria-live="polite" hidden></span>
+                            </div>
+                            <p id="auto-dark-mode-unavailable-hint" class="form-hint auto-dark-mode-hint" hidden data-i18n="config.autoDarkModeUnavailableHint">Auto dark mode is not available for custom themes. Custom themes use one fixed palette instead of separate dark and light variants.</p>
+                        </div>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-background-dots-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showBackgroundDots">Show background dots</span>
+                                    <button type="button" id="show-background-dots-info-btn" class="info-button" data-i18n-aria="config.showBackgroundDotsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="animations-enabled-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.enableAnimations">Enable animations</span>
+                                    <button type="button" id="animations-enabled-info-btn" class="info-button" data-i18n-aria="config.enableAnimationsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="config.fontSizeLabel">Font size:</label>
+                            <button type="button" id="font-size-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.fontSizeInfoTitle">ℹ</button>
+                            <div class="font-size-selector">
+                                <button type="button" class="font-size-option" data-size="xs">xs</button>
+                                <button type="button" class="font-size-option" data-size="s">s</button>
+                                <button type="button" class="font-size-option" data-size="sm">sm</button>
+                                <button type="button" class="font-size-option active" data-size="m">m</button>
+                                <button type="button" class="font-size-option" data-size="lg">lg</button>
+                                <button type="button" class="font-size-option" data-size="l">l</button>
+                                <button type="button" class="font-size-option" data-size="xl">xl</button>
+                            </div>
+                        </div>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item" id="theme-iconstyling-group">
+                                <label class="checkbox-label" for="theme-iconstyling-enable">
+                                    <input type="checkbox" id="theme-iconstyling-enable">
+                                    <span class="checkbox-text" data-i18n="config.iconStylingLabel">Favicon harmonization (per theme)</span>
+                                    <button type="button" id="theme-iconstyling-info-btn" class="info-button" data-i18n-aria="config.iconStylingInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div id="theme-iconstyling-controls" hidden>
+                                <div class="checkbox-tree-item checkbox-tree-child">
+                                    <span class="tree-symbol">├──</span>
+                                    <label for="theme-iconstyling-style" data-i18n="config.iconStylingStyleLabel">Style</label>
+                                    <select id="theme-iconstyling-style">
+                                        <option value="muted" data-i18n="config.iconStylingStyleMuted">Muted</option>
+                                        <option value="tinted" data-i18n="config.iconStylingStyleTinted">Tinted</option>
+                                        <option value="overlay" data-i18n="config.iconStylingStyleOverlay">Overlay</option>
+                                    </select>
+                                </div>
+                                <div class="checkbox-tree-item checkbox-tree-child">
+                                    <span class="tree-symbol">├──</span>
+                                    <label for="theme-iconstyling-intensity" data-i18n="config.iconStylingIntensityLabel">Intensity</label>
+                                    <input type="range" id="theme-iconstyling-intensity" min="0" max="1" step="0.05" value="0.5">
+                                </div>
+                                <div class="checkbox-tree-item checkbox-tree-child theme-iconstyling-preview-row">
+                                    <span class="tree-symbol">└──</span>
+                                    <div id="theme-iconstyling-preview" class="theme-icon-preview" aria-hidden="true">
+                                        <span class="preview-icon"></span>
+                                        <span class="preview-icon"></span>
+                                        <span class="preview-icon"></span>
+                                    </div>
+                                </div>
+                                <p class="form-hint theme-iconstyling-preview-hint" data-i18n="config.themeIconStylingPreviewHint">Preview only — click Save to apply on the dashboard.</p>
+                            </div>
+                        </div>
+                        <div class="checkbox-tree" style="margin-top:0.6rem">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-tips-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showTipsAboveButtons">Show tips above buttons</span>
+                                    <button type="button" id="show-tips-info-btn" class="info-button" data-i18n-aria="config.showTipsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Layout: columns, preset, density, packed columns, title -->
+                    <section class="general-card" id="general-layout" data-general-panel="layout" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.generalLayoutTitle">Layout</h3>
+                        <p class="general-card-intro" data-i18n="config.generalLayoutIntro">Grid structure, column count, layout preset, and density.</p>
+                        <div class="form-group">
+                            <label for="columns-input" data-i18n="config.columnsLabel">Columns per row:</label>
+                            <div class="number-input-wrapper">
+                                <input type="number" id="columns-input" data-i18n-aria="config.columnsInputAria" min="1" max="6" value="3">
+                                <div class="number-input-controls">
+                                    <button type="button" class="number-input-btn number-input-up" data-input="columns-input" data-i18n-aria="config.columnsIncreaseAria">▲</button>
+                                    <button type="button" class="number-input-btn number-input-down" data-input="columns-input" data-i18n-aria="config.columnsDecreaseAria">▼</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="layout-version-select" data-i18n="config.layoutVersionLabel">Layout version:</label>
+                            <button type="button" id="layout-version-info-btn" class="info-button" data-i18n-aria="config.layoutVersionInfoTitle">ℹ</button>
+                            <select id="layout-version-select"></select>
+                        </div>
+                        <p id="layout-version-beta-notice" class="setting-description setting-description--beta" data-i18n="config.layoutVersionBetaNotice">Modern and Glass are still in early beta and not finished yet. Classic is recommended for the best experience.</p>
+                        <p id="layout-version-description" class="setting-description" aria-live="polite"></p>
+                        <div class="form-group">
+                            <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
+                            <button type="button" id="layout-preset-info-btn" class="info-button" data-i18n-aria="config.layoutPresetInfoTitle">ℹ</button>
+                            <select id="layout-preset-select"></select>
+                        </div>
+                        <p id="layout-preset-description" class="setting-description" aria-live="polite"></p>
+                        <div class="form-group">
+                            <label for="density-mode-select" data-i18n="config.densityLabel">Density:</label>
+                            <button type="button" id="density-mode-info-btn" class="info-button" data-i18n-aria="config.densityModeInfoTitle">ℹ</button>
+                            <select id="density-mode-select"></select>
+                        </div>
+                        <p id="density-mode-description" class="setting-description" aria-live="polite"></p>
+                        <div class="setting-preview" role="status" aria-live="polite">
+                            <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
+                            <span id="layout-density-preview-text"></span>
+                        </div>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label" for="packed-columns-checkbox">
+                                    <input type="checkbox" id="packed-columns-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.packedColumns">Tight column stack (fill vertical space)</span>
+                                    <button type="button" id="packed-columns-info-btn" class="info-button" data-i18n-aria="config.packedColumnsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-title-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showDashboardTitle">Show dashboard title</span>
+                                    <button type="button" id="show-title-info-btn" class="info-button" data-i18n-aria="config.showDashboardTitleInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="launcher-icon-size-group">
+                            <label for="launcher-icon-size-select" data-i18n="config.launcherIconSizeLabel">Launcher icon size:</label>
+                            <button type="button" id="launcher-icon-size-info-btn" class="info-button" data-i18n-aria="config.launcherIconSizeInfoTitle">ℹ</button>
+                            <select id="launcher-icon-size-select">
+                                <option value="small" data-i18n="config.launcherIconSizeSmall">Small</option>
+                                <option value="normal" data-i18n="config.launcherIconSizeNormal">Normal</option>
+                                <option value="large" data-i18n="config.launcherIconSizeLarge">Large</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="calendar-url-input" data-i18n="config.calendarUrlLabel">Calendar URL:</label>
+                            <button type="button" id="calendar-url-info-btn" class="info-button" data-i18n-aria="config.calendarUrlInfoTitle">ℹ</button>
+                            <input type="url" id="calendar-url-input"
+                                   data-i18n-placeholder="config.calendarUrlPlaceholder"
+                                   placeholder="https://calendar.google.com"
+                                   autocomplete="off" spellcheck="false">
+                        </div>
+                    </section>
+
+                    <!-- Bookmarks — essentials -->
+                    <section class="general-card" id="general-bookmarks-essentials" data-general-panel="bookmarks-essentials" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.generalBookmarksEssentialsTitle">Bookmarks</h3>
+                        <p class="general-card-intro" data-i18n="config.generalBookmarksEssentialsIntro">Everyday bookmark display and navigation.</p>
+                        <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Link previews, category collapse, and more are under Advanced → Bookmarks.</p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-icons-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showIcons">Show favicons</span>
+                                    <button type="button" id="show-icons-info-btn" class="info-button" data-i18n-aria="config.showIconsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="new-tab-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.openLinksInNewTab">Open links in new tab</span>
+                                    <button type="button" id="new-tab-info-btn" class="info-button" data-i18n-aria="config.openLinksInNewTabInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="hide-empty-categories-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.hideEmptyCategories">Hide empty categories</span>
+                                    <button type="button" id="hide-empty-categories-info-btn" class="info-button" data-i18n-aria="config.hideEmptyCategoriesInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="paste-url-quick-add-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.pasteUrlQuickAdd">Paste URL to quick-add bookmark</span>
+                                    <button type="button" id="paste-url-quick-add-info-btn" class="info-button" data-i18n-aria="config.pasteUrlQuickAddInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">├──</span>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="inbox-enabled-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.inboxEnabled">Enable Inbox page</span>
+                                    <button type="button" id="inbox-enabled-info-btn" class="info-button" data-i18n-aria="config.inboxEnabledInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="config-row checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label class="config-label" for="paste-destination-select" data-i18n="config.pasteDestination">Paste URL default</label>
+                                <select id="paste-destination-select" class="config-select">
+                                    <option value="ask" data-i18n="config.pasteDestinationAsk">Ask each time</option>
+                                    <option value="bookmark" data-i18n="config.pasteDestinationBookmark">Always add bookmark</option>
+                                    <option value="inbox" data-i18n="config.pasteDestinationInbox">Always save to Inbox</option>
+                                </select>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-page-tabs-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showPageTabs">Show page tabs</span>
+                                    <button type="button" id="show-page-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageTabsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-page-names-in-tabs-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showPageNamesInTabs">Show page names in tabs</span>
+                                    <button type="button" id="show-page-names-in-tabs-info-btn" class="info-button" data-i18n-aria="config.showPageNamesInTabsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Smart Collections — essentials summary -->
+                    <section class="general-card general-card-compact" id="general-smart-collections-summary" data-general-panel="smart-collections-summary" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</h3>
+                        <p id="smart-collections-enabled-summary" class="smart-collections-enabled-summary" aria-live="polite"></p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enable-smart-collections-master" aria-describedby="smart-collections-master-hint">
+                                    <span class="checkbox-text" data-i18n="config.enableSmartCollections">Enable smart collections</span>
+                                    <button type="button" id="enable-smart-collections-info-btn" class="info-button" data-i18n-aria="config.enableSmartCollectionsInfoTitle" aria-label="Smart collections information">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row smart-collections-action-row">
+                                <span class="tree-symbol">└──</span>
+                                <div class="config-advanced-action-row">
+                                    <p id="smart-collections-master-hint" class="config-advanced-action-text" data-i18n="config.enableSmartCollectionsHint">Turns smart collections on or off. Configure each collection in Advanced.</p>
+                                    <div class="config-advanced-action-actions">
+                                        <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="smart-collections" data-i18n="config.configureSmartCollections">Configure in Advanced →</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Status monitoring — essentials summary -->
+                    <section class="general-card general-card-compact" id="general-status-essentials-summary" data-general-panel="status-essentials-summary" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.statusEssentialsTitle">Status monitoring</h3>
+                        <p id="status-essentials-summary-line" class="status-essentials-summary-line" aria-live="polite"></p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-status-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showBookmarkStatus">Show bookmark status (online/offline)</span>
+                                    <button type="button" id="show-status-info-btn" class="info-button" data-i18n-aria="config.showBookmarkStatusInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row">
+                                <span class="tree-symbol">└──</span>
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.statusEssentialsHint">Per-bookmark checks (as in onboarding) live under Bookmarks. Health shows issues across all pages. Advanced: retries, colors, and ping.</p>
+                                    <div class="config-advanced-action-actions">
+                                        <a href="/health" id="status-essentials-health-link" class="btn btn-secondary btn-small status-essentials-health-link" hidden data-i18n="config.statusEssentialsOpenHealth">Health →</a>
+                                        <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="status" data-i18n="config.configureStatusAdvanced">Advanced settings →</button>
+                                        <a href="#bookmarks" id="status-essentials-bookmarks-link" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Header & Buttons -->
+                    <section class="general-card" id="general-search-buttons" data-general-panel="search-buttons" data-config-tier="essentials">
+                        <h3 class="section-title" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</h3>
+                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer and header.</p>
+                        <div class="config-action-list buttons-visibility-list" role="list">
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.addBookmarkButtonLabel">Add bookmark</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-add-bookmark-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.searchButtonLabel">Search</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-search-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.findersButtonLabel">Finders</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-finders-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.commandsButtonLabel">Commands</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-commands-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.cheatsheetButtonLabel">Cheatsheet</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-cheatsheet-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.recentButtonLabel">Recent</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-recent-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text buttons-visibility-label">
+                                    <span data-i18n="config.tagCloudButtonLabel">Tag cloud (/)</span>
+                                    <button type="button" id="show-tag-cloud-button-info-btn" class="info-button" data-i18n-aria="config.showTagCloudButtonInfoTitle">ℹ</button>
+                                </span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-tag-cloud-button-checkbox"></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text" data-i18n="config.configButtonLabel">Config</span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
+                                <span class="config-advanced-action-text buttons-visibility-label">
+                                    <span data-i18n="config.healthLinkButtonLabel">Health link</span>
+                                    <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
+                                </span>
+                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem">
+                            <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
+                            <button type="button" id="button-bar-position-info-btn" class="info-button" data-i18n-aria="config.buttonBarPositionInfoTitle">ℹ</button>
+                            <select id="button-bar-position-select">
+                                <option value="bottom"       data-i18n="config.buttonBarPositionBottom">Center-bottom (default)</option>
+                                <option value="bottom-left"  data-i18n="config.buttonBarPositionLeft">Bottom-left corner</option>
+                                <option value="bottom-right" data-i18n="config.buttonBarPositionRight">Bottom-right corner</option>
+                                <option value="side-left"    data-i18n="config.buttonBarPositionSideLeft">Side rail (left)</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <!-- Appearance — fine-tuning (advanced) -->
+                    <section class="general-card" id="general-appearance-advanced" data-general-panel="appearance-advanced" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.generalAppearanceAdvancedTitle">Appearance — fine-tuning</h3>
+                        <p class="general-card-intro" data-i18n="config.generalAppearanceAdvancedIntro">Background and fonts.</p>
+                        <div class="form-group">
+                            <label data-i18n="config.backgroundLabel">Background:</label>
+                            <button type="button" id="background-picker-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundPickerInfoTitle">ℹ</button>
+                            <div class="bg-picker-wrapper">
+                                <div class="bg-type-selector">
+                                    <button type="button" class="bg-type-btn" data-bg-type="none" data-i18n="config.backgroundNone">None</button>
+                                    <button type="button" class="bg-type-btn" data-bg-type="auto" data-i18n="config.backgroundAuto">Auto</button>
+                                    <button type="button" class="bg-type-btn" data-bg-type="gradient" data-i18n="config.backgroundGradient">Gradient</button>
+                                    <button type="button" class="bg-type-btn" data-bg-type="image" data-i18n="config.backgroundImage">Image</button>
+                                </div>
+                                <div id="bg-auto-section" class="bg-sub-section" hidden>
+                                    <p class="form-hint" data-i18n="config.backgroundAutoHint">A gradient matched to your active theme.</p>
+                                    <div class="bg-auto-preview" id="bg-auto-preview"></div>
+                                </div>
+                                <div id="bg-gradient-section" class="bg-sub-section" hidden>
+                                    <div class="bg-preset-grid" id="bg-preset-grid"></div>
+                                </div>
+                                <div id="bg-image-section" class="bg-sub-section" hidden>
+                                    <input type="url" id="bg-image-url-input"
+                                        data-i18n-placeholder="config.backgroundImageUrlPlaceholder"
+                                        placeholder="https://example.com/image.jpg">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="background-opacity-input" data-i18n="config.backgroundOpacityLabel">Background opacity</label>
+                            <button type="button" id="background-opacity-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.backgroundOpacityInfoTitle">ℹ</button>
+                            <div class="control-slider">
+                                <input type="range" id="background-opacity-input" class="slider-input" min="0.65" max="1" step="0.01" value="1">
+                                <span id="background-opacity-value" class="slider-value">100%</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="font-preset-select" data-i18n="config.fontPresetLabel">UI font</label>
+                            <button type="button" id="font-preset-info-btn" class="info-button" data-i18n-aria="config.fontPresetInfoTitle">ℹ</button>
+                            <select id="font-preset-select" class="font-preset-select">
+                                <option value="source-code-pro" data-i18n="config.fontPresetSourceCodePro">Source Code Pro (mono)</option>
+                                <option value="jetbrains-mono" data-i18n="config.fontPresetJetBrainsMono">JetBrains Mono (mono)</option>
+                                <option value="ibm-plex-mono" data-i18n="config.fontPresetIbmPlexMono">IBM Plex Mono (mono)</option>
+                                <option value="inter" data-i18n="config.fontPresetInter">Inter (sans)</option>
+                                <option value="ibm-plex-sans" data-i18n="config.fontPresetIbmPlexSans">IBM Plex Sans (sans)</option>
+                                <option value="dm-sans" data-i18n="config.fontPresetDmSans">DM Sans (sans)</option>
+                                <option value="system" data-i18n="config.fontPresetSystem">System UI (sans)</option>
+                            </select>
+                            <div class="font-upload-row">
+                                <label for="custom-font-input" data-i18n="config.uploadFontLabel">Upload font:</label>
+                                <label for="custom-font-input" class="btn btn-secondary btn-small file-input-btn" data-i18n="config.chooseFile">Choose file</label>
+                                <input type="file" id="custom-font-input" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" hidden>
+                                <span id="custom-font-status" class="setting-hint font-upload-status" aria-live="polite"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="font-weight-select" data-i18n="config.fontWeightLabel">Font weight:</label>
+                            <button type="button" id="font-weight-info-btn" class="info-button" data-i18n-aria="config.fontWeightInfoTitle">ℹ</button>
+                            <select id="font-weight-select">
+                                <option value="normal" data-i18n="config.fontWeightNormal">Normal</option>
+                                <option value="600" data-i18n="config.fontWeightSemiBold">Semi-bold</option>
+                                <option value="bold" data-i18n="config.fontWeightBold">Bold</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <!-- Bookmarks — advanced -->
+                    <section class="general-card" id="general-bookmarks-display" data-general-panel="bookmarks-display" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.generalBookmarksTitle">Bookmarks</h3>
+                        <p class="general-card-intro" data-i18n="config.generalBookmarksDisplayIntro">Icons, shortcuts, badges, link preview, sorting, and navigation.</p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-shortcuts-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showShortcuts">Show bookmark shortcuts</span>
+                                    <button type="button" id="show-shortcuts-info-btn" class="info-button" data-i18n-aria="config.showShortcutsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-link-preview-cards-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.showLinkPreviewCards">Show link preview cards on hover</span>
+                                    <button type="button" id="show-link-preview-cards-info-btn" class="info-button" data-i18n-aria="config.showLinkPreviewCardsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="link-preview-hover-delay-select" data-i18n="config.linkPreviewHoverDelayLabel">Preview hover delay:</label>
+                                <button type="button" id="link-preview-hover-delay-info-btn" class="info-button" data-i18n-aria="config.linkPreviewHoverDelayInfoTitle">ℹ</button>
+                                <select id="link-preview-hover-delay-select">
+                                    <option value="100" data-i18n="config.linkPreviewDelayFast">Fast (100ms)</option>
+                                    <option value="150" data-i18n="config.linkPreviewDelayBalanced">Balanced (150ms)</option>
+                                    <option value="250" data-i18n="config.linkPreviewDelaySlow">Calm (250ms)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group bookmark-preview-maintenance">
+                            <label class="bookmark-detail-label" data-i18n="config.bookmarkPreviewMaintenanceLabel">Stored preview metadata</label>
+                            <button type="button" id="bookmark-preview-maintenance-info-btn" class="info-button" data-i18n-aria="config.bookmarkPreviewMaintenanceInfoTitle">ℹ</button>
+                            <p class="form-hint" data-i18n="config.bookmarkPreviewMaintenanceHint">Refresh or clear title, description and image stored on bookmarks for hover cards and tooltips on the dashboard.</p>
+                            <div class="bookmark-preview-maintenance-actions">
+                                <button type="button" id="refresh-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewRefreshAll">Refresh all previews</button>
+                                <button type="button" id="clear-all-bookmark-previews-btn" class="btn btn-secondary btn-small" data-i18n="config.bookmarkPreviewClearAll">Clear all previews</button>
+                            </div>
+                        </div>
+                        <hr class="section-group-divider" aria-hidden="true">
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="always-collapse-categories-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.alwaysCollapseCategories">Always collapse categories</span>
+                                    <button type="button" id="always-collapse-categories-info-btn" class="info-button" data-i18n-aria="config.alwaysCollapseCategoriesInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="global-shortcuts-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.globalShortcuts">Use shortcuts from all pages</span>
+                                    <button type="button" id="global-shortcuts-info-btn" class="info-button" data-i18n-aria="config.globalShortcutsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row general-keyboard-link-row">
+                                <span class="tree-symbol">└──</span>
+                                <div class="config-advanced-action-row">
+                                    <p class="config-advanced-action-text" data-i18n="config.keyboardTabHint">Customize which keys trigger search, navigation, and other dashboard actions.</p>
+                                    <div class="config-advanced-action-actions">
+                                        <a href="#keyboard" id="general-keyboard-link" class="btn btn-primary btn-small help-keyboard-cta" data-i18n="config.helpPageKeyboardOpenLink">Open keyboard settings</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Smart Collections — advanced -->
+                    <section class="general-card" id="general-smart-collections" data-general-panel="smart-collections" data-config-tier="advanced">
                         <h3 class="section-title" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</h3>
                         <p class="general-card-intro" data-i18n="config.generalSmartCollectionsIntro">Automatic bookmark collections based on usage and recency.</p>
 
@@ -792,88 +941,23 @@
                                 <div class="checkbox-tree-item" id="tag-collections-min-count-row">
                                     <label for="tag-collections-min-count" data-i18n="config.tagCollectionsMinCount">Minimum bookmarks per tag:</label>
                                     <div class="number-input-wrapper">
-                                        <button type="button" class="number-input-down" data-input="tag-collections-min-count">−</button>
                                         <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
-                                        <button type="button" class="number-input-up" data-input="tag-collections-min-count">+</button>
+                                        <div class="number-input-controls">
+                                            <button type="button" class="number-input-btn number-input-up" data-input="tag-collections-min-count">▲</button>
+                                            <button type="button" class="number-input-btn number-input-down" data-input="tag-collections-min-count">▼</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </details>
                     </section>
 
-                    <!-- 7. Header & Buttons -->
-                    <section class="general-card" data-general-panel="search-buttons">
-                        <h3 class="section-title" data-i18n="config.generalHeaderButtonsTitle">Header & Buttons</h3>
-                        <p class="general-card-intro" data-i18n="config.generalHeaderButtonsIntro">Button visibility in the dashboard footer and header.</p>
-                        <div class="config-action-list buttons-visibility-list" role="list">
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.addBookmarkButtonLabel">Add bookmark</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-add-bookmark-button-checkbox"></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.searchButtonLabel">Search</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-search-button-checkbox"></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.findersButtonLabel">Finders</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-finders-button-checkbox"></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.commandsButtonLabel">Commands</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-commands-button-checkbox"></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.cheatsheetButtonLabel">Cheatsheet</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-cheatsheet-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.recentButtonLabel">Recent</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-recent-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text buttons-visibility-label">
-                                    <span data-i18n="config.tagCloudButtonLabel">Tag cloud (/)</span>
-                                    <button type="button" id="show-tag-cloud-button-info-btn" class="info-button" data-i18n-aria="config.showTagCloudButtonInfoTitle">ℹ</button>
-                                </span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-tag-cloud-button-checkbox"></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text" data-i18n="config.configButtonLabel">Config</span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
-                            </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text buttons-visibility-label">
-                                    <span data-i18n="config.healthLinkButtonLabel">Health link</span>
-                                    <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
-                                </span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem">
-                            <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
-                            <button type="button" id="button-bar-position-info-btn" class="info-button" data-i18n-aria="config.buttonBarPositionInfoTitle">ℹ</button>
-                            <select id="button-bar-position-select">
-                                <option value="bottom"       data-i18n="config.buttonBarPositionBottom">Center-bottom (default)</option>
-                                <option value="bottom-left"  data-i18n="config.buttonBarPositionLeft">Bottom-left corner</option>
-                                <option value="bottom-right" data-i18n="config.buttonBarPositionRight">Bottom-right corner</option>
-                                <option value="side-left"    data-i18n="config.buttonBarPositionSideLeft">Side rail (left)</option>
-                            </select>
-                        </div>
-                    </section>
-
-                    <!-- 8. Diagnostics & Status -->
-                    <section class="general-card" data-general-panel="status">
+                    <!-- Diagnostics & Status — advanced -->
+                    <section class="general-card" id="general-status" data-general-panel="status" data-config-tier="advanced">
                         <h3 class="section-title" data-i18n="config.generalDiagnosticsTitle">Diagnostics & Status</h3>
                         <p class="general-card-intro" data-i18n="config.generalDiagnosticsIntro">Bookmark network status, health indicators, and sync notifications.</p>
                         <p class="form-hint status-two-level-hint" data-i18n="config.statusTwoLevelHint">Dashboard status is global. Each bookmark also needs its own status check enabled under Config → Bookmarks.</p>
                         <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-status-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showBookmarkStatus">Show bookmark status (online/offline)</span>
-                                    <button type="button" id="show-status-info-btn" class="info-button" data-i18n-aria="config.showBookmarkStatusInfoTitle">ℹ</button>
-                                </label>
-                            </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
                                 <span class="tree-symbol">└──</span>
                                 <label class="checkbox-label">
@@ -911,9 +995,11 @@
                                 <label for="status-offline-retries-input" data-i18n="config.statusOfflineRetries">Offline retries:</label>
                                 <button type="button" id="status-offline-retries-info-btn" class="info-button" data-i18n-aria="config.statusOfflineRetriesInfoTitle">ℹ</button>
                                 <div class="number-input-wrapper">
-                                    <button type="button" class="number-input-down" data-input="status-offline-retries-input">−</button>
                                     <input type="number" id="status-offline-retries-input" min="1" max="10" value="3">
-                                    <button type="button" class="number-input-up" data-input="status-offline-retries-input">+</button>
+                                    <div class="number-input-controls">
+                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retries-input">▲</button>
+                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retries-input">▼</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -921,9 +1007,11 @@
                                 <label for="status-offline-retry-delay-input" data-i18n="config.statusOfflineRetryDelay">Retry delay (ms):</label>
                                 <button type="button" id="status-offline-retry-delay-info-btn" class="info-button" data-i18n-aria="config.statusOfflineRetryDelayInfoTitle">ℹ</button>
                                 <div class="number-input-wrapper">
-                                    <button type="button" class="number-input-down" data-input="status-offline-retry-delay-input">−</button>
                                     <input type="number" id="status-offline-retry-delay-input" min="100" max="3000" step="50" value="450">
-                                    <button type="button" class="number-input-up" data-input="status-offline-retry-delay-input">+</button>
+                                    <div class="number-input-controls">
+                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retry-delay-input">▲</button>
+                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retry-delay-input">▼</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="checkbox-tree-item checkbox-tree-child">
@@ -949,8 +1037,8 @@
                         </div>
                     </section>
 
-                    <!-- 9. Branding & Identity -->
-                    <section class="general-card" data-general-panel="branding">
+                    <!-- Branding & Identity — advanced -->
+                    <section class="general-card" id="general-branding" data-general-panel="branding" data-config-tier="advanced">
                         <h3 class="section-title" data-i18n="config.generalBrandingTitle">Branding & Identity</h3>
                         <p class="general-card-intro" data-i18n="config.generalBrandingIntro">Custom favicon, font, and browser title for this installation.</p>
                         <div class="checkbox-tree">
@@ -990,39 +1078,11 @@
                         </div>
                     </section>
 
-                    <!-- 10. Advanced: power-user options -->
-                    <section class="general-card" data-general-panel="advanced-general">
-                        <h3 class="section-title" data-i18n="config.generalAdvancedTitle">Advanced</h3>
-                        <p class="general-card-intro" data-i18n="config.generalAdvancedIntro">Power-user options: launcher mode, search behavior, and device settings.</p>
+                    <!-- Search & input — advanced -->
+                    <section class="general-card" id="general-search-input" data-general-panel="search-input" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.generalSearchInputTitle">Search & input</h3>
+                        <p class="general-card-intro" data-i18n="config.generalSearchInputIntro">Search overlay behavior and suggestions.</p>
                         <div class="checkbox-tree">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="hypr-mode-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.hyprMode">HyprMode (Launcher mode for PWA)</span>
-                                    <button type="button" id="hypr-mode-info-btn" class="info-button" data-i18n-aria="config.hyprModeInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item pwa-install-panel" id="pwa-install-panel">
-                                <p class="config-advanced-action-text" id="pwa-install-status" data-i18n="config.pwaInstallHint">Install nextDash for launcher-style access (pairs well with HyprMode).</p>
-                                <div class="config-advanced-action-actions">
-                                    <button type="button" id="pwa-install-trigger-btn" class="btn btn-secondary btn-small" hidden data-i18n="config.pwaInstallButton">Add to home screen</button>
-                                </div>
-                                <div id="pwa-install-steps" class="pwa-install-steps" data-fallback="<ol><li>Open the dashboard in your browser.</li><li>Use the browser menu → <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li>Enable HyprMode above for launcher behaviour.</li></ol>"></div>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="device-specific-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.deviceSpecificSettings">Use device-specific settings</span>
-                                    <button type="button" id="device-specific-info-btn" class="info-button" data-i18n-aria="config.deviceSpecificSettingsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="allow-local-bookmarks-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.allowLocalBookmarks">Allow localhost &amp; private-network bookmarks</span>
-                                    <button type="button" id="allow-local-bookmarks-info-btn" class="info-button" data-i18n-aria="config.allowLocalBookmarksInfoTitle">ℹ</button>
-                                </label>
-                            </div>
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="keep-search-open-when-empty-checkbox">
@@ -1066,8 +1126,51 @@
                                     <button type="button" id="include-finders-in-search-info-btn" class="info-button" data-i18n-aria="config.includeFindersInSearchInfoTitle">ℹ</button>
                                 </label>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- System & tools — advanced -->
+                    <section class="general-card" id="general-system-tools" data-general-panel="system-tools" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.generalSystemToolsTitle">System & tools</h3>
+                        <p class="general-card-intro" data-i18n="config.generalSystemToolsIntro">Launcher mode, device settings, tours, and maintenance.</p>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="hypr-mode-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.hyprMode">HyprMode (Launcher mode for PWA)</span>
+                                    <button type="button" id="hypr-mode-info-btn" class="info-button" data-i18n-aria="config.hyprModeInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item pwa-install-panel" id="pwa-install-panel">
+                                <p class="config-advanced-action-text" id="pwa-install-status" data-i18n="config.pwaInstallHint">Install nextDash for launcher-style access (pairs well with HyprMode).</p>
+                                <div class="config-advanced-action-actions">
+                                    <button type="button" id="pwa-install-trigger-btn" class="btn btn-secondary btn-small" hidden data-i18n="config.pwaInstallButton">Add to home screen</button>
+                                </div>
+                                <div id="pwa-install-steps" class="pwa-install-steps" data-fallback="<ol><li>Open the dashboard in your browser.</li><li>Use the browser menu → <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li>Enable HyprMode above for launcher behaviour.</li></ol>"></div>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="device-specific-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.deviceSpecificSettings">Use device-specific settings</span>
+                                    <button type="button" id="device-specific-info-btn" class="info-button" data-i18n-aria="config.deviceSpecificSettingsInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allow-local-bookmarks-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.allowLocalBookmarks">Allow localhost &amp; private-network bookmarks</span>
+                                    <button type="button" id="allow-local-bookmarks-info-btn" class="info-button" data-i18n-aria="config.allowLocalBookmarksInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tours & onboarding resets — advanced -->
+                    <section class="general-card" id="general-tours-resets" data-general-panel="tours-resets" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.tourResetsTitle">Tours &amp; onboarding</h3>
+                        <div class="checkbox-tree">
                             <div class="checkbox-tree-item tour-resets-wrapper">
-                                <details class="tour-resets-details">
+                                <details class="tour-resets-details" open>
                                     <summary class="tour-resets-summary" data-i18n="config.tourResetsTitle">Tours &amp; onboarding</summary>
                                     <div class="tour-resets-body">
                                         <div class="config-action-list">
@@ -1169,7 +1272,7 @@
                     </section>
 
                     <!-- Reset -->
-                    <section class="general-card general-card-danger" data-general-panel="reset">
+                    <section class="general-card general-card-danger" id="general-reset" data-general-panel="reset" data-config-tier="advanced">
                         <h3 class="section-title" data-i18n="config.resetSectionTitle">Reset</h3>
                         <p class="general-card-intro reset-expand-hint" data-i18n="config.resetExpandToConfirm">Expand this section to access the reset button.</p>
                         <div class="reset-danger-body">
@@ -1185,6 +1288,7 @@
                         </div>
                     </section>
 
+                    </div><!-- end .general-content -->
                 </div><!-- end .general-layout -->
                 </div><!-- end .general-tab-surface -->
 
@@ -2375,10 +2479,10 @@
     <script src="/static/js/config/config-tab-tours.js?v=config-stats-tour-on-1"></script>
     <script src="/static/js/config/config-persistence.js?v=config-settings-guard-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=inbox-intro-modal-reset-2"></script>
+    <script src="/static/js/config/config-setup.js?v=general-accordion-1"></script>
     <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2"></script>
     <script src="/static/js/config/config-language.js?v=search-index-refresh-1"></script>
-    <script src="/static/js/config/config-general-layers.js?v=inbox-paste-coupling-1"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-split-shell-4"></script>
     <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}"></script>
     <script src="/static/js/config-tour-runtime.js"></script>
     <script src="/static/js/config-general-tour.js?v=general-tour-c4-1"></script>

@@ -35,17 +35,19 @@ class ConfigGeneralLayers {
         this.toolbar = document.getElementById('general-layer-toolbar');
         if (!this.root || !this.toolbar) return;
 
-        this.restructurePanels();
+        this.wireThemeColorsLink();
         if (!this._handlersWired) {
             this.setupLayerSwitcher();
             this.setupExpandCollapseAll();
             this.setupLayerJumps();
             this.setupSmartCollectionsMaster();
             this.setupSmartCollectionLabelPropagation();
+            this.setupNavClicks();
             this._handlersWired = true;
         }
         this.refreshCheckboxTreeSymbols();
         this.wireStatusEssentialsLinks();
+        this.initScrollspy();
     }
 
     syncLayerFromUrlOrStorage() {
@@ -70,34 +72,6 @@ class ConfigGeneralLayers {
         }
 
         this.applyHash(hash);
-    }
-
-    restructurePanels() {
-        if (this.root.dataset.layersReady === '1') return;
-
-        this.splitBasicsPanel();
-        this.injectAppearanceEssentialsActions(this.root.querySelector('[data-general-panel="basics-core"]'));
-        this.wireThemeColorsLink();
-        this.createBookmarksEssentialsPanel();
-        this.createSmartCollectionsSummary();
-        this.createStatusEssentialsSummary();
-        this.splitAdvancedGeneralPanel();
-        this.assignPanelTiers();
-        this.reorderPanels();
-        this.refreshCheckboxTreeSymbols();
-        this.root.dataset.layersReady = '1';
-    }
-
-    appendCheckboxTreeItemWithChildren(tree, checkboxId, scope) {
-        const item = scope?.querySelector(`#${checkboxId}`)?.closest('.checkbox-tree-item');
-        if (!item || !tree) return;
-        const nodes = [item];
-        let sibling = item.nextElementSibling;
-        while (sibling?.classList.contains('checkbox-tree-child')) {
-            nodes.push(sibling);
-            sibling = sibling.nextElementSibling;
-        }
-        nodes.forEach((node) => tree.appendChild(node));
     }
 
     refreshCheckboxTreeSymbols(scope = this.root) {
@@ -125,56 +99,120 @@ class ConfigGeneralLayers {
         });
     }
 
-    splitBasicsPanel() {
-        const basics = this.root.querySelector('[data-general-panel="basics"]');
-        if (!basics || this.root.querySelector('[data-general-panel="basics-core"]')) return;
+    // ── Sections index / chip nav (shell: .config-split-layout, same pattern as Stats/Help) ──
 
-        const core = document.createElement('section');
-        core.className = 'general-card';
-        core.dataset.generalPanel = 'basics-core';
-        core.dataset.configTier = 'essentials';
-        core.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
-            <p class="general-card-intro" data-i18n="config.generalEssentialsAppearanceIntro">Theme, font size, favicon styling, animations, and tips.</p>
-        `;
-
-        const advanced = document.createElement('section');
-        advanced.className = 'general-card';
-        advanced.dataset.generalPanel = 'appearance-advanced';
-        advanced.dataset.configTier = 'advanced';
-        advanced.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalAppearanceAdvancedTitle">Appearance — fine-tuning</h3>
-            <p class="general-card-intro" data-i18n="config.generalAppearanceAdvancedIntro">Background and fonts.</p>
-        `;
-
-        const moveToCore = [];
-        const moveToAdvanced = [];
-        basics.querySelectorAll('.form-group, .checkbox-tree').forEach((el) => {
-            const isCore = Boolean(
-                el.querySelector('#theme-select, #auto-dark-mode-checkbox, .font-size-selector, #animations-enabled-checkbox, #theme-iconstyling-enable, #show-tips-checkbox')
-            );
-            if (isCore) moveToCore.push(el);
-            else moveToAdvanced.push(el);
-        });
-        moveToCore.forEach((el) => core.appendChild(el));
-        moveToAdvanced.forEach((el) => advanced.appendChild(el));
-
-        basics.replaceWith(core, advanced);
-        this.injectAppearanceEssentialsActions(core);
+    setupNavClicks() {
+        if (!this.root || this.root.dataset.navClicksBound === '1') return;
+        this.root.dataset.navClicksBound = '1';
+        const handler = (e) => {
+            const a = e.target.closest('a[data-nav-panel]');
+            if (!a) return;
+            e.preventDefault();
+            const panelId = a.getAttribute('data-nav-panel');
+            const card = this.root.querySelector(`[data-general-panel="${panelId}"]`);
+            const isOpen = Boolean(card)
+                && !card.hidden
+                && card.dataset.mobilePanelHidden !== 'true'
+                && !card.classList.contains('is-collapsed');
+            if (isOpen && this.isPanelInViewport(card)) {
+                this.collapsePanel(panelId);
+                return;
+            }
+            this.collapseOtherPanels(panelId);
+            this.scrollToPanel(panelId, { switchLayer: true });
+        };
+        document.querySelector('.general-index')?.addEventListener('click', handler);
+        document.getElementById('general-chip-nav')?.addEventListener('click', handler);
     }
 
-    injectAppearanceEssentialsActions(core) {
-        if (!core || core.querySelector('#general-theme-colors-link')) return;
-        const row = document.createElement('p');
-        row.className = 'general-card-intro general-appearance-actions';
-        row.innerHTML = '<a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a>';
-        if (window.MobileExperience?.isPhoneLayout?.()) {
-            row.hidden = true;
+    /**
+     * Whether a section's heading is genuinely visible near the top of the viewport (vs. open
+     * but scrolled mostly or fully out of view, where a silent collapse would look like nothing happened).
+     */
+    isPanelInViewport(card) {
+        const rect = card.getBoundingClientRect();
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        return rect.top > -40 && rect.top < vh * 0.6;
+    }
+
+    /** Click a quick link a second time while its section is open and in view: collapse it again. */
+    collapsePanel(panelId) {
+        const card = this.root?.querySelector(`[data-general-panel="${panelId}"]`);
+        if (!card) return;
+        card.classList.add('is-collapsed');
+        const title = card.querySelector('.section-title');
+        if (title) title.setAttribute('aria-expanded', 'false');
+        window.configManager?._persistGeneralPanelState?.();
+        window.configManager?.syncResetPanelGuard?.();
+    }
+
+    /** Navigating to a section via a quick link: collapse every other open section first (accordion). */
+    collapseOtherPanels(exceptPanelId) {
+        if (!this.root) return;
+        this.root.querySelectorAll('.general-card[data-general-panel]').forEach((card) => {
+            const panelId = card.getAttribute('data-general-panel');
+            if (panelId === exceptPanelId || panelId === 'reset') return;
+            if (card.hidden || card.classList.contains('is-collapsed')) return;
+            card.classList.add('is-collapsed');
+            const title = card.querySelector('.section-title');
+            if (title) title.setAttribute('aria-expanded', 'false');
+        });
+        window.configManager?._persistGeneralPanelState?.();
+        window.configManager?.syncResetPanelGuard?.();
+    }
+
+    buildChipNav() {
+        const host = document.getElementById('general-chip-nav');
+        const indexLinks = document.querySelectorAll('.general-index-list a');
+        if (!host || !indexLinks.length) return;
+        host.textContent = '';
+        indexLinks.forEach((link) => {
+            const panelId = link.getAttribute('data-nav-panel');
+            const li = link.closest('li');
+            const card = panelId ? this.root?.querySelector(`[data-general-panel="${panelId}"]`) : null;
+            const visible = Boolean(card) && !card.hidden && card.dataset.mobilePanelHidden !== 'true';
+            if (li) li.hidden = !visible;
+            if (!visible) return;
+            const a = document.createElement('a');
+            a.href = link.getAttribute('href') || '#';
+            a.textContent = link.textContent;
+            a.className = link.classList.contains('general-index-danger-link')
+                ? 'general-chip general-index-danger-link'
+                : 'general-chip';
+            a.dataset.navPanel = panelId || '';
+            if (link.classList.contains('is-active')) a.classList.add('is-active');
+            host.appendChild(a);
+        });
+    }
+
+    setActiveNavSection(panelId) {
+        document.querySelectorAll('.general-index-list a, #general-chip-nav a').forEach((a) => {
+            a.classList.toggle('is-active', a.getAttribute('data-nav-panel') === panelId);
+        });
+    }
+
+    initScrollspy() {
+        if (this._scrollspyObs) {
+            this._scrollspyObs.disconnect();
+            this._scrollspyObs = null;
         }
-        const intro = core.querySelector('.general-card-intro');
-        if (intro) intro.after(row);
-        else core.querySelector('.section-title')?.after(row);
-        this.wireThemeColorsLink();
+
+        this.buildChipNav();
+
+        const sections = this.root?.querySelectorAll('.general-content .general-card[id]:not([hidden])');
+        const links = document.querySelectorAll('.general-index-list a, #general-chip-nav a');
+        if (!sections?.length || !links.length || !('IntersectionObserver' in window)) return;
+
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    this.setActiveNavSection(entry.target.getAttribute('data-general-panel'));
+                }
+            });
+        }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+        sections.forEach((s) => obs.observe(s));
+        this._scrollspyObs = obs;
     }
 
     wireThemeColorsLink() {
@@ -226,84 +264,6 @@ class ConfigGeneralLayers {
         });
     }
 
-    createBookmarksEssentialsPanel() {
-        if (this.root.querySelector('[data-general-panel="bookmarks-essentials"]')) return;
-
-        const display = this.root.querySelector('[data-general-panel="bookmarks-display"]');
-        if (!display) return;
-
-        const essentials = document.createElement('section');
-        essentials.className = 'general-card';
-        essentials.dataset.generalPanel = 'bookmarks-essentials';
-        essentials.dataset.configTier = 'essentials';
-        essentials.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalBookmarksEssentialsTitle">Bookmarks</h3>
-            <p class="general-card-intro" data-i18n="config.generalBookmarksEssentialsIntro">Everyday bookmark display and navigation.</p>
-            <p class="general-card-intro general-card-intro-hint" data-i18n="config.generalBookmarksEssentialsAdvancedHint">Link previews, category collapse, and more are under Advanced → Bookmarks.</p>
-        `;
-
-        const tree = document.createElement('div');
-        tree.className = 'checkbox-tree';
-
-        const iconsItem = display.querySelector('#show-icons-checkbox')?.closest('.checkbox-tree-item');
-        if (iconsItem) tree.appendChild(iconsItem);
-
-        ['new-tab-checkbox', 'hide-empty-categories-checkbox'].forEach((id) => {
-            const item = display.querySelector(`#${id}`)?.closest('.checkbox-tree-item');
-            if (item) tree.appendChild(item);
-        });
-        this.appendCheckboxTreeItemWithChildren(tree, 'paste-url-quick-add-checkbox', display);
-        const pageTabsItem = display.querySelector('#show-page-tabs-checkbox')?.closest('.checkbox-tree-item');
-        if (pageTabsItem) tree.appendChild(pageTabsItem);
-        const pageNamesItem = display.querySelector('#show-page-names-in-tabs-checkbox')?.closest('.checkbox-tree-item');
-        if (pageNamesItem) tree.appendChild(pageNamesItem);
-
-        if (tree.children.length > 0) essentials.appendChild(tree);
-        this.refreshCheckboxTreeSymbols(tree);
-
-        display.parentNode.insertBefore(essentials, display);
-    }
-
-    createSmartCollectionsSummary() {
-        if (this.root.querySelector('[data-general-panel="smart-collections-summary"]')) return;
-
-        const full = this.root.querySelector('[data-general-panel="smart-collections"]');
-        if (!full) return;
-
-        const summary = document.createElement('section');
-        summary.className = 'general-card general-card-compact';
-        summary.dataset.generalPanel = 'smart-collections-summary';
-        summary.dataset.configTier = 'essentials';
-        summary.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalSmartCollectionsTitle">Smart Collections</h3>
-            <p id="smart-collections-enabled-summary" class="smart-collections-enabled-summary" aria-live="polite"></p>
-            <div class="checkbox-tree">
-                <div class="checkbox-tree-item">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="enable-smart-collections-master" aria-describedby="smart-collections-master-hint">
-                        <span class="checkbox-text" data-i18n="config.enableSmartCollections">Enable smart collections</span>
-                        <button type="button" id="enable-smart-collections-info-btn" class="info-button" data-i18n-aria="config.enableSmartCollectionsInfoTitle" aria-label="Smart collections information">ℹ</button>
-                    </label>
-                </div>
-                <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row smart-collections-action-row">
-                    <span class="tree-symbol">└──</span>
-                    <div class="config-advanced-action-row">
-                        <p id="smart-collections-master-hint" class="config-advanced-action-text" data-i18n="config.enableSmartCollectionsHint">Turns smart collections on or off. Configure each collection in Advanced.</p>
-                        <div class="config-advanced-action-actions">
-                            <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="smart-collections" data-i18n="config.configureSmartCollections">Configure in Advanced →</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        full.parentNode.insertBefore(summary, full);
-        if (full.dataset.configTier !== 'advanced') {
-            full.dataset.configTier = 'advanced';
-        }
-        this.syncSmartCollectionsSummaryCount();
-    }
-
     syncSmartCollectionsSummaryCount() {
         const el = document.getElementById('smart-collections-enabled-summary');
         if (!el) return;
@@ -312,49 +272,6 @@ class ConfigGeneralLayers {
         const tpl = this.t('smartCollectionsEnabledCount', '{count} of {total} enabled');
         el.textContent = tpl.replace('{count}', String(on)).replace('{total}', String(total));
         el.hidden = total === 0;
-    }
-
-    createStatusEssentialsSummary() {
-        if (this.root.querySelector('[data-general-panel="status-essentials-summary"]')) return;
-
-        const full = this.root.querySelector('[data-general-panel="status"]');
-        if (!full) return;
-
-        const summary = document.createElement('section');
-        summary.className = 'general-card general-card-compact';
-        summary.dataset.generalPanel = 'status-essentials-summary';
-        summary.dataset.configTier = 'essentials';
-        summary.innerHTML = `
-            <h3 class="section-title" data-i18n="config.statusEssentialsTitle">Status monitoring</h3>
-            <p id="status-essentials-summary-line" class="status-essentials-summary-line" aria-live="polite"></p>
-            <div class="checkbox-tree">
-                <div class="checkbox-tree-item" id="status-essentials-toggle-slot"></div>
-                <div class="checkbox-tree-item checkbox-tree-child checkbox-tree-action-row">
-                    <span class="tree-symbol">└──</span>
-                    <div class="config-advanced-action-row">
-                        <p class="config-advanced-action-text" data-i18n="config.statusEssentialsHint">Per-bookmark checks (as in onboarding) live under Bookmarks. Health shows issues across all pages. Advanced: retries, colors, and ping.</p>
-                        <div class="config-advanced-action-actions">
-                            <a href="/health" id="status-essentials-health-link" class="btn btn-secondary btn-small status-essentials-health-link" hidden data-i18n="config.statusEssentialsOpenHealth">Health →</a>
-                            <button type="button" class="btn btn-secondary btn-small general-layer-jump" data-jump-panel="status" data-i18n="config.configureStatusAdvanced">Advanced settings →</button>
-                            <a href="#bookmarks" id="status-essentials-bookmarks-link" class="btn btn-secondary btn-small" data-i18n="config.manageBookmarkStatusChecks">Bookmark checks →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        full.parentNode.insertBefore(summary, full);
-
-        const toggleSlot = summary.querySelector('#status-essentials-toggle-slot');
-        const showStatusItem = full.querySelector('#show-status-checkbox')?.closest('.checkbox-tree-item');
-        if (toggleSlot && showStatusItem) {
-            toggleSlot.replaceWith(showStatusItem);
-        }
-
-        if (full.dataset.configTier !== 'advanced') {
-            full.dataset.configTier = 'advanced';
-        }
-        this.wireStatusEssentialsLinks();
     }
 
     wireStatusEssentialsLinks() {
@@ -372,96 +289,6 @@ class ConfigGeneralLayers {
             mgr.ui?.switchToTab?.('bookmarks');
             window.location.hash = '#bookmarks';
         });
-    }
-
-    splitAdvancedGeneralPanel() {
-        const old = this.root.querySelector('[data-general-panel="advanced-general"]');
-        if (!old || this.root.querySelector('[data-general-panel="search-input"]')) return;
-
-        const search = document.createElement('section');
-        search.className = 'general-card';
-        search.dataset.generalPanel = 'search-input';
-        search.dataset.configTier = 'advanced';
-        search.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalSearchInputTitle">Search & input</h3>
-            <p class="general-card-intro" data-i18n="config.generalSearchInputIntro">Search overlay behavior and suggestions.</p>
-        `;
-
-        const system = document.createElement('section');
-        system.className = 'general-card';
-        system.dataset.generalPanel = 'system-tools';
-        system.dataset.configTier = 'advanced';
-        system.innerHTML = `
-            <h3 class="section-title" data-i18n="config.generalSystemToolsTitle">System & tools</h3>
-            <p class="general-card-intro" data-i18n="config.generalSystemToolsIntro">Launcher mode, device settings, tours, and maintenance.</p>
-        `;
-
-        const searchIds = new Set([
-            'keep-search-open-when-empty-checkbox',
-            'interleave-mode-checkbox',
-            'show-search-flow-banner-checkbox',
-            'enable-fuzzy-suggestions-checkbox',
-            'fuzzy-suggestions-start-with-checkbox',
-            'include-finders-in-search-checkbox',
-        ]);
-
-        [...old.querySelectorAll('.checkbox-tree-item')].forEach((item) => {
-            const input = item.querySelector('input[type="checkbox"]');
-            const target = input && searchIds.has(input.id) ? search : system;
-            target.appendChild(item);
-        });
-
-        old.replaceWith(search, system);
-    }
-
-    assignPanelTiers() {
-        const tierMap = {
-            'basics-core': 'essentials',
-            localization: 'essentials',
-            layout: 'essentials',
-            'bookmarks-essentials': 'essentials',
-            'smart-collections-summary': 'essentials',
-            'status-essentials-summary': 'essentials',
-            'search-buttons': 'essentials',
-            'appearance-advanced': 'advanced',
-            'bookmarks-display': 'advanced',
-            'smart-collections': 'advanced',
-            status: 'advanced',
-            branding: 'advanced',
-            'search-input': 'advanced',
-            'system-tools': 'advanced',
-            reset: 'advanced',
-        };
-        this.root.querySelectorAll('[data-general-panel]').forEach((card) => {
-            const id = card.getAttribute('data-general-panel');
-            if (tierMap[id]) card.dataset.configTier = tierMap[id];
-        });
-    }
-
-    reorderPanels() {
-        const order = [
-            'localization',
-            'basics-core',
-            'layout',
-            'bookmarks-essentials',
-            'smart-collections-summary',
-            'status-essentials-summary',
-            'search-buttons',
-            'appearance-advanced',
-            'bookmarks-display',
-            'smart-collections',
-            'status',
-            'branding',
-            'search-input',
-            'system-tools',
-            'reset',
-        ];
-        const frag = document.createDocumentFragment();
-        order.forEach((id) => {
-            const el = this.root.querySelector(`[data-general-panel="${id}"]`);
-            if (el) frag.appendChild(el);
-        });
-        this.root.appendChild(frag);
     }
 
     setupLayerSwitcher() {
@@ -673,6 +500,7 @@ class ConfigGeneralLayers {
             'general',
             this.getBreadcrumbSubsection()
         );
+        this.initScrollspy();
         this.scheduleLayerSideEffects({ layerChanged: prevLayer !== this.layer });
     }
 

@@ -969,15 +969,18 @@ test.describe('config tab groups (v5)', () => {
                 save: w('.config-actions-top'),
                 tabs: w('.tabs-scroll-wrapper'),
                 toolbar: w('.general-layer-toolbar'),
+                content: w('.general-content'),
                 card: w('.general-card:not([hidden])'),
             };
         });
 
+        // The toolbar/save/tabs chrome sits above the split layout and spans the full column;
+        // the card sits inside the sections content pane next to the sticky index sidebar (shell: .config-split-layout).
         expect(widths.column).toBeGreaterThan(0);
         expectWidthNear(widths.save, widths.column);
         expectWidthNear(widths.tabs, widths.column);
         expectWidthNear(widths.toolbar, widths.column);
-        expectWidthNear(widths.card, widths.column);
+        expectWidthNear(widths.card, widths.content);
     });
 });
 

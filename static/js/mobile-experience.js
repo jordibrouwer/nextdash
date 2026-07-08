@@ -184,18 +184,20 @@
             const id = card.getAttribute('data-general-panel');
             card.dataset.mobilePanelHidden = MOBILE_GENERAL_PANELS.includes(id) ? 'false' : 'true';
         });
-        const themePanel = layers.root.querySelector('[data-general-panel="basics-core"]');
+        const content = layers.root.querySelector('.general-content') || layers.root;
+        const themePanel = content.querySelector('[data-general-panel="basics-core"]');
         const mobileOrder = ['localization', 'basics-core', 'layout'];
         const mobileFrag = document.createDocumentFragment();
         mobileOrder.forEach((id) => {
-            const el = layers.root.querySelector(`[data-general-panel="${id}"]`);
+            const el = content.querySelector(`[data-general-panel="${id}"]`);
             if (el) mobileFrag.appendChild(el);
         });
         if (mobileFrag.childNodes.length) {
-            layers.root.prepend(mobileFrag);
+            content.prepend(mobileFrag);
         } else if (themePanel) {
-            layers.root.prepend(themePanel);
+            content.prepend(themePanel);
         }
+        layers.buildChipNav?.();
         const toolbar = document.getElementById('general-layer-toolbar');
         if (toolbar) toolbar.hidden = true;
         const introAdv = document.getElementById('general-layer-intro-advanced');
@@ -232,6 +234,7 @@
         if (mobileSearchHost) mobileSearchHost.hidden = true;
         const themeEditorLink = document.querySelector('.general-appearance-actions');
         if (themeEditorLink) themeEditorLink.hidden = false;
+        layers.buildChipNav?.();
         window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 

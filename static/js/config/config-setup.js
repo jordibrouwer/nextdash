@@ -1473,6 +1473,10 @@ class ConfigSetup {
             syncTitleA11y(card, title);
             const toggleCard = () => {
                 card.classList.toggle('is-collapsed');
+                const isNowExpanded = !card.classList.contains('is-collapsed');
+                if (isNowExpanded && panelId) {
+                    this.c.generalLayers?.collapseOtherPanels?.(panelId);
+                }
                 syncTitleA11y(card, title);
                 if (card.getAttribute('data-general-panel')) persistState();
                 if (panelId === 'reset') this.c.syncResetPanelGuard();
