@@ -237,6 +237,19 @@
         return el;
     }
 
+    /** Same trigger distance as the IntersectionObserver's rootMargin below, checked manually. */
+    const LAZY_TRIGGER_MARGIN_PX = 160;
+
+    function isSentinelTriggered(sentinel, root) {
+        if (!sentinel || !root) {
+            return false;
+        }
+        const sRect = sentinel.getBoundingClientRect();
+        const rRect = root.getBoundingClientRect();
+        return sRect.top < rRect.bottom + LAZY_TRIGGER_MARGIN_PX
+            && sRect.bottom > rRect.top - LAZY_TRIGGER_MARGIN_PX;
+    }
+
     function setupLazyLoader(scrollRoot, releasesRoot, manifestEntries, sessionId) {
         teardownLazyLoader();
 
@@ -279,6 +292,16 @@
                         teardownLazyLoader();
                         sentinel?.remove();
                         hint?.remove();
+                        return;
+                    }
+                    // A short release card can leave the sentinel inside the same trigger zone it
+                    // was already in, so isIntersecting never crosses back to false and the
+                    // IntersectionObserver has nothing to re-fire on. Check the geometry directly
+                    // and keep the chain going instead of silently stalling until the next scroll.
+                    // Reset `loading` first so the recursive call doesn't bail on its own guard.
+                    if (isSentinelTriggered(sentinel, scrollRoot)) {
+                        loading = false;
+                        return loadNext();
                     }
                 })
                 .catch(() => {
@@ -352,8 +375,6 @@
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
         const onAbort = typeof options.onAbort === 'function' ? options.onAbort : null;
         const releaseToken = getReleaseToken();
-        modalSessionId += 1;
-        const sessionId = modalSessionId;
 
         if (!window.AppModal) {
             onAbort?.();
@@ -391,6 +412,13 @@
                 return Promise.resolve();
             }
         }
+
+        // Only claim a new session once we're actually past every early-return guard above —
+        // bumping this unconditionally silently broke the lazy loader of an already-open modal
+        // whenever a second open call raced in (e.g. an auto-open racing a manual ★ click) and
+        // no-opped here, since loadNext() compares against the now-stale captured sessionId.
+        modalSessionId += 1;
+        const sessionId = modalSessionId;
 
         const finish = () => {
             teardownLazyLoader();

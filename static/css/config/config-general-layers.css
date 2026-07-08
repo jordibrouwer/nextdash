@@ -109,6 +109,53 @@ body.config-is-dirty .general-layout {
     z-index: auto;
 }
 
+/* Split-shell: sticky sections index (shell: .config-split-layout in config-tab-shell.css, same
+ * pattern as Stats/Help). overflow:visible on fused surfaces is required or position:sticky breaks. */
+.general-tab-surface .general-layout,
+.general-tab-surface .config-split-layout {
+    overflow: visible;
+}
+
+body[data-layout-version="classic"] .general-tab-surface,
+body[data-layout-version="modern"] .general-tab-surface,
+body[data-layout-version="glass"] .general-tab-surface {
+    overflow: visible;
+}
+
+.general-tab-surface .general-index,
+.general-tab-surface .config-split-index {
+    position: sticky;
+    top: var(--config-general-index-sticky-top, 5.75rem);
+    align-self: start;
+    z-index: 4;
+    border: none;
+    border-right: 1px solid var(--border-primary);
+    border-radius: 0;
+    background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
+    padding: 0.75rem;
+    margin: 0;
+    max-height: calc(100vh - var(--config-general-index-sticky-top, 5.75rem) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.general-index-list a.general-index-danger-link {
+    color: var(--accent-error);
+}
+
+.general-index-list a.general-index-danger-link:hover,
+.general-index-list a.general-index-danger-link:focus-visible,
+.general-index-list a.general-index-danger-link.is-active {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+}
+
+body[data-phone-layout="true"] .general-tab-surface .general-index,
+body[data-phone-layout="true"] .general-tab-surface .config-split-index {
+    display: none;
+}
+
 .general-panels-bulk-actions {
     display: flex;
     flex-wrap: wrap;

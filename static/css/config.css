@@ -1,7 +1,7 @@
 /* Config Styles - Imports all config modules */
 @import url('config/config-general.css?v=help-sticky-nav-1');
 @import url('config/config-tabs.css?v=config-tab-active-revert-1');
-@import url('config/config-forms.css');
+@import url('config/config-forms.css?v=section-title-revert-1');
 @import url('config/config-lists.css');
 @import url('config/config-classic-surfaces.css?v=config-polish-c2-2');
 @import url('config/config-modern-glass-surfaces.css?v=config-polish-c2-2');

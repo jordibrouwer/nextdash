@@ -39,7 +39,7 @@ var sharedAssetVersions = pageAssetVersions{
 	GlassTokensCSS:         "dashboard-d12-row-tokens-1",
 	OverlaysGlassCSS:       "whats-new-config-parity-1",
 	MobileExperienceCSS:    "phone-layout-6",
-	MobileExperienceJS:     "phone-layout-5",
+	MobileExperienceJS:     "general-split-shell-1",
 	FeatureSpotlightCSS:    "c15-reduced-motion-1",
 	FeatureSpotlightJS:     "paste-replay-v1",
 	LayoutModernNudgeJS:    "layout-versions-2",
@@ -50,6 +50,6 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-2",
-	WhatsNewData:           "whats-new-v131",
+	WhatsNewData:           "whats-new-v132",
 	DataRevision:           "data-revision-4",
 }

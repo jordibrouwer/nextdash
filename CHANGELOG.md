@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.07 — July 2026](#v20260707--july-2026)
 - [v2026.07.06.1 — July 2026](#v202607061--july-2026)
 - [v2026.07.06 — July 2026](#v20260706--july-2026)
 - [v2026.07.05.1 — July 2026](#v202607051--july-2026)
@@ -77,6 +78,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.07 — July 2026
+
+**Config → General split-shell** — sticky "quick links" sidebar navigation (same pattern as Stats/Help) with single-section accordion behaviour; Advanced split into smaller cards; number-input styling fix.
+
+### Config
+
+- **new** **General split-shell** — sticky **quick links** sidebar lists every section next to the settings content and highlights the section currently in view while you scroll (shell: `.config-split-layout`, same pattern as Stats/Help) (`templates/config.html`, `config-general-layers.css`).
+- **new** **Section accordion** — opening a section, from the quick-links sidebar or by clicking its own title, collapses whichever other section was open so only one stays expanded; a second click on an already-open section that's in view collapses it again; clicking the link for an open section that has scrolled out of view scrolls back to it instead of silently collapsing it off-screen (`config-general-layers.js`, `config-setup.js`).
+- **fix** **Section tiers now static** — Essentials/Advanced tiers live directly on each section in the template instead of being assembled by JS at load time, removing the old runtime DOM-splitting logic; **Advanced** now splits into **Search & input**, **System & tools**, and a standalone **Tours & onboarding** card instead of one long block (`config-general-layers.js`, `templates/config.html`).
+- **fix** **Number input styling** — *Offline retries*, *Retry delay*, and *Minimum bookmarks per tag* steppers now use the same themed background and button styling as other number inputs, such as *Columns per row* (`config-forms.css`).
+
+### What's new modal
+
+- **fix** **Lazy-load stalling** — a second `openWhatsNewModal()` call while the modal was already open (e.g. an automatic unread-release prompt racing a manual ★ click) silently invalidated the active session, freezing lazy-loading for the rest of that modal's lifetime; the session id now only advances once every early-return guard has passed.
+- **fix** **Lazy-load stopping after one release** — when an appended release wasn't tall enough to push the sentinel back out of the scroll-loader's trigger zone, `isIntersecting` never crossed back to `false` and the observer had nothing left to re-fire on, so scrolling further did nothing. The loader now checks the sentinel's position directly after each load and keeps the chain going instead of waiting on an observer event that might never come.
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.07** release notes and Config → General split-shell documentation.
+- **fix** **What's new modal** — **v2026.07.07** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v132` data version and `2026.07-dashboard-release-v101` dashboard release token; `general-split-shell-4`, `general-accordion-1`, `number-input-bg-1`, and `whats-new-lazy-session-fix-2` config asset query strings.
 
 ---
 

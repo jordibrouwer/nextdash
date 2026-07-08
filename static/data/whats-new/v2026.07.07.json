@@ -1,0 +1,37 @@
+{
+  "tag": "v2026.07.07",
+  "date": "July 2026",
+  "releasedAt": "2026-07-08",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>General split-shell</strong> — Config → General now uses a sticky <strong>quick links</strong> sidebar next to the settings content, same split-shell pattern as Stats and Help; the sidebar highlights the section currently in view as you scroll."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Section accordion</strong> — opening a section (via the sidebar or its own title) collapses whichever other section was open, so only one stays expanded. Clicking the link for an already-open, in-view section collapses it again; clicking the link for an open section scrolled out of view scrolls back to it instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Advanced split further</strong> — <strong>Search &amp; input</strong>, <strong>System &amp; tools</strong>, and a standalone <strong>Tours &amp; onboarding</strong> card replace one long <em>Advanced</em> block."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Number input styling</strong> — <em>Offline retries</em>, <em>Retry delay</em>, and <em>Minimum bookmarks per tag</em> steppers now match the themed background and button styling used elsewhere, like <em>Columns per row</em>."
+        }
+      ]
+    },
+    {
+      "title": "What's new modal",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Lazy-load stalling</strong> — this modal's own scroll-to-load-more could silently stop fetching further releases after the first one, or freeze entirely if it was opened twice in a row (e.g. an automatic unread-release prompt racing a manual ★ click). Fixed on both counts — you're reading this via the fix."
+        }
+      ]
+    }
+  ]
+}

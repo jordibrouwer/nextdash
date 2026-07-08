@@ -596,6 +596,8 @@
 
 .number-input-wrapper input[type="number"] {
     border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
     text-align: center;
     flex: 1;
     padding-right: 32px;
