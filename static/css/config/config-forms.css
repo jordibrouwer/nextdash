@@ -474,14 +474,21 @@
 /* Help tab support block */
 .help-support-block {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    gap: 0.6rem 1rem;
+    justify-content: center;
+    gap: 0.6rem;
     margin: 1.5rem 0 0.5rem;
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--border-primary);
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
+    text-align: center;
+}
+
+.help-support-block .wn-kofi-btn {
+    font-size: 0.95rem;
+    padding: 0.5rem 1.1rem;
 }
 
 .help-support-label {

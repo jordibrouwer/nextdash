@@ -136,6 +136,31 @@
     min-width: 0;
 }
 
+/* Sticky quick-links sidebar (shell: .config-split-layout, same pattern as Help/General).
+ * overflow:visible on fused surfaces is required or position:sticky breaks. */
+.stats-tab-surface .stats-layout,
+.stats-tab-surface .config-split-layout {
+    overflow: visible;
+}
+
+body[data-layout-version="classic"] .stats-tab-surface,
+body[data-layout-version="modern"] .stats-tab-surface,
+body[data-layout-version="glass"] .stats-tab-surface {
+    overflow: visible;
+}
+
+.stats-tab-surface .stats-index,
+.stats-tab-surface .config-split-index {
+    position: sticky;
+    top: var(--config-stats-index-sticky-top, 5.75rem);
+    align-self: start;
+    z-index: 4;
+    max-height: calc(100vh - var(--config-stats-index-sticky-top, 5.75rem) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* ── Blocks ── */
 .stats-block {
     border: 1px solid var(--border-primary);
@@ -150,6 +175,43 @@
 
 .stats-block > .section-title {
     margin: 0 0 0.7rem;
+}
+
+/* ── Collapsible blocks (accordion — same pattern as General's .general-card.is-collapsible) ── */
+.stats-block.is-collapsible .stats-block-title-row {
+    cursor: default;
+}
+
+.stats-block.is-collapsible .stats-block-title-row .section-title {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+}
+
+.stats-block.is-collapsible .stats-block-title-row .section-title:hover {
+    color: var(--text-primary);
+}
+
+.stats-block.is-collapsible .stats-block-title-row .section-title::before {
+    content: '−';
+    font-size: 1em;
+    font-weight: var(--font-weight-bold);
+    width: 1em;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--accent-primary);
+}
+
+.stats-block.is-collapsible.is-collapsed .stats-block-title-row .section-title::before {
+    content: '+';
+}
+
+.stats-block.is-collapsible.is-collapsed > *:not(.stats-block-title-row) {
+    display: none;
 }
 
 /* ── Period buttons ── */

@@ -428,7 +428,6 @@ html:has(#config-main) #config-main :is(
     align-self: start;
     max-height: min(70vh, calc(100vh - 12rem));
     overflow: auto;
-    border-right: 1px solid var(--border-primary);
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     padding: 0.75rem;
     margin: 0;
@@ -483,6 +482,7 @@ html:has(#config-main) #config-main :is(
     flex-direction: column;
     gap: 0;
     min-width: 0;
+    border-left: 1px solid var(--border-primary);
 }
 
 .config-split-mobile-nav {
@@ -533,7 +533,6 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-surface .config-split-index {
     border: none;
-    border-right: 1px solid var(--border-primary);
     border-radius: 0;
     box-shadow: none;
     top: 0;
@@ -560,6 +559,10 @@ html:has(#config-main) #config-main :is(
 
     .config-split-index {
         display: none;
+    }
+
+    .config-split-content {
+        border-left: none;
     }
 }
 

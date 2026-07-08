@@ -1,0 +1,46 @@
+{
+  "tag": "v2026.07.08",
+  "date": "July 2026",
+  "releasedAt": "2026-07-08",
+  "sections": [
+    {
+      "title": "Config → Help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Sections consolidated &amp; reordered</strong> — help topics are grouped into fewer, broader sections in a clearer order: <em>Getting started, Configuring nextDash, Keyboard shortcuts, Search/commands/toolbar, Finders, Appearance &amp; display, Organizing bookmarks, Pages/categories/bulk editing, Tags &amp; collections, Inbox, Health &amp; status, Data &amp; backups, Self-hosting &amp; troubleshooting</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Sticky accordion &amp; scrollspy</strong> — Help now uses the same sticky <strong>quick links</strong> sidebar, single-open section accordion, and scroll-position highlighting as Config → General and Stats."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Animated Ko-fi button</strong> — the <em>Support me on Ko-fi</em> button now has the same twinkling-star glow as the What's New modal's donate CTA, centered on its own row; the <strong>jordibrw.nl</strong> link is larger and accent-themed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quick-link scroll offset</strong> — clicking a quick link could land partway into a section, hiding its title behind the sticky toolbar; jumps now always land on the section title."
+        }
+      ]
+    },
+    {
+      "title": "Config → General",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Missing section borders</strong> — sections now get a dividing line between them, matching Help's bordered blocks, across Classic/Modern/Glass."
+        }
+      ]
+    },
+    {
+      "title": "Config shell",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Split-shell divider now spans the full page</strong> — the vertical line between the quick-links sidebar and the content column used to stop wherever the sidebar's sticky box ended; it now runs the full height of the section content and meets the shell's bottom border on both Help and General."
+        }
+      ]
+    }
+  ]
+}
