@@ -131,10 +131,13 @@ body {
    the config header/nav line up with the dashboard header instead of jumping. */
 html:has(#config-main) .config-page-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1600px);
+    /* Match the dashboard .container exactly: cap the box at 1600px with an
+       auto side margin (not a 1600px grid track centered inside a full-width
+       padded shell, which drifted narrower than the dashboard above 1600px). */
+    grid-template-columns: minmax(0, 1fr);
     justify-content: center;
     width: 100%;
-    max-width: 100%;
+    max-width: 1600px;
     margin-inline: auto;
     padding-inline: clamp(2rem, 6vw, 8rem);
     box-sizing: border-box;

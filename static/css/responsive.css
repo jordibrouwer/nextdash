@@ -33,7 +33,8 @@
     /* Keep the config page shell in step with the dashboard .container at this
        breakpoint so the config header/nav stay aligned with the dashboard. */
     html:has(#config-main) .config-page-shell {
-        grid-template-columns: minmax(0, 1600px);
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 1600px;
         padding-inline: clamp(1.5rem, 5vw, 6rem);
     }
 
