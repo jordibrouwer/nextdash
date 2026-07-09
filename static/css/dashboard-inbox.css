@@ -62,6 +62,9 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.4rem 0.5rem;
+    /* Icon-width of separation from the page tabs so the inbox reads as its own
+       group rather than another page tab. */
+    margin-left: 1.15rem;
 }
 
 .page-nav-btn--inbox .page-tab-icon {

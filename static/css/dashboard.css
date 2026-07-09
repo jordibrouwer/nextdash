@@ -1045,6 +1045,59 @@ body {
     color: var(--text-on-warning, #000);
 }
 
+/* Icon variant: health shown as an icon with an inline counter after it,
+   styled to match the inbox tab in the page navigation. */
+.health-link--icon {
+    /* Pull the health icon closer to the inbox tab (the .header-actions gap of
+       1.5rem is too wide between two compact icon buttons). */
+    margin-left: -1rem;
+}
+
+.health-link--icon a {
+    animation: none;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
+.health-link--icon a:hover {
+    text-shadow: none;
+}
+
+.health-link--icon .health-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+/* Inline pill counter after the icon (overrides the absolute superscript dot). */
+.health-link--icon .health-badge {
+    position: static;
+    top: auto;
+    right: auto;
+    min-width: 1.35rem;
+    height: auto;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
+    color: var(--accent-error);
+}
+
+.health-link--icon .health-badge.health-badge-warn {
+    border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
+    color: var(--accent-warning);
+}
+
 /* Dashboard Grid */
 .dashboard-grid {
     --dashboard-column-min: 250px;

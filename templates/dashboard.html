@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=container-clamp-margin-1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=health-icon-badge-2">
     <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v=dashboard-d12-row-tokens-1">
     <link rel="stylesheet" href="/static/css/modal.css?v=page-overview-modal-1">
     <link rel="stylesheet" href="/static/css/app-notification.css">
@@ -44,7 +44,7 @@
     <link rel="stylesheet" href="/static/css/dashboard-feature-promos.css?v=tag-filter-fix-1">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-tab-attention-3">
+    <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-tab-gap-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
@@ -80,8 +80,12 @@
                         <!-- Pages will be loaded here -->
                     </div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
-                    {{if .ShowHealthDashboard}}<div class="health-link">
-                        <a href="/health" data-i18n="dashboard.health">health</a>
+                    {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
+                        <a href="/health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
+                            <svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M3 12h4l2 6 4-14 2 8h6"/>
+                            </svg>
+                        </a>
                     </div>{{end}}
                     {{if .ShowConfigButton}}<div class="config-link">
                         <a href="/config" data-i18n="dashboard.config">config</a>
@@ -308,7 +312,7 @@
     <script src="/static/js/dashboard/dashboard-render-core.js?v=inbox-kbd-nav-3"></script>
     <script src="/static/js/dashboard/dashboard-render-incremental.js?v=config-category-sync-1"></script>
     <script src="/static/js/dashboard/dashboard-notifications.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-visual.js?v=inbox-header-title-1"></script>
+    <script src="/static/js/dashboard/dashboard-visual.js?v=health-icon-badge-2"></script>
     <script src="/static/js/dashboard/dashboard-date-weather.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-recent.js?v=recent-usage-d8-1"></script>
