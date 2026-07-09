@@ -136,7 +136,7 @@ html:has(#config-main) .config-page-shell {
     width: 100%;
     max-width: 100%;
     margin-inline: auto;
-    padding-inline: clamp(1rem, 3vw, 4.5rem);
+    padding-inline: clamp(2rem, 6vw, 8rem);
     box-sizing: border-box;
 }
 
@@ -152,7 +152,7 @@ html:has(#config-main) .config-page-column {
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 clamp(1rem, 3vw, 4.5rem);
+    padding: 0 clamp(2rem, 6vw, 8rem);
 }
 
 /* Equal-width chrome rows (save bar, tabs, General intro/cards) */

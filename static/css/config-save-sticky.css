@@ -67,7 +67,7 @@ body.config-is-dirty .config-save-sticky.is-scroll-active {
     /* Match the config page shell so the sticky bar aligns with the header/nav. */
     max-width: 1600px;
     margin: 0 auto;
-    padding: 0 clamp(1rem, 3vw, 4.5rem);
+    padding: 0 clamp(2rem, 6vw, 8rem);
     box-sizing: border-box;
     width: 100%;
     display: flex;

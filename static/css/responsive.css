@@ -24,24 +24,24 @@
     }
     
     .container {
-        /* Fixed clamp() margin (not a percentage) so whitespace stays small and
-           the columns keep their width as long as possible before shrinking. */
+        /* Roomier clamp() margin (not a percentage) so the columns sit closer
+           together, shrinking toward the floor as the window narrows. */
         max-width: 100%;
-        padding: 0 clamp(1rem, 3vw, 3.5rem);
+        padding: 0 clamp(1.5rem, 5vw, 6rem);
     }
 
     /* Keep the config page shell in step with the dashboard .container at this
        breakpoint so the config header/nav stay aligned with the dashboard. */
     html:has(#config-main) .config-page-shell {
         grid-template-columns: minmax(0, 1600px);
-        padding-inline: clamp(1rem, 3vw, 3.5rem);
+        padding-inline: clamp(1.5rem, 5vw, 6rem);
     }
 
     /* Same for the health shell, so its header/nav stay aligned too. */
     .health-shell {
         max-width: 100%;
-        padding-left: clamp(1rem, 3vw, 3.5rem);
-        padding-right: clamp(1rem, 3vw, 3.5rem);
+        padding-left: clamp(1.5rem, 5vw, 6rem);
+        padding-right: clamp(1.5rem, 5vw, 6rem);
     }
 
     .dashboard-grid {

@@ -12,7 +12,7 @@ body {
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 2rem clamp(1rem, 3vw, 4.5rem);
+    padding: 2rem clamp(2rem, 6vw, 8rem);
     box-sizing: border-box;
 }
 

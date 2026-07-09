@@ -47,12 +47,13 @@ body {
 
 .container {
     /* Fixed clamp() side margin (not a percentage) so the whitespace shrinks
-       toward the 1rem floor as the window narrows, giving the columns the
-       reclaimed space before they have to get narrower. */
+       toward the floor as the window narrows, giving the columns the reclaimed
+       space before they have to get narrower. Roomy margins keep the columns
+       closer together on wide screens. */
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 clamp(1rem, 3vw, 4.5rem);
+    padding: 0 clamp(2rem, 6vw, 8rem);
 }
 
 /* Header Top - Contains date, tabs, and config button */
