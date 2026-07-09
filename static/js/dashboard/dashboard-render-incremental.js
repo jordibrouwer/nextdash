@@ -199,12 +199,16 @@ class DashboardRenderIncremental {
             list.removeAttribute('data-show-ping');
         }
 
-        const desiredUrls = bookmarks.map((bookmark) => this.normalizeUrl(bookmark?.url));
-        const rowByUrl = new Map();
+        const rowsByUrl = new Map();
         list.querySelectorAll('.bookmark-link[data-bookmark-url]').forEach((row) => {
             const url = this.normalizeUrl(row.getAttribute('data-bookmark-url'));
             if (url) {
-                rowByUrl.set(url, row);
+                const rows = rowsByUrl.get(url);
+                if (rows) {
+                    rows.push(row);
+                } else {
+                    rowsByUrl.set(url, [row]);
+                }
             }
         });
 
@@ -214,14 +218,24 @@ class DashboardRenderIncremental {
         bookmarks.forEach((bookmark, index) => {
             const pageIndex = Array.isArray(d.bookmarks) ? d.bookmarks.indexOf(bookmark) : -1;
             const urlKey = this.normalizeUrl(bookmark?.url);
-            let row = urlKey ? rowByUrl.get(urlKey) : null;
+            let row = null;
+            if (urlKey) {
+                const rows = rowsByUrl.get(urlKey);
+                if (rows) {
+                    row = rows.find((candidate) => !usedRows.has(candidate)) || null;
+                }
+            }
             if (!row && pageIndex >= 0) {
-                row = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
+                const byIndex = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
+                row = usedRows.has(byIndex) ? null : byIndex;
             }
             if (!row && urlKey) {
                 row = [...document.querySelectorAll(
                     '#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]'
-                )].find((el) => this.normalizeUrl(el.getAttribute('data-bookmark-url')) === urlKey) || null;
+                )].find((el) => (
+                    this.normalizeUrl(el.getAttribute('data-bookmark-url')) === urlKey
+                    && !usedRows.has(el)
+                )) || null;
             }
             const fingerprint = d.bookmarkRows.bookmarkRenderFingerprint(bookmark);
 

@@ -198,7 +198,7 @@
                     targetEl: filterInput,
                 });
             }
-            root.querySelectorAll('#stats-index a').forEach((link) => {
+            root.querySelectorAll('.stats-index a').forEach((link) => {
                 const title = textOf(link);
                 if (!title) return;
                 const targetId = (link.getAttribute('href') || '').replace(/^#/, '');

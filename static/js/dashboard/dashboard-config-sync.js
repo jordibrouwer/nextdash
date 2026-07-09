@@ -27,10 +27,8 @@ class DashboardConfigSync {
                 if (event.key === d.structureSyncEventKey) {
                     await this.refreshAfterConfigStructureUpdate(payload);
                     d.lastAppliedStructureSyncAt = payload?.timestamp || Date.now();
-                    d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, payload?.timestamp || 0);
                     try {
                         sessionStorage.removeItem(d.pendingStructureSyncKey);
-                        sessionStorage.removeItem(d.pendingSettingsSyncKey);
                     } catch { /* ignore */ }
                     this.showSyncToast(d.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
                     return;
@@ -166,12 +164,7 @@ class DashboardConfigSync {
                 await this.refreshAfterConfigStructureUpdate(structurePending || {});
                 d.lastAppliedStructureSyncAt = structureTs;
                 sessionStorage.removeItem(d.pendingStructureSyncKey);
-                if (settingsTs > 0) {
-                    d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, settingsTs);
-                    sessionStorage.removeItem(d.pendingSettingsSyncKey);
-                }
                 this.showSyncToast(d.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
-                return;
             }
 
             if (settingsTs > d.lastAppliedSettingsSyncAt) {

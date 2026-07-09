@@ -91,4 +91,58 @@ test.describe('dashboard config sync reload', () => {
         expect(result.smartCount).toBeGreaterThan(0);
         expect(result.titleText.length).toBeGreaterThan(0);
     });
+
+    test('pending settings sync survives structure sync and is applied after return', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const now = Date.now();
+            sessionStorage.setItem(
+                d.pendingStructureSyncKey,
+                JSON.stringify({ type: 'structure-updated', sourceTabId: 'cfg-test', timestamp: now + 1000 })
+            );
+            sessionStorage.setItem(
+                d.pendingSettingsSyncKey,
+                JSON.stringify({ type: 'settings-updated', sourceTabId: 'cfg-test', timestamp: now + 2000 })
+            );
+
+            let structureCalls = 0;
+            let settingsCalls = 0;
+            const originalStructureRefresh = d.configSync.refreshAfterConfigStructureUpdate.bind(d.configSync);
+            const originalSettingsRefresh = d.configSync.refreshAfterConfigSettingsUpdate.bind(d.configSync);
+
+            d.configSync.refreshAfterConfigStructureUpdate = async (payload) => {
+                structureCalls += 1;
+                return originalStructureRefresh(payload);
+            };
+            d.configSync.refreshAfterConfigSettingsUpdate = async (payload) => {
+                settingsCalls += 1;
+                return originalSettingsRefresh(payload);
+            };
+
+            try {
+                await d.configSync.maybeRefreshAfterConfigReturn();
+            } finally {
+                d.configSync.refreshAfterConfigStructureUpdate = originalStructureRefresh;
+                d.configSync.refreshAfterConfigSettingsUpdate = originalSettingsRefresh;
+            }
+
+            return {
+                structureCalls,
+                settingsCalls,
+                pendingStructure: sessionStorage.getItem(d.pendingStructureSyncKey),
+                pendingSettings: sessionStorage.getItem(d.pendingSettingsSyncKey),
+                lastAppliedStructureSyncAt: d.lastAppliedStructureSyncAt,
+                lastAppliedSettingsSyncAt: d.lastAppliedSettingsSyncAt,
+            };
+        });
+
+        expect(result.structureCalls).toBe(1);
+        expect(result.settingsCalls).toBe(1);
+        expect(result.pendingStructure).toBeNull();
+        expect(result.pendingSettings).toBeNull();
+        expect(result.lastAppliedSettingsSyncAt).toBeGreaterThan(0);
+    });
 });

@@ -115,9 +115,10 @@ class DashboardPersistence {
             return false;
         }
 
-        const payload = Array.isArray(options.payload)
+        const hasExplicitPayload = Array.isArray(options.payload);
+        const explicitPayload = hasExplicitPayload
             ? options.payload.map((bookmark) => ({ ...bookmark }))
-            : [...d.bookmarks];
+            : null;
 
         const priorSave = d._bookmarkOrderSaveInFlight;
         const saveTask = (async () => {
@@ -128,6 +129,9 @@ class DashboardPersistence {
                     // Prior save already notified; continue with latest payload.
                 }
             }
+            const payload = hasExplicitPayload
+                ? explicitPayload.map((bookmark) => ({ ...bookmark }))
+                : [...d.bookmarks].map((bookmark) => ({ ...bookmark }));
             try {
                 const response = await dashFetch(`/api/bookmarks?page=${pageId}`, {
                     method: 'POST',

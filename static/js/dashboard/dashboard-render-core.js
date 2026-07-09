@@ -908,6 +908,7 @@ class DashboardRenderCore {
         titleEl.addEventListener('pointerdown', onPointerDown);
         titleEl.addEventListener('pointermove', onPointerMove);
         titleEl.addEventListener('pointerup', onPointerEnd);
+        titleEl.addEventListener('pointerleave', onPointerEnd);
         titleEl.addEventListener('pointercancel', onPointerEnd);
         titleEl.addEventListener('lostpointercapture', onPointerEnd);
     }

@@ -107,4 +107,66 @@ test.describe('dashboard incremental DOM', () => {
 
         expect(reused).toBe(true);
     });
+
+    test('keeps duplicate-url rows visible during incremental patch', async ({ page }) => {
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const normalize = (url) => String(url || '').trim().toLowerCase();
+            const sourceIndex = (d.bookmarks || []).findIndex((bookmark) => normalize(bookmark?.url));
+            if (sourceIndex < 0) {
+                return { ok: false, reason: 'no-source-bookmark' };
+            }
+            const source = d.bookmarks[sourceIndex];
+            const categoryId = String(source.category || '');
+            const duplicate = {
+                ...source,
+                name: `${source.name || 'bookmark'} duplicate`,
+                shortcut: '',
+                pinned: false,
+            };
+            d.bookmarks.splice(sourceIndex + 1, 0, duplicate);
+            d.renderDashboard({ incremental: false });
+
+            const categoryList = document.querySelector(
+                `#dashboard-layout .category[data-category-id="${CSS.escape(categoryId)}"] .bookmarks-list[data-category-id]`
+            );
+            if (!categoryList) {
+                return { ok: false, reason: 'missing-category-list' };
+            }
+
+            const urlKey = normalize(source.url);
+            const rowsBefore = [...categoryList.querySelectorAll('.bookmark-link[data-bookmark-url]')]
+                .filter((row) => normalize(row.getAttribute('data-bookmark-url')) === urlKey);
+            if (rowsBefore.length < 2) {
+                return { ok: false, reason: 'missing-duplicate-before-patch', count: rowsBefore.length };
+            }
+
+            duplicate.name = `${duplicate.name} updated`;
+            const patched = d.renderIncremental.tryRender({});
+
+            const rowsAfter = [...categoryList.querySelectorAll('.bookmark-link[data-bookmark-url]')]
+                .filter((row) => normalize(row.getAttribute('data-bookmark-url')) === urlKey);
+            const uniqueNodes = new Set(rowsAfter).size;
+            const hasUpdatedName = rowsAfter.some((row) => (
+                row.querySelector('.bookmark-text')?.textContent?.includes('updated')
+            ));
+
+            return {
+                ok: true,
+                patched,
+                rowsAfter: rowsAfter.length,
+                uniqueNodes,
+                hasUpdatedName,
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.patched).toBe(true);
+        expect(result.rowsAfter).toBe(2);
+        expect(result.uniqueNodes).toBe(2);
+        expect(result.hasUpdatedName).toBe(true);
+    });
 });

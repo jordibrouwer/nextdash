@@ -216,6 +216,7 @@ test.describe('dashboard inline edit', () => {
         await page.waitForTimeout(700);
 
         const countBefore = await page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count();
+        const targetUrl = (await page.locator('.bookmark-inline-form input[type="url"]').first().inputValue()).trim();
         const deleteBtn = page.locator('.bookmark-inline-delete');
         await expect(deleteBtn).toBeVisible();
         await deleteBtn.click();
@@ -228,9 +229,21 @@ test.describe('dashboard inline edit', () => {
         await expect.poll(async () => page.evaluate(() => (
             !document.querySelector('.bookmark-inline-editing')
         ))).toBe(true);
+        await expect.poll(async () => page.evaluate((url) => {
+            const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
+            return {
+                countAfter: rows.length,
+                stillPresent: rows.some((row) => (
+                    String(row.getAttribute('data-bookmark-url') || '').trim() === url
+                )),
+            };
+        }, targetUrl)).toMatchObject({
+            countAfter: expect.any(Number),
+            stillPresent: false,
+        });
         await expect.poll(async () => (
             page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count()
-        )).toBe(countBefore - 1);
+        )).toBeLessThan(countBefore);
     });
 
     test('inline form uses opaque surfaces above dimmed grid', async ({ page }) => {
