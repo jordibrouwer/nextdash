@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.09 — July 2026](#v20260709--july-2026)
 - [v2026.07.08.1 — July 2026](#v2026070081--july-2026)
 - [v2026.07.08 — July 2026](#v20260708--july-2026)
 - [v2026.07.07 — July 2026](#v20260707--july-2026)
@@ -80,6 +81,46 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.09 — July 2026
+
+**Health icon & counter, dashboard/config/health margin alignment, Stats inbox insights** — the header health link becomes a heartbeat icon with an inline counter (on by default), the dashboard reclaims side whitespace before shrinking columns, config and health share the dashboard's content box, and Stats gains an Inbox section plus expand/collapse-all with remembered state.
+
+### Dashboard header
+
+- **new** **Health as an icon with a counter** — the *health* text link is now an inline SVG heartbeat icon with an inline pill counter (broken/warning bookmark count), styled to match the inbox tab; hidden when healthy, red for broken and amber for warnings (`templates/dashboard.html`, `dashboard-visual.js`, `dashboard.css`).
+- **new** **Health link on by default** — `showHealthDashboard` now defaults to **true** for fresh installs and for existing settings missing the key; users who explicitly turned it off keep their choice (`models.go`, `settings_defaults_test.go`, frontend defaults).
+- **fix** **Header spacing** — tightened the inbox↔health icon gap so they read as one group, and added an icon-width gap between the page tabs and the inbox tab (`dashboard-inbox.css`, `dashboard.css`).
+
+### Dashboard layout
+
+- **fix** **Whitespace shrinks before columns** — the side margin was a percentage of the window (`min(88%, 1600px)`), so narrowing the window squeezed the columns first while wide margins stayed. It's now a small clamped buffer (`clamp(1rem, 3vw, 4.5rem)`) that shrinks first, and `--dashboard-column-max` was raised from 300px to 360px so columns can grow to fill the available width (`dashboard.css`, `responsive.css`).
+
+### Config → Stats
+
+- **new** **Inbox statistics** — a new *Inbox* section (after Finders) shows current inbox health (total/unread, oldest unread, unread > 30d backlog, tags/notes/previews) and lifetime triage throughput: added / converted / discarded counts, average time to triage, a conversion coverage bar, an added-vs-triaged trend sparkline, and source/domain tables — backed by a durable `data/inbox-stats.json` aggregate and a new `/api/inbox-stats` route (`inbox_stats.go`, `inbox_handlers.go`, `config-stats.js`, `templates/config.html`, EN/NL/DE/FR).
+- **new** **Expand all / Collapse all** — Stats and Help gained the same *Expand all sections* / *Collapse all sections* buttons as General, in the same style and place (`config-stats.js`, `config-help-search.js`, `templates/config.html`).
+- **new** **Remembered section state** — Stats sections start collapsed and remember which ones you expand across visits via `localStorage` (`config-stats.js`).
+
+### Config & health chrome
+
+- **fix** **Aligned margins across pages** — config and health now share the dashboard's `1600px` + `clamp()` content box and reset the UA default 8px body margin, so their header and nav links line up with the dashboard and no longer jump when switching pages (`config-general.css`, `config-save-sticky.css`, `health.css`, `responsive.css`).
+- **fix** **Config help titles show &** — plain-text help titles like *Health & status* and *Tags & collections* rendered a literal `&amp;` because they're set via `textContent`; `&amp;` replaced with `&` in the plain (no-markup) locale strings across EN/NL/DE/FR (markup-bearing strings keep `&amp;`).
+
+### Config fixes
+
+- **fix** **Columns-per-row input** — clearing the columns field no longer stores `NaN`/`null` (which blanked the dashboard column layout); the live handler now guards and clamps to 1–6 like the save path (`config-settings.js`).
+- **fix** **Device-settings parse crash** — the `getDeviceSettings` localStorage fallback is wrapped in try/catch so corrupt JSON can't crash config init (`config-storage.js`).
+- **fix** **Sturdier save flow** — `saveChanges` picks the right dashboard sync signal from the change scope (structure vs settings) to avoid a redundant full reload, defers clearing the device-local cache until all saves succeed, and read methods surface a clear error on a non-OK response instead of an obscure parse error (`config-persistence.js`, `config-data.js`).
+- **fix** **Safe i18n rendering** — `applyTranslations` uses `textContent` for plain labels and only `innerHTML` when a translation carries markup, so a stray `<` can't be interpreted as HTML while `<kbd>`/`<strong>` still render (`config-language.js`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.09** release notes.
+- **fix** **What's new modal** — **v2026.07.09** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v135` data version and `2026.07-dashboard-release-v104` dashboard release token; `health-icon-badge-2`, `inbox-tab-gap-1`, `container-clamp-margin-1`, `shell-clamp-margin-1`, `stats-expand-collapse-all-1`, `help-expand-collapse-all-1`, and `stats-collapse-persist-1` asset query strings.
 
 ---
 

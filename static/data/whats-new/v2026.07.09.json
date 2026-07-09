@@ -1,0 +1,76 @@
+{
+  "tag": "v2026.07.09",
+  "date": "July 2026",
+  "releasedAt": "2026-07-09",
+  "sections": [
+    {
+      "title": "Dashboard header",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health as an icon with a counter</strong> — the <em>health</em> text link is now a heartbeat icon with an inline pill counter (broken or warning bookmark count), styled to match the inbox tab; hidden when everything is healthy, red for broken and amber for warnings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health link on by default</strong> — the health link now shows in the header for all users out of the box. If you turned it off before, your choice is kept."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Header spacing</strong> — tightened the gap between the inbox and health icons so they read as one group, and added an icon-width gap between the page tabs and the inbox tab."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard layout",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Whitespace shrinks before columns</strong> — the side margins used to be a fixed percentage of the window, so narrowing the window squeezed the columns (and bookmark names) first while wide margins stayed. Margins are now a small clamped buffer that shrinks first, and columns may grow wider (up to a readable max) to fill the available width."
+        }
+      ]
+    },
+    {
+      "title": "Config → Stats",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Inbox statistics</strong> — a new <em>Inbox</em> section (placed after Finders) shows current inbox health (total/unread, oldest unread, backlog, tags/notes/previews) plus lifetime triage throughput: items added, converted to bookmarks, discarded, average time to triage, a conversion coverage bar, an added-vs-triaged trend sparkline, and source/domain tables — reusing the existing stats visuals."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Expand all / Collapse all</strong> — Stats and Help gained the same <em>Expand all sections</em> / <em>Collapse all sections</em> buttons as General, in the same style and place."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Remembered section state</strong> — Stats sections now start collapsed and remember which ones you expand across visits."
+        }
+      ]
+    },
+    {
+      "title": "Config &amp; health chrome",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Aligned margins across pages</strong> — the config and health pages now share the same content box and side margins as the dashboard, so the header and nav links line up exactly and no longer appear to jump when switching pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config help titles show &amp;</strong> — help section titles like <em>Health &amp; status</em> and <em>Tags &amp; collections</em> showed a literal <code>&amp;amp;</code>; they now render a normal ampersand."
+        }
+      ]
+    },
+    {
+      "title": "Config fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Columns-per-row input</strong> — clearing the columns field no longer stores an invalid value that could blank out the dashboard column layout; it clamps to 1–6."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Sturdier saves</strong> — the config save flow now sends the right dashboard sync signal for the change (avoiding a redundant full reload), keeps device-local settings intact if a save fails midway, and reports a clear error when a data request fails instead of an obscure parse error."
+        }
+      ]
+    }
+  ]
+}
