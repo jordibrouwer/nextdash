@@ -275,7 +275,7 @@ environment:
 
 **Health icon & counter (v2026.07.09)** — the dashboard header **health** link is now a heartbeat icon with an inline counter pill (broken/warning count; red for broken, amber for warnings, hidden when healthy), styled like the inbox tab. On by default for all users (toggle under Config → General → Header & buttons).
 
-**Dashboard whitespace rework (v2026.07.09)** — side margins are a small clamped buffer instead of a fixed percentage, so narrowing the window shrinks the whitespace before the columns; columns may grow wider (up to a readable max) to fill the available width. Config and health pages share the dashboard's content box, so their header and nav links line up across pages.
+**Dashboard margins & status rows (v2026.07.09)** — side margins are a fixed clamped buffer instead of a fixed percentage, so narrowing the window shrinks the whitespace before the columns; roomier margins on wide screens keep the columns closer together. Config and health pages share the dashboard's content box, so their header and nav links line up across pages. Online/offline/checking status rows get a consistent left inset and rounded corners.
 
 **Stats inbox insights (v2026.07.09)** — a new **Inbox** section in Config → Stats shows current inbox health and lifetime triage throughput (added / converted / discarded, average time to triage, conversion bar, added-vs-triaged trend, source/domain tables), backed by `data/inbox-stats.json` and `/api/inbox-stats`. Stats and Help gain **Expand all / Collapse all**, and Stats sections remember their open/collapsed state across visits.
 

@@ -96,7 +96,8 @@ Nothing yet.
 
 ### Dashboard layout
 
-- **fix** **Whitespace shrinks before columns** — the side margin was a percentage of the window (`min(88%, 1600px)`), so narrowing the window squeezed the columns first while wide margins stayed. It's now a small clamped buffer (`clamp(1rem, 3vw, 4.5rem)`) that shrinks first, and `--dashboard-column-max` was raised from 300px to 360px so columns can grow to fill the available width (`dashboard.css`, `responsive.css`).
+- **fix** **Roomier side margins** — the side margin was a percentage of the window (`min(88%, 1600px)`), so narrowing the window squeezed the columns first while wide margins stayed. It's now a fixed clamped buffer (`clamp(2rem, 6vw, 8rem)`) that shrinks as the window narrows, with roomier margins on wide screens so the columns sit closer together. The same content box is shared by the config and health pages so their headers and nav line up (`dashboard.css`, `responsive.css`, `config-general.css`, `config-save-sticky.css`, `health.css`).
+- **fix** **Status row highlight** — online/offline/checking bookmark rows now get a consistent left inset (`--bookmark-row-start-pad`) and rounded corners, so the coloured status highlight no longer looks clipped at the row edges (`dashboard.css`, `dashboard-bookmark-row.css`).
 
 ### Config → Stats
 
@@ -120,7 +121,7 @@ Nothing yet.
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.09** release notes.
 - **fix** **What's new modal** — **v2026.07.09** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v135` data version and `2026.07-dashboard-release-v104` dashboard release token; `health-icon-badge-2`, `inbox-tab-gap-1`, `container-clamp-margin-1`, `shell-clamp-margin-1`, `stats-expand-collapse-all-1`, `help-expand-collapse-all-1`, and `stats-collapse-persist-1` asset query strings.
+- **fix** **Cache-bust** — `whats-new-v136` data version and `2026.07-dashboard-release-v104` dashboard release token; `health-icon-badge-2`, `inbox-tab-gap-1`, `stats-expand-collapse-all-1`, `help-expand-collapse-all-1`, `stats-collapse-persist-1`, and `wider-margins-1` asset query strings.
 
 ---
 

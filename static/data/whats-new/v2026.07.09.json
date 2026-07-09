@@ -25,7 +25,11 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Whitespace shrinks before columns</strong> — the side margins used to be a fixed percentage of the window, so narrowing the window squeezed the columns (and bookmark names) first while wide margins stayed. Margins are now a small clamped buffer that shrinks first, and columns may grow wider (up to a readable max) to fill the available width."
+          "text": "<strong>Roomier side margins</strong> — the side whitespace is now a fixed buffer that shrinks as the window narrows (instead of a percentage that squeezed the columns first), with roomier margins on wide screens so the columns sit closer together. The config and health pages share the same content box, so their headers and nav line up with the dashboard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status row highlight</strong> — online/offline/checking bookmark rows now get a consistent left inset and rounded corners, so the coloured status highlight no longer looks clipped at the row edges."
         }
       ]
     },
