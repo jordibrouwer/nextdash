@@ -16,6 +16,8 @@ class DashboardConfigSync {
                 return;
             }
             if (d._configReturnRefreshInFlight) {
+                // A refresh is already running; this event's pending marker survives in
+                // sessionStorage and is drained by maybeRefreshAfterConfigReturn() below.
                 return;
             }
             d._configReturnRefreshInFlight = true;
@@ -26,9 +28,17 @@ class DashboardConfigSync {
                 }
                 if (event.key === d.structureSyncEventKey) {
                     await this.refreshAfterConfigStructureUpdate(payload);
-                    d.lastAppliedStructureSyncAt = payload?.timestamp || Date.now();
+                    const structureTs = payload?.timestamp || Date.now();
+                    d.lastAppliedStructureSyncAt = structureTs;
                     try {
                         sessionStorage.removeItem(d.pendingStructureSyncKey);
+                        // The structure refresh is a superset of a settings refresh, so
+                        // any pending settings sync at or before it is already applied.
+                        const settingsPending = this.readPendingConfigSync(d.pendingSettingsSyncKey);
+                        if (settingsPending && settingsPending.timestamp <= structureTs) {
+                            d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, settingsPending.timestamp);
+                            sessionStorage.removeItem(d.pendingSettingsSyncKey);
+                        }
                     } catch { /* ignore */ }
                     this.showSyncToast(d.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
                     return;
@@ -50,6 +60,10 @@ class DashboardConfigSync {
             } finally {
                 d._configReturnRefreshInFlight = false;
             }
+            // Drain any sync event that arrived (and was skipped) while the refresh
+            // above held the in-flight guard, so a second edit isn't left until the
+            // next pageshow/visibilitychange.
+            void this.maybeRefreshAfterConfigReturn();
         });
     }
 
@@ -160,10 +174,19 @@ class DashboardConfigSync {
 
         d._configReturnRefreshInFlight = true;
         try {
+            let structureApplied = false;
             if (structureTs > d.lastAppliedStructureSyncAt) {
                 await this.refreshAfterConfigStructureUpdate(structurePending || {});
                 d.lastAppliedStructureSyncAt = structureTs;
                 sessionStorage.removeItem(d.pendingStructureSyncKey);
+                structureApplied = true;
+                // The structure refresh is a superset of the settings refresh (same
+                // loadData + re-render), so a settings sync at or before it is already
+                // applied — consume its marker instead of running a second full reload.
+                if (settingsTs > 0 && settingsTs <= structureTs) {
+                    d.lastAppliedSettingsSyncAt = Math.max(d.lastAppliedSettingsSyncAt, settingsTs);
+                    sessionStorage.removeItem(d.pendingSettingsSyncKey);
+                }
                 this.showSyncToast(d.formatDashboardLabel('syncConfigChanges', {}, 'Synced config changes.'));
             }
 
@@ -171,7 +194,9 @@ class DashboardConfigSync {
                 await this.refreshAfterConfigSettingsUpdate(settingsPending || {});
                 d.lastAppliedSettingsSyncAt = settingsTs;
                 sessionStorage.removeItem(d.pendingSettingsSyncKey);
-                this.showSyncToast(d.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
+                if (!structureApplied) {
+                    this.showSyncToast(d.formatDashboardLabel('syncSettingsApplied', {}, 'Applied dashboard settings update.'));
+                }
             }
         } finally {
             d._configReturnRefreshInFlight = false;
@@ -194,55 +219,30 @@ class DashboardConfigSync {
 
 
     async refreshAfterConfigStructureUpdate(payload = {}) {
-        const d = this.dash;
-        if (d.isInlineEditActive()) {
-            if (!(await d.confirmInlineEditBeforeNavigation())) {
-                return;
-            }
-        }
-        try {
-            d.data?.invalidatePageDataCache?.();
-            await d.loadData({ skipPageBookmarks: true });
-            if (d.settings.language && d.settings.language !== d.language.currentLanguage) {
-                await d.language.loadTranslations(d.settings.language);
-            }
-            d.applyVisualSettings();
-            d.initializeAutoDarkMode();
-            d.setupDOM();
-            d.updateStatusMonitor();
-            await d.withRetry(
-                () => d.loadPageBookmarks(d.currentPageId, { rethrow: true, skipRender: true }),
-                2,
-                220
-            );
-            if (d.needsCrossPageBookmarks()) {
-                await d.withRetry(() => d.loadAllBookmarks({ rethrow: true }), 2, 220);
-            } else {
-                d.allBookmarks = [];
-            }
-            d.renderPageNavigation();
-            d.inbox?.applySettingsChange?.();
-            d.renderDashboard({ animate: false });
-            d.initializeButtonTipsRotation();
-            if (d.searchComponent) {
-                d.updateSearchComponent();
-            }
-            if (d.statusMonitor && d.settings.showStatus) {
-                d.statusMonitor.refreshAllStatuses();
-            }
-            d.updateHealthBadge();
-        } catch (error) {
-            console.warn('Config structure refresh failed:', error);
-            d.showErrorNotification(
-                d.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to sync config changes. Please try again.'),
-                { retry: () => this.refreshAfterConfigStructureUpdate(payload) }
-            );
-            throw error;
-        }
+        await this._refreshAfterConfigUpdate({
+            payload,
+            renderOptions: { animate: false },
+            updateHealthBadge: true,
+            failureMessage: 'Failed to sync config changes. Please try again.',
+            warnLabel: 'Config structure refresh failed:',
+            retry: () => this.refreshAfterConfigStructureUpdate(payload)
+        });
     }
 
 
     async refreshAfterConfigSettingsUpdate(payload = {}) {
+        await this._refreshAfterConfigUpdate({
+            payload,
+            renderOptions: { animate: false, incremental: false },
+            updateHealthBadge: false,
+            failureMessage: 'Failed to apply settings update. Please try again.',
+            warnLabel: 'Config settings refresh failed:',
+            retry: () => this.refreshAfterConfigSettingsUpdate(payload)
+        });
+    }
+
+
+    async _refreshAfterConfigUpdate({ renderOptions, updateHealthBadge, failureMessage, warnLabel, retry }) {
         const d = this.dash;
         if (d.isInlineEditActive()) {
             if (!(await d.confirmInlineEditBeforeNavigation())) {
@@ -271,7 +271,7 @@ class DashboardConfigSync {
             }
             d.renderPageNavigation();
             d.inbox?.applySettingsChange?.();
-            d.renderDashboard({ animate: false, incremental: false });
+            d.renderDashboard(renderOptions);
             d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
@@ -279,11 +279,14 @@ class DashboardConfigSync {
             if (d.statusMonitor && d.settings.showStatus) {
                 d.statusMonitor.refreshAllStatuses();
             }
+            if (updateHealthBadge) {
+                d.updateHealthBadge();
+            }
         } catch (error) {
-            console.warn('Config settings refresh failed:', error);
+            console.warn(warnLabel, error);
             d.showErrorNotification(
-                d.formatDashboardLabel('syncConfigRefreshFailed', {}, 'Failed to apply settings update. Please try again.'),
-                { retry: () => this.refreshAfterConfigSettingsUpdate(payload) }
+                d.formatDashboardLabel('syncConfigRefreshFailed', {}, failureMessage),
+                { retry }
             );
             throw error;
         }

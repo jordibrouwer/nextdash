@@ -215,7 +215,17 @@ class DashboardRenderIncremental {
         const usedRows = new Set();
         const fragment = document.createDocumentFragment();
 
-        bookmarks.forEach((bookmark, index) => {
+        // data-bookmark-index is a page-global index (matches the full render's
+        // resolveBookmarkIndex); readers like keyboard-nav/search index d.bookmarks by it.
+        const applyBookmarkIndex = (row, pageIndex) => {
+            if (pageIndex >= 0) {
+                row.setAttribute('data-bookmark-index', String(pageIndex));
+            } else {
+                row.removeAttribute('data-bookmark-index');
+            }
+        };
+
+        bookmarks.forEach((bookmark) => {
             const pageIndex = Array.isArray(d.bookmarks) ? d.bookmarks.indexOf(bookmark) : -1;
             const urlKey = this.normalizeUrl(bookmark?.url);
             let row = null;
@@ -243,7 +253,7 @@ class DashboardRenderIncremental {
                 usedRows.add(row);
                 if (row.classList.contains('bookmark-inline-editing') || row.querySelector('.bookmark-inline-form')) {
                     d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
-                    row.setAttribute('data-bookmark-index', String(index));
+                    applyBookmarkIndex(row, pageIndex);
                     fragment.appendChild(row);
                     return;
                 }
@@ -253,13 +263,13 @@ class DashboardRenderIncremental {
                 if (needsRefresh) {
                     d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
                 }
-                row.setAttribute('data-bookmark-index', String(index));
+                applyBookmarkIndex(row, pageIndex);
                 fragment.appendChild(row);
                 return;
             }
 
             row = d.createBookmarkElement(bookmark, category.id || '', !isSmartCollection);
-            row.setAttribute('data-bookmark-index', String(index));
+            applyBookmarkIndex(row, pageIndex);
             fragment.appendChild(row);
         });
 
