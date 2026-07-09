@@ -75,6 +75,10 @@ html:has(#config-main) .config-save-sticky * {
 
 body {
     min-height: 100vh;
+    /* Reset the UA default 8px body margin so the config shell starts flush at
+       the viewport edge, matching the dashboard (otherwise the config header/nav
+       sit 8px inward and appear to jump when switching pages). */
+    margin: 0;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: var(--font-size-text);
     overflow-x: hidden;
@@ -122,15 +126,17 @@ body {
     padding-bottom: 2rem;
 }
 
-/* Single shared column — header, save/tabs, and tab content share exact width */
+/* Single shared column — header, save/tabs, and tab content share exact width.
+   Mirrors the dashboard .container box (max-width 1600px + clamp side margin) so
+   the config header/nav line up with the dashboard header instead of jumping. */
 html:has(#config-main) .config-page-shell {
     display: grid;
-    grid-template-columns: minmax(0, min(88%, 1600px));
+    grid-template-columns: minmax(0, 1600px);
     justify-content: center;
     width: 100%;
     max-width: 100%;
     margin-inline: auto;
-    padding-inline: 1rem;
+    padding-inline: clamp(1rem, 3vw, 4.5rem);
     box-sizing: border-box;
 }
 
@@ -143,10 +149,10 @@ html:has(#config-main) .config-page-column {
 }
 
 .container {
-    max-width: min(88%, 1600px);
+    max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 clamp(1rem, 3vw, 4.5rem);
 }
 
 /* Equal-width chrome rows (save bar, tabs, General intro/cards) */

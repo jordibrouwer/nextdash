@@ -24,10 +24,19 @@
     }
     
     .container {
-        max-width: 92%;
-        padding: 0 1rem;
+        /* Fixed clamp() margin (not a percentage) so whitespace stays small and
+           the columns keep their width as long as possible before shrinking. */
+        max-width: 100%;
+        padding: 0 clamp(1rem, 3vw, 3.5rem);
     }
-    
+
+    /* Keep the config page shell in step with the dashboard .container at this
+       breakpoint so the config header/nav stay aligned with the dashboard. */
+    html:has(#config-main) .config-page-shell {
+        grid-template-columns: minmax(0, 1600px);
+        padding-inline: clamp(1rem, 3vw, 3.5rem);
+    }
+
     .dashboard-grid {
         gap: 2rem;
     }

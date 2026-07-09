@@ -46,10 +46,13 @@ body {
 }
 
 .container {
-    max-width: min(88%, 1600px);
+    /* Fixed clamp() side margin (not a percentage) so the whitespace shrinks
+       toward the 1rem floor as the window narrows, giving the columns the
+       reclaimed space before they have to get narrower. */
+    max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 clamp(1rem, 3vw, 4.5rem);
 }
 
 /* Header Top - Contains date, tabs, and config button */
@@ -1045,7 +1048,12 @@ body {
 /* Dashboard Grid */
 .dashboard-grid {
     --dashboard-column-min: 250px;
-    --dashboard-column-max: 300px;
+    /* Upper bound a column may grow to. Raised from 300px so that on wide
+       screens the columns absorb the available width (fewer, wider, more
+       readable columns) instead of staying narrow and leaving large side
+       whitespace. Below this width the per-column calc() takes over and the
+       columns shrink gracefully toward --dashboard-column-min. */
+    --dashboard-column-max: 360px;
     display: grid;
     row-gap: 3rem;
     column-gap: 1.5rem;
