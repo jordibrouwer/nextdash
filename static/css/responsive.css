@@ -37,6 +37,13 @@
         padding-inline: clamp(1rem, 3vw, 3.5rem);
     }
 
+    /* Same for the health shell, so its header/nav stay aligned too. */
+    .health-shell {
+        max-width: 100%;
+        padding-left: clamp(1rem, 3vw, 3.5rem);
+        padding-right: clamp(1rem, 3vw, 3.5rem);
+    }
+
     .dashboard-grid {
         gap: 2rem;
     }
