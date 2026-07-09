@@ -77,8 +77,12 @@ class ConfigLanguage {
             }
             if (element.hasAttribute('aria-label')) {
                 element.setAttribute('aria-label', translation);
-            } else {
+            } else if (/<[a-z][\s\S]*>/i.test(translation)) {
+                // Only use innerHTML for translations that intentionally carry markup
+                // (e.g. <kbd>, <strong>); plain labels use textContent to stay safe.
                 element.innerHTML = translation;
+            } else {
+                element.textContent = translation;
             }
         });
 
