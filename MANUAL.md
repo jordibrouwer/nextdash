@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.08.1**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.09**).
 
 ---
 
@@ -237,7 +237,7 @@ Side rail layout (optional — **Config → General → Layout → Button bar po
 ### Header
 
 - **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
-- **health** — Link to `/health` with badge (e.g. `3 broken`) when issues exist; when broken links are counted, the link opens `/health?filter=broken`.  
+- **health** — A **heartbeat icon** linking to `/health`, with an inline pill counter (e.g. `3`) when broken or warning bookmarks exist — red for broken, amber for warnings, hidden when healthy (**v2026.07.09**, styled like the inbox tab). When broken links are counted, the link opens `/health?filter=broken`. On by default (toggle under **Config → General → Advanced → Header & buttons**).  
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
 
@@ -767,7 +767,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **7 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **7 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.09** header health icon with counter (on by default), roomier dashboard side margins with exact config/health alignment at every width (including above 1600px), rounded status-row highlights with extra left inset for favicon clearance, config header health icon parity (dashboard-style icon + counter, inbox pill removed), and Stats inbox insights plus expand/collapse-all with remembered state; **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -825,7 +825,7 @@ Filter, sort, search, and page-filter state persist in the session across refres
 
 From the dashboard, **`:health`** (command mode) opens health with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/health?filter=stale`.
 
-The dashboard **health** link badge counts broken links and warnings (including shortcut conflicts) as a compact number pill — broken count takes priority over warnings (**v2026.07.01.1**). When broken issues exist, the link opens `/health?filter=broken`. On **config**, the header **→ health beta** link and **General → Essentials → Health →** use the same routing (Essentials link appears when status monitoring is on).
+The dashboard **health** icon (**v2026.07.09**, a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy (**v2026.07.01.1**). When broken issues exist, the link opens `/health?filter=broken`. On **config**, the header **→ health beta** link and **General → Essentials → Health →** use the same routing (Essentials link appears when status monitoring is on).
 
 ### Stats (`config#stats`)
 
@@ -835,10 +835,12 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 - **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), sparklines, and **week-over-week** active-bookmark comparison when the **week** period is selected. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).
 - **Top bookmarks, pages, categories, shortcuts** — sortable tables; click a bookmark row (or press `Enter`) to open it in **Config → Bookmarks**.
 - **Finders** — finder totals and top-20 table by `useCount`.
+- **Inbox** (**v2026.07.09**) — current inbox health (total / unread, oldest unread age, unread > 30d backlog, tags / notes / previews) plus **lifetime triage throughput**: items added, converted to bookmarks, discarded, average time to triage, a conversion coverage bar, an added-vs-triaged trend sparkline (7 / 30 / 90 days), and source / top-domain tables. Lifetime counters are kept in `data/inbox-stats.json` and start from when tracking began (older activity isn't included).
 - **Tags** — coverage, most-used tag, untagged count, per-tag tables.
 - **Rot & cleanup** — stale bookmarks, cleanup score (resets when the library is empty).
 - **Conflicts** — duplicate URL detail list and shortcut conflicts with a link to **Health**.
-- **Toolbar** — **Filter tables** search (narrows rows across all stats tables with a visible/total hint), **Refresh** (reloads stats in-tab), and **Export CSV** (downloads multiple sections; respects active period filters) live in the in-surface toolbar (**v2026.07.01.1** moved Refresh/Export from the intro row).
+- **Toolbar** — **Filter tables** search (narrows rows across all stats tables with a visible/total hint), **Expand all** / **Collapse all sections** (same as General; **v2026.07.09**), **Refresh** (reloads stats in-tab), and **Export CSV** (downloads multiple sections; respects active period filters) live in the in-surface toolbar (**v2026.07.01.1** moved Refresh/Export from the intro row).
+- **Section state** (**v2026.07.09**) — Stats sections start collapsed and remember which ones you expand across visits.
 - **Overview** — includes **Last backup** (formatted date from the backups tab when a ZIP was created in this browser).
 
 ---

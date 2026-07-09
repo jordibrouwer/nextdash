@@ -115,9 +115,11 @@ class DashboardPersistence {
             return false;
         }
 
-        const payload = Array.isArray(options.payload)
-            ? options.payload.map((bookmark) => ({ ...bookmark }))
-            : [...d.bookmarks];
+        const hasExplicitPayload = Array.isArray(options.payload);
+        // Snapshot an explicit payload at call time (the caller's array may mutate
+        // before the queued save runs). The implicit d.bookmarks path is read below,
+        // after awaiting the prior save, so it reflects any post-failure rollback.
+        const explicitPayload = hasExplicitPayload ? [...options.payload] : null;
 
         const priorSave = d._bookmarkOrderSaveInFlight;
         const saveTask = (async () => {
@@ -128,6 +130,8 @@ class DashboardPersistence {
                     // Prior save already notified; continue with latest payload.
                 }
             }
+            const source = hasExplicitPayload ? explicitPayload : d.bookmarks;
+            const payload = source.map((bookmark) => ({ ...bookmark }));
             try {
                 const response = await dashFetch(`/api/bookmarks?page=${pageId}`, {
                     method: 'POST',

@@ -46,10 +46,14 @@ body {
 }
 
 .container {
-    max-width: min(88%, 1600px);
+    /* Fixed clamp() side margin (not a percentage) so the whitespace shrinks
+       toward the floor as the window narrows, giving the columns the reclaimed
+       space before they have to get narrower. Roomy margins keep the columns
+       closer together on wide screens. */
+    max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 clamp(2rem, 6vw, 8rem);
 }
 
 /* Header Top - Contains date, tabs, and config button */
@@ -663,7 +667,7 @@ body {
     width: 100%;
     max-width: 100%;
     align-items: center;
-    padding: 0.5rem var(--bookmark-row-end-pad, 2px) 0.5rem 0;
+    padding: 0.5rem var(--bookmark-row-end-pad, 3px) 0.5rem var(--bookmark-row-start-pad, 6px);
     min-height: 1.9rem;
     white-space: nowrap;
     border-radius: 0;
@@ -1042,10 +1046,68 @@ body {
     color: var(--text-on-warning, #000);
 }
 
+/* Icon variant: health shown as an icon with an inline counter after it,
+   styled to match the inbox tab in the page navigation. */
+.health-link--icon {
+    /* Pull the health icon closer to the inbox tab (the .header-actions gap of
+       1.5rem is too wide between two compact icon buttons). */
+    margin-left: -1rem;
+}
+
+.health-link--icon a {
+    animation: none;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
+.health-link--icon a:hover {
+    text-shadow: none;
+}
+
+.health-link--icon .health-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+/* Inline pill counter after the icon (overrides the absolute superscript dot). */
+.health-link--icon .health-badge {
+    position: static;
+    top: auto;
+    right: auto;
+    min-width: 1.35rem;
+    height: auto;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
+    color: var(--accent-error);
+}
+
+.health-link--icon .health-badge.health-badge-warn {
+    border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
+    color: var(--accent-warning);
+}
+
 /* Dashboard Grid */
 .dashboard-grid {
     --dashboard-column-min: 250px;
-    --dashboard-column-max: 300px;
+    /* Upper bound a column may grow to. Raised from 300px so that on wide
+       screens the columns absorb the available width (fewer, wider, more
+       readable columns) instead of staying narrow and leaving large side
+       whitespace. Below this width the per-column calc() takes over and the
+       columns shrink gracefully toward --dashboard-column-min. */
+    --dashboard-column-max: 360px;
     display: grid;
     row-gap: 3rem;
     column-gap: 1.5rem;
@@ -1183,7 +1245,7 @@ body {
 }
 
 .dashboard-grid.layout-compact .bookmark-link {
-    padding: 0.25rem var(--bookmark-row-end-pad, 2px) 0.25rem 0;
+    padding: 0.25rem var(--bookmark-row-end-pad, 3px) 0.25rem var(--bookmark-row-start-pad, 6px);
 }
 
 .dashboard-grid.density-comfortable .bookmark-link {
@@ -2103,7 +2165,8 @@ body.no-animations .category-chevron {
     min-width: 0;
     min-height: 2rem;
     width: 100%;
-    --bookmark-row-end-pad: 2px;
+    --bookmark-row-start-pad: 6px;
+    --bookmark-row-end-pad: 3px;
     --bookmark-status-col: 3.35em;
 }
 
@@ -2156,7 +2219,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     font-weight: var(--font-weight-semibold);
     transition: transform 140ms ease, opacity 120ms ease, color 140ms ease, background 140ms ease;
     position: relative;
-    padding: 0.5rem var(--bookmark-row-end-pad, 2px) 0.5rem 0;
+    padding: 0.5rem var(--bookmark-row-end-pad, 3px) 0.5rem var(--bookmark-row-start-pad, 6px);
     color: var(--text-primary);
     max-width: 100%;
     min-height: 1.9rem;

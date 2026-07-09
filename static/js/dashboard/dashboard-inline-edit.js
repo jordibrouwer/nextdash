@@ -840,13 +840,6 @@ class DashboardInlineEdit {
         form.appendChild(actions);
 
         form.addEventListener('keydown', async (e) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                if (!(await this.confirmDiscardInlineEdit())) {
-                    return;
-                }
-                this.cancelBookmarkInlineEdit(row, bookmarkRef);
-            }
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 void runSave(e);
@@ -1704,6 +1697,7 @@ class DashboardInlineEdit {
         row.addEventListener('pointerdown', onPointerDown, { capture: false, signal });
         row.addEventListener('pointermove', onPointerMove, { capture: false, signal });
         row.addEventListener('pointerup', onPointerEnd, { capture: false, signal });
+        row.addEventListener('pointerleave', onPointerEnd, { capture: false, signal });
         row.addEventListener('pointercancel', onPointerEnd, { capture: false, signal });
         row.addEventListener('lostpointercapture', onPointerEnd, { capture: false, signal });
     }

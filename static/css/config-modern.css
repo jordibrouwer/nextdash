@@ -595,12 +595,10 @@ body[data-layout-version="modern"] .stats-period-btn.active {
     box-shadow: var(--layout-shadow-sm);
 }
 
-body[data-layout-version="modern"] .stats-index-list li a {
+body[data-layout-version="modern"] :is(.help-index, .general-index, .stats-index) li a {
     border-radius: var(--layout-radius-sm);
-}
-
-body[data-layout-version="modern"] .stats-index-list li a.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--layout-surface-inset));
+    padding: 0.28rem 0.4rem;
+    transition: background-color var(--layout-transition), color var(--layout-transition);
 }
 
 body[data-layout-version="modern"] .unsaved-badge {
@@ -613,13 +611,7 @@ body[data-layout-version="modern"] .help-block {
     padding: 1rem 1.1rem;
 }
 
-body[data-layout-version="modern"] .help-index li a {
-    border-radius: var(--layout-radius-sm);
-    padding: 0.28rem 0.4rem;
-    transition: background-color var(--layout-transition), color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .help-index li a:hover {
+body[data-layout-version="modern"] :is(.help-index, .general-index, .stats-index) li a:hover {
     background: color-mix(in srgb, var(--accent-primary) 10%, var(--layout-surface-inset));
 }
 

@@ -139,6 +139,17 @@ body[data-layout-version="glass"] .general-tab-surface {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Quick links parity with Help tab (classic/modern/glass): same roomy list rhythm. */
+.general-tab-surface .general-index ul {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.general-tab-surface .general-index li {
+    margin-bottom: 0.45rem !important;
+    line-height: 1.6;
+}
+
 .general-index-list a.general-index-danger-link {
     color: var(--accent-error);
 }

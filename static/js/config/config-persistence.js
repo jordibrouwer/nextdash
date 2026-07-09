@@ -849,7 +849,9 @@ class ConfigPersistence {
                     this.c.storage.saveDeviceSettings(this.c.settingsData);
                 } else {
                     await this.c.data.saveSettings(this.c.settingsData);
-                    this.c.storage.clearDeviceSettings();
+                    // Defer clearing the device-local cache until all saves below
+                    // succeed, so a later failure leaves the local state intact for
+                    // a retry instead of wiping it mid-way through a partial save.
                 }
             }
 
@@ -875,9 +877,28 @@ class ConfigPersistence {
                 await this.c.data.savePages(this.c.pagesData);
             }
 
+            // All server saves succeeded — now safe to drop the device-local cache
+            // (server settings are authoritative). Deferred from the settings save
+            // above so a mid-save failure doesn't wipe device state.
+            if (changeScope.hasSettingsChanges && !this.c.deviceSpecific) {
+                this.c.storage.clearDeviceSettings();
+            }
+
             this.c.originalPagesData = JSON.parse(JSON.stringify(this.c.pagesData));
             this.c.refreshPageDropdowns();
-            this.signalDashboardSettingsUpdated('settings-saved');
+            // Signal the right kind of dashboard sync: the dashboard's structure
+            // refresh re-reads settings too (it's a superset of the settings
+            // refresh), so send it whenever any structural data changed; otherwise
+            // a settings-only save needs just the lighter settings signal. This
+            // avoids a redundant full settings reload on a structure-only save.
+            const hasStructuralChanges = needsFullPersist
+                || changeScope.hasStructuralChanges === true
+                || changeScope.changedBookmarkPageIds === null;
+            if (hasStructuralChanges) {
+                this.signalDashboardReload('settings-saved');
+            } else if (changeScope.hasSettingsChanges) {
+                this.signalDashboardSettingsUpdated('settings-saved');
+            }
             this._completeSaveUi({ changeScope, duplicateUrls });
             void this._refreshAfterSave(changeScope);
         } catch (error) {

@@ -33,6 +33,12 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     transition: none;
 }
 
+/* Status rows: keep extra inset so the left status bar does not crowd favicons. */
+.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing) {
+    padding-left: calc(var(--bookmark-row-start-pad, 6px) + 4px);
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--bookmark-row-hover-bg);

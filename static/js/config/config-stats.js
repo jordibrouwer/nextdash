@@ -11,7 +11,32 @@ class ConfigStats {
         this._filterQuery = '';
         this._activeSectionId = 'stats-overview';
         // Current period (days) per section; 0 = all time
-        this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, tags: 0, rot: 90 };
+        this.sectionPeriods = { activity: 30, top: 0, pages: 0, categories: 0, tags: 0, rot: 90, inbox: 30 };
+        // Inbox data sources (fetched async; snapshot from /api/inbox, lifetime from /api/inbox-stats)
+        this._inboxItems = [];
+        this._inboxStats = null;
+        // Persisted per-section collapse state (accordion; at most one open).
+        this._collapseStateKey = 'nextdash_config_stats_open';
+    }
+
+    readCollapseState() {
+        try {
+            const raw = localStorage.getItem(this._collapseStateKey);
+            const parsed = raw ? JSON.parse(raw) : null;
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    persistCollapseState() {
+        const state = {};
+        document.querySelectorAll('.stats-content .stats-block[id]').forEach((block) => {
+            state[block.id] = !block.classList.contains('is-collapsed');
+        });
+        try {
+            localStorage.setItem(this._collapseStateKey, JSON.stringify(state));
+        } catch { /* ignore quota / private mode */ }
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -282,6 +307,7 @@ class ConfigStats {
     breadcrumbSectionLabel(sectionId) {
         const keys = {
             'stats-overview': 'statsInfoOverviewTitle',
+            'stats-inbox': 'statsInfoInboxTitle',
             'stats-insights': 'statsInfoInsightsTitle',
             'stats-score': 'statsInfoScoreTitle',
             'stats-activity': 'statsInfoActivityTitle',
@@ -307,6 +333,7 @@ class ConfigStats {
             'stats-categories': 'categories',
             'stats-tags': 'tags',
             'stats-rot': 'rot',
+            'stats-inbox': 'inbox',
         };
         return map[sectionId] || null;
     }
@@ -358,6 +385,7 @@ class ConfigStats {
             case 'categories':  this.renderCategoriesBlock(bookmarks, pages, days); break;
             case 'tags':        this.renderTagsBlock(bookmarks, pages, days); break;
             case 'rot':         this.renderRotBlock(bookmarks, pages, locale, days); break;
+            case 'inbox':       this.renderInboxTrend(days); break;
         }
         this.applyTableFilter();
     }
@@ -414,6 +442,8 @@ class ConfigStats {
     // ── Collapsible blocks (accordion) ───────────────────────────────────────
 
     setupBlockCollapsible() {
+        const savedState = this.readCollapseState();
+        const hasSavedState = Object.keys(savedState).length > 0;
         document.querySelectorAll('.stats-content .stats-block[id]').forEach((block) => {
             const title = block.querySelector('.stats-block-title-row .section-title');
             if (!title || title.dataset.collapseWired === '1') return;
@@ -421,7 +451,11 @@ class ConfigStats {
             block.classList.add('is-collapsible');
             title.setAttribute('role', 'button');
             title.setAttribute('tabindex', '0');
-            title.setAttribute('aria-expanded', 'true');
+            // Restore the remembered open/collapsed state. On first visit (no saved
+            // state) everything starts collapsed; the user expands what they want.
+            const expanded = hasSavedState ? savedState[block.id] === true : false;
+            block.classList.toggle('is-collapsed', !expanded);
+            title.setAttribute('aria-expanded', expanded ? 'true' : 'false');
             const toggle = () => this.toggleBlock(block.id);
             title.addEventListener('click', toggle);
             title.addEventListener('keydown', (e) => {
@@ -431,6 +465,36 @@ class ConfigStats {
                 }
             });
         });
+        this.syncActiveNavFromOpenBlock();
+    }
+
+    setupExpandCollapseAll() {
+        const expandBtn = document.getElementById('stats-expand-all-btn');
+        const collapseBtn = document.getElementById('stats-collapse-all-btn');
+        if (!expandBtn || expandBtn.dataset.bulkWired === '1') {
+            if (collapseBtn && collapseBtn.dataset.bulkWired !== '1') {
+                collapseBtn.dataset.bulkWired = '1';
+                collapseBtn.addEventListener('click', () => this.setAllBlocksCollapsed(true));
+            }
+            return;
+        }
+        expandBtn.dataset.bulkWired = '1';
+        expandBtn.addEventListener('click', () => this.setAllBlocksCollapsed(false));
+        if (collapseBtn && collapseBtn.dataset.bulkWired !== '1') {
+            collapseBtn.dataset.bulkWired = '1';
+            collapseBtn.addEventListener('click', () => this.setAllBlocksCollapsed(true));
+        }
+    }
+
+    /** Expand or collapse every stats section at once, then persist and sync nav. */
+    setAllBlocksCollapsed(collapsed) {
+        document.querySelectorAll('.stats-content .stats-block[id]').forEach((block) => {
+            block.classList.toggle('is-collapsed', collapsed);
+            const title = block.querySelector('.stats-block-title-row .section-title');
+            if (title) title.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+        this.syncActiveNavFromOpenBlock();
+        this.persistCollapseState();
     }
 
     toggleBlock(blockId) {
@@ -444,6 +508,7 @@ class ConfigStats {
             this.collapseOtherBlocks(blockId);
         }
         this.syncActiveNavFromOpenBlock();
+        this.persistCollapseState();
     }
 
     /** Opening a block via title click or quick link collapses whichever other block was open. */
@@ -481,6 +546,7 @@ class ConfigStats {
         const title = block.querySelector('.stats-block-title-row .section-title');
         if (title) title.setAttribute('aria-expanded', 'true');
         this.syncActiveNavFromOpenBlock();
+        this.persistCollapseState();
         const tourActive = document.body.hasAttribute('data-config-general-tour-active');
         block.scrollIntoView({ behavior: tourActive ? 'auto' : 'smooth', block: 'start' });
     }
@@ -545,6 +611,10 @@ class ConfigStats {
         this.setText('stats-with-shortcut',    String(withSc));
         this.setText('stats-without-shortcut', String(Math.max(0, bookmarks.length - withSc)));
         this.setText('stats-avg-opens',        String(avg));
+        const inboxItems = Array.isArray(this._inboxItems) ? this._inboxItems : [];
+        const inboxUnread = inboxItems.filter((it) => !Number(it?.readAt)).length;
+        this.setText('stats-overview-inbox-total',  String(inboxItems.length));
+        this.setText('stats-overview-inbox-unread', String(inboxUnread));
         manager?.backup?.updateLastBackupDisplay?.(manager.settingsData?.language);
     }
 
@@ -553,6 +623,7 @@ class ConfigStats {
     bindInfoButtons() {
         const sections = [
             ['stats-overview-info-btn',   'statsInfoOverviewTitle',   'statsInfoOverviewMsg'],
+            ['stats-inbox-info-btn',      'statsInfoInboxTitle',      'statsInfoInboxMsg'],
             ['stats-insights-info-btn',   'statsInfoInsightsTitle',   'statsInfoInsightsMsg'],
             ['stats-score-info-btn',      'statsInfoScoreTitle',      'statsInfoScoreMsg'],
             ['stats-activity-info-btn',   'statsInfoActivityTitle',   'statsInfoActivityMsg'],
@@ -1610,6 +1681,271 @@ class ConfigStats {
         this.setText('stats-status-check-count', String(statusCheckCount));
     }
 
+    // ── Inbox ──────────────────────────────────────────────────────────────
+
+    /** Fetch inbox snapshot + durable aggregate, then render the inbox block. */
+    async loadInboxData(locale) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const [itemsRes, statsRes] = await Promise.allSettled([
+            fetcher('/api/inbox'),
+            fetcher('/api/inbox-stats'),
+        ]);
+        try {
+            if (itemsRes.status === 'fulfilled' && itemsRes.value.ok) {
+                const body = await itemsRes.value.json();
+                this._inboxItems = Array.isArray(body?.items) ? body.items : [];
+            }
+        } catch { this._inboxItems = []; }
+        try {
+            if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
+                this._inboxStats = await statsRes.value.json();
+            }
+        } catch { this._inboxStats = null; }
+        this.renderInboxBlock(locale);
+        // Keep the overview inbox tiles in sync once data lands.
+        const items = Array.isArray(this._inboxItems) ? this._inboxItems : [];
+        this.setText('stats-overview-inbox-total',  String(items.length));
+        this.setText('stats-overview-inbox-unread', String(items.filter((it) => !Number(it?.readAt)).length));
+        this.applyTableFilter();
+    }
+
+    formatDurationShort(ms) {
+        const n = Number(ms);
+        if (!Number.isFinite(n) || n <= 0) return '—';
+        const days = n / 86400000;
+        if (days >= 1) {
+            const d = Math.round(days);
+            return this.t('config.statsInboxDaysUnit').replace('{n}', String(d));
+        }
+        const hours = n / 3600000;
+        if (hours >= 1) {
+            return this.t('config.statsInboxHoursUnit').replace('{n}', String(Math.round(hours)));
+        }
+        const mins = Math.max(1, Math.round(n / 60000));
+        return this.t('config.statsInboxMinutesUnit').replace('{n}', String(mins));
+    }
+
+    renderInboxBlock(locale) {
+        const items = Array.isArray(this._inboxItems) ? this._inboxItems : [];
+        const stats = this._inboxStats || {};
+        const now = Date.now();
+
+        // ── Snapshot (current inbox) ──
+        const unread = items.filter((it) => !Number(it?.readAt));
+        const read = items.length - unread.length;
+        const oldestUnreadAt = unread.reduce((min, it) => {
+            const added = Number(it?.addedAt || 0);
+            return added > 0 && added < min ? added : min;
+        }, Number.POSITIVE_INFINITY);
+        const backlogCutoff = now - 30 * 86400000;
+        const backlog = unread.filter((it) => Number(it?.addedAt || 0) > 0 && Number(it.addedAt) < backlogCutoff).length;
+
+        const withTags = items.filter((it) => Array.isArray(it?.tags) && it.tags.some((t) => String(t || '').trim())).length;
+        const withNote = items.filter((it) => String(it?.note || '').trim()).length;
+        const withPreview = items.filter((it) => String(it?.previewImage || '').trim()).length;
+
+        this.setText('stats-inbox-total',  String(items.length));
+        this.setText('stats-inbox-unread', String(unread.length));
+        this.setText('stats-inbox-oldest-unread',
+            Number.isFinite(oldestUnreadAt) ? this.formatDurationShort(now - oldestUnreadAt) : '—');
+        this.setText('stats-inbox-backlog', String(backlog));
+        this.setText('stats-inbox-read', String(read));
+        this.setText('stats-inbox-with-tags', String(withTags));
+        this.setText('stats-inbox-with-note', String(withNote));
+        this.setText('stats-inbox-with-preview', String(withPreview));
+
+        // ── Lifetime (durable aggregate) ──
+        const added = Number(stats.totalAdded || 0);
+        const promoted = Number(stats.totalPromoted || 0);
+        const deleted = Number(stats.totalDeleted || 0);
+        const triaged = promoted + deleted;
+        const conversionPct = triaged > 0 ? Math.round((promoted / triaged) * 100) : 0;
+
+        const fill = document.getElementById('stats-inbox-conversion-fill');
+        const label = document.getElementById('stats-inbox-conversion-label');
+        if (fill) fill.style.width = `${conversionPct}%`;
+        if (label) {
+            label.textContent = this.t('config.statsInboxConversion')
+                .replace('{promoted}', String(promoted))
+                .replace('{triaged}', String(triaged))
+                .replace('{pct}', String(conversionPct));
+        }
+
+        this.setText('stats-inbox-added',    String(added));
+        this.setText('stats-inbox-promoted', String(promoted));
+        this.setText('stats-inbox-deleted',  String(deleted));
+        const avgRetention = Number(stats.retentionCount || 0) > 0
+            ? Number(stats.sumRetentionMs || 0) / Number(stats.retentionCount)
+            : 0;
+        this.setText('stats-inbox-avg-retention', this.formatDurationShort(avgRetention));
+
+        const sinceEl = document.getElementById('stats-inbox-since');
+        if (sinceEl) {
+            const firstAt = Number(stats.firstEventAt || 0);
+            if (firstAt > 0) {
+                sinceEl.hidden = false;
+                sinceEl.textContent = this.t('config.statsInboxSince')
+                    .replace('{date}', this.formatWhen(firstAt, locale));
+            } else {
+                sinceEl.hidden = true;
+                sinceEl.textContent = '';
+            }
+        }
+
+        // ── Sources table (current in inbox vs lifetime added) ──
+        const currentBySource = new Map();
+        items.forEach((it) => {
+            const src = String(it?.source || '').trim().toLowerCase() || 'unknown';
+            currentBySource.set(src, (currentBySource.get(src) || 0) + 1);
+        });
+        const lifetimeBySource = new Map(
+            Object.entries(stats.bySource || {}).map(([k, v]) => [String(k).toLowerCase(), Number(v) || 0])
+        );
+        const sourceKeys = new Set([...currentBySource.keys(), ...lifetimeBySource.keys()]);
+        const sourceRows = [...sourceKeys]
+            .map((src) => ({ src, current: currentBySource.get(src) || 0, lifetime: lifetimeBySource.get(src) || 0 }))
+            .sort((a, b) => b.lifetime - a.lifetime || b.current - a.current);
+
+        this.clearTable('stats-inbox-sources-body');
+        if (sourceRows.length === 0) {
+            this.noData('stats-inbox-sources-body', 3);
+        } else {
+            const maxLifetime = Math.max(...sourceRows.map((r) => r.lifetime), 1);
+            sourceRows.forEach((row) => {
+                this.appendRow('stats-inbox-sources-body', [
+                    this.inboxSourceLabel(row.src),
+                    String(row.current),
+                    String(row.lifetime),
+                ], { barCol: 2, barPct: Math.round((row.lifetime / maxLifetime) * 100) });
+            });
+        }
+
+        // ── Top domains in current inbox ──
+        const domainMap = new Map();
+        items.forEach((it) => {
+            const domain = String(it?.domain || '').trim().toLowerCase();
+            if (!domain) return;
+            domainMap.set(domain, (domainMap.get(domain) || 0) + 1);
+        });
+        const domainRows = [...domainMap.entries()]
+            .map(([domain, count]) => ({ domain, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 20);
+
+        this.clearTable('stats-inbox-domains-body');
+        if (domainRows.length === 0) {
+            this.noData('stats-inbox-domains-body', 2);
+        } else {
+            const maxCount = Math.max(...domainRows.map((r) => r.count), 1);
+            domainRows.forEach((row) => {
+                this.appendRow('stats-inbox-domains-body', [
+                    row.domain,
+                    String(row.count),
+                ], { barCol: 1, barPct: Math.round((row.count / maxCount) * 100) });
+            });
+        }
+
+        this.renderInboxTrend(this.sectionPeriods.inbox || 30);
+    }
+
+    inboxSourceLabel(src) {
+        const key = {
+            paste: 'statsInboxSourcePaste',
+            extension: 'statsInboxSourceExtension',
+            api: 'statsInboxSourceApi',
+            unknown: 'statsInboxSourceUnknown',
+        }[src];
+        if (!key) return src;
+        const val = this.t(`config.${key}`);
+        return val && !val.startsWith('config.') ? val : src;
+    }
+
+    /** Trend sparkline: added vs. triaged (promoted+deleted) per bucket, matching renderActivity visuals. */
+    renderInboxTrend(days) {
+        const wrap = document.getElementById('stats-inbox-sparkline');
+        if (!wrap) return;
+        wrap.textContent = '';
+
+        const buckets = (this._inboxStats && this._inboxStats.dailyBuckets) || {};
+        const period = Number(days) || 30;
+        const bucketCount = period === 7 ? 7 : period === 90 ? 9 : 5;
+        const bucketDays = period / bucketCount;
+        const now = Date.now();
+        const cutoff = now - period * 86400000;
+
+        const addedBuckets = Array(bucketCount).fill(0);
+        const triagedBuckets = Array(bucketCount).fill(0);
+        Object.entries(buckets).forEach(([day, counts]) => {
+            const ts = Date.parse(`${day}T00:00:00Z`);
+            if (!Number.isFinite(ts) || ts < cutoff) return;
+            const age = now - ts;
+            const idx = Math.floor(age / (bucketDays * 86400000));
+            const bucketIdx = bucketCount - 1 - Math.min(idx, bucketCount - 1);
+            addedBuckets[bucketIdx] += Number(counts?.added || 0);
+            triagedBuckets[bucketIdx] += Number(counts?.promoted || 0) + Number(counts?.deleted || 0);
+        });
+
+        const maxVal = Math.max(...addedBuckets, ...triagedBuckets, 1);
+        const W = 500, H = 72, gap = 3;
+        const groupW = Math.floor((W - gap * (bucketCount - 1)) / bucketCount);
+        const barW = Math.max(2, Math.floor((groupW - 2) / 2));
+
+        const rects = [];
+        for (let i = 0; i < bucketCount; i++) {
+            const gx = i * (groupW + gap);
+            const addH = Math.round((addedBuckets[i] / maxVal) * H);
+            const triH = Math.round((triagedBuckets[i] / maxVal) * H);
+            rects.push(`<rect x="${gx}" y="${H - addH}" width="${barW}" height="${Math.max(addH, addedBuckets[i] > 0 ? 2 : 0)}" fill="var(--accent-primary)" opacity="0.85" rx="1"/>`);
+            rects.push(`<rect x="${gx + barW + 2}" y="${H - triH}" width="${barW}" height="${Math.max(triH, triagedBuckets[i] > 0 ? 2 : 0)}" fill="var(--accent-success)" opacity="0.85" rx="1"/>`);
+        }
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('height', '72');
+        svg.setAttribute('role', 'img');
+        const totalAdded = addedBuckets.reduce((s, v) => s + v, 0);
+        const totalTriaged = triagedBuckets.reduce((s, v) => s + v, 0);
+        svg.setAttribute('aria-label', this.t('config.statsInboxSparklineAria')
+            .replace('{added}', String(totalAdded))
+            .replace('{triaged}', String(totalTriaged)));
+        svg.style.cssText = 'display:block;width:100%;';
+        svg.innerHTML = rects.join('');
+        wrap.appendChild(svg);
+
+        // Accessible table equivalent.
+        const srTable = document.createElement('table');
+        srTable.className = 'stats-sr-only';
+        const tbody = document.createElement('tbody');
+        for (let i = 0; i < bucketCount; i++) {
+            const tr = document.createElement('tr');
+            [String(i + 1), String(addedBuckets[i]), String(triagedBuckets[i])].forEach((txt) => {
+                const td = document.createElement('td');
+                td.textContent = txt;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        }
+        srTable.appendChild(tbody);
+        wrap.appendChild(srTable);
+
+        // Legend (added vs triaged), reusing muted text style.
+        const legend = document.createElement('div');
+        legend.className = 'stats-inbox-legend';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.innerHTML = `
+            <span class="stats-inbox-legend-item"><span class="stats-inbox-legend-swatch" style="background:var(--accent-primary)"></span>${this.escapeForLegend(this.t('config.statsInboxLegendAdded'))}</span>
+            <span class="stats-inbox-legend-item"><span class="stats-inbox-legend-swatch" style="background:var(--accent-success)"></span>${this.escapeForLegend(this.t('config.statsInboxLegendTriaged'))}</span>
+        `;
+        wrap.appendChild(legend);
+    }
+
+    escapeForLegend(text) {
+        return String(text ?? '').replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+    }
+
     // ── Main entry point ───────────────────────────────────────────────────
 
     refresh(manager) {
@@ -1632,6 +1968,7 @@ class ConfigStats {
         this.renderRotBlock(bookmarks, pages, locale, this.sectionPeriods.rot);
         this.renderConflictsBlock(bookmarks);
         this.renderSearchStatus(settings, bookmarks);
+        void this.loadInboxData(locale);
 
         const filterInput = document.getElementById('stats-filter-input');
         if (filterInput) {
@@ -1645,6 +1982,7 @@ class ConfigStats {
         this.bindTableFilter();
         this.applyTableFilter();
         this.setupBlockCollapsible();
+        this.setupExpandCollapseAll();
         this.setupNavClicks();
         this.initScrollspy();
         window.configManager?.ui?.refreshTabBreadcrumb?.('stats');

@@ -41,7 +41,7 @@ class Dashboard {
             showTime: true,
             timeFormat: '24h',
             showConfigButton: true,
-            showHealthDashboard: false,
+            showHealthDashboard: true,
             showRecentButton: false,
             showTips: false,
 

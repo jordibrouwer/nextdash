@@ -161,6 +161,17 @@ body[data-layout-version="glass"] .stats-tab-surface {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Quick links parity with Help tab (classic/modern/glass): same roomy list rhythm. */
+.stats-tab-surface .stats-index ul {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.stats-tab-surface .stats-index li {
+    margin-bottom: 0.45rem !important;
+    line-height: 1.6;
+}
+
 /* ── Blocks ── */
 .stats-block {
     border: 1px solid var(--border-primary);
@@ -562,6 +573,30 @@ body[data-layout-version="glass"] .stats-tab-surface {
     color: var(--text-tertiary);
     margin: 0;
     opacity: 0.9;
+}
+
+/* ── Inbox trend legend ── */
+.stats-inbox-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-top: 0.4rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+}
+
+.stats-inbox-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.stats-inbox-legend-swatch {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 2px;
+    opacity: 0.85;
 }
 
 /* ── Responsive ── */

@@ -224,9 +224,10 @@ class DashboardVisual {
         if (d.settings.showHealthDashboard === true) {
             if (!healthLink) {
                 healthLink = document.createElement('div');
-                healthLink.className = 'health-link';
+                healthLink.className = 'health-link health-link--icon';
                 const healthLabel = d.language.t('dashboard.health');
-                healthLink.innerHTML = `<a href="/health">${healthLabel !== 'dashboard.health' ? healthLabel : 'health'}</a>`;
+                const label = healthLabel !== 'dashboard.health' ? healthLabel : 'health';
+                healthLink.innerHTML = `<a href="/health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
 
                 const headerActions = document.querySelector('.header-actions');
                 if (headerActions) {

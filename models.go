@@ -331,6 +331,10 @@ type Store interface {
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
+
+	// Inbox stats (durable aggregate; survives triaged-away items)
+	RecordInboxEvent(evt InboxEvent)
+	GetInboxStats() InboxStats
 }
 
 // PrefetchIconUpdate is a merge-safe favicon write keyed by bookmark index and canonical URL.
@@ -420,7 +424,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherUnit:                 "celsius",
 			WeatherRefreshMinutes:       30,
 			ShowConfigButton:            true,
-			ShowHealthDashboard:         false,
+			ShowHealthDashboard:         true,
 			ShowSearchButton:            true,
 			ShowAddBookmarkButton:       true,
 			ShowFindersButton:           true,
@@ -1588,7 +1592,7 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherUnit:               "celsius",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
-			ShowHealthDashboard:       false,
+			ShowHealthDashboard:       true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
 			ShowFindersButton:         true,
@@ -1731,7 +1735,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowCommandsButton = true
 		}
 		if _, ok := rawSettings["showHealthDashboard"]; !ok {
-			settings.ShowHealthDashboard = false
+			settings.ShowHealthDashboard = true
 		}
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true

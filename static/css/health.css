@@ -1,13 +1,19 @@
 body {
+    /* Reset the UA default 8px body margin so the health shell starts flush at
+       the viewport edge, matching the dashboard and config pages. */
+    margin: 0;
     overflow-x: hidden;
     width: 100%;
 }
 
 .health-shell {
-    max-width: min(88%, 1600px);
+    /* Same content box as the dashboard/config .container so the health header
+       and nav links line up with those pages instead of jumping. */
+    max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem clamp(2rem, 6vw, 8rem);
+    box-sizing: border-box;
 }
 
 .health-header {

@@ -9,24 +9,33 @@ class ConfigData {
     }
 
     /**
+     * Fetch and parse JSON, surfacing a clear error on a non-OK response instead
+     * of letting res.json() throw an obscure parse error on an HTML/500 body.
+     * @param {string} url
+     * @param {string} label - human-readable resource name for error messages
+     * @returns {Promise<any>}
+     */
+    async fetchJson(url, label) {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Failed to load ${label} (HTTP ${res.status})`);
+        }
+        return res.json();
+    }
+
+    /**
      * Load all data from API
      * @param {boolean} deviceSpecific - Whether to use device-specific settings
      * @returns {Promise<Object>} - Object containing bookmarks, categories, pages, and settings
      */
     async loadData(deviceSpecific) {
         try {
-            const [bookmarksRes, pagesRes, settingsRes] = await Promise.all([
-                fetch('/api/bookmarks'),
-                fetch('/api/pages'),
-                fetch('/api/settings')
+            const [bookmarks, pages, serverSettings] = await Promise.all([
+                this.fetchJson('/api/bookmarks', 'bookmarks'),
+                this.fetchJson('/api/pages', 'pages'),
+                this.fetchJson('/api/settings', 'settings')
             ]);
 
-            const bookmarks = await bookmarksRes.json();
-            const pages = await pagesRes.json();
-            
-            // Load settings from server first
-            const serverSettings = await settingsRes.json();
-            
             // Load settings from localStorage or server based on device-specific flag
             let settings;
             if (deviceSpecific) {
@@ -87,8 +96,7 @@ class ConfigData {
      * @returns {Promise<Array>}
      */
     async loadBookmarksByPage(pageId) {
-        const res = await fetch(`/api/bookmarks?page=${pageId}`);
-        return await res.json();
+        return this.fetchJson(`/api/bookmarks?page=${pageId}`, 'bookmarks');
     }
 
     /**
@@ -118,8 +126,7 @@ class ConfigData {
      */
     async loadCategoriesByPage(pageId = null) {
         const url = pageId ? `/api/categories?page=${pageId}` : '/api/categories';
-        const res = await fetch(url);
-        return await res.json();
+        return this.fetchJson(url, 'categories');
     }
 
     /**
@@ -181,8 +188,7 @@ class ConfigData {
      * @returns {Promise<Object>}
      */
     async loadServerSettings() {
-        const settingsRes = await fetch('/api/settings');
-        return await settingsRes.json();
+        return this.fetchJson('/api/settings', 'settings');
     }
 
     /**
@@ -190,8 +196,7 @@ class ConfigData {
      * @returns {Promise<Array>}
      */
     async loadFinders() {
-        const res = await fetch('/api/finders');
-        return await res.json();
+        return this.fetchJson('/api/finders', 'finders');
     }
 
     /**

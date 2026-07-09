@@ -1255,7 +1255,7 @@ class ConfigSetup {
         this.c.setupAutosaveLowRiskFields();
         this.c.setupStickySaveBar();
         this.c.setupNavigationGuards();
-        this.c.setupHealthBadgeRefresh();
+        this.c.setupHeaderBadgeRefresh();
         window.ConfigHelpSearch?.init(this.c.language);
         window.ConfigSettingsSearch?.init(this.c.language);
         this.c.updateHealthBadge();
@@ -1267,9 +1267,9 @@ class ConfigSetup {
         }
     }
 
-    setupHealthBadgeRefresh() {
-        if (this.c._healthBadgeRefreshBound) return;
-        this.c._healthBadgeRefreshBound = true;
+    setupHeaderBadgeRefresh() {
+        if (this.c._headerBadgeRefreshBound) return;
+        this.c._headerBadgeRefreshBound = true;
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.c.updateHealthBadge();
@@ -1278,7 +1278,7 @@ class ConfigSetup {
     }
 
     async updateHealthBadge() {
-        const anchor = document.querySelector('header.header .header-links a.back-link[href^="/health"]');
+        const anchor = document.querySelector('header.header .header-links a.health-link-anchor[href^="/health"]');
         const utils = window.HealthBadgeUtils;
         if (!anchor || !utils) return;
         try {
@@ -1710,7 +1710,7 @@ class ConfigSetup {
 
     installPublicMethods() {
         const c = this.config;
-        for (const name of ['setupDOM', 'setupEventListeners', 'setupHealthBadgeRefresh', 'updateHealthBadge', 'setupNavigationGuards', 'setupStructureAutoSyncListeners', 'setupGeneralCardCollapsible', 'setupBookmarksTabCollapsibles', 'setupCascadingCheckboxes', 'setupInputValidation']) {
+        for (const name of ['setupDOM', 'setupEventListeners', 'setupHeaderBadgeRefresh', 'updateHealthBadge', 'setupNavigationGuards', 'setupStructureAutoSyncListeners', 'setupGeneralCardCollapsible', 'setupBookmarksTabCollapsibles', 'setupCascadingCheckboxes', 'setupInputValidation']) {
             c[name] = (...args) => this[name](...args);
         }
     }

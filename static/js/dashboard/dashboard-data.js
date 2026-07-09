@@ -215,7 +215,7 @@ class DashboardData {
                 d.settings.pasteDestination = 'ask';
             }
             if (typeof d.settings.showHealthDashboard === 'undefined') {
-                d.settings.showHealthDashboard = false;
+                d.settings.showHealthDashboard = true;
             }
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;

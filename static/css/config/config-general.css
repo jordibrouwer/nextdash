@@ -75,6 +75,10 @@ html:has(#config-main) .config-save-sticky * {
 
 body {
     min-height: 100vh;
+    /* Reset the UA default 8px body margin so the config shell starts flush at
+       the viewport edge, matching the dashboard (otherwise the config header/nav
+       sit 8px inward and appear to jump when switching pages). */
+    margin: 0;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: var(--font-size-text);
     overflow-x: hidden;
@@ -122,15 +126,20 @@ body {
     padding-bottom: 2rem;
 }
 
-/* Single shared column — header, save/tabs, and tab content share exact width */
+/* Single shared column — header, save/tabs, and tab content share exact width.
+   Mirrors the dashboard .container box (max-width 1600px + clamp side margin) so
+   the config header/nav line up with the dashboard header instead of jumping. */
 html:has(#config-main) .config-page-shell {
     display: grid;
-    grid-template-columns: minmax(0, min(88%, 1600px));
+    /* Match the dashboard .container exactly: cap the box at 1600px with an
+       auto side margin (not a 1600px grid track centered inside a full-width
+       padded shell, which drifted narrower than the dashboard above 1600px). */
+    grid-template-columns: minmax(0, 1fr);
     justify-content: center;
     width: 100%;
-    max-width: 100%;
+    max-width: 1600px;
     margin-inline: auto;
-    padding-inline: 1rem;
+    padding-inline: clamp(2rem, 6vw, 8rem);
     box-sizing: border-box;
 }
 
@@ -143,10 +152,10 @@ html:has(#config-main) .config-page-column {
 }
 
 .container {
-    max-width: min(88%, 1600px);
+    max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 clamp(2rem, 6vw, 8rem);
 }
 
 /* Equal-width chrome rows (save bar, tabs, General intro/cards) */
@@ -471,13 +480,12 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 1.5rem;
+    gap: 0.85rem;
     margin-left: auto;
     align-self: flex-start;
     padding-top: 0.12rem;
 }
 
-.config-header-top .health-link a,
 .config-header-top .dashboard-link a,
 .config-header-top .header-links .back-link {
     text-decoration: none;
@@ -496,65 +504,86 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     box-shadow: none;
 }
 
-.config-header-top .health-link a:hover,
 .config-header-top .dashboard-link a:hover,
 .config-header-top .header-links .back-link:hover {
     color: var(--text-primary);
 }
 
-.config-header-top .health-link a {
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-    gap: 0;
-    padding-right: 0.35em;
+.config-header-top .page-tab-icon {
+    margin-right: 0;
+    font-style: normal;
+    line-height: 1;
 }
 
-.config-header-top .health-link a:hover {
-    animation: none;
-    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
+.config-header-top .inbox-link--icon .back-link,
+.config-header-top .health-link--icon .back-link {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.config-header-top .inbox-link--icon .back-link:hover,
+.config-header-top .health-link--icon .back-link:hover {
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
+    text-shadow: none;
+}
+
+.config-header-top .health-link--icon .health-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+.config-header-top .page-inbox-badge {
+    display: none !important;
+}
+
+.config-header-top .page-inbox-badge.is-inbox-badge-visible {
+    display: inline-flex !important;
+    min-width: 1.35rem;
+    padding: 0.1rem 0.4rem;
+    margin-left: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    align-items: center;
+    justify-content: center;
 }
 
 .health-badge {
-    position: absolute;
-    top: -0.45em;
-    right: -0.55em;
+    position: static;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.15em;
-    height: 1.15em;
-    padding: 0 0.25em;
-    font-size: 0.62em;
-    font-weight: var(--font-weight-bold);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+    min-width: 1.35rem;
+    height: auto;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.1;
     border-radius: 999px;
-    color: #fff;
-    background: var(--accent-error);
+    color: var(--accent-error);
+    border: 1px solid color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
     pointer-events: none;
     z-index: 1;
     box-sizing: border-box;
 }
 
 .health-badge-warn {
-    background: var(--accent-warning);
-    color: var(--text-on-warning, #000);
-}
-
-@keyframes healthLinkShimmer {
-    0%   { text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0); }
-    50%  { text-shadow: 0 0 8px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.6); }
-    100% { text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0); }
-}
-
-.config-header-top .header-links a[href="/health"] {
-    transition: none;
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-}
-
-.config-header-top .header-links a[href="/health"]:hover {
-    animation: none;
-    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
-    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
+    color: var(--accent-warning);
 }
 
 .nav-links {

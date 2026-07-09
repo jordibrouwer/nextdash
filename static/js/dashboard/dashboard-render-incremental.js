@@ -199,29 +199,53 @@ class DashboardRenderIncremental {
             list.removeAttribute('data-show-ping');
         }
 
-        const desiredUrls = bookmarks.map((bookmark) => this.normalizeUrl(bookmark?.url));
-        const rowByUrl = new Map();
+        const rowsByUrl = new Map();
         list.querySelectorAll('.bookmark-link[data-bookmark-url]').forEach((row) => {
             const url = this.normalizeUrl(row.getAttribute('data-bookmark-url'));
             if (url) {
-                rowByUrl.set(url, row);
+                const rows = rowsByUrl.get(url);
+                if (rows) {
+                    rows.push(row);
+                } else {
+                    rowsByUrl.set(url, [row]);
+                }
             }
         });
 
         const usedRows = new Set();
         const fragment = document.createDocumentFragment();
 
-        bookmarks.forEach((bookmark, index) => {
+        // data-bookmark-index is a page-global index (matches the full render's
+        // resolveBookmarkIndex); readers like keyboard-nav/search index d.bookmarks by it.
+        const applyBookmarkIndex = (row, pageIndex) => {
+            if (pageIndex >= 0) {
+                row.setAttribute('data-bookmark-index', String(pageIndex));
+            } else {
+                row.removeAttribute('data-bookmark-index');
+            }
+        };
+
+        bookmarks.forEach((bookmark) => {
             const pageIndex = Array.isArray(d.bookmarks) ? d.bookmarks.indexOf(bookmark) : -1;
             const urlKey = this.normalizeUrl(bookmark?.url);
-            let row = urlKey ? rowByUrl.get(urlKey) : null;
+            let row = null;
+            if (urlKey) {
+                const rows = rowsByUrl.get(urlKey);
+                if (rows) {
+                    row = rows.find((candidate) => !usedRows.has(candidate)) || null;
+                }
+            }
             if (!row && pageIndex >= 0) {
-                row = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
+                const byIndex = list.querySelector(`.bookmark-link[data-bookmark-index="${pageIndex}"]`);
+                row = usedRows.has(byIndex) ? null : byIndex;
             }
             if (!row && urlKey) {
                 row = [...document.querySelectorAll(
                     '#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]'
-                )].find((el) => this.normalizeUrl(el.getAttribute('data-bookmark-url')) === urlKey) || null;
+                )].find((el) => (
+                    this.normalizeUrl(el.getAttribute('data-bookmark-url')) === urlKey
+                    && !usedRows.has(el)
+                )) || null;
             }
             const fingerprint = d.bookmarkRows.bookmarkRenderFingerprint(bookmark);
 
@@ -229,7 +253,7 @@ class DashboardRenderIncremental {
                 usedRows.add(row);
                 if (row.classList.contains('bookmark-inline-editing') || row.querySelector('.bookmark-inline-form')) {
                     d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
-                    row.setAttribute('data-bookmark-index', String(index));
+                    applyBookmarkIndex(row, pageIndex);
                     fragment.appendChild(row);
                     return;
                 }
@@ -239,13 +263,13 @@ class DashboardRenderIncremental {
                 if (needsRefresh) {
                     d.populateBookmarkRowView(row, bookmark, category.id || '', !isSmartCollection);
                 }
-                row.setAttribute('data-bookmark-index', String(index));
+                applyBookmarkIndex(row, pageIndex);
                 fragment.appendChild(row);
                 return;
             }
 
             row = d.createBookmarkElement(bookmark, category.id || '', !isSmartCollection);
-            row.setAttribute('data-bookmark-index', String(index));
+            applyBookmarkIndex(row, pageIndex);
             fragment.appendChild(row);
         });
 

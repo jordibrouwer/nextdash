@@ -77,7 +77,7 @@ class ConfigManager {
             showCheatSheetButton: false,
             showAddBookmarkButton: true,
             showRecentButton: false,
-            showHealthDashboard: false,
+            showHealthDashboard: true,
             showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,

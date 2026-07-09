@@ -31,7 +31,7 @@ class ConfigSettingsDefaults {
             settingsData.showCheatSheetButton = true;
         }
         if (typeof settingsData.showHealthDashboard === 'undefined') {
-            settingsData.showHealthDashboard = false;
+            settingsData.showHealthDashboard = true;
         }
         if (typeof settingsData.showTips === 'undefined') {
             settingsData.showTips = false;

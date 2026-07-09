@@ -29,8 +29,14 @@ class ConfigStorage {
         if (window.DeviceSettingsMerge?.getDeviceSettingsRaw) {
             return window.DeviceSettingsMerge.getDeviceSettingsRaw();
         }
-        const stored = localStorage.getItem('dashboardSettings');
-        return stored ? JSON.parse(stored) : null;
+        // Fallback path when DeviceSettingsMerge isn't loaded yet: guard against
+        // corrupt localStorage so a bad JSON blob can't crash config init.
+        try {
+            const stored = localStorage.getItem('dashboardSettings');
+            return stored ? JSON.parse(stored) : null;
+        } catch {
+            return null;
+        }
     }
 
     /**
