@@ -86,7 +86,7 @@ Nothing yet.
 
 ## v2026.07.09 — July 2026
 
-**Health icon & counter, dashboard/config/health margin alignment, Stats inbox insights** — the header health link becomes a heartbeat icon with an inline counter (on by default), the dashboard reclaims side whitespace before shrinking columns, config and health share the dashboard's content box, and Stats gains an Inbox section plus expand/collapse-all with remembered state.
+**Health icon & counter, aligned page chrome, and Stats inbox insights** — the dashboard header health link becomes a heartbeat icon with an inline counter (on by default), the dashboard reclaims side whitespace before shrinking columns, config and health share the dashboard's content box (including wide screens), the config header health link now matches the dashboard icon treatment, and Stats gains an Inbox section plus expand/collapse-all with remembered state.
 
 ### Dashboard header
 
@@ -97,7 +97,7 @@ Nothing yet.
 ### Dashboard layout
 
 - **fix** **Roomier side margins** — the side margin was a percentage of the window (`min(88%, 1600px)`), so narrowing the window squeezed the columns first while wide margins stayed. It's now a fixed clamped buffer (`clamp(2rem, 6vw, 8rem)`) that shrinks as the window narrows, with roomier margins on wide screens so the columns sit closer together. The same content box is shared by the config and health pages so their headers and nav line up (`dashboard.css`, `responsive.css`, `config-general.css`, `config-save-sticky.css`, `health.css`).
-- **fix** **Status row highlight** — online/offline/checking bookmark rows now get a consistent left inset (`--bookmark-row-start-pad`) and rounded corners, so the coloured status highlight no longer looks clipped at the row edges (`dashboard.css`, `dashboard-bookmark-row.css`).
+- **fix** **Status row highlight** — online/offline/checking bookmark rows now get a consistent left inset (`--bookmark-row-start-pad`) and rounded corners, plus extra spacing so the left status bar no longer crowds favicons (`dashboard.css`, `dashboard-bookmark-row.css`).
 
 ### Config → Stats
 
@@ -108,6 +108,8 @@ Nothing yet.
 ### Config & health chrome
 
 - **fix** **Aligned margins across pages** — config and health now share the dashboard's `1600px` + `clamp()` content box and reset the UA default 8px body margin, so their header and nav links line up with the dashboard and no longer jump when switching pages (`config-general.css`, `config-save-sticky.css`, `health.css`, `responsive.css`).
+- **fix** **Config shell alignment on wide screens** — above `1600px`, config no longer drifts narrower than dashboard/health; the config page shell now uses the same max-width + auto-margin model so all three pages align at every viewport width (`config-general.css`, `responsive.css`).
+- **fix** **Config header icon parity** — config header actions now use the dashboard-style heartbeat icon link and count pill styling for health, keep only the health icon + back-to-dashboard link, and drop the extra inbox pill from config header chrome (`templates/config.html`, `config-general.css`, `config-setup.js`, `config.css`).
 - **fix** **Config help titles show &** — plain-text help titles like *Health & status* and *Tags & collections* rendered a literal `&amp;` because they're set via `textContent`; `&amp;` replaced with `&` in the plain (no-markup) locale strings across EN/NL/DE/FR (markup-bearing strings keep `&amp;`).
 
 ### Config fixes
@@ -121,7 +123,7 @@ Nothing yet.
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.09** release notes.
 - **fix** **What's new modal** — **v2026.07.09** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v136` data version and `2026.07-dashboard-release-v104` dashboard release token; `health-icon-badge-2`, `inbox-tab-gap-1`, `stats-expand-collapse-all-1`, `help-expand-collapse-all-1`, `stats-collapse-persist-1`, and `wider-margins-1` asset query strings.
+- **fix** **Cache-bust** — `whats-new-v136` data version and `2026.07-dashboard-release-v104` dashboard release token; `health-icon-badge-2`, `inbox-tab-gap-1`, `stats-expand-collapse-all-1`, `help-expand-collapse-all-1`, `stats-collapse-persist-1`, `wider-margins-1`, `config-shell-align-1`, and `config-header-icon-links-2` asset query strings.
 
 ---
 
