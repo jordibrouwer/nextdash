@@ -651,7 +651,12 @@ class ConfigSettings {
         if (columnsInput) {
             columnsInput.value = settings.columnsPerRow;
             columnsInput.addEventListener('input', (e) => {
-                settings.columnsPerRow = parseInt(e.target.value);
+                // Guard against an empty/non-numeric field (parseInt('') === NaN),
+                // which would serialize to null and break the dashboard column layout.
+                const parsed = Number.parseInt(e.target.value, 10);
+                if (Number.isFinite(parsed)) {
+                    settings.columnsPerRow = Math.min(6, Math.max(1, parsed));
+                }
             });
         }
 
