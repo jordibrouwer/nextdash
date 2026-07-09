@@ -480,13 +480,12 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 1.5rem;
+    gap: 0.85rem;
     margin-left: auto;
     align-self: flex-start;
     padding-top: 0.12rem;
 }
 
-.config-header-top .health-link a,
 .config-header-top .dashboard-link a,
 .config-header-top .header-links .back-link {
     text-decoration: none;
@@ -505,65 +504,86 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     box-shadow: none;
 }
 
-.config-header-top .health-link a:hover,
 .config-header-top .dashboard-link a:hover,
 .config-header-top .header-links .back-link:hover {
     color: var(--text-primary);
 }
 
-.config-header-top .health-link a {
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-    gap: 0;
-    padding-right: 0.35em;
+.config-header-top .page-tab-icon {
+    margin-right: 0;
+    font-style: normal;
+    line-height: 1;
 }
 
-.config-header-top .health-link a:hover {
-    animation: none;
-    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
+.config-header-top .inbox-link--icon .back-link,
+.config-header-top .health-link--icon .back-link {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.config-header-top .inbox-link--icon .back-link:hover,
+.config-header-top .health-link--icon .back-link:hover {
+    background: color-mix(in srgb, var(--background-secondary) 60%, transparent 40%);
+    text-shadow: none;
+}
+
+.config-header-top .health-link--icon .health-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+.config-header-top .page-inbox-badge {
+    display: none !important;
+}
+
+.config-header-top .page-inbox-badge.is-inbox-badge-visible {
+    display: inline-flex !important;
+    min-width: 1.35rem;
+    padding: 0.1rem 0.4rem;
+    margin-left: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    align-items: center;
+    justify-content: center;
 }
 
 .health-badge {
-    position: absolute;
-    top: -0.45em;
-    right: -0.55em;
+    position: static;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.15em;
-    height: 1.15em;
-    padding: 0 0.25em;
-    font-size: 0.62em;
-    font-weight: var(--font-weight-bold);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+    min-width: 1.35rem;
+    height: auto;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.1;
     border-radius: 999px;
-    color: #fff;
-    background: var(--accent-error);
+    color: var(--accent-error);
+    border: 1px solid color-mix(in srgb, var(--accent-error) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 18%, transparent);
     pointer-events: none;
     z-index: 1;
     box-sizing: border-box;
 }
 
 .health-badge-warn {
-    background: var(--accent-warning);
-    color: var(--text-on-warning, #000);
-}
-
-@keyframes healthLinkShimmer {
-    0%   { text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0); }
-    50%  { text-shadow: 0 0 8px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.6); }
-    100% { text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0); }
-}
-
-.config-header-top .header-links a[href="/health"] {
-    transition: none;
-    animation: healthLinkShimmer 3s ease-in-out infinite;
-}
-
-.config-header-top .header-links a[href="/health"]:hover {
-    animation: none;
-    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
-    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
+    color: var(--accent-warning);
 }
 
 .nav-links {
