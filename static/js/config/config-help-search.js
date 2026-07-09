@@ -134,6 +134,29 @@
         block.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    /** Expand or collapse every help section at once, then sync the active nav link. */
+    function setAllBlocksCollapsed(collapsed) {
+        document.querySelectorAll('.help-content .help-block[id]').forEach((block) => {
+            block.classList.toggle('is-collapsed', collapsed);
+            const title = block.querySelector('.section-title');
+            if (title) title.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+        syncActiveNavFromOpenBlock();
+    }
+
+    function setupExpandCollapseAll() {
+        const expandBtn = document.getElementById('help-expand-all-btn');
+        const collapseBtn = document.getElementById('help-collapse-all-btn');
+        if (expandBtn && expandBtn.dataset.bulkWired !== '1') {
+            expandBtn.dataset.bulkWired = '1';
+            expandBtn.addEventListener('click', () => setAllBlocksCollapsed(false));
+        }
+        if (collapseBtn && collapseBtn.dataset.bulkWired !== '1') {
+            collapseBtn.dataset.bulkWired = '1';
+            collapseBtn.addEventListener('click', () => setAllBlocksCollapsed(true));
+        }
+    }
+
     function setupNavClicks() {
         const indexEl = document.querySelector('.help-index');
         const chipEl = document.getElementById('help-chip-nav');
@@ -230,6 +253,7 @@
             }
 
             setupBlockCollapsible();
+            setupExpandCollapseAll();
             setupNavClicks();
             initScrollspy();
             syncActiveNavFromOpenBlock();

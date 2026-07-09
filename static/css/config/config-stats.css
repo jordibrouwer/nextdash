@@ -575,6 +575,30 @@ body[data-layout-version="glass"] .stats-tab-surface {
     opacity: 0.9;
 }
 
+/* ── Inbox trend legend ── */
+.stats-inbox-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-top: 0.4rem;
+    font-size: var(--font-size-controls);
+    color: var(--text-tertiary);
+}
+
+.stats-inbox-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.stats-inbox-legend-swatch {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 2px;
+    opacity: 0.85;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .stats-layout:not(.config-split-layout) {

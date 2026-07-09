@@ -96,6 +96,7 @@ func main() {
 	r.HandleFunc("/api/inbox", handlers.DeleteInboxItem).Methods("DELETE")
 	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH")
 	r.HandleFunc("/api/inbox", handlers.PutInboxItem).Methods("PUT")
+	r.HandleFunc("/api/inbox-stats", handlers.GetInboxStats).Methods("GET")
 	r.HandleFunc("/api/previews/clear", handlers.ClearAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/previews/refresh", handlers.RefreshAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")

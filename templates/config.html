@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
     <link rel="stylesheet" href="/static/css/reorder.css">
     <link rel="stylesheet" href="/static/css/modal.css?v=whats-new-kofi-stars-1">
-    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-sticky-accordion-1">
+    <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-inbox-block-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
@@ -1866,6 +1866,8 @@
                     <button type="button" id="stats-filter-clear" class="config-filter-clear stats-filter-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
                 </div>
                 <div class="config-tab-toolbar-tools stats-page-intro-actions">
+                    <button type="button" id="stats-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
+                    <button type="button" id="stats-collapse-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalCollapseAll">Collapse all sections</button>
                     <button type="button" id="stats-refresh-btn" class="btn btn-secondary btn-small" data-i18n="config.statsRefresh">Refresh</button>
                     <button type="button" id="stats-export-csv-btn" class="btn btn-secondary btn-small" data-i18n="config.statsExportCsv">Export CSV</button>
                 </div>
@@ -1886,6 +1888,7 @@
                         <li><a href="#stats-tags" data-i18n="config.statsNavTags">tags</a></li>
                         <li><a href="#stats-shortcuts" data-i18n="config.statsNavShortcuts">shortcuts</a></li>
                         <li><a href="#stats-finders" data-i18n="config.statsNavFinders">finders</a></li>
+                        <li><a href="#stats-inbox" data-i18n="config.statsNavInbox">inbox</a></li>
                         <li><a href="#stats-rot" data-i18n="config.statsNavRot">rot &amp; cleanup</a></li>
                         <li><a href="#stats-conflicts" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</a></li>
                         <li><a href="#stats-search" data-i18n="config.statsNavSearch">search &amp; status</a></li>
@@ -1910,6 +1913,8 @@
                             <div><dt data-i18n="config.statsWithShortcut">With shortcut</dt><dd id="stats-with-shortcut">0</dd></div>
                             <div><dt data-i18n="config.statsWithoutShortcut">Without shortcut</dt><dd id="stats-without-shortcut">0</dd></div>
                             <div><dt data-i18n="config.statsAvgOpensLabel">Avg opens / bookmark</dt><dd id="stats-avg-opens">0</dd></div>
+                            <div><dt data-i18n="config.statsInboxTotal">Inbox items</dt><dd id="stats-overview-inbox-total">0</dd></div>
+                            <div><dt data-i18n="config.statsInboxUnread">Inbox unread</dt><dd id="stats-overview-inbox-unread">0</dd></div>
                             <div><dt data-i18n="config.statsLastBackupLabel">Last backup</dt><dd id="stats-last-backup">—</dd></div>
                         </dl>
                     </section>
@@ -2151,6 +2156,98 @@
                         </div>
                     </section>
 
+                    <section id="stats-inbox" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavInbox">inbox</h3>
+                            <button type="button" class="info-button" id="stats-inbox-info-btn">ℹ</button>
+                        </div>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsInboxSubCurrent">current inbox</h4>
+                        <div class="stats-rot-grid">
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-total" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxTotal">inbox items</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-unread" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxUnread">unread</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-oldest-unread" class="stats-rot-value">—</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxOldestUnread">oldest unread</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-backlog" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxBacklog">unread &gt; 30d</div>
+                            </div>
+                        </div>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsInboxRead">Read (kept)</dt><dd id="stats-inbox-read">0</dd></div>
+                            <div><dt data-i18n="config.statsInboxWithTags">With tags</dt><dd id="stats-inbox-with-tags">0</dd></div>
+                            <div><dt data-i18n="config.statsInboxWithNote">With note</dt><dd id="stats-inbox-with-note">0</dd></div>
+                            <div><dt data-i18n="config.statsInboxWithPreview">With preview</dt><dd id="stats-inbox-with-preview">0</dd></div>
+                        </dl>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsInboxSubThroughput">triage throughput (lifetime)</h4>
+                        <p id="stats-inbox-since" class="stats-muted" hidden></p>
+                        <div class="stats-shortcut-bar-wrap">
+                            <div class="stats-shortcut-bar">
+                                <div id="stats-inbox-conversion-fill" class="stats-shortcut-bar-fill"></div>
+                            </div>
+                            <span id="stats-inbox-conversion-label" class="stats-shortcut-bar-label"></span>
+                        </div>
+                        <div class="stats-rot-grid">
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-added" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxAdded">added</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-promoted" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxPromoted">converted</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-deleted" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxDeleted">discarded</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-inbox-avg-retention" class="stats-rot-value">—</div>
+                                <div class="stats-rot-label" data-i18n="config.statsInboxAvgRetention">avg. time to triage</div>
+                            </div>
+                        </div>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsInboxSubTrend">triage activity</h4>
+                        <div class="stats-period-bar" data-section="inbox">
+                            <button type="button" class="stats-period-btn" data-period="7" data-i18n="config.statsPeriodWeek">week</button>
+                            <button type="button" class="stats-period-btn active" data-period="30" data-i18n="config.statsPeriodMonth">month</button>
+                            <button type="button" class="stats-period-btn" data-period="90" data-i18n="config.statsPeriod3Months">3 months</button>
+                        </div>
+                        <div id="stats-inbox-sparkline" class="stats-sparkline-wrap"></div>
+                        <p class="stats-sparkline-hint" data-i18n="config.statsInboxSparklineHint">Items added vs. triaged per bucket within the selected period.</p>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsInboxSubSources">inbox by source</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsInboxColSource">Source</th>
+                                    <th data-i18n="config.statsInboxColCurrent">In inbox now</th>
+                                    <th data-i18n="config.statsInboxColLifetime">Added (lifetime)</th>
+                                </tr></thead>
+                                <tbody id="stats-inbox-sources-body"></tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsInboxSubDomains">top domains in inbox</h4>
+                        <div class="stats-table-wrap">
+                            <table class="stats-table">
+                                <thead><tr>
+                                    <th data-i18n="config.statsInboxColDomain">Domain</th>
+                                    <th data-i18n="config.statsInboxColItems">Items</th>
+                                </tr></thead>
+                                <tbody id="stats-inbox-domains-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <section id="stats-rot" class="stats-block">
                         <div class="stats-block-title-row">
                             <h3 class="section-title" data-i18n="config.statsNavRot">rot &amp; cleanup</h3>
@@ -2269,6 +2366,10 @@
                                data-i18n-placeholder="config.helpFilterPlaceholder"
                                placeholder="Filter help sections…" autocomplete="off" spellcheck="false">
                         <button type="button" id="help-search-clear" class="config-filter-clear help-search-clear" data-i18n-aria="config.statsFilterClear" aria-label="Clear filter" hidden>✕</button>
+                    </div>
+                    <div class="config-tab-toolbar-tools help-page-actions">
+                        <button type="button" id="help-expand-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalExpandAll">Expand all sections</button>
+                        <button type="button" id="help-collapse-all-btn" class="btn btn-secondary btn-small" data-i18n="config.generalCollapseAll">Collapse all sections</button>
                     </div>
                     <p id="help-search-empty" class="help-search-empty" hidden data-i18n="config.helpFilterNoResults">No sections match your search.</p>
                 </div>
@@ -2449,7 +2550,7 @@
     <script src="/static/js/config-pages-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-collections-tour.js?v=config-tours-v1"></script>
     <script src="/static/js/config-theme-tour.js?v=config-tours-v1"></script>
-    <script src="/static/js/config/config-help-search.js?v=help-accordion-nav-1"></script>
+    <script src="/static/js/config/config-help-search.js?v=help-expand-collapse-all-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
     <script src="/static/js/config/config-command-palette.js"></script>
@@ -2459,7 +2560,7 @@
     <script src="/static/js/colors.js?v=colors-b10-1"></script>
     <script src="/static/js/dashboard-promo-registry.js?v=promo-restore-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
-    <script src="/static/js/config/config-stats.js?v=stats-nav-highlight-1"></script>
+    <script src="/static/js/config/config-stats.js?v=stats-expand-collapse-all-1"></script>
     <script src="/static/js/config/config-keyboard.js?v=keyboard-list-shell-1"></script>
     <script src="/static/js/config/config-tags.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>

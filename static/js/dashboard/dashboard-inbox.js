@@ -130,9 +130,12 @@ class DashboardInbox {
         }
     }
 
-    async deleteItem(id) {
+    async deleteItem(id, options = {}) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const res = await fetcher(`/api/inbox?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        // reason=promote lets the server attribute the delete as a conversion
+        // (vs. a plain discard) in the durable inbox stats aggregate.
+        const reasonParam = options.reason === 'promote' ? '&reason=promote' : '';
+        const res = await fetcher(`/api/inbox?id=${encodeURIComponent(id)}${reasonParam}`, { method: 'DELETE' });
         if (!res.ok) {
             throw new Error(`inbox delete HTTP ${res.status}`);
         }
@@ -922,7 +925,7 @@ class DashboardInbox {
             return;
         }
         try {
-            await this.deleteItem(id);
+            await this.deleteItem(id, { reason: 'promote' });
             if (this.isActiveView()) {
                 await this.loadAndRender();
             }

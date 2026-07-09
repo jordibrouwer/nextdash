@@ -331,6 +331,10 @@ type Store interface {
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
+
+	// Inbox stats (durable aggregate; survives triaged-away items)
+	RecordInboxEvent(evt InboxEvent)
+	GetInboxStats() InboxStats
 }
 
 // PrefetchIconUpdate is a merge-safe favicon write keyed by bookmark index and canonical URL.
