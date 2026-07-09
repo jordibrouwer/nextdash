@@ -2913,7 +2913,7 @@ class ConfigSettings {
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
             showConfigButton: true,
-            showHealthDashboard: false,
+            showHealthDashboard: true,
             showSearchButton: true,
             showAddBookmarkButton: true,
             showFindersButton: true,

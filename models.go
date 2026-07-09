@@ -424,7 +424,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherUnit:                 "celsius",
 			WeatherRefreshMinutes:       30,
 			ShowConfigButton:            true,
-			ShowHealthDashboard:         false,
+			ShowHealthDashboard:         true,
 			ShowSearchButton:            true,
 			ShowAddBookmarkButton:       true,
 			ShowFindersButton:           true,
@@ -1592,7 +1592,7 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherUnit:               "celsius",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
-			ShowHealthDashboard:       false,
+			ShowHealthDashboard:       true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
 			ShowFindersButton:         true,
@@ -1735,7 +1735,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowCommandsButton = true
 		}
 		if _, ok := rawSettings["showHealthDashboard"]; !ok {
-			settings.ShowHealthDashboard = false
+			settings.ShowHealthDashboard = true
 		}
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
