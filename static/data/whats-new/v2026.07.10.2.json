@@ -10,6 +10,19 @@
         {
           "badge": "new",
           "text": "<strong>Compressed page loads</strong> — the server now gzip-compresses HTML, JavaScript, CSS, and API responses when your browser supports it (which every modern browser does). Typical files transfer 70-90% smaller (for example the main search script drops from ~98&nbsp;KB to ~19&nbsp;KB), so the dashboard and config load noticeably faster, especially over slower connections. Already-compressed files like fonts and images are left as-is."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster config load</strong> — the config page's guided-tour scripts (~374&nbsp;KB) no longer block the page from rendering; they load after the page is interactive, so config opens sooner. Tours still work exactly the same when you start one."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox icon</strong> — the dashboard inbox tab now uses a monochrome line-style icon that matches the header health icon, instead of the coloured emoji."
         }
       ]
     },

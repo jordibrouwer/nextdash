@@ -273,7 +273,7 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
-**Faster loads & quieter health borders (v2026.07.10.2)** — the server now gzip-compresses HTML/JS/CSS/JSON responses, so pages transfer 70-90% smaller (e.g. the main search script drops from ~98 KB to ~19 KB). The health page also gets the same border cleanup as config: softer borders on the stat tiles and panels, the intro frame dropped, and sections separated by spacing and headings (classic layout).
+**Faster loads & quieter health borders (v2026.07.10.2)** — the server now gzip-compresses HTML/JS/CSS/JSON responses, so pages transfer 70-90% smaller (e.g. the main search script drops from ~98 KB to ~19 KB), and the config page's guided-tour scripts (~374 KB) no longer block first paint. The dashboard inbox tab gets a monochrome line-style icon matching the health icon. The health page also gets the same border cleanup as config: softer borders on the stat tiles and panels, the intro frame dropped, and sections separated by spacing and headings (classic layout).
 
 **Quieter config borders (v2026.07.10.1)** — the config page reduced a pile-up of nested frames (save bar, tab bar, group labels, intro, quick-links sidebar, per-row lines). Borders are now reserved for the outer tab surface and real dividers; sections and topics are separated by spacing and headings instead, so the page reads calmer while staying easy to scan. Classic layout only (modern/glass early beta unchanged).
 
