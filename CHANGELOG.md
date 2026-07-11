@@ -95,6 +95,7 @@ Nothing yet.
 ### Config → General
 
 - **new** **Labelled sub-groups** — a new `.general-card-group` / `.general-card-group-label` pattern (a dimmed accent-dashed `— group` opener, one level below the `//` section heading, in the existing terminal aesthetic) splits the busiest Essentials sections into scannable groups: Localization → *language* / *date & time*; Appearance & Style → *theme* / *text* / *extras*; Layout → *grid* / *spacing* / *extras*. Same settings, same tabs — nothing moved; the tier switcher and quick-links are unchanged. Seven new group-label i18n keys across EN/NL/DE/FR (`templates/config.html`, `config-forms.css`, locales).
+- **fix** **Config tours default off for Stats/Pages/Tags/Theme** — these four config tab tours no longer auto-start on first visit; an `autoStart: false` flag plus an `isAutoStartEnabled` gate in `scheduleManualTour`/`maybeStart` blocks the auto path while leaving `force` triggers (the existing Reset/Start buttons in Config → General → Tours & onboarding) working. General/Bookmarks/Finders/Categories/Collections are unchanged (`config-tab-tours.js`).
 
 ### Accessibility & polish
 
@@ -107,7 +108,7 @@ Nothing yet.
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11** notes.
 - **fix** **What's new modal** — **v2026.07.11** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v146` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS and `a11y-polish-1` health/render-core asset query strings.
+- **fix** **Cache-bust** — `whats-new-v147` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS, `a11y-polish-1` health/render-core, and `tours-autostart-off-1` config-tab-tours asset query strings.
 
 **Scope:** classic layout, General tab only; no settings moved between tabs, no label rewrites.
 

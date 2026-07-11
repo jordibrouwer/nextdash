@@ -10,6 +10,10 @@
         {
           "badge": "new",
           "text": "<strong>Clearer settings groups</strong> — the busiest General sections are now split into small labelled sub-groups so related options sit together: Localization into <em>language</em> and <em>date &amp; time</em>, Appearance &amp; Style into <em>theme</em>, <em>text</em> and <em>extras</em>, and Layout into <em>grid</em>, <em>spacing</em> and <em>extras</em>. Same settings, same place — just easier to scan. Nothing was moved between tabs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter config tours</strong> — the Stats, Pages, Tags and Theme config tours no longer start on their own when you open those tabs. You can still run any of them any time from <em>Config → General → Tours &amp; onboarding</em>. The General, Bookmarks, Finders, Categories and Collections tours are unchanged."
         }
       ]
     },
