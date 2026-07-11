@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.11 — July 2026](#v20260711--july-2026)
 - [v2026.07.10.2 — July 2026](#v202607102--july-2026)
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
 - [v2026.07.10 — July 2026](#v20260710--july-2026)
@@ -84,6 +85,24 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.11 — July 2026
+
+**Clearer General settings** — the busiest General config sections are split into small labelled sub-groups so related options sit together and the page is easier to scan.
+
+### Config → General
+
+- **new** **Labelled sub-groups** — a new `.general-card-group` / `.general-card-group-label` pattern (a dimmed accent-dashed `— group` opener, one level below the `//` section heading, in the existing terminal aesthetic) splits the busiest Essentials sections into scannable groups: Localization → *language* / *date & time*; Appearance & Style → *theme* / *text* / *extras*; Layout → *grid* / *spacing* / *extras*. Same settings, same tabs — nothing moved; the tier switcher and quick-links are unchanged. Seven new group-label i18n keys across EN/NL/DE/FR (`templates/config.html`, `config-forms.css`, locales).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11** notes.
+- **fix** **What's new modal** — **v2026.07.11** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v144` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS asset query strings.
+
+**Scope:** classic layout, General tab only; no settings moved between tabs, no label rewrites.
 
 ---
 
