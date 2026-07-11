@@ -47,6 +47,7 @@ type pageAssetVersions struct {
 	SearchCSS                string
 	StatusCSS                string
 	DashboardEnhancementsCSS string
+	FontsCSS                 string
 }
 
 var sharedAssetVersions = pageAssetVersions{
@@ -92,4 +93,5 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCSS:                "dashboard-whats-new-fab-1",
 	StatusCSS:                "dashboard-chrome-c3-1",
 	DashboardEnhancementsCSS: "page-overview-modal-1",
+	FontsCSS:                 "self-hosted-scp-1",
 }

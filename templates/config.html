@@ -51,11 +51,10 @@
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/config-glass.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-classic-separate-2">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
