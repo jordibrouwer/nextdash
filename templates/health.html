@@ -11,29 +11,29 @@
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
+    <!-- First-paint fallback only; theme-loader.js syncs this to the resolved --background-primary for every theme. -->
     <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/modal.css">
-    <link rel="stylesheet" href="/static/css/font-size.css">
-    <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
+    <link rel="stylesheet" href="/static/css/font-size.css?v={{.Assets.FontSizeCSS}}">
+    <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
-    <link rel="stylesheet" href="/static/css/config/config-buttons.css">
+    <link rel="stylesheet" href="/static/css/config/config-buttons.css?v={{.Assets.ConfigButtonsCSS}}">
     <link rel="stylesheet" href="/static/css/health.css?v=wider-margins-1">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v=health-layout-parity-1">
     <link rel="stylesheet" href="/static/css/health-modern.css?v=health-row-actions-1">
-    <link rel="stylesheet" href="/static/css/overlays-modern.css">
+    <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/health-glass.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
-    <link rel="stylesheet" href="/static/css/app-notification.css">
-    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app-notification.css?v={{.Assets.AppNotificationCSS}}">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css?v={{.Assets.SkeletonLoadingCSS}}">
+    <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-layout-preset="{{if .LayoutPreset}}{{.LayoutPreset}}{{else}}default{{end}}" data-density-mode="{{if .DensityMode}}{{.DensityMode}}{{else}}compact{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <div class="health-shell">

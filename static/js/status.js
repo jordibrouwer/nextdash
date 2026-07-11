@@ -314,8 +314,15 @@ class StatusMonitor {
             };
         } catch (error) {
             clearTimeout(timeoutId);
+            // A ping that times out (AbortError) or fails at the network layer
+            // (Safari surfaces this as a TypeError "Load failed") is an expected
+            // outcome for an unreachable/slow site, not a programming error — the
+            // bookmark is simply marked offline. Log it quietly so it doesn't read
+            // as a red console error; keep console.error only for the unexpected.
             if (error.name === 'AbortError') {
                 console.warn('Ping timeout for', bookmark.url);
+            } else if (error instanceof TypeError) {
+                console.warn('Ping failed for', bookmark.url, ':', error.message);
             } else {
                 console.error('Ping error for', bookmark.url, ':', error);
             }

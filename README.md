@@ -273,6 +273,12 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
+**Self-hosted font & faster first paint (v2026.07.10)** — the default **Source Code Pro** font is now bundled with nextDash instead of loaded from Google Fonts, so there's no third-party request, the app works fully offline, and no font call leaves your machine. Non-essential discovery/tour promo scripts no longer block the dashboard from rendering (they load after the page is interactive), so bookmarks appear sooner.
+
+**Per-theme browser colour (v2026.07.10)** — the mobile browser bar and installed-app (PWA) chrome now match the background of whatever theme you pick, including every built-in and custom theme (previously only light/dark were correct and everything else fell back to blue).
+
+**Longer What's new history (v2026.07.10)** — the What's new modal now shows the **25 most recent** releases instead of 7; the newest loads first and the rest still load on demand as you scroll, so opening it stays fast.
+
 **Health icon & counter (v2026.07.09)** — the dashboard header **health** link is now a heartbeat icon with an inline counter pill (broken/warning count; red for broken, amber for warnings, hidden when healthy), styled like the inbox tab. On by default for all users (toggle under Config → General → Header & buttons).
 
 **Dashboard margins & status rows (v2026.07.09)** — side margins are a fixed clamped buffer instead of a fixed percentage, so narrowing the window shrinks the whitespace before the columns; roomier margins on wide screens keep the columns closer together. Config and health pages share the dashboard's content box (including above 1600px), so their header and nav links line up across pages. Online/offline/checking status rows get a consistent left inset, rounded corners, and extra space so the status border does not crowd favicons.

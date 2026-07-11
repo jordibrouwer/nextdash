@@ -11,6 +11,7 @@
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
+    <!-- First-paint fallback only; theme-loader.js syncs this to the resolved --background-primary for every theme. -->
     <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,43 +19,42 @@
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
     <link rel="stylesheet" href="/static/css/config.css?v=config-header-icon-links-2">
-    <link rel="stylesheet" href="/static/css/onboarding.css">
-    <link rel="stylesheet" href="/static/css/config-general-tour.css?v=general-tour-v4">
+    <link rel="stylesheet" href="/static/css/onboarding.css?v={{.Assets.OnboardingCSS}}">
+    <link rel="stylesheet" href="/static/css/config-general-tour.css?v={{.Assets.ConfigGeneralTourCSS}}">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
-    <link rel="stylesheet" href="/static/css/reorder.css">
-    <link rel="stylesheet" href="/static/css/modal.css?v=whats-new-kofi-stars-1">
+    <link rel="stylesheet" href="/static/css/reorder.css?v={{.Assets.ReorderCSS}}">
+    <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-inbox-block-1">
     <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
-    <link rel="stylesheet" href="/static/css/bookmark-form-preview.css">
+    <link rel="stylesheet" href="/static/css/bookmark-form-preview.css?v={{.Assets.BookmarkFormPreviewCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=config-row-rhythm-a10-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=config-polish-c2-1">
     <link rel="stylesheet" href="/static/css/config/config-finders.css?v=finders-add-right-1">
     <link rel="stylesheet" href="/static/css/config/config-collections.css?v=help-split-b12-1">
     <link rel="stylesheet" href="/static/css/config/config-backups.css?v=config-polish-c2-1">
-    <link rel="stylesheet" href="/static/css/search.css">
-    <link rel="stylesheet" href="/static/css/search-commands-new.css">
-    <link rel="stylesheet" href="/static/css/status.css">
-    <link rel="stylesheet" href="/static/css/select.css">
-    <link rel="stylesheet" href="/static/css/font-size.css">
-    <link rel="stylesheet" href="/static/css/responsive.css">
-    <link rel="stylesheet" href="/static/css/dashboard-enhancements.css">
+    <link rel="stylesheet" href="/static/css/search.css?v={{.Assets.SearchCSS}}">
+    <link rel="stylesheet" href="/static/css/search-commands-new.css?v={{.Assets.SearchCommandsNewCSS}}">
+    <link rel="stylesheet" href="/static/css/status.css?v={{.Assets.StatusCSS}}">
+    <link rel="stylesheet" href="/static/css/select.css?v={{.Assets.SelectCSS}}">
+    <link rel="stylesheet" href="/static/css/font-size.css?v={{.Assets.FontSizeCSS}}">
+    <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
+    <link rel="stylesheet" href="/static/css/dashboard-enhancements.css?v={{.Assets.DashboardEnhancementsCSS}}">
     <link rel="stylesheet" href="/static/css/config-save-sticky.css?v=wider-margins-1">
     <link rel="stylesheet" href="/static/css/config/config-general-layers.css?v=general-scroll-margin-1">
     <link rel="stylesheet" href="/static/css/config/config-settings-search.css?v=config-chrome-v5-4">
     <link rel="stylesheet" href="/static/css/colors.css?v=config-polish-c2-2">
-    <link rel="stylesheet" href="/static/css/skeleton-loading.css">
+    <link rel="stylesheet" href="/static/css/skeleton-loading.css?v={{.Assets.SkeletonLoadingCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-polish-c2-2">
-    <link rel="stylesheet" href="/static/css/overlays-modern.css?v=whats-new-config-parity-1">
+    <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
     <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
     <link rel="stylesheet" href="/static/css/config-glass.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="stylesheet" href="/static/css/enhanced-features.css">
+        <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-chrome-classic-separate-2">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>

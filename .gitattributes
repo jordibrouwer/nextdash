@@ -12,6 +12,7 @@ playwright-report/** merge=ours
 node_modules/** merge=ours
 
 *_test.go merge=ours
+Makefile merge=ours
 package.json merge=ours
 package-lock.json merge=ours
 playwright.config.js merge=ours

@@ -1,0 +1,52 @@
+{
+  "tag": "v2026.07.10",
+  "date": "July 2026",
+  "releasedAt": "2026-07-10",
+  "modalLead": "This release is about a faster, more private, more consistent dashboard: the browser theme colour now matches whatever theme you pick, the default font is self-hosted (no third-party requests), non-essential scripts load out of the way of first paint, and the What's new history now shows the 25 most recent releases.",
+  "sections": [
+    {
+      "title": "Performance & privacy",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Self-hosted font</strong> — the default <em>Source Code Pro</em> font is now bundled with nextDash instead of loaded from Google Fonts. That removes a third-party request on every page, keeps the app fully working offline, and stops any font-related call leaving your machine."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster first paint</strong> — the discovery/tour promo scripts no longer block the dashboard from rendering; they load after the page is interactive, so bookmarks appear sooner (about 106&nbsp;KB moved off the critical path)."
+        }
+      ]
+    },
+    {
+      "title": "Theme & appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Correct browser theme colour</strong> — the mobile browser bar and installed-app (PWA) chrome now match the background of whatever theme you're using, including every built-in and custom theme. Previously only light and dark showed the right colour and everything else fell back to blue."
+        }
+      ]
+    },
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>More history</strong> — this modal now shows the <strong>25 most recent</strong> releases instead of 7. The newest loads first and the rest still load on demand as you scroll, each with its own loading skeleton, so opening the modal stays fast."
+        }
+      ]
+    },
+    {
+      "title": "Under the hood",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Consistent cache-busting</strong> — every dashboard, config, and health stylesheet is now versioned from one place, so a release reliably refreshes styles in your browser instead of occasionally serving a stale file."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter status pings</strong> — when a bookmark is unreachable or slow, the status check simply marks it offline as before, but it no longer prints a red error in the browser console for that expected case."
+        }
+      ]
+    }
+  ]
+}
