@@ -6,6 +6,16 @@ body {
     width: 100%;
 }
 
+:root {
+    /* Border hierarchy (health quiet-borders pass, mirrors config):
+       - --health-border      : outer panels + KPI tiles (kept, but softer)
+       - --health-border-soft : internal dividers (row separators, toolbars)
+       Panels keep a single soft frame; the intro and internal groups are
+       separated by spacing + headings instead of stacked borders. */
+    --health-border: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    --health-border-soft: color-mix(in srgb, var(--border-primary) 40%, transparent);
+}
+
 .health-shell {
     /* Same content box as the dashboard/config .container so the health header
        and nav links line up with those pages instead of jumping. */
@@ -46,10 +56,9 @@ body {
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-primary) 25%, transparent);
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
+    /* Quiet-borders: no frame — separated from the tiles below by spacing. */
+    padding: 0 0 0.25rem;
+    margin-bottom: 1.25rem;
 }
 
 .health-page-intro > div {
@@ -119,7 +128,8 @@ body {
 }
 
 .health-card {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--health-border);
+    border-radius: 6px;
     padding: 0.35rem 0.45rem;
     background: var(--background-primary);
     text-align: left;
@@ -172,7 +182,8 @@ body {
 .health-controls,
 .health-issues-panel,
 .health-duplicates-panel {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--health-border);
+    border-radius: 6px;
     background: var(--background-primary);
     padding: 0.85rem 1rem;
     margin-bottom: 1rem;
@@ -409,7 +420,7 @@ body {
     align-items: start;
     min-width: 0;
     padding: 0.65rem 0.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--health-border-soft, var(--border-primary));
     background: var(--background-primary);
     border-left: 3px solid transparent;
 }
@@ -704,7 +715,7 @@ body {
 .health-actions-menu-label-danger {
     margin-top: 0.5rem;
     padding-top: 0.35rem;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--health-border-soft, var(--border-primary));
     color: var(--accent-error);
 }
 
@@ -738,7 +749,7 @@ body {
 }
 
 .health-duplicate-group {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--health-border-soft, var(--border-primary));
     padding: 0.65rem 0.75rem;
     background: var(--background-primary);
     margin-bottom: 0;
@@ -796,7 +807,7 @@ body {
 
 .health-empty {
     padding: 18px;
-    border: 1px dashed var(--border-secondary);
+    border: 1px dashed var(--health-border-soft, var(--border-secondary));
     opacity: 0.78;
 }
 
@@ -884,7 +895,7 @@ body[data-density-mode="dense"] .health-card {
         gap: 12px;
         margin-bottom: 16px;
         padding-bottom: 12px;
-        border-bottom: 1px solid var(--border-primary);
+        border-bottom: 1px solid var(--health-border-soft, var(--border-primary));
     }
 
     .health-header h1,
