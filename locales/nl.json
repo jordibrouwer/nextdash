@@ -2595,7 +2595,9 @@
     "generalGroupLanguage": "taal",
     "generalGroupDateTime": "datum & tijd",
     "generalGroupGrid": "raster",
-    "generalGroupSpacing": "ruimte"
+    "generalGroupSpacing": "ruimte",
+    "increaseValueAria": "Waarde verhogen",
+    "decreaseValueAria": "Waarde verlagen"
   },
   "colors": {
     "title": "thema-aanpassing",

@@ -2596,7 +2596,9 @@
     "generalGroupLanguage": "sprache",
     "generalGroupDateTime": "datum & zeit",
     "generalGroupGrid": "raster",
-    "generalGroupSpacing": "abstand"
+    "generalGroupSpacing": "abstand",
+    "increaseValueAria": "Wert erhöhen",
+    "decreaseValueAria": "Wert verringern"
   },
   "colors": {
     "title": "themenanpassung",

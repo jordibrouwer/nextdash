@@ -2595,7 +2595,9 @@
     "generalGroupLanguage": "language",
     "generalGroupDateTime": "date & time",
     "generalGroupGrid": "grid",
-    "generalGroupSpacing": "spacing"
+    "generalGroupSpacing": "spacing",
+    "increaseValueAria": "Increase value",
+    "decreaseValueAria": "Decrease value"
   },
   "colors": {
     "title": "theme customization",

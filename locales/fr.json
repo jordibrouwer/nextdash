@@ -2598,7 +2598,9 @@
     "generalGroupLanguage": "langue",
     "generalGroupDateTime": "date & heure",
     "generalGroupGrid": "grille",
-    "generalGroupSpacing": "espacement"
+    "generalGroupSpacing": "espacement",
+    "increaseValueAria": "Augmenter la valeur",
+    "decreaseValueAria": "Diminuer la valeur"
   },
   "colors": {
     "title": "personnalisation du thème",
