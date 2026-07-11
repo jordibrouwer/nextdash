@@ -19,6 +19,10 @@
         {
           "badge": "fix",
           "text": "<strong>Screen-reader labels & skip link</strong> — the config number spinners (▲/▼) now announce a proper name instead of just \"button\", and the health page gained a keyboard skip-to-content link like the dashboard and config. Category header icons also load lazily, matching bookmark favicons."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Clear message without JavaScript</strong> — if JavaScript is turned off or fails to load, the dashboard now shows a short \"JavaScript required\" message instead of a loading skeleton that never finishes."
         }
       ]
     }
