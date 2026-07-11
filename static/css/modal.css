@@ -992,6 +992,7 @@ body.no-animations .modal-button.danger.selected {
     align-items: center;
     gap: 0.4rem;
     user-select: none;
+    border-radius: var(--layout-radius-xs, 6px);
 }
 
 .cheat-sheet-group-title::-webkit-details-marker {
@@ -1012,6 +1013,20 @@ body.no-animations .modal-button.danger.selected {
 
 .cheat-sheet-group-title:hover {
     color: var(--text-secondary);
+}
+
+/* Keyboard clarity: always show where focus is inside cheat sheet modal. */
+.keyboard-cheat-sheet-modal .cheat-sheet-filter:focus-visible,
+.keyboard-cheat-sheet-modal .cheat-sheet-group-title:focus-visible,
+.keyboard-cheat-sheet-modal .modal-button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+.keyboard-cheat-sheet-modal .cheat-sheet-group-title:focus-visible {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .keyboard-cheat-sheet-table {

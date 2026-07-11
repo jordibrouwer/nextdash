@@ -72,6 +72,51 @@ test.describe('dashboard overlay focus', () => {
         }), { timeout: 15_000 }).toBe(true);
     });
 
+    test('cheat sheet keeps tab focus trapped and supports keyboard scrolling', async ({ page }) => {
+        await closeDashboardOverlays(page);
+        await page.keyboard.press('!');
+        await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
+        await page.evaluate(() => {
+            window.DashboardFeaturePromos?.dismissOpen?.();
+            const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+            const body = modal?.querySelector('.modal-body');
+            if (body instanceof HTMLElement) {
+                body.scrollTop = 0;
+            }
+        });
+
+        // Move focus off the input so PageDown scrolls the modal body.
+        await page.keyboard.press('Tab');
+        await expect.poll(async () => page.evaluate(() => {
+            const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+            const active = document.activeElement;
+            return Boolean(modal && active instanceof Element && modal.contains(active));
+        })).toBe(true);
+
+        const scrolled = await page.evaluate(async () => {
+            const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+            const body = modal?.querySelector('.modal-body');
+            if (!(body instanceof HTMLElement)) {
+                return false;
+            }
+            const before = body.scrollTop;
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true, cancelable: true }));
+            await new Promise((resolve) => setTimeout(resolve, 260));
+            return body.scrollTop > before;
+        });
+        expect(scrolled).toBe(true);
+
+        // Tab stays trapped inside the modal.
+        for (let i = 0; i < 8; i += 1) {
+            await page.keyboard.press('Tab');
+            await expect.poll(async () => page.evaluate(() => {
+                const modal = document.getElementById('app-modal');
+                const active = document.activeElement;
+                return Boolean(modal?.classList.contains('show') && active instanceof Element && modal.contains(active));
+            })).toBe(true);
+        }
+    });
+
     test('recent bookmarks shortcut moves focus into modal', async ({ page }) => {
         await closeDashboardOverlays(page);
         await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());

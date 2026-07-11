@@ -4,6 +4,7 @@
 class DashboardUiHelpers {
     constructor(dashboard) {
         this.dash = dashboard;
+        this._cheatSheetKeyHandler = null;
     }
 
     formatDashboardLabel(key, replacements = {}, fallback = '') {
@@ -326,6 +327,7 @@ class DashboardUiHelpers {
         if (!window.AppModal) {
             return;
         }
+        this._cleanupCheatSheetKeyHandler();
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
@@ -368,6 +370,7 @@ class DashboardUiHelpers {
             modalClass: 'keyboard-cheat-sheet-modal',
             initialFocusSelector: '#cheat-sheet-filter',
             onHide: () => {
+                this._cleanupCheatSheetKeyHandler();
                 if (window.DashboardFeaturePromos?.isPromoOpen?.('cheatsheet')) {
                     window.DashboardFeaturePromos.dismissOpen();
                 }
@@ -404,6 +407,99 @@ class DashboardUiHelpers {
                 }
             });
         });
+        this._setupCheatSheetKeyboardNav();
+    }
+
+
+    _cleanupCheatSheetKeyHandler() {
+        if (!this._cheatSheetKeyHandler) {
+            return;
+        }
+        document.removeEventListener('keydown', this._cheatSheetKeyHandler, true);
+        this._cheatSheetKeyHandler = null;
+    }
+
+
+    _setupCheatSheetKeyboardNav() {
+        const d = this.dash;
+        this._cleanupCheatSheetKeyHandler();
+        this._cheatSheetKeyHandler = (e) => {
+            const overlay = document.getElementById('app-modal');
+            const panel = overlay?.querySelector('.keyboard-cheat-sheet-modal');
+            if (!overlay?.classList.contains('show') || !panel) {
+                this._cleanupCheatSheetKeyHandler();
+                return;
+            }
+
+            if (!panel.contains(document.activeElement)) {
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+                const filter = panel.querySelector('#cheat-sheet-filter');
+                if (filter instanceof HTMLElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    filter.focus({ preventScroll: true });
+                    if (typeof filter.select === 'function') {
+                        filter.select();
+                    }
+                }
+                return;
+            }
+
+            const activeSummary = document.activeElement?.closest?.('.cheat-sheet-group-title');
+            if (activeSummary && (e.key === ' ' || e.key === 'Enter')) {
+                const details = activeSummary.closest('details.cheat-sheet-group');
+                if (details instanceof HTMLDetailsElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    details.open = !details.open;
+                }
+                return;
+            }
+
+            const active = document.activeElement;
+            const isTypingTarget = active instanceof HTMLElement
+                && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+            if (isTypingTarget) {
+                return;
+            }
+
+            const body = panel.querySelector('.modal-body');
+            const scrollRoot = body instanceof HTMLElement ? body : panel;
+            const lineStep = 56;
+            const pageStep = Math.max(200, Math.floor(scrollRoot.clientHeight * 0.85));
+            let handled = true;
+            switch (e.key) {
+                case 'ArrowDown':
+                    scrollRoot.scrollBy({ top: lineStep, behavior: 'smooth' });
+                    break;
+                case 'ArrowUp':
+                    scrollRoot.scrollBy({ top: -lineStep, behavior: 'smooth' });
+                    break;
+                case 'PageDown':
+                    scrollRoot.scrollBy({ top: pageStep, behavior: 'smooth' });
+                    break;
+                case 'PageUp':
+                    scrollRoot.scrollBy({ top: -pageStep, behavior: 'smooth' });
+                    break;
+                case 'Home':
+                    scrollRoot.scrollTo({ top: 0, behavior: 'smooth' });
+                    break;
+                case 'End':
+                    scrollRoot.scrollTo({ top: scrollRoot.scrollHeight, behavior: 'smooth' });
+                    break;
+                default:
+                    handled = false;
+                    break;
+            }
+            if (handled) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        document.addEventListener('keydown', this._cheatSheetKeyHandler, true);
     }
 
 
