@@ -184,7 +184,7 @@ body:not([data-layout-version]) .config-page-shell > .config-section.section-con
 
 body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
 body:not([data-layout-version]) .config-section.section-controls .config-actions-top {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border, var(--border-primary));
     border-radius: var(--config-surface-radius, 6px);
     box-shadow: var(--config-surface-shadow, 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent));
     padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
@@ -198,7 +198,7 @@ body[data-layout-version="classic"] .config-section.section-controls .tabs-scrol
 body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
     margin-top: var(--config-tab-gap, 0.85rem);
     padding-top: 0;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border, var(--border-primary));
     border-radius: var(--config-surface-radius, 6px);
     box-shadow: var(--config-surface-shadow, 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent));
 }

@@ -95,7 +95,7 @@ body[data-layout-version="glass"] .help-tab-surface {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .help-tab-surface .help-block:last-child {
@@ -108,7 +108,7 @@ body[data-layout-version="glass"] .help-tab-surface {
 }
 
 .help-tab-surface .help-support-block {
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .help-search-empty {
@@ -243,7 +243,7 @@ body[data-layout-version="glass"] .help-tab-surface {
 
 .help-tips-disclosure .help-tips-catalog {
     padding: 0 0.75rem 0.75rem;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .help-block-intro:empty {

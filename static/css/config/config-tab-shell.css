@@ -111,7 +111,7 @@ html:has(#config-main) #config-main :is(
     gap: 0.75rem;
     min-height: var(--config-toolbar-min-height, 2.75rem);
     padding: var(--config-toolbar-padding-block, 0.5rem) var(--config-toolbar-padding-inline, 0.75rem);
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--config-surface-toolbar);
     flex-shrink: 0;
     width: 100%;
@@ -135,7 +135,7 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-toolbar--in-surface {
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     border-radius: 0;
     box-shadow: none;
 }
@@ -215,7 +215,7 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-toolbar--bookmarks .bookmarks-list-controls-row--filter {
     padding-top: 0;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .config-tab-surface .config-tab-toolbar--bookmarks .bookmarks-list-controls-row--filter {
@@ -311,7 +311,7 @@ html:has(#config-main) #config-main :is(
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border-soft, var(--border-primary));
     padding: 2rem;
     text-align: center;
 }
@@ -336,7 +336,7 @@ html:has(#config-main) #config-main :is(
 .config-action-list {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--config-surface-list);
     width: 100%;
     max-width: 100%;
@@ -349,7 +349,7 @@ html:has(#config-main) #config-main :is(
     gap: 0.75rem;
     padding: 0.55rem 0.75rem;
     min-height: 2.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     transition: background-color 0.12s ease;
 }
 
@@ -445,8 +445,8 @@ html:has(#config-main) #config-main :is(
     margin: 0;
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--border-primary);
-    background: var(--config-surface-list, transparent);
+    /* Quiet-borders: clean list separated by spacing + active highlight, no frame or per-item lines. */
+    gap: 0.1rem;
 }
 
 .config-split-index-list a {
@@ -457,12 +457,8 @@ html:has(#config-main) #config-main :is(
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     text-decoration: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-radius: 5px;
     transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-.config-split-index-list li:last-child a {
-    border-bottom: none;
 }
 
 .config-split-index-list a:hover {
@@ -482,7 +478,7 @@ html:has(#config-main) #config-main :is(
     flex-direction: column;
     gap: 0;
     min-width: 0;
-    border-left: 1px solid var(--border-primary);
+    border-left: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .config-split-mobile-nav {
@@ -491,7 +487,7 @@ html:has(#config-main) #config-main :is(
     overflow-x: auto;
     padding: 0.45rem 0.75rem;
     margin: 0;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--config-surface-toolbar, color-mix(in srgb, var(--background-primary) 25%, transparent));
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
@@ -503,7 +499,7 @@ html:has(#config-main) #config-main :is(
     min-height: 2rem;
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border-soft, var(--border-primary));
     border-radius: 999px;
     background: transparent;
     color: var(--text-secondary);
@@ -584,7 +580,7 @@ html:has(#config-main) #config-main :is(
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-right: 1px solid var(--border-primary);
+    border-right: 1px solid var(--config-border-soft, var(--border-primary));
     box-sizing: border-box;
 }
 
@@ -600,7 +596,7 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-surface > .bookmarks-list-controls.config-tab-toolbar--in-surface {
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     border-radius: 0;
     box-shadow: none;
 }
@@ -616,7 +612,7 @@ html:has(#config-main) #config-main :is(
 
 .config-tab-surface .config-master-pane {
     border: none;
-    border-right: 1px solid var(--border-primary);
+    border-right: 1px solid var(--config-border-soft, var(--border-primary));
     border-radius: 0;
     box-shadow: none;
 }
@@ -637,7 +633,7 @@ html:has(#config-main) #config-main :is(
         width: 100%;
         max-height: 50vh;
         border-right: none;
-        border-bottom: 1px solid var(--border-primary);
+        border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     }
 
     .config-detail-pane {
@@ -666,7 +662,7 @@ html:has(#config-main) #config-main :is(
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     text-align: left;
     max-width: none;
 }
@@ -689,7 +685,7 @@ body[data-phone-layout="true"] .bookmarks-tab-workspace {
     text-align: left;
     gap: 0.75rem;
     padding: 1.1rem 1.15rem;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border-soft, var(--border-primary));
     border-radius: var(--border-radius-md, 0.5rem);
     background: var(--config-surface-list, var(--background-secondary));
 }
