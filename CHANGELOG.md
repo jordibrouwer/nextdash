@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.10.1 — July 2026](#v202607101--july-2026)
 - [v2026.07.10 — July 2026](#v20260710--july-2026)
 - [v2026.07.09 — July 2026](#v20260709--july-2026)
 - [v2026.07.08.1 — July 2026](#v2026070081--july-2026)
@@ -82,6 +83,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.10.1 — July 2026
+
+**Quieter config borders** — the config page reduced a pile-up of nested frames so sections and topics read through spacing and headings instead of stacked borders. Classic layout only.
+
+### Config appearance
+
+- **fix** **Fewer, softer borders** — the config page stacked 6–8 framed layers at once (save bar, tab bar, SYSTEM/DASHBOARD/EXTRAS group labels, breadcrumb, Essentials/Advanced intro, quick-links sidebar, per-tab card/block/row dividers). A central `--config-border` / `--config-border-soft` token pair (classic scope) now keeps borders only on the outer tab surface and real zone dividers, and softens the rest; nested cards/blocks/rows are separated by spacing and headings. Form controls, buttons, keycaps, and badges stay crisp (`config-classic-surfaces.css`, `config-tabs.css`, `config-tab-shell.css`, `config-general.css`, `config-save-bar.css`, and the per-tab stats/help/tags/collections/backups/lists/keyboard CSS).
+- **fix** **Cleaner quick-links sidebar** — the section index dropped its frame and per-item divider lines; it's now a plain list with a rounded active/hover highlight (`config-tab-shell.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.10.1** notes.
+- **fix** **What's new modal** — **v2026.07.10.1** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v139` data version and `2026.07-dashboard-release-v106` dashboard release token; `quiet-borders-1` config CSS asset query strings.
+
+**Scope:** classic layout only (the default and recommended "best experience"); the modern/glass early-beta layouts are unchanged.
 
 ---
 

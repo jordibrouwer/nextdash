@@ -273,6 +273,8 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
+**Quieter config borders (v2026.07.10.1)** — the config page reduced a pile-up of nested frames (save bar, tab bar, group labels, intro, quick-links sidebar, per-row lines). Borders are now reserved for the outer tab surface and real dividers; sections and topics are separated by spacing and headings instead, so the page reads calmer while staying easy to scan. Classic layout only (modern/glass early beta unchanged).
+
 **Self-hosted font & faster first paint (v2026.07.10)** — the default **Source Code Pro** font is now bundled with nextDash instead of loaded from Google Fonts, so there's no third-party request, the app works fully offline, and no font call leaves your machine. Non-essential discovery/tour promo scripts no longer block the dashboard from rendering (they load after the page is interactive), so bookmarks appear sooner.
 
 **Per-theme browser colour (v2026.07.10)** — the mobile browser bar and installed-app (PWA) chrome now match the background of whatever theme you pick, including every built-in and custom theme (previously only light/dark were correct and everything else fell back to blue).
