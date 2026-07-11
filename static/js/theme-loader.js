@@ -199,6 +199,28 @@
         return version;
     }
 
+    /**
+     * Syncs the <meta name="theme-color"> tag to the active theme's resolved
+     * background color so the mobile browser / PWA chrome matches every theme
+     * (light, dark, built-in, and custom), not just the two hardcoded defaults.
+     */
+    function syncThemeColorMeta() {
+        try {
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (!meta) return;
+            const styles = getComputedStyle(document.documentElement);
+            const bg = (styles.getPropertyValue('--background-primary') || '').trim();
+            // Only overwrite once the theme CSS variables have actually resolved;
+            // an empty value means /api/theme.css hasn't applied yet, so keep the
+            // server-rendered fallback until a later sync (DOMContentLoaded/theme-changed).
+            if (bg) {
+                meta.setAttribute('content', bg);
+            }
+        } catch (e) {
+            // ignore - theme-color is a progressive enhancement
+        }
+    }
+
     function syncBackgroundDots(showBackgroundDots) {
         const show = showBackgroundDots !== false;
         document.documentElement.setAttribute('data-show-background-dots', show ? 'true' : 'false');
@@ -292,6 +314,9 @@
         
         document.head.appendChild(style);
 
+        // Keep the mobile/PWA chrome color in sync with the resolved theme background
+        syncThemeColorMeta();
+
         // Notify listeners that theme has changed
         try {
             document.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme } }));
@@ -346,6 +371,9 @@
     
     document.addEventListener('DOMContentLoaded', function() {
         applyLayoutVersion(getLayoutVersion());
+        // theme.css is guaranteed parsed by now; correct the meta if the early
+        // synchronous applyTheme() ran before the theme variables resolved.
+        syncThemeColorMeta();
 
         if (!window.DashboardFont || typeof window.DashboardFont.applyMainFont !== 'function') {
             return;
@@ -369,6 +397,7 @@
         applyTheme: applyTheme,
         applyLayoutVersion: applyLayoutVersion,
         syncBackgroundDots: syncBackgroundDots,
+        syncThemeColorMeta: syncThemeColorMeta,
         onThemeChange: function(cb) {
             if (typeof cb !== 'function') return function() {};
             const handler = (e) => cb(e?.detail?.theme);

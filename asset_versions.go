@@ -30,7 +30,7 @@ type pageAssetVersions struct {
 
 var sharedAssetVersions = pageAssetVersions{
 	ThemeCSS:               "bg-dots-layer-2",
-	ThemeJS:                "theme-sync-1",
+	ThemeJS:                "theme-color-meta-1",
 	VisualSettingsJS:       "theme-sync-1",
 	SettingsSanitizeJS:     "settings-sanitize-1",
 	DiscoverabilityJS:      "discoverability-state-4",
