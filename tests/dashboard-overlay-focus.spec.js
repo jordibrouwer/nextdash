@@ -117,6 +117,40 @@ test.describe('dashboard overlay focus', () => {
         }
     });
 
+    test('cheat sheet toggles focused section with Space', async ({ page }) => {
+        await closeDashboardOverlays(page);
+        await page.keyboard.press('!');
+        await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
+        await page.evaluate(() => {
+            window.DashboardFeaturePromos?.dismissOpen?.();
+        });
+
+        const state = await page.evaluate(() => {
+            const groups = Array.from(document.querySelectorAll(
+                '#app-modal.show .keyboard-cheat-sheet-modal details.cheat-sheet-group'
+            ));
+            if (groups.length < 2) {
+                return { ok: false };
+            }
+            const target = groups[1];
+            const summary = target.querySelector('.cheat-sheet-group-title');
+            if (!(summary instanceof HTMLElement)) {
+                return { ok: false };
+            }
+            summary.focus({ preventScroll: true });
+            const before = target.open;
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+            const afterFirst = target.open;
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+            const afterSecond = target.open;
+            return { ok: true, before, afterFirst, afterSecond };
+        });
+
+        expect(state.ok).toBe(true);
+        expect(state.afterFirst).toBe(!state.before);
+        expect(state.afterSecond).toBe(state.before);
+    });
+
     test('recent bookmarks shortcut moves focus into modal', async ({ page }) => {
         await closeDashboardOverlays(page);
         await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
