@@ -41,6 +41,10 @@
         {
           "badge": "fix",
           "text": "<strong>Consistent cache-busting</strong> — every dashboard, config, and health stylesheet is now versioned from one place, so a release reliably refreshes styles in your browser instead of occasionally serving a stale file."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter status pings</strong> — when a bookmark is unreachable or slow, the status check simply marks it offline as before, but it no longer prints a red error in the browser console for that expected case."
         }
       ]
     }

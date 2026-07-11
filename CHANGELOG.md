@@ -102,17 +102,21 @@ Nothing yet.
 
 - **new** **25-release history** — the What's new modal now shows the **25 most recent** releases instead of 7. The newest still loads first and the rest lazy-load on scroll (each its own JSON + skeleton), so open stays fast (`whats-new-modal.js`).
 
+### Dashboard
+
+- **fix** **Quieter status pings** — a status ping to an unreachable or slow bookmark rejects at the network layer (Safari surfaces it as `TypeError: Load failed`), which is an expected outcome — the bookmark is simply marked offline — but it logged via `console.error` and showed up as a red console error. Timeouts (`AbortError`) and network `TypeError`s now log via `console.warn`; `console.error` is kept only for genuinely unexpected errors. Behaviour is unchanged (`status.js`).
+
 ### Under the hood
 
 - **fix** **Centralized CSS cache-busting** — shared stylesheets across dashboard/config/health were linked without a `?v=` token (or with different tokens per page for the same file), so releases couldn't reliably invalidate them. All are now versioned from one `pageAssetVersions` field per file, so one bump invalidates a file everywhere; no stylesheet is served unversioned on the three pages anymore (`asset_versions.go`, `templates/dashboard.html`, `templates/config.html`, `templates/health.html`).
 - **fix** **Release-token test** — `TestSharedAssetVersionsMatchWhatsNewStub` pinned an exact dashboard release token and drifted red on each bump; it now matches the token by pattern while still failing if the token is removed (`asset_versions_test.go`).
-- **new** **Dev Makefile** — `make build` rebuilds the Docker image and brings the container online in the foreground (live logs, Ctrl-C stops); also `build-clean`, `up`, `down`, and `logs` targets (`Makefile`).
+- **new** **Dev Makefile** — `make build` rebuilds the Docker image and brings the container online in the foreground (live logs, Ctrl-C stops); also `build-clean`, `up`, `down`, and `logs` targets. Kept off `main` like the other dev-only files, via `merge=ours` in `.gitattributes` and the prune list in `scripts/release-to-main.sh` (`Makefile`, `.gitattributes`, `scripts/release-to-main.sh`).
 
 ### Developer & docs
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.10** release notes; What's new history wording updated from 7 to 25 releases.
 - **fix** **What's new modal** — **v2026.07.10** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v137` data version and `2026.07-dashboard-release-v105` dashboard release token; `whats-new-25-visible-1` modal script, `theme-color-meta-1` theme JS, `self-hosted-scp-1` fonts, and centralized shared-CSS asset query strings.
+- **fix** **Cache-bust** — `whats-new-v138` data version and `2026.07-dashboard-release-v105` dashboard release token; `whats-new-25-visible-1` modal script, `ping-quiet-network-errors-1` status JS, `theme-color-meta-1` theme JS, `self-hosted-scp-1` fonts, and centralized shared-CSS asset query strings.
 
 ---
 
