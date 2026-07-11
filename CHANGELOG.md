@@ -95,6 +95,7 @@ Nothing yet.
 
 - **new** **Gzip response compression** — a stdlib `compress/gzip` middleware now transparently compresses text responses (HTML, JS, CSS, JSON, SVG) for clients that send `Accept-Encoding: gzip`. Typical assets shrink ~70-90% (e.g. `search.js` ~98 KB → ~19 KB, config HTML ~255 KB → ~30 KB), with `Vary: Accept-Encoding` set and already-compressed types (woff2, png, ico, jpg) skipped. No new dependency; a `sync.Pool` reuses compressors. 304/no-gzip/binary paths verified unaffected (`gzip.go`, `main.go`).
 - **fix** **Deferred config tour scripts** — the ten config guided-tour scripts (`config-tour-runtime` + nine `config-*-tour.js`, ~374 KB) were render-blocking despite only running on interaction; they now `defer`, dropping render-blocking config scripts from 80 to 70. Verified safe: tour globals are consumed only lazily and `ConfigManager` instantiates on `DOMContentLoaded` after deferred scripts run — the General tour still launches normally (`templates/config.html`).
+- **fix** **Deferred peripheral dashboard scripts** — eleven interaction/after-load feature scripts (weather, tag-autocomplete, quick-add, swipe-navigation, hypr-mode, reorder, app-notification, inbox-intro-modal, dashboard-tag-cloud, dashboard-deep-link, shortcut-format, ~107 KB) now `defer`, dropping render-blocking dashboard scripts from 69 to 58. Every consumer reads these via guarded access inside init (which runs on `DOMContentLoaded`), so the features are unchanged (`templates/dashboard.html`).
 
 ### Dashboard
 
@@ -108,7 +109,7 @@ Nothing yet.
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.10.2** notes.
 - **fix** **What's new modal** — **v2026.07.10.2** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v142` data version and `2026.07-dashboard-release-v107` dashboard release token; `quiet-borders-1` health CSS, `config-tours-defer-1` config tour scripts, and `inbox-svg-icon-1` inbox asset query strings.
+- **fix** **Cache-bust** — `whats-new-v143` data version and `2026.07-dashboard-release-v107` dashboard release token; `quiet-borders-1` health CSS, `config-tours-defer-1` config tour scripts, and `inbox-svg-icon-1` inbox asset query strings; dashboard peripheral scripts `defer`red in place.
 
 **Scope:** the border cleanup is classic layout only; the modern/glass early-beta layouts are unchanged. Gzip applies to all pages.
 
