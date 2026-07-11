@@ -103,11 +103,13 @@ Nothing yet.
 - **fix** **Health skip link** — the health page gained a keyboard skip-to-content link targeting `#health-main`, matching dashboard/config, with the `.skip-to-content` style added to `health.css` (health doesn't load `dashboard-enhancements.css`).
 - **fix** **Lazy category icons** — uploaded category-header icons now set `loading="lazy"`, consistent with bookmark-row favicons (`dashboard-render-core.js`).
 - **fix** **No-JS fallback** — the dashboard clears its skeleton only from JS, so with JavaScript disabled it shimmered forever; a `<noscript>` block now hides the skeleton and shows a themed "JavaScript required" banner (EN/NL/DE/FR via `.Language`) (`templates/dashboard.html`).
+- **fix** **Cheat sheet keyboard navigation** — the keyboard shortcuts modal now keeps keyboard scroll controls scoped to the modal (`Arrow`, `PageUp/Down`, `Home`, `End`), supports reliable section toggle with `Space`/`Enter` on focused section titles, and adds a clear `:focus-visible` highlight for filter, section headers, and modal actions so keyboard focus is always visible (`dashboard-ui-helpers.js`, `modal.css`).
 
 ### Developer & docs
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11** notes.
 - **fix** **What's new modal** — **v2026.07.11** JSON entry.
+- **fix** **Playwright regression coverage** — added dashboard overlay-focus coverage for `Space`-toggle on focused cheat-sheet section headers, to guard keyboard-only expand/collapse behavior (`tests/dashboard-overlay-focus.spec.js`).
 - **fix** **Cache-bust** — `whats-new-v147` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS, `a11y-polish-1` health/render-core, and `tours-autostart-off-1` config-tab-tours asset query strings.
 
 **Scope:** classic layout, General tab only; no settings moved between tabs, no label rewrites.

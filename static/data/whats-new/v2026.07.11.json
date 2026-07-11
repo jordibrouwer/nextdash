@@ -27,6 +27,10 @@
         {
           "badge": "fix",
           "text": "<strong>Clear message without JavaScript</strong> — if JavaScript is turned off or fails to load, the dashboard now shows a short \"JavaScript required\" message instead of a loading skeleton that never finishes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet keyboard polish</strong> — in the keyboard shortcuts modal, focus is now always visibly highlighted, <kbd>Space</kbd>/<kbd>Enter</kbd> reliably expand or collapse the focused section header, and keyboard scrolling keys stay scoped to the modal."
         }
       ]
     }
