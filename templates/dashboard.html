@@ -57,9 +57,48 @@
     <link rel="stylesheet" href="/static/css/dashboard-inline-edit-surface.css?v=opaque-panel-3">
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
+    <noscript>
+        <style>
+            /* Without JS the `loading` class never clears, so the skeleton would
+               shimmer forever. Hide it, reveal the real chrome, and show a banner. */
+            body.loading .skeleton-root { display: none !important; }
+            body.loading .skeleton-hide-while-loading { visibility: visible !important; }
+            .dashboard-noscript {
+                margin: clamp(2rem, 6vw, 8rem) auto;
+                max-width: 42rem;
+                padding: 1.25rem 1.5rem;
+                border: 1px solid var(--border-primary);
+                border-radius: 8px;
+                background: var(--background-secondary);
+                color: var(--text-primary);
+                font-family: var(--font-family-main, monospace);
+                line-height: 1.5;
+                text-align: center;
+            }
+            .dashboard-noscript h1 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+            .dashboard-noscript p { margin: 0; color: var(--text-secondary); }
+        </style>
+    </noscript>
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-show-title="{{.ShowTitle}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
+    <noscript>
+        <div class="dashboard-noscript" role="alert">
+            {{if eq .Language "nl"}}
+            <h1>JavaScript is nodig</h1>
+            <p>Dit dashboard heeft JavaScript nodig om je bladwijzers te laden. Schakel JavaScript in en herlaad de pagina.</p>
+            {{else if eq .Language "de"}}
+            <h1>JavaScript erforderlich</h1>
+            <p>Dieses Dashboard benötigt JavaScript, um deine Lesezeichen zu laden. Bitte aktiviere JavaScript und lade die Seite neu.</p>
+            {{else if eq .Language "fr"}}
+            <h1>JavaScript requis</h1>
+            <p>Ce tableau de bord a besoin de JavaScript pour charger vos favoris. Veuillez activer JavaScript et recharger la page.</p>
+            {{else}}
+            <h1>JavaScript required</h1>
+            <p>This dashboard needs JavaScript to load your bookmarks. Please enable JavaScript and reload the page.</p>
+            {{end}}
+        </div>
+    </noscript>
     <!-- Container 1: Date, tabs, config button -->
     <div class="dashboard-section section-controls">
         <div class="container">
@@ -309,7 +348,7 @@
     <script src="/static/js/dashboard/dashboard-bookmark-rows.js?v=config-category-sync-1"></script>
     <script src="/static/js/dashboard/dashboard-category-sort.js?v=cat-sort-4"></script>
     <script src="/static/js/dashboard/dashboard-category-title-fit.js?v=cat-title-fit-1"></script>
-    <script src="/static/js/dashboard/dashboard-render-core.js?v=inbox-kbd-nav-3"></script>
+    <script src="/static/js/dashboard/dashboard-render-core.js?v=a11y-polish-1"></script>
     <script src="/static/js/dashboard/dashboard-render-incremental.js?v=config-category-sync-1"></script>
     <script src="/static/js/dashboard/dashboard-notifications.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-visual.js?v=health-icon-badge-2"></script>

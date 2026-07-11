@@ -1,0 +1,38 @@
+{
+  "tag": "v2026.07.11",
+  "date": "July 2026",
+  "releasedAt": "2026-07-11",
+  "modalLead": "The General settings page is easier to scan: busy sections are now split into small labelled sub-groups, so related options sit together.",
+  "sections": [
+    {
+      "title": "Config → General",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Clearer settings groups</strong> — the busiest General sections are now split into small labelled sub-groups so related options sit together: Localization into <em>language</em> and <em>date &amp; time</em>, Appearance &amp; Style into <em>theme</em>, <em>text</em> and <em>extras</em>, and Layout into <em>grid</em>, <em>spacing</em> and <em>extras</em>. Same settings, same place — just easier to scan. Nothing was moved between tabs."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter config tours</strong> — the Stats, Pages, Tags and Theme config tours no longer start on their own when you open those tabs. You can still run any of them any time from <em>Config → General → Tours &amp; onboarding</em>. The General, Bookmarks, Finders, Categories and Collections tours are unchanged."
+        }
+      ]
+    },
+    {
+      "title": "Accessibility & polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Screen-reader labels & skip link</strong> — the config number spinners (▲/▼) now announce a proper name instead of just \"button\", and the health page gained a keyboard skip-to-content link like the dashboard and config. Category header icons also load lazily, matching bookmark favicons."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Clear message without JavaScript</strong> — if JavaScript is turned off or fails to load, the dashboard now shows a short \"JavaScript required\" message instead of a loading skeleton that never finishes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cheat sheet keyboard polish</strong> — in the keyboard shortcuts modal, focus is now always visibly highlighted, <kbd>Space</kbd>/<kbd>Enter</kbd> reliably expand or collapse the focused section header, and keyboard scrolling keys stay scoped to the modal."
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.11 — July 2026](#v20260711--july-2026)
 - [v2026.07.10.2 — July 2026](#v202607102--july-2026)
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
 - [v2026.07.10 — July 2026](#v20260710--july-2026)
@@ -84,6 +85,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.11 — July 2026
+
+**Clearer General settings** — the busiest General config sections are split into small labelled sub-groups so related options sit together and the page is easier to scan.
+
+### Config → General
+
+- **new** **Labelled sub-groups** — a new `.general-card-group` / `.general-card-group-label` pattern (a dimmed accent-dashed `— group` opener, one level below the `//` section heading, in the existing terminal aesthetic) splits the busiest Essentials sections into scannable groups: Localization → *language* / *date & time*; Appearance & Style → *theme* / *text* / *extras*; Layout → *grid* / *spacing* / *extras*. Same settings, same tabs — nothing moved; the tier switcher and quick-links are unchanged. Seven new group-label i18n keys across EN/NL/DE/FR (`templates/config.html`, `config-forms.css`, locales).
+- **fix** **Config tours default off for Stats/Pages/Tags/Theme** — these four config tab tours no longer auto-start on first visit; an `autoStart: false` flag plus an `isAutoStartEnabled` gate in `scheduleManualTour`/`maybeStart` blocks the auto path while leaving `force` triggers (the existing Reset/Start buttons in Config → General → Tours & onboarding) working. General/Bookmarks/Finders/Categories/Collections are unchanged (`config-tab-tours.js`).
+
+### Accessibility & polish
+
+- **fix** **Spinner accessible names** — the six config number-input spinners (tag-collections min count, offline retries, retry delay) were bare `▲`/`▼` buttons with no accessible name; added generic `increaseValueAria` / `decreaseValueAria` i18n keys (EN/NL/DE/FR) wired via `data-i18n-aria` (`templates/config.html`, locales).
+- **fix** **Health skip link** — the health page gained a keyboard skip-to-content link targeting `#health-main`, matching dashboard/config, with the `.skip-to-content` style added to `health.css` (health doesn't load `dashboard-enhancements.css`).
+- **fix** **Lazy category icons** — uploaded category-header icons now set `loading="lazy"`, consistent with bookmark-row favicons (`dashboard-render-core.js`).
+- **fix** **No-JS fallback** — the dashboard clears its skeleton only from JS, so with JavaScript disabled it shimmered forever; a `<noscript>` block now hides the skeleton and shows a themed "JavaScript required" banner (EN/NL/DE/FR via `.Language`) (`templates/dashboard.html`).
+- **fix** **Cheat sheet keyboard navigation** — the keyboard shortcuts modal now keeps keyboard scroll controls scoped to the modal (`Arrow`, `PageUp/Down`, `Home`, `End`), supports reliable section toggle with `Space`/`Enter` on focused section titles, and adds a clear `:focus-visible` highlight for filter, section headers, and modal actions so keyboard focus is always visible (`dashboard-ui-helpers.js`, `modal.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11** notes.
+- **fix** **What's new modal** — **v2026.07.11** JSON entry.
+- **fix** **Playwright regression coverage** — added dashboard overlay-focus coverage for `Space`-toggle on focused cheat-sheet section headers, to guard keyboard-only expand/collapse behavior (`tests/dashboard-overlay-focus.spec.js`).
+- **fix** **Cache-bust** — `whats-new-v147` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS, `a11y-polish-1` health/render-core, and `tours-autostart-off-1` config-tab-tours asset query strings.
+
+**Scope:** classic layout, General tab only; no settings moved between tabs, no label rewrites.
 
 ---
 

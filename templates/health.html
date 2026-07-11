@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css?v={{.Assets.ConfigButtonsCSS}}">
-    <link rel="stylesheet" href="/static/css/health.css?v=quiet-borders-1">
+    <link rel="stylesheet" href="/static/css/health.css?v=a11y-polish-1">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v=health-layout-parity-1">
     <link rel="stylesheet" href="/static/css/health-modern.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-layout-preset="{{if .LayoutPreset}}{{.LayoutPreset}}{{else}}default{{end}}" data-density-mode="{{if .DensityMode}}{{.DensityMode}}{{else}}compact{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
+    <a class="skip-to-content" href="#health-main" data-i18n="dashboard.skipToContent">Skip to main content</a>
     <div class="health-shell">
         <header class="health-header">
             <div>

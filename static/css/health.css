@@ -6,6 +6,26 @@ body {
     width: 100%;
 }
 
+/* Skip-to-content link (a11y parity with dashboard/config, which style this
+   in dashboard-enhancements.css — health doesn't load that file). */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 10000;
+    padding: 0.5rem 1rem;
+    background: var(--background-primary, #000);
+    color: var(--text-primary, #fff);
+    border: 1px solid var(--text-primary);
+    font-family: var(--font-family-main);
+    text-decoration: none;
+}
+
+.skip-to-content:focus-visible {
+    left: 0.5rem;
+    top: 0.5rem;
+}
+
 :root {
     /* Border hierarchy (health quiet-borders pass, mirrors config):
        - --health-border      : outer panels + KPI tiles (kept, but softer)

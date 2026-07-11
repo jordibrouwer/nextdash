@@ -25,6 +25,14 @@
         return def.enabled !== false;
     }
 
+    // Whether a tour may start on its own (auto-schedule on first visit). Tours
+    // with `autoStart: false` never auto-start; they only run when the user
+    // explicitly triggers them (the reset/start buttons call maybeStart with
+    // force, which bypasses this gate).
+    function isAutoStartEnabled(def) {
+        return def.autoStart !== false;
+    }
+
     const CONFIG_TAB_TOUR_DEFS = [
         {
             id: 'general',
@@ -80,6 +88,7 @@
         {
             id: 'stats',
             title: 'Stats',
+            autoStart: false,
             statePrefix: 'configStatsTour',
             tourGlobal: 'ConfigStatsTour',
             settingsFlag: 'configStatsTourCompleted',
@@ -119,6 +128,7 @@
         {
             id: 'tags',
             title: 'Tags',
+            autoStart: false,
             statePrefix: 'configTagsTour',
             tourGlobal: 'ConfigTagsTour',
             settingsFlag: 'configTagsTourCompleted',
@@ -144,6 +154,7 @@
         {
             id: 'pages',
             title: 'Pages',
+            autoStart: false,
             statePrefix: 'configPagesTour',
             tourGlobal: 'ConfigPagesTour',
             settingsFlag: 'configPagesTourCompleted',
@@ -186,6 +197,7 @@
         {
             id: 'theme',
             title: 'Theme',
+            autoStart: false,
             statePrefix: 'configThemeTour',
             tourGlobal: 'ConfigThemeTour',
             settingsFlag: 'configThemeTourCompleted',
@@ -420,6 +432,7 @@
         scheduleManualTour(id) {
             const def = this.getDef(id);
             if (!isTourEnabled(def)) return;
+            if (!isAutoStartEnabled(def)) return;
             const c = this.config;
             const TourClass = this.getTourClass(def);
             if (typeof TourClass !== 'function') return;
@@ -472,6 +485,11 @@
             const def = this.getDef(id);
             if (!isTourEnabled(def)) {
                 return { ok: false, reason: 'disabled' };
+            }
+            // Auto-start-disabled tours only run on an explicit (force) trigger,
+            // e.g. the reset/start buttons — never from the auto-schedule timer.
+            if (!force && !isAutoStartEnabled(def)) {
+                return { ok: false, reason: 'auto-disabled' };
             }
             const TourClass = this.getTourClass(def);
             const c = this.config;

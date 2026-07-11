@@ -1116,6 +1116,7 @@ class DashboardRenderCore {
             const iconImage = document.createElement('img');
             iconImage.src = `/data/icons/${categoryIcon}`;
             iconImage.alt = '';
+            iconImage.loading = 'lazy';
             iconImage.className = 'bookmark-icon';
             labelWrap.appendChild(iconImage);
             try {

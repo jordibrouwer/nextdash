@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=quiet-borders-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=general-clarity-1">
     <link rel="stylesheet" href="/static/css/onboarding.css?v={{.Assets.OnboardingCSS}}">
     <link rel="stylesheet" href="/static/css/config-general-tour.css?v={{.Assets.ConfigGeneralTourCSS}}">
     <link rel="stylesheet" href="/static/css/guided-flow-guard.css?v={{.Assets.GuidedFlowCSS}}">
@@ -236,6 +236,8 @@
                     <section class="general-card" id="general-localization" data-general-panel="localization" data-config-tier="essentials">
                         <h3 class="section-title" data-i18n="config.localizationTitle">Localization</h3>
                         <p class="general-card-intro" data-i18n="config.localizationIntro">Language, date and time display, and weather source.</p>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupLanguage">language</span>
                         <div class="form-group">
                             <label for="language-select" data-i18n="config.languageLabel">Language:</label>
                             <button type="button" id="language-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.languageInfoTitle">ℹ</button>
@@ -247,6 +249,9 @@
                             </select>
                             <p class="form-hint" data-i18n="config.languageAppliesImmediately">Language changes apply immediately (no Save needed).</p>
                         </div>
+                        </div>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupDateTime">date &amp; time</span>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label">
@@ -326,6 +331,7 @@
                                 </select>
                             </div>
                         </div>
+                        </div>
                     </section>
 
                     <!-- Appearance & Style — essentials -->
@@ -333,6 +339,8 @@
                         <h3 class="section-title" data-i18n="config.generalAppearanceTitle">Appearance & Style</h3>
                         <p class="general-card-intro" data-i18n="config.generalEssentialsAppearanceIntro">Theme, font size, favicon styling, animations, and tips.</p>
                         <p class="general-card-intro general-appearance-actions"><a href="#colors" id="general-theme-colors-link" class="btn btn-secondary btn-small" data-i18n="config.openThemeColorsLink">Open theme editor →</a></p>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupTheme">theme</span>
                         <div class="form-group form-group--theme-select">
                             <label for="theme-select" data-i18n="config.themeLabel">Theme:</label>
                             <button type="button" id="theme-select-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.themeInfoTitle">ℹ</button>
@@ -369,6 +377,9 @@
                                 </label>
                             </div>
                         </div>
+                        </div>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupText">text</span>
                         <div class="form-group">
                             <label data-i18n="config.fontSizeLabel">Font size:</label>
                             <button type="button" id="font-size-info-btn" class="info-button form-group-info-btn" data-i18n-aria="config.fontSizeInfoTitle">ℹ</button>
@@ -382,6 +393,9 @@
                                 <button type="button" class="font-size-option" data-size="xl">xl</button>
                             </div>
                         </div>
+                        </div>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupExtras">extras</span>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item" id="theme-iconstyling-group">
                                 <label class="checkbox-label" for="theme-iconstyling-enable">
@@ -425,12 +439,15 @@
                                 </label>
                             </div>
                         </div>
+                        </div>
                     </section>
 
                     <!-- Layout: columns, preset, density, packed columns, title -->
                     <section class="general-card" id="general-layout" data-general-panel="layout" data-config-tier="essentials">
                         <h3 class="section-title" data-i18n="config.generalLayoutTitle">Layout</h3>
                         <p class="general-card-intro" data-i18n="config.generalLayoutIntro">Grid structure, column count, layout preset, and density.</p>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupGrid">grid</span>
                         <div class="form-group">
                             <label for="columns-input" data-i18n="config.columnsLabel">Columns per row:</label>
                             <div class="number-input-wrapper">
@@ -464,6 +481,9 @@
                             <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
                             <span id="layout-density-preview-text"></span>
                         </div>
+                        </div>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupSpacing">spacing</span>
                         <div class="checkbox-tree">
                             <div class="checkbox-tree-item">
                                 <label class="checkbox-label" for="packed-columns-checkbox">
@@ -480,6 +500,9 @@
                                 </label>
                             </div>
                         </div>
+                        </div>
+                        <div class="general-card-group">
+                        <span class="general-card-group-label" data-i18n="config.generalGroupExtras">extras</span>
                         <div class="form-group" id="launcher-icon-size-group">
                             <label for="launcher-icon-size-select" data-i18n="config.launcherIconSizeLabel">Launcher icon size:</label>
                             <button type="button" id="launcher-icon-size-info-btn" class="info-button" data-i18n-aria="config.launcherIconSizeInfoTitle">ℹ</button>
@@ -496,6 +519,7 @@
                                    data-i18n-placeholder="config.calendarUrlPlaceholder"
                                    placeholder="https://calendar.google.com"
                                    autocomplete="off" spellcheck="false">
+                        </div>
                         </div>
                     </section>
 
@@ -947,8 +971,8 @@
                                     <div class="number-input-wrapper">
                                         <input type="number" id="tag-collections-min-count" min="0" max="100" value="0">
                                         <div class="number-input-controls">
-                                            <button type="button" class="number-input-btn number-input-up" data-input="tag-collections-min-count">▲</button>
-                                            <button type="button" class="number-input-btn number-input-down" data-input="tag-collections-min-count">▼</button>
+                                            <button type="button" class="number-input-btn number-input-up" data-input="tag-collections-min-count" data-i18n-aria="config.increaseValueAria">▲</button>
+                                            <button type="button" class="number-input-btn number-input-down" data-input="tag-collections-min-count" data-i18n-aria="config.decreaseValueAria">▼</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1001,8 +1025,8 @@
                                 <div class="number-input-wrapper">
                                     <input type="number" id="status-offline-retries-input" min="1" max="10" value="3">
                                     <div class="number-input-controls">
-                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retries-input">▲</button>
-                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retries-input">▼</button>
+                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retries-input" data-i18n-aria="config.increaseValueAria">▲</button>
+                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retries-input" data-i18n-aria="config.decreaseValueAria">▼</button>
                                     </div>
                                 </div>
                             </div>
@@ -1013,8 +1037,8 @@
                                 <div class="number-input-wrapper">
                                     <input type="number" id="status-offline-retry-delay-input" min="100" max="3000" step="50" value="450">
                                     <div class="number-input-controls">
-                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retry-delay-input">▲</button>
-                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retry-delay-input">▼</button>
+                                        <button type="button" class="number-input-btn number-input-up" data-input="status-offline-retry-delay-input" data-i18n-aria="config.increaseValueAria">▲</button>
+                                        <button type="button" class="number-input-btn number-input-down" data-input="status-offline-retry-delay-input" data-i18n-aria="config.decreaseValueAria">▼</button>
                                     </div>
                                 </div>
                             </div>
@@ -2536,7 +2560,7 @@
     <script src="/static/js/config/config-settings.js?v=columns-input-nan-guard-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js"></script>
-    <script src="/static/js/config/config-tab-tours.js?v=config-stats-tour-on-1"></script>
+    <script src="/static/js/config/config-tab-tours.js?v=tours-autostart-off-1"></script>
     <script src="/static/js/config/config-persistence.js?v=save-signal-scope-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=general-nav-highlight-1"></script>
