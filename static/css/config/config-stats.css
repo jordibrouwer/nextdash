@@ -32,7 +32,7 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     padding: 0.9rem 1rem;
 }
 
@@ -451,7 +451,7 @@ body[data-layout-version="glass"] .stats-tab-surface {
 .stats-table td {
     padding: 0.4rem 0.55rem;
     text-align: left;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .stats-table th {

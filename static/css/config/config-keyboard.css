@@ -51,7 +51,7 @@
     text-transform: uppercase;
     color: var(--text-tertiary);
     background: var(--config-surface-toolbar, var(--background-secondary));
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     user-select: none;
 }
 
@@ -61,7 +61,7 @@
     font-size: 0.88rem;
     color: var(--text-secondary);
     line-height: 1.45;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .keyboard-binding-row {
@@ -72,7 +72,7 @@
     padding: 0.55rem 0.75rem;
     min-height: 2.75rem;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     transition: background-color 0.12s ease;
 }
 

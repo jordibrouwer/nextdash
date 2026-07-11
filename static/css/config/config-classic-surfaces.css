@@ -8,10 +8,20 @@ html:has(body[data-layout-version="classic"]) {
     --config-surface-toolbar: color-mix(in srgb, var(--background-primary) 10%, var(--background-secondary));
     --config-surface-radius: 6px;
     --config-surface-shadow: 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent);
+
+    /* Border hierarchy (config quiet-borders pass):
+       - --config-border      : the outer tab surface + real zone dividers (kept, but softer)
+       - --config-border-soft : the few internal dividers we keep (toolbar↔content, split columns)
+       Everything nested inside a surface (cards, blocks, rows, intro/breadcrumb, sidebar items)
+       drops its own border and is separated by spacing + headings instead. */
+    --config-border: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    --config-border-soft: color-mix(in srgb, var(--border-primary) 40%, transparent);
+    --config-group-gap: 1.75rem;
+    --config-group-gap-lg: 2.5rem;
 }
 
 body[data-layout-version="classic"] .config-tab-surface {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border);
     border-radius: var(--config-surface-radius);
     background: var(--config-surface-list);
     box-shadow: var(--config-surface-shadow);
@@ -39,7 +49,7 @@ body[data-layout-version="classic"] .bookmarks-tab-surface > .structure-workspac
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft);
 }
 
 body[data-layout-version="classic"] .bookmarks-tab-surface > .structure-workspace-in-surface .structure-workspace-toggle {
@@ -51,7 +61,7 @@ body[data-layout-version="classic"] .backups-tab-surface,
 body[data-layout-version="classic"] .help-tab-surface,
 body[data-layout-version="classic"] .general-tab-surface,
 body[data-layout-version="classic"] .theme-colors-tab-surface {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border);
     border-radius: var(--config-surface-radius);
     background: var(--config-surface-list);
     box-shadow: var(--config-surface-shadow);
@@ -64,13 +74,13 @@ body[data-layout-version="classic"] .help-tab-surface .config-tab-toolbar--in-su
 body[data-layout-version="classic"] .theme-colors-tab-surface .config-tab-toolbar--in-surface {
     background: var(--config-surface-toolbar);
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft);
 }
 
 body[data-layout-version="classic"] .general-tab-surface .general-layer-toolbar.config-tab-toolbar--in-surface {
     background: var(--config-surface-toolbar);
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft);
 }
 
 body[data-layout-version="classic"] .stats-tab-surface .stats-filter-bar,
@@ -94,14 +104,14 @@ body[data-layout-version="classic"] .theme-colors-tab-surface #custom-themes-lis
 }
 
 body[data-layout-version="classic"] .bookmarks-splitview {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border);
     border-radius: var(--config-surface-radius);
     box-shadow: var(--config-surface-shadow);
     overflow: hidden;
 }
 
 body[data-layout-version="classic"] .bookmarks-tab-surface {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border);
     border-radius: var(--config-surface-radius);
     box-shadow: var(--config-surface-shadow);
     overflow: hidden;
@@ -117,14 +127,14 @@ body[data-layout-version="classic"] .bookmarks-tab-surface .bookmarks-splitview 
 body[data-layout-version="classic"] .bookmarks-tab-surface .config-tab-toolbar--in-surface {
     background: var(--config-surface-toolbar);
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft);
 }
 
 body[data-layout-version="classic"] .bookmarks-tab-surface > .bookmarks-list-controls,
 body[data-layout-version="classic"] .bookmarks-tab-surface .config-master-pane,
 body[data-layout-version="classic"] .bookmarks-tab-surface .bookmarks-splitview-list {
     border: none;
-    border-right: 1px solid var(--border-primary);
+    border-right: 1px solid var(--config-border-soft);
 }
 
 body[data-layout-version="classic"] .bookmarks-tab-surface .config-detail-pane,
@@ -133,7 +143,7 @@ body[data-layout-version="classic"] .bookmarks-splitview-detail {
 }
 
 body[data-layout-version="classic"] .collections-tab-surface {
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--config-border);
     border-radius: var(--config-surface-radius);
     box-shadow: var(--config-surface-shadow);
     overflow: hidden;

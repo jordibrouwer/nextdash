@@ -25,7 +25,7 @@
     width: 100%;
     /* Bottom edge only — full box border leaves a stray top/right segment past the last tab */
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .config-controls-wrapper .tabs .tab-button {
@@ -232,7 +232,7 @@ body.no-animations .tabs-scroll-wrapper::after {
     flex-direction: column;
     flex: var(--config-tab-group-weight, 1) 1 0;
     min-width: min-content;
-    border-inline-end: 1px solid var(--border-primary);
+    border-inline-end: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .config-tab-group[data-tab-group="system"] {
@@ -270,7 +270,7 @@ body.no-animations .tabs-scroll-wrapper::after {
     padding: 0.28rem 0.45rem 0.18rem;
     text-align: center;
     white-space: nowrap;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     line-height: 1.2;
 }
 

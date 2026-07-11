@@ -75,7 +75,7 @@
     text-transform: uppercase;
     color: var(--text-tertiary);
     background: var(--background-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     flex-shrink: 0;
 }
 
@@ -99,7 +99,7 @@
     text-transform: uppercase;
     color: var(--text-tertiary);
     background: var(--background-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     flex-shrink: 0;
 }
 
@@ -220,15 +220,15 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .bookmarks-tab-surface > .structure-workspace-in-surface.is-collapsed {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .bookmarks-tab-surface > .structure-workspace-in-surface:not(.is-collapsed) {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .structure-workspace-in-surface .structure-workspace-toggle {
@@ -449,7 +449,7 @@
 .page-item,
 .category-item,
 .finder-item {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     background: transparent;
     transition: background-color 0.12s ease;
     min-width: 0;

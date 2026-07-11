@@ -33,7 +33,7 @@
 }
 
 .collection-item {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .collection-item:last-child {
@@ -115,7 +115,7 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .collections-tab-surface > .collections-edit-panel[hidden] {
@@ -124,7 +124,7 @@
 
 .collections-tab-surface > .config-empty-state {
     border: none;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .collections-tab-surface .collections-edit-header {
@@ -132,7 +132,7 @@
     align-items: center;
     min-height: var(--config-toolbar-min-height, 2.75rem);
     padding: 0.45rem 0.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--config-surface-toolbar);
 }
 
@@ -151,13 +151,13 @@
 
 .collections-tab-surface .collections-edit-actions {
     padding: 0.6rem 0.75rem;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
     background: transparent;
 }
 
 .collections-edit-header {
     padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--background-primary);
 }
 
@@ -183,7 +183,7 @@
     display: flex;
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 /* ── Rules ── */

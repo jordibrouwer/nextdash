@@ -27,7 +27,7 @@
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     padding: 0.9rem 0.75rem;
 }
 
@@ -45,7 +45,7 @@
 }
 
 .backups-tab-surface > .backups-section-danger {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     box-shadow: inset 3px 0 0 var(--accent-error);
 }
 
@@ -76,7 +76,7 @@
     gap: 0.75rem;
     padding: 0.65rem 0.75rem;
     min-height: 2.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     transition: background-color 0.12s ease;
 }
 

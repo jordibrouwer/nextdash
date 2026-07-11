@@ -1,0 +1,21 @@
+{
+  "tag": "v2026.07.10.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-10",
+  "modalLead": "A calmer config page: far fewer competing borders, so sections and topics stand out through spacing and headings instead of stacked frames.",
+  "sections": [
+    {
+      "title": "Config appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Fewer borders, clearer sections</strong> — the config page had many nested frames stacking up at once (save bar, tab bar, group labels, intro, quick-links sidebar, cards, per-row lines). Borders are now reserved for the outer tab surface and real dividers; everything inside is separated by spacing and headings instead, so it reads calmer while sections and topics stay easy to tell apart."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cleaner quick-links list</strong> — the section sidebar dropped its frame and per-item lines; it's now a simple list with a clear highlight on the active section."
+        }
+      ]
+    }
+  ]
+}

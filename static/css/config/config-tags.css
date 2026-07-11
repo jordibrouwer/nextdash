@@ -111,7 +111,7 @@
     min-width: 0;
     padding: 0.85rem 0.75rem;
     border: none;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     background: color-mix(in srgb, var(--background-secondary) 92%, var(--background-primary));
     overflow-x: hidden;
     overflow-y: visible;
@@ -266,7 +266,7 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     text-transform: uppercase;
     color: var(--text-tertiary);
     background: var(--background-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     flex-shrink: 0;
 }
 
@@ -288,14 +288,14 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
     background: var(--background-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
     user-select: none;
 }
 
 /* ── Tag item ── */
 
 .tag-item {
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .tag-item:last-child {
@@ -441,7 +441,7 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
 .tag-drilldown {
     display: none;
     flex-direction: column;
-    border-top: 1px solid var(--border-primary);
+    border-top: 1px solid var(--config-border-soft, var(--border-primary));
     background: var(--background-secondary);
 }
 
@@ -454,7 +454,7 @@ body.no-animations .tags-cloud.tags-cloud--live .tag-cloud-word {
     align-items: center;
     gap: 0.5rem;
     padding: 0.35rem 0.75rem 0.35rem 2.4rem;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--config-border-soft, var(--border-primary));
 }
 
 .tag-drilldown-row:last-child {
