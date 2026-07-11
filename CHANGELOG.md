@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.10.2 — July 2026](#v202607102--july-2026)
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
 - [v2026.07.10 — July 2026](#v20260710--july-2026)
 - [v2026.07.09 — July 2026](#v20260709--july-2026)
@@ -83,6 +84,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.10.2 — July 2026
+
+**Gzip-compressed responses and quieter health borders** — text responses now compress on the wire so pages transfer 70-90% smaller, and the health page gets the same border cleanup as config in **v2026.07.10.1**.
+
+### Performance
+
+- **new** **Gzip response compression** — a stdlib `compress/gzip` middleware now transparently compresses text responses (HTML, JS, CSS, JSON, SVG) for clients that send `Accept-Encoding: gzip`. Typical assets shrink ~70-90% (e.g. `search.js` ~98 KB → ~19 KB, config HTML ~255 KB → ~30 KB), with `Vary: Accept-Encoding` set and already-compressed types (woff2, png, ico, jpg) skipped. No new dependency; a `sync.Pool` reuses compressors. 304/no-gzip/binary paths verified unaffected (`gzip.go`, `main.go`).
+- **fix** **Deferred config tour scripts** — the ten config guided-tour scripts (`config-tour-runtime` + nine `config-*-tour.js`, ~374 KB) were render-blocking despite only running on interaction; they now `defer`, dropping render-blocking config scripts from 80 to 70. Verified safe: tour globals are consumed only lazily and `ConfigManager` instantiates on `DOMContentLoaded` after deferred scripts run — the General tour still launches normally (`templates/config.html`).
+- **fix** **Deferred peripheral dashboard scripts** — eleven interaction/after-load feature scripts (weather, tag-autocomplete, quick-add, swipe-navigation, hypr-mode, reorder, app-notification, inbox-intro-modal, dashboard-tag-cloud, dashboard-deep-link, shortcut-format, ~107 KB) now `defer`, dropping render-blocking dashboard scripts from 69 to 58. Every consumer reads these via guarded access inside init (which runs on `DOMContentLoaded`), so the features are unchanged (`templates/dashboard.html`).
+
+### Dashboard
+
+- **fix** **Line-style inbox icon** — the dashboard inbox tab now uses an inline monochrome SVG (`currentColor`, matched to the header health icon) instead of the coloured 📥 emoji, so the two read as one visual family across themes (`dashboard-page-nav.js`, `dashboard-inbox.css`).
+
+### Health appearance
+
+- **fix** **Fewer, softer borders** — the health page framed the intro, every KPI stat tile, the filter/controls panel, and the bookmark panel at once. A central `--health-border` / `--health-border-soft` token pair now keeps softer borders on the stat tiles and outer panels, drops the intro frame (spacing instead), and softens internal row/toolbar/group dividers and the empty-state dashed border. Filters, pills, the active-tile highlight, and action buttons stay crisp (`health.css`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.10.2** notes.
+- **fix** **What's new modal** — **v2026.07.10.2** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v143` data version and `2026.07-dashboard-release-v107` dashboard release token; `quiet-borders-1` health CSS, `config-tours-defer-1` config tour scripts, and `inbox-svg-icon-1` inbox asset query strings; dashboard peripheral scripts `defer`red in place.
+
+**Scope:** the border cleanup is classic layout only; the modern/glass early-beta layouts are unchanged. Gzip applies to all pages.
 
 ---
 

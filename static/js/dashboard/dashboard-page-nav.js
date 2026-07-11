@@ -312,7 +312,11 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-label', inboxName);
             inboxBtn.title = inboxName;
             inboxBtn.innerHTML = `
-                <span class="page-tab-icon" aria-hidden="true">📥</span>
+                <svg class="page-tab-icon page-tab-icon--svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M4 14h4l1.5 2.5h5L16 14h4"/>
+                    <path d="M4 14v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>
+                    <path d="M12 4v6m0 0l-2.5-2.5M12 10l2.5-2.5"/>
+                </svg>
                 <span class="page-inbox-badge" id="page-inbox-badge" hidden></span>
             `;
             inboxBtn.addEventListener('click', async () => {

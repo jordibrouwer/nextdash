@@ -1,0 +1,43 @@
+{
+  "tag": "v2026.07.10.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-10",
+  "modalLead": "A calmer health page (same treatment as config) and much lighter page loads: text responses are now gzip-compressed, so pages transfer 70-90% smaller.",
+  "sections": [
+    {
+      "title": "Performance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Compressed page loads</strong> — the server now gzip-compresses HTML, JavaScript, CSS, and API responses when your browser supports it (which every modern browser does). Typical files transfer 70-90% smaller (for example the main search script drops from ~98&nbsp;KB to ~19&nbsp;KB), so the dashboard and config load noticeably faster, especially over slower connections. Already-compressed files like fonts and images are left as-is."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster config load</strong> — the config page's guided-tour scripts (~374&nbsp;KB) no longer block the page from rendering; they load after the page is interactive, so config opens sooner. Tours still work exactly the same when you start one."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Faster dashboard load</strong> — more non-essential dashboard scripts (weather, tag cloud, drag-reorder, swipe navigation, and other on-demand features, ~107&nbsp;KB) now load after the page is interactive instead of blocking it, so your bookmarks appear sooner. Every feature still works the same."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox icon</strong> — the dashboard inbox tab now uses a monochrome line-style icon that matches the header health icon, instead of the coloured emoji."
+        }
+      ]
+    },
+    {
+      "title": "Health appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter health borders</strong> — the health page had a frame around the intro, every stat tile, the filter bar, and the bookmark panel all at once. Borders are now softer and reserved for the tiles and outer panels; the intro drops its frame and sections are separated by spacing and headings, matching the config cleanup. Filters, pills, the active tile highlight, and action buttons stay crisp."
+        }
+      ]
+    }
+  ]
+}

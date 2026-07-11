@@ -71,6 +71,18 @@
     margin-right: 0;
 }
 
+/* Line-style inbox glyph, matched to the header health icon (monochrome,
+   currentColor, ~1.15rem) so the two read as one visual family. */
+.page-tab-icon--svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
 .page-nav-btn--inbox .page-inbox-badge {
     display: none !important;
     min-width: 0;
