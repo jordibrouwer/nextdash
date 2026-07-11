@@ -127,6 +127,34 @@
     margin-top: 0.35rem;
 }
 
+/* Sub-group within a busy card (general clarity pass).
+   One level below the "// section" heading: a dimmed "— group" opener that
+   visually clusters related settings, in the same terminal aesthetic. */
+.general-card-group {
+    margin-top: 1.1rem;
+}
+
+.general-card-group:first-of-type {
+    margin-top: 0.35rem;
+}
+
+.general-card-group-label {
+    display: block;
+    margin: 0 0 0.55rem;
+    font-size: calc(var(--font-size-controls) * 0.9);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    color: var(--text-tertiary);
+    line-height: 1.2;
+}
+
+.general-card-group-label::before {
+    content: '— ';
+    color: var(--accent-primary);
+    opacity: 0.75;
+}
+
 .general-card .checkbox-tree-child.is-disabled {
     opacity: 0.42;
     pointer-events: none;
