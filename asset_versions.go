@@ -29,15 +29,24 @@ type pageAssetVersions struct {
 
 	// Shared CSS previously served without a cache-bust token. Centralized here
 	// so a single bump invalidates the file across dashboard/config/health.
-	AppNotificationCSS     string
-	SearchCommandsNewCSS   string
-	BookmarkFormPreviewCSS string
-	SearchCommandsNoteCSS  string
-	SelectCSS              string
-	FontSizeCSS            string
-	OnboardingCSS          string
-	ConfigGeneralTourCSS   string
-	EnhancedFeaturesCSS    string
+	AppNotificationCSS       string
+	SearchCommandsNewCSS     string
+	BookmarkFormPreviewCSS   string
+	SearchCommandsNoteCSS    string
+	SelectCSS                string
+	FontSizeCSS              string
+	OnboardingCSS            string
+	ConfigGeneralTourCSS     string
+	EnhancedFeaturesCSS      string
+	ModalCSS                 string
+	ResponsiveCSS            string
+	ConfigButtonsCSS         string
+	OverlaysModernCSS        string
+	SkeletonLoadingCSS       string
+	ReorderCSS               string
+	SearchCSS                string
+	StatusCSS                string
+	DashboardEnhancementsCSS string
 }
 
 var sharedAssetVersions = pageAssetVersions{
@@ -65,13 +74,22 @@ var sharedAssetVersions = pageAssetVersions{
 	WhatsNewData:           "whats-new-v136",
 	DataRevision:           "data-revision-4",
 
-	AppNotificationCSS:     "app-notification-1",
-	SearchCommandsNewCSS:   "search-commands-new-1",
-	BookmarkFormPreviewCSS: "bookmark-form-preview-1",
-	SearchCommandsNoteCSS:  "search-commands-note-1",
-	SelectCSS:              "select-1",
-	FontSizeCSS:            "font-size-1",
-	OnboardingCSS:          "onboarding-1",
-	ConfigGeneralTourCSS:   "general-tour-v4",
-	EnhancedFeaturesCSS:    "enhanced-features-1",
+	AppNotificationCSS:       "app-notification-1",
+	SearchCommandsNewCSS:     "search-commands-new-1",
+	BookmarkFormPreviewCSS:   "bookmark-form-preview-1",
+	SearchCommandsNoteCSS:    "search-commands-note-1",
+	SelectCSS:                "select-1",
+	FontSizeCSS:              "font-size-1",
+	OnboardingCSS:            "onboarding-1",
+	ConfigGeneralTourCSS:     "general-tour-v4",
+	EnhancedFeaturesCSS:      "enhanced-features-1",
+	ModalCSS:                 "page-overview-modal-1",
+	ResponsiveCSS:            "config-shell-align-1",
+	ConfigButtonsCSS:         "config-buttons-1",
+	OverlaysModernCSS:        "whats-new-config-parity-1",
+	SkeletonLoadingCSS:       "load-faster-1",
+	ReorderCSS:               "reorder-1",
+	SearchCSS:                "dashboard-whats-new-fab-1",
+	StatusCSS:                "dashboard-chrome-c3-1",
+	DashboardEnhancementsCSS: "page-overview-modal-1",
 }
