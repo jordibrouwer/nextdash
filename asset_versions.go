@@ -26,6 +26,18 @@ type pageAssetVersions struct {
 	SearchCommandsNewJS    string
 	WhatsNewData           string
 	DataRevision           string // dashboard data-revision / cross-tab sync bundles
+
+	// Shared CSS previously served without a cache-bust token. Centralized here
+	// so a single bump invalidates the file across dashboard/config/health.
+	AppNotificationCSS     string
+	SearchCommandsNewCSS   string
+	BookmarkFormPreviewCSS string
+	SearchCommandsNoteCSS  string
+	SelectCSS              string
+	FontSizeCSS            string
+	OnboardingCSS          string
+	ConfigGeneralTourCSS   string
+	EnhancedFeaturesCSS    string
 }
 
 var sharedAssetVersions = pageAssetVersions{
@@ -52,4 +64,14 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCommandsNewJS:    "search-commands-new-2",
 	WhatsNewData:           "whats-new-v136",
 	DataRevision:           "data-revision-4",
+
+	AppNotificationCSS:     "app-notification-1",
+	SearchCommandsNewCSS:   "search-commands-new-1",
+	BookmarkFormPreviewCSS: "bookmark-form-preview-1",
+	SearchCommandsNoteCSS:  "search-commands-note-1",
+	SelectCSS:              "select-1",
+	FontSizeCSS:            "font-size-1",
+	OnboardingCSS:          "onboarding-1",
+	ConfigGeneralTourCSS:   "general-tour-v4",
+	EnhancedFeaturesCSS:    "enhanced-features-1",
 }
