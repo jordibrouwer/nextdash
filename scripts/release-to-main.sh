@@ -171,6 +171,7 @@ done
 
 git rm --ignore-unmatch \
   .github/pull_request_template.md \
+  Makefile \
   package.json \
   package-lock.json \
   playwright.config.js \
