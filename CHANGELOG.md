@@ -96,11 +96,17 @@ Nothing yet.
 
 - **new** **Labelled sub-groups** — a new `.general-card-group` / `.general-card-group-label` pattern (a dimmed accent-dashed `— group` opener, one level below the `//` section heading, in the existing terminal aesthetic) splits the busiest Essentials sections into scannable groups: Localization → *language* / *date & time*; Appearance & Style → *theme* / *text* / *extras*; Layout → *grid* / *spacing* / *extras*. Same settings, same tabs — nothing moved; the tier switcher and quick-links are unchanged. Seven new group-label i18n keys across EN/NL/DE/FR (`templates/config.html`, `config-forms.css`, locales).
 
+### Accessibility & polish
+
+- **fix** **Spinner accessible names** — the six config number-input spinners (tag-collections min count, offline retries, retry delay) were bare `▲`/`▼` buttons with no accessible name; added generic `increaseValueAria` / `decreaseValueAria` i18n keys (EN/NL/DE/FR) wired via `data-i18n-aria` (`templates/config.html`, locales).
+- **fix** **Health skip link** — the health page gained a keyboard skip-to-content link targeting `#health-main`, matching dashboard/config, with the `.skip-to-content` style added to `health.css` (health doesn't load `dashboard-enhancements.css`).
+- **fix** **Lazy category icons** — uploaded category-header icons now set `loading="lazy"`, consistent with bookmark-row favicons (`dashboard-render-core.js`).
+
 ### Developer & docs
 
 - **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11** notes.
 - **fix** **What's new modal** — **v2026.07.11** JSON entry.
-- **fix** **Cache-bust** — `whats-new-v144` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS asset query strings.
+- **fix** **Cache-bust** — `whats-new-v145` data version and `2026.07-dashboard-release-v108` dashboard release token; `general-clarity-1` config CSS and `a11y-polish-1` health/render-core asset query strings.
 
 **Scope:** classic layout, General tab only; no settings moved between tabs, no label rewrites.
 

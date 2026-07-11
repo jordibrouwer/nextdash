@@ -12,6 +12,15 @@
           "text": "<strong>Clearer settings groups</strong> — the busiest General sections are now split into small labelled sub-groups so related options sit together: Localization into <em>language</em> and <em>date &amp; time</em>, Appearance &amp; Style into <em>theme</em>, <em>text</em> and <em>extras</em>, and Layout into <em>grid</em>, <em>spacing</em> and <em>extras</em>. Same settings, same place — just easier to scan. Nothing was moved between tabs."
         }
       ]
+    },
+    {
+      "title": "Accessibility & polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Screen-reader labels & skip link</strong> — the config number spinners (▲/▼) now announce a proper name instead of just \"button\", and the health page gained a keyboard skip-to-content link like the dashboard and config. Category header icons also load lazily, matching bookmark favicons."
+        }
+      ]
     }
   ]
 }
