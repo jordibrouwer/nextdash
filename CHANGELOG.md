@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.10 — July 2026](#v20260710--july-2026)
 - [v2026.07.09 — July 2026](#v20260709--july-2026)
 - [v2026.07.08.1 — July 2026](#v2026070081--july-2026)
 - [v2026.07.08 — July 2026](#v20260708--july-2026)
@@ -81,6 +82,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.10 — July 2026
+
+**Self-hosted font, faster first paint, correct per-theme browser colour, and a longer What's new history** — the default font is now bundled instead of loaded from Google Fonts, non-essential promo scripts no longer block the dashboard render, the `theme-color` browser/PWA chrome matches every theme, shared stylesheets are versioned from one place, and the What's new modal shows the 25 most recent releases.
+
+### Performance & privacy
+
+- **new** **Self-hosted Source Code Pro** — the default UI font was loaded from `fonts.googleapis.com`/`fonts.gstatic.com` on every page (a render-blocking third-party request, a privacy leak, and broken offline). It's now bundled as two variable-font woff2 subsets (latin + latin-ext, ~55 KB, covering weights 400/600/900) served same-origin, with a new `static/css/fonts.css` `@font-face` (`font-display: swap`) and a font preload. Fonts embed in the binary via `go:embed`. Opt-in non-default presets (JetBrains Mono, Inter, etc.) still load from Google on demand, so their CSP allowances are kept (`static/fonts/`, `static/css/fonts.css`, `templates/dashboard.html`, `templates/config.html`, `templates/health.html`, `asset_versions.go`).
+- **fix** **Deferred promo scripts** — eight discovery/tour promo scripts (promo-placement, promo-registry, search/grid-keyboard/g-jump/smart-collection/feature promos, tips-catalog) were render-blocking despite not being needed for first paint; they now `defer`, moving ~106 KB off the critical path and dropping render-blocking scripts from 77 to 69 (`templates/dashboard.html`).
+
+### Theme & appearance
+
+- **fix** **Per-theme `theme-color`** — the mobile browser bar and PWA chrome were hardcoded to two colours (light vs dark), so every other theme showed the wrong colour. `theme-loader.js` now syncs the `<meta name="theme-color">` tag to the resolved `--background-primary` on apply, on theme change, and on `DOMContentLoaded`; the static template value is only a first-paint fallback. Applies to dashboard, config, and health (`theme-loader.js`, `templates/dashboard.html`, `templates/config.html`, `templates/health.html`).
+
+### What's new
+
+- **new** **25-release history** — the What's new modal now shows the **25 most recent** releases instead of 7. The newest still loads first and the rest lazy-load on scroll (each its own JSON + skeleton), so open stays fast (`whats-new-modal.js`).
+
+### Under the hood
+
+- **fix** **Centralized CSS cache-busting** — shared stylesheets across dashboard/config/health were linked without a `?v=` token (or with different tokens per page for the same file), so releases couldn't reliably invalidate them. All are now versioned from one `pageAssetVersions` field per file, so one bump invalidates a file everywhere; no stylesheet is served unversioned on the three pages anymore (`asset_versions.go`, `templates/dashboard.html`, `templates/config.html`, `templates/health.html`).
+- **fix** **Release-token test** — `TestSharedAssetVersionsMatchWhatsNewStub` pinned an exact dashboard release token and drifted red on each bump; it now matches the token by pattern while still failing if the token is removed (`asset_versions_test.go`).
+- **new** **Dev Makefile** — `make build` rebuilds the Docker image and brings the container online in the foreground (live logs, Ctrl-C stops); also `build-clean`, `up`, `down`, and `logs` targets (`Makefile`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.10** release notes; What's new history wording updated from 7 to 25 releases.
+- **fix** **What's new modal** — **v2026.07.10** JSON entry.
+- **fix** **Cache-bust** — `whats-new-v137` data version and `2026.07-dashboard-release-v105` dashboard release token; `whats-new-25-visible-1` modal script, `theme-color-meta-1` theme JS, `self-hosted-scp-1` fonts, and centralized shared-CSS asset query strings.
 
 ---
 
