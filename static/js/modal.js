@@ -197,6 +197,7 @@ class Modal {
 
         // Confirm button (styled like search matches)
         const confirmButton = document.createElement('button');
+        confirmButton.type = 'button';
         confirmButton.className = `modal-button ${confirmClass}`;
         const confirmName = document.createElement('span');
         confirmName.className = 'modal-button-name';
@@ -211,6 +212,7 @@ class Modal {
         // Cancel button
         if (showCancel) {
             const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
             cancelButton.className = 'modal-button';
             const cancelName = document.createElement('span');
             cancelName.className = 'modal-button-name';

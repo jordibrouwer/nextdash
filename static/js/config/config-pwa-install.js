@@ -67,6 +67,9 @@
         root.dataset.pwaBound = '1';
 
         global.addEventListener('beforeinstallprompt', (event) => {
+            // Suppress Chrome's default banner so the config install button drives
+            // the prompt. Chrome logs an expected "Banner not shown" console message
+            // as a result — see pwa-install-hint.js for the same trade-off.
             event.preventDefault();
             deferredPrompt = event;
             sync(root);

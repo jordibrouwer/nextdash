@@ -139,6 +139,10 @@
 
     function init() {
         window.addEventListener('beforeinstallprompt', (e) => {
+            // preventDefault() suppresses Chrome's own install banner so we can
+            // surface our own "add to home screen" hint instead. This makes
+            // Chrome log "Banner not shown: beforeinstallpromptevent.preventDefault()
+            // called" to the console — that message is expected, not an error.
             e.preventDefault();
             deferredPrompt = e;
             if (window.dashboardInstance?.settings?.onboardingCompleted === true) {
