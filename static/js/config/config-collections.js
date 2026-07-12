@@ -239,7 +239,7 @@ class ConfigCollections {
                 return [...new Set(all.map(bm => bm.shortcut).filter(Boolean))];
             }
             return [];
-        });
+        }, { single: true });
     }
 
     async _saveEdit(manager) {

@@ -1070,7 +1070,7 @@ class ConfigSetup {
     
         const addCollectionBtn = document.getElementById('add-collection-btn');
         if (addCollectionBtn) addCollectionBtn.addEventListener('click', () => {
-            if (this.c.collections) this.c.collections._openEdit(null, this);
+            if (this.c.collections) this.c.collections._openEdit(null, this.c);
         });
         const collectionsEmptyCta = document.getElementById('collections-empty-cta');
         if (collectionsEmptyCta) collectionsEmptyCta.addEventListener('click', () => addCollectionBtn?.click());

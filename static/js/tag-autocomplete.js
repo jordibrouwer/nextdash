@@ -3,17 +3,23 @@
  * Dropdown autocomplete for comma-separated tag inputs.
  *
  * Usage:
+ *   // Comma-separated multi-value input (e.g. bookmark tags):
  *   TagAutocomplete.attach(inputEl, () => ['work', 'dev', 'personal']);
+ *   // Single-value input (e.g. a collection rule value):
+ *   TagAutocomplete.attach(inputEl, () => ['work', 'dev'], { single: true });
  *   TagAutocomplete.detach(inputEl);
  */
 class TagAutocomplete {
     /**
      * @param {HTMLInputElement} input
      * @param {() => string[]} getTagsFn
+     * @param {{single?: boolean}} [options] single: treat the input as one
+     *   value instead of a comma-separated list (no trailing comma is added).
      */
-    constructor(input, getTagsFn) {
+    constructor(input, getTagsFn, options = {}) {
         this._input = input;
         this._getTagsFn = getTagsFn;
+        this._single = Boolean(options.single);
         this._dropdown = null;
         this._activeIndex = -1;
 
@@ -30,9 +36,9 @@ class TagAutocomplete {
 
     // ── Public ────────────────────────────────────────────────────────────────
 
-    static attach(input, getTagsFn) {
+    static attach(input, getTagsFn, options = {}) {
         TagAutocomplete.detach(input);
-        input._tagAutocomplete = new TagAutocomplete(input, getTagsFn);
+        input._tagAutocomplete = new TagAutocomplete(input, getTagsFn, options);
     }
 
     static detach(input) {
@@ -164,12 +170,16 @@ class TagAutocomplete {
     }
 
     _accept(tag) {
-        const val = this._input.value;
-        const lastComma = val.lastIndexOf(',');
-        const prefix = lastComma >= 0 ? val.slice(0, lastComma + 1) + ' ' : '';
-        const prevParts = prefix.split(',').map(t => t.trim()).filter(Boolean);
-        prevParts.push(tag);
-        this._input.value = prevParts.join(', ') + ', ';
+        if (this._single) {
+            this._input.value = tag;
+        } else {
+            const val = this._input.value;
+            const lastComma = val.lastIndexOf(',');
+            const prefix = lastComma >= 0 ? val.slice(0, lastComma + 1) + ' ' : '';
+            const prevParts = prefix.split(',').map(t => t.trim()).filter(Boolean);
+            prevParts.push(tag);
+            this._input.value = prevParts.join(', ') + ', ';
+        }
         this._input.selectionStart = this._input.selectionEnd = this._input.value.length;
         this._close();
         this._input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -180,12 +190,14 @@ class TagAutocomplete {
 
     _currentToken() {
         const val = this._input.value;
+        if (this._single) return val.trim().toLowerCase();
         const lastComma = val.lastIndexOf(',');
         const raw = lastComma >= 0 ? val.slice(lastComma + 1) : val;
         return raw.trimStart().toLowerCase();
     }
 
     _usedTags() {
+        if (this._single) return [];
         const val = this._input.value;
         const lastComma = val.lastIndexOf(',');
         const prefix = lastComma >= 0 ? val.slice(0, lastComma) : '';

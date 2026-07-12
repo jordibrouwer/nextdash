@@ -537,6 +537,9 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Never cache the HTML shell so clients always pick up the latest asset
+	// URLs (with their ?v= cache-busters). Static JS/CSS stay long-cached.
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.WriteHeader(http.StatusOK)
 	w.Write(buf.Bytes())
 }
@@ -555,6 +558,9 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Never cache the HTML shell so clients always pick up the latest asset
+	// URLs (with their ?v= cache-busters). Static JS/CSS stay long-cached.
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.WriteHeader(http.StatusOK)
 	w.Write(buf.Bytes())
 }
