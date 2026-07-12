@@ -169,6 +169,11 @@ test.describe('dashboard inline edit', () => {
             ));
         }, { url: target.url, expected: edited }), { timeout: 10_000 }).toBe(true);
 
+        // Restore the original name so re-runs start from a clean state. The
+        // save API takes the page id as a query param and the full page array
+        // as the body (POST /api/bookmarks?page=N with [Bookmark, ...]); the
+        // earlier form here sent the wrong shape (400) and then awaited a
+        // refresh that never resolved, timing the test out.
         await page.evaluate(async ({ url, originalName }) => {
             const normalizedUrl = String(url || '').trim();
             const d = window.dashboardInstance;
@@ -178,14 +183,26 @@ test.describe('dashboard inline edit', () => {
             if (!bookmark || String(bookmark.name || '').trim() === String(originalName || '').trim()) {
                 return;
             }
-            bookmark.name = originalName;
+            const pageId = d.currentPageId;
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            await api('/api/bookmarks', {
+            const res = await api(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) {
+                return;
+            }
+            const pageBookmarks = await res.json();
+            const idx = pageBookmarks.findIndex(
+                (entry) => String(entry?.url || '').trim() === normalizedUrl
+            );
+            if (idx < 0) {
+                return;
+            }
+            pageBookmarks[idx].name = originalName;
+            await api(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: d.currentPageId, bookmark }),
+                body: JSON.stringify(pageBookmarks),
             });
-            await d.data?.refreshAfterBookmarkAdded?.(d.currentPageId);
+            bookmark.name = originalName;
         }, { url: target.url, originalName: target.storedName });
     });
 

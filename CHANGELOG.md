@@ -99,6 +99,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Developer & docs
 
 - **fix** **Cheat-sheet scroll test** — the keyboard-scroll e2e test now focuses a non-typing element before pressing PageDown (the scroll handler intentionally ignores scroll keys while an input is focused) and polls for the final scroll position instead of a single fixed timeout, fixing a false failure (`tests/dashboard-overlay-focus.spec.js`).
+- **fix** **Inline-edit save test** — the "save commits inline edit changes" e2e test restored the original name with the wrong save-API shape (page in the body instead of the `?page=` query, and a single bookmark instead of the full page array), which returned 400 and then awaited a refresh that never resolved, timing the test out. The cleanup now GETs the page array, patches the name, and POSTs it back (`tests/dashboard-inline-edit.spec.js`).
 - **fix** **PWA install handlers** — documented that the `beforeinstallprompt` `preventDefault()` call suppresses Chrome's default banner in favour of the app's own install UI, so Chrome's "Banner not shown" console message is expected (`pwa-install-hint.js`, `config/config-pwa-install.js`).
 - **fix** **What's new modal** — added an "Under the hood" entry to the **v2026.07.11.3** notes covering the dialog focus fixes (user-facing wording only).
 - **fix** **Cache-bust** — `whats-new-v151` data version (`asset_versions.go`, `whats-new-stub.js`) and a `modal-focus-aria-1` query string on `modal.js` so the modal fixes are refetched.
