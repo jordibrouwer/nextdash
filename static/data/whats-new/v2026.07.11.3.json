@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.11.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-11",
+  "modalLead": "Tagging a whole batch of bookmarks at once is now a one-liner from the config bulk toolbar.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Bulk tags</strong> — select several bookmarks in <em>Config → Bookmarks</em> and the bulk toolbar now has a <em>Tags</em> control. Type one or more comma-separated tags, choose <em>Add</em>, <em>Replace</em>, or <em>Remove</em>, and apply them to every selected bookmark in one go. The field suggests tags you already use as you type."
+        }
+      ]
+    }
+  ]
+}
