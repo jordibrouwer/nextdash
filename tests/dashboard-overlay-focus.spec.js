@@ -85,26 +85,34 @@ test.describe('dashboard overlay focus', () => {
             }
         });
 
-        // Move focus off the input so PageDown scrolls the modal body.
-        await page.keyboard.press('Tab');
-        await expect.poll(async () => page.evaluate(() => {
-            const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
-            const active = document.activeElement;
-            return Boolean(modal && active instanceof Element && modal.contains(active));
-        })).toBe(true);
-
-        const scrolled = await page.evaluate(async () => {
+        // Move focus off the filter input onto a non-typing element so PageDown
+        // scrolls the modal body (the handler intentionally ignores scroll keys
+        // while an input/textarea is focused). A single Tab lands back on the
+        // filter via the focus trap, so focus a group summary explicitly.
+        const before = await page.evaluate(() => {
             const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
             const body = modal?.querySelector('.modal-body');
             if (!(body instanceof HTMLElement)) {
-                return false;
+                return null;
             }
-            const before = body.scrollTop;
+            const summary = modal.querySelector('.cheat-sheet-group-title');
+            if (summary instanceof HTMLElement) {
+                summary.focus({ preventScroll: true });
+            } else {
+                document.activeElement?.blur?.();
+            }
+            const start = body.scrollTop;
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true, cancelable: true }));
-            await new Promise((resolve) => setTimeout(resolve, 260));
-            return body.scrollTop > before;
+            return start;
         });
-        expect(scrolled).toBe(true);
+        expect(before).not.toBeNull();
+        // The handler scrolls with `behavior: 'smooth'`, so poll for the final
+        // position rather than asserting after a single fixed timeout.
+        await expect.poll(async () => page.evaluate((prev) => {
+            const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
+            const body = modal?.querySelector('.modal-body');
+            return body instanceof HTMLElement ? body.scrollTop > prev : false;
+        }, before)).toBe(true);
 
         // Tab stays trapped inside the modal.
         for (let i = 0; i < 8; i += 1) {
