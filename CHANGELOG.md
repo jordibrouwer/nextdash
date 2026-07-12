@@ -9,7 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.07.11.1 — July 2026](#v202607111--july-2026)
+- [v2026.07.11.2 — July 2026](#v202607112--july-2026)
 - [v2026.07.11 — July 2026](#v20260711--july-2026)
 - [v2026.07.10.2 — July 2026](#v202607102--july-2026)
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
@@ -89,7 +89,7 @@ Nothing yet.
 
 ---
 
-## v2026.07.11.1 — July 2026
+## v2026.07.11.2 — July 2026
 
 **Tags within reach & smarter collection rules** — the Tags field moves above the fold in the bookmark forms, the dashboard inline editor is reordered to match, and building a custom collection now autocompletes rule values.
 
@@ -108,10 +108,10 @@ Nothing yet.
 
 ### Developer & docs
 
-- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11.1** notes.
-- **fix** **What's new modal** — **v2026.07.11.1** JSON entry (no doc-update item, by design).
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11.2** notes.
+- **fix** **What's new modal** — **v2026.07.11.2** JSON entry (no doc-update item, by design).
 - **fix** **Regression coverage** — the collection autocomplete e2e test now drives the real `#add-collection-btn` so it guards the wrong-manager fix (`tests/config-collections-autocomplete.spec.js`).
-- **fix** **Cache-bust** — `whats-new-v148` data version and `2026.07-dashboard-release-v109` dashboard release token; `search-commands-new-3-tags-above-fold`, `collections-ac-1/2`, and `inline-edit-field-order-1` asset query strings.
+- **fix** **Cache-bust** — `whats-new-v149` data version and `2026.07-dashboard-release-v110` dashboard release token; `search-commands-new-3-tags-above-fold`, `collections-ac-1/2`, and `inline-edit-field-order-1` asset query strings.
 
 ---
 
