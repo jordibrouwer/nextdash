@@ -276,8 +276,26 @@ class Modal {
         document.body.addEventListener('touchmove', this.preventScrollHandler, { passive: false });
         document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
         
-        // Focus initial element or confirm button for keyboard navigation
-        setTimeout(() => {
+        // Focus initial element or confirm button for keyboard navigation.
+        // Defer past the current frame so the modal is laid out and focusable
+        // before we focus it — a double rAF waits for the 'show' class to take
+        // effect without depending on a fixed transition duration.
+        this._focusInitialElement(initialFocusSelector, confirmButton);
+    }
+
+    _afterNextPaint(callback) {
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => requestAnimationFrame(callback));
+        } else {
+            setTimeout(callback, 100);
+        }
+    }
+
+    _focusInitialElement(initialFocusSelector, confirmButton) {
+        this._afterNextPaint(() => {
+            if (!this.modal?.classList.contains('show')) {
+                return;
+            }
             if (initialFocusSelector) {
                 const initialEl = this.modal.querySelector(initialFocusSelector);
                 if (initialEl && typeof initialEl.focus === 'function') {
@@ -295,7 +313,7 @@ class Modal {
             if (target && typeof target.focus === 'function') {
                 target.focus({ preventScroll: true });
             }
-        }, 100);
+        });
     }
 
     hide() {
