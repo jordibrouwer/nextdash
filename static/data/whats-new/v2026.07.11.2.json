@@ -1,0 +1,39 @@
+{
+  "tag": "v2026.07.11.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-11",
+  "modalLead": "Tags are easier to reach when adding or editing a bookmark, and building a collection now suggests values as you type.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tags above the fold</strong> — in the quick-add bookmark modal (<kbd>&amp;</kbd>) and the config bookmark form, the <em>Tags</em> field now sits right under Page/Category instead of hidden inside <em>More options</em>, so you can label a bookmark without expanding anything."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Clearer inline editor</strong> — the dashboard inline bookmark editor now orders its fields Page → Category → Tags → Note (with Note just above the Pinned/Status checks), matching the other bookmark forms."
+        }
+      ]
+    },
+    {
+      "title": "Collections",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Autocomplete in collection rules</strong> — when you add or edit a custom collection (<em>Config → Collections</em>), each rule's value field now suggests the tags, categories, and shortcuts already in use, the same way tags autocomplete on a bookmark. Shortcut suggestions keep their original casing (e.g. <code>G</code>, <code>GI</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Snappier Back/Forward</strong> — the dashboard and config pages no longer opt out of the browser's back/forward cache, so returning to a page you just left is instant again while still loading the latest assets."
+        }
+      ]
+    }
+  ]
+}

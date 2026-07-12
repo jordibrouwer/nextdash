@@ -1612,11 +1612,17 @@
                                 </select>
                             </div>
 
+                            <div class="bookmark-detail-section">
+                                <label class="bookmark-detail-label" for="detail-tags" data-i18n="config.detailTagsLabel">Tags</label>
+                                <input type="text" id="detail-tags" class="bookmark-detail-input" data-i18n-placeholder="config.detailTagsPlaceholder" placeholder="work, dev, personal…" autocomplete="off">
+                                <span class="bookmark-detail-field-hint" data-i18n="config.tagsFieldHint">Comma-separated. Used for filtering and dynamic collections.</span>
+                            </div>
+
                             <details class="bookmark-detail-more" id="bookmark-detail-more">
                                 <summary class="bookmark-detail-more-summary">
                                     <span class="bookmark-detail-more-summary-content">
                                         <span class="bookmark-detail-label" data-i18n="config.bookmarkDetailMoreOptions">More options</span>
-                                        <span class="bookmark-detail-more-hint" data-i18n="config.bookmarkDetailMoreOptionsHint">Shortcut, icon, tags, previews and status</span>
+                                        <span class="bookmark-detail-more-hint" data-i18n="config.bookmarkDetailMoreOptionsHint">Shortcut, icon, previews and status</span>
                                     </span>
                                     <span class="bookmark-detail-more-chevron" aria-hidden="true"></span>
                                 </summary>
@@ -1675,12 +1681,6 @@
                             <div class="bookmark-detail-section">
                                 <label class="bookmark-detail-label" for="detail-note" data-i18n="bookmark.noteLabel">Note</label>
                                 <textarea id="detail-note" class="bookmark-detail-input bookmark-detail-note" data-i18n-placeholder="config.detailNotePlaceholder" placeholder="Optional note…" rows="3" autocomplete="off"></textarea>
-                            </div>
-
-                            <div class="bookmark-detail-section">
-                                <label class="bookmark-detail-label" for="detail-tags" data-i18n="config.detailTagsLabel">Tags</label>
-                                <input type="text" id="detail-tags" class="bookmark-detail-input" data-i18n-placeholder="config.detailTagsPlaceholder" placeholder="work, dev, personal…" autocomplete="off">
-                                <span class="bookmark-detail-field-hint" data-i18n="config.tagsFieldHint">Comma-separated. Used for filtering and dynamic collections.</span>
                             </div>
 
                             <div class="bookmark-detail-section bookmark-detail-toggles">
@@ -2546,13 +2546,13 @@
     <script src="/static/js/config/config-bookmark-store.js"></script>
     <script src="/static/js/config/config-pages.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-categories.js?v=config-b11-empty-hidden-1"></script>
-    <script src="/static/js/tag-autocomplete.js"></script>
+    <script src="/static/js/tag-autocomplete.js?v=collections-ac-1"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
     <script src="/static/js/config/config-bookmarks.js?v=bookmarks-phase2-1"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
-    <script src="/static/js/config/config-collections.js"></script>
+    <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=tips-off-default-1"></script>
@@ -2563,7 +2563,7 @@
     <script src="/static/js/config/config-tab-tours.js?v=tours-autostart-off-1"></script>
     <script src="/static/js/config/config-persistence.js?v=save-signal-scope-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=general-nav-highlight-1"></script>
+    <script src="/static/js/config/config-setup.js?v=collections-ac-2"></script>
     <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2"></script>
     <script src="/static/js/config/config-language.js?v=i18n-safe-text-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-nav-highlight-1"></script>

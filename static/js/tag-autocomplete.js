@@ -3,17 +3,23 @@
  * Dropdown autocomplete for comma-separated tag inputs.
  *
  * Usage:
+ *   // Comma-separated multi-value input (e.g. bookmark tags):
  *   TagAutocomplete.attach(inputEl, () => ['work', 'dev', 'personal']);
+ *   // Single-value input (e.g. a collection rule value):
+ *   TagAutocomplete.attach(inputEl, () => ['work', 'dev'], { single: true });
  *   TagAutocomplete.detach(inputEl);
  */
 class TagAutocomplete {
     /**
      * @param {HTMLInputElement} input
      * @param {() => string[]} getTagsFn
+     * @param {{single?: boolean}} [options] single: treat the input as one
+     *   value instead of a comma-separated list (no trailing comma is added).
      */
-    constructor(input, getTagsFn) {
+    constructor(input, getTagsFn, options = {}) {
         this._input = input;
         this._getTagsFn = getTagsFn;
+        this._single = Boolean(options.single);
         this._dropdown = null;
         this._activeIndex = -1;
 
@@ -30,9 +36,9 @@ class TagAutocomplete {
 
     // ── Public ────────────────────────────────────────────────────────────────
 
-    static attach(input, getTagsFn) {
+    static attach(input, getTagsFn, options = {}) {
         TagAutocomplete.detach(input);
-        input._tagAutocomplete = new TagAutocomplete(input, getTagsFn);
+        input._tagAutocomplete = new TagAutocomplete(input, getTagsFn, options);
     }
 
     static detach(input) {
@@ -46,12 +52,22 @@ class TagAutocomplete {
 
     _handleInput() {
         const token = this._currentToken();
-        const known = (this._getTagsFn() || []).map(t => t.toLowerCase());
+        // Keep each suggestion's original casing (e.g. uppercase shortcuts like
+        // "G", "GI") while matching case-insensitively. Dedup on the lowercased
+        // form so "Dev" and "dev" don't both appear.
+        const seen = new Set();
+        const known = (this._getTagsFn() || []).filter(t => {
+            const lower = String(t).toLowerCase();
+            if (seen.has(lower)) return false;
+            seen.add(lower);
+            return true;
+        });
         const used = this._usedTags();
+        const isUsed = t => used.includes(String(t).toLowerCase());
 
         if (!token) {
             const candidates = known
-                .filter(t => !used.includes(t))
+                .filter(t => !isUsed(t))
                 .sort((a, b) => a.localeCompare(b))
                 .slice(0, 8);
             if (candidates.length === 0) { this._close(); return; }
@@ -59,9 +75,10 @@ class TagAutocomplete {
             return;
         }
 
-        const candidates = known.filter(t =>
-            t.startsWith(token) && t !== token && !used.includes(t)
-        ).sort((a, b) => a.localeCompare(b)).slice(0, 8);
+        const candidates = known.filter(t => {
+            const lower = String(t).toLowerCase();
+            return lower.startsWith(token) && lower !== token && !isUsed(t);
+        }).sort((a, b) => a.localeCompare(b)).slice(0, 8);
 
         if (candidates.length === 0) { this._close(); return; }
         this._open(candidates, token);
@@ -164,12 +181,16 @@ class TagAutocomplete {
     }
 
     _accept(tag) {
-        const val = this._input.value;
-        const lastComma = val.lastIndexOf(',');
-        const prefix = lastComma >= 0 ? val.slice(0, lastComma + 1) + ' ' : '';
-        const prevParts = prefix.split(',').map(t => t.trim()).filter(Boolean);
-        prevParts.push(tag);
-        this._input.value = prevParts.join(', ') + ', ';
+        if (this._single) {
+            this._input.value = tag;
+        } else {
+            const val = this._input.value;
+            const lastComma = val.lastIndexOf(',');
+            const prefix = lastComma >= 0 ? val.slice(0, lastComma + 1) + ' ' : '';
+            const prevParts = prefix.split(',').map(t => t.trim()).filter(Boolean);
+            prevParts.push(tag);
+            this._input.value = prevParts.join(', ') + ', ';
+        }
         this._input.selectionStart = this._input.selectionEnd = this._input.value.length;
         this._close();
         this._input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -180,12 +201,14 @@ class TagAutocomplete {
 
     _currentToken() {
         const val = this._input.value;
+        if (this._single) return val.trim().toLowerCase();
         const lastComma = val.lastIndexOf(',');
         const raw = lastComma >= 0 ? val.slice(lastComma + 1) : val;
         return raw.trimStart().toLowerCase();
     }
 
     _usedTags() {
+        if (this._single) return [];
         const val = this._input.value;
         const lastComma = val.lastIndexOf(',');
         const prefix = lastComma >= 0 ? val.slice(0, lastComma) : '';
