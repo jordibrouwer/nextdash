@@ -12,6 +12,15 @@
           "text": "<strong>Bulk tags</strong> — select several bookmarks in <em>Config → Bookmarks</em> and the bulk toolbar now has a <em>Tags</em> control. Type one or more comma-separated tags, choose <em>Add</em>, <em>Replace</em>, or <em>Remove</em>, and apply them to every selected bookmark in one go. The field suggests tags you already use as you type."
         }
       ]
+    },
+    {
+      "title": "Under the hood",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Smoother dialogs</strong> — dialog windows now hand focus back cleanly when they close, so keyboard and screen-reader navigation stays tidy and the browser console no longer warns about it."
+        }
+      ]
     }
   ]
 }
