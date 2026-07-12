@@ -1723,7 +1723,7 @@
     "structureWorkspaceIntro": "Wissel pagina en categorie voor de bladwijzerlijst hieronder. Herstel gearchiveerde pagina's of stel favicon-beleid in.",
     "structureWorkspaceFootnote": "Herschikken, archiveren, sjablonen, iconen en samenvoegen: gebruik de tabs Pagina's en Categorieën.",
     "bookmarkDetailMoreOptions": "Meer opties",
-    "bookmarkDetailMoreOptionsHint": "Sneltoets, icoon, tags, previews en status",
+    "bookmarkDetailMoreOptionsHint": "Sneltoets, icoon, previews en status",
     "structureContextDefault": "Kies eerst pagina en categorie.",
     "structureContextLabel": "Ctx: {page} / {category}",
     "faviconPolicy": "Faviconbeleid",

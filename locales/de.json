@@ -1713,7 +1713,7 @@
     "structureWorkspaceIntro": "Seite und Kategorie für die Lesezeichenliste unten wechseln. Archivierte Seiten wiederherstellen oder Favicon-Regel setzen.",
     "structureWorkspaceFootnote": "Sortieren, archivieren, Vorlagen, Symbole und Zusammenführen: Tabs Seiten und Kategorien nutzen.",
     "bookmarkDetailMoreOptions": "Weitere Optionen",
-    "bookmarkDetailMoreOptionsHint": "Kürzel, Symbol, Tags, Vorschauen und Status",
+    "bookmarkDetailMoreOptionsHint": "Kürzel, Symbol, Vorschauen und Status",
     "structureContextDefault": "Erst Seite und Kategorie wählen.",
     "structureContextLabel": "Kontext: {page} / {category}",
     "faviconPolicy": "Favicon-Regel",

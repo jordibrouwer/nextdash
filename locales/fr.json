@@ -1713,7 +1713,7 @@
     "structureWorkspaceIntro": "Changer de page et de catégorie pour la liste de favoris ci-dessous. Restaurer les pages archivées ou définir la règle favicon.",
     "structureWorkspaceFootnote": "Réordonner, archiver, modèles, icônes et fusion : utilisez les onglets Pages et Catégories.",
     "bookmarkDetailMoreOptions": "Plus d'options",
-    "bookmarkDetailMoreOptionsHint": "Raccourci, icône, tags, aperçus et statut",
+    "bookmarkDetailMoreOptionsHint": "Raccourci, icône, aperçus et statut",
     "structureContextDefault": "Choisir page et catégorie d'abord.",
     "structureContextLabel": "Contexte : {page} / {category}",
     "faviconPolicy": "Règle favicon",

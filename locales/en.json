@@ -1733,7 +1733,7 @@
     "structureWorkspaceIntro": "Switch page and category for the bookmark list below. Restore archived pages or set favicon policy here.",
     "structureWorkspaceFootnote": "Reorder, archive, templates, icons, and merge: use the Pages and Categories tabs.",
     "bookmarkDetailMoreOptions": "More options",
-    "bookmarkDetailMoreOptionsHint": "Shortcut, icon, tags, previews and status",
+    "bookmarkDetailMoreOptionsHint": "Shortcut, icon, previews and status",
     "structureContextDefault": "Pick page and category first.",
     "structureContextLabel": "Ctx: {page} / {category}",
     "faviconPolicy": "Favicon policy",
