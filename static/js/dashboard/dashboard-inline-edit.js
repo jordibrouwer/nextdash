@@ -579,14 +579,14 @@ class DashboardInlineEdit {
         let noteInput = document.createElement('textarea');
         noteInput.className = 'bookmark-inline-textarea';
         noteInput.value = bookmark.note || '';
-        form.appendChild(mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput));
+        const noteField = mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput);
 
         const tagsInput = document.createElement('input');
         tagsInput.type = 'text';
         tagsInput.className = 'bookmark-inline-input';
         tagsInput.placeholder = cfg('detailTagsPlaceholder', 'work, dev, personal…');
         tagsInput.value = (Array.isArray(bookmark.tags) ? bookmark.tags : []).join(', ');
-        form.appendChild(mkField(cfg('detailTagsLabel', 'Tags'), tagsInput));
+        const tagsField = mkField(cfg('detailTagsLabel', 'Tags'), tagsInput);
         // Seed session pool from loaded bookmarks
         (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks ?? []).forEach(bm => (bm.tags || []).forEach(t => _sessionTags.add(t)));
         TagAutocomplete.attach(tagsInput, () => {
@@ -616,7 +616,6 @@ class DashboardInlineEdit {
         syncShortcutConflict(shortcutInput.value);
         const shortcutField = mkField(cfg('shortcut', 'Shortcut'), shortcutInput);
         shortcutField.appendChild(shortcutConflictHint);
-        form.appendChild(shortcutField);
 
         const catSelect = document.createElement('select');
         catSelect.className = 'bookmark-inline-select';
@@ -633,7 +632,7 @@ class DashboardInlineEdit {
             }
             catSelect.appendChild(o);
         });
-        form.appendChild(mkField(cfg('category', 'Category'), catSelect));
+        const catField = mkField(cfg('category', 'Category'), catSelect);
 
         const pageSelect = document.createElement('select');
         pageSelect.className = 'bookmark-inline-select';
@@ -646,7 +645,14 @@ class DashboardInlineEdit {
             if (Number(page.id) === sourcePageId) o.selected = true;
             pageSelect.appendChild(o);
         });
-        form.appendChild(mkField(cfg('page', 'Page'), pageSelect));
+        const pageField = mkField(cfg('page', 'Page'), pageSelect);
+
+        // Field order: Upload → Shortcut → Page → Category → Tags → Note → Pinned/Status
+        form.appendChild(shortcutField);
+        form.appendChild(pageField);
+        form.appendChild(catField);
+        form.appendChild(tagsField);
+        form.appendChild(noteField);
 
         const reloadCatSelectForPage = async (pageId) => {
             const isCurrentPage = Number(pageId) === currentPageId;
