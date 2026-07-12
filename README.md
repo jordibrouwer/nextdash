@@ -273,6 +273,8 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
+**Smoother dialogs (v2026.07.11.4)** — dialog windows now hand keyboard and screen-reader focus back cleanly when they close (focus returns to the control that opened them before the dialog is hidden), and the browser console no longer warns about focus being trapped in a hidden element.
+
 **Bulk tags (v2026.07.11.3)** — select several bookmarks in *Config → Bookmarks* and the bulk toolbar now has a **Tags** control: type one or more comma-separated tags, choose **Add**, **Replace**, or **Remove**, and apply them to every selected bookmark at once. The field suggests tags you already use as you type.
 
 **Tags within reach & collection autocomplete (v2026.07.11.2)** — the **Tags** field moves above the fold in both bookmark forms (out of *More options*, right under Page/Category), and the dashboard inline editor is reordered to match (Page → Category → Tags → Note). Building a **custom collection** now autocompletes each rule's value from the tags, categories, and shortcuts already in use (shortcut suggestions keep their casing). The dashboard and config pages no longer opt out of the browser's back/forward cache, so returning to a page you just left is instant again.

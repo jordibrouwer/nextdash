@@ -197,6 +197,7 @@ class Modal {
 
         // Confirm button (styled like search matches)
         const confirmButton = document.createElement('button');
+        confirmButton.type = 'button';
         confirmButton.className = `modal-button ${confirmClass}`;
         const confirmName = document.createElement('span');
         confirmName.className = 'modal-button-name';
@@ -211,6 +212,7 @@ class Modal {
         // Cancel button
         if (showCancel) {
             const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
             cancelButton.className = 'modal-button';
             const cancelName = document.createElement('span');
             cancelName.className = 'modal-button-name';
@@ -274,8 +276,26 @@ class Modal {
         document.body.addEventListener('touchmove', this.preventScrollHandler, { passive: false });
         document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
         
-        // Focus initial element or confirm button for keyboard navigation
-        setTimeout(() => {
+        // Focus initial element or confirm button for keyboard navigation.
+        // Defer past the current frame so the modal is laid out and focusable
+        // before we focus it — a double rAF waits for the 'show' class to take
+        // effect without depending on a fixed transition duration.
+        this._focusInitialElement(initialFocusSelector, confirmButton);
+    }
+
+    _afterNextPaint(callback) {
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => requestAnimationFrame(callback));
+        } else {
+            setTimeout(callback, 100);
+        }
+    }
+
+    _focusInitialElement(initialFocusSelector, confirmButton) {
+        this._afterNextPaint(() => {
+            if (!this.modal?.classList.contains('show')) {
+                return;
+            }
             if (initialFocusSelector) {
                 const initialEl = this.modal.querySelector(initialFocusSelector);
                 if (initialEl && typeof initialEl.focus === 'function') {
@@ -293,7 +313,7 @@ class Modal {
             if (target && typeof target.focus === 'function') {
                 target.focus({ preventScroll: true });
             }
-        }, 100);
+        });
     }
 
     hide() {
@@ -301,6 +321,26 @@ class Modal {
             const callback = this._onHideCallback;
             this._onHideCallback = null;
             callback();
+        }
+
+        // Move focus out of the modal before hiding it. Setting aria-hidden
+        // while a descendant still holds focus triggers a Chrome console
+        // warning (focus must not be hidden from assistive tech).
+        const opener = this.previouslyFocusedElement;
+        this.previouslyFocusedElement = null;
+        if (this.modal && this.modal.contains(document.activeElement)) {
+            if (window.FocusTrapUtils?.focusIfConnected) {
+                window.FocusTrapUtils.focusIfConnected(opener);
+            } else if (opener?.isConnected && typeof opener.focus === 'function') {
+                opener.focus({ preventScroll: true });
+            }
+            // The opener may not accept focus (e.g. <body> without tabindex),
+            // in which case focus stays on the modal descendant — blur it so
+            // nothing focused remains inside the aria-hidden overlay.
+            if (this.modal.contains(document.activeElement)
+                && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
         }
 
         if (this.modal) {
@@ -328,9 +368,10 @@ class Modal {
             document.body.removeEventListener('wheel', this.preventScrollHandler);
         }
         
-        // Return focus to the element that triggered the modal
-        const opener = this.previouslyFocusedElement;
-        this.previouslyFocusedElement = null;
+        // Return focus to the element that triggered the modal. When focus was
+        // inside the modal we already restored it synchronously above; this
+        // re-affirms it after the DOM settles (and covers openers that were not
+        // focused at hide time).
         if (window.FocusTrapUtils?.focusIfConnected) {
             setTimeout(() => {
                 window.FocusTrapUtils.focusIfConnected(opener);

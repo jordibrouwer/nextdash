@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.11.4",
+  "date": "July 2026",
+  "releasedAt": "2026-07-12",
+  "modalLead": "A small polish pass on dialog windows for smoother keyboard and screen-reader navigation.",
+  "sections": [
+    {
+      "title": "Under the hood",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Smoother dialogs</strong> — dialog windows now hand focus back cleanly when they close, so keyboard and screen-reader navigation stays tidy and the browser console no longer warns about it."
+        }
+      ]
+    }
+  ]
+}
