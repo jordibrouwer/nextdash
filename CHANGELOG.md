@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.11.1 — July 2026](#v202607111--july-2026)
 - [v2026.07.11 — July 2026](#v20260711--july-2026)
 - [v2026.07.10.2 — July 2026](#v202607102--july-2026)
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
@@ -85,6 +86,32 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.11.1 — July 2026
+
+**Tags within reach & smarter collection rules** — the Tags field moves above the fold in the bookmark forms, the dashboard inline editor is reordered to match, and building a custom collection now autocompletes rule values.
+
+### Bookmarks
+
+- **new** **Tags above the fold** — in the quick-add modal (`&`) the Tags field moves out of `More options` to a dedicated section right under the Page/Category row (`nbm-wizard-step-2-panel`); in the config bookmark form it moves out of `More options` to sit directly below Category. The `More options` hint no longer lists "tags" (EN/NL/DE/FR). Tags label/placeholder in the modal are now localized via `config.detailTagsLabel` + a new `config.commaSeparatedShort` key (`search-commands-new.js`, `templates/config.html`, locales).
+- **fix** **Inline editor field order** — the dashboard inline bookmark editor now appends fields in a fixed order (Shortcut → Page → Category → Tags → Note, above the Pinned/Status checks) instead of the previous scattered order; field definitions and their listeners are unchanged (`dashboard-inline-edit.js`).
+
+### Collections
+
+- **new** **Autocomplete on rule values** — the custom-collection rule editor reuses `TagAutocomplete` on each rule's value field, suggesting the tags, categories, or shortcuts already in use (field-aware). A new single-value mode (`{ single: true }`) replaces the value on accept with no trailing comma; suggestions keep their original casing so shortcuts show as `G`, `GI` (`tag-autocomplete.js`, `config-collections.js`). Fixed the `+ Add collection` button passing the wrong manager to the editor, which left the suggestion pool empty (`config-setup.js`). Config → Help *Tags & collections* now mentions rule-value autocomplete (EN/NL/DE/FR).
+
+### Polish
+
+- **fix** **Back/Forward cache** — the dashboard and config HTML responses dropped `no-store` (kept `no-cache, must-revalidate`), so the browser bfcache works again and Back/Forward navigation stays instant while clients still pick up the latest `?v=` asset URLs (`handlers.go`).
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11.1** notes.
+- **fix** **What's new modal** — **v2026.07.11.1** JSON entry (no doc-update item, by design).
+- **fix** **Regression coverage** — the collection autocomplete e2e test now drives the real `#add-collection-btn` so it guards the wrong-manager fix (`tests/config-collections-autocomplete.spec.js`).
+- **fix** **Cache-bust** — `whats-new-v148` data version and `2026.07-dashboard-release-v109` dashboard release token; `search-commands-new-3-tags-above-fold`, `collections-ac-1/2`, and `inline-edit-field-order-1` asset query strings.
 
 ---
 
