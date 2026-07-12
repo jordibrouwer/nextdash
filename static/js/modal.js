@@ -303,6 +303,26 @@ class Modal {
             callback();
         }
 
+        // Move focus out of the modal before hiding it. Setting aria-hidden
+        // while a descendant still holds focus triggers a Chrome console
+        // warning (focus must not be hidden from assistive tech).
+        const opener = this.previouslyFocusedElement;
+        this.previouslyFocusedElement = null;
+        if (this.modal && this.modal.contains(document.activeElement)) {
+            if (window.FocusTrapUtils?.focusIfConnected) {
+                window.FocusTrapUtils.focusIfConnected(opener);
+            } else if (opener?.isConnected && typeof opener.focus === 'function') {
+                opener.focus({ preventScroll: true });
+            }
+            // The opener may not accept focus (e.g. <body> without tabindex),
+            // in which case focus stays on the modal descendant — blur it so
+            // nothing focused remains inside the aria-hidden overlay.
+            if (this.modal.contains(document.activeElement)
+                && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+        }
+
         if (this.modal) {
             this.modal.classList.remove('show');
             this.modal.setAttribute('aria-hidden', 'true');
@@ -328,9 +348,10 @@ class Modal {
             document.body.removeEventListener('wheel', this.preventScrollHandler);
         }
         
-        // Return focus to the element that triggered the modal
-        const opener = this.previouslyFocusedElement;
-        this.previouslyFocusedElement = null;
+        // Return focus to the element that triggered the modal. When focus was
+        // inside the modal we already restored it synchronously above; this
+        // re-affirms it after the DOM settles (and covers openers that were not
+        // focused at hide time).
         if (window.FocusTrapUtils?.focusIfConnected) {
             setTimeout(() => {
                 window.FocusTrapUtils.focusIfConnected(opener);
