@@ -303,8 +303,8 @@ class SearchCommandNew {
                             </div>
                         </div>
                         <div class="nbm-section nbm-wizard-step-2-panel">
-                            <label class="nbm-label" for="new-bookmark-tags">Tags <span class="nbm-label-hint">comma-separated</span></label>
-                            <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="work, dev, personal…" autocomplete="off" spellcheck="false">
+                            <label class="nbm-label" for="new-bookmark-tags">${this.t('config.detailTagsLabel', 'Tags')} <span class="nbm-label-hint">${this.t('config.commaSeparatedShort', 'comma-separated')}</span></label>
+                            <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="${this.t('config.detailTagsPlaceholder', 'work, dev, personal…')}" autocomplete="off" spellcheck="false">
                         </div>
                         <details class="nbm-more-options nbm-wizard-step-2-panel" id="new-bookmark-more">
                             <summary>${this.t('config.addBookmarkMoreOptions', 'More options')}</summary>

@@ -1161,6 +1161,7 @@
     "detailUrlPlaceholder": "https://example.com",
     "detailShortcutPlaceholder": "ABC",
     "detailTagsLabel": "Tags",
+    "commaSeparatedShort": "comma-separated",
     "detailTagsPlaceholder": "work, dev, personal…",
     "detailNotePlaceholder": "Optional note…",
     "detailIconUrlPlaceholder": "https://.../icon.png",

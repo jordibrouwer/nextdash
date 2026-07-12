@@ -1144,6 +1144,7 @@
     "detailUrlPlaceholder": "https://beispiel.de",
     "detailShortcutPlaceholder": "ABC",
     "detailTagsLabel": "Tags",
+    "commaSeparatedShort": "kommagetrennt",
     "detailTagsPlaceholder": "arbeit, dev, privat…",
     "detailNotePlaceholder": "Optionale Notiz…",
     "detailIconUrlPlaceholder": "https://.../icon.png",

@@ -1144,6 +1144,7 @@
     "detailUrlPlaceholder": "https://exemple.fr",
     "detailShortcutPlaceholder": "ABC",
     "detailTagsLabel": "Tags",
+    "commaSeparatedShort": "séparés par des virgules",
     "detailTagsPlaceholder": "travail, dev, perso…",
     "detailNotePlaceholder": "Note optionnelle…",
     "detailIconUrlPlaceholder": "https://.../icone.png",

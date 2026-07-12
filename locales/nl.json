@@ -1154,6 +1154,7 @@
     "detailUrlPlaceholder": "https://voorbeeld.nl",
     "detailShortcutPlaceholder": "ABC",
     "detailTagsLabel": "Tags",
+    "commaSeparatedShort": "kommagescheiden",
     "detailTagsPlaceholder": "werk, dev, privé…",
     "detailNotePlaceholder": "Optionele notitie…",
     "detailIconUrlPlaceholder": "https://.../icoon.png",
