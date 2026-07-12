@@ -86,7 +86,19 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-Nothing yet.
+### Accessibility
+
+- **fix** **Modal focus** — closing a modal no longer sets `aria-hidden="true"` on the overlay while a button inside it still holds focus, which Chrome flagged in the console ("focus must not be hidden from assistive technology"). Focus is now moved back to the opener (or blurred when the opener can't take focus) before the overlay is hidden (`modal.js`).
+- **fix** **Modal buttons** — the confirm/cancel buttons now set `type="button"` so they can never submit an enclosing form by default (`modal.js`).
+
+### Compatibility
+
+- **fix** **PWA meta tag** — added the standard `mobile-web-app-capable` meta tag alongside the Apple-specific one to silence Chrome's deprecation warning (`templates/dashboard.html`, `templates/config.html`, `templates/health.html`).
+
+### Developer & docs
+
+- **fix** **Cheat-sheet scroll test** — the keyboard-scroll e2e test now focuses a non-typing element before pressing PageDown (the scroll handler intentionally ignores scroll keys while an input is focused) and polls for the final scroll position instead of a single fixed timeout, fixing a false failure (`tests/dashboard-overlay-focus.spec.js`).
+- **fix** **PWA install handlers** — documented that the `beforeinstallprompt` `preventDefault()` call suppresses Chrome's default banner in favour of the app's own install UI, so Chrome's "Banner not shown" console message is expected (`pwa-install-hint.js`, `config/config-pwa-install.js`).
 
 ---
 
