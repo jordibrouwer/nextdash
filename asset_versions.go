@@ -71,7 +71,7 @@ var sharedAssetVersions = pageAssetVersions{
 	PreviewCardSpotlightJS: "preview-cards-v1",
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
-	SearchCommandsNewJS:    "search-commands-new-2",
+	SearchCommandsNewJS:    "search-commands-new-3-tags-above-fold",
 	WhatsNewData:           "whats-new-v147",
 	DataRevision:           "data-revision-4",
 
