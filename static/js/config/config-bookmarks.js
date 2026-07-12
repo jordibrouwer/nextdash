@@ -1278,7 +1278,8 @@ class ConfigBookmarks {
         if (countLabel) countLabel.textContent = String(count);
 
         ['bulk-delete-bookmarks-btn', 'bulk-toggle-pin-btn',
-         'bulk-toggle-status-btn', 'bulk-move-apply-btn', 'bulk-refresh-favicons-btn'].forEach((id) => {
+         'bulk-toggle-status-btn', 'bulk-move-apply-btn', 'bulk-refresh-favicons-btn',
+         'bulk-apply-tags-btn', 'bulk-tags-input', 'bulk-tags-mode-select'].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.disabled = count === 0;
         });
@@ -1334,6 +1335,35 @@ class ConfigBookmarks {
             }
         });
         this.clearSelection();
+    }
+
+    bulkApplyTags(bookmarks, tags, mode = 'add') {
+        const normalized = (Array.isArray(tags) ? tags : [])
+            .map(t => String(t).trim().toLowerCase())
+            .filter(t => t.length > 0)
+            .filter((t, i, arr) => arr.indexOf(t) === i);
+        if (normalized.length === 0) return 0;
+
+        let updated = 0;
+        this.getSelectedIndexes().forEach((index) => {
+            const bm = bookmarks[index];
+            if (!bm) return;
+            const existing = Array.isArray(bm.tags) ? bm.tags : [];
+            let next;
+            if (mode === 'replace') {
+                next = [...normalized];
+            } else if (mode === 'remove') {
+                next = existing.filter(t => !normalized.includes(t));
+            } else { // 'add'
+                next = [...existing, ...normalized]
+                    .filter((t, i, arr) => arr.indexOf(t) === i);
+            }
+            bm.tags = next;
+            normalized.forEach(t => _sessionTags.add(t));
+            updated += 1;
+        });
+        this.clearSelection();
+        return updated;
     }
 
     bulkToggleStatus(bookmarks) {

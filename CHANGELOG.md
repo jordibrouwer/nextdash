@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.11.3 — July 2026](#v202607113--july-2026)
 - [v2026.07.11.2 — July 2026](#v202607112--july-2026)
 - [v2026.07.11 — July 2026](#v20260711--july-2026)
 - [v2026.07.10.2 — July 2026](#v202607102--july-2026)
@@ -86,6 +87,22 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.11.3 — July 2026
+
+**Bulk tags** — the config bookmarks bulk toolbar can now add, replace, or remove tags across every selected bookmark at once.
+
+### Bookmarks
+
+- **new** **Bulk tags** — select bookmarks in *Config → Bookmarks* and the bulk toolbar gains a *Tags* group: a comma-separated tag input (with `TagAutocomplete` seeded from all loaded bookmarks) and an Add/Replace/Remove mode select. `bulkApplyTags(bookmarks, tags, mode)` normalizes to lower-case, trims, and dedupes, then mutates the selected bookmarks in place and clears the selection, saving through the existing config dirty/save flow like the other bulk actions (`config-bookmarks.js`, `config-setup.js`, `templates/config.html`, locales). The three new controls are disabled when nothing is selected.
+
+### Developer & docs
+
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.11.3** notes.
+- **fix** **What's new modal** — **v2026.07.11.3** JSON entry (no doc-update item, by design).
+- **fix** **Cache-bust** — `whats-new-v150` data version and `2026.07-dashboard-release-v111` dashboard release token; `bookmarks-bulk-tags-1` asset query strings on `config-bookmarks.js` and `config-setup.js`.
 
 ---
 

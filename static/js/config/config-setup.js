@@ -1050,7 +1050,31 @@ class ConfigSetup {
                 this.c.markDirty();
             });
         }
-    
+
+        const bulkApplyTagsBtn = document.getElementById('bulk-apply-tags-btn');
+        const bulkTagsInput = document.getElementById('bulk-tags-input');
+        const bulkTagsModeSelect = document.getElementById('bulk-tags-mode-select');
+        if (bulkTagsInput && window.TagAutocomplete) {
+            window.TagAutocomplete.attach(bulkTagsInput, () =>
+                (this.c.allBookmarksData ?? []).flatMap(bm => bm.tags || []));
+        }
+        if (bulkApplyTagsBtn && bulkTagsInput) {
+            bulkApplyTagsBtn.addEventListener('click', () => {
+                const tags = bulkTagsInput.value.split(',');
+                const mode = bulkTagsModeSelect ? bulkTagsModeSelect.value : 'add';
+                const updated = this.c.bookmarks.bulkApplyTags(this.c.bookmarksData, tags, mode);
+                if (updated > 0) {
+                    const template = this.c.language.t('config.bulkTagsUpdated') || 'Tags updated for {count} bookmark(s).';
+                    this.c.ui.showNotification(template.replace('{count}', String(updated)), 'success');
+                    bulkTagsInput.value = '';
+                    this.c.refreshBookmarksList({ skipFlush: true });
+                    this.c.markDirty();
+                } else {
+                    this.c.ui.showNotification(this.c.language.t('config.selectBookmarksFirst') || 'Select bookmarks first.', 'info');
+                }
+            });
+        }
+
         if (!this.c._findersAddDelegationBound) {
             this.c._findersAddDelegationBound = true;
             document.addEventListener('click', (e) => {
