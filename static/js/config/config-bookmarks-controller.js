@@ -19,9 +19,13 @@ class ConfigBookmarksController {
 
     async loadPageBookmarks(pageId) {
         try {
-            this.c.currentPageId = parseInt(pageId);
-            await this.c.bookmarkStore.loadPage(pageId);
-            this.c.bookmarksPageCategories = (await this.c.data.loadCategoriesByPage(pageId)).map(cat => ({ ...cat }));
+            // Normalize once with a numeric fallback so a non-numeric selector value
+            // (e.g. an empty <select>) never puts NaN into currentPageId; the rest of
+            // the controller reads currentPageId back as Number(...) || 1.
+            const pid = Number(pageId) || Number(this.c.currentPageId) || 1;
+            this.c.currentPageId = pid;
+            await this.c.bookmarkStore.loadPage(pid);
+            this.c.bookmarksPageCategories = (await this.c.data.loadCategoriesByPage(pid)).map(cat => ({ ...cat }));
             this.c.currentBookmarksCategoryFilter = this.c.getLastCategoryFilterForPage(this.c.currentPageId);
 
             if (this.c.bookmarks) {
