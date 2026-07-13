@@ -291,7 +291,9 @@
         if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/')) {
             return raw;
         }
-        return `/data/icons/${raw}`;
+        // Encode the stored filename so a space, #, ? or similar can't break the
+        // URL (matches the dashboard bookmark/category icon renderers).
+        return `/data/icons/${encodeURIComponent(raw)}`;
     }
 
     function renderFavicon(issue) {
