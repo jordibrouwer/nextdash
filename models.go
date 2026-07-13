@@ -384,6 +384,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			Categories: []Category{
 				{ID: "development", Name: "Development"},
 				{ID: "media", Name: "Media"},
+				{ID: "tech", Name: "Tech"},
 				{ID: "social", Name: "Social"},
 				{ID: "search", Name: "Search"},
 				{ID: "utilities", Name: "Utilities"},
@@ -394,8 +395,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
 				{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
-				{Name: "Facebook", URL: "https://facebook.com", Shortcut: "F", Category: "social", CheckStatus: false, Tags: []string{"social"}},
-				{Name: "Instagram", URL: "https://instagram.com", Shortcut: "INS", Category: "social", CheckStatus: false, Tags: []string{"social", "photos"}},
+				{Name: "Unraid", URL: "https://unraid.net", Shortcut: "U", Category: "tech", CheckStatus: false, Tags: []string{"tech", "homelab"}},
+				{Name: "Phoronix", URL: "https://www.phoronix.com", Shortcut: "PHO", Category: "tech", CheckStatus: false, Tags: []string{"tech", "news"}},
+				{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
 				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
 			},
 		}
