@@ -273,6 +273,8 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
+**Fresh defaults & dashboard polish (v2026.07.12)** — new installs now open on the **Kelp Drift (dark)** theme with **auto dark mode** on, so the dashboard follows your system light/dark preference out of the box, and the starter bookmarks seed a *Tech* category (Unraid, Phoronix) and a *Social* category (Bluesky) instead of Facebook/Instagram. The `&` quick-add omnibox is restyled to match the search/commands/finders overlays (rounded, blurred glass, spring animation), *Config → Bookmarks* now opens on your first page each fresh load while remembering the page you switch to for the session, and bookmark/category icons with unusual filenames load reliably. Existing dashboards keep their current theme and bookmarks.
+
 **Smoother dialogs (v2026.07.11.4)** — dialog windows now hand keyboard and screen-reader focus back cleanly when they close (focus returns to the control that opened them before the dialog is hidden), and the browser console no longer warns about focus being trapped in a hidden element.
 
 **Bulk tags (v2026.07.11.3)** — select several bookmarks in *Config → Bookmarks* and the bulk toolbar now has a **Tags** control: type one or more comma-separated tags, choose **Add**, **Replace**, or **Remove**, and apply them to every selected bookmark at once. The field suggests tags you already use as you type.

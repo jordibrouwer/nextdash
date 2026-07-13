@@ -2,14 +2,31 @@
   "tag": "v2026.07.11.4",
   "date": "July 2026",
   "releasedAt": "2026-07-12",
-  "modalLead": "A small polish pass on dialog windows for smoother keyboard and screen-reader navigation.",
+  "modalLead": "A polish pass on dialog windows for smoother keyboard and screen-reader navigation, plus quieter, more standards-compliant browser behaviour.",
   "sections": [
     {
-      "title": "Under the hood",
+      "title": "Dialogs",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Smoother dialogs</strong> — dialog windows now hand focus back cleanly when they close, so keyboard and screen-reader navigation stays tidy and the browser console no longer warns about it."
+          "text": "<strong>Focus handed back cleanly</strong> — when a dialog closes, keyboard focus now returns to the control that opened it before the dialog is hidden, so keyboard and screen-reader navigation stays tidy and the browser console no longer warns that focus was trapped in a hidden element."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>More reliable opening focus</strong> — dialogs now place the cursor on their first control as soon as they finish opening, without depending on a fixed animation delay, so focus lands consistently across layouts and slower devices."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No accidental submits</strong> — dialog buttons can no longer submit a surrounding form by accident, so confirm and cancel always do exactly what they say."
+        }
+      ]
+    },
+    {
+      "title": "Browser & PWA",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Quieter, standards-compliant install support</strong> — added the standard <em>add to home screen</em> meta tag alongside the older Apple-specific one, so Chrome no longer logs a deprecation warning and progressive-web-app install works consistently across browsers."
         }
       ]
     }

@@ -31,7 +31,7 @@ class Dashboard {
         this.currentPageId = 'default';
         this.settings = {
             currentPage: 'default',
-            theme: 'cherry-graphite-dark',
+            theme: 'kelp-drift-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -76,7 +76,7 @@ class Dashboard {
             backgroundOpacity: 1,
             fontWeight: 'normal',
             fontPreset: 'source-code-pro',
-            autoDarkMode: false,
+            autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,
             showSmartStaleCollection: false,

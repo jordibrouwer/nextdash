@@ -1114,7 +1114,7 @@ class DashboardRenderCore {
 
         if (this.isUploadedCategoryIcon(categoryIcon)) {
             const iconImage = document.createElement('img');
-            iconImage.src = `/data/icons/${categoryIcon}`;
+            iconImage.src = `/data/icons/${encodeURIComponent(categoryIcon)}`;
             iconImage.alt = '';
             iconImage.loading = 'lazy';
             iconImage.className = 'bookmark-icon';

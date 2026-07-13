@@ -354,6 +354,8 @@ class Onboarding {
                         type: 'select',
                         label: this.t('onboarding.mobileThemeLabel', 'Theme'),
                         options: [
+                            { value: 'kelp-drift-dark', label: this.t('onboarding.mobileThemeKelpDark', 'Kelp Drift (dark)') },
+                            { value: 'kelp-drift-light', label: this.t('onboarding.mobileThemeKelpLight', 'Kelp Drift (light)') },
                             { value: 'cherry-graphite-dark', label: this.t('onboarding.mobileThemeDark', 'Dark') },
                             { value: 'cherry-graphite-light', label: this.t('onboarding.mobileThemeLight', 'Light') },
                             { value: 'ocean-dark', label: this.t('onboarding.mobileThemeOceanDark', 'Ocean dark') },
@@ -387,7 +389,7 @@ class Onboarding {
     buildInitialSettings(settings) {
         return {
             language: settings.language || 'en',
-            theme: settings.theme || 'cherry-graphite-dark',
+            theme: settings.theme || 'kelp-drift-dark',
             openInNewTab: settings.openInNewTab !== false,
             autoDarkMode: settings.autoDarkMode !== false,
             showWeatherWithDate: settings.showWeatherWithDate === true,

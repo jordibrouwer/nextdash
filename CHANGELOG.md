@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.12 — July 2026](#v20260712--july-2026)
 - [v2026.07.11.4 — July 2026](#v202607114--july-2026)
 - [v2026.07.11.3 — July 2026](#v202607113--july-2026)
 - [v2026.07.11.2 — July 2026](#v202607112--july-2026)
@@ -91,6 +92,38 @@ Nothing yet.
 
 ---
 
+## v2026.07.12 — July 2026
+
+**Fresh defaults** — new installs open on the Kelp Drift dark theme with auto dark mode on and updated starter bookmarks, plus a couple of small dashboard polish fixes.
+
+### Appearance
+
+- **new** **Default theme** — a fresh install now defaults to the `kelp-drift-dark` theme with `autoDarkMode` on, so the dashboard follows the system light/dark preference out of the box. Applied across the backend defaults (`models.go`, both the initial-write and the file-missing fallback) and the config/dashboard front-end defaults (`config.js`, `dashboard.js`, `config/config-settings.js`). Existing settings files are untouched.
+
+### Bookmarks
+
+- **new** **Starter bookmarks** — the default first page now seeds a *Tech* category with Unraid and Phoronix, and a *Social* category with Bluesky, replacing the old Facebook and Instagram entries (`models.go`). Only affects brand-new installs.
+
+### Dashboard
+
+- **fix** **Quick-add omnibox restyle** — the `&` quick-add line now uses rounded corners, a blurred-glass background, soft shadow, and a spring entrance animation matching the search/commands/finders overlays instead of the old flat box (`static/css/dashboard.css`).
+- **fix** **Config → Bookmarks starts on the first page** — a fresh config load now selects the first visible page (main) instead of following the dashboard's current page; the user's page choice is kept in memory for the rest of the session, so it only resets on the next fresh load (`config.js`).
+- **fix** **Icon URL encoding** — bookmark and category icon `<img src>` values on the dashboard now wrap the filename in `encodeURIComponent`, matching the inline editor, so a filename with a space, `#`, `?` or similar no longer breaks the URL and falls back to the letter avatar (`dashboard-bookmark-rows.js`, `dashboard-render-core.js`). The search overlay was already safe via its filename regex guard.
+- **fix** **Config → Bookmarks page id NaN guard** — `loadPageBookmarks` normalizes the page id once with `Number(...)` and a numeric fallback (current page, then `1`) instead of a bare `parseInt`, so a non-numeric page-selector value can never store `NaN` in `currentPageId`; the normalized id is used consistently for `loadPage` and `loadCategoriesByPage` (`config-bookmarks-controller.js`).
+
+### Onboarding
+
+- **new** **Kelp Drift in the tour** — the onboarding auto-dark-mode step now defaults to *On*, and the mobile theme picker offers *Kelp Drift (dark)* and *Kelp Drift (light)* as the first options, with new `mobileThemeKelpDark` / `mobileThemeKelpLight` translations in all four locales (`onboarding.js`, `locales/{en,nl,de,fr}.json`).
+
+### Developer & docs
+
+- **fix** **i18n parity** — removed orphan `helpPageTipsTitle` (de, fr) and `helpPageExtensionTitle` / `helpPageSecurityTitle` (fr) keys that had no code reference and were absent from en/nl, bringing all four locales back on par (`locales/de.json`, `locales/fr.json`).
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.12** notes.
+- **fix** **What's new modal** — **v2026.07.12** JSON entry with *Appearance*, *Bookmarks*, and *Dashboard polish* sections (no doc-update item, by design).
+- **fix** **Cache-bust** — `whats-new-v154` data version and `data-revision-5` (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v113` dashboard release token, and `omnibox-glass-1`, `kelp-drift-default-1`, `kelp-drift-bookmarks-page-1`, `icon-url-encode-1` asset query strings on the changed CSS/JS.
+
+---
+
 ## v2026.07.11.4 — July 2026
 
 **Smoother dialogs** — a polish pass on dialog windows so keyboard and screen-reader focus is handed back cleanly on close, with no console warnings.
@@ -110,8 +143,8 @@ Nothing yet.
 - **fix** **Cheat-sheet scroll test** — the keyboard-scroll e2e test now focuses a non-typing element before pressing PageDown (the scroll handler intentionally ignores scroll keys while an input is focused) and polls for the final scroll position instead of a single fixed timeout, fixing a false failure (`tests/dashboard-overlay-focus.spec.js`).
 - **fix** **Inline-edit save test** — the "save commits inline edit changes" e2e test restored the original name with the wrong save-API shape (page in the body instead of the `?page=` query, and a single bookmark instead of the full page array), which returned 400 and then awaited a refresh that never resolved, timing the test out. The cleanup now GETs the page array, patches the name, and POSTs it back (`tests/dashboard-inline-edit.spec.js`).
 - **fix** **PWA install handlers** — documented that the `beforeinstallprompt` `preventDefault()` call suppresses Chrome's default banner in favour of the app's own install UI, so Chrome's "Banner not shown" console message is expected (`pwa-install-hint.js`, `config/config-pwa-install.js`).
-- **fix** **What's new modal** — **v2026.07.11.4** JSON entry with an "Under the hood" section covering the dialog focus fixes (user-facing wording only).
-- **fix** **Cache-bust** — `whats-new-v152` data version (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v112` dashboard release token, and a `modal-focus-aria-1` query string on `modal.js` so the modal fixes are refetched.
+- **fix** **What's new modal** — **v2026.07.11.4** JSON entry with *Dialogs* and *Browser & PWA* sections covering the dialog focus, opening-focus, form-submit, and PWA meta-tag fixes (user-facing wording only).
+- **fix** **Cache-bust** — `whats-new-v153` data version (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v112` dashboard release token, and a `modal-focus-aria-1` query string on `modal.js` so the modal fixes are refetched.
 
 ---
 
