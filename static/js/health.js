@@ -485,11 +485,18 @@
         });
         if (!confirmed) return;
 
+        // The backend deletes by positional index, so deleting one bookmark
+        // shifts every later index on the same page down by one. Resolve the
+        // selected issues up front and delete each page's rows from the highest
+        // index down, so the still-pending (lower) indices stay valid.
+        const issues = keys
+            .map((key) => findIssueBySelectionKey(key))
+            .filter(Boolean)
+            .sort((a, b) => (b.pageId - a.pageId) || (b.index - a.index));
+
         let deleted = 0;
         let failed = 0;
-        for (const key of keys) {
-            const issue = findIssueBySelectionKey(key);
-            if (!issue) continue;
+        for (const issue of issues) {
             try {
                 const response = await apiFetch('/api/health/delete-bookmark', {
                     method: 'POST',
