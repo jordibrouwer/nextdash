@@ -228,12 +228,47 @@ test.describe('dashboard inline edit', () => {
     });
 
     test('delete button opens confirm modal and removes bookmark', async ({ page }) => {
+        // Seed a dedicated throwaway bookmark on the current page and delete THAT,
+        // so the test never depends on whichever bookmark happens to sit in the
+        // first row when the shared e2e data dir has been mutated by earlier tests
+        // (a stale first-row ref made deleteBookmarkInline no-op, so the confirm
+        // modal never opened and the test flaked in the full suite).
+        const targetUrl = `https://example.com/inline-delete-${Date.now()}`;
+        await page.evaluate(async (url) => {
+            const d = window.dashboardInstance;
+            const pageId = d.currentPageId;
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api(`/api/bookmarks?page=${pageId}`);
+            const pageBookmarks = res.ok ? await res.json() : [];
+            pageBookmarks.push({ name: 'Inline Delete Target', url, category: '', shortcut: '' });
+            await api(`/api/bookmarks?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pageBookmarks),
+            });
+            await d.loadPageBookmarks(pageId, { forceFetch: true });
+        }, targetUrl);
+
+        // Focus the seeded row and open its inline editor.
+        const targetRow = page.locator(`#dashboard-layout .bookmark-link[data-bookmark-url="${targetUrl}"]`);
+        await expect(targetRow).toBeVisible({ timeout: 5000 });
+        await targetRow.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+        await expect.poll(async () => page.evaluate((url) => {
+            const d = window.dashboardInstance;
+            const kn = d.keyboardNavigation;
+            kn.updateNavigableElements();
+            const row = kn.navigableElements.find((el) => (
+                String(el.getAttribute('data-bookmark-url') || '').trim() === url
+            ));
+            return row ? kn.selectBookmarkRow(row) : false;
+        }, targetUrl)).toBe(true);
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form')).toBeVisible({ timeout: 3000 });
-        await page.waitForTimeout(700);
+        await expect.poll(async () => (
+            (await page.locator('.bookmark-inline-form input[type="url"]').first().inputValue()).trim()
+        )).toBe(targetUrl);
 
         const countBefore = await page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').count();
-        const targetUrl = (await page.locator('.bookmark-inline-form input[type="url"]').first().inputValue()).trim();
         const deleteBtn = page.locator('.bookmark-inline-delete');
         await expect(deleteBtn).toBeVisible();
         await deleteBtn.click();

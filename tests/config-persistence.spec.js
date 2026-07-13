@@ -208,7 +208,7 @@ test.describe('config persistence (phase 2)', () => {
         expect(result.settingsPosts).toBe(0);
     });
 
-    test('saveChanges with bookmark category edit signals settings sync', async ({ page }) => {
+    test('saveChanges with bookmark category edit signals structure sync', async ({ page }) => {
         await waitForConfigReady(page);
 
         const result = await page.evaluate(async () => {
@@ -242,14 +242,18 @@ test.describe('config persistence (phase 2)', () => {
 
             return {
                 ok: true,
-                settingsType: settingsPayload?.type,
-                hasStructurePayload: Boolean(structurePayload),
+                structureType: structurePayload?.type,
+                hasSettingsPayload: Boolean(settingsPayload),
             };
         });
 
         expect(result.ok).toBe(true);
-        expect(result.settingsType).toBe('settings-saved');
-        expect(result.hasStructurePayload).toBe(false);
+        // Moving a bookmark to another category is a structural change (it changes
+        // which column the bookmark renders in), so saveChanges sends the structure
+        // reload signal — a superset that re-reads settings too — not the lighter
+        // settings-only signal.
+        expect(result.structureType).toBe('settings-saved');
+        expect(result.hasSettingsPayload).toBe(false);
     });
 
     test('restoreUndoSnapshot reverts dirty settings change', async ({ page }) => {
