@@ -3842,10 +3842,14 @@ body.no-animations .bookmark-move-out {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-bottom: 4.5rem;
+    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.12s ease;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    transition: opacity 0.2s ease-out;
 }
 
 .omnibox-overlay.is-visible {
@@ -3857,11 +3861,27 @@ body.no-animations .bookmark-move-out {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    padding: 0.5rem 0.75rem;
-    width: min(640px, 92vw);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: color-mix(in srgb, var(--background-modal) 90%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    /* exit: slide down toward toolbar */
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+.omnibox-overlay.is-visible .omnibox-box {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    /* entrance: spring — vertraagt soepel aan het einde */
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
 .omnibox-hint {
