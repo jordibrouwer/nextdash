@@ -346,11 +346,14 @@ class ConfigManager {
             window.DiscoverabilityState?.init?.(this.settingsData.discoverabilityState);
             this._persistedTheme = String(this.settingsData.theme || '');
             this.syncConfigTabToursSeenFromServer();
-            this.currentPageId = this.resolvePageId(settings.currentPage, this.getVisiblePages());
-            if (this.isPageArchived(this.currentPageId)) {
-                const visiblePages = this.getVisiblePages();
-                this.currentPageId = visiblePages.length > 0 ? Number(visiblePages[0].id) : 1;
-            }
+            // Config → Bookmarks always starts on the first visible page (main) on a
+            // fresh config load. The user's page choice is kept in-memory for the rest
+            // of the session (tab switches keep currentPageId; see config-ui switchToTab),
+            // so it only resets to the first page on the next fresh load.
+            const visiblePagesOnLoad = this.getVisiblePages();
+            this.currentPageId = visiblePagesOnLoad.length > 0
+                ? Number(visiblePagesOnLoad[0].id)
+                : this.resolvePageId(settings.currentPage, visiblePagesOnLoad);
             
             await this.loadPageBookmarks(this.currentPageId);
             window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(
