@@ -383,7 +383,7 @@ class DashboardBookmarkRows {
                 iconSlot.appendChild(placeholder);
 
                 const iconImg = document.createElement('img');
-                iconImg.src = `/data/icons/${bookmark.icon}`;
+                iconImg.src = `/data/icons/${encodeURIComponent(bookmark.icon)}`;
                 iconImg.className = 'bookmark-icon';
                 iconImg.alt = '';
                 iconImg.loading = 'lazy';
