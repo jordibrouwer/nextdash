@@ -59,7 +59,7 @@ class ConfigManager {
         this.currentBookmarksSearch = '';
         this.settingsData = {
             currentPage: 'default',
-            theme: 'cherry-graphite-dark',
+            theme: 'kelp-drift-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -115,7 +115,7 @@ class ConfigManager {
             backgroundOpacity: 1,
             fontWeight: 'normal',
             fontPreset: 'source-code-pro',
-            autoDarkMode: false,
+            autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,
             showSmartStaleCollection: false,

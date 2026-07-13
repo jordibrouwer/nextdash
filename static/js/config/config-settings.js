@@ -2897,7 +2897,7 @@ class ConfigSettings {
      */
     getDefaults() {
         return {
-            theme: 'cherry-graphite-dark',
+            theme: 'kelp-drift-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -2961,7 +2961,7 @@ class ConfigSettings {
             backgroundOpacity: 1,
             fontWeight: 'normal',
             fontPreset: 'source-code-pro',
-            autoDarkMode: false,
+            autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,
             showSmartStaleCollection: false,

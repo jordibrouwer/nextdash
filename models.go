@@ -410,7 +410,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
 			CurrentPage:                 1,
-			Theme:                       "cherry-graphite-dark",
+			Theme:                       "kelp-drift-dark",
 			OpenInNewTab:                true,
 			ColumnsPerRow:               3,
 			FontSize:                    "m",
@@ -479,7 +479,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BackgroundOpacity:           1,
 			FontWeight:                  "normal",
 			FontPreset:                  "source-code-pro",
-			AutoDarkMode:                false,
+			AutoDarkMode:                true,
 			ShowSmartRecentCollection:   false,
 			ShowSmartTodayCollection:    true,
 			ShowSmartStaleCollection:    false,
@@ -1578,7 +1578,7 @@ func (fs *FileStore) GetSettings() Settings {
 		// Return default settings if file doesn't exist
 		return Settings{
 			CurrentPage:               1,
-			Theme:                     "cherry-graphite-dark",
+			Theme:                     "kelp-drift-dark",
 			OpenInNewTab:              true,
 			ColumnsPerRow:             3,
 			FontSize:                  "m",
@@ -1643,7 +1643,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundOpacity:         1,
 			FontWeight:                "normal",
 			FontPreset:                "source-code-pro",
-			AutoDarkMode:              false,
+			AutoDarkMode:              true,
 			ShowSmartRecentCollection: false,
 			ShowSmartTodayCollection:  true,
 			ShowSmartStaleCollection:  false,

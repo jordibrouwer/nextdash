@@ -2687,6 +2687,8 @@
     "mobileLanguageThemeTitle": "Sprache & Theme",
     "mobileLanguageThemeBody": "Sprache und Dashboard-Theme wählen.",
     "mobileThemeLabel": "Theme",
+    "mobileThemeKelpDark": "Kelp Drift (dunkel)",
+    "mobileThemeKelpLight": "Kelp Drift (hell)",
     "mobileThemeDark": "Dunkel",
     "mobileThemeLight": "Hell",
     "mobileThemeOceanDark": "Ocean dunkel",

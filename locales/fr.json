@@ -2689,6 +2689,8 @@
     "mobileLanguageThemeTitle": "Langue & thème",
     "mobileLanguageThemeBody": "Choisissez la langue et le thème du tableau de bord.",
     "mobileThemeLabel": "Thème",
+    "mobileThemeKelpDark": "Kelp Drift (sombre)",
+    "mobileThemeKelpLight": "Kelp Drift (clair)",
     "mobileThemeDark": "Sombre",
     "mobileThemeLight": "Clair",
     "mobileThemeOceanDark": "Ocean sombre",
