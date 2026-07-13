@@ -109,6 +109,7 @@ Nothing yet.
 - **fix** **Quick-add omnibox restyle** — the `&` quick-add line now uses rounded corners, a blurred-glass background, soft shadow, and a spring entrance animation matching the search/commands/finders overlays instead of the old flat box (`static/css/dashboard.css`).
 - **fix** **Config → Bookmarks starts on the first page** — a fresh config load now selects the first visible page (main) instead of following the dashboard's current page; the user's page choice is kept in memory for the rest of the session, so it only resets on the next fresh load (`config.js`).
 - **fix** **Icon URL encoding** — bookmark and category icon `<img src>` values on the dashboard now wrap the filename in `encodeURIComponent`, matching the inline editor, so a filename with a space, `#`, `?` or similar no longer breaks the URL and falls back to the letter avatar (`dashboard-bookmark-rows.js`, `dashboard-render-core.js`). The search overlay was already safe via its filename regex guard.
+- **fix** **Config → Bookmarks page id NaN guard** — `loadPageBookmarks` normalizes the page id once with `Number(...)` and a numeric fallback (current page, then `1`) instead of a bare `parseInt`, so a non-numeric page-selector value can never store `NaN` in `currentPageId`; the normalized id is used consistently for `loadPage` and `loadCategoriesByPage` (`config-bookmarks-controller.js`).
 
 ### Onboarding
 

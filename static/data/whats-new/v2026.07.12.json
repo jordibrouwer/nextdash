@@ -49,6 +49,10 @@
         {
           "badge": "fix",
           "text": "<strong>Translations back on par</strong> — dropped the orphan <code>helpPageTipsTitle</code> (de, fr) and <code>helpPageExtensionTitle</code> / <code>helpPageSecurityTitle</code> (fr) keys that had no code reference and were missing from en/nl, so all four locale files carry an identical key set again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page id guarded against NaN</strong> — Config → Bookmarks now normalizes the selected page id once with <code>Number(...)</code> and a numeric fallback instead of a bare <code>parseInt</code>, so a non-numeric page-selector value can no longer store <code>NaN</code> in the current page state (<code>config-bookmarks-controller.js</code>)."
         }
       ]
     }
