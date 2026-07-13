@@ -1,0 +1,56 @@
+{
+  "tag": "v2026.07.12",
+  "date": "July 2026",
+  "releasedAt": "2026-07-13",
+  "modalLead": "A fresh default look for new installs, updated starter bookmarks, a couple of small dashboard polish fixes, and the technical follow-through behind them.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>New default theme</strong> — fresh installs now start on <em>Kelp Drift (dark)</em> with <strong>auto dark mode</strong> switched on, so the dashboard follows your system light/dark preference out of the box. Existing dashboards keep whatever theme you already chose."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Updated starter bookmarks</strong> — a brand-new install now seeds a <em>Tech</em> category with Unraid and Phoronix, and a <em>Social</em> category with Bluesky, in place of the old Facebook and Instagram entries. Your existing bookmarks are untouched."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard polish",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Refreshed quick-add line</strong> — the <code>&amp;</code> quick-add omnibox now uses the same rounded, blurred-glass styling and spring animation as the search, commands, and finders overlays instead of the old flat box."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks config opens on the first page</strong> — Config → Bookmarks now always starts on your first page when you open config, and remembers the page you switch to for the rest of that session."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Icons with unusual filenames load reliably</strong> — bookmark and category icons whose filename contains a space or special character now display correctly on the dashboard instead of falling back to the letter badge."
+        }
+      ]
+    },
+    {
+      "title": "Under the hood",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Icon URLs are now encoded</strong> — the dashboard bookmark-row and category-header renderers wrap the icon filename in <code>encodeURIComponent</code> when building the <code>/data/icons/…</code> <code>src</code>, matching the inline editor, so filenames with a space, <code>#</code> or <code>?</code> no longer break the request (<code>dashboard-bookmark-rows.js</code>, <code>dashboard-render-core.js</code>). The search overlay was already safe via its filename regex guard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Translations back on par</strong> — dropped the orphan <code>helpPageTipsTitle</code> (de, fr) and <code>helpPageExtensionTitle</code> / <code>helpPageSecurityTitle</code> (fr) keys that had no code reference and were missing from en/nl, so all four locale files carry an identical key set again."
+        }
+      ]
+    }
+  ]
+}
