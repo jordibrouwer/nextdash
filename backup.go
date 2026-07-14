@@ -582,16 +582,14 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Backup creates a zip file with all data from the data directory
-func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
-	if !h.requireWriteAccess(w, r) {
-		return
-	}
+// buildBackupZip assembles the full data-directory backup as a ZIP archive in memory.
+// It is shared by the download handler (Backup) and the automatic backup scheduler so
+// both produce identical archives.
+func (h *Handlers) buildBackupZip() ([]byte, error) {
 	// Ensure base data directory exists so backup works on first run.
 	dataDir := ResolveDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		http.Error(w, "Failed to prepare backup directory", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
 	// Create a buffer to write our archive to
@@ -606,8 +604,11 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// Skip directories
+		// Never include the auto-backup store itself (avoid backup-in-backup).
 		if info.IsDir() {
+			if info.Name() == autoBackupDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -656,8 +657,7 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		http.Error(w, "Failed to create backup", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
 	// Also include per-page categories as dedicated files for compatibility.
@@ -665,49 +665,56 @@ func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 		categories := h.store.GetCategoriesByPage(page.ID)
 		categoriesData, err := json.MarshalIndent(categories, "", "  ")
 		if err != nil {
-			http.Error(w, "Failed to serialize categories", http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 		entryName := fmt.Sprintf("categories-%d.json", page.ID)
 		zipFile, err := zipWriter.Create(entryName)
 		if err != nil {
-			http.Error(w, "Failed to include categories in backup", http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 		if _, err := zipFile.Write(categoriesData); err != nil {
-			http.Error(w, "Failed to write categories in backup", http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 	}
 
 	finders := h.store.GetFinders()
 	findersData, err := json.MarshalIndent(finders, "", "  ")
 	if err != nil {
-		http.Error(w, "Failed to serialize finders", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 	findersZip, err := zipWriter.Create("finders.json")
 	if err != nil {
-		http.Error(w, "Failed to include finders in backup", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 	if _, err := findersZip.Write(findersData); err != nil {
-		http.Error(w, "Failed to write finders in backup", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
 	// Close the zip writer
-	err = zipWriter.Close()
+	if err := zipWriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// Backup creates a zip file with all data from the data directory
+func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	data, err := h.buildBackupZip()
 	if err != nil {
-		http.Error(w, "Failed to finalize backup", http.StatusInternalServerError)
+		http.Error(w, "Failed to create backup", http.StatusInternalServerError)
 		return
 	}
 
 	// Set headers for file download
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", "attachment; filename=nextDash-backup.zip")
-	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
 
 	// Write the zip content to response
-	w.Write(buf.Bytes())
+	w.Write(data)
 }

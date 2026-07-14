@@ -74,6 +74,10 @@ func main() {
 	r.HandleFunc("/api/colors/custom-themes", handlers.GetCustomThemesList).Methods("GET")
 	r.HandleFunc("/api/theme.css", handlers.CustomThemeCSS).Methods("GET")
 	r.HandleFunc("/api/backup", handlers.Backup).Methods("GET")
+	r.HandleFunc("/api/auto-backups", handlers.ListAutoBackups).Methods("GET")
+	r.HandleFunc("/api/auto-backups/download", handlers.DownloadAutoBackup).Methods("GET")
+	r.HandleFunc("/api/auto-backups", handlers.DeleteAutoBackup).Methods("DELETE")
+	r.HandleFunc("/api/auto-backups/run", handlers.RunAutoBackup).Methods("POST")
 	r.HandleFunc("/api/import", handlers.Import).Methods("POST")
 	r.HandleFunc("/api/ping", handlers.PingURL).Methods("GET")
 
@@ -143,6 +147,10 @@ func main() {
 		Handler: requestLogging(gzipMiddleware(securityHeaders(r))),
 	}
 
+	// Weekly automatic local backups (keeps the latest few, respects the setting).
+	schedulerStop := make(chan struct{})
+	handlers.StartAutoBackupScheduler(schedulerStop)
+
 	go func() {
 		log.Printf("Server starting on port %s", port)
 		log.Printf("Dashboard: http://localhost:%s", port)
@@ -157,6 +165,7 @@ func main() {
 	<-stop
 
 	log.Printf("Shutting down server...")
+	close(schedulerStop)
 	handlers.FlushCaches()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

@@ -1,0 +1,42 @@
+{
+  "tag": "v2026.07.13",
+  "date": "July 2026",
+  "releasedAt": "2026-07-14",
+  "modalLead": "Automatic weekly backups that live safely on your server, plus two health-tools fixes.",
+  "sections": [
+    {
+      "title": "Backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Automatic weekly backups</strong> — nextDash now creates a full ZIP backup of your data once a week and keeps it on the server, under <em>Config → Backup → Automatic Backups</em>. The latest 3 are kept; when a new one is made, the oldest is removed automatically."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Download or delete any backup</strong> — each stored backup shows its date and size with a <strong>Download</strong> button to save it locally and a <strong>Delete</strong> button to remove it. A <strong>Back Up Now</strong> button creates one on demand at any time."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Countdown to the next backup</strong> — the section shows how long until the next automatic backup runs, so you always know when a fresh copy is due."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Turn it off if you prefer</strong> — a single toggle enables or disables the weekly automatic backup. It's on by default, and turning it off never affects the <strong>Back Up Now</strong> button or your existing backups."
+        }
+      ]
+    },
+    {
+      "title": "Link health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bulk delete removes the right bookmarks</strong> — deleting several broken links at once from the health dashboard now removes exactly the ones you selected, instead of occasionally removing a different bookmark."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health favicons with unusual filenames load reliably</strong> — favicons whose filename contains a space or special character now display correctly in the health dashboard instead of failing to load."
+        }
+      ]
+    }
+  ]
+}

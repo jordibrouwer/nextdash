@@ -1841,6 +1841,27 @@
                 </div>
 
                 <div class="backups-section">
+                    <h3 class="section-title" data-i18n="config.autoBackupsSectionTitle">Automatic Backups</h3>
+                    <div class="backups-actions-row">
+                        <div class="backups-action-item">
+                            <div class="backups-action-copy">
+                                <p class="backups-action-label" data-i18n="config.autoBackupsIntro">A backup is created automatically every week and stored on the server. The latest 3 are kept — the oldest is removed when a newer one is made.</p>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-backup-enabled-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.autoBackupEnabledLabel">Create a weekly backup automatically</span>
+                                </label>
+                                <p id="auto-backup-next" class="backups-last-date" hidden></p>
+                            </div>
+                            <div class="backups-action-buttons">
+                                <button type="button" id="auto-backup-run-btn" class="btn btn-primary btn-small" data-i18n="config.autoBackupRunNow">Back Up Now</button>
+                            </div>
+                        </div>
+                    </div>
+                    <ul id="auto-backups-list" class="auto-backups-list"></ul>
+                    <p id="auto-backups-empty" class="backups-action-hint" data-i18n="config.autoBackupsEmpty" hidden>No automatic backups yet.</p>
+                </div>
+
+                <div class="backups-section">
                     <h3 class="section-title" data-i18n="config.backupsImportExportSectionTitle">Import &amp; Export</h3>
                     <div class="backups-actions-row">
                         <div class="backups-action-item">

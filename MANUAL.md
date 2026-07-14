@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.12**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.13**).
 
 ---
 
@@ -976,6 +976,20 @@ Import is **atomic**: files are staged, orphan icons and stale JSON are removed,
 Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (read **before** bookmarks — not the server’s current setting).
 
 Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when localhost bookmarks are disabled) are **skipped** during import; the UI shows how many were skipped alongside new and conflict counts. Icon filenames in imported JSON are sanitized.
+
+### Automatic backups (v2026.07.13)
+
+**config → backups → Automatic Backups** — nextDash automatically creates a full ZIP backup (the same contents as a manual ZIP backup) **once a week** and stores it **on the server**, under `data/auto-backups/`. This is separate from the browser download above: automatic backups live with your instance so they survive even if you never click *Create backup*.
+
+- **Rotation** — the latest **3** automatic backups are kept. When a new one is written, the **oldest is removed** automatically, so the folder never grows without bound.
+- **Download / Delete** — each stored backup lists its **date** and **size** with a **Download** button (saves the ZIP to your computer) and a **Delete** button (removes it from the server after a confirmation).
+- **Back Up Now** — creates an automatic backup on demand at any time, without waiting for the weekly run. It works even when the weekly toggle is off.
+- **Countdown** — the section shows how long until the next scheduled backup.
+- **Enable / disable** — a toggle (on by default) controls the **weekly** run. Turning it off stops new automatic backups but never touches **Back Up Now** or your existing files.
+
+Scheduling is **restart-robust**: rather than a fixed weekly timer, nextDash runs a backup whenever the newest one is older than **7 days**, so an instance that restarts often still gets its weekly copy. The `data/auto-backups/` folder is **excluded** from regular ZIP backups (no backup-in-backup).
+
+> **Persistence note:** automatic backups are stored under the data directory. If you run in Docker, keep `data/` on a **mounted volume** (as the sample compose files do) so backups survive container rebuilds — an anonymous/ephemeral data directory would lose them.
 
 ### Settings export / import
 

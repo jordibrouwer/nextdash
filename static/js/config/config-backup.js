@@ -171,6 +171,18 @@ class ConfigBackup {
             });
         }
 
+        // Automatic backups
+        const autoBackupEnabled = document.getElementById('auto-backup-enabled-checkbox');
+        if (autoBackupEnabled) {
+            autoBackupEnabled.addEventListener('change', (e) => this.setAutoBackupEnabled(e.target.checked));
+        }
+        const autoBackupRunBtn = document.getElementById('auto-backup-run-btn');
+        if (autoBackupRunBtn) {
+            autoBackupRunBtn.addEventListener('click', () => this.runAutoBackup());
+        }
+        // syncAutoBackupEnabled() and loadAutoBackups() are called from
+        // ConfigManager once settingsData has loaded from the server.
+
         // Import info button
         const importInfoBtn = document.getElementById('import-info-btn');
         if (importInfoBtn) {
@@ -235,6 +247,248 @@ class ConfigBackup {
             }
         } finally {
             this.setButtonLoading(backupBtn, false);
+        }
+    }
+
+    /**
+     * Reflect the stored autoBackupEnabled setting into the toggle.
+     */
+    syncAutoBackupEnabled() {
+        const checkbox = document.getElementById('auto-backup-enabled-checkbox');
+        if (!checkbox) return;
+        const enabled = typeof configManager !== 'undefined'
+            ? configManager.settingsData?.autoBackupEnabled !== false
+            : true;
+        checkbox.checked = enabled;
+    }
+
+    /**
+     * Persist the autoBackupEnabled setting.
+     */
+    async setAutoBackupEnabled(enabled) {
+        if (typeof configManager === 'undefined' || !configManager.settingsData) return;
+        configManager.settingsData.autoBackupEnabled = enabled;
+        try {
+            if (configManager.settings?.saveSettingsToServer) {
+                await configManager.settings.saveSettingsToServer(configManager.settingsData);
+            }
+        } catch (e) {
+            console.error('Failed to save auto-backup setting:', e);
+        }
+        // Reflect the new state in the countdown and refresh nextBackupAt.
+        this.loadAutoBackups();
+    }
+
+    /**
+     * Format a byte count as a short human-readable size.
+     */
+    formatBackupSize(bytes) {
+        const n = Number(bytes) || 0;
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    /**
+     * Human-readable "time remaining" until the next automatic backup.
+     */
+    formatCountdown(nextIso) {
+        const target = new Date(nextIso).getTime();
+        if (isNaN(target)) return '';
+        const ms = target - Date.now();
+        if (ms <= 0) return this.t('config.autoBackupNextDue') || 'due now';
+
+        const totalMinutes = Math.floor(ms / 60000);
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        if (hours > 0) parts.push(`${hours}h`);
+        if (days === 0) parts.push(`${minutes}m`);
+        return parts.join(' ');
+    }
+
+    /**
+     * Update the countdown label to the next automatic backup.
+     */
+    renderAutoBackupCountdown() {
+        const el = document.getElementById('auto-backup-next');
+        if (!el) return;
+        const enabled = typeof configManager !== 'undefined'
+            ? configManager.settingsData?.autoBackupEnabled !== false
+            : true;
+        if (!enabled || !this._autoBackupNextAt) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+        const remaining = this.formatCountdown(this._autoBackupNextAt);
+        const template = this.t('config.autoBackupNextIn') || 'Next backup in {time}';
+        el.textContent = template.replace('{time}', remaining);
+        el.hidden = false;
+    }
+
+    /**
+     * Refresh the countdown every minute while the page is open.
+     */
+    startAutoBackupCountdown() {
+        if (this._autoBackupCountdownTimer) return;
+        this._autoBackupCountdownTimer = setInterval(() => this.renderAutoBackupCountdown(), 60000);
+    }
+
+    /**
+     * Load and render the list of automatic backups.
+     */
+    async loadAutoBackups() {
+        const list = document.getElementById('auto-backups-list');
+        const empty = document.getElementById('auto-backups-empty');
+        if (!list) return;
+
+        let backups = [];
+        this._autoBackupNextAt = null;
+        try {
+            const res = await fetch('/api/auto-backups');
+            if (res.ok) {
+                const data = await res.json();
+                backups = Array.isArray(data?.backups) ? data.backups : [];
+                this._autoBackupNextAt = data?.nextBackupAt || null;
+            }
+        } catch (e) {
+            console.error('Failed to load automatic backups:', e);
+        }
+
+        this.renderAutoBackupCountdown();
+        this.startAutoBackupCountdown();
+
+        list.innerHTML = '';
+        if (!Array.isArray(backups) || backups.length === 0) {
+            if (empty) empty.hidden = false;
+            return;
+        }
+        if (empty) empty.hidden = true;
+
+        const locale = typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined;
+        const downloadLabel = this.t('config.autoBackupDownload') || 'Download';
+        const deleteLabel = this.t('config.autoBackupDelete') || 'Delete';
+        backups.forEach((backup) => {
+            const when = this.formatLastBackupWhen(backup.createdAt, locale) || backup.createdAt || '';
+            const size = this.formatBackupSize(backup.size);
+            const li = document.createElement('li');
+            li.className = 'auto-backups-list-item';
+            li.innerHTML = `
+                <span class="auto-backups-item-meta">
+                    <span class="auto-backups-item-date">${this._escHtml(when)}</span>
+                    <span class="auto-backups-item-size">${this._escHtml(size)}</span>
+                </span>`;
+
+            const actions = document.createElement('div');
+            actions.className = 'auto-backups-item-actions';
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.type = 'button';
+            downloadBtn.className = 'btn btn-secondary btn-small';
+            downloadBtn.textContent = downloadLabel;
+            downloadBtn.addEventListener('click', () => this.downloadAutoBackup(backup.name));
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-danger btn-small';
+            deleteBtn.textContent = deleteLabel;
+            deleteBtn.addEventListener('click', () => this.deleteAutoBackup(backup.name));
+
+            actions.appendChild(downloadBtn);
+            actions.appendChild(deleteBtn);
+            li.appendChild(actions);
+            list.appendChild(li);
+        });
+    }
+
+    /**
+     * Delete a stored automatic backup by name, after confirmation.
+     */
+    async deleteAutoBackup(name) {
+        const confirmMessage = this.t('config.autoBackupDeleteConfirmMessage')
+            || 'Delete this backup? This cannot be undone.';
+        let confirmed = false;
+        if (window.AppModal) {
+            confirmed = await window.AppModal.danger({
+                title: this.t('config.autoBackupDeleteConfirmTitle') || 'Delete Backup',
+                message: confirmMessage,
+                confirmText: this.t('config.autoBackupDelete') || 'Delete',
+            });
+        } else {
+            confirmed = window.confirm(confirmMessage);
+        }
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch(`/api/auto-backups?name=${encodeURIComponent(name)}`, {
+                method: 'DELETE',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
+            if (!res.ok) throw new Error(res.statusText);
+            await this.loadAutoBackups();
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupDeleteSuccess') || 'Backup deleted.', 'success');
+            }
+        } catch (e) {
+            console.error('Auto-backup delete error:', e);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupDeleteError') || 'Failed to delete backup.', 'error');
+            }
+        }
+    }
+
+    /**
+     * Download a stored automatic backup by name.
+     */
+    async downloadAutoBackup(name) {
+        try {
+            const res = await fetch(`/api/auto-backups/download?name=${encodeURIComponent(name)}`);
+            if (!res.ok) throw new Error(res.statusText);
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (e) {
+            console.error('Auto-backup download error:', e);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.backupError') || 'Failed to download backup.', 'error');
+            }
+        }
+    }
+
+    /**
+     * Create an automatic backup on demand and refresh the list.
+     */
+    async runAutoBackup() {
+        const btn = document.getElementById('auto-backup-run-btn');
+        this.setButtonLoading(btn, true, this.t('config.backupInProgress') || 'Creating…');
+        try {
+            const res = await fetch('/api/auto-backups/run', {
+                method: 'POST',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
+            if (!res.ok) throw new Error(res.statusText);
+            await this.loadAutoBackups();
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupRunSuccess') || 'Backup created.', 'success');
+            }
+        } catch (e) {
+            console.error('Auto-backup run error:', e);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupRunError') || 'Failed to create backup.', 'error');
+            }
+        } finally {
+            this.setButtonLoading(btn, false);
         }
     }
 
