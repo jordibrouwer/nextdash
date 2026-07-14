@@ -365,6 +365,7 @@ class ConfigBackup {
         list.innerHTML = '';
         if (!Array.isArray(backups) || backups.length === 0) {
             if (empty) empty.hidden = false;
+            this.renderAutoBackupSummary([]);
             return;
         }
         if (empty) empty.hidden = true;
@@ -372,6 +373,8 @@ class ConfigBackup {
         const locale = typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined;
         const downloadLabel = this.t('config.autoBackupDownload') || 'Download';
         const deleteLabel = this.t('config.autoBackupDelete') || 'Delete';
+        const restoreLabel = this.t('config.autoBackupRestore') || 'Restore';
+        this.renderAutoBackupSummary(backups);
         backups.forEach((backup) => {
             const when = this.formatLastBackupWhen(backup.createdAt, locale) || backup.createdAt || '';
             const size = this.formatBackupSize(backup.size);
@@ -392,6 +395,12 @@ class ConfigBackup {
             downloadBtn.textContent = downloadLabel;
             downloadBtn.addEventListener('click', () => this.downloadAutoBackup(backup.name));
 
+            const restoreBtn = document.createElement('button');
+            restoreBtn.type = 'button';
+            restoreBtn.className = 'btn btn-secondary btn-small';
+            restoreBtn.textContent = restoreLabel;
+            restoreBtn.addEventListener('click', () => this.restoreAutoBackup(backup.name));
+
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'btn btn-danger btn-small';
@@ -399,10 +408,72 @@ class ConfigBackup {
             deleteBtn.addEventListener('click', () => this.deleteAutoBackup(backup.name));
 
             actions.appendChild(downloadBtn);
+            actions.appendChild(restoreBtn);
             actions.appendChild(deleteBtn);
             li.appendChild(actions);
             list.appendChild(li);
         });
+    }
+
+    /**
+     * Show a "N backups · total size" line under the list.
+     */
+    renderAutoBackupSummary(backups) {
+        const el = document.getElementById('auto-backups-summary');
+        if (!el) return;
+        if (!Array.isArray(backups) || backups.length === 0) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+        const totalBytes = backups.reduce((sum, b) => sum + (Number(b.size) || 0), 0);
+        const template = this.t('config.autoBackupsSummary') || '{count} backups · {size} total';
+        el.textContent = template
+            .replace('{count}', String(backups.length))
+            .replace('{size}', this.formatBackupSize(totalBytes));
+        el.hidden = false;
+    }
+
+    /**
+     * Restore all data from a stored automatic backup, after confirmation.
+     */
+    async restoreAutoBackup(name) {
+        const confirmMessage = this.t('config.autoBackupRestoreConfirmMessage')
+            || 'Restore this backup? This replaces all current data and cannot be undone.';
+        let confirmed = false;
+        if (window.AppModal) {
+            confirmed = await window.AppModal.danger({
+                title: this.t('config.autoBackupRestoreConfirmTitle') || 'Restore Backup',
+                message: confirmMessage,
+                confirmText: this.t('config.autoBackupRestore') || 'Restore',
+            });
+        } else {
+            confirmed = window.confirm(confirmMessage);
+        }
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, {
+                method: 'POST',
+                headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
+            });
+            if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                throw new Error(errText || res.statusText);
+            }
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupRestoreSuccess') || 'Backup restored. Reloading…', 'success');
+            }
+            if (this.faviconPrefetch) {
+                this.faviconPrefetch.markForZipImport();
+            }
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (e) {
+            console.error('Auto-backup restore error:', e);
+            if (typeof configManager !== 'undefined' && configManager.ui) {
+                configManager.ui.showNotification(this.t('config.autoBackupRestoreError') || 'Failed to restore backup.', 'error');
+            }
+        }
     }
 
     /**
@@ -478,6 +549,11 @@ class ConfigBackup {
                 headers: typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {},
             });
             if (!res.ok) throw new Error(res.statusText);
+            // A manual backup counts as a backup: refresh the "Last backup" label too.
+            localStorage.setItem('nextdash-last-backup', new Date().toISOString());
+            this.updateLastBackupDisplay(
+                typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined
+            );
             await this.loadAutoBackups();
             if (typeof configManager !== 'undefined' && configManager.ui) {
                 configManager.ui.showNotification(this.t('config.autoBackupRunSuccess') || 'Backup created.', 'success');

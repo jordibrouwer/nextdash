@@ -1,0 +1,29 @@
+{
+  "tag": "v2026.07.13.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-14",
+  "modalLead": "Restore an automatic backup in one click, plus a few small refinements to the automatic-backups panel.",
+  "sections": [
+    {
+      "title": "Backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Restore straight from the list</strong> — each automatic backup now has a <strong>Restore</strong> button next to Download and Delete. It replaces all current data with that backup (after a confirmation) and reloads — no need to download the ZIP and re-import it by hand."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Backup totals at a glance</strong> — the <em>Automatic Backups</em> section now shows a small summary line with how many backups you have and their combined size."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Back Up Now updates the last-backup date</strong> — creating a backup on demand now refreshes the <em>Last backup</em> label, just like the manual ZIP download does."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Two backups in the same moment no longer clash</strong> — making several backups within the same second now writes separate files instead of overwriting one, so nothing is lost when you click <em>Back Up Now</em> in quick succession."
+        }
+      ]
+    }
+  ]
+}

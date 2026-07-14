@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.13.1 — July 2026](#v202607131--july-2026)
 - [v2026.07.13 — July 2026](#v20260713--july-2026)
 - [v2026.07.12 — July 2026](#v20260712--july-2026)
 - [v2026.07.11.4 — July 2026](#v202607114--july-2026)
@@ -90,6 +91,26 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.13.1 — July 2026
+
+**Automatic-backup refinements** — restore a stored backup in one click, a totals line, a last-backup-date fix, and a same-second filename fix.
+
+### Backups
+
+- **new** **Restore from the list** — each stored automatic backup gains a **Restore** button (`POST /api/auto-backups/restore?name=…`) that replaces all current data with that backup and reloads. The upload-import pipeline was refactored into a shared `applyStagedImport`, and the restore path unpacks the stored ZIP into staged files via `stagedFilesFromZip`, so restore and upload import go through the same atomic commit and category-save (`auto_backup.go`, `backup.go`, `main.go`). The restore button uses the destructive theme colour with a confirm dialog and marks favicons for prefetch on reload (`config/config-backup.js`, `templates/config.html`, `locales/{en,nl,de,fr}.json`).
+- **new** **Totals summary** — the *Automatic Backups* section shows a “{count} backups · {size} total” line under the list, hidden when empty (`config/config-backup.js`, `templates/config.html`, `locales/{en,nl,de,fr}.json`).
+- **fix** **Back Up Now updates the last-backup date** — an on-demand automatic backup now writes `nextdash-last-backup` and refreshes the *Last backup* label, matching the manual ZIP download (`config/config-backup.js`).
+- **fix** **Same-second filenames no longer collide** — `writeAutoBackup` now uses `uniqueAutoBackupName`, appending a `-2`, `-3`, … suffix when several backups are written within the same second, so a rapid *Back Up Now* no longer overwrites a just-written file. The filename regex accepts the optional suffix, and download/delete/restore share a single `resolveAutoBackupPath` validator (`auto_backup.go`).
+
+### Developer & docs
+
+- **fix** **Tests** — added same-second uniqueness and restore round-trip coverage (plus restore name/traversal rejection) in `auto_backup_test.go`, and dropped the now-unnecessary sleeps from the rotation test.
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.13.1** notes.
+- **fix** **What's new modal** — **v2026.07.13.1** JSON entry with a *Backups* section (no doc-update or cache-bust item, by design).
+- **fix** **Cache-bust** — `whats-new-v156` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v115` dashboard release token.
 
 ---
 

@@ -78,6 +78,7 @@ func main() {
 	r.HandleFunc("/api/auto-backups/download", handlers.DownloadAutoBackup).Methods("GET")
 	r.HandleFunc("/api/auto-backups", handlers.DeleteAutoBackup).Methods("DELETE")
 	r.HandleFunc("/api/auto-backups/run", handlers.RunAutoBackup).Methods("POST")
+	r.HandleFunc("/api/auto-backups/restore", handlers.RestoreAutoBackup).Methods("POST")
 	r.HandleFunc("/api/import", handlers.Import).Methods("POST")
 	r.HandleFunc("/api/ping", handlers.PingURL).Methods("GET")
 
