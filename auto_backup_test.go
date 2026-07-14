@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 // newTestHandlers points the data dir at a temp directory and returns a Handlers
@@ -69,12 +68,11 @@ func TestWriteAutoBackupRotatesToThree(t *testing.T) {
 func TestWriteAutoBackupCreatesAndPrunes(t *testing.T) {
 	h := newTestHandlers(t)
 
+	// No sleeps: uniqueAutoBackupName disambiguates same-second writes.
 	for i := 0; i < 4; i++ {
 		if err := h.writeAutoBackup(); err != nil {
 			t.Fatalf("writeAutoBackup #%d: %v", i, err)
 		}
-		// Distinct second-resolution timestamps in the filename.
-		time.Sleep(1100 * time.Millisecond)
 	}
 
 	names, err := listAutoBackupFiles()
@@ -83,6 +81,35 @@ func TestWriteAutoBackupCreatesAndPrunes(t *testing.T) {
 	}
 	if len(names) != maxAutoBackups {
 		t.Fatalf("kept %d backups, want %d", len(names), maxAutoBackups)
+	}
+}
+
+func TestWriteAutoBackupSameSecondDoesNotOverwrite(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Three writes within (almost certainly) the same second must produce three
+	// distinct files, not one overwritten file.
+	for i := 0; i < 3; i++ {
+		if err := h.writeAutoBackup(); err != nil {
+			t.Fatalf("writeAutoBackup #%d: %v", i, err)
+		}
+	}
+	names, err := listAutoBackupFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 3 {
+		t.Fatalf("got %d distinct backups, want 3 (same-second overwrite?)", len(names))
+	}
+	seen := map[string]bool{}
+	for _, n := range names {
+		if !autoBackupNameRe.MatchString(n) {
+			t.Fatalf("name %q does not match the auto-backup pattern", n)
+		}
+		if seen[n] {
+			t.Fatalf("duplicate name %q", n)
+		}
+		seen[n] = true
 	}
 }
 
@@ -201,6 +228,63 @@ func TestDeleteAutoBackupMissingReturns404(t *testing.T) {
 	h.DeleteAutoBackup(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestRestoreAutoBackupRoundTrip(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Use two valid theme IDs (invalid ones are reset on read). Set the first,
+	// back it up, then switch to the second on disk.
+	const backedUpTheme = "kelp-drift-dark"
+	const changedTheme = "cherry-graphite-dark"
+
+	original := h.store.GetSettings()
+	original.Theme = backedUpTheme
+	if err := h.store.SaveSettings(original); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+	if err := h.writeAutoBackup(); err != nil {
+		t.Fatalf("writeAutoBackup: %v", err)
+	}
+	names, err := listAutoBackupFiles()
+	if err != nil || len(names) == 0 {
+		t.Fatalf("no backup: %v", err)
+	}
+
+	// Mutate so on-disk state differs from the backup.
+	changed := h.store.GetSettings()
+	changed.Theme = changedTheme
+	if err := h.store.SaveSettings(changed); err != nil {
+		t.Fatalf("SaveSettings (mutate): %v", err)
+	}
+	if h.store.GetSettings().Theme != changedTheme {
+		t.Fatal("expected mutation to take effect")
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auto-backups/restore?name="+names[0], nil)
+	rec := httptest.NewRecorder()
+	h.RestoreAutoBackup(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (body: %s)", rec.Code, rec.Body.String())
+	}
+
+	// The store reads from disk, so the restored theme should match the backup.
+	if got := h.store.GetSettings().Theme; got != backedUpTheme {
+		t.Fatalf("after restore theme = %q, want %q", got, backedUpTheme)
+	}
+}
+
+func TestRestoreAutoBackupRejectsBadNames(t *testing.T) {
+	h := newTestHandlers(t)
+	bad := []string{"", "../settings.json", "foo/bar.zip", "nextdash-auto-backup-bad.zip"}
+	for _, name := range bad {
+		req := httptest.NewRequest(http.MethodPost, "/api/auto-backups/restore?name="+name, nil)
+		rec := httptest.NewRecorder()
+		h.RestoreAutoBackup(rec, req)
+		if rec.Code == http.StatusOK {
+			t.Fatalf("name %q was accepted, want rejection", name)
+		}
 	}
 }
 

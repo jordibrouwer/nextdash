@@ -545,34 +545,15 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		staged = append(staged, stagedImportFile{filename: filename, content: content})
 	}
 
-	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
-
-	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)
-	if err != nil {
-		log.Printf("import: prepare failed: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	skippedBookmarks, impErr := h.applyStagedImport(dataDir, staged)
+	if impErr != nil {
+		log.Printf("import: %v", impErr)
+		http.Error(w, impErr.Error(), impErr.status())
 		return
 	}
 
-	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
-
-	if err := commitPreparedImport(dataDir, prepared); err != nil {
-		log.Printf("import: commit failed: %v", err)
-		http.Error(w, "Failed to apply import", http.StatusInternalServerError)
-		return
-	}
-
-	for pageID, categories := range importedCategoriesByPage {
-		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
-			log.Printf("import: save categories for page %d failed: %v", pageID, err)
-			http.Error(w, "Failed to save imported categories", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	h.invalidateHealthReportCache()
-	log.Printf("import: success (%d files, %d bookmarks skipped)", len(prepared), skippedBookmarks)
-	logDataImport("backup_zip", len(prepared), skippedBookmarks, r)
+	log.Printf("import: success (%d bookmarks skipped)", skippedBookmarks)
+	logDataImport("backup_zip", len(staged), skippedBookmarks, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -580,6 +561,43 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		"status":            "success",
 		"skippedBookmarks": skippedBookmarks,
 	})
+}
+
+// importError carries an HTTP status alongside the message so both the upload
+// import and the restore-from-stored-backup paths can share applyStagedImport.
+type importError struct {
+	msg  string
+	code int
+}
+
+func (e *importError) Error() string { return e.msg }
+func (e *importError) status() int   { return e.code }
+
+// applyStagedImport runs the shared import pipeline (prepare, merge categories,
+// atomic commit, save categories) for a set of staged files. It returns the
+// number of skipped bookmarks, or an *importError with an HTTP status.
+func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) (int, *importError) {
+	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
+
+	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)
+	if err != nil {
+		return 0, &importError{msg: err.Error(), code: http.StatusBadRequest}
+	}
+
+	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
+
+	if err := commitPreparedImport(dataDir, prepared); err != nil {
+		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
+	}
+
+	for pageID, categories := range importedCategoriesByPage {
+		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
+			return 0, &importError{msg: fmt.Sprintf("save categories for page %d failed: %v", pageID, err), code: http.StatusInternalServerError}
+		}
+	}
+
+	h.invalidateHealthReportCache()
+	return skippedBookmarks, nil
 }
 
 // buildBackupZip assembles the full data-directory backup as a ZIP archive in memory.

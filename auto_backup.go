@@ -1,7 +1,11 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -9,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -29,9 +34,24 @@ const (
 	autoBackupTimeLayout = "2006-01-02T150405Z"
 )
 
-// autoBackupNameRe matches valid automatic-backup filenames (prefix + timestamp + .zip).
-// Used to validate download requests and to filter the storage directory listing.
-var autoBackupNameRe = regexp.MustCompile(`^nextdash-auto-backup-\d{4}-\d{2}-\d{2}T\d{6}Z\.zip$`)
+// autoBackupNameRe matches valid automatic-backup filenames (prefix + timestamp,
+// with an optional "-N" disambiguator when several are made in the same second,
+// + .zip). Used to validate download/delete requests and to filter the listing.
+var autoBackupNameRe = regexp.MustCompile(`^nextdash-auto-backup-\d{4}-\d{2}-\d{2}T\d{6}Z(-\d+)?\.zip$`)
+
+// uniqueAutoBackupName returns a filename that does not yet exist in dir. The
+// timestamp has second resolution, so two backups made within the same second
+// get a "-2", "-3", … suffix instead of silently overwriting each other.
+func uniqueAutoBackupName(dir string) string {
+	stamp := autoBackupPrefix + time.Now().UTC().Format(autoBackupTimeLayout)
+	name := stamp + ".zip"
+	for i := 2; ; i++ {
+		if _, err := os.Stat(filepath.Join(dir, name)); os.IsNotExist(err) {
+			return name
+		}
+		name = fmt.Sprintf("%s-%d.zip", stamp, i)
+	}
+}
 
 // autoBackupDir returns the directory holding automatic backups.
 func autoBackupDir() string {
@@ -103,8 +123,7 @@ func (h *Handlers) writeAutoBackup() error {
 		return err
 	}
 
-	filename := autoBackupPrefix + time.Now().UTC().Format(autoBackupTimeLayout) + ".zip"
-	if err := writeFileAtomic(filepath.Join(dir, filename), data, 0644); err != nil {
+	if err := writeFileAtomic(filepath.Join(dir, uniqueAutoBackupName(dir)), data, 0644); err != nil {
 		return err
 	}
 
@@ -229,12 +248,11 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 // DownloadAutoBackup streams a stored automatic backup by name.
 func (h *Handlers) DownloadAutoBackup(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
-	// Strict validation: only the exact auto-backup filename shape, no path parts.
-	if name != filepath.Base(name) || !autoBackupNameRe.MatchString(name) {
+	path, ok := resolveAutoBackupPath(name)
+	if !ok {
 		http.Error(w, "Invalid backup name", http.StatusBadRequest)
 		return
 	}
-	path := filepath.Join(autoBackupDir(), name)
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
 		http.Error(w, "Backup not found", http.StatusNotFound)
@@ -259,14 +277,14 @@ func (h *Handlers) DeleteAutoBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.URL.Query().Get("name")
-	// Strict validation: only the exact auto-backup filename shape, no path parts.
-	if name != filepath.Base(name) || !autoBackupNameRe.MatchString(name) {
+	path, ok := resolveAutoBackupPath(name)
+	if !ok {
 		http.Error(w, "Invalid backup name", http.StatusBadRequest)
 		return
 	}
 
 	h.autoBackupMu.Lock()
-	err := os.Remove(filepath.Join(autoBackupDir(), name))
+	err := os.Remove(path)
 	h.autoBackupMu.Unlock()
 
 	if err != nil {
@@ -282,6 +300,98 @@ func (h *Handlers) DeleteAutoBackup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{"status": "success"})
+}
+
+// resolveAutoBackupPath validates a request-supplied backup name and returns its
+// on-disk path, or ok=false when the name is malformed (path traversal etc.).
+func resolveAutoBackupPath(name string) (string, bool) {
+	if name != filepath.Base(name) || !autoBackupNameRe.MatchString(name) {
+		return "", false
+	}
+	return filepath.Join(autoBackupDir(), name), true
+}
+
+// stagedFilesFromZip unpacks a backup ZIP into staged import files, applying the
+// same filename validation and JSON check as the upload import path.
+func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("could not read backup archive: %w", err)
+	}
+	staged := make([]stagedImportFile, 0, len(zr.File))
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		filename := normalizeImportFilename(f.Name)
+		if !h.isValidImportFilename(filename) {
+			// Skip unexpected entries rather than failing the whole restore.
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
+		}
+		content, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
+		}
+		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
+			return nil, fmt.Errorf("invalid JSON in backup file: %s", filename)
+		}
+		staged = append(staged, stagedImportFile{filename: filename, content: content})
+	}
+	return staged, nil
+}
+
+// RestoreAutoBackup replaces all current data with the contents of a stored
+// automatic backup, reusing the shared import pipeline.
+func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	name := r.URL.Query().Get("name")
+	path, ok := resolveAutoBackupPath(name)
+	if !ok {
+		http.Error(w, "Invalid backup name", http.StatusBadRequest)
+		return
+	}
+
+	// Serialize against writes/rotation so the archive can't be pruned mid-read.
+	h.autoBackupMu.Lock()
+	data, err := os.ReadFile(path)
+	h.autoBackupMu.Unlock()
+	if err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, "Backup not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("auto-backup: restore read %q failed: %v", name, err)
+		http.Error(w, "Failed to read backup", http.StatusInternalServerError)
+		return
+	}
+
+	staged, err := h.stagedFilesFromZip(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	dataDir := ResolveDataDir()
+	skipped, impErr := h.applyStagedImport(dataDir, staged)
+	if impErr != nil {
+		log.Printf("auto-backup: restore %q: %v", name, impErr)
+		http.Error(w, impErr.Error(), impErr.status())
+		return
+	}
+
+	log.Printf("auto-backup: restored from %q (%d bookmarks skipped)", name, skipped)
+	logDataImport("auto_backup_restore", len(staged), skipped, r)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{"status": "success", "skippedBookmarks": skipped})
 }
 
 // RunAutoBackup creates an automatic backup on demand (manual "Back up now").

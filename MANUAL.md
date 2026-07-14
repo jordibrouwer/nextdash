@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.13**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.13.1**).
 
 ---
 
@@ -982,10 +982,13 @@ Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when lo
 **config → backups → Automatic Backups** — nextDash automatically creates a full ZIP backup (the same contents as a manual ZIP backup) **once a week** and stores it **on the server**, under `data/auto-backups/`. This is separate from the browser download above: automatic backups live with your instance so they survive even if you never click *Create backup*.
 
 - **Rotation** — the latest **3** automatic backups are kept. When a new one is written, the **oldest is removed** automatically, so the folder never grows without bound.
-- **Download / Delete** — each stored backup lists its **date** and **size** with a **Download** button (saves the ZIP to your computer) and a **Delete** button (removes it from the server after a confirmation).
-- **Back Up Now** — creates an automatic backup on demand at any time, without waiting for the weekly run. It works even when the weekly toggle is off.
+- **Download / Restore / Delete** — each stored backup lists its **date** and **size** with three actions: **Download** (saves the ZIP to your computer), **Restore** (replaces **all** current data with that backup after a confirmation, then reloads — the same effect as importing the ZIP, without the download/upload round-trip), and **Delete** (removes it from the server after a confirmation).
+- **Back Up Now** — creates an automatic backup on demand at any time, without waiting for the weekly run. It works even when the weekly toggle is off, and refreshes the **Last backup** date shown in the ZIP section (v2026.07.13.1).
+- **Totals** — a small summary line shows how many automatic backups you have and their combined size (v2026.07.13.1).
 - **Countdown** — the section shows how long until the next scheduled backup.
 - **Enable / disable** — a toggle (on by default) controls the **weekly** run. Turning it off stops new automatic backups but never touches **Back Up Now** or your existing files.
+
+Filenames carry a UTC timestamp; if you create several backups within the same second, later ones get a `-2`, `-3`, … suffix so none overwrite each other (v2026.07.13.1). Like a manual **Import ZIP**, a restore is atomic and replaces everything — bookmark URL validation and skipped-URL handling work the same way.
 
 Scheduling is **restart-robust**: rather than a fixed weekly timer, nextDash runs a backup whenever the newest one is older than **7 days**, so an instance that restarts often still gets its weekly copy. The `data/auto-backups/` folder is **excluded** from regular ZIP backups (no backup-in-backup).
 
