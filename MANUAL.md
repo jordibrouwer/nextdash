@@ -156,8 +156,9 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 **Categories** are sections within a page (e.g. `dev`, `news`, `tools`). In config they have an ID and display name. Bookmarks belong to one category (or uncategorised).
 
-- Collapse/expand per category on the dashboard.  
-- Drag the **grip** on a category title to reorder sections.  
+- Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once.  
+- Drag the **`//` prefix** in a category title to reorder sections.  
+- Add a new category (or page) straight from the **new-bookmark modal** — the **Category** and **Page** dropdowns each carry a **+ New…** option that creates and saves it inline, no bookmark required.  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. The first rename may show a one-time **Got it** promo beside the header; **Esc** dismisses the promo and cancels rename.
 - In **config → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
@@ -418,6 +419,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
+| `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
 ### 9.2 Bookmark grid
 
@@ -604,7 +606,7 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 ### Reorder categories
 
-- Drag the **grip** on the category title on the dashboard, or drag rows in **config → categories** (or focus a row and press **↑** / **↓**).
+- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
 - Order in **config → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
 
 ### Reorder pages
@@ -634,7 +636,7 @@ Use **config → pages** to rename a page on any device.
 
 ### Collapse
 
-Click category header or chevron, or focus the header and press **Enter** / **Space**. **Always collapse categories** can be set in general settings.
+Click category header or chevron, or focus the header and press **Enter** / **Space**. Press **`.`** anywhere on the dashboard to collapse or expand **every** category at once (smart toggle — if any category is open, they all collapse; otherwise they all expand); state is remembered per page. **Always collapse categories** can be set in general settings.
 
 ---
 

@@ -229,7 +229,8 @@ class DashboardUiHelpers {
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
-                item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
+                item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
+                item('Drag // in category title', 'bmDragCategory', 'Reorder categories (grab the // prefix in the header)'),
             ]),
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
