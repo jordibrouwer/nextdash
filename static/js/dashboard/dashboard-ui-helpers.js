@@ -192,6 +192,7 @@ class DashboardUiHelpers {
                     : [item('1–9', 'navPageTab', 'Switch to bookmark page')]),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
+                item('.', 'navCollapseAll', 'Collapse or expand all categories'),
                 item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),
                 item('← / →', 'navFocusLeftRight', 'Move focus left / right in grid'),
                 item('Home / End', 'navCategoryHomeEnd', 'First / last bookmark in the focused category'),

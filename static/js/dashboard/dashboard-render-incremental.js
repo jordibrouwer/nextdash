@@ -341,6 +341,7 @@ class DashboardRenderIncremental {
         d._categoryListsCache = null;
         d._renderAnimationsEnabled = false;
         this.core.initializeCategoryReorder();
+        this.core.initializeDashboardCategoryReorder();
         window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
         d.updateSearchComponent?.();

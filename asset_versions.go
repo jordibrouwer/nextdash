@@ -73,7 +73,7 @@ var sharedAssetVersions = pageAssetVersions{
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-5-inline-create",
 	WhatsNewData:           "whats-new-v156",
-	DataRevision:           "data-revision-5",
+	DataRevision:           "data-revision-6",
 
 	AppNotificationCSS:       "app-notification-1",
 	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",

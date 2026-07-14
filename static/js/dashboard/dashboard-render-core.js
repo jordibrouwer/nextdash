@@ -379,7 +379,7 @@ class DashboardRenderCore {
         // Enable realtime drag-and-drop sorting within each category
         this.initializeCategoryReorder();
         window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
-        // this.initializeDashboardCategoryReorder();
+        this.initializeDashboardCategoryReorder();
 
         d.updateSearchComponent();
         d.syncBookmarkGridA11y();
@@ -455,6 +455,32 @@ class DashboardRenderCore {
         return [...pinned, ...regular];
     }
 
+
+    // Collapse or expand every category on the current page at once.
+    // Smart toggle: if any category is open, collapse all; otherwise expand all.
+    // Pass `collapse` (true/false) to force a direction.
+    toggleAllCategoriesCollapsed(collapse) {
+        const d = this.dash;
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+        const cats = Array.from(grid.querySelectorAll('.category[data-category-id]'));
+        if (cats.length === 0) return;
+
+        const target = typeof collapse === 'boolean'
+            ? collapse
+            : cats.some((el) => el.getAttribute('data-collapsed') !== 'true'); // any open → collapse
+
+        cats.forEach((el) => {
+            const id = el.getAttribute('data-category-id') || '';
+            const isSmart = el.getAttribute('data-smart-collection') === 'true';
+            const key = isSmart ? `smart:${id}` : `${d.currentPageId}:${id}`;
+            el.setAttribute('data-collapsed', target ? 'true' : 'false');
+            const title = el.querySelector('.category-title');
+            if (title) title.setAttribute('aria-expanded', target ? 'false' : 'true');
+            d.collapsedCategories[key] = target;
+        });
+        d.saveCollapsedStates();
+    }
 
     initializeCategoryReorder() {
         const d = this.dash;
@@ -563,6 +589,9 @@ class DashboardRenderCore {
         };
 
         if (isPacked) {
+            // Multiple column containers: a document-level drag-over relay moves the
+            // dragged category across columns; per-item dragover is delegated to it.
+            this.ensureCategoryDragOverRelay();
             grid.querySelectorAll('.dashboard-column').forEach((col) => {
                 d.dashboardCategoryReorderInstances.push(new DragReorder({
                     container: col,
@@ -570,7 +599,7 @@ class DashboardRenderCore {
                     itemClass: 'category-reorder-item',
                     handleSelector: '.category-reorder-handle',
                     longPressMs: 0,
-                    delegateItemDragOver: false,
+                    delegateItemDragOver: true,
                     touchContainerSelector: '.dashboard-column',
                     onReorder
                 }));
@@ -850,7 +879,7 @@ class DashboardRenderCore {
         };
 
         const isExcludedTarget = (target) => Boolean(
-            target?.closest?.('.category-sort-controls, .smart-collection-why-btn, .category-rename-input')
+            target?.closest?.('.category-sort-controls, .smart-collection-why-btn, .category-rename-input, .category-reorder-handle')
         );
 
         const onPointerDown = (e) => {
@@ -1103,6 +1132,23 @@ class DashboardRenderCore {
 
         const labelWrap = document.createElement('span');
         labelWrap.className = 'category-title-label';
+
+        // The "//" prefix. For real categories it doubles as the drag-reorder handle
+        // (DragReorder makes it draggable and grabs it via handleSelector); smart
+        // collections keep a plain "//" that is not draggable.
+        const prefixSpan = document.createElement('span');
+        prefixSpan.textContent = '// ';
+        prefixSpan.setAttribute('aria-hidden', 'true');
+        if (!isSmartCollection) {
+            prefixSpan.className = 'category-reorder-handle';
+            // Dragging the handle must not toggle collapse or start a rename.
+            prefixSpan.addEventListener('click', (e) => e.stopPropagation());
+            prefixSpan.addEventListener('mousedown', (e) => e.stopPropagation());
+            prefixSpan.addEventListener('dblclick', (e) => e.stopPropagation());
+        } else {
+            prefixSpan.className = 'category-title-prefix';
+        }
+        labelWrap.appendChild(prefixSpan);
 
         const trailingWrap = document.createElement('span');
         trailingWrap.className = 'category-title-trailing';

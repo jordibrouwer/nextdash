@@ -96,6 +96,21 @@ class DashboardToolbar {
                 e.stopPropagation();
                 d.showKeyboardCheatSheet();
             }
+
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '.') {
+                if (d.isModalOpen()) {
+                    return;
+                }
+                if (window.DashboardTagCloud?.modalOpen) {
+                    return;
+                }
+                if (d.searchComponent && d.searchComponent.isActive()) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                d.toggleAllCategoriesCollapsed();
+            }
         });
     }
 
@@ -229,6 +244,9 @@ class DashboardToolbar {
             } else {
                 d.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
             }
+        });
+        document.getElementById('collapse-all-button')?.addEventListener('click', () => {
+            d.toggleAllCategoriesCollapsed();
         });
     }
 

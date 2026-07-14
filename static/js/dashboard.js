@@ -1557,6 +1557,10 @@ class Dashboard {
         return this.renderCore.initializeDashboardCategoryReorder(...arguments);
     }
 
+    toggleAllCategoriesCollapsed() {
+        return this.renderCore.toggleAllCategoriesCollapsed(...arguments);
+    }
+
     ensureCategoryDragOverRelay() {
         return this.renderCore.ensureCategoryDragOverRelay(...arguments);
     }
