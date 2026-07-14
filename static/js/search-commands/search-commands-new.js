@@ -292,14 +292,32 @@ class SearchCommandNew {
                                 <label class="nbm-label" for="new-bookmark-page">${this.t('config.page', 'Page')}</label>
                                 <select id="new-bookmark-page" name="page" class="nbm-input">
                                     ${this.generatePageOptions()}
+                                    <option value="__new__" class="nbm-new-option">${this.t('config.addNewPageOption', '➕ New page…')}</option>
                                 </select>
+                                <div class="nbm-inline-create" id="new-page-create" hidden>
+                                    <span class="nbm-inline-create-hint">${this.t('config.newPageNameLabel', 'Name your new page')}</span>
+                                    <div class="nbm-inline-create-row">
+                                        <input type="text" id="new-page-create-input" class="nbm-input" placeholder="${this.t('config.newPageNamePlaceholder', 'Page name')}" autocomplete="off" spellcheck="false" maxlength="60">
+                                        <button type="button" class="nbm-inline-create-ok" id="new-page-create-ok" aria-label="${this.t('config.confirm', 'Confirm')}">✓</button>
+                                        <button type="button" class="nbm-inline-create-cancel" id="new-page-create-cancel" aria-label="${this.t('config.cancel', 'Cancel')}">✕</button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="nbm-col">
                                 <label class="nbm-label" for="new-bookmark-category">${this.t('config.category', 'Category')}</label>
                                 <select id="new-bookmark-category" name="category" class="nbm-input">
                                     <option value="">${this.t('config.noCategory', 'No category')}</option>
                                     ${this.generateCategoryOptions()}
+                                    <option value="__new__" class="nbm-new-option">${this.t('config.addNewCategoryOption', '➕ New category…')}</option>
                                 </select>
+                                <div class="nbm-inline-create" id="new-category-create" hidden>
+                                    <span class="nbm-inline-create-hint">${this.t('config.newCategoryNameLabel', 'Name your new category')}</span>
+                                    <div class="nbm-inline-create-row">
+                                        <input type="text" id="new-category-create-input" class="nbm-input" placeholder="${this.t('config.newCategoryNamePlaceholder', 'Category name')}" autocomplete="off" spellcheck="false" maxlength="60">
+                                        <button type="button" class="nbm-inline-create-ok" id="new-category-create-ok" aria-label="${this.t('config.confirm', 'Confirm')}">✓</button>
+                                        <button type="button" class="nbm-inline-create-cancel" id="new-category-create-cancel" aria-label="${this.t('config.cancel', 'Cancel')}">✕</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="nbm-section nbm-wizard-step-2-panel">
@@ -438,6 +456,7 @@ class SearchCommandNew {
             categorySelect.innerHTML = `
                 <option value="">${this.t('config.noCategory', 'No category')}</option>
                 ${this.generateCategoryOptions()}
+                <option value="__new__" class="nbm-new-option">${this.t('config.addNewCategoryOption', '➕ New category…')}</option>
             `;
             if (currentValue && this.categories.find(cat => cat.id === currentValue)) {
                 categorySelect.value = currentValue;
@@ -450,6 +469,186 @@ class SearchCommandNew {
         } catch (error) {
             console.error('Error loading categories for page:', error);
         }
+    }
+
+    // ── Inline create (new page / new category without leaving the modal) ──────
+
+    _inlineIds(kind) {
+        return kind === 'page'
+            ? { select: 'new-bookmark-page', box: 'new-page-create', input: 'new-page-create-input', ok: 'new-page-create-ok', cancel: 'new-page-create-cancel' }
+            : { select: 'new-bookmark-category', box: 'new-category-create', input: 'new-category-create-input', ok: 'new-category-create-ok', cancel: 'new-category-create-cancel' };
+    }
+
+    // Re-select a native select value and refresh its CustomSelect skin.
+    _setSelectValue(selectEl, value) {
+        if (!selectEl) return;
+        selectEl.value = value;
+        if (typeof CustomSelect !== 'undefined') {
+            if (selectEl.__customSelectInstance) {
+                try { selectEl.__customSelectInstance.destroy(); } catch (e) { /* ignore */ }
+                selectEl.__customSelectInstance = null;
+                delete selectEl.dataset.customSelectInit;
+            }
+            const instance = new CustomSelect(selectEl);
+            selectEl.__customSelectInstance = instance;
+            selectEl.dataset.customSelectInit = 'true';
+        }
+    }
+
+    setupInlineCreate(kind) {
+        const ids = this._inlineIds(kind);
+        const okBtn = document.getElementById(ids.ok);
+        const cancelBtn = document.getElementById(ids.cancel);
+        const input = document.getElementById(ids.input);
+        okBtn?.addEventListener('click', () => this.confirmInlineCreate(kind));
+        cancelBtn?.addEventListener('click', () => this.cancelInlineCreate(kind));
+        input?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); this.confirmInlineCreate(kind); }
+            else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.cancelInlineCreate(kind); }
+        });
+    }
+
+    openInlineCreate(kind) {
+        const ids = this._inlineIds(kind);
+        const select = document.getElementById(ids.select);
+        const box = document.getElementById(ids.box);
+        const input = document.getElementById(ids.input);
+        if (!select || !box || !input) return;
+        // Hide the select while entering a name; restore its previous value on cancel.
+        select.hidden = true;
+        if (select.__customSelectInstance?.wrapper) select.__customSelectInstance.wrapper.hidden = true;
+        box.hidden = false;
+        input.value = '';
+        input.focus();
+    }
+
+    cancelInlineCreate(kind) {
+        const ids = this._inlineIds(kind);
+        const select = document.getElementById(ids.select);
+        const box = document.getElementById(ids.box);
+        if (box) box.hidden = true;
+        const prev = kind === 'page' ? (this._prevPageValue ?? '') : (this._prevCategoryValue ?? '');
+        if (select) {
+            select.hidden = false;
+            if (select.__customSelectInstance?.wrapper) select.__customSelectInstance.wrapper.hidden = false;
+            this._setSelectValue(select, prev);
+        }
+    }
+
+    async confirmInlineCreate(kind) {
+        const ids = this._inlineIds(kind);
+        const input = document.getElementById(ids.input);
+        const name = (input?.value || '').trim();
+        if (!name) { input?.focus(); return; }
+        if (kind === 'page') {
+            await this.createNewPage(name);
+        } else {
+            await this.createNewCategory(name);
+        }
+    }
+
+    async createNewCategory(name) {
+        const pageId = this.getSelectedPageId() || Number(this.currentPageId) || 1;
+        try {
+            const res = await fetch(`/api/categories?page=${pageId}`);
+            const existing = res.ok ? await res.json() : [];
+            const list = Array.isArray(existing) ? existing : [];
+            if (list.some((c) => (c.name || '').trim().toLowerCase() === name.toLowerCase())) {
+                this.notify(this.t('config.categoryExists', 'That category already exists.'), 'warning');
+                return;
+            }
+            const id = this._slugId(name, list.map((c) => String(c.id)));
+            const payload = [...list, { id, name }];
+            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/categories?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!save.ok) throw new Error(save.statusText);
+
+            // Reload the category dropdown for this page and select the new one.
+            await this.updateCategoriesForPage(pageId);
+            const select = document.getElementById('new-bookmark-category');
+            const box = document.getElementById('new-category-create');
+            if (box) box.hidden = true;
+            if (select) {
+                select.hidden = false;
+                if (select.__customSelectInstance?.wrapper) select.__customSelectInstance.wrapper.hidden = false;
+                this._setSelectValue(select, id);
+                this._prevCategoryValue = id;
+            }
+            this._refreshDashboardData();
+            this.notify(this.t('config.categoryCreated', 'Category created.'), 'success');
+        } catch (e) {
+            console.error('Inline create category failed:', e);
+            this.notify(this.t('config.categoryCreateError', 'Could not create the category.'), 'error');
+        }
+    }
+
+    async createNewPage(name) {
+        try {
+            const res = await fetch('/api/pages');
+            const existing = res.ok ? await res.json() : [];
+            const list = Array.isArray(existing) ? existing : [];
+            if (list.some((p) => (p.name || '').trim().toLowerCase() === name.toLowerCase())) {
+                this.notify(this.t('config.pageExists', 'That page already exists.'), 'warning');
+                return;
+            }
+            const nextId = list.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+            const payload = [...list, { id: nextId, name }];
+            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!save.ok) throw new Error(save.statusText);
+
+            // Rebuild the page dropdown, select the new page, refresh its categories.
+            this.pages = payload;
+            const select = document.getElementById('new-bookmark-page');
+            const box = document.getElementById('new-page-create');
+            if (select) {
+                select.innerHTML = `${this.generatePageOptions()}<option value="__new__" class="nbm-new-option">${this.t('config.addNewPageOption', '➕ New page…')}</option>`;
+                if (box) box.hidden = true;
+                select.hidden = false;
+                if (select.__customSelectInstance?.wrapper) select.__customSelectInstance.wrapper.hidden = false;
+                this._setSelectValue(select, String(nextId));
+                this._prevPageValue = String(nextId);
+            }
+            await this.updateCategoriesForPage(nextId);
+            this.updateShortcutConflictHint();
+            this.updateUrlDuplicateHint();
+            this._refreshDashboardData();
+            this.notify(this.t('config.pageCreated', 'Page created.'), 'success');
+        } catch (e) {
+            console.error('Inline create page failed:', e);
+            this.notify(this.t('config.pageCreateError', 'Could not create the page.'), 'error');
+        }
+    }
+
+    // Turn a name into a stable, unique id (mirrors config category id rules).
+    _slugId(name, taken = []) {
+        let base = String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        if (!base) base = 'category';
+        let id = base;
+        let n = 2;
+        const takenSet = new Set(taken);
+        while (takenSet.has(id)) { id = `${base}-${n++}`; }
+        return id;
+    }
+
+
+    // Keep the live dashboard in sync so a new page tab / category appears.
+    _refreshDashboardData() {
+        const d = window.dashboardInstance;
+        if (!d) return;
+        try {
+            if (typeof d.loadData === 'function') {
+                void Promise.resolve(d.loadData()).then(() => {
+                    try { d.renderPageNavigation?.(); } catch (e) { /* ignore */ }
+                });
+            }
+        } catch (e) { /* best effort */ }
     }
 
     normalizeUrlField(urlInput, writeBack = true) {
@@ -545,11 +744,31 @@ class SearchCommandNew {
         this._boundHandleKeyDown = this.handleKeyDown.bind(this);
         document.addEventListener('keydown', this._boundHandleKeyDown);
 
-        document.getElementById('new-bookmark-page')?.addEventListener('change', async (e) => {
+        const pageSelectEl = document.getElementById('new-bookmark-page');
+        pageSelectEl?.addEventListener('change', async (e) => {
+            if (e.target.value === '__new__') {
+                this.openInlineCreate('page');
+                return;
+            }
+            this._prevPageValue = e.target.value;
             await this.updateCategoriesForPage(parseInt(e.target.value, 10));
             this.updateShortcutConflictHint();
             this.updateUrlDuplicateHint();
         });
+        if (pageSelectEl) this._prevPageValue = pageSelectEl.value;
+
+        const categorySelectEl = document.getElementById('new-bookmark-category');
+        categorySelectEl?.addEventListener('change', (e) => {
+            if (e.target.value === '__new__') {
+                this.openInlineCreate('category');
+                return;
+            }
+            this._prevCategoryValue = e.target.value;
+        });
+        if (categorySelectEl) this._prevCategoryValue = categorySelectEl.value;
+
+        this.setupInlineCreate('page');
+        this.setupInlineCreate('category');
 
         const shortcutInput = document.getElementById('new-bookmark-shortcut');
         shortcutInput?.addEventListener('input', (e) => {
