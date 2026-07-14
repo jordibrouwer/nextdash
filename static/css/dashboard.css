@@ -1425,6 +1425,12 @@ body {
     content: '$ ';
 }
 
+/* Terminal layout uses "$ " instead of "// "; hide the "//" prefix/handle. */
+.dashboard-grid.layout-terminal .category-reorder-handle,
+.dashboard-grid.layout-terminal .category-title-prefix {
+    display: none;
+}
+
 .dashboard-grid.layout-terminal .bookmark-link {
     font-family: "Source Code Pro", monospace;
     letter-spacing: 0.01em;
@@ -1868,8 +1874,34 @@ body[data-density-mode="dense"] .dashboard-grid {
     overflow: hidden;
 }
 
-.category-title-label::before {
-    content: '// ';
+/* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
+.category-reorder-handle {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: pre;
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
+}
+
+.category-title:hover .category-reorder-handle {
+    opacity: 0.85;
+}
+
+.category-reorder-handle:hover {
+    opacity: 1;
+}
+
+.category-reorder-handle:active {
+    cursor: grabbing;
+}
+
+/* Category being dragged across the grid. */
+#dashboard-layout .category.is-draggable {
+    opacity: 0.4;
+    transform: scale(0.985);
+    transition: opacity 0.1s, transform 0.1s;
 }
 
 .category-title-trailing {

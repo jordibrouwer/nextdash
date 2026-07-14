@@ -192,6 +192,7 @@ class DashboardUiHelpers {
                     : [item('1–9', 'navPageTab', 'Switch to bookmark page')]),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
+                item('.', 'navCollapseAll', 'Collapse or expand all categories'),
                 item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),
                 item('← / →', 'navFocusLeftRight', 'Move focus left / right in grid'),
                 item('Home / End', 'navCategoryHomeEnd', 'First / last bookmark in the focused category'),
@@ -228,7 +229,8 @@ class DashboardUiHelpers {
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
-                item('Drag handle', 'bmDragReorder', 'Reorder within or across categories'),
+                item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
+                item('Drag // in category title', 'bmDragCategory', 'Reorder categories (grab the // prefix in the header)'),
             ]),
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),

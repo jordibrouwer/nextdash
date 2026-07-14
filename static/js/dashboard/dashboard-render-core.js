@@ -379,7 +379,7 @@ class DashboardRenderCore {
         // Enable realtime drag-and-drop sorting within each category
         this.initializeCategoryReorder();
         window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
-        // this.initializeDashboardCategoryReorder();
+        this.initializeDashboardCategoryReorder();
 
         d.updateSearchComponent();
         d.syncBookmarkGridA11y();
@@ -456,6 +456,32 @@ class DashboardRenderCore {
     }
 
 
+    // Collapse or expand every category on the current page at once.
+    // Smart toggle: if any category is open, collapse all; otherwise expand all.
+    // Pass `collapse` (true/false) to force a direction.
+    toggleAllCategoriesCollapsed(collapse) {
+        const d = this.dash;
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return;
+        const cats = Array.from(grid.querySelectorAll('.category[data-category-id]'));
+        if (cats.length === 0) return;
+
+        const target = typeof collapse === 'boolean'
+            ? collapse
+            : cats.some((el) => el.getAttribute('data-collapsed') !== 'true'); // any open → collapse
+
+        cats.forEach((el) => {
+            const id = el.getAttribute('data-category-id') || '';
+            const isSmart = el.getAttribute('data-smart-collection') === 'true';
+            const key = isSmart ? `smart:${id}` : `${d.currentPageId}:${id}`;
+            el.setAttribute('data-collapsed', target ? 'true' : 'false');
+            const title = el.querySelector('.category-title');
+            if (title) title.setAttribute('aria-expanded', target ? 'false' : 'true');
+            d.collapsedCategories[key] = target;
+        });
+        d.saveCollapsedStates();
+    }
+
     initializeCategoryReorder() {
         const d = this.dash;
         this.destroyCategoryReorderInstances();
@@ -478,8 +504,12 @@ class DashboardRenderCore {
             const reorderInstance = new DragReorder({
                 container: listElement,
                 itemSelector: '.bookmark-link',
-                handleSelector: '.bookmark-reorder-handle',
-                /* 0 here: longPressMs blocked immediate native drag when whole row was handle; with narrow strip only, require instant drag. */
+                /* Whole row is the drag handle so a bookmark can be grabbed anywhere.
+                   The row's <a> has draggable=false (see createBookmarkRow) so the
+                   browser's native link-drag can't hijack the reorder. The 500 ms
+                   long-press editor still works: HTML5 drag only starts once the
+                   pointer moves, and any move >8 px cancels the long-press timer. */
+                handleSelector: null,
                 longPressMs: 0,
                 delegateItemDragOver: true,
                 onReorder: () => {
@@ -502,6 +532,12 @@ class DashboardRenderCore {
         if (d._bookmarkDragRelayHandler) {
             return;
         }
+        // Only the placeholder moves during the drag; the dragged row is pulled out
+        // of layout (display:none) so inserting it never changes a column's height.
+        // Moving the real row live caused a feedback loop: the height change shifted
+        // the layout under a still cursor, elementFromPoint then hit a different row,
+        // and the row ping-ponged between columns — the flicker. The row is dropped
+        // into the placeholder's slot at dragend (commitBookmarkDragPlaceholder).
         d._bookmarkDragRelayHandler = (e) => {
             const dragged = window.__dragReorderState && window.__dragReorderState.selected;
             if (!dragged || !e.dataTransfer) {
@@ -512,6 +548,21 @@ class DashboardRenderCore {
             }
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
+
+            if (!window.__dragReorderState.placeholder) {
+                const ph = document.createElement('div');
+                ph.className = 'bookmark-drop-placeholder';
+                ph.setAttribute('aria-hidden', 'true');
+                window.__dragReorderState.placeholder = ph;
+            }
+            const placeholder = window.__dragReorderState.placeholder;
+
+            // Take the dragged row out of the flow so hit-testing is stable. Its
+            // display is restored when the drop is committed.
+            if (dragged.style.display !== 'none') {
+                dragged.style.display = 'none';
+            }
+
             const el = document.elementFromPoint(e.clientX, e.clientY);
             if (!el) {
                 return;
@@ -520,31 +571,39 @@ class DashboardRenderCore {
             if (!targetList || targetList.getAttribute('data-smart-collection') === 'true') {
                 return;
             }
-            if (!window.__dragReorderState.placeholder) {
-                const ph = document.createElement('div');
-                ph.className = 'bookmark-drop-placeholder';
-                ph.setAttribute('aria-hidden', 'true');
-                window.__dragReorderState.placeholder = ph;
-            }
-            const placeholder = window.__dragReorderState.placeholder;
             const targetItem = el.closest('.bookmark-link.reorder-item');
+
             if (targetItem && targetItem !== dragged) {
-                targetItem.parentNode.insertBefore(placeholder, targetItem);
-                const sameParent = dragged.parentNode === targetItem.parentNode;
-                if (sameParent) {
-                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
-                } else {
-                    targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
+                // Insert the placeholder before or after the hovered row depending on
+                // which half of it the cursor is over.
+                const rect = targetItem.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                const ref = after ? targetItem.nextSibling : targetItem;
+                if (placeholder.parentNode !== targetItem.parentNode || placeholder.nextSibling !== ref) {
+                    targetItem.parentNode.insertBefore(placeholder, ref);
                 }
-            } else if (!targetItem) {
-                if (dragged.parentNode !== targetList) {
-                    targetList.appendChild(dragged);
-                }
+            } else if (!targetItem && placeholder.parentNode !== targetList) {
+                // Empty area of a list: park the placeholder at the end.
                 targetList.appendChild(placeholder);
             }
         };
         document.addEventListener('dragover', d._bookmarkDragRelayHandler, { capture: true, passive: false });
+
+        // At drop, move the hidden dragged row into the placeholder's slot and show
+        // it again, before reorder.js's dragend removes the placeholder and reads the
+        // DOM order for the sync. Capture phase runs ahead of the row's own dragend.
+        d._bookmarkDragCommitHandler = () => {
+            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
+            const placeholder = window.__dragReorderState && window.__dragReorderState.placeholder;
+            if (dragged && dragged.classList && dragged.classList.contains('bookmark-link')) {
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(dragged, placeholder);
+                }
+                dragged.style.display = '';
+            }
+        };
+        document.addEventListener('dragend', d._bookmarkDragCommitHandler, { capture: true });
+        document.addEventListener('drop', d._bookmarkDragCommitHandler, { capture: true });
     }
 
 
@@ -563,6 +622,9 @@ class DashboardRenderCore {
         };
 
         if (isPacked) {
+            // Multiple column containers: a document-level drag-over relay moves the
+            // dragged category across columns; per-item dragover is delegated to it.
+            this.ensureCategoryDragOverRelay();
             grid.querySelectorAll('.dashboard-column').forEach((col) => {
                 d.dashboardCategoryReorderInstances.push(new DragReorder({
                     container: col,
@@ -570,7 +632,7 @@ class DashboardRenderCore {
                     itemClass: 'category-reorder-item',
                     handleSelector: '.category-reorder-handle',
                     longPressMs: 0,
-                    delegateItemDragOver: false,
+                    delegateItemDragOver: true,
                     touchContainerSelector: '.dashboard-column',
                     onReorder
                 }));
@@ -644,6 +706,11 @@ class DashboardRenderCore {
         if (d._bookmarkDragRelayHandler) {
             document.removeEventListener('dragover', d._bookmarkDragRelayHandler, { capture: true, passive: false });
             d._bookmarkDragRelayHandler = null;
+        }
+        if (d._bookmarkDragCommitHandler) {
+            document.removeEventListener('dragend', d._bookmarkDragCommitHandler, { capture: true });
+            document.removeEventListener('drop', d._bookmarkDragCommitHandler, { capture: true });
+            d._bookmarkDragCommitHandler = null;
         }
         if (!Array.isArray(d.categoryReorderInstances)) {
             d.categoryReorderInstances = [];
@@ -850,7 +917,7 @@ class DashboardRenderCore {
         };
 
         const isExcludedTarget = (target) => Boolean(
-            target?.closest?.('.category-sort-controls, .smart-collection-why-btn, .category-rename-input')
+            target?.closest?.('.category-sort-controls, .smart-collection-why-btn, .category-rename-input, .category-reorder-handle')
         );
 
         const onPointerDown = (e) => {
@@ -1103,6 +1170,23 @@ class DashboardRenderCore {
 
         const labelWrap = document.createElement('span');
         labelWrap.className = 'category-title-label';
+
+        // The "//" prefix. For real categories it doubles as the drag-reorder handle
+        // (DragReorder makes it draggable and grabs it via handleSelector); smart
+        // collections keep a plain "//" that is not draggable.
+        const prefixSpan = document.createElement('span');
+        prefixSpan.textContent = '// ';
+        prefixSpan.setAttribute('aria-hidden', 'true');
+        if (!isSmartCollection) {
+            prefixSpan.className = 'category-reorder-handle';
+            // Dragging the handle must not toggle collapse or start a rename.
+            prefixSpan.addEventListener('click', (e) => e.stopPropagation());
+            prefixSpan.addEventListener('mousedown', (e) => e.stopPropagation());
+            prefixSpan.addEventListener('dblclick', (e) => e.stopPropagation());
+        } else {
+            prefixSpan.className = 'category-title-prefix';
+        }
+        labelWrap.appendChild(prefixSpan);
 
         const trailingWrap = document.createElement('span');
         trailingWrap.className = 'category-title-trailing';

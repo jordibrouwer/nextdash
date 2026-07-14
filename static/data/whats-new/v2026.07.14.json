@@ -1,0 +1,38 @@
+{
+  "tag": "v2026.07.14",
+  "date": "July 2026",
+  "releasedAt": "2026-07-14",
+  "modalLead": "Reorder bookmarks by dragging the whole row, collapse every category at once, and create a new page or category right from the add-bookmark form.",
+  "sections": [
+    {
+      "title": "Organising your dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Drag a bookmark anywhere on its row</strong> — moving a bookmark within a category or into another one now works by grabbing the row itself, not just the thin strip on the far left. A single click still opens the bookmark, and a long press still opens the inline editor."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No more flicker when dragging between columns</strong> — dropping a bookmark into a category in another column used to make the columns jump and flicker until you let go. The drop marker now moves smoothly and the column stays put."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Collapse or expand every category at once</strong> — press <code>.</code> anywhere on the dashboard, or use the new toolbar button, to fold all categories away (or open them all back up). Your choice is remembered per page."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Drag categories by the “//” in the title</strong> — the <code>//</code> in front of a category name is a drag handle again, so you can reorder whole sections on the dashboard, including across columns. A plain click on it still collapses the category."
+        }
+      ]
+    },
+    {
+      "title": "Adding bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Create a new page or category inline</strong> — the add-bookmark form's <strong>Page</strong> and <strong>Category</strong> dropdowns each have a <strong>+ New…</strong> option. Pick it, type a name, and it's created and saved on the spot — no need to add a bookmark first or leave the form."
+        }
+      ]
+    }
+  ]
+}

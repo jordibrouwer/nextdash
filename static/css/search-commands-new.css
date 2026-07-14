@@ -191,6 +191,82 @@
     min-width: 0;
 }
 
+/* Inline "create new page/category" row inside the add-bookmark modal. */
+.nbm-new-option {
+    font-style: italic;
+}
+
+.nbm-inline-create {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    border: 1px dashed var(--accent-success, #34d399);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent-success, #34d399) 8%, transparent);
+}
+
+/* The [hidden] attribute must win over the display above. */
+.nbm-inline-create[hidden] {
+    display: none;
+}
+
+.nbm-inline-create-hint {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary, #9ca3af);
+    letter-spacing: 0.02em;
+}
+
+.nbm-inline-create-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.nbm-inline-create-row .nbm-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nbm-inline-create-ok,
+.nbm-inline-create-cancel {
+    flex: 0 0 auto;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.nbm-inline-create-ok {
+    background: var(--accent-success, #34d399);
+    color: #06281d;
+}
+
+.nbm-inline-create-cancel {
+    background: var(--background-secondary, rgba(128, 128, 128, 0.12));
+    color: var(--text-secondary, #9ca3af);
+    border-color: var(--border-primary, rgba(128, 128, 128, 0.3));
+}
+
+.nbm-inline-create-ok:hover {
+    filter: brightness(1.08);
+}
+
+.nbm-inline-create-cancel:hover {
+    color: var(--accent-error, #fb7185);
+    border-color: var(--accent-error, #fb7185);
+}
+
 /* ── More options ── */
 .nbm-more-options {
     border-bottom: 1px solid var(--border-primary);
