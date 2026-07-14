@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.13 — July 2026](#v20260713--july-2026)
 - [v2026.07.12 — July 2026](#v20260712--july-2026)
 - [v2026.07.11.4 — July 2026](#v202607114--july-2026)
 - [v2026.07.11.3 — July 2026](#v202607113--july-2026)
@@ -89,6 +90,32 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.13 — July 2026
+
+**Automatic weekly backups** — nextDash now keeps a rolling set of ZIP backups on the server, with download, delete, on-demand run, and a countdown, plus two link-health fixes.
+
+### Backups
+
+- **new** **Automatic weekly backups** — a scheduler goroutine creates a full ZIP backup once a week and stores it under `data/auto-backups/`, keeping the latest 3 (the oldest is pruned when a new one is written). Backups are written atomically behind a mutex; the ZIP is built by a shared `buildBackupZip()` so downloads and automatic backups are byte-for-byte identical, and the `auto-backups/` directory is excluded from regular backups to avoid backup-in-backup (`auto_backup.go`, `backup.go`, `main.go`).
+- **new** **Restart-robust scheduling** — instead of a fragile 168-hour in-process timer, the scheduler re-checks every few hours and runs a backup whenever the newest one is older than 7 days, so a container that restarts often still gets its weekly backup. It stops cleanly on shutdown via a dedicated stop channel (`auto_backup.go`, `main.go`).
+- **new** **Enable/disable toggle** — a new `autoBackupEnabled` setting (default on) gates the automatic run; disabling it never affects the manual *Back Up Now* button or existing files. Defaulted on for fresh installs and for older settings files missing the key, matching the `allowLocalBookmarks` pattern (`models.go`).
+- **new** **Config → Backup UI** — a new *Automatic Backups* section lists each stored backup with its date and size, a **Download** button, and a **Delete** button (in the destructive theme colour, with a confirm dialog), plus a **Back Up Now** button and a live countdown to the next scheduled backup (`templates/config.html`, `config/config-backup.js`, `config.js`, `css/config/config-backups.css`).
+- **new** **API endpoints** — `GET /api/auto-backups` (list + `enabled` + `nextBackupAt`), `GET /api/auto-backups/download?name=…`, `DELETE /api/auto-backups?name=…`, and `POST /api/auto-backups/run`. Download and delete strictly validate the filename shape and reject path traversal; write endpoints go through `requireWriteAccess` (`auto_backup.go`, `main.go`).
+
+### Link health
+
+- **fix** **Bulk delete removes the selected bookmarks** — deleting multiple broken links at once from the health dashboard now removes exactly the selected bookmarks instead of occasionally removing the wrong one.
+- **fix** **Health favicon URL encoding** — favicon filenames in the health dashboard are now encoded, so a filename with a space or special character loads correctly instead of failing the request.
+
+### Developer & docs
+
+- **fix** **Tests** — added `auto_backup_test.go` covering rotation (4 → 3, oldest pruned), exclusion of `auto-backups/` from regular backups, download/delete name validation and traversal rejection, the 404 delete case, and due/not-due logic, plus `autoBackupEnabled` default and explicit-false assertions in `settings_defaults_test.go`.
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.13** notes.
+- **fix** **What's new modal** — **v2026.07.13** JSON entry with *Backups* and *Link health* sections (no doc-update or cache-bust item, by design).
+- **fix** **Cache-bust** — `whats-new-v155` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v114` dashboard release token.
 
 ---
 
