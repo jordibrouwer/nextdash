@@ -29,6 +29,9 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if !settings.ShowIcons {
 		t.Fatal("fresh install: showIcons should be true")
 	}
+	if !settings.AutoBackupEnabled {
+		t.Fatal("fresh install: autoBackupEnabled should be true")
+	}
 }
 
 func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
@@ -69,6 +72,31 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	}
 	if !settings.ShowCheatSheetButton {
 		t.Fatal("migration: missing showCheatSheetButton should default to true")
+	}
+	if !settings.AutoBackupEnabled {
+		t.Fatal("migration: missing autoBackupEnabled should default to true")
+	}
+}
+
+func TestGetSettingsRespectsExplicitAutoBackupDisabled(t *testing.T) {
+
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	if err := os.MkdirAll("data", 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark","autoBackupEnabled":false}`)
+	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewStore()
+	settings := store.GetSettings()
+
+	if settings.AutoBackupEnabled {
+		t.Fatal("explicit autoBackupEnabled:false should stay false")
 	}
 }
 

@@ -35,6 +35,7 @@ type Handlers struct {
 	healthReportAt time.Time
 	healthReportOK bool
 	prefetchMu       sync.Mutex
+	autoBackupMu     sync.Mutex
 	ssrfAPILimiter     *slidingWindowLimiter
 	statusPingLimiter  *slidingWindowLimiter
 }

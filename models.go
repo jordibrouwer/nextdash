@@ -215,6 +215,7 @@ type Settings struct {
 	InboxShowInPageTabs         bool                             `json:"inboxShowInPageTabs"`         // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote     bool                             `json:"inboxDeleteAfterPromote"`     // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
+	AutoBackupEnabled           bool                             `json:"autoBackupEnabled"`           // Automatically create a weekly local backup (keeps the latest 3)
 	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
 }
 
@@ -509,6 +510,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InboxShowInPageTabs:         true,
 			InboxDeleteAfterPromote:     true,
 			AllowLocalBookmarks:         true,
+			AutoBackupEnabled:           true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -1674,6 +1676,7 @@ func (fs *FileStore) GetSettings() Settings {
 			InboxShowInPageTabs:       true,
 			InboxDeleteAfterPromote:   true,
 			AllowLocalBookmarks:       true,
+			AutoBackupEnabled:         true,
 		}
 	}
 
@@ -1890,6 +1893,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["allowLocalBookmarks"]; !ok {
 			settings.AllowLocalBookmarks = true
+		}
+		if _, ok := rawSettings["autoBackupEnabled"]; !ok {
+			settings.AutoBackupEnabled = true
 		}
 	}
 
