@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.14 — July 2026](#v20260714--july-2026)
 - [v2026.07.13.1 — July 2026](#v202607131--july-2026)
 - [v2026.07.13 — July 2026](#v20260713--july-2026)
 - [v2026.07.12 — July 2026](#v20260712--july-2026)
@@ -91,6 +92,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.14 — July 2026
+
+**Dashboard organising** — drag bookmarks by the whole row (no more column flicker), collapse or expand every category with one key, drag categories by their `//`, and create a page or category inline from the add-bookmark form.
+
+### Bookmarks
+
+- **fix** **Drag-to-reorder from the whole row** — a bookmark can be dragged from anywhere on its row instead of only the near-invisible left grip. The row is the drag handle (`handleSelector: null`) and the row's `<a>` is set `draggable=false` so the browser's native link-drag can no longer hijack the reorder. A single click still opens the bookmark; a stationary long-press still opens the inline editor (`dashboard/dashboard-render-core.js`, `dashboard/dashboard-bookmark-rows.js`).
+- **fix** **Long-press editor no longer fires mid-drag** — once a native HTML5 drag starts the browser stops sending `pointermove`, so the long-press slop check could not cancel and the inline editor opened during a drag. A `dragstart` handler now cancels the pending long-press, with a `body.bookmark-dragging` / `is-draggable` guard as a backstop (`dashboard/dashboard-inline-edit.js`).
+- **fix** **No column flicker when dragging across columns** — the drop relay now moves only the placeholder and hides the dragged row (`display:none`) during the drag, committing the row into the placeholder's slot at `dragend`. Moving the real row live changed a column's height, which shifted the layout under a still cursor and made `elementFromPoint` oscillate. `DragReorder`'s container `dragover` is also disabled when a document-level relay owns it, so two handlers no longer fight over the row (`dashboard/dashboard-render-core.js`, `reorder.js`).
+
+### Categories
+
+- **new** **Collapse / expand all** — press `.` anywhere on the dashboard (or the new toolbar button) to fold every category at once; it smart-toggles (any open → collapse all; all closed → expand all) and the state is saved per page. Added a cheat-sheet entry and the `.` shortcut to the keyboard help (`dashboard/dashboard-render-core.js`, `dashboard/dashboard-toolbar.js`, `dashboard/dashboard-ui-helpers.js`, `templates/dashboard.html`, `css/dashboard.css`, `locales/{en,nl,de,fr}.json`).
+- **new** **Restore category drag-reorder via `//`** — the `//` prefix in a real category's title is a drag handle again and reorders whole sections, including across columns in packed layouts (a document-level relay fixes the original cross-column bug). Dragging the handle no longer toggles collapse or starts a rename; a plain click still collapses (`dashboard/dashboard-render-core.js`, `dashboard/dashboard-render-incremental.js`, `dashboard.js`, `css/dashboard.css`).
+
+### Adding bookmarks
+
+- **new** **Inline new page / category** — the add-bookmark form's **Page** and **Category** dropdowns each carry a **+ New…** option that creates and saves the page or category on the spot (no bookmark required) and reselects it, refreshing the dashboard data. Uses the existing categories/pages APIs (`search-commands/search-commands-new.js`, `css/search-commands-new.css`, `locales/{en,nl,de,fr}.json`).
+
+### Developer & docs
+
+- **fix** **Tests** — added `dashboard-bookmark-drag.spec.js` (whole-row handle, cross-category move, no-flicker while holding, dragstart-cancels-long-press, stationary long-press opens editor) and `dashboard-category-reorder.spec.js` (handle presence, click-does-not-collapse, reorder persists).
+- **fix** **README, MANUAL & Config Help** — **v2026.07.14** notes; the category-reorder and collapse-all wording in MANUAL and Config Help now points at the `//` handle and the `.` shortcut.
+- **fix** **Cache-bust** — `whats-new-v157` data version (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v116` dashboard release token, and bumped `reorder.js` / render-core / bookmark-rows / inline-edit / ui-helpers asset tokens.
 
 ---
 
