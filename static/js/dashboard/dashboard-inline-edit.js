@@ -1668,6 +1668,11 @@ class DashboardInlineEdit {
                 if (row.classList.contains('bookmark-inline-editing')) {
                     return;
                 }
+                // A drag in progress (mouse or touch) must never turn into an edit.
+                if (document.body.classList.contains('bookmark-dragging')
+                    || row.classList.contains('is-draggable')) {
+                    return;
+                }
                 this.openBookmarkInlineEditor(row, bookmarkRef);
                 const blockNav = (ev) => {
                     ev.preventDefault();
@@ -1699,6 +1704,12 @@ class DashboardInlineEdit {
             clearTimer();
         };
 
+        /* Once a native HTML5 drag begins, the browser stops sending pointermove
+           (it sends drag events instead), so the slop check above never fires and
+           the long-press timer would open the editor mid-drag. Cancel on dragstart
+           so a reorder never turns into an inline edit. */
+        const onDragStart = () => clearTimer();
+
         /* Bubble phase: avoid stealing native drag from .bookmark-reorder-handle (capture broke DnD in some browsers). */
         row.addEventListener('pointerdown', onPointerDown, { capture: false, signal });
         row.addEventListener('pointermove', onPointerMove, { capture: false, signal });
@@ -1706,6 +1717,7 @@ class DashboardInlineEdit {
         row.addEventListener('pointerleave', onPointerEnd, { capture: false, signal });
         row.addEventListener('pointercancel', onPointerEnd, { capture: false, signal });
         row.addEventListener('lostpointercapture', onPointerEnd, { capture: false, signal });
+        row.addEventListener('dragstart', onDragStart, { capture: true, signal });
     }
 
 

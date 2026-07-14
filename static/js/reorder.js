@@ -110,7 +110,10 @@ class DragReorder {
         });
 
         if (!this.useCoarsePointerDrag) {
-            this.container.ondragover = this.containerDragOverHandler;
+            /* When a document-level relay owns dragover (delegateItemDragOver), the
+               container handler must stay off: two handlers moving the same dragged
+               row per event pingpong it between positions and flicker the column. */
+            this.container.ondragover = this.delegateItemDragOver ? null : this.containerDragOverHandler;
             this.container.ondrop = (e) => e.preventDefault();
         }
     }

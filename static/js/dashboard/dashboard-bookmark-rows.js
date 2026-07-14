@@ -413,6 +413,11 @@ class DashboardBookmarkRows {
 
         const openLink = document.createElement('a');
         openLink.className = 'bookmark-open';
+        /* Anchors are natively draggable; left on, grabbing the row would start a
+           useless "drag the URL" gesture instead of the DragReorder move. The whole
+           row is the reorder handle (see initializeCategoryReorder), so the link
+           itself must not be draggable. */
+        openLink.draggable = false;
         const safeHref = d.safeBookmarkOpenHref(bookmark.url);
         openLink.href = safeHref || '#';
         openLink.id = this.bookmarkCellId(bookmark, bookmarkIndex, categoryId);
