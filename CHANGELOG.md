@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.14.1 — July 2026](#v202607141--july-2026)
 - [v2026.07.14 — July 2026](#v20260714--july-2026)
 - [v2026.07.13.1 — July 2026](#v202607131--july-2026)
 - [v2026.07.13 — July 2026](#v20260713--july-2026)
@@ -92,6 +93,22 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.14.1 — July 2026
+
+**Drag feedback for sorted categories** — dragging a bookmark in an A–Z / Recent category now explains why it can't be reordered instead of doing nothing.
+
+### Bookmarks
+
+- **fix** **Explain why a sorted category won't drag** — categories sorted **A–Z** or **Recent** don't create a `DragReorder` instance (a manual drag would be re-sorted away), so bookmarks there aren't draggable. That previously looked broken. Sort-active lists now carry a hover tooltip and a `not-allowed` cursor, and a genuine drag gesture (press + >8px move) shows a single throttled toast telling you to switch the category back to manual order; a plain click still opens the bookmark (`dashboard/dashboard-render-core.js` `attachSortLockedDragHint`, `css/dashboard.css`, `locales/{en,nl,de,fr}.json`).
+
+### Developer & docs
+
+- **fix** **Tests** — added an e2e case in `dashboard-bookmark-drag.spec.js` asserting the hover tooltip, the explain-why toast on a drag attempt, and silence on a plain click (forces a full render so the sort-locked hint attaches deterministically).
+- **fix** **README, MANUAL & Config Help** — **v2026.07.14.1** notes.
+- **fix** **Cache-bust** — `whats-new-v158` data version (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v117` dashboard release token, and bumped `dashboard.css` / render-core asset tokens.
 
 ---
 

@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.14.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-15",
+  "modalLead": "A small follow-up: dragging a bookmark now explains itself when a category is sorted A–Z or Recent.",
+  "sections": [
+    {
+      "title": "Organising your dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Clearer why a bookmark won't drag</strong> — when a category is sorted <strong>A–Z</strong> or <strong>Recent</strong>, its bookmarks can't be dragged to reorder (the sort would just undo it). Previously nothing happened, which looked broken. Now the category shows a hover tooltip, a not-allowed cursor, and a one-off note when you try to drag — reminding you to switch that category back to manual order first. A plain click still opens the bookmark."
+        }
+      ]
+    }
+  ]
+}
