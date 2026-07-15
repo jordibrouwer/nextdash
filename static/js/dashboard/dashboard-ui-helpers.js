@@ -187,9 +187,15 @@ class DashboardUiHelpers {
         const isSideRail = d.settings?.buttonBarPosition === 'side-left';
         const sections = [
             section('sectionNavigation', 'Navigation', [
+                item('1–9', 'navPageTab', 'Switch to bookmark page'),
+                // '0' still opens the Inbox but is deliberately undocumented: Shift+I
+                // replaces it, and listing both would teach a shortcut that is going away.
                 ...(d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false
-                    ? [item('0 · 1–9', 'navPageTabs', '0 = Inbox; 1–9 = switch to bookmark page')]
-                    : [item('1–9', 'navPageTab', 'Switch to bookmark page')]),
+                    ? [item('Shift + I', 'navInboxView', 'Open Inbox — links saved to read later')]
+                    : []),
+                ...(d.health?.isEnabled?.()
+                    ? [item('Shift + H', 'navHealthView', 'Open Health — bookmarks that need attention')]
+                    : []),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
                 item('.', 'navCollapseAll', 'Collapse or expand all categories'),
@@ -275,7 +281,7 @@ class DashboardUiHelpers {
             ]),
             section('sectionCommandsNavigation', 'Commands — navigation', [
                 item(':page', 'cnPage', 'Switch page by name or number — palette stays open, ✓ on current page'),
-                item(':inbox', 'cnInbox', 'Open Inbox page (0)'),
+                item(':inbox', 'cnInbox', 'Open Inbox page (Shift + I)'),
                 item(':inbox triage', 'cnInboxTriage', 'Triage inbox items one by one'),
                 item(':recent', 'cnRecent', 'Open recent bookmarks modal (same as *)'),
                 item(':overview', 'cnOverview', 'Open page overview with bookmark counts (same as ,)'),

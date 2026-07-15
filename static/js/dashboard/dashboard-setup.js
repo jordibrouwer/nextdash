@@ -283,10 +283,36 @@ class DashboardSetup {
             if (key === '>') this.markInlineTipUsed('search_open');
             if (key === '?') this.markInlineTipUsed('finder_open');
             if (key === ':') this.markInlineTipUsed('command_open');
+            // Legacy inbox shortcut. Superseded by Shift+I and no longer documented
+            // in the cheat sheet, but kept working so it does not break the habit of
+            // anyone already using it.
             if (key === '0') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
+                if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void d.inbox.openInboxView();
+                }
+                return;
+            }
+
+            // Shift+letter opens a view. Shift-modified rather than a bare letter
+            // because bare letters open the shortcut search, which is how a bookmark
+            // with that shortcut letter is reached.
+            // e.code, not e.key: on a layout where Shift+H yields another character
+            // the physical key is still the one the user pressed.
+            if (e.shiftKey && e.code === 'KeyH') {
+                if (d.health?.isEnabled?.()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void d.health.openHealthView();
+                }
+                return;
+            }
+
+            if (e.shiftKey && e.code === 'KeyI') {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
                     e.stopPropagation();
