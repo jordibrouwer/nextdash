@@ -38,11 +38,19 @@
         return badge;
     }
 
+    /**
+     * `options.keepHref` leaves the anchor's href alone. The dashboard's health icon
+     * opens the health view in place and only keeps its href as a middle-click
+     * fallback, so rewriting it to /health?filter=… on every badge refresh would
+     * undo that. Config, which really does navigate to the page, omits the flag.
+     */
     function applyHealthBadgeToAnchor(anchor, summary, language, options = {}) {
         if (!anchor) return null;
         const { broken, warn } = summarizeHealthCounts(summary);
         anchor.querySelector('.health-badge')?.remove();
-        anchor.href = buildHealthPageHref(broken);
+        if (!options.keepHref) {
+            anchor.href = buildHealthPageHref(broken);
+        }
         if (broken > 0) {
             anchor.appendChild(createHealthCountBadge(broken, 'broken', language));
         } else if (warn > 0) {

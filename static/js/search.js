@@ -335,6 +335,22 @@ class SearchComponent {
         return document.getElementById('dashboard-layout')?.classList.contains('inbox-layout') ?? false;
     }
 
+    /**
+     * A full-container view (inbox, health) is on screen. Such a view owns plain
+     * letter keys for its own shortcuts, so search must not swallow them as
+     * type-to-search.
+     */
+    _isDashboardViewActive() {
+        const dash = window.dashboardInstance;
+        if (this._isInboxViewActive()) {
+            return true;
+        }
+        if (dash?.activeView === 'health') {
+            return true;
+        }
+        return document.getElementById('dashboard-layout')?.classList.contains('health-layout') ?? false;
+    }
+
     _isInboxLauncherKey(e, key) {
         return key === '>'
             || key === ':'
@@ -391,7 +407,7 @@ class SearchComponent {
             return;
         }
 
-        if (!this.searchActive && this._isInboxViewActive() && !this._isInboxLauncherKey(e, key)) {
+        if (!this.searchActive && this._isDashboardViewActive() && !this._isInboxLauncherKey(e, key)) {
             if (e.key.length === 1 && /^[A-Za-z0-9]$/.test(e.key)) {
                 return;
             }

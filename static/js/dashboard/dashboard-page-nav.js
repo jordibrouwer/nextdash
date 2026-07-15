@@ -12,19 +12,22 @@ class DashboardPageNav {
         if (!Number.isFinite(targetPageId)) {
             return false;
         }
-        const leavingInbox = d.activeView === 'inbox';
+        // Any non-bookmarks view owns the whole container, so returning to a page
+        // has to rebuild it even when the page id is unchanged.
+        const leavingView = !d.isBookmarksView();
 
         if (!(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
 
-        if (leavingInbox) {
+        if (leavingView) {
             d.activeView = 'bookmarks';
             d.inbox?.clearKeyboardSelection?.();
+            d.health?.clearKeyboardSelection?.();
         }
 
         if (targetPageId === Number(d.currentPageId)) {
-            if (leavingInbox) {
+            if (leavingView) {
                 return this.restoreBookmarksViewForPage(targetPageId);
             }
             return true;
@@ -55,6 +58,7 @@ class DashboardPageNav {
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.inbox?.clearKeyboardSelection?.();
+        d.health?.clearKeyboardSelection?.();
         return true;
     }
 
@@ -66,10 +70,23 @@ class DashboardPageNav {
     }
 
 
+    /** Lowercase header label on the health view (same in all locales). */
+    healthHeaderTitle() {
+        return 'health';
+    }
+
+
     inboxPageLabel() {
         const d = this.dash;
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
         return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
+    }
+
+
+    healthPageLabel() {
+        const d = this.dash;
+        const healthLabel = d.language?.t?.('dashboard.healthPageTitle');
+        return healthLabel && healthLabel !== 'dashboard.healthPageTitle' ? healthLabel : 'Health';
     }
 
 
@@ -80,6 +97,8 @@ class DashboardPageNav {
             let displayName;
             if (d.activeView === 'inbox') {
                 displayName = this.inboxHeaderTitle();
+            } else if (d.activeView === 'health') {
+                displayName = this.healthHeaderTitle();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -91,19 +110,21 @@ class DashboardPageNav {
 
     updateDocumentTitle() {
         const d = this.dash;
-        if (d.activeView === 'inbox') {
-            const inboxName = this.inboxPageLabel();
+        const viewName = d.activeView === 'inbox'
+            ? this.inboxPageLabel()
+            : (d.activeView === 'health' ? this.healthPageLabel() : '');
+        if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
                 if (base) {
                     document.title = d.settings.showPageInTitle
-                        ? `${inboxName} — ${base}`
+                        ? `${viewName} — ${base}`
                         : base;
                 } else {
-                    document.title = `${inboxName} — nextDash`;
+                    document.title = `${viewName} — nextDash`;
                 }
             } else {
-                document.title = `${inboxName} — nextDash`;
+                document.title = `${viewName} — nextDash`;
             }
             return;
         }
@@ -143,8 +164,8 @@ class DashboardPageNav {
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
-            const isInbox = btn.getAttribute('data-inbox-tab') === 'true';
-            const selected = !isInbox && index === pageIndex && d.activeView !== 'inbox';
+            const isViewTab = btn.hasAttribute('data-view-tab');
+            const selected = !isViewTab && index === pageIndex && d.isBookmarksView();
             btn.classList.toggle('active', selected);
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
@@ -156,10 +177,21 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-selected', inboxSelected ? 'true' : 'false');
             inboxBtn.tabIndex = inboxSelected ? 0 : -1;
         }
+        // The health icon lives in the header, outside this container, but is the
+        // same kind of destination — keep its active state in step with the tabs.
+        d.visual?.syncHealthLinkActiveState?.();
     }
 
 
     setActiveInboxTab() {
+        this.setActivePageNavButton(this.dash.currentPageId);
+        this.updatePageTitle();
+        this.updateDocumentTitle();
+    }
+
+
+    /** Health has no tab of its own: it opens from the header icon. */
+    setActiveHealthTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
         this.updatePageTitle();
         this.updateDocumentTitle();
@@ -258,7 +290,7 @@ class DashboardPageNav {
             pageBtn.type = 'button';
             pageBtn.className = 'page-nav-btn';
             pageBtn.setAttribute('role', 'tab');
-            const isActive = d.activeView !== 'inbox' && d.samePageId(page.id, d.currentPageId);
+            const isActive = d.isBookmarksView() && d.samePageId(page.id, d.currentPageId);
             pageBtn.setAttribute('aria-selected', isActive ? 'true' : 'false');
             pageBtn.tabIndex = isActive ? 0 : -1;
             if (isActive) {
@@ -299,7 +331,8 @@ class DashboardPageNav {
             inboxBtn.className = 'page-nav-btn page-nav-btn--inbox';
             inboxBtn.id = 'page-nav-inbox-btn';
             inboxBtn.setAttribute('role', 'tab');
-            inboxBtn.setAttribute('data-inbox-tab', 'true');
+            // Marks a tab that opens a view rather than a page — see setActivePageNavButton.
+            inboxBtn.setAttribute('data-view-tab', 'inbox');
             const inboxActive = d.activeView === 'inbox';
             inboxBtn.setAttribute('aria-selected', inboxActive ? 'true' : 'false');
             inboxBtn.tabIndex = inboxActive ? 0 : -1;

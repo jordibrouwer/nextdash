@@ -217,6 +217,54 @@ class DashboardVisual {
     }
 
 
+    /**
+     * The header health icon opens the health view in place. It stays an <a href="/health">
+     * so middle-click, ⌘-click and "open in new tab" still reach the standalone page —
+     * only a plain left click is intercepted.
+     */
+    bindHealthLinkToView(healthLink) {
+        const d = this.dash;
+        const anchor = healthLink?.querySelector?.('a.health-link-anchor');
+        if (!anchor || anchor.dataset.healthViewBound === '1') {
+            return;
+        }
+        anchor.dataset.healthViewBound = '1';
+        anchor.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+                return;
+            }
+            if (!d.health?.isEnabled?.()) {
+                return;
+            }
+            e.preventDefault();
+            void d.health.openHealthView();
+        });
+    }
+
+
+    /**
+     * Mark the header health icon as the current view, the way an active page tab is
+     * marked. It is an <a> outside #page-navigation, so setActivePageNavButton never
+     * reaches it — without this the health view would be the only view with no
+     * indication of where you are.
+     */
+    syncHealthLinkActiveState() {
+        const d = this.dash;
+        const anchor = document.querySelector('.health-link a.health-link-anchor');
+        if (!anchor) {
+            return;
+        }
+        const active = d.activeView === 'health';
+        anchor.classList.toggle('active', active);
+        // aria-current, not aria-selected: this is a link, not a tab in a tablist.
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
+        }
+    }
+
+
     updateHealthDashboardVisibility() {
         const d = this.dash;
         let healthLink = document.querySelector('.health-link');
@@ -239,6 +287,7 @@ class DashboardVisual {
                     }
                 }
             }
+            this.bindHealthLinkToView(healthLink);
             this.updateHealthBadge();
         } else if (healthLink) {
             healthLink.remove();
@@ -255,7 +304,8 @@ class DashboardVisual {
         try {
             const summary = await utils.fetchBookmarkHealthSummary();
             if (!summary) return;
-            utils.applyHealthBadgeToAnchor(anchor, summary, d.language);
+            // keepHref: the icon opens the view; its href is only the middle-click path.
+            utils.applyHealthBadgeToAnchor(anchor, summary, d.language, { keepHref: true });
             d.updateMiniStatusLine();
         } catch (e) {
             // Silently skip — badge is non-critical

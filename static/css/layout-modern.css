@@ -196,6 +196,17 @@ body[data-layout-version="modern"] .page-nav-btn.active {
         var(--layout-shadow-sm);
 }
 
+/* Modern marks the current tab with a tinted pill rather than an underline; the
+   health icon is the same kind of destination, so it follows suit here too. */
+body[data-layout-version="modern"] .health-link--icon a.active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    color: var(--text-primary);
+    border-bottom-color: transparent;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 32%, transparent),
+        var(--layout-shadow-sm);
+}
+
 body[data-layout-version="modern"] .page-tab-popover {
     border-radius: var(--layout-radius-md);
     box-shadow: var(--layout-shadow-md);

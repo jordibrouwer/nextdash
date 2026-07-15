@@ -128,6 +128,7 @@ class Dashboard {
             this.renderDateWeatherLine();
             this.updateHealthBadge();
             this.inbox?.restoreViewIfNeeded?.();
+            this.health?.restoreViewIfNeeded?.();
             this.maybeRefreshAfterConfigReturn();
         });
         this.searchComponent = null;
@@ -194,6 +195,7 @@ class Dashboard {
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
         this.inbox = new DashboardInbox(this);
+        this.health = typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null;
         this.pasteChoice = new DashboardPasteChoice(this);
         this.activeView = 'bookmarks';
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
@@ -280,6 +282,7 @@ class Dashboard {
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
             this.inbox.setupKeyboardNavigation();
+            this.health?.setupEscapeShortcut();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);
             }
@@ -305,9 +308,19 @@ class Dashboard {
                     }
                     return;
                 }
+                if (hash === 'health') {
+                    if (this.activeView !== 'health') {
+                        void this.health?.openHealthView?.();
+                    }
+                    return;
+                }
                 if (hash && /^\d+$/.test(hash)) {
                     if (this.activeView === 'inbox') {
                         this.inbox?.restoreInboxHash?.();
+                        return;
+                    }
+                    if (this.activeView === 'health') {
+                        this.health?.restoreHealthHash?.();
                         return;
                     }
                     const pageIndex = parseInt(hash) - 1;
@@ -852,6 +865,15 @@ class Dashboard {
 
     samePageId(a, b) {
         return this.data.samePageId(...arguments);
+    }
+
+    /**
+     * True when the bookmark grid for a page is on screen, rather than one of the
+     * full-container views (inbox, health). Prefer this over `activeView !== 'inbox'`:
+     * that phrasing quietly means "bookmarks" and grows wrong with each new view.
+     */
+    isBookmarksView() {
+        return this.activeView === 'bookmarks';
     }
 
     needsCrossPageBookmarks() {

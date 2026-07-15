@@ -1068,6 +1068,20 @@ body {
     text-shadow: none;
 }
 
+/* Active state matched to .page-nav-btn.active: the health icon is a header link
+   rather than a page tab, but it is the same kind of destination, so "you are
+   here" must look the same. The transparent border reserves the underline's
+   space at rest, so marking it active never shifts the header. */
+.health-link--icon a {
+    border-bottom: 2px solid transparent;
+}
+
+.health-link--icon a.active {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
 .health-link--icon .health-link-icon {
     width: 1.15rem;
     height: 1.15rem;
