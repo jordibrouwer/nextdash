@@ -237,7 +237,17 @@ class DashboardRenderCore {
             d.inbox.render();
             return;
         }
-        if (d.activeView === 'inbox') {
+        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
+            d.data?.schedulePageBookmarksHealIfNeeded?.();
+            if (d.isInlineEditActive()) {
+                return;
+            }
+            d.health.render();
+            return;
+        }
+        // A view whose feature is switched off falls back to bookmarks rather
+        // than rendering nothing.
+        if (d.activeView !== 'bookmarks') {
             d.activeView = 'bookmarks';
         }
         d.data?.schedulePageBookmarksHealIfNeeded?.();
@@ -262,7 +272,7 @@ class DashboardRenderCore {
         d._renderAnimationsEnabled = animate;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
-        container.classList.remove('inbox-layout');
+        container.classList.remove('inbox-layout', 'health-layout');
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

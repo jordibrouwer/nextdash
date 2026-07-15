@@ -187,9 +187,15 @@ class DashboardUiHelpers {
         const isSideRail = d.settings?.buttonBarPosition === 'side-left';
         const sections = [
             section('sectionNavigation', 'Navigation', [
+                item('1–9', 'navPageTab', 'Switch to bookmark page'),
+                // '0' still opens the Inbox but is deliberately undocumented: Shift+I
+                // replaces it, and listing both would teach a shortcut that is going away.
                 ...(d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false
-                    ? [item('0 · 1–9', 'navPageTabs', '0 = Inbox; 1–9 = switch to bookmark page')]
-                    : [item('1–9', 'navPageTab', 'Switch to bookmark page')]),
+                    ? [item('Shift + I', 'navInboxView', 'Open Inbox — links saved to read later')]
+                    : []),
+                ...(d.health?.isEnabled?.()
+                    ? [item('Shift + H', 'navHealthView', 'Open Health — bookmarks that need attention')]
+                    : []),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
                 item('.', 'navCollapseAll', 'Collapse or expand all categories'),
@@ -265,17 +271,17 @@ class DashboardUiHelpers {
                 item(':open tag <name> / :open category <name>', 'cbOpenTagCat', 'Open bookmarks matching a tag or category on the current page'),
                 item(':open last [n]', 'cbOpenLast', 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)'),
                 item(':goto <url or domain>', 'cbGoto', 'Navigate directly — full URLs open as-is, bare domains get https:// prepended'),
-                item(':goto config / stats / health', 'cbGotoNav', 'Quick navigation to config, stats, or health page'),
+                item(':goto config / stats / health', 'cbGotoNav', 'Quick navigation to config, stats, or health view'),
                 item(':duplicate / :duplicates', 'cbDuplicates', 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)'),
                 item(':history / :history clear', 'cbHistory', 'Browse recent searches from the command bar / wipe all search history'),
                 item(':stale <days>', 'cbStale', 'Show bookmarks not opened in <days> days (default 30)'),
-                item(':health [filter]', 'caHealth', 'Open health page — broken / duplicate / stale / refresh'),
-                item(':health page [n]', 'cbHealthPage', 'Open health filtered to a specific page number'),
+                item(':health [filter]', 'caHealth', 'Open health view — broken / duplicate / stale / refresh'),
+                item(':health page [n]', 'cbHealthPage', 'Open health view with a specific page context'),
                 item(':save / :saved', 'cbSave', 'Save the current search query / show saved searches'),
             ]),
             section('sectionCommandsNavigation', 'Commands — navigation', [
                 item(':page', 'cnPage', 'Switch page by name or number — palette stays open, ✓ on current page'),
-                item(':inbox', 'cnInbox', 'Open Inbox page (0)'),
+                item(':inbox', 'cnInbox', 'Open Inbox page (Shift + I)'),
                 item(':inbox triage', 'cnInboxTriage', 'Triage inbox items one by one'),
                 item(':recent', 'cnRecent', 'Open recent bookmarks modal (same as *)'),
                 item(':overview', 'cnOverview', 'Open page overview with bookmark counts (same as ,)'),

@@ -22,7 +22,7 @@
     }
 
     function buildHealthPageHref(brokenCount) {
-        return brokenCount > 0 ? '/health?filter=broken' : '/health';
+        return brokenCount > 0 ? '/?hv_filter=broken#health' : '/#health';
     }
 
     function createHealthCountBadge(count, type, language) {
@@ -38,11 +38,18 @@
         return badge;
     }
 
+    /**
+     * `options.keepHref` leaves the anchor's href alone. The dashboard's health icon
+     * opens the health view in place, so badge refreshes should not rewrite a custom
+     * href set by the caller.
+     */
     function applyHealthBadgeToAnchor(anchor, summary, language, options = {}) {
         if (!anchor) return null;
         const { broken, warn } = summarizeHealthCounts(summary);
         anchor.querySelector('.health-badge')?.remove();
-        anchor.href = buildHealthPageHref(broken);
+        if (!options.keepHref) {
+            anchor.href = buildHealthPageHref(broken);
+        }
         if (broken > 0) {
             anchor.appendChild(createHealthCountBadge(broken, 'broken', language));
         } else if (warn > 0) {

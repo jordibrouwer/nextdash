@@ -1,5 +1,5 @@
 /**
- * Bookmark open tracking (dashboard). Analytics UI lives in Config → Stats and /health.
+ * Bookmark open tracking (dashboard). Analytics UI lives in Config → Stats and dashboard health.
  */
 class BookmarkAnalytics {
     async trackBookmarkOpen(pageId, index) {

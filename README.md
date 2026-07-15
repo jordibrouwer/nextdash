@@ -74,11 +74,11 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 ### Optional write token (LAN / VPS)
 
-Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard, config, and health pages inject the token automatically when you open them in a browser.
+Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard and config pages inject the token automatically when you open them in a browser.
 
 Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **bookmark ping** (`/api/ping`), **search-index build**, **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
 
-When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard, config, and health pages inject the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
+When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard and config pages inject the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
 
 Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
 
@@ -186,8 +186,10 @@ environment:
 
 **Navigation**
 - `0` — open **Inbox** (when search is closed)
+- `Shift + I` — open **Inbox** view directly (recommended; `0` still works)
 - `1–9` — jump directly to a bookmark page tab
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
+- `Shift + H` — open **Health** view directly (inside dashboard)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
@@ -237,13 +239,13 @@ environment:
 - `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
 - `:page` — switch page by name or number (palette stays open, `✓` on current)
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
-- `:inbox` / `:inbox triage` — open Inbox page (`0`) or start triage on unread items
+- `:inbox` / `:inbox triage` — open Inbox page (`Shift + I`) or start triage on unread items
 - `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — per focused category: `order` / `az` / `recent` (palette shows the category name)
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
 - `:duplicate` / `:duplicates` — list bookmarks with duplicate URLs (opens health duplicates view)
-- `:health [filter]` — open health page — `broken`, `duplicate`, `stale`, `refresh`, …; `:health page [n]` filters by page
+- `:health [filter]` — open health view — `broken`, `duplicate`, `stale`, `refresh`, …; `:health page [n]` opens health with a page context
 - `:dark` / `:title` / `:lang` / `:animations` / `:status` / `:opacity` — display and theme toggles
 - `:collections` — toggle smart collections (today, recent, stale, most used)
 - `:backup` / `:export` — open config backups or download a ZIP backup
@@ -273,7 +275,9 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
-**Health repairs & score breakdown (v2026.07.14.2)** — fixing a bookmark on the **health** page now sticks: a re-checked link turns green immediately instead of staying broken for up to three minutes, **Retest statuses** no longer skips the very bookmarks flagged as broken (and says so when there is nothing to test), and an applied redirect is verified against the new address before the row counts as healthy. Click any score badge — or press **`s`** — to unfold what the score is made of: every bookmark starts at 100, and each issue shows what it costs. The page is keyboard-first again: **`Tab`** steps row by row instead of through every control, with **`s`** score, **`p`** re-check, **`f`** favicon, **`x`** select, **`m`** more actions and **`g`**/**`G`** for first/last, all listed in the legend at the top.
+**Health dashboard view + quick shortcuts (v2026.07.15)** — the heartbeat icon opens **Health** inside the dashboard shell (like Inbox), so issue triage stays in one place; old `/health` links now redirect to this view. Keyboard entry points are mnemonic: **`Shift+H`** opens Health and **`Shift+I`** opens Inbox (legacy `0` still works). Config header navigation is cleaner too: only **back to dashboard** remains. All new Health-view labels and related cheat-sheet entries are localized consistently across **EN / NL / DE / FR**.
+
+**Health repairs & score breakdown (v2026.07.14.2)** — fixing a bookmark in the **health view** now sticks: a re-checked link turns green immediately instead of staying broken for up to three minutes, **Retest statuses** no longer skips the very bookmarks flagged as broken (and says so when there is nothing to test), and an applied redirect is verified against the new address before the row counts as healthy. Click any score badge — or press **`s`** — to unfold what the score is made of: every bookmark starts at 100, and each issue shows what it costs. The view is keyboard-first: **`Tab`** steps row by row instead of through every control, with **`s`** score, **`p`** re-check, **`f`** favicon, **`x`** select, **`m`** more actions and **`g`**/**`G`** for first/last, all listed in the legend at the top.
 
 **Glass layout retired (v2026.07.14.2)** — the **Glass** layout is gone; **Classic** and **Modern** remain. Dashboards set to Glass switch to **Classic** automatically and show a one-time note. Change layout in **config → general → Basics**.
 
@@ -446,7 +450,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **7 recent versions** (each loads on demand)
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **25 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay
@@ -456,11 +460,10 @@ Dynamic bookmark groups that appear automatically:
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
-- **Health beta** (`/health`) — compact nine-stat summary row, unified filter/bulk controls, multi-select bulk favicon/delete with partial-failure toasts, row favicons, **expandable score breakdown** (per-issue deductions from 100, click the badge or press `s`), keyboard-first navigation (`j`/`k`, `Tab` steps row by row, `g`/`G` first/last, `Enter` → Config editor, `o` → open URL, `s` score, `p` re-check, `f` favicon, `x` select, `m` more actions), structured localized issue reasons, default `broken` filter on first visit, URL state sync; **Classic / Modern** layout parity with dashboard/config (preset, density, backgrounds, opacity, row-action chip styling); `health-runtime.js` keeps row actions responsive (coalesced renders, action lock, timed fetches); per-row repair via overflow menu (**detect redirect** with fast `redirectOnly` suggest, URL confirm, and the replacement verified before the row counts as healthy, **refresh title**, **archive**); **Re-check status** in toolbar and overflow **Status** section, with the report refreshing immediately after every repair; **Retest statuses** covers bookmarks with status checks on plus any row already flagged broken (250 per run)
-- Health view with dead-link detection; suggests archive/redirect/title fixes from the row overflow menu
+- **Health view** (`/#health`) — dashboard-first health triage with summary tiles, quick filters, search, sort, retest, row score breakdown, and keyboard-first navigation (`j`/`k`, `Tab`, `g`/`G`, `s`, `p`, `f`, `x`, `m`, `Enter`, `o`). Per-row overflow actions include **detect redirect**, **refresh title**, **archive**, and delete. Legacy `/health` URLs now redirect into this view.
 - Health badge on the dashboard and config headers: compact count-only pill (e.g. `3`) with theme accent colours for broken vs warnings; screen readers get a full `aria-label` (**v2026.07.01.1**); bulk open broken links asks for confirmation with a per-batch limit
-- Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to query parameters
-- Favicon display and refresh from the health view (per row or bulk selection)
+- Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to URL query parameters (`hv_filter`, `hv_sort`, `hv_q`)
+- Favicon display and refresh from the health view (per row)
 - **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **week-over-week** comparison on Activity when the week period is selected, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav, formatted **Last backup** on overview; conflicts link to health
 
 ### Bookmarks

@@ -54,6 +54,18 @@ class KeyboardNavigation {
                 return;
             }
 
+            const health = this.dashboard.health;
+            const healthDomActive = layoutEl?.classList.contains('health-layout');
+            if (healthDomActive && health?.isEnabled?.()) {
+                if (this.dashboard.activeView !== 'health') {
+                    this.dashboard.activeView = 'health';
+                }
+                health.handleKeyboardNavigation?.(e);
+                // Return either way: the bookmark grid is not on screen, so its
+                // shortcuts must not fire against health rows.
+                return;
+            }
+
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;

@@ -376,6 +376,8 @@ class DashboardData {
                 const initialHash = window.location.hash.substring(1);
                 if (initialHash === 'inbox' && d.inbox?.isEnabled?.()) {
                     await d.inbox.openInboxView();
+                } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
+                    await d.health.openHealthView();
                 }
             }
         } catch (error) {
@@ -535,6 +537,10 @@ class DashboardData {
             await d.inbox.loadAndRender();
             return true;
         }
+        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
+            await d.health.loadAndRender({ refresh: true });
+            return true;
+        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -616,7 +622,8 @@ class DashboardData {
 
     schedulePageBookmarksHealIfNeeded() {
         const d = this.dash;
-        if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
+        // Healing repairs the page grid; the full-container views don't show it.
+        if (!d.isBookmarksView()) {
             return;
         }
         const pid = Number(d.currentPageId);
@@ -667,18 +674,36 @@ class DashboardData {
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
         const d = this.dash;
         const { skipRender = false, animate = false } = options;
-        const preserveInboxView = d.activeView === 'inbox' && d.inbox?.isEnabled?.();
+        // Loading a page's data in the background must not yank the user out of a
+        // view they are reading, nor rewrite the hash out from under it.
+        //
+        // Three signals, because each alone has a blind spot:
+        //  - the hash, for startup: the initial page load runs before #health/#inbox
+        //    is consumed, so activeView is still 'bookmarks' and writing #<n> here
+        //    would destroy the deep link before anything acted on it;
+        //  - activeView, for the ordinary case;
+        //  - the layout class, because this runs several awaits deep: a load that
+        //    started while the grid was up can land after the user has opened a view,
+        //    and would then rewrite the hash from #health back to #1.
+        const layoutEl = document.getElementById('dashboard-layout');
+        const viewOnScreen = layoutEl?.classList.contains('inbox-layout')
+            || layoutEl?.classList.contains('health-layout');
+        const pendingViewHash = window.location.hash === '#health' || window.location.hash === '#inbox';
+        const preserveView = pendingViewHash
+            || viewOnScreen
+            || (d.activeView === 'inbox' && d.inbox?.isEnabled?.())
+            || (d.activeView === 'health' && d.health?.isEnabled?.());
 
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
-        if (!preserveInboxView) {
+        if (!preserveView) {
             d.activeView = 'bookmarks';
         }
         d.refreshButtonTipsOnPageChange?.();
 
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
-        if (!preserveInboxView && pageIndex !== -1) {
+        if (!preserveView && pageIndex !== -1) {
             window.location.hash = `#${pageIndex + 1}`;
         }
 
