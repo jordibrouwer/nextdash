@@ -498,6 +498,10 @@ class DashboardRenderCore {
             const categoryId = listElement.getAttribute('data-category-id') || '';
             const sortMode = window.DashboardCategorySort?.getCategorySortMode(d, { id: categoryId }) || 'order';
             if (sortMode !== 'order') {
+                // Manual drag is disabled while A–Z / Recent sorting owns the order —
+                // a dragged row would just be re-sorted away. Explain why instead of
+                // doing nothing: hint on hover and a one-off toast on a drag attempt.
+                this.attachSortLockedDragHint(listElement, sortMode);
                 return;
             }
 
@@ -520,6 +524,70 @@ class DashboardRenderCore {
             d.categoryReorderInstances.push(reorderInstance);
         });
         this.ensureBookmarkDragOverRelay();
+    }
+
+    /**
+     * Categories sorted A–Z / Recent can't be reordered by hand (the sort would undo
+     * it). Rows there aren't draggable, so a drag looks like "nothing happens". Mark
+     * the list so CSS shows a not-allowed cursor + hover tooltip, and show a single
+     * toast the first time the user tries to drag a row in it.
+     */
+    attachSortLockedDragHint(listElement, sortMode) {
+        const d = this.dash;
+        if (!listElement || listElement._sortLockedHintBound) {
+            return;
+        }
+        listElement._sortLockedHintBound = true;
+
+        const modeLabel = sortMode === 'recent'
+            ? d.formatDashboardLabel('sortModeRecent', {}, 'Recent')
+            : d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
+        const hint = d.formatDashboardLabel(
+            'reorderSortLockedHint',
+            { mode: modeLabel },
+            `Sorted by ${modeLabel} — switch this category to manual order to drag bookmarks.`
+        );
+        listElement.setAttribute('title', hint);
+
+        const showHintToast = () => {
+            const now = Date.now();
+            if (d._sortLockedToastAt && now - d._sortLockedToastAt < 4000) {
+                return;
+            }
+            d._sortLockedToastAt = now;
+            d.showNotification?.(hint, 'info');
+        };
+
+        // Only a genuine drag gesture (press + move past a small threshold) gets the
+        // toast — a plain click that opens the bookmark must stay silent. The rows
+        // aren't draggable here, so we detect the intent from raw pointer events.
+        let startX = 0;
+        let startY = 0;
+        let armed = false;
+        listElement.addEventListener('pointerdown', (e) => {
+            if (e.button !== undefined && e.button !== 0) {
+                return;
+            }
+            if (e.target?.closest?.('.category-sort-controls, .bookmark-inline-form')) {
+                return;
+            }
+            armed = Boolean(e.target?.closest?.('.bookmark-link.reorder-item'));
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+        listElement.addEventListener('pointermove', (e) => {
+            if (!armed) {
+                return;
+            }
+            if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
+                armed = false;
+                showHintToast();
+            }
+        });
+        const disarm = () => { armed = false; };
+        listElement.addEventListener('pointerup', disarm);
+        listElement.addEventListener('pointercancel', disarm);
+        listElement.addEventListener('pointerleave', disarm);
     }
 
     /**

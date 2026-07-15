@@ -186,4 +186,76 @@ test.describe('dashboard bookmark drag', () => {
             || document.body.classList.contains('bookmark-inline-edit-active'));
         expect(editing).toBe(true);
     });
+
+    test('a category sorted A–Z explains why bookmarks cannot be dragged', async ({ page }) => {
+        await prepare(page);
+
+        // Sort every populated real category A–Z, so at least one sort-active list with
+        // a row is reliably present (avoids racing one specific category's re-render).
+        const anyPopulated = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const lists = Array.from(
+                document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]')
+            ).filter((l) => l.getAttribute('data-smart-collection') !== 'true'
+                && l.querySelector('.bookmark-link.reorder-item'));
+            lists.forEach((l) => window.DashboardCategorySort
+                .setCategorySortMode(d, l.getAttribute('data-category-id'), 'az'));
+            // Force a full (non-incremental) render so the reorder init — which attaches
+            // the sort-locked hint — runs deterministically.
+            d.renderDashboard({ animate: true });
+            return lists.length > 0;
+        });
+        test.skip(!anyPopulated, 'no populated category');
+
+        // Everything else in one in-page step: wait for a sort-active list that has a
+        // row and the hint title, then drive the pointer sequence (deterministic;
+        // native mouse drag can hang headless).
+        const result = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const findReady = () => Array.from(
+                document.querySelectorAll('#dashboard-layout .bookmarks-list.bookmarks-list--sort-active')
+            ).find((l) => l.querySelector('.bookmark-link.reorder-item')
+                && /manual order/i.test(l.getAttribute('title') || ''));
+
+            let list = null;
+            for (let i = 0; i < 120; i += 1) {
+                list = findReady();
+                if (list) break;
+                await new Promise((r) => setTimeout(r, 50));
+            }
+            if (!list) return { notReady: true };
+
+            const title = list.getAttribute('title') || '';
+            const notifs = [];
+            const orig = d.showNotification.bind(d);
+            d.showNotification = (...a) => { notifs.push(a[0]); return orig(...a); };
+
+            const row = list.querySelector('.bookmark-link.reorder-item');
+            const r = row.getBoundingClientRect();
+            const x = r.left + r.width * 0.6;
+            const y = r.top + r.height / 2;
+            const fire = (type, el, cx, cy) => el.dispatchEvent(new PointerEvent(type, {
+                bubbles: true, cancelable: true, composed: true,
+                pointerId: 1, button: 0, isPrimary: true, clientX: cx, clientY: cy,
+            }));
+
+            fire('pointerdown', row, x, y);
+            fire('pointerup', row, x, y);
+            const afterClick = notifs.length;
+
+            fire('pointerdown', row, x, y);
+            fire('pointermove', list, x, y + 20);
+            const afterDrag = notifs.length;
+            fire('pointerup', list, x, y + 20);
+
+            d.showNotification = orig;
+            return { title, afterClick, afterDrag, first: notifs[0] || '' };
+        });
+
+        expect(result.notReady).not.toBe(true);
+        expect(result.title).toMatch(/manual order/i);
+        expect(result.afterClick).toBe(0);
+        expect(result.afterDrag).toBeGreaterThan(0);
+        expect(result.first).toMatch(/manual order/i);
+    });
 });
