@@ -1,0 +1,51 @@
+{
+  "tag": "v2026.07.15",
+  "date": "July 2026",
+  "releasedAt": "2026-07-15",
+  "modalLead": "Health now opens as a dashboard view, with new Shift shortcuts for Health and Inbox, and a cleaner config header.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health now opens inside the dashboard</strong> — the heartbeat icon no longer has to take you away from your page context. Health is available as an in-dashboard view (like Inbox), with focused filters, score breakdown, and row actions."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The standalone health page still exists</strong> — `/health` remains available for the heavier toolbox (bulk selection, page filter, auto-heal), while the dashboard view stays a calmer keyboard-first slice."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health view state is steadier</strong> — active-tab styling now matches the rest of dashboard navigation, deep-link restore with <code>#health</code> is stable, and Escape returns to bookmarks cleanly."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Jump straight to Health with <kbd>Shift+H</kbd></strong> — no command or page hop needed."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Jump straight to Inbox with <kbd>Shift+I</kbd></strong> — easier to remember than a digit. <kbd>0</kbd> still works for existing habits, but the cheat sheet now teaches Shift+I."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config header is simplified</strong> — the extra health icon was removed from config header actions, leaving a cleaner single route back to the dashboard. Status Essentials still keeps an up-to-date broken count and health link target."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Health view copy is now localized end-to-end</strong> — all new Health labels and related cheat-sheet entries are present and style-aligned in <strong>EN / NL / DE / FR</strong>."
+        }
+      ]
+    }
+  ]
+}

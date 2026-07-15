@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.15 — July 2026](#v20260715--july-2026)
 - [v2026.07.14.2 — July 2026](#v202607142--july-2026)
 - [v2026.07.14.1 — July 2026](#v202607141--july-2026)
 - [v2026.07.14 — July 2026](#v20260714--july-2026)
@@ -94,6 +95,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.15 — July 2026
+
+**Health in the dashboard, faster keyboard entry points, and a cleaner config header** — health now opens as an in-dashboard view (alongside Inbox), `Shift+H`/`Shift+I` jump into Health/Inbox, and Config keeps a single back-to-dashboard header link.
+
+### Dashboard
+
+- **new** **Health as an in-dashboard view** — the header heartbeat icon now opens a dedicated **Health** view inside the dashboard shell (like Inbox) instead of forcing a page jump. It keeps a calmer, keyboard-first subset: one list, quick filters, score breakdown, re-check, and row actions; the standalone `/health` page remains available for bulk select, page filtering, and auto-heal (`dashboard-health.js`, `dashboard.html`, `health-view.css`).
+- **new** **Health deep-link and active-state polish** — `#health` opens and restores the dashboard view correctly, the health header icon gets an active state aligned with page tabs, and Escape returns to the bookmarks grid cleanly (`dashboard-page-nav.js`, `dashboard-render-core.js`, `dashboard.css`).
+- **fix** **Keyboard flow inside the new view** — row shortcuts no longer die after changing a sort select, and page-load races no longer overwrite `#health` back to a page hash (`dashboard-health.js`, `dashboard-page-nav.js`, `dashboard-data.js`, `keyboard-navigation.js`).
+
+### Keyboard
+
+- **new** **Shift shortcuts for views** — `Shift+H` opens Health and `Shift+I` opens Inbox directly from the dashboard, using `e.code` so physical-key behavior is layout-safe. Legacy `0` still opens Inbox for compatibility but is intentionally removed from the cheat sheet (`dashboard-setup.js`, `dashboard-ui-helpers.js`, `locales/{en,nl,de,fr}.json`).
+
+### Config
+
+- **fix** **Config header simplified** — the config header no longer duplicates the health icon entry point; it now keeps only **← back to dashboard**. Health broken-count updates still power Status Essentials links by reading the shared health summary directly, without a header anchor dependency (`config.html`, `config-setup.js`).
+
+### Developer & docs
+
+- **fix** **Tests** — added dashboard health-view coverage for in-place open/close behavior, keyboard controls, duplicate filtering, and `#health` deep-link restore (`tests/health-dashboard-view.spec.js`).
+- **fix** **Health view i18n parity** — all new health-view labels plus new cheat-sheet entries (`Shift+H`, `Shift+I`, `:health page`) are now present in `en`, `nl`, `de`, and `fr`, with localized wording tuned to each language's existing style (`locales/{en,nl,de,fr}.json`).
+- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.15** notes.
+- **fix** **What's new modal** — added **v2026.07.15** JSON entry with dashboard/keyboard/config highlights.
+- **fix** **Cache-bust** — `whats-new-v160` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v119` dashboard release token.
 
 ---
 

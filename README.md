@@ -186,8 +186,10 @@ environment:
 
 **Navigation**
 - `0` — open **Inbox** (when search is closed)
+- `Shift + I` — open **Inbox** view directly (recommended; `0` still works)
 - `1–9` — jump directly to a bookmark page tab
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
+- `Shift + H` — open **Health** view directly (dashboard view; `/health` page still available)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
@@ -237,7 +239,7 @@ environment:
 - `:open last [n]` — open the N most recently opened bookmarks on the current page (default 5, max 50; same 15-tab safe cap as `:open all`)
 - `:page` — switch page by name or number (palette stays open, `✓` on current)
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
-- `:inbox` / `:inbox triage` — open Inbox page (`0`) or start triage on unread items
+- `:inbox` / `:inbox triage` — open Inbox page (`Shift + I`) or start triage on unread items
 - `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — per focused category: `order` / `az` / `recent` (palette shows the category name)
@@ -272,6 +274,8 @@ environment:
 **Desktop discoverability promos** (desktop dashboard, once per feature until dismissed) — contextual **Got it** balloons beside search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; promo may appear on hold and retries when blocked by What's new), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismissed promos persist in **`settings.json`** (`discoverabilityState`) and sync across browsers (**v2026.07.01.1**). **Reset all dashboard promos** or individual resets (G+jump, cheat sheet, weather location) from **Tours & onboarding**.
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
+
+**Health dashboard view + quick shortcuts (v2026.07.15)** — the heartbeat icon now opens **Health** inside the dashboard shell (like Inbox), so you can review issues in-place without leaving the current context; the standalone **`/health`** page still exists for bulk tooling. Keyboard entry points are now mnemonic: **`Shift+H`** opens Health and **`Shift+I`** opens Inbox (legacy `0` still works). Config header navigation is cleaner too: only **back to dashboard** remains. All new Health-view labels and related cheat-sheet entries are now localized consistently across **EN / NL / DE / FR**.
 
 **Health repairs & score breakdown (v2026.07.14.2)** — fixing a bookmark on the **health** page now sticks: a re-checked link turns green immediately instead of staying broken for up to three minutes, **Retest statuses** no longer skips the very bookmarks flagged as broken (and says so when there is nothing to test), and an applied redirect is verified against the new address before the row counts as healthy. Click any score badge — or press **`s`** — to unfold what the score is made of: every bookmark starts at 100, and each issue shows what it costs. The page is keyboard-first again: **`Tab`** steps row by row instead of through every control, with **`s`** score, **`p`** re-check, **`f`** favicon, **`x`** select, **`m`** more actions and **`g`**/**`G`** for first/last, all listed in the legend at the top.
 
@@ -446,7 +450,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **7 recent versions** (each loads on demand)
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **25 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay
