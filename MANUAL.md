@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.14.1**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.14.2**).
 
 ---
 
@@ -131,7 +131,7 @@ Install → Open URL in browser → Onboarding wizard (optional)
     → Optional: What's new, layout tip, paste spotlight (desktop); config guided tours; feature tour; browser extension
 ```
 
-1. **Onboarding** — Language, links, weather/date, classic, modern, or glass layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
+1. **Onboarding** — Language, links, weather/date, classic or modern layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
 3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
 4. **Guided config tours** — The first time you open **General**, **Bookmarks**, **Theme**, **Finders**, or other config tabs on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
@@ -333,7 +333,7 @@ With the dashboard focused and no text field active, paste a URL. A choice dialo
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **nearly opaque panel** (~96% background) with a **tour-like full-page blur** behind it — including in **glass** and **launcher** layouts, where other tiles blur but the form stays sharp and readable. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes — **Esc** also works while the inline-edit discoverability promo is open (dismissing the promo cancels the form). **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Background dashboard re-renders are skipped while unsaved inline edits are open. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **nearly opaque panel** (~96% background) with a **tour-like full-page blur** behind it — including in the **launcher** preset, where other tiles blur but the form stays sharp and readable. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes — **Esc** also works while the inline-edit discoverability promo is open (dismissing the promo cancels the form). **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Background dashboard re-renders are skipped while unsaved inline edits are open. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -568,8 +568,8 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:metadata` | Health missing previews or config bookmarks |
 | `:tour` / `:promo` | Start feature tour or reset discoverability promos |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
-| `:layoutversion` | List classic / modern / glass |
-| `:layoutversion modern` / `classic` / `glass` / `toggle` | Switch layout version (`toggle` cycles classic → modern → glass) |
+| `:layoutversion` | List classic / modern |
+| `:layoutversion modern` / `classic` / `toggle` | Switch layout version (`toggle` switches between classic and modern) |
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
@@ -712,28 +712,27 @@ When enabled, one auto-group per tag that meets minimum count.
 
 ## 14. Layouts, themes, and appearance
 
-### Layout version (Classic / Modern / Glass)
+### Layout version (Classic / Modern)
 
-nextDash has three **layout versions** — same bookmark grid and categories, different visual polish:
+nextDash has two **layout versions** — same bookmark grid and categories, different visual polish:
 
 | Version | What it does |
 |---------|----------------|
 | **Classic** | Original dashboard styling and spacing (default). |
 | **Modern** | Refreshed visuals — updated row highlights, tooltips, and chrome — same structure underneath. |
-| **Glass** | Translucent iOS-style surfaces with backdrop blur on dashboard, config, and health chrome. |
+
+**Glass was removed in v2026.07.14.2.** It was a third parallel layout that needed its own styling for every visual change. Dashboards set to Glass switch to **Classic** automatically — nothing to do, and a one-time note tells you it happened. Your theme and presets are unaffected.
 
 **Themes control all colors** in every version; switching layout version does not change your theme.
 
 **Where to switch**
 
 - **Config → General → Layout → Layout version** — dropdown with a live description under the control.  
-- **First-run onboarding** — dedicated layout step with classic, modern, and glass previews.  
-- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` / `:layoutversion glass` applies one; `:layoutversion toggle` cycles classic → modern → glass.  
+- **First-run onboarding** — dedicated layout step with classic and modern previews.  
+- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
 **Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. Last-seen release and dismissed promos sync via **`settings.discoverabilityState`** in `settings.json` across browsers (**v2026.07.01.1**). **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start (they also refresh on page change without resetting that delay). **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; the G+jump hint may appear on hold and retries when blocked by What's new or another overlay), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename; **Esc** on the promo cancels rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
-
-**Glass presets** — On glass layout, **terminal** tiles are transparent until hover; **masonry** uses subtle borders with glass on hover; **launcher** chips use lighter surfaces and a gentler hover lift.
 
 ### Layout presets
 
@@ -796,6 +795,7 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | Feature | Use |
 |---------|-----|
 | **Score 0–100** | Combines broken, duplicate, shortcut conflict, stale, missing preview, unused |
+| **Score breakdown** (**v2026.07.14.2**) | Click the score badge — or press `s` — to unfold how the score was reached: every bookmark starts at 100, each issue lists what it costs (broken −60, duplicate −15, shortcut conflict −15, never checked −10, not opened in 30 days −10, never opened −10, stale check −5, no preview −5), down to the total |
 | **Summary row** | Nine compact stat cards on one row; click a card to jump to that filter |
 | **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy — default **broken** on first visit |
 | **Controls panel** | Search, page filter, status pills, and bulk buttons in one compact block |
@@ -807,12 +807,14 @@ Summary row (9 stats, click to filter) → Compact controls (search, page, pills
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, delete) |
 | **Action runtime** | `health-runtime.js` coalesces re-renders, blocks concurrent row actions, and times out slow API calls so detect redirect and other repairs do not freeze the page |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
-| **Keyboard** | `j`/`k` or arrows move focus; `Enter` → editor; `O` → open URL |
-| **Layout parity** | Uses the same **Classic / Modern / Glass** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
-| **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips; glass blur on glass layout) |
+| **Keyboard** (**v2026.07.14.2**) | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row). The legend at the top of the page lists them |
+| **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
+| **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips) |
 | **dashboard link** | Jump to bookmark on correct page/category |
-| **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS) |
-| **Bulk** | Retest all checked, open broken (with confirm/limit), merge duplicate groups |
+| **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS). The row updates immediately (**v2026.07.14.2** — a cleared error used to stay on screen for up to three minutes, which made the fix look like it had failed) |
+| **Bulk** | **Retest statuses**, open broken (with confirm/limit), merge duplicate groups |
+| **Retest scope** (**v2026.07.14.2**) | Bookmarks only get status checks when **Check status** is on for them (off by default, set per bookmark in **Config → Bookmarks**). Retest used to skip everything else — including rows flagged **broken**, which this page can't switch on — so those could never be cleared here. Retest now also tests any bookmark with a recorded error, tells you plainly when there is nothing to test, and stops after 250 checks per run (each takes up to 3s; run it again to continue) |
+| **Detect redirect result** (**v2026.07.14.2**) | An applied redirect is checked against the new address before the row counts as healthy. If the replacement fails too, the row stays red with the reason instead of reporting a fix that was never verified |
 | **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; merges tags, shortcut, opens, notes, and icons from removed rows into the keeper |
 
 Filter, sort, search, and page-filter state persist in the session across refreshes and sync to the URL (`filter`, `page`, `sort`, `q`).
@@ -876,7 +878,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 - **Layer toolbar (v2026.07.04)** — **Essentials**, **Advanced**, and **Show all** switch in one row at the top of the fused General surface.
 - **Sections index & accordion (v2026.07.07)** — a sticky **quick links** sidebar (same split-shell pattern as **Stats** and **Help**) lists every section next to the settings content and highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time. Clicking the link for an already-open section that's in view collapses it again; clicking the link for an open section that has scrolled out of view scrolls back to it instead of collapsing it invisibly off-screen. Hidden on phones (same panels as the mobile layout below). Sections have a dividing border between them, and the vertical divider next to the quick-links sidebar runs the full height of the page (**v2026.07.08**). Quick-link clicks land on the section title instead of scrolling a few lines past it (**v2026.07.08.1**).
 - **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls.
-- **Save row chrome** — Save row and main tab bar use a solid background so scrolling content does not show through. Section panels share consistent row widths across classic, modern, and glass layout versions.
+- **Save row chrome** — Save row and main tab bar use a solid background so scrolling content does not show through. Section panels share consistent row widths across classic and modern layout versions.
 - **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
 - **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
 - **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
@@ -1327,7 +1329,7 @@ arrows nav  Enter open    ; edit       Shift+M move  Shift+T tag  Shift+D delete
 ```
 Ctrl/Cmd+K          quick actions (save, open dashboard, tours)
 Ctrl/Cmd+Shift+K    find any setting, tab, or help section
-:layoutversion      switch Classic / Modern / Glass layout (dashboard)
+:layoutversion      switch Classic / Modern layout (dashboard)
 ```
 
 ### Important URLs
