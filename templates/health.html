@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>health beta</title>
-    <script src="/static/js/write-api.js"></script>
-    <script src="/static/js/device-settings-merge.js"></script>
-    <script src="/static/js/font-presets.js"></script>
+    <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
+    <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
@@ -134,17 +134,17 @@
         </main>
     </div>
 
-    <script src="/static/js/skeleton-loading.js"></script>
+    <script src="/static/js/skeleton-loading.js?v={{.Assets.SkeletonLoadingJS}}"></script>
     <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
-    <script src="/static/js/layout-utils.js"></script>
+    <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
-    <script src="/static/js/page-layout-sync.js"></script>
-    <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
-    <script src="/static/js/modal.js"></script>
+    <script src="/static/js/page-layout-sync.js?v={{.Assets.PageLayoutSyncJS}}"></script>
+    <script src="/static/js/config/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
+    <script src="/static/js/modal.js?v={{.Assets.ModalJS}}"></script>
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
-    <script src="/static/js/dashboard-deep-link.js"></script>
+    <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}"></script>
     <script src="/static/js/health-runtime.js?v=health-runtime-1"></script>
     <script src="/static/js/health.js?v=health-retest-action-1"></script>
 </body>

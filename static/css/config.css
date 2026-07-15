@@ -6,11 +6,11 @@
 @import url('config/config-classic-surfaces.css?v=quiet-borders-1');
 @import url('config/config-modern-surfaces.css?v=glass-removed-1');
 @import url('config/config-tab-shell.css?v=quiet-borders-1');
-@import url('config/config-buttons.css');
-@import url('config/config-unsaved-state.css');
+@import url('config/config-buttons.css?v=config-buttons-1');
+@import url('config/config-unsaved-state.css?v=config-unsaved-state-1');
 @import url('config/config-reduced-motion.css?v=config-c15-broad-2');
 @import url('config/config-save-status.css?v=config-save-status-v1');
-@import url('config/config-notifications.css');
-@import url('config/config-sliders.css');
+@import url('config/config-notifications.css?v=config-notifications-1');
+@import url('config/config-sliders.css?v=config-sliders-1');
 @import url('config/config-help.css?v=quiet-borders-1');
 @import url('config/config-stats.css?v=quiet-borders-1');
