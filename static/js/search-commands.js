@@ -2391,12 +2391,12 @@ class SearchCommandsComponent {
 
         if (scope === 'health') {
             return [{
-                name: this._t('commands.gotoHealth', 'Open health page'),
+                name: this._t('commands.gotoHealth', 'Open health view'),
                 shortcut: ':GOTO',
                 type: 'command',
                 action: () => {
                     this._closeCommandPalette();
-                    window.location.href = '/health';
+                    window.location.href = '/#health';
                     return { navigate: true };
                 },
             }];
@@ -2538,11 +2538,11 @@ class SearchCommandsComponent {
         }));
         if (stale.length > cap) {
             rows.push({
-                name: `Showing ${cap} of ${stale.length} — visit health page for full list`,
+                name: `Showing ${cap} of ${stale.length} — open health view for full list`,
                 shortcut: '→',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthPageUrl({ filter: 'stale' });
+                    window.location.href = this.buildHealthViewUrl({ filter: 'stale' });
                     return { navigate: true };
                 }
             });
@@ -2606,27 +2606,27 @@ class SearchCommandsComponent {
         ];
     }
 
-    buildHealthPageUrl(options = {}) {
+    buildHealthViewUrl(options = {}) {
         const filters = ['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy'];
         const params = new URLSearchParams();
         const filter = (options.filter || 'all').toLowerCase();
         if (filter && filter !== 'all' && filters.includes(filter)) {
-            params.set('filter', filter);
+            params.set('hv_filter', filter);
         }
         if (options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all') {
             params.set('page', String(options.page));
         }
         if (options.sort) {
-            params.set('sort', options.sort);
+            params.set('hv_sort', options.sort);
         }
         if (options.query) {
-            params.set('q', options.query);
+            params.set('hv_q', options.query);
         }
         if (options.refresh) {
-            params.set('refresh', '1');
+            params.set('hv_refresh', '1');
         }
         const qs = params.toString();
-        return qs ? `/health?${qs}` : '/health';
+        return qs ? `/?${qs}#health` : '/#health';
     }
 
     _handleHealthPageCommand(dashboard, pageArgs) {
@@ -2642,7 +2642,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     this._closeCommandPalette();
-                    window.location.href = this.buildHealthPageUrl({ page: page.id });
+                    window.location.href = this.buildHealthViewUrl({ page: page.id });
                     return { navigate: true };
                 },
             }));
@@ -2657,7 +2657,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     this._closeCommandPalette();
-                    window.location.href = this.buildHealthPageUrl({ page: page.id });
+                    window.location.href = this.buildHealthViewUrl({ page: page.id });
                     return { navigate: true };
                 },
             }];
@@ -2676,7 +2676,7 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => {
                 this._closeCommandPalette();
-                window.location.href = this.buildHealthPageUrl({ page: page.id });
+                window.location.href = this.buildHealthViewUrl({ page: page.id });
                 return { navigate: true };
             },
         }));
@@ -2714,7 +2714,7 @@ class SearchCommandsComponent {
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthPageUrl({ refresh: true });
+                    window.location.href = this.buildHealthViewUrl({ refresh: true });
                     return { navigate: true };
                 }
             }];
@@ -2722,11 +2722,11 @@ class SearchCommandsComponent {
 
         if (!sub) {
             const rows = [{
-                name: 'Open health page',
+                name: 'Open health view',
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthPageUrl();
+                    window.location.href = this.buildHealthViewUrl();
                     return { navigate: true };
                 }
             }];
@@ -2737,7 +2737,7 @@ class SearchCommandsComponent {
                     shortcut: ':HEALTH',
                     type: 'command',
                     action: () => {
-                        window.location.href = this.buildHealthPageUrl({ filter: id });
+                        window.location.href = this.buildHealthViewUrl({ filter: id });
                         return { navigate: true };
                     }
                 });
@@ -2764,7 +2764,7 @@ class SearchCommandsComponent {
                 shortcut: ':HEALTH',
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthPageUrl({ filter: exact.id });
+                    window.location.href = this.buildHealthViewUrl({ filter: exact.id });
                     return { navigate: true };
                 }
             }];
@@ -2778,7 +2778,7 @@ class SearchCommandsComponent {
                 completion: `:health ${entry.id} `,
                 type: 'command',
                 action: () => {
-                    window.location.href = this.buildHealthPageUrl({ filter: entry.id });
+                    window.location.href = this.buildHealthViewUrl({ filter: entry.id });
                     return { navigate: true };
                 }
             }));
@@ -3160,7 +3160,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         this._closeCommandPalette();
-                        window.location.href = this.buildHealthPageUrl({ filter: 'missing-preview' });
+                        window.location.href = this.buildHealthViewUrl({ filter: 'missing-preview' });
                         return { navigate: true };
                     },
                 },
@@ -3193,7 +3193,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     this._closeCommandPalette();
-                    window.location.href = this.buildHealthPageUrl({ filter: 'missing-preview' });
+                    window.location.href = this.buildHealthViewUrl({ filter: 'missing-preview' });
                     return { navigate: true };
                 },
             }];

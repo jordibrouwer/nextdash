@@ -1,9 +1,5 @@
 /**
  * Health view — bookmark health as a dashboard view, modelled on DashboardInbox.
- *
- * The standalone /health page still exists and carries the features this view
- * deliberately leaves out (bulk select, page filter, auto-heal). This view is the
- * calm, keyboard-first subset: one list, one filter row, one action set.
  */
 class DashboardHealth {
     static VIEW = 'health';
@@ -183,6 +179,51 @@ class DashboardHealth {
         }
     }
 
+    consumeLegacyEntryParams() {
+        const url = new URL(window.location.href);
+        const params = url.searchParams;
+        const filters = new Set(['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy']);
+        const sorts = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
+        let refresh = false;
+        let consumed = false;
+
+        const filter = (params.get('hv_filter') || '').toLowerCase();
+        if (filter && filters.has(filter)) {
+            this.filter = filter;
+            consumed = true;
+        }
+
+        const query = params.get('hv_q');
+        if (typeof query === 'string' && query.trim() !== '') {
+            this.searchQuery = query.trim();
+            consumed = true;
+        }
+
+        const sort = (params.get('hv_sort') || '').toLowerCase();
+        if (sort && sorts.has(sort)) {
+            this.sort = sort;
+            consumed = true;
+        }
+
+        const refreshRaw = (params.get('hv_refresh') || '').toLowerCase();
+        if (refreshRaw === '1' || refreshRaw === 'true') {
+            refresh = true;
+            consumed = true;
+        }
+
+        if (consumed) {
+            params.delete('hv_filter');
+            params.delete('hv_q');
+            params.delete('hv_sort');
+            params.delete('hv_refresh');
+            const nextQuery = params.toString();
+            const nextUrl = `${url.pathname}${nextQuery ? `?${nextQuery}` : ''}#health`;
+            history.replaceState(history.state, '', nextUrl);
+        }
+
+        return { refresh };
+    }
+
     async openHealthView() {
         const d = this.dash;
         if (!this.isEnabled()) {
@@ -201,7 +242,8 @@ class DashboardHealth {
         d.activeView = DashboardHealth.VIEW;
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();
-        await this.loadAndRender();
+        const legacyEntry = this.consumeLegacyEntryParams();
+        await this.loadAndRender({ refresh: legacyEntry.refresh });
         this.restoreHealthHash();
         return true;
     }
@@ -596,10 +638,10 @@ class DashboardHealth {
     }
 
     /**
-     * Re-check one bookmark, mirroring handlePingClick() on /health: the server
-     * pings on demand (/api/ping), the result is cached for the next report, and
-     * the bookmark's own status is persisted. /api/health/retest-all is not a
-     * single-bookmark endpoint — it ignores its body and walks every page.
+     * Re-check one bookmark: the server pings on demand (/api/ping), the result is
+     * cached for the next report, and the bookmark's own status is persisted.
+     * /api/health/retest-all is not a single-bookmark endpoint — it ignores its
+     * body and walks every page.
      *
      * Guarded per row: the ping is slow enough that a double press would
      * otherwise fire two requests and race their results.
@@ -758,7 +800,7 @@ class DashboardHealth {
                 return;
             }
             // Read-modify-write the whole page: /api/bookmarks has no per-bookmark
-            // PATCH, and this mirrors what /health does.
+            // PATCH.
             const res = await fetch(`/api/bookmarks?page=${issue.pageId}`);
             if (!res.ok) throw new Error(`load HTTP ${res.status}`);
             const bookmarks = await res.json();
@@ -894,8 +936,7 @@ class DashboardHealth {
         }
     }
 
-    /** AppModal.confirm when it exists, window.confirm as the fallback — same shape
-     *  as confirmDialog() on /health. */
+    /** AppModal.confirm when it exists, window.confirm as the fallback. */
     async confirm(title, message, { danger = false } = {}) {
         if (typeof window.AppModal?.confirm === 'function') {
             return Boolean(await window.AppModal.confirm({

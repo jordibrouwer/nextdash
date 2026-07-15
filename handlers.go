@@ -178,21 +178,31 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 }
 
 func (h *Handlers) HealthPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := h.parsePageTemplates("templates/health.html")
-	if err != nil {
-		http.Error(w, "Template parsing error", http.StatusInternalServerError)
-		return
+	q := r.URL.Query()
+	target := url.Values{}
+
+	if filter := strings.TrimSpace(q.Get("filter")); filter != "" {
+		target.Set("hv_filter", strings.ToLower(filter))
+	}
+	if search := strings.TrimSpace(q.Get("q")); search != "" {
+		target.Set("hv_q", search)
+	}
+	if sort := strings.TrimSpace(q.Get("sort")); sort != "" {
+		target.Set("hv_sort", sort)
+	}
+	if refresh := strings.TrimSpace(q.Get("refresh")); refresh == "1" || strings.EqualFold(refresh, "true") {
+		target.Set("hv_refresh", "1")
+	}
+	if page := strings.TrimSpace(q.Get("page")); page != "" && !strings.EqualFold(page, "all") {
+		target.Set("page", page)
 	}
 
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, h.htmlPageData(h.store.GetSettings())); err != nil {
-		http.Error(w, "Template execution error", http.StatusInternalServerError)
-		return
+	redirectURL := "/#health"
+	if encoded := target.Encode(); encoded != "" {
+		redirectURL = "/?" + encoded + "#health"
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {

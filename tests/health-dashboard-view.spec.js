@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * Health as a dashboard view (the inbox-shaped one), not the standalone /health page.
+ * Health as a dashboard view (the inbox-shaped one).
  *
  * The report is mocked so the assertions describe the view rather than whatever the
  * seeded bookmarks happen to score.
@@ -93,12 +93,11 @@ test.describe('health dashboard view', () => {
         await expect(badge).toBeVisible();
         await expect(badge).toHaveText(/^\d+$/);
 
-        // The badge helper rewrites href on every refresh; the dashboard icon opts out
-        // so the middle-click fallback keeps pointing at the page, not at ?filter=broken.
-        await expect(page.locator('.health-link a.health-link-anchor')).toHaveAttribute('href', '/health');
+        // The dashboard icon should stay hash-based, even while the badge refreshes.
+        await expect(page.locator('.health-link a.health-link-anchor')).toHaveAttribute('href', '/#health');
     });
 
-    test('the header icon still opens /health in a new tab', async ({ page, context }) => {
+    test('the header icon still opens dashboard health in a new tab', async ({ page, context }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
@@ -110,8 +109,10 @@ test.describe('health dashboard view', () => {
         ]);
         // A fresh tab starts at about:blank, so wait for the real navigation rather
         // than reading url() straight away.
-        await popup.waitForURL(/\/health/, { timeout: 15_000 });
-        expect(new URL(popup.url()).pathname).toBe('/health');
+        await popup.waitForURL(/\/#health$/, { timeout: 15_000 });
+        const popupUrl = new URL(popup.url());
+        expect(popupUrl.pathname).toBe('/');
+        expect(popupUrl.hash).toBe('#health');
         await popup.close();
     });
 
@@ -514,7 +515,7 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         // Enter on the badge must toggle the panel only. The equivalent bug on
-        // /health navigated to /config while also expanding the score.
+        // The health action should only open config and leave score collapsed.
         const badge = page.locator('.health-view-item-score').first();
         await badge.focus();
         await page.keyboard.press('Enter');

@@ -13,7 +13,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>The standalone health page still exists</strong> — `/health` remains available for the heavier toolbox (bulk selection, page filter, auto-heal), while the dashboard view stays a calmer keyboard-first slice."
+          "text": "<strong>The old standalone health page is removed</strong> — legacy `/health` links now redirect to the in-dashboard Health view, so there is one clear surface for health triage."
         },
         {
           "badge": "fix",

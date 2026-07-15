@@ -2300,7 +2300,7 @@ class ConfigSettings {
     applyStatusEssentialsHealthHref(brokenCount = 0) {
         const healthLink = document.getElementById('status-essentials-health-link');
         if (!healthLink || healthLink.hidden) return;
-        healthLink.href = brokenCount > 0 ? '/health?filter=broken' : '/health';
+        healthLink.href = brokenCount > 0 ? '/?hv_filter=broken#health' : '/#health';
     }
 
     refreshStatusEssentialsSummary(settings, allBookmarks = []) {

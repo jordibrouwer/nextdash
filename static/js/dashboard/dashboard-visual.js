@@ -218,9 +218,7 @@ class DashboardVisual {
 
 
     /**
-     * The header health icon opens the health view in place. It stays an <a href="/health">
-     * so middle-click, ⌘-click and "open in new tab" still reach the standalone page —
-     * only a plain left click is intercepted.
+     * The header health icon opens the health view in place.
      */
     bindHealthLinkToView(healthLink) {
         const d = this.dash;
@@ -275,7 +273,7 @@ class DashboardVisual {
                 healthLink.className = 'health-link health-link--icon';
                 const healthLabel = d.language.t('dashboard.health');
                 const label = healthLabel !== 'dashboard.health' ? healthLabel : 'health';
-                healthLink.innerHTML = `<a href="/health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
+                healthLink.innerHTML = `<a href="/#health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
 
                 const headerActions = document.querySelector('.header-actions');
                 if (headerActions) {

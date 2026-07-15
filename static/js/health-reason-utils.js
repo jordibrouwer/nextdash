@@ -1,12 +1,12 @@
 /**
- * Shared health reason translation for the /health page and the dashboard health view.
+ * Shared health reason translation for health-related dashboard surfaces.
  *
  * Both surfaces turn the same server payload into the same human sentences, so the
  * mapping lives here rather than in each of them: a reason code added on the server
  * and taught to only one copy would silently render as a bare code in the other.
  *
- * `language` is passed in rather than read from a global because /health keeps its
- * language object in a module-scoped state object and the dashboard keeps its own.
+ * `language` is passed in rather than read from a global so callers can provide
+ * their own language object (dashboard instance, config page, tests, etc.).
  */
 (function () {
     'use strict';
@@ -125,7 +125,7 @@
         }));
     }
 
-    /** Score bands. Kept here so /health and the dashboard view cannot disagree. */
+    /** Score bands. Kept centralized so health surfaces cannot disagree. */
     function scoreClass(score) {
         if (score >= 90) return 'good';
         if (score >= 70) return 'warn';
