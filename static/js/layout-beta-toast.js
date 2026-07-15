@@ -7,7 +7,9 @@
     const STORAGE_KEY = 'nextdash:layout-beta-toast-v1';
     const SHOW_DELAY_MS = 1200;
     const TOAST_DURATION_MS = 9000;
-    const MAX_RETRY_ATTEMPTS = 40;
+    // ~2 minutes: this is scheduled up front rather than after the prompt chain,
+    // so it must outwait a what's-new modal the user is still reading.
+    const MAX_RETRY_ATTEMPTS = 200;
     const RETRY_DELAY_MS = 600;
 
     let scheduleTimer = null;

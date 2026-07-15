@@ -93,6 +93,12 @@ class DashboardPromos {
         const skipPreviewCardSpotlight = options.skipPreviewCardSpotlight === true;
         const maxWaitAttempts = 50;
 
+        // Scheduled before the chain, not at its tail: every branch below can
+        // return early (what's new returns until acknowledged), which left these
+        // two unreachable for anyone with an unseen release. They announce state
+        // rather than compete for attention, so they do not belong in the chain.
+        this.scheduleStandaloneToasts();
+
         if (!this.canShowPostOnboardingPrompts()) {
             d._postOnboardingPromptsAttempts = (d._postOnboardingPromptsAttempts || 0) + 1;
             if (d._postOnboardingPromptsAttempts < maxWaitAttempts) {
@@ -130,6 +136,8 @@ class DashboardPromos {
                             delay: 1200,
                             skipWhatsNew: true,
                             skipLayoutNudge,
+                            skipPasteSpotlight,
+                            skipPreviewCardSpotlight,
                         });
                         return;
                     }
@@ -137,6 +145,8 @@ class DashboardPromos {
                         delay: 600,
                         skipWhatsNew: false,
                         skipLayoutNudge,
+                        skipPasteSpotlight,
+                        skipPreviewCardSpotlight,
                     });
                 },
             });
@@ -170,6 +180,19 @@ class DashboardPromos {
             this.maybeShowPreviewCardSpotlight();
         }
 
+    }
+
+
+    /**
+     * Both toasts own their one-time storage keys and retry until a blocking
+     * modal closes, so they need no ordering. Scheduling is guarded because the
+     * chain can re-enter many times per load and resetAttempts would re-arm
+     * their retry budget on every pass.
+     */
+    scheduleStandaloneToasts() {
+        const d = this.dash;
+        if (d._standaloneToastsScheduled) return;
+        d._standaloneToastsScheduled = true;
         window.LayoutBetaToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
         window.InboxIntroToast?.scheduleShow?.({ delay: 1400, resetAttempts: true });
     }
