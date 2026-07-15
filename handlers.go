@@ -40,6 +40,7 @@ type Handlers struct {
 	statusPingLimiter  *slidingWindowLimiter
 }
 
+
 const healthReportCacheTTL = 3 * time.Minute
 
 const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
@@ -261,6 +262,21 @@ func healthReasonLegacyLabel(r HealthReason) string {
 	return r.Code
 }
 
+// Score deductions, worst first. A bookmark starts at 100 and each reason that
+// applies subtracts its penalty. These are the single source of truth: the value
+// travels to the client on each reason, so the score breakdown in the UI cannot
+// drift from the arithmetic here.
+const (
+	healthPenaltyBroken           = 60
+	healthPenaltyDuplicate        = 15
+	healthPenaltyShortcutConflict = 15
+	healthPenaltyNeverChecked     = 10
+	healthPenaltyNotOpened30Days  = 10
+	healthPenaltyNeverOpened      = 10
+	healthPenaltyStaleCheck       = 5
+	healthPenaltyNoPreview        = 5
+)
+
 func appendHealthReason(details *[]HealthReason, legacy *[]string, reason HealthReason) {
 	*details = append(*details, reason)
 	*legacy = append(*legacy, healthReasonLegacyLabel(reason))
@@ -365,65 +381,67 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if isBroken {
 				status = "broken"
 				if detail := strings.TrimSpace(bm.LastError); detail != "" {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail})
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
 				} else {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable"})
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable", Penalty: healthPenaltyBroken})
 				}
-				score -= 60
+				score -= healthPenaltyBroken
 			}
 			if isDuplicate {
 				if status == "healthy" {
 					status = "duplicate"
 				}
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
-					Code:   "duplicate_url",
-					Params: map[string]string{"count": strconv.Itoa(duplicateCount)},
+					Code:    "duplicate_url",
+					Params:  map[string]string{"count": strconv.Itoa(duplicateCount)},
+					Penalty: healthPenaltyDuplicate,
 				})
-				score -= 15
+				score -= healthPenaltyDuplicate
 			}
 			if isShortcutConflict {
 				if status == "healthy" {
 					status = "shortcut-conflict"
 				}
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
-					Code:   "shortcut_conflict",
-					Params: map[string]string{"count": strconv.Itoa(shortcutCounts[shortcutKey])},
+					Code:    "shortcut_conflict",
+					Params:  map[string]string{"count": strconv.Itoa(shortcutCounts[shortcutKey])},
+					Penalty: healthPenaltyShortcutConflict,
 				})
-				score -= 15
+				score -= healthPenaltyShortcutConflict
 			}
 			if isUnchecked {
 				if status == "healthy" {
 					status = "unchecked"
 				}
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_never_run"})
-				score -= 10
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_never_run", Penalty: healthPenaltyNeverChecked})
+				score -= healthPenaltyNeverChecked
 			} else if isStaleCheck {
 				if status == "healthy" {
 					status = "unchecked"
 				}
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale"})
-				score -= 5
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale", Penalty: healthPenaltyStaleCheck})
+				score -= healthPenaltyStaleCheck
 			}
 			if isStale {
 				if status == "healthy" {
 					status = "stale"
 				}
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days"})
-				score -= 10
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
+				score -= healthPenaltyNotOpened30Days
 			}
 			if isUnused {
 				if status == "healthy" {
 					status = "unused"
 				}
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened"})
-				score -= 10
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened", Penalty: healthPenaltyNeverOpened})
+				score -= healthPenaltyNeverOpened
 			}
 			if isMissingPreview {
 				if status == "healthy" {
 					status = "missing-preview"
 				}
-				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview"})
-				score -= 5
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview", Penalty: healthPenaltyNoPreview})
+				score -= healthPenaltyNoPreview
 			}
 
 			if score < 0 {
@@ -1961,6 +1979,7 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 	})) {
 		return
 	}
+	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -2008,13 +2027,22 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	if !respondBookmarkMutationError(w, err) {
 		return
 	}
+	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "updated"})
 }
 
-// RetestAll runs ping checks on all bookmarks marked with checkStatus=true
+// retestAllMaxBookmarks caps a single retest run. Each ping costs up to 3s and they
+// run sequentially, so an uncapped run over a large collection would hold the request
+// open for minutes. Callers see skippedOverLimit and can run again.
+const retestAllMaxBookmarks = 250
+
+// RetestAll runs ping checks on bookmarks marked with checkStatus=true. With
+// scope=all it also tests bookmarks that have checkStatus off but a recorded
+// error, so a row flagged broken can be cleared from the health page — those
+// rows are otherwise unreachable, since the page exposes no checkStatus toggle.
 func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -2029,12 +2057,14 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
+	includeFlagged := strings.EqualFold(scope, "all")
+
 	pages := h.store.GetPages()
 	var results []map[string]interface{}
 	healthUpdates := make(map[string]HealthScanCache)
-	var tested, onlineCount, offlineCount int
+	var tested, onlineCount, offlineCount, skipped, skippedOverLimit int
 
-	// Retest all bookmarks with checkStatus=true
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
 		type retestUpdate struct {
@@ -2044,7 +2074,15 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		updatesByKey := make(map[string]retestUpdate)
 
 		for _, bm := range bookmarks {
-			if !bm.CheckStatus {
+			// A bookmark with checkStatus off but a stored LastError is rendered broken
+			// and scored -60, yet the default run never revisits it.
+			eligible := bm.CheckStatus || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			if !eligible {
+				skipped++
+				continue
+			}
+			if tested >= retestAllMaxBookmarks {
+				skippedOverLimit++
 				continue
 			}
 
@@ -2094,9 +2132,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 
 		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
-				if !current[i].CheckStatus {
-					continue
-				}
+				// No CheckStatus filter here: updatesByKey only holds bookmarks this run
+				// actually pinged, and re-filtering would discard the scope=all results.
 				key := canonicalBookmarkURLKey(current[i].URL)
 				if key == "" {
 					continue
@@ -2124,13 +2161,18 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateHealthReportCache()
+
 	logBookmarkStatusBatch(tested, onlineCount, offlineCount, activitySourceFromRequest(r))
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":  "completed",
-		"count":   len(results),
-		"results": results,
+		"status":           "completed",
+		"count":            len(results),
+		"results":          results,
+		"skipped":          skipped,
+		"skippedOverLimit": skippedOverLimit,
+		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
 	})
 }
 
@@ -2303,6 +2345,7 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveBookmarkPageUpdates(pageSnapshots)) {
 		return
 	}
+	h.invalidateHealthReportCache()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -2343,6 +2386,7 @@ func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) 
 	if !respondBookmarkMutationError(w, h.store.DeleteBookmarkAt(req.PageID, req.Index)) {
 		return
 	}
+	h.invalidateHealthReportCache()
 	if deleted.URL != "" || deleted.Name != "" {
 		deleted.PageID = req.PageID
 		logBookmarkDelete(deleted, r)
@@ -2466,6 +2510,14 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		resolvedTitle = strings.TrimSpace(h.fetchPageTitleSafeCtx(r.Context(), targetURL))
 	}
 
+	// Verify the replacement before storing it: clearing LastError on the strength
+	// of "the URL changed" reports healthy for a URL nobody has reached yet. Runs
+	// outside MutateBookmarkAt because that holds the store write lock.
+	verified := PingResult{}
+	if updatedURL != "" && updatedURL != strings.TrimSpace(sourceBookmark.URL) {
+		verified = h.pingURLDetailed(r.Context(), updatedURL)
+	}
+
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
 			bookmark.URL = updatedURL
@@ -2482,8 +2534,18 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if appliedURL {
-			bookmark.LastError = ""
 			bookmark.LastChecked = time.Now().UnixMilli()
+			if verified.Status == "online" {
+				bookmark.LastError = ""
+			} else {
+				// The fix landed but the target still fails: keep the row red and say why,
+				// rather than reporting healthy on an unverified URL.
+				detail := strings.TrimSpace(verified.ErrorDetail)
+				if detail == "" {
+					detail = "Unreachable"
+				}
+				bookmark.LastError = detail
+			}
 		}
 
 		result = *bookmark
@@ -2492,14 +2554,17 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	if !respondBookmarkMutationError(w, err) {
 		return
 	}
+	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"status":       "ok",
-		"appliedUrl":   appliedURL,
-		"appliedTitle": appliedTitle,
-		"url":          result.URL,
-		"title":        result.PreviewTitle,
+		"status":         "ok",
+		"appliedUrl":     appliedURL,
+		"appliedTitle":   appliedTitle,
+		"url":            result.URL,
+		"title":          result.PreviewTitle,
+		"verifiedOnline": appliedURL && verified.Status == "online",
+		"verifyError":    strings.TrimSpace(result.LastError),
 	})
 }
 

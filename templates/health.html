@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css?v={{.Assets.ConfigButtonsCSS}}">
-    <link rel="stylesheet" href="/static/css/health.css?v=a11y-polish-1">
+    <link rel="stylesheet" href="/static/css/health.css?v=health-roving-tabindex-1">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v=health-layout-parity-1">
     <link rel="stylesheet" href="/static/css/health-modern.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
@@ -52,7 +52,17 @@
         <section class="health-page-intro">
             <div>
                 <p data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
-                <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
+                <ul class="health-keyboard-legend" aria-label="Keyboard shortcuts" data-i18n-aria="health.kbdLegendLabel">
+                    <li><kbd>j</kbd><kbd>k</kbd><span data-i18n="health.kbdMove">move</span></li>
+                    <li><kbd>s</kbd><span data-i18n="health.kbdScore">score</span></li>
+                    <li><kbd>p</kbd><span data-i18n="health.kbdPing">re-check</span></li>
+                    <li><kbd>f</kbd><span data-i18n="health.kbdFavicon">favicon</span></li>
+                    <li><kbd>x</kbd><span data-i18n="health.kbdSelect">select</span></li>
+                    <li><kbd>m</kbd><span data-i18n="health.kbdMenu">more actions</span></li>
+                    <li><kbd>Enter</kbd><span data-i18n="health.kbdEdit">edit</span></li>
+                    <li><kbd>o</kbd><span data-i18n="health.kbdOpen">open link</span></li>
+                    <li><kbd>g</kbd><kbd>G</kbd><span data-i18n="health.kbdJump">first / last</span></li>
+                </ul>
             </div>
         </section>
 
@@ -113,7 +123,6 @@
                     </select>
                 </div>
             </div>
-            <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
             <div id="health-issues" class="health-issues health-list">
                 <div class="skeleton-root skeleton-health-issues" data-skeleton-root aria-hidden="true">
                     <div class="skeleton-shimmer skeleton-health-row"></div>
@@ -146,6 +155,6 @@
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}"></script>
     <script src="/static/js/health-runtime.js?v=health-runtime-1"></script>
-    <script src="/static/js/health.js?v=health-retest-action-1"></script>
+    <script src="/static/js/health.js?v=health-roving-tabindex-1"></script>
 </body>
 </html>

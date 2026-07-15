@@ -2138,6 +2138,9 @@ type HealthReason struct {
 	Code   string            `json:"code"`
 	Params map[string]string `json:"params,omitempty"`
 	Detail string            `json:"detail,omitempty"`
+	// Penalty is the score this reason costs. Sent so the UI can explain a score
+	// instead of restating the deductions in JS, where they would drift.
+	Penalty int `json:"penalty,omitempty"`
 }
 
 type HealthIssue struct {
