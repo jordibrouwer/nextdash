@@ -1,5 +1,5 @@
 /**
- * One-time spotlight for classic-layout users to try modern or glass (onboarding and :layoutversion).
+ * One-time spotlight for classic-layout users to try modern (onboarding and :layoutversion).
  */
 (function () {
     'use strict';
@@ -48,16 +48,13 @@
             titleKey: 'layoutModernNudgeTitle',
             bodyKey: 'layoutModernNudgeBody',
             tryKey: 'layoutModernNudgeTry',
-            secondaryTryKey: 'layoutModernNudgeTryGlass',
             closeKey: 'layoutModernNudgeClose',
-            titleFallback: 'Try modern or glass',
-            bodyFallback: 'Classic, modern, or glass — same structure, different polish. Try a version below, use <code>:layoutversion toggle</code> on the dashboard, or switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
+            titleFallback: 'Try modern',
+            bodyFallback: 'Classic and modern — same structure, different polish. Try modern below, use <code>:layoutversion toggle</code> on the dashboard, or switch anytime in <a class="button-hint-link" href="/config#general/layout">config → General → Layout</a>.',
             tryFallback: 'Try modern',
-            secondaryTryFallback: 'Try glass',
             closeFallback: 'Keep classic',
             iconSvg: LAYOUT_ICON_SVG,
             onTry: () => applyLayoutVersion(dashboard, 'modern'),
-            onSecondaryTry: () => applyLayoutVersion(dashboard, 'glass'),
         });
     }
 

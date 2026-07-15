@@ -1,19 +1,29 @@
 /**
- * One-time success toast: the modern layout is early beta — prefer Classic.
+ * One-time toast: the Glass layout was removed and this device was switched to Classic.
+ *
+ * theme-loader.js sets window.__nextdashLayoutWasGlass before normalizing the
+ * stored value away; without that flag the switch is invisible by the time the
+ * page renders.
  */
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'nextdash:layout-beta-toast-v1';
+    const STORAGE_KEY = 'nextdash:layout-glass-removed-v1';
     const SHOW_DELAY_MS = 1200;
     const TOAST_DURATION_MS = 9000;
-    const MAX_RETRY_ATTEMPTS = 40;
+    // ~2 minutes of retries: this announces a change the user did not ask for,
+    // so it waits out a what's-new modal instead of giving up like a tip would.
+    const MAX_RETRY_ATTEMPTS = 200;
     const RETRY_DELAY_MS = 600;
 
     let scheduleTimer = null;
     let retryAttempts = 0;
 
-    const FALLBACK = 'The Modern layout is still in early beta. Use Classic as layout for the best experience.';
+    const FALLBACK = 'The Glass layout has been removed. Your layout is now set to Classic.';
+
+    function wasGlass() {
+        return window.__nextdashLayoutWasGlass === true;
+    }
 
     function language() {
         return window.dashboardInstance?.language || window.configManager?.language || null;
@@ -22,12 +32,12 @@
     function message() {
         const lang = language();
         const scope = document.getElementById('config-main') ? 'config' : 'dashboard';
-        const key = `${scope}.layoutBetaToast`;
+        const key = `${scope}.layoutGlassRemovedToast`;
         const text = lang?.t?.(key);
         if (text && text !== key) {
             return text;
         }
-        const altKey = scope === 'config' ? 'dashboard.layoutBetaToast' : 'config.layoutBetaToast';
+        const altKey = scope === 'config' ? 'dashboard.layoutGlassRemovedToast' : 'config.layoutGlassRemovedToast';
         const alt = lang?.t?.(altKey);
         if (alt && alt !== altKey) {
             return alt;
@@ -53,6 +63,22 @@
         } catch { /* ignore */ }
     }
 
+    /**
+     * Rewrites a device-specific glass setting to classic so the flag does not
+     * reappear on the next load. Server-stored settings normalize in models.go.
+     */
+    function persistClassic() {
+        try {
+            if (localStorage.getItem('deviceSpecificSettings') !== 'true') return;
+            const raw = localStorage.getItem('dashboardSettings');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if ((parsed?.layoutVersion || '').toLowerCase().trim() !== 'glass') return;
+            parsed.layoutVersion = 'classic';
+            localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+        } catch { /* ignore */ }
+    }
+
     function canShowOnDashboard() {
         const dash = window.dashboardInstance;
         if (!dash) return false;
@@ -65,21 +91,22 @@
 
     function notify(text, options) {
         if (window.dashboardInstance?.showNotification) {
-            window.dashboardInstance.showNotification(text, 'success', options);
+            window.dashboardInstance.showNotification(text, 'info', options);
             return true;
         }
         if (window.configManager?.ui?.showNotification) {
-            window.configManager.ui.showNotification(text, 'success', options);
+            window.configManager.ui.showNotification(text, 'info', options);
             return true;
         }
         if (window.AppNotification?.show) {
-            window.AppNotification.show(text, 'success', options);
+            window.AppNotification.show(text, 'info', options);
             return true;
         }
         return false;
     }
 
     function maybeShow() {
+        if (!wasGlass()) return true;
         if (hasShown()) return true;
 
         if (document.getElementById('dashboard-layout') && !canShowOnDashboard()) {
@@ -95,6 +122,7 @@
     }
 
     function scheduleShow(options = {}) {
+        if (!wasGlass()) return;
         if (hasShown()) return;
 
         if (scheduleTimer) {
@@ -123,7 +151,9 @@
         }, delay);
     }
 
-    window.LayoutBetaToast = {
+    persistClassic();
+
+    window.LayoutGlassRemovedToast = {
         STORAGE_KEY,
         hasShown,
         markShown,

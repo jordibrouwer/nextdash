@@ -143,7 +143,7 @@ test.describe('config persistence (phase 2)', () => {
 
         const result = await page.evaluate(async () => {
             const cm = window.configManager;
-            cm.settingsData.layoutVersion = 'glass';
+            cm.settingsData.layoutVersion = 'modern';
             cm.settingsData.showTitle = true;
             cm.settingsData.showIcons = true;
             if (typeof cm.syncSavedSettingsSnapshot === 'function') {
@@ -202,7 +202,7 @@ test.describe('config persistence (phase 2)', () => {
         });
 
         expect(result.ok).toBe(true);
-        expect(result.layoutVersion).toBe('glass');
+        expect(result.layoutVersion).toBe('modern');
         expect(result.showTitle).toBe(true);
         expect(result.showIcons).toBe(true);
         expect(result.settingsPosts).toBe(0);

@@ -160,7 +160,7 @@ type Settings struct {
 	CategorySortModes           map[string]map[string]string     `json:"categorySortModes,omitempty"` // Per-page sort for uncategorized/orphan categories
 	CategorySortModesMigrated   bool                             `json:"categorySortModesMigrated"`   // Legacy sortMethod migrated to per-category modes
 	LayoutPreset                string                           `json:"layoutPreset"`                // Dashboard layout preset
-	LayoutVersion               string                           `json:"layoutVersion"`               // Dashboard layout version: classic, modern, glass
+	LayoutVersion               string                           `json:"layoutVersion"`               // Dashboard layout version: classic, modern
 	DensityMode                 string                           `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense
 	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
 	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
@@ -1807,7 +1807,8 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
 		}
-		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern" && settings.LayoutVersion != "glass") {
+		// "glass" was removed; stored glass settings normalize to classic here.
+		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern") {
 			settings.LayoutVersion = "classic"
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {

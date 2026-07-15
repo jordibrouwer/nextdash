@@ -6,7 +6,7 @@
 (function initDashboardPromoRegistry(global) {
     const DISCOVERABILITY_PROMOS_PAUSED = false;
 
-    /** Never auto-show these (Ctrl+V paste, preview cards, classic/modern/glass nudge). */
+    /** Never auto-show these (Ctrl+V paste, preview cards, classic/modern nudge). */
     const AUTO_PROMO_DISABLED = new Set([
         'pasteSpotlight',
         'layoutVersionNudge',

@@ -1865,7 +1865,7 @@ class SearchCommandsComponent {
 
         const versions = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.getLayoutVersions()
-            : ['classic', 'modern', 'glass'];
+            : ['classic', 'modern'];
 
         const currentVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
@@ -1882,7 +1882,7 @@ class SearchCommandsComponent {
         }
 
         if (versionQuery === 'toggle') {
-            const order = ['classic', 'modern', 'glass'];
+            const order = ['classic', 'modern'];
             const index = order.indexOf(currentVersion);
             const next = order[(index + 1) % order.length];
             return [{
@@ -2192,7 +2192,7 @@ class SearchCommandsComponent {
             });
         } else {
             const normalized = (version || 'classic').toLowerCase().trim();
-            const nextVersion = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
+            const nextVersion = ['classic', 'modern'].includes(normalized) ? normalized : 'classic';
             dashboard.settings.layoutVersion = nextVersion;
             document.documentElement.setAttribute('data-layout-version', nextVersion);
             document.body.setAttribute('data-layout-version', nextVersion);

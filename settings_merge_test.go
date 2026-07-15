@@ -41,12 +41,12 @@ func TestMergeSettingsFromBodyUpdatesPresentFields(t *testing.T) {
 		LayoutVersion:       "classic",
 	}
 
-	merged, err := mergeSettingsFromBody(stored, []byte(`{"layoutVersion":"glass","allowLocalBookmarks":true}`))
+	merged, err := mergeSettingsFromBody(stored, []byte(`{"layoutVersion":"modern","allowLocalBookmarks":true}`))
 	if err != nil {
 		t.Fatalf("mergeSettingsFromBody: %v", err)
 	}
-	if merged.LayoutVersion != "glass" {
-		t.Fatalf("layoutVersion = %q, want glass", merged.LayoutVersion)
+	if merged.LayoutVersion != "modern" {
+		t.Fatalf("layoutVersion = %q, want modern", merged.LayoutVersion)
 	}
 	if merged.AllowLocalBookmarks != true {
 		t.Fatalf("allowLocalBookmarks = %v, want true", merged.AllowLocalBookmarks)

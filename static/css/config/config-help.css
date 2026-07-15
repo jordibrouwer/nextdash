@@ -63,8 +63,7 @@
 
 /* overflow:hidden on fused surfaces breaks position:sticky for the index column */
 body[data-layout-version="classic"] .help-tab-surface,
-body[data-layout-version="modern"] .help-tab-surface,
-body[data-layout-version="glass"] .help-tab-surface {
+body[data-layout-version="modern"] .help-tab-surface {
     overflow: visible;
 }
 

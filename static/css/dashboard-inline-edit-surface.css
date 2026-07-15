@@ -1,4 +1,4 @@
-/* Inline edit opaque surfaces — loaded last; wins over layout/glass tokens. */
+/* Inline edit opaque surfaces — loaded last; wins over layout tokens. */
 
 body.bookmark-inline-edit-active {
     --inline-edit-panel-bg: var(--background-primary);

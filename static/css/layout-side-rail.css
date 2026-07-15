@@ -1,6 +1,6 @@
 /* Side Rail navigation — body[data-button-position="side-left"]
    Converts the bottom button bar into a 44px vertical rail on the left edge.
-   All other layouts (classic / modern / glass) are unaffected. */
+   All other layouts (classic / modern) are unaffected. */
 
 /* ── Variables ─────────────────────────────────────────────────────────────── */
 body[data-button-position="side-left"] {
@@ -421,31 +421,6 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
     background: transparent;
     border-top-color: var(--layout-surface-border);
 }
-
-/* ── Glass layout overrides ──────────────────────────────────────────────────── */
-body[data-layout-version="glass"][data-button-position="side-left"] .button-container {
-    background: var(--layout-surface);
-    border-right-color: var(--layout-surface-border);
-    box-shadow:
-        2px 0 12px color-mix(in srgb, var(--text-primary) 8%, transparent),
-        inset -1px 0 0 var(--glass-inset-highlight, color-mix(in srgb, var(--text-primary) 9%, transparent));
-    backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
-}
-
-body[data-layout-version="glass"][data-button-position="side-left"] .search-button {
-    transition:
-        background-color var(--layout-transition),
-        border-color var(--layout-transition),
-        color var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-body[data-layout-version="glass"][data-button-position="side-left"] .whats-new-btn {
-    background: transparent;
-    border-top-color: var(--layout-surface-border);
-}
-
 /* ── Mobile: fall back to centered bottom bar ────────────────────────────────── */
 @media (max-width: 768px) {
     body[data-button-position="side-left"] .button-container {

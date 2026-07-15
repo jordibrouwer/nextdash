@@ -62,7 +62,7 @@ test.describe('dashboard config sync reload', () => {
         const result = await page.evaluate(async () => {
             localStorage.setItem('deviceSpecificSettings', 'true');
             localStorage.setItem('dashboardSettings', JSON.stringify({
-                layoutVersion: 'glass',
+                layoutVersion: 'modern',
                 showTitle: true,
                 showDate: true,
                 showWeatherWithDate: true,
@@ -85,8 +85,8 @@ test.describe('dashboard config sync reload', () => {
             };
         });
 
-        expect(result.layoutSetting).toBe('glass');
-        expect(result.layout).toBe('glass');
+        expect(result.layoutSetting).toBe('modern');
+        expect(result.layout).toBe('modern');
         expect(result.showTitle).toBe(true);
         expect(result.smartCount).toBeGreaterThan(0);
         expect(result.titleText.length).toBeGreaterThan(0);

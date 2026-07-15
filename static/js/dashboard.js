@@ -330,6 +330,10 @@ class Dashboard {
             window.LayoutVersionNudge?.consumeReplayPending?.();
             window.FeatureSpotlight?.consumePasteReplayPending?.();
             window.PreviewCardSpotlight?.consumeReplayPending?.();
+            // Reports a setting that already changed, so it is scheduled outside
+            // the discoverability queue: that queue re-opens what's new until it
+            // is acknowledged and returns early, which would starve this toast.
+            window.LayoutGlassRemovedToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }

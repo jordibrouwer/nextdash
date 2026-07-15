@@ -117,8 +117,7 @@ body.config-is-dirty .general-layout {
 }
 
 body[data-layout-version="classic"] .general-tab-surface,
-body[data-layout-version="modern"] .general-tab-surface,
-body[data-layout-version="glass"] .general-tab-surface {
+body[data-layout-version="modern"] .general-tab-surface {
     overflow: visible;
 }
 
@@ -139,7 +138,7 @@ body[data-layout-version="glass"] .general-tab-surface {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Quick links parity with Help tab (classic/modern/glass): same roomy list rhythm. */
+/* Quick links parity with Help tab (classic/modern): same roomy list rhythm. */
 .general-tab-surface .general-index ul {
     padding-left: 1.5rem;
     margin-top: 0.5rem;
