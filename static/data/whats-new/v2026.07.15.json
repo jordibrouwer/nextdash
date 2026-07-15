@@ -2,7 +2,7 @@
   "tag": "v2026.07.15",
   "date": "July 2026",
   "releasedAt": "2026-07-15",
-  "modalLead": "Health now opens as a dashboard view, with new Shift shortcuts for Health and Inbox, and a cleaner config header.",
+  "modalLead": "Health is now fully dashboard-first: old /health links redirect to the Health view, view shortcuts are faster, and docs/help are aligned.",
   "sections": [
     {
       "title": "Dashboard",
@@ -43,7 +43,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Health view copy is now localized end-to-end</strong> — all new Health labels and related cheat-sheet entries are present and style-aligned in <strong>EN / NL / DE / FR</strong>."
+          "text": "<strong>Health docs/help copy is now aligned end-to-end</strong> — README, Manual, Config → Help, and the cheat-sheet wording all match the dashboard-first Health flow in <strong>EN / NL / DE / FR</strong>."
         }
       ]
     }

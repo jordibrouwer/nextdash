@@ -799,7 +799,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Controls panel** | Search, status pills, sort, and retest action in one compact block |
 | **Search** | Name, URL, category, page |
 | **Open in Config** | Click the row main area or press `Enter` to open **Config → Bookmarks** for that bookmark |
-| **Favicon** | Shows stored bookmark icon; refresh per row or in bulk |
+| **Favicon** | Shows stored bookmark icon; refresh per row |
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, delete) |
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
@@ -811,7 +811,6 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Bulk** | **Retest statuses** from the toolbar |
 | **Retest scope** (**v2026.07.14.2**) | Bookmarks only get status checks when **Check status** is on for them (off by default, set per bookmark in **Config → Bookmarks**). Retest used to skip everything else — including rows flagged **broken**, which this page can't switch on — so those could never be cleared here. Retest now also tests any bookmark with a recorded error, tells you plainly when there is nothing to test, and stops after 250 checks per run (each takes up to 3s; run it again to continue) |
 | **Detect redirect result** (**v2026.07.14.2**) | An applied redirect is checked against the new address before the row counts as healthy. If the replacement fails too, the row stays red with the reason instead of reporting a fix that was never verified |
-| **Duplicate merge** | Keeps the “best” bookmark: most opens → pinned → oldest; merges tags, shortcut, opens, notes, and icons from removed rows into the keeper |
 
 Filter, sort, and search state persist in the session across refreshes and sync to the URL (`hv_filter`, `hv_sort`, `hv_q`).
 

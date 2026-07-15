@@ -104,7 +104,7 @@ Nothing yet.
 
 ### Dashboard
 
-- **new** **Health as an in-dashboard view** — the header heartbeat icon now opens a dedicated **Health** view inside the dashboard shell (like Inbox) instead of forcing a page jump. It keeps a calmer, keyboard-first subset: one list, quick filters, score breakdown, re-check, and row actions; the standalone `/health` page remains available for bulk select, page filtering, and auto-heal (`dashboard-health.js`, `dashboard.html`, `health-view.css`).
+- **new** **Health as an in-dashboard view** — the header heartbeat icon now opens a dedicated **Health** view inside the dashboard shell (like Inbox) instead of forcing a page jump. It keeps a calmer, keyboard-first subset: one list, quick filters, score breakdown, re-check, and row actions (`dashboard-health.js`, `dashboard.html`, `health-view.css`).
 - **new** **Health deep-link and active-state polish** — `#health` opens and restores the dashboard view correctly, the health header icon gets an active state aligned with page tabs, and Escape returns to the bookmarks grid cleanly (`dashboard-page-nav.js`, `dashboard-render-core.js`, `dashboard.css`).
 - **fix** **Keyboard flow inside the new view** — row shortcuts no longer die after changing a sort select, and page-load races no longer overwrite `#health` back to a page hash (`dashboard-health.js`, `dashboard-page-nav.js`, `dashboard-data.js`, `keyboard-navigation.js`).
 
@@ -120,7 +120,7 @@ Nothing yet.
 
 - **fix** **Tests** — added dashboard health-view coverage for in-place open/close behavior, keyboard controls, duplicate filtering, and `#health` deep-link restore (`tests/health-dashboard-view.spec.js`).
 - **fix** **Health view i18n parity** — all new health-view labels plus new cheat-sheet entries (`Shift+H`, `Shift+I`, `:health page`) are now present in `en`, `nl`, `de`, and `fr`, with localized wording tuned to each language's existing style (`locales/{en,nl,de,fr}.json`).
-- **fix** **README, MANUAL, CHANGELOG & Config Help** — **v2026.07.15** notes.
+- **fix** **Standalone health removal follow-up** — legacy `/health` now redirects to `/#health`, old standalone health assets/tests were removed, and docs/help text were aligned to dashboard-first routing while keeping **v2026.07.15** (`handlers.go`, `templates/health.html`, `static/js/health.js`, `README.md`, `MANUAL.md`, `locales/{en,nl,de,fr}.json`).
 - **fix** **What's new modal** — added **v2026.07.15** JSON entry with dashboard/keyboard/config highlights.
 - **fix** **Cache-bust** — `whats-new-v160` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v119` dashboard release token.
 
