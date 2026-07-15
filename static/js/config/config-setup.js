@@ -27,7 +27,7 @@ class ConfigSetup {
             );
         } else {
             const normalized = (this.c.settingsData.layoutVersion || 'classic').toLowerCase().trim();
-            const layoutVersion = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
+            const layoutVersion = ['classic', 'modern'].includes(normalized) ? normalized : 'classic';
             this.c.settingsData.layoutVersion = layoutVersion;
             document.documentElement.setAttribute('data-layout-version', layoutVersion);
             document.body.setAttribute('data-layout-version', layoutVersion);
@@ -73,7 +73,7 @@ class ConfigSetup {
                     );
                 } else {
                     const normalized = (layoutVersion || 'classic').toLowerCase().trim();
-                    const version = ['classic', 'modern', 'glass'].includes(normalized) ? normalized : 'classic';
+                    const version = ['classic', 'modern'].includes(normalized) ? normalized : 'classic';
                     this.c.settingsData.layoutVersion = version;
                     document.documentElement.setAttribute('data-layout-version', version);
                     document.body.setAttribute('data-layout-version', version);

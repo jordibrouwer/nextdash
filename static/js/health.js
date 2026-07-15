@@ -11,6 +11,7 @@
         pageId: 'all',
         language: null,
         selected: new Set(),
+        expandedScores: new Set(),
         focusedRowIndex: -1,
         visibleIssues: []
     };
@@ -102,7 +103,18 @@
         if (typeof query === 'string') {
             healthState.query = query;
         }
-        return params.get('refresh') === '1';
+        const wantsRetest = params.get('refresh') === '1';
+        if (wantsRetest) {
+            // Consume the param here rather than leaving it to the saveState() calls in
+            // main(), which strip it only as a side effect of rebuilding the query
+            // string. ?refresh=1 auto-clicks retest, and retest ends in reloadReport();
+            // if the param ever outlives the run, that pair re-pings every bookmark on
+            // each load.
+            params.delete('refresh');
+            const qs = params.toString();
+            history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+        }
+        return wantsRetest;
     }
 
     const statusFallbacks = {
@@ -250,6 +262,45 @@
             return issue.reasonDetails.map((item) => translateReasonDetail(item));
         }
         return (issue?.reasons || []).map((reason) => translateReason(reason));
+    }
+
+    /**
+     * Reasons paired with the score each one costs. The penalty comes from the server
+     * (one source with the arithmetic); rows from an older payload simply carry no
+     * penalty and render as a plain reason.
+     */
+    function getIssueReasonEntries(issue) {
+        if (Array.isArray(issue?.reasonDetails) && issue.reasonDetails.length) {
+            return issue.reasonDetails.map((item) => ({
+                label: translateReasonDetail(item),
+                penalty: Number(item?.penalty) || 0
+            }));
+        }
+        return (issue?.reasons || []).map((reason) => ({
+            label: translateReason(reason),
+            penalty: 0
+        }));
+    }
+
+    function renderScoreBreakdown(issue) {
+        const entries = getIssueReasonEntries(issue);
+        if (!entries.length) {
+            return `<p class="health-score-perfect">${escapeHtml(t('health.scorePerfect', 'No issues found — full score.'))}</p>`;
+        }
+        const rows = entries.map((entry) => `
+            <li class="health-score-item">
+                <span class="health-score-item-label">${escapeHtml(entry.label)}</span>
+                ${entry.penalty > 0
+                    ? `<span class="health-score-item-cost">−${escapeHtml(entry.penalty)}</span>`
+                    : ''}
+            </li>`).join('');
+        return `
+            <p class="health-score-explain-intro">${escapeHtml(t('health.scoreExplainIntro', 'Every bookmark starts at 100. This one loses:'))}</p>
+            <ul class="health-score-list">${rows}</ul>
+            <p class="health-score-total">
+                <span>${escapeHtml(t('health.scoreTotal', 'Score'))}</span>
+                <span class="health-score-total-value ${scoreClass(issue.score)}">${escapeHtml(issue.score)}</span>
+            </p>`;
     }
 
     function emptyMessageForFilter(filter) {
@@ -453,7 +504,66 @@
         countEl.textContent = t('health.selectionCount', '{count} selected', { count });
     }
 
-    function focusRowByIndex(index) {
+    /**
+     * Open/close the score breakdown for one row. State lives in healthState so an
+     * open panel survives the re-render that follows a ping or retest.
+     */
+    function toggleScorePanel(key, force) {
+        if (!key) return;
+        const shouldOpen = typeof force === 'boolean' ? force : !healthState.expandedScores.has(key);
+        if (shouldOpen) {
+            healthState.expandedScores.add(key);
+        } else {
+            healthState.expandedScores.delete(key);
+        }
+        syncScorePanel(key);
+    }
+
+    function syncScorePanel(key) {
+        const panel = document.querySelector(`[data-score-panel="${CSS.escape(key)}"]`);
+        const toggle = document.querySelector(`[data-score-toggle="${CSS.escape(key)}"]`);
+        if (!panel || !toggle) return;
+        const open = healthState.expandedScores.has(key);
+        panel.hidden = !open;
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.closest('.health-row')?.classList.toggle('health-row--score-open', open);
+    }
+
+    function syncAllScorePanels() {
+        document.querySelectorAll('[data-score-panel]').forEach((panel) => {
+            syncScorePanel(panel.getAttribute('data-score-panel') || '');
+        });
+    }
+
+    /**
+     * Roving tabindex, mirroring KeyboardNavigation.syncRovingTabStops on the
+     * dashboard: only the current row is a tab stop. Every control inside a row
+     * being tabbable meant ~8 stops per row, so reaching the last of 100 bookmarks
+     * by keyboard was hundreds of presses. Within a row, j/k/s/x/p/Enter/o do the
+     * work; Tab moves between rows.
+     */
+    function syncRowTabStops({ focus = false } = {}) {
+        const rows = document.querySelectorAll('#health-issues .health-row');
+        const active = healthState.focusedRowIndex;
+        rows.forEach((row, i) => {
+            const isCurrent = active >= 0 ? i === active : i === 0;
+            row.querySelectorAll('button, a, input, select').forEach((el) => {
+                el.tabIndex = -1;
+            });
+            const main = row.querySelector('.health-row-main');
+            if (main) main.tabIndex = isCurrent ? 0 : -1;
+        });
+        if (focus && active >= 0 && rows[active]) {
+            const main = rows[active].querySelector('.health-row-main');
+            try {
+                main?.focus({ preventScroll: true });
+            } catch {
+                main?.focus();
+            }
+        }
+    }
+
+    function focusRowByIndex(index, { focus = false } = {}) {
         const rows = document.querySelectorAll('#health-issues .health-row');
         if (!rows.length) return;
         const clamped = Math.max(0, Math.min(index, rows.length - 1));
@@ -462,13 +572,16 @@
             row.classList.toggle('health-row--focused', i === clamped);
         });
         rows[clamped]?.scrollIntoView({ block: 'nearest' });
+        syncRowTabStops({ focus });
     }
 
-    function moveRowFocus(delta) {
+    function moveRowFocus(delta, options = {}) {
         const rows = document.querySelectorAll('#health-issues .health-row');
         if (!rows.length) return;
-        const start = healthState.focusedRowIndex < 0 ? 0 : healthState.focusedRowIndex;
-        focusRowByIndex(start + delta);
+        const hadFocus = healthState.focusedRowIndex >= 0;
+        const start = hadFocus ? healthState.focusedRowIndex : 0;
+        // First j/k lands on row 0 rather than skipping past it.
+        focusRowByIndex(hadFocus ? start + delta : 0, options);
     }
 
     function findIssueBySelectionKey(key) {
@@ -659,8 +772,11 @@
         const activeClass = isActive ? ' active' : '';
         const metaTitle = meta ? ` title="${escapeHtml(meta)}"` : '';
         if (filterKey) {
+            // Out of the tab sequence: these KPI tiles duplicate the filter pills
+            // below them, and having both cost 9 extra stops before the first row.
+            // Still clickable, and the pills give the same filters a keyboard path.
             return `
-                <button type="button" class="health-card health-card-${tone} health-card-button${activeClass}" data-filter="${escapeHtml(filterKey)}"${metaTitle}>
+                <button type="button" class="health-card health-card-${tone} health-card-button${activeClass}" data-filter="${escapeHtml(filterKey)}"${metaTitle} tabindex="-1">
                     <div class="health-card-label">${escapeHtml(label)}</div>
                     <div class="health-card-value">${escapeHtml(value)}</div>
                     <div class="health-card-meta">${escapeHtml(meta || '')}</div>
@@ -706,10 +822,12 @@
             healthy: summary.healthyCount || 0
         };
 
+        // role="toolbar" (set on the container) means one tab stop with arrow keys
+        // inside, not nine separate stops. The active pill carries the stop.
         return filterOrder.map((filter) => {
             const isActive = healthState.filter === filter;
             return `
-            <button class="health-pill health-period-btn ${isActive ? 'active' : ''}" type="button" data-filter="${filter}" aria-pressed="${isActive ? 'true' : 'false'}">
+            <button class="health-pill health-period-btn ${isActive ? 'active' : ''}" type="button" data-filter="${filter}" aria-pressed="${isActive ? 'true' : 'false'}" tabindex="${isActive ? '0' : '-1'}">
                 ${escapeHtml(filter === 'all' ? t('health.filterAll', 'all') : statusLabel(filter))}
                 <span>${counts[filter] || 0}</span>
             </button>
@@ -794,7 +912,13 @@
                 </label>
                 <div class="health-row-leading">
                     ${renderFavicon(issue)}
-                    <div class="health-row-score ${scoreClass(issue.score)}" aria-label="${escapeHtml(t('health.scoreLabel', 'Health score {score}', { score: issue.score }))}">${escapeHtml(issue.score)}</div>
+                    <button type="button"
+                            class="health-row-score ${scoreClass(issue.score)}"
+                            data-score-toggle="${escapeHtml(selKey)}"
+                            aria-expanded="false"
+                            aria-controls="health-score-panel-${escapeHtml(selKey)}"
+                            aria-label="${escapeHtml(t('health.scoreExplainAria', 'Health score {score}. Show how this score is calculated.', { score: issue.score }))}"
+                    >${escapeHtml(issue.score)}</button>
                 </div>
                 <button type="button" class="health-row-main health-row-open" data-open-config="1" aria-label="${escapeHtml(openAria)}">
                     <div class="health-row-head">
@@ -820,6 +944,9 @@
                 </button>
                 <div class="health-row-actions-col">
                     ${renderIssueActions(issue)}
+                </div>
+                <div class="health-score-panel" id="health-score-panel-${escapeHtml(selKey)}" data-score-panel="${escapeHtml(selKey)}" hidden>
+                    ${renderScoreBreakdown(issue)}
                 </div>
             </article>
         `;
@@ -986,6 +1113,28 @@
         }
     }
 
+    /**
+     * A run that tests nothing still returns status "completed"; reporting only the
+     * count made that read as success and left the user waiting on a retest that
+     * never ran.
+     */
+    function formatRetestSummary(result) {
+        const count = Number(result?.count || 0);
+        const overLimit = Number(result?.skippedOverLimit || 0);
+        if (count === 0) {
+            return t('health.retestedNone', 'Nothing to retest: no bookmarks have status checks enabled.');
+        }
+        const parts = [t('health.retestedBookmarks', 'Retested {count} bookmarks', { count })];
+        if (overLimit > 0) {
+            parts.push(t(
+                'health.retestLimitReached',
+                '{count} not tested (per-run limit) — run again to continue.',
+                { count: overLimit }
+            ));
+        }
+        return parts.join(' ');
+    }
+
     function setupHealthEventListeners() {
         if (healthListenersBound) return;
         healthListenersBound = true;
@@ -1008,6 +1157,25 @@
             healthState.focusedRowIndex = -1;
             saveState();
             render();
+        });
+
+        // Standard toolbar keys: arrows move between pills, Home/End jump to the ends.
+        // The pills are one tab stop, so without this they'd be mouse-only.
+        document.getElementById('health-filter-pills')?.addEventListener('keydown', (e) => {
+            const pills = [...document.querySelectorAll('#health-filter-pills .health-pill')];
+            if (!pills.length) return;
+            const current = pills.indexOf(document.activeElement);
+            if (current < 0) return;
+            let next = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (current + 1) % pills.length;
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (current - 1 + pills.length) % pills.length;
+            else if (e.key === 'Home') next = 0;
+            else if (e.key === 'End') next = pills.length - 1;
+            if (next === null) return;
+            e.preventDefault();
+            e.stopPropagation();
+            pills.forEach((pill, i) => { pill.tabIndex = i === next ? 0 : -1; });
+            pills[next].focus();
         });
 
         document.getElementById('health-select-all-btn')?.addEventListener('click', () => {
@@ -1035,8 +1203,61 @@
             closeAllActionMenus();
         });
 
+        // role="menu" promises arrow-key navigation; wire it up so the menu items are
+        // operable now that the more-button is no longer a tab stop.
+        document.getElementById('health-issues')?.addEventListener('keydown', (e) => {
+            const menu = e.target.closest?.('.health-actions-menu');
+            if (!menu || menu.hidden) return;
+            const items = [...menu.querySelectorAll('.health-actions-menu-item')];
+            if (!items.length) return;
+            const current = items.indexOf(document.activeElement);
+            let next = null;
+            if (e.key === 'ArrowDown') next = (current + 1) % items.length;
+            else if (e.key === 'ArrowUp') next = (current - 1 + items.length) % items.length;
+            else if (e.key === 'Home') next = 0;
+            else if (e.key === 'End') next = items.length - 1;
+            else if (e.key === 'Escape' || e.key === 'Tab') {
+                // Hand focus back to the row so j/k keep working after the menu closes.
+                closeAllActionMenus();
+                const row = menu.closest('.health-row');
+                row?.querySelector('.health-row-main')?.focus();
+                if (e.key === 'Escape') e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            if (next === null) return;
+            e.preventDefault();
+            e.stopPropagation();
+            items[next].focus();
+        });
+
+        // Tabbing (or clicking) into a row makes it the current row, so j/k continue
+        // from where focus actually is instead of from a stale index.
+        document.getElementById('health-issues')?.addEventListener('focusin', (e) => {
+            const row = e.target.closest?.('.health-row');
+            if (!row) return;
+            const index = Number(row.getAttribute('data-row-index'));
+            if (!Number.isFinite(index) || index === healthState.focusedRowIndex) return;
+            healthState.focusedRowIndex = index;
+            document.querySelectorAll('#health-issues .health-row').forEach((el, i) => {
+                el.classList.toggle('health-row--focused', i === index);
+            });
+            syncRowTabStops();
+        });
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                // Close what is open, innermost first, so one Escape does not wipe
+                // both an action menu and every open score panel at once.
+                if (document.querySelector('.health-actions-menu:not([hidden])')) {
+                    closeAllActionMenus();
+                    return;
+                }
+                if (healthState.expandedScores.size) {
+                    healthState.expandedScores.clear();
+                    syncAllScorePanels();
+                    return;
+                }
                 closeAllActionMenus();
                 return;
             }
@@ -1044,22 +1265,65 @@
             if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) {
                 return;
             }
-            if (!document.getElementById('health-issues')?.contains(document.activeElement)
-                && tag !== 'body'
-                && !e.target?.closest('#health-issues')) {
-                // still allow when no specific focus inside issues
+            // Tab walks the rows one by one, matching KeyboardNavigation on the
+            // dashboard. Roving tabindex leaves a single stop for the whole list, so
+            // without this Tab would jump from the current row straight out of it.
+            // At the last row (or Shift+Tab at the first) we let Tab through, so the
+            // list never becomes a trap.
+            if (e.key === 'Tab' && healthState.focusedRowIndex >= 0) {
+                const total = healthState.visibleIssues?.length || 0;
+                if (!total) return;
+                const atLast = healthState.focusedRowIndex === total - 1;
+                const atFirst = healthState.focusedRowIndex === 0;
+                if ((!e.shiftKey && atLast) || (e.shiftKey && atFirst)) {
+                    healthState.focusedRowIndex = -1;
+                    document.querySelectorAll('#health-issues .health-row')
+                        .forEach((row) => row.classList.remove('health-row--focused'));
+                    return;
+                }
+                e.preventDefault();
+                moveRowFocus(e.shiftKey ? -1 : 1, { focus: true });
+                return;
             }
+
+            // Never shadow browser or OS chords (Ctrl+F, Cmd+R, Alt+←).
+            if (e.ctrlKey || e.metaKey || e.altKey) {
+                return;
+            }
+            // Move DOM focus with the selection so Tab resumes from the current row
+            // and screen readers announce the move.
             if (e.key === 'j' || e.key === 'ArrowDown') {
                 e.preventDefault();
-                moveRowFocus(1);
+                moveRowFocus(1, { focus: true });
                 return;
             }
             if (e.key === 'k' || e.key === 'ArrowUp') {
                 e.preventDefault();
-                moveRowFocus(-1);
+                moveRowFocus(-1, { focus: true });
                 return;
             }
+            if (e.key === 'g' || e.key === 'Home') {
+                e.preventDefault();
+                focusRowByIndex(0, { focus: true });
+                return;
+            }
+            if (e.key === 'G' || e.key === 'End') {
+                e.preventDefault();
+                focusRowByIndex((healthState.visibleIssues?.length || 1) - 1, { focus: true });
+                return;
+            }
+            // Focus sitting on a control inside a row (score badge, an action button,
+            // a menu item) means the key belongs to that control. Without this, Enter
+            // on the score badge would also fire the row's "edit" shortcut and navigate
+            // away, and letter keys would double-fire.
+            const onRowControl = Boolean(
+                e.target?.closest?.('.health-row')
+                && !e.target?.classList?.contains('health-row-main')
+                && e.target?.matches?.('button, a, input, select, [role="menuitem"]')
+            );
+
             if (e.key === 'Enter' && healthState.focusedRowIndex >= 0) {
+                if (onRowControl) return;
                 const issue = healthState.visibleIssues[healthState.focusedRowIndex];
                 if (issue) {
                     e.preventDefault();
@@ -1067,11 +1331,76 @@
                 }
                 return;
             }
+            // Space/Enter already activate a focused control; letter shortcuts must not
+            // also fire while focus is inside one.
+            if (onRowControl && /^[a-zA-Z]$/.test(e.key)) {
+                return;
+            }
             if ((e.key === 'o' || e.key === 'O') && healthState.focusedRowIndex >= 0) {
                 const issue = healthState.visibleIssues[healthState.focusedRowIndex];
                 if (issue?.url) {
                     e.preventDefault();
                     window.open(issue.url, '_blank', 'noopener');
+                }
+                return;
+            }
+            if ((e.key === 's' || e.key === 'S') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue) {
+                    e.preventDefault();
+                    toggleScorePanel(issueSelectionKey(issue));
+                }
+                return;
+            }
+            if ((e.key === 'x' || e.key === 'X') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue) {
+                    e.preventDefault();
+                    const key = issueSelectionKey(issue);
+                    if (healthState.selected.has(key)) {
+                        healthState.selected.delete(key);
+                    } else {
+                        healthState.selected.add(key);
+                    }
+                    // Keep the row put: a full render would reset focus and scroll.
+                    const row = document.querySelector(`.health-row[data-row-key="${CSS.escape(key)}"]`);
+                    const box = row?.querySelector('.health-row-checkbox');
+                    const on = healthState.selected.has(key);
+                    if (box) box.checked = on;
+                    row?.classList.toggle('health-row--selected', on);
+                    syncSelectionToolbar();
+                }
+                return;
+            }
+            if ((e.key === 'p' || e.key === 'P') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue?.url) {
+                    e.preventDefault();
+                    const row = document.querySelector(`.health-row[data-row-key="${CSS.escape(issueSelectionKey(issue))}"]`);
+                    row?.querySelector('[data-ping-url]')?.click();
+                }
+                return;
+            }
+            if ((e.key === 'f' || e.key === 'F') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue?.url) {
+                    e.preventDefault();
+                    const row = document.querySelector(`.health-row[data-row-key="${CSS.escape(issueSelectionKey(issue))}"]`);
+                    row?.querySelector('[data-favicon-url]')?.click();
+                }
+                return;
+            }
+            // The row's repair/delete actions live behind the more-menu, which is no
+            // longer a tab stop; m is their keyboard entry point. Focus moves into the
+            // menu so the arrow keys and Escape take over from there.
+            if ((e.key === 'm' || e.key === 'M') && healthState.focusedRowIndex >= 0) {
+                const issue = healthState.visibleIssues[healthState.focusedRowIndex];
+                if (issue) {
+                    e.preventDefault();
+                    const row = document.querySelector(`.health-row[data-row-key="${CSS.escape(issueSelectionKey(issue))}"]`);
+                    const toggle = row?.querySelector('.health-actions-more-btn');
+                    toggle?.click();
+                    row?.querySelector('.health-actions-menu:not([hidden]) .health-actions-menu-item')?.focus();
                 }
             }
         });
@@ -1086,6 +1415,12 @@
                 syncSelectionToolbar();
                 const row = checkbox.closest('.health-row');
                 row?.classList.toggle('health-row--selected', checkbox.checked);
+                return;
+            }
+
+            const scoreToggle = e.target.closest('[data-score-toggle]');
+            if (scoreToggle) {
+                toggleScorePanel(scoreToggle.getAttribute('data-score-toggle') || '');
                 return;
             }
 
@@ -1189,11 +1524,15 @@
 
         document.getElementById('retest-all-btn')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget || e.target;
+            // Bookmarks with checkStatus off are skipped by the default run. When the
+            // report shows flagged rows, test those too so a broken row can go green
+            // from this page — there is no checkStatus toggle in the health UI.
+            const scope = Number(healthState.report?.summary?.brokenCount || 0) > 0 ? 'all' : 'checked';
             try {
                 await runHealthAction('retest-all', async () => {
                     setButtonBusy(btn, true);
                     try {
-                        const response = await healthFetch('/api/health/retest-all', {
+                        const response = await healthFetch(`/api/health/retest-all?scope=${scope}`, {
                             method: 'POST',
                             headers: writeJsonHeaders()
                         }, 5 * 60 * 1000);
@@ -1201,7 +1540,7 @@
                             throw new Error(t('health.retestFailed', 'Failed to retest all bookmarks'));
                         }
                         const result = await response.json();
-                        showBulkStatus(t('health.retestedBookmarks', 'Retested {count} bookmarks', { count: result.count || 0 }));
+                        showBulkStatus(formatRetestSummary(result));
                         await reloadReport();
                     } finally {
                         setButtonBusy(btn, false);
@@ -1560,8 +1899,16 @@
             }
 
             await runHealthAction('redirect-apply', async () => {
-                await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
-                showBulkStatus(t('health.autoHealRedirectApplied', 'Redirect URL applied.'));
+                const applied = await applyAutoHeal(pageId, index, { newUrl: redirectUrl, refreshTitle: false });
+                // The server pings the replacement before storing it, so report what it
+                // found rather than assuming a changed URL is a working URL.
+                showBulkStatus(applied?.verifiedOnline === false && applied?.verifyError
+                    ? t(
+                        'health.autoHealRedirectUnverified',
+                        'Redirect applied, but the new URL still fails: {error}',
+                        { error: applied.verifyError }
+                    )
+                    : t('health.autoHealRedirectApplied', 'Redirect URL applied and verified online.'));
                 await reloadReport();
             }, {
                 busyMessage: t('health.autoHealWorking', 'working...')
@@ -1748,6 +2095,10 @@
         syncPageFilterSelect(report);
         if (issuesEl) issuesEl.innerHTML = renderIssues(report);
         if (duplicatesEl) duplicatesEl.innerHTML = renderDuplicates(report);
+        // innerHTML rebuilds every row, so re-apply the panels the user had open
+        // and the roving tab stop.
+        syncAllScorePanels();
+        syncRowTabStops();
 
         const dupPanel = document.querySelector('.health-duplicates-panel');
         if (dupPanel) {

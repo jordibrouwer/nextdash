@@ -286,7 +286,7 @@ class DashboardUiHelpers {
             ]),
             section('sectionCommandsAppearance', 'Commands — appearance', [
                 item(':layout <preset>', 'caLayout', 'Switch layout — default / compact / cards / masonry / list / launcher'),
-                item(':layoutversion <mode>', 'caLayoutversion', 'Switch layout version — classic / modern / glass / toggle (not the same as :layout presets)'),
+                item(':layoutversion <mode>', 'caLayoutversion', 'Switch layout version — classic / modern / toggle (not the same as :layout presets)'),
                 item(':theme <name>', 'caTheme', 'Switch colour theme'),
                 item(':density <mode>', 'caDensity', 'Change density — comfortable / compact / dense'),
                 item(':columns <n>', 'caColumns', 'Set number of columns (1–6)'),

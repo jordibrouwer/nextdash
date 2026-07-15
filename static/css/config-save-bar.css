@@ -31,8 +31,7 @@ html:has(#config-main) :is(
     align-self: stretch;
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .config-actions-top,
-body[data-layout-version="glass"] .config-section.section-controls .config-actions-top {
+body[data-layout-version="modern"] .config-section.section-controls .config-actions-top {
     margin-inline: 0;
     background-color: var(--background-secondary);
     backdrop-filter: none;
@@ -73,8 +72,7 @@ body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wr
     background: linear-gradient(to right, transparent, var(--background-secondary));
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper,
-body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper {
+body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper {
     margin-inline: 0;
     padding-inline: 0;
 }
@@ -91,9 +89,8 @@ body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-
     }
 }
 
-/* C9 — unified app chrome (modern & glass): header + save row + tabs as one card */
-body[data-layout-version="modern"] .config-page-shell > .config-section.section-header,
-body[data-layout-version="glass"] .config-page-shell > .config-section.section-header {
+/* C9 — unified app chrome (modern): header + save row + tabs as one card */
+body[data-layout-version="modern"] .config-page-shell > .config-section.section-header {
     border: 1px solid var(--layout-surface-border);
     border-bottom: none;
     border-radius: var(--layout-radius-md) var(--layout-radius-md) 0 0;
@@ -103,8 +100,7 @@ body[data-layout-version="glass"] .config-page-shell > .config-section.section-h
     margin-bottom: 0;
 }
 
-body[data-layout-version="modern"] .config-page-shell > .config-section.section-controls,
-body[data-layout-version="glass"] .config-page-shell > .config-section.section-controls {
+body[data-layout-version="modern"] .config-page-shell > .config-section.section-controls {
     border: 1px solid var(--layout-surface-border);
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 38%, transparent);
     border-radius: 0 0 var(--layout-radius-md) var(--layout-radius-md);
@@ -113,8 +109,7 @@ body[data-layout-version="glass"] .config-page-shell > .config-section.section-c
     margin-top: calc(-1 * var(--config-tab-gap, 0.85rem));
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .config-actions-top,
-body[data-layout-version="glass"] .config-section.section-controls .config-actions-top {
+body[data-layout-version="modern"] .config-section.section-controls .config-actions-top {
     border: none;
     border-radius: 0;
     box-shadow: none;
@@ -122,13 +117,11 @@ body[data-layout-version="glass"] .config-section.section-controls .config-actio
     padding-inline: var(--config-save-bar-padding-inline, 0.65rem);
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .config-actions-top::before,
-body[data-layout-version="glass"] .config-section.section-controls .config-actions-top::before {
+body[data-layout-version="modern"] .config-section.section-controls .config-actions-top::before {
     display: none;
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper,
-body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper {
+body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper {
     margin-top: 0;
     padding: 0.3rem var(--config-save-bar-padding-inline, 0.65rem) 0.3rem;
     border: none;
@@ -138,21 +131,18 @@ body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-
     background: transparent;
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper::before,
-body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper::before {
+body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper::before {
     display: none;
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .config-controls-wrapper .tabs.config-tabs-grouped,
-body[data-layout-version="glass"] .config-section.section-controls .config-controls-wrapper .tabs.config-tabs-grouped {
+body[data-layout-version="modern"] .config-section.section-controls .config-controls-wrapper .tabs.config-tabs-grouped {
     border: none;
     border-radius: 0;
     box-shadow: none;
     background: transparent;
 }
 
-body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper::after,
-body[data-layout-version="glass"] .config-section.section-controls .tabs-scroll-wrapper::after {
+body[data-layout-version="modern"] .config-section.section-controls .tabs-scroll-wrapper::after {
     background: linear-gradient(to right, transparent, var(--background-secondary));
 }
 

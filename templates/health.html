@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>health beta</title>
-    <script src="/static/js/write-api.js"></script>
-    <script src="/static/js/device-settings-merge.js"></script>
-    <script src="/static/js/font-presets.js"></script>
+    <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
+    <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
@@ -24,13 +24,10 @@
     <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-buttons.css?v={{.Assets.ConfigButtonsCSS}}">
-    <link rel="stylesheet" href="/static/css/health.css?v=a11y-polish-1">
+    <link rel="stylesheet" href="/static/css/health.css?v=health-roving-tabindex-1">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v=health-layout-parity-1">
     <link rel="stylesheet" href="/static/css/health-modern.css?v=health-row-actions-1">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
-    <link rel="stylesheet" href="/static/css/health-glass.css?v=health-row-actions-1">
-    <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
     <link rel="stylesheet" href="/static/css/app-notification.css?v={{.Assets.AppNotificationCSS}}">
     <link rel="stylesheet" href="/static/css/skeleton-loading.css?v={{.Assets.SkeletonLoadingCSS}}">
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -55,7 +52,17 @@
         <section class="health-page-intro">
             <div>
                 <p data-i18n="health.subtitle">Find broken links, duplicates, stale bookmarks, and missing metadata in one place.</p>
-                <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
+                <ul class="health-keyboard-legend" aria-label="Keyboard shortcuts" data-i18n-aria="health.kbdLegendLabel">
+                    <li><kbd>j</kbd><kbd>k</kbd><span data-i18n="health.kbdMove">move</span></li>
+                    <li><kbd>s</kbd><span data-i18n="health.kbdScore">score</span></li>
+                    <li><kbd>p</kbd><span data-i18n="health.kbdPing">re-check</span></li>
+                    <li><kbd>f</kbd><span data-i18n="health.kbdFavicon">favicon</span></li>
+                    <li><kbd>x</kbd><span data-i18n="health.kbdSelect">select</span></li>
+                    <li><kbd>m</kbd><span data-i18n="health.kbdMenu">more actions</span></li>
+                    <li><kbd>Enter</kbd><span data-i18n="health.kbdEdit">edit</span></li>
+                    <li><kbd>o</kbd><span data-i18n="health.kbdOpen">open link</span></li>
+                    <li><kbd>g</kbd><kbd>G</kbd><span data-i18n="health.kbdJump">first / last</span></li>
+                </ul>
             </div>
         </section>
 
@@ -116,7 +123,6 @@
                     </select>
                 </div>
             </div>
-            <p class="health-keyboard-hint" data-i18n="health.keyboardHint">Tip: j/k move rows, Enter opens editor, O opens link.</p>
             <div id="health-issues" class="health-issues health-list">
                 <div class="skeleton-root skeleton-health-issues" data-skeleton-root aria-hidden="true">
                     <div class="skeleton-shimmer skeleton-health-row"></div>
@@ -137,18 +143,18 @@
         </main>
     </div>
 
-    <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/layout-version-utils.js"></script>
-    <script src="/static/js/layout-utils.js"></script>
+    <script src="/static/js/skeleton-loading.js?v={{.Assets.SkeletonLoadingJS}}"></script>
+    <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
+    <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
-    <script src="/static/js/page-layout-sync.js"></script>
-    <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
-    <script src="/static/js/modal.js"></script>
+    <script src="/static/js/page-layout-sync.js?v={{.Assets.PageLayoutSyncJS}}"></script>
+    <script src="/static/js/config/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
+    <script src="/static/js/modal.js?v={{.Assets.ModalJS}}"></script>
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
-    <script src="/static/js/dashboard-deep-link.js"></script>
+    <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}"></script>
     <script src="/static/js/health-runtime.js?v=health-runtime-1"></script>
-    <script src="/static/js/health.js?v=health-retest-action-1"></script>
+    <script src="/static/js/health.js?v=health-roving-tabindex-1"></script>
 </body>
 </html>

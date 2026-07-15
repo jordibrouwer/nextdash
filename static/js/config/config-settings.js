@@ -357,7 +357,7 @@ class ConfigSettings {
         };
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
-        const layoutVersions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern', 'glass'];
+        const layoutVersions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
         const densityModes = ['comfortable', 'compact', 'dense', 'auto'];
         const layoutKey = layoutPresets.includes(layoutPreset) ? layoutPreset : 'default';
         const versionKey = layoutVersions.includes(layoutVersion) ? layoutVersion : 'classic';
@@ -662,11 +662,10 @@ class ConfigSettings {
 
         const layoutVersionSelect = document.getElementById('layout-version-select');
         if (layoutVersionSelect) {
-            const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern', 'glass'];
+            const versions = window.LayoutVersionUtils?.getLayoutVersions?.() || ['classic', 'modern'];
             const VERSION_LABELS = {
                 classic: 'Classic',
-                modern: 'Modern',
-                glass: 'Glass'
+                modern: 'Modern'
             };
             layoutVersionSelect.innerHTML = versions.map((version) => {
                 const label = VERSION_LABELS[version] || (version.charAt(0).toUpperCase() + version.slice(1));

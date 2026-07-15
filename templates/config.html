@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Configuration</title>
-    <script src="/static/js/write-api.js"></script>
-    <script src="/static/js/font-presets.js"></script>
+    <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
@@ -49,9 +49,6 @@
     <link rel="stylesheet" href="/static/css/feature-spotlight.css?v={{.Assets.FeatureSpotlightCSS}}">
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
-    <link rel="stylesheet" href="/static/css/config-glass.css?v=config-polish-c2-2">
-    <link rel="stylesheet" href="/static/css/overlays-glass.css?v={{.Assets.OverlaysGlassCSS}}">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/config-save-bar.css?v=quiet-borders-1">
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -464,7 +461,7 @@
                             <button type="button" id="layout-version-info-btn" class="info-button" data-i18n-aria="config.layoutVersionInfoTitle">ℹ</button>
                             <select id="layout-version-select"></select>
                         </div>
-                        <p id="layout-version-beta-notice" class="setting-description setting-description--beta" data-i18n="config.layoutVersionBetaNotice">Modern and Glass are still in early beta and not finished yet. Classic is recommended for the best experience.</p>
+                        <p id="layout-version-beta-notice" class="setting-description setting-description--beta" data-i18n="config.layoutVersionBetaNotice">Modern is still in early beta and not finished yet. Classic is recommended for the best experience.</p>
                         <p id="layout-version-description" class="setting-description" aria-live="polite"></p>
                         <div class="form-group">
                             <label for="layout-preset-select" data-i18n="config.layoutPresetLabel">Layout preset:</label>
@@ -1222,7 +1219,7 @@
                                             </div>
                                         </div>
                                         <div class="config-advanced-action-row">
-                                            <p class="config-advanced-action-text" data-i18n="config.resetLayoutModernNudgeHint">Show the layout-versions spotlight again on the dashboard (classic layout only). Try modern or Try glass applies that version directly.</p>
+                                            <p class="config-advanced-action-text" data-i18n="config.resetLayoutModernNudgeHint">Show the layout-versions spotlight again on the dashboard (classic layout only). Try modern applies that version directly.</p>
                                             <div class="config-advanced-action-actions">
                                                 <button type="button" id="reset-layout-modern-nudge-btn" class="btn btn-secondary btn-small" data-i18n="config.resetLayoutModernNudgeButton">Reset layout versions prompt</button>
                                             </div>
@@ -2561,45 +2558,45 @@
     </div>
     </div>
 
-    <script src="/static/js/modal.js"></script>
+    <script src="/static/js/modal.js?v={{.Assets.ModalJS}}"></script>
     <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}"></script>
-    <script src="/static/js/layout-version-utils.js"></script>
-    <script src="/static/js/layout-utils.js"></script>
-    <script src="/static/js/status.js"></script>
-    <script src="/static/js/select.js"></script>
-    <script src="/static/js/reorder.js"></script>
-    <script src="/static/js/hypr-mode.js"></script>
+    <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
+    <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
+    <script src="/static/js/status.js?v={{.Assets.StatusJS}}"></script>
+    <script src="/static/js/select.js?v={{.Assets.SelectJS}}"></script>
+    <script src="/static/js/reorder.js?v={{.Assets.ReorderJS}}"></script>
+    <script src="/static/js/hypr-mode.js?v={{.Assets.HyprModeJS}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-unsaved-1"></script>
     <script src="/static/js/config/config-ui.js?v=config-chrome-v5-4"></script>
-    <script src="/static/js/device-settings-merge.js"></script>
+    <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
     <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
-    <script src="/static/js/config/config-storage.js"></script>
-    <script src="/static/js/config/config-data.js"></script>
-    <script src="/static/js/config/config-bookmark-store.js"></script>
+    <script src="/static/js/config/config-storage.js?v={{.Assets.ConfigStorageJS}}"></script>
+    <script src="/static/js/config/config-data.js?v={{.Assets.ConfigDataJS}}"></script>
+    <script src="/static/js/config/config-bookmark-store.js?v={{.Assets.ConfigBookmarkStoreJS}}"></script>
     <script src="/static/js/config/config-pages.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-categories.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/tag-autocomplete.js?v=collections-ac-1"></script>
-    <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
+    <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
     <script src="/static/js/config/config-bookmarks.js?v=bookmarks-bulk-tags-1"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=tips-off-default-1"></script>
-    <script src="/static/js/config/config-font.js"></script>
-    <script src="/static/js/config/config-settings.js?v=kelp-drift-default-1"></script>
+    <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
+    <script src="/static/js/config/config-settings.js?v=glass-removed-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
-    <script src="/static/js/config/config-tours-runtime.js"></script>
+    <script src="/static/js/config/config-tours-runtime.js?v={{.Assets.ConfigToursRuntimeJS}}"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-autostart-off-1"></script>
     <script src="/static/js/config/config-persistence.js?v=save-signal-scope-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=bookmarks-bulk-tags-1"></script>
+    <script src="/static/js/config/config-setup.js?v=glass-removed-1"></script>
     <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2"></script>
     <script src="/static/js/config/config-language.js?v=i18n-safe-text-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-nav-highlight-1"></script>
@@ -2617,8 +2614,8 @@
     <script src="/static/js/config/config-help-search.js?v=help-expand-collapse-all-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=search-index-keyboard-1"></script>
-    <script src="/static/js/config/config-command-palette.js"></script>
-    <script src="/static/js/config/config-setting-info.js"></script>
+    <script src="/static/js/config/config-command-palette.js?v={{.Assets.ConfigCommandPaletteJS}}"></script>
+    <script src="/static/js/config/config-setting-info.js?v={{.Assets.ConfigSettingInfoJS}}"></script>
     <script src="/static/js/config/config-custom-themes.js?v=config-domain-1"></script>
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-b10-1"></script>
@@ -2630,16 +2627,17 @@
     <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>
     <script src="/static/js/config/config-quick-add.js?v=config-quick-add-2"></script>
     <!-- Main config orchestrator -->
-    <script src="/static/js/skeleton-loading.js"></script>
+    <script src="/static/js/skeleton-loading.js?v={{.Assets.SkeletonLoadingJS}}"></script>
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/feature-spotlight.js?v={{.Assets.FeatureSpotlightJS}}"></script>
     <script src="/static/js/layout-modern-nudge.js?v={{.Assets.LayoutModernNudgeJS}}"></script>
     <script src="/static/js/layout-beta-toast.js?v={{.Assets.LayoutBetaToastJS}}"></script>
+    <script src="/static/js/layout-glass-removed-toast.js?v={{.Assets.LayoutGlassRemovedJS}}"></script>
     <script src="/static/js/preview-card-spotlight.js?v={{.Assets.PreviewCardSpotlightJS}}"></script>
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
-    <script src="/static/js/config.js?v=kelp-drift-bookmarks-page-1"></script>
+    <script src="/static/js/config.js?v=glass-removed-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">

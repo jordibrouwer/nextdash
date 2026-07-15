@@ -325,6 +325,7 @@ class ConfigManager {
             void this.maybeStartConfigGeneralTour({ force: true });
         }
 
+        window.LayoutGlassRemovedToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
         window.LayoutBetaToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
     }
 

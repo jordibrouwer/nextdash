@@ -1,5 +1,5 @@
 /**
- * One-time success toast: modern/glass layouts are early beta — prefer Classic.
+ * One-time success toast: the modern layout is early beta — prefer Classic.
  */
 (function () {
     'use strict';
@@ -7,13 +7,15 @@
     const STORAGE_KEY = 'nextdash:layout-beta-toast-v1';
     const SHOW_DELAY_MS = 1200;
     const TOAST_DURATION_MS = 9000;
-    const MAX_RETRY_ATTEMPTS = 40;
+    // ~2 minutes: this is scheduled up front rather than after the prompt chain,
+    // so it must outwait a what's-new modal the user is still reading.
+    const MAX_RETRY_ATTEMPTS = 200;
     const RETRY_DELAY_MS = 600;
 
     let scheduleTimer = null;
     let retryAttempts = 0;
 
-    const FALLBACK = 'Glass and modern layouts are still in early beta. Use Classic as layout for the best experience.';
+    const FALLBACK = 'The Modern layout is still in early beta. Use Classic as layout for the best experience.';
 
     function language() {
         return window.dashboardInstance?.language || window.configManager?.language || null;

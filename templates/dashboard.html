@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
-    <script src="/static/js/write-api.js"></script>
-    <script src="/static/js/font-presets.js"></script>
-    <script src="/static/js/device-settings-merge.js"></script>
+    <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
+    <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
     <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
     <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
@@ -21,8 +21,8 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=sort-locked-drag-hint-1">
-    <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v=dashboard-d12-row-tokens-1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v={{.Assets.DashboardCSS}}">
+    <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v={{.Assets.DashboardBookmarkRowCSS}}">
     <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/app-notification.css?v={{.Assets.AppNotificationCSS}}">
     <link rel="stylesheet" href="/static/css/search.css?v={{.Assets.SearchCSS}}">
@@ -49,12 +49,9 @@
     <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-svg-icon-1">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-modern.css?v=dashboard-d12-row-tokens-1">
+    <link rel="stylesheet" href="/static/css/layout-modern.css?v={{.Assets.LayoutModernCSS}}">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-glass-tokens.css?v={{.Assets.GlassTokensCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-glass.css?v=dashboard-d12-row-tokens-1">
     <link rel="stylesheet" href="/static/css/layout-side-rail.css?v=side-rail-discover-d7-1">
-    <link rel="stylesheet" href="/static/css/overlays-glass.css?v=whats-new-config-parity-1">
     <link rel="stylesheet" href="/static/css/dashboard-inline-edit-surface.css?v=opaque-panel-3">
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
@@ -289,23 +286,23 @@
     <script src="/static/js/modal.js?v=modal-focus-aria-1"></script>
     <script src="/static/js/focus-trap-utils.js?v=inline-edit-inert-fix-1"></script>
     <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}" defer></script>
-    <script src="/static/js/layout-version-utils.js"></script>
-    <script src="/static/js/layout-utils.js"></script>
-    <script src="/static/js/config/config-language.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-url-utils.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-preview-service.js"></script>
-    <script src="/static/js/bookmark-form/bookmark-form-preview.js"></script>
+    <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
+    <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
+    <script src="/static/js/config/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
+    <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-remove.js"></script>
-    <script src="/static/js/search-commands/search-commands-columns.js"></script>
-    <script src="/static/js/search-commands/search-commands-fontsize.js"></script>
-    <script src="/static/js/search-commands/search-commands-theme.js"></script>
-    <script src="/static/js/search-commands/search-commands-note.js"></script>
-    <script src="/static/js/search-commands.js?v=no-quicktag-cmd-1"></script>
+    <script src="/static/js/search-commands/search-commands-remove.js?v={{.Assets.SearchCommandsRemoveJS}}"></script>
+    <script src="/static/js/search-commands/search-commands-columns.js?v={{.Assets.SearchCommandsColumnsJS}}"></script>
+    <script src="/static/js/search-commands/search-commands-fontsize.js?v={{.Assets.SearchCommandsFontSizeJS}}"></script>
+    <script src="/static/js/search-commands/search-commands-theme.js?v={{.Assets.SearchCommandsThemeJS}}"></script>
+    <script src="/static/js/search-commands/search-commands-note.js?v={{.Assets.SearchCommandsNoteJS}}"></script>
+    <script src="/static/js/search-commands.js?v=glass-removed-1"></script>
     <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
-    <script src="/static/js/fuzzy-search.js"></script>
+    <script src="/static/js/fuzzy-search.js?v={{.Assets.FuzzySearchJS}}"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1" defer></script>
-    <script src="/static/js/dashboard-promo-registry.js?v=promo-registry-c3-1" defer></script>
+    <script src="/static/js/dashboard-promo-registry.js?v=glass-removed-1" defer></script>
     <script src="/static/js/dashboard-search-promo.js?v=search-promo-8" defer></script>
     <script src="/static/js/search.js?v=inbox-search-guard-1"></script>
     <script src="/static/js/status.js?v=ping-quiet-network-errors-1"></script>
@@ -315,28 +312,29 @@
     <script src="/static/js/dashboard-feature-promos.js?v=cat-rename-promo-2" defer></script>
     <script src="/static/js/keyboard-navigation.js?v=inbox-kbd-nav-4"></script>
     <script src="/static/js/swipe-navigation.js?v=nav-fix-4" defer></script>
-    <script src="/static/js/hypr-mode.js" defer></script>
+    <script src="/static/js/hypr-mode.js?v={{.Assets.HyprModeJS}}" defer></script>
     <script src="/static/js/reorder.js?v=delegate-dragover-1" defer></script>
     <script src="/static/js/guided-flow-guard.js?v={{.Assets.GuidedFlowJS}}" defer></script>
     <script src="/static/js/onboarding.js?v=kelp-drift-default-1" defer></script>
-    <script src="/static/js/feature-tour.js?v=focus-ring-1" defer></script>
-    <script src="/static/js/config-bookmarks-tour.js" defer></script>
+    <script src="/static/js/feature-tour.js?v=glass-removed-1" defer></script>
+    <script src="/static/js/config-bookmarks-tour.js?v={{.Assets.ConfigBookmarksTourJS}}" defer></script>
     <script src="/static/js/feature-spotlight.js?v={{.Assets.FeatureSpotlightJS}}" defer></script>
     <script src="/static/js/layout-modern-nudge.js?v={{.Assets.LayoutModernNudgeJS}}" defer></script>
     <script src="/static/js/preview-card-spotlight.js?v={{.Assets.PreviewCardSpotlightJS}}" defer></script>
     <script src="/static/js/weather.js?v=weather-geolocation-1" defer></script>
     <script src="/static/js/tag-autocomplete.js?v=collections-ac-1" defer></script>
     <script src="/static/js/quick-add.js?v={{.Assets.SearchCommandsNewJS}}" defer></script>
-    <script src="/static/js/skeleton-loading.js"></script>
-    <script src="/static/js/shortcut-format.js" defer></script>
+    <script src="/static/js/skeleton-loading.js?v={{.Assets.SkeletonLoadingJS}}"></script>
+    <script src="/static/js/shortcut-format.js?v={{.Assets.ShortcutFormatJS}}" defer></script>
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}" defer></script>
     <script src="/static/js/layout-beta-toast.js?v={{.Assets.LayoutBetaToastJS}}" defer></script>
+    <script src="/static/js/layout-glass-removed-toast.js?v={{.Assets.LayoutGlassRemovedJS}}" defer></script>
     <script src="/static/js/inbox-intro-toast.js?v={{.Assets.InboxIntroToastJS}}" defer></script>
     <script src="/static/js/inbox-intro-modal.js?v={{.Assets.InboxIntroModalJS}}" defer></script>
-    <script src="/static/js/pwa-install-hint.js" defer></script>
+    <script src="/static/js/pwa-install-hint.js?v={{.Assets.PWAInstallHintJS}}" defer></script>
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/dashboard-tag-cloud.js?v=tag-filter-fix-6" defer></script>
-    <script src="/static/js/dashboard-deep-link.js" defer></script>
+    <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}" defer></script>
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
     <script src="/static/js/dashboard/dashboard-data.js?v=tips-off-default-1"></script>
@@ -353,19 +351,19 @@
     <script src="/static/js/dashboard/dashboard-bookmark-rows.js?v=row-drag-handle-1"></script>
     <script src="/static/js/dashboard/dashboard-category-sort.js?v=cat-sort-4"></script>
     <script src="/static/js/dashboard/dashboard-category-title-fit.js?v=cat-title-fit-1"></script>
-    <script src="/static/js/dashboard/dashboard-render-core.js?v=sort-locked-drag-hint-1"></script>
+    <script src="/static/js/dashboard/dashboard-render-core.js?v={{.Assets.DashboardRenderCoreJS}}"></script>
     <script src="/static/js/dashboard/dashboard-render-incremental.js?v=category-drag-handle-1"></script>
     <script src="/static/js/dashboard/dashboard-notifications.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-visual.js?v=health-icon-badge-2"></script>
     <script src="/static/js/dashboard/dashboard-date-weather.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-recent.js?v=recent-usage-d8-1"></script>
-    <script src="/static/js/dashboard/dashboard-promos.js?v=promos-dash-ref-1"></script>
-    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=collapse-all-2"></script>
+    <script src="/static/js/dashboard/dashboard-promos.js?v=promos-standalone-toasts-1"></script>
+    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=glass-removed-1"></script>
     <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2" defer></script>
-    <script src="/static/js/dashboard/dashboard-setup.js?v=inbox-kbd-nav-3"></script>
+    <script src="/static/js/dashboard/dashboard-setup.js?v=glass-removed-1"></script>
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
     <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
-    <script src="/static/js/analytics.js" defer></script>
+    <script src="/static/js/analytics.js?v={{.Assets.AnalyticsJS}}" defer></script>
 </body>
 </html>

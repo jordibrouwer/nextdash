@@ -536,11 +536,154 @@ body {
     font-size: var(--font-size-controls);
     background: color-mix(in srgb, var(--text-secondary) 10%, var(--background-secondary));
     flex-shrink: 0;
+    /* Now a button: strip UA chrome so the badge keeps its shape. */
+    border: 1px solid transparent;
+    padding: 0;
+    font-family: inherit;
+    cursor: pointer;
+    position: relative;
+}
+
+.health-row-score:hover,
+.health-row-score[aria-expanded="true"] {
+    border-color: var(--border-primary);
+}
+
+.health-row-score:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Caret marking the badge as expandable. */
+.health-row-score::after {
+    content: "";
+    position: absolute;
+    bottom: 0.22rem;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid currentColor;
+    opacity: 0.75;
+}
+
+.health-row-score:hover::after,
+.health-row-score:focus-visible::after,
+.health-row-score[aria-expanded="true"]::after {
+    opacity: 1;
+}
+
+.health-row-score[aria-expanded="true"]::after {
+    transform: translateX(-50%) rotate(180deg);
 }
 
 .health-row-score.good { color: var(--accent-success); }
 .health-row-score.warn { color: var(--accent-warning); }
 .health-row-score.bad { color: var(--accent-error); }
+
+/* Score breakdown: spans the row's 4-column grid so it reads as one block. */
+.health-score-panel {
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+    padding: 0.6rem 0.7rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    font-size: calc(var(--font-size-controls) * 0.9);
+}
+
+.health-row--score-open {
+    border-left-color: var(--accent-primary);
+}
+
+.health-score-explain-intro {
+    margin: 0 0 0.4rem;
+    color: var(--text-secondary);
+}
+
+.health-score-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.health-score-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+}
+
+.health-score-item-label {
+    color: var(--text-primary);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.health-score-item-cost {
+    flex-shrink: 0;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-error);
+}
+
+.health-score-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.45rem 0 0;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+}
+
+.health-score-total-value {
+    font-weight: var(--font-weight-black);
+    font-variant-numeric: tabular-nums;
+}
+
+.health-score-total-value.good { color: var(--accent-success); }
+.health-score-total-value.warn { color: var(--accent-warning); }
+.health-score-total-value.bad { color: var(--accent-error); }
+
+.health-score-perfect {
+    margin: 0;
+    color: var(--accent-success);
+}
+
+/* Shortcut legend: same kbd treatment as the dashboard hints and modals. */
+.health-keyboard-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.9rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    font-size: calc(var(--font-size-controls) * 0.85);
+    color: var(--text-tertiary);
+}
+
+.health-keyboard-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.health-keyboard-legend kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.9em;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
 
 .health-row-main {
     min-width: 0;

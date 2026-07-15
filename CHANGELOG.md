@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.14.2 — July 2026](#v202607142--july-2026)
 - [v2026.07.14.1 — July 2026](#v202607141--july-2026)
 - [v2026.07.14 — July 2026](#v20260714--july-2026)
 - [v2026.07.13.1 — July 2026](#v202607131--july-2026)
@@ -93,6 +94,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.14.2 — July 2026
+
+**Health repairs that stick, and a score that explains itself** — the health page can clear a broken link, verify a redirect before trusting it, and show what each issue costs. Glass is retired.
+
+### Health
+
+- **fix** **Repairs are visible immediately** — `invalidateHealthReportCache()` existed but no health handler called it (only `backup.go`), so every mutation stayed hidden behind the 3-minute report TTL: a successful ping cleared `LastError` on disk while the report kept reporting broken. All six mutating handlers now invalidate (`handlers.go`).
+- **fix** **Retest reaches flagged bookmarks** — the run skipped every bookmark with `checkStatus` off (the default) and still reported `completed`, so a row rendered broken and scored −60 could never be cleared from a page that exposes no `checkStatus` toggle. `scope=all` now includes rows with a recorded error, a run that tests nothing says so, and a second `CheckStatus` filter in the write-back that discarded the results is gone. Capped at 250 pings per run — they are sequential at up to 3s each (`handlers.go`, `health.js`).
+- **fix** **Redirects are verified before they are trusted** — `AutoHealApply` cleared `LastError` on the strength of "the URL changed" without contacting the replacement. It now pings the new URL before storing it and keeps the row red, with the reason, when it still fails (`handlers.go`, `health.js`).
+- **new** **Score breakdown** — the score badge expands (click or <kbd>s</kbd>) into the per-reason deductions and the total. Penalties travel from the server on each `HealthReason` as named constants beside the arithmetic, rather than being restated in JS where they would drift; a test pins them to `100 - score` (`models.go`, `handlers.go`, `health.js`, `health.css`).
+- **new** **Keyboard navigation** — the score badge was a `div` and unreachable; reaching the first row cost 27 tab stops with 8 more per row, leaving the last of 100 bookmarks unreachable. Rows now use roving tabindex mirroring `KeyboardNavigation.syncRovingTabStops`: one stop per row, `Tab` walks them and releases at either end, and `s`/`x`/`p`/`f`/`m`/`g`/`G` cover the controls that left the tab order. Filter pills became one stop with arrow keys, as their `role="toolbar"` already promised. `Enter` on a row control no longer also fires the row's edit shortcut (`health.js`, `health.css`, `templates/health.html`).
+- **fix** **Page cleanup** — removed a dead `if` block and the duplicate keyboard hint that listed only half the keys; the shortcut legend replaces it (`templates/health.html`).
+
+### Appearance
+
+- **fix** **Glass layout removed** — one of three parallel layouts, each needing its own CSS for every visual change; dropping it removes ~3,100 lines. Stored settings migrate silently: `models.go` validates `layoutVersion` against the allowed list and falls back to `classic`, so dropping `glass` from that list *is* the migration, and localStorage device settings normalize the same way. Because both paths rewrite `glass` without a trace, `theme-loader` records the raw value first and a one-time toast tells the user their layout changed (`models.go`, `theme-loader.js`, `layout-beta-toast.js`).
+
+### Dashboard
+
+- **fix** **One-time toasts no longer starve** — `runPostOnboardingPrompts` is a chain of early returns, and what's new returns until acknowledged, leaving the layout and Inbox intro toasts unreachable for anyone with an unseen release. Both own their storage keys and retry until a blocking modal closes, so they are now scheduled before the chain rather than at its tail (`dashboard/dashboard-promos.js`, `layout-beta-toast.js`, `inbox-intro-toast.js`).
+
+### Developer & docs
+
+- **fix** **Cache-bust coverage** — 52 asset references moved onto the `Assets` system (32 were untokened, so `static_cache.go` served them `max-age=86400` and a deploy stayed invisible for up to a day — the head scripts are the sharp end, `write-api.js` carries write-token auth). Fixed a dual cache identity where `config-buttons.css` resolved to two URLs from different entry points (`asset_versions.go`, `config.css`, templates).
+- **fix** **E2E tests** — four specs failed on a clean tree because they outlived the code they check: `openShortcutSearch` typed `>` via `press('Shift+.')`, which sends key `.` with `shiftKey` — a chord no keyboard produces — firing collapse-all and leaving `navigableElements` at 0; the backups tab asserted 3 sections after Automatic Backups made it 4; the layout nudge asserted the Glass button removed with Glass; and category reorder identified categories by `data-category-id`, which derived buckets also carry while never being reorderable (`e2e-helpers.js`, `config-tab-consistency.spec.js`, `dashboard-grid-shortcuts.spec.js`, `dashboard-recent-and-nudge.spec.js`, `dashboard-category-reorder.spec.js`).
+- **new** **Tests** — 6 Go tests covering cache invalidation, retest scope, redirect verification and penalty arithmetic (`health_report_invalidation_test.go`); 21 Playwright tests covering the score breakdown, the keyboard model, tab order, and retest loop guards (`health-score-keyboard.spec.js`, `health-tab-navigation.spec.js`, `health-retest-loop.spec.js`).
+- **fix** **README, MANUAL & Config Help** — **v2026.07.14.2** notes.
+- **fix** **Cache-bust** — `whats-new-v159` data version (`asset_versions.go`, `whats-new-stub.js`), `2026.07-dashboard-release-v118` dashboard release token, and bumped `health.js` / `health.css` asset tokens.
 
 ---
 

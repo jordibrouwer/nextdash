@@ -1,0 +1,51 @@
+{
+  "tag": "v2026.07.14.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-15",
+  "modalLead": "The health page can now actually fix a bookmark and show you why it scored what it scored — and the Glass layout has been retired.",
+  "sections": [
+    {
+      "title": "Health page",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A repaired bookmark turns green right away</strong> — re-checking a broken link cleared the error, but the page kept showing it as broken for up to three minutes, so the fix looked like it had failed. Every health action now updates the view immediately."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Retest no longer skips your broken links</strong> — <strong>Retest statuses</strong> only tested bookmarks with status checks switched on, which is off by default. A link flagged as broken could never be cleared from this page, and the button reported success after testing nothing. It now includes flagged bookmarks, and says so plainly when there is nothing to test."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Redirect fixes are verified before they count</strong> — applying a detected redirect marked the bookmark healthy without ever visiting the new address. The new URL is now checked first, and the row stays red with the reason when it still fails."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>See how a score is calculated</strong> — click the score badge on any row (or press <kbd>s</kbd>) to unfold the breakdown: every bookmark starts at 100, and each issue shows what it costs, down to the total."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health is keyboard-first again</strong> — reaching a bookmark took 27 tab presses, and every row cost eight more. <kbd>Tab</kbd> now steps through the rows one at a time, and the row keys cover the rest: <kbd>s</kbd> score, <kbd>p</kbd> re-check, <kbd>f</kbd> favicon, <kbd>x</kbd> select, <kbd>m</kbd> more actions, <kbd>g</kbd>/<kbd>G</kbd> first/last. The shortcut legend at the top of the page lists them all."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The Glass layout has been retired</strong> — it was one of three parallel layouts, and every visual change had to be built three times. If you were using Glass, your dashboard now uses <strong>Classic</strong> and a one-time note tells you so. <strong>Classic</strong> and <strong>Modern</strong> remain, and you can switch between them in <strong>Config → General → Basics</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>One-time notices no longer get stuck behind What's new</strong> — the layout and Inbox introduction notes waited their turn in a queue that stopped at an unread What's new, so they never appeared. They are now scheduled independently and wait for the modal to close."
+        }
+      ]
+    }
+  ]
+}

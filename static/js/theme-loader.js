@@ -156,7 +156,7 @@
     
     function normalizeLayoutVersion(value) {
         const normalized = (value || '').toLowerCase().trim();
-        if (normalized === 'modern' || normalized === 'glass') {
+        if (normalized === 'modern') {
             return normalized;
         }
         return 'classic';
@@ -164,7 +164,7 @@
 
     /**
      * Gets the layoutVersion setting
-     * @returns {string} The layout version ('classic', 'modern', or 'glass')
+     * @returns {string} The layout version ('classic' or 'modern')
      */
     function getLayoutVersion() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
@@ -185,6 +185,13 @@
             if (htmlAttr) {
                 layoutVersion = htmlAttr;
             }
+        }
+
+        // normalizeLayoutVersion() silently maps the removed "glass" onto classic,
+        // so record the raw value first — LayoutGlassRemovedToast needs it to
+        // explain the switch, and this is the only place it is still observable.
+        if ((layoutVersion || '').toLowerCase().trim() === 'glass') {
+            window.__nextdashLayoutWasGlass = true;
         }
 
         return normalizeLayoutVersion(layoutVersion);

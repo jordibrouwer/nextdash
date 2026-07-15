@@ -37,7 +37,7 @@ class DashboardSetup {
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
         const layoutVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(d.settings.layoutVersion)
-            : (['classic', 'modern', 'glass'].includes((d.settings.layoutVersion || '').toLowerCase())
+            : (['classic', 'modern'].includes((d.settings.layoutVersion || '').toLowerCase())
                 ? (d.settings.layoutVersion || 'classic').toLowerCase()
                 : 'classic');
         d.settings.layoutVersion = layoutVersion;

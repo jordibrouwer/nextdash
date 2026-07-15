@@ -1,42 +1,48 @@
 /**
- * One-time info toast: introduce Inbox and the 0 shortcut for existing users.
+ * One-time toast: the Glass layout was removed and this device was switched to Classic.
+ *
+ * theme-loader.js sets window.__nextdashLayoutWasGlass before normalizing the
+ * stored value away; without that flag the switch is invisible by the time the
+ * page renders.
  */
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'nextdash:inbox-intro-toast-v1';
-    const SHOW_DELAY_MS = 1400;
-    const TOAST_DURATION_MS = 10000;
-    // ~2 minutes: this is scheduled up front rather than after the prompt chain,
-    // so it must outwait a what's-new modal the user is still reading.
+    const STORAGE_KEY = 'nextdash:layout-glass-removed-v1';
+    const SHOW_DELAY_MS = 1200;
+    const TOAST_DURATION_MS = 9000;
+    // ~2 minutes of retries: this announces a change the user did not ask for,
+    // so it waits out a what's-new modal instead of giving up like a tip would.
     const MAX_RETRY_ATTEMPTS = 200;
     const RETRY_DELAY_MS = 600;
 
     let scheduleTimer = null;
     let retryAttempts = 0;
 
-    const FALLBACK_MESSAGE = 'New: Inbox — save links to read later. Press 0 anytime to open it.';
-    const FALLBACK_ACTION = 'Open Inbox';
+    const FALLBACK = 'The Glass layout has been removed. Your layout is now set to Classic.';
 
-    function language() {
-        return window.dashboardInstance?.language || null;
+    function wasGlass() {
+        return window.__nextdashLayoutWasGlass === true;
     }
 
-    function translate(key, fallback) {
+    function language() {
+        return window.dashboardInstance?.language || window.configManager?.language || null;
+    }
+
+    function message() {
         const lang = language();
+        const scope = document.getElementById('config-main') ? 'config' : 'dashboard';
+        const key = `${scope}.layoutGlassRemovedToast`;
         const text = lang?.t?.(key);
         if (text && text !== key) {
             return text;
         }
-        return fallback;
-    }
-
-    function message() {
-        return translate('dashboard.inboxIntroToast', FALLBACK_MESSAGE);
-    }
-
-    function actionLabel() {
-        return translate('dashboard.inboxIntroToastAction', FALLBACK_ACTION);
+        const altKey = scope === 'config' ? 'dashboard.layoutGlassRemovedToast' : 'config.layoutGlassRemovedToast';
+        const alt = lang?.t?.(altKey);
+        if (alt && alt !== altKey) {
+            return alt;
+        }
+        return FALLBACK;
     }
 
     function hasShown() {
@@ -57,15 +63,25 @@
         } catch { /* ignore */ }
     }
 
-    function isInboxEnabled() {
-        const dash = window.dashboardInstance;
-        return dash?.settings?.inboxEnabled !== false;
+    /**
+     * Rewrites a device-specific glass setting to classic so the flag does not
+     * reappear on the next load. Server-stored settings normalize in models.go.
+     */
+    function persistClassic() {
+        try {
+            if (localStorage.getItem('deviceSpecificSettings') !== 'true') return;
+            const raw = localStorage.getItem('dashboardSettings');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if ((parsed?.layoutVersion || '').toLowerCase().trim() !== 'glass') return;
+            parsed.layoutVersion = 'classic';
+            localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+        } catch { /* ignore */ }
     }
 
     function canShowOnDashboard() {
         const dash = window.dashboardInstance;
         if (!dash) return false;
-        if (!isInboxEnabled()) return false;
         if (dash.onboardingStartedInSession) return false;
         if (dash.settings?.onboardingCompleted !== true) return false;
         if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
@@ -73,13 +89,13 @@
         return true;
     }
 
-    function openInbox() {
-        void window.dashboardInstance?.inbox?.openInboxView?.();
-    }
-
     function notify(text, options) {
         if (window.dashboardInstance?.showNotification) {
             window.dashboardInstance.showNotification(text, 'info', options);
+            return true;
+        }
+        if (window.configManager?.ui?.showNotification) {
+            window.configManager.ui.showNotification(text, 'info', options);
             return true;
         }
         if (window.AppNotification?.show) {
@@ -90,26 +106,24 @@
     }
 
     function maybeShow() {
+        if (!wasGlass()) return true;
         if (hasShown()) return true;
-        if (!document.getElementById('dashboard-layout')) return false;
-        if (!canShowOnDashboard()) return false;
 
-        if (!notify(message(), {
-            duration: TOAST_DURATION_MS,
-            actionLabel: actionLabel(),
-            onAction: openInbox,
-        })) {
+        if (document.getElementById('dashboard-layout') && !canShowOnDashboard()) {
+            return false;
+        }
+
+        if (!notify(message(), { duration: TOAST_DURATION_MS })) {
             return false;
         }
 
         markShown();
-        window.dashboardInstance?.pageNav?.syncInboxTabHighlight?.();
         return true;
     }
 
     function scheduleShow(options = {}) {
+        if (!wasGlass()) return;
         if (hasShown()) return;
-        if (!document.getElementById('dashboard-layout')) return;
 
         if (scheduleTimer) {
             clearTimeout(scheduleTimer);
@@ -137,7 +151,9 @@
         }, delay);
     }
 
-    window.InboxIntroToast = {
+    persistClassic();
+
+    window.LayoutGlassRemovedToast = {
         STORAGE_KEY,
         hasShown,
         markShown,
@@ -148,13 +164,6 @@
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch { /* ignore */ }
-            return true;
-        },
-        /** Dev helper: clear seen-state and show the toast again. */
-        replay(options = {}) {
-            this.reset();
-            this.scheduleShow({ delay: 0, resetAttempts: true, ...options });
-            return true;
         },
     };
 })();
