@@ -1999,6 +1999,13 @@ body[data-density-mode="dense"] .dashboard-grid {
     display: none;
 }
 
+/* Manual drag is off while A–Z / Recent sorting owns the order. Signal it: no grab
+   affordance, and a not-allowed cursor on a press-drag. A plain click still opens
+   the bookmark (the link keeps its own pointer cursor). */
+.bookmarks-list.bookmarks-list--sort-active .bookmark-link.reorder-item:active {
+    cursor: not-allowed;
+}
+
 /* ─── Category collapse — grid-template-rows transition ──────── */
 .category-body {
     display: grid;
