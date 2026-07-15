@@ -1301,20 +1301,22 @@ class ConfigSetup {
         });
     }
 
+    /**
+     * Config's header no longer carries a health icon — health opens from the
+     * dashboard. The broken count is still needed here, though: Status Essentials
+     * shows it and points its own link at the right filter. So this fetches the
+     * summary and feeds that panel, with no anchor to paint.
+     */
     async updateHealthBadge() {
-        const anchor = document.querySelector('header.header .header-links a.health-link-anchor[href^="/health"]');
         const utils = window.HealthBadgeUtils;
-        if (!anchor || !utils) return;
+        if (!utils) return;
         try {
             const summary = await utils.fetchBookmarkHealthSummary();
             if (!summary) return;
-            utils.applyHealthBadgeToAnchor(anchor, summary, this.c.language, {
-                onApplied: ({ broken }) => {
-                    this.c._healthBrokenCount = broken;
-                    this.c.settings?.applyStatusEssentialsHealthHref?.(broken);
-                    this.c.settings?.refreshStatusEssentialsSummary?.(this.c.settingsData, this.c.allBookmarksData);
-                },
-            });
+            const { broken } = utils.summarizeHealthCounts(summary);
+            this.c._healthBrokenCount = broken;
+            this.c.settings?.applyStatusEssentialsHealthHref?.(broken);
+            this.c.settings?.refreshStatusEssentialsSummary?.(this.c.settingsData, this.c.allBookmarksData);
         } catch (e) {
             // Non-critical — silently skip
         }
