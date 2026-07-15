@@ -56,22 +56,40 @@ test.describe('dashboard category drag-reorder', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        const idsBefore = await page.locator(realCategorySel).evaluateAll(
-            (els) => els.map((el) => el.getAttribute('data-category-id'))
-        );
-        expect(idsBefore.length).toBeGreaterThan(1);
-
-        // Move the first category to the end within its column, then let the
-        // dashboard persist the new order (same path a real drag triggers).
-        await page.evaluate(() => {
-            const grid = document.getElementById('dashboard-layout');
-            const first = grid.querySelector(
-                '.category:not([data-smart-collection="true"])'
-            );
-            const column = first.closest('.dashboard-column') || grid;
-            column.appendChild(first); // move to end of its column
-            window.dashboardInstance.syncCategoriesFromDom();
+        // Only categories the server actually stores can be reordered. Buckets derived
+        // from bookmark fields — uncategorized (groupedBookmarks[''], empty id) and rows
+        // whose category no longer exists — are regenerated on every render and never
+        // appear in the POST to /api/categories, so moving one can never persist.
+        // They still carry a data-category-id in the DOM, so the DOM alone cannot tell
+        // them apart: ask the server which ids are real.
+        const storedIds = await page.evaluate(async () => {
+            const res = await fetch('/api/categories?page=1');
+            const body = await res.json();
+            const list = Array.isArray(body) ? body : (body.categories || []);
+            return list.map((c) => c.id).filter(Boolean);
         });
+        const storedSel = storedIds
+            .map((id) => `${realCategorySel}[data-category-id="${id}"]`)
+            .join(', ');
+        const readOrder = async () => (storedSel
+            ? page.locator(storedSel).evaluateAll((els) => els.map((el) => el.getAttribute('data-category-id')))
+            : []);
+
+        const idsBefore = await readOrder();
+        // Other specs share this server and can leave a page with fewer than two
+        // rendered stored categories; there is nothing to reorder then.
+        test.skip(idsBefore.length < 2, 'needs at least two stored categories rendered');
+
+        // Move the first stored category behind the last one, then let the dashboard
+        // persist the new order (same path a real drag triggers).
+        await page.evaluate((selector) => {
+            const grid = document.getElementById('dashboard-layout');
+            const stored = [...grid.querySelectorAll(selector)];
+            const first = stored[0];
+            const last = stored[stored.length - 1];
+            last.after(first);
+            window.dashboardInstance.syncCategoriesFromDom();
+        }, storedSel);
 
         // saveCategoryOrder debounces ~1s; wait it out.
         await page.waitForTimeout(1500);
@@ -81,9 +99,7 @@ test.describe('dashboard category drag-reorder', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        const idsAfter = await page.locator(realCategorySel).evaluateAll(
-            (els) => els.map((el) => el.getAttribute('data-category-id'))
-        );
+        const idsAfter = await readOrder();
 
         // The previously-first category should no longer be first.
         expect(idsAfter[0]).not.toBe(idsBefore[0]);

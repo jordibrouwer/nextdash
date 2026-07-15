@@ -237,7 +237,12 @@ test.describe('dashboard grid shortcuts', () => {
     });
 
     test('held G shows first-time g-jump promo balloon', async ({ page }) => {
+        // Clear via the promo's own API. The localStorage key is a legacy mirror that
+        // discoverability-state.js rewrites from its canonical state on load
+        // (syncLegacyKeysFromState), so removing the key alone leaves the promo
+        // suppressed and the balloon never appears.
         await page.evaluate(() => {
+            window.DashboardGJumpPromo?.clearPromoSeen?.();
             localStorage.removeItem('nextdash:dashboard-g-jump-promo-confirmed-v1');
         });
         await dismissBlockingOverlays(page);

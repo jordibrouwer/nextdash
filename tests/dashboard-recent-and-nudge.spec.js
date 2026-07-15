@@ -187,7 +187,10 @@ test.describe('layout modern nudge after onboarding', () => {
         const spotlight = page.locator('.feature-spotlight.show');
         await expect(spotlight).toBeVisible({ timeout: 10_000 });
         await expect(spotlight.locator('.feature-spotlight-try')).toBeVisible();
-        await expect(spotlight.locator('.feature-spotlight-try-secondary')).toBeVisible();
+        // No secondary button: it offered the Glass layout, dropped in 5f64482
+        // ("Remove the Glass layout"). The nudge now has one action, so asserting a
+        // second one asks for a button that must not come back.
+        await expect(spotlight.locator('.feature-spotlight-try-secondary')).toHaveCount(0);
         expect(pageErrors).toEqual([]);
     });
 });

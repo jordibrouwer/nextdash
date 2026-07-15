@@ -1084,7 +1084,12 @@ test.describe('config stats & backups surface (B9)', () => {
         await page.evaluate(() => window.configManager.ui.switchToTab('backups'));
         const surface = page.locator('.backups-tab-surface');
         await expect(surface).toBeVisible();
-        await expect(surface.locator('.backups-section')).toHaveCount(3);
+        // The point is that every section shares one surface, not how many there are —
+        // a hard count went stale the moment Automatic Backups was added (d61462e).
+        const sections = surface.locator('.backups-section');
+        await expect(sections).not.toHaveCount(0);
+        const total = await page.locator('[data-tab-content="backups"] .backups-section').count();
+        expect(await sections.count()).toBe(total);
 
         const sectionCount = await page.evaluate(() => {
             const tab = document.querySelector('[data-tab-content="backups"] .backups-tab');

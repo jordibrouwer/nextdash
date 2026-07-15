@@ -134,7 +134,11 @@ async function openShortcutSearch(page, options = {}) {
     if (prefix === ':') {
         await page.keyboard.press(':');
     } else if (prefix === '>') {
-        await page.keyboard.press('Shift+.');
+        // type('>') sends key '>' like a real keyboard. press('Shift+.') sends key '.'
+        // with shiftKey — a combination no keyboard produces — which triggers the
+        // collapse-all shortcut ('.') and leaves every category collapsed, so the
+        // keyboard grid has nothing left to navigate afterwards.
+        await page.keyboard.type('>');
     }
     await expect.poll(async () => page.evaluate((wantedPrefix) => {
         const search = document.getElementById('shortcut-search');
