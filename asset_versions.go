@@ -150,7 +150,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigFontJS:             "config-font-1",
 	ConfigToursRuntimeJS:     "config-tours-runtime-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
-	ConfigSettingInfoJS:      "config-setting-info-1",
+	ConfigSettingInfoJS:      "config-setting-info-health-always-on-1",
 	PageLayoutSyncJS:         "page-layout-sync-1",
 	DashboardRenderCoreJS:    "sort-locked-drag-hint-1",
 

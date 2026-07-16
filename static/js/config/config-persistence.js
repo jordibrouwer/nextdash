@@ -531,7 +531,6 @@ class ConfigPersistence {
         const selector = [
             '#show-tips-checkbox',
             '#show-config-button-checkbox',
-            '#show-health-dashboard-checkbox',
             '#show-recent-button-checkbox',
             '#animations-enabled-checkbox',
             '#include-finders-in-search-checkbox',

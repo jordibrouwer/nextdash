@@ -1745,9 +1745,10 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showCommandsButton"]; !ok {
 			settings.ShowCommandsButton = true
 		}
-		if _, ok := rawSettings["showHealthDashboard"]; !ok {
-			settings.ShowHealthDashboard = true
-		}
+		// Health is always available and can no longer be disabled. Force it on
+		// regardless of any legacy stored value so users who previously turned it
+		// off get it back.
+		settings.ShowHealthDashboard = true
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
 		}

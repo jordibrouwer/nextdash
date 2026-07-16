@@ -66,7 +66,6 @@ const SETTING_INFO_DEFS = [
     { type: 'checkbox', targetId: 'show-page-tabs-checkbox', btnId: 'show-page-tabs-info-btn', title: 'showPageTabsInfoTitle', message: 'showPageTabsInfoMessage' },
     { type: 'checkbox', targetId: 'show-page-names-in-tabs-checkbox', btnId: 'show-page-names-in-tabs-info-btn', title: 'showPageNamesInTabsInfoTitle', message: 'showPageNamesInTabsInfoMessage' },
     { type: 'checkbox', targetId: 'show-tag-cloud-button-checkbox', btnId: 'show-tag-cloud-button-info-btn', title: 'showTagCloudButtonInfoTitle', message: 'showTagCloudButtonInfoMessage' },
-    { type: 'checkbox', targetId: 'show-health-dashboard-checkbox', btnId: 'show-health-dashboard-info-btn', title: 'showHealthDashboardInfoTitle', message: 'showHealthDashboardInfoMessage' },
     { type: 'labelFor', labelFor: 'status-offline-retries-input', btnId: 'status-offline-retries-info-btn', title: 'statusOfflineRetriesInfoTitle', message: 'statusOfflineRetriesInfoMessage' },
     { type: 'labelFor', labelFor: 'status-offline-retry-delay-input', btnId: 'status-offline-retry-delay-info-btn', title: 'statusOfflineRetryDelayInfoTitle', message: 'statusOfflineRetryDelayInfoMessage' },
     { type: 'afterSelector', selector: '.bookmark-preview-maintenance', btnId: 'bookmark-preview-maintenance-info-btn', title: 'bookmarkPreviewMaintenanceInfoTitle', message: 'bookmarkPreviewMaintenanceInfoMessage' },
