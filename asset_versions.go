@@ -138,7 +138,7 @@ var sharedAssetVersions = pageAssetVersions{
 	SkeletonLoadingJS:        "skeleton-loading-1",
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
-	DashboardDeepLinkJS:      "dashboard-deep-link-1",
+	DashboardDeepLinkJS:      "dashboard-deep-link-edit-2",
 	AnalyticsJS:              "analytics-1",
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-1",

@@ -630,6 +630,27 @@ class DashboardHealth {
         window.open(url, '_blank', 'noopener,noreferrer');
     }
 
+    /**
+     * Edit the bookmark in place: leave the health view, deep-link to the row on its
+     * own page, and open the dashboard's inline editor there (?edit=1). Falls back to
+     * the config bookmarks list when the deep-link helper isn't available.
+     */
+    editIssueInline(issue) {
+        this.closeAllMenus();
+        const pageId = Number(issue?.pageId);
+        if (Number.isFinite(pageId) && typeof DashboardDeepLink?.buildDashboardDeepLink === 'function') {
+            window.location.href = DashboardDeepLink.buildDashboardDeepLink({
+                pageId,
+                bookmarkIndex: issue.index,
+                categoryId: issue.category || null,
+                url: issue.url || null,
+                edit: true,
+            });
+            return;
+        }
+        this.openIssueInConfig(issue);
+    }
+
     openIssueInConfig(issue) {
         try {
             localStorage.setItem(
@@ -1447,7 +1468,7 @@ class DashboardHealth {
             this.openIssue(issue);
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
-            this.openIssueInConfig(issue);
+            this.editIssueInline(issue);
         });
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();

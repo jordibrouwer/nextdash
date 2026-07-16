@@ -723,6 +723,11 @@ class DashboardPageNav {
                     d.keyboardNavigation.highlightCurrentElement?.();
                 }
             }
+            // ?edit=1 lands on the row and opens the inline editor. tryOpenInlineBookmarkEdit
+            // resolves the bookmark from the keyboard-nav current element set just above.
+            if (link.edit && typeof d.tryOpenInlineBookmarkEdit === 'function') {
+                requestAnimationFrame(() => d.tryOpenInlineBookmarkEdit());
+            }
         } else if (link.bookmarkIndex != null || link.url) {
             const msg = d.language?.t?.('dashboard.deepLinkBookmarkNotFound')
                 || 'Bookmark not found on this page (it may have moved).';
