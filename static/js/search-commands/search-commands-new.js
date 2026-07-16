@@ -1084,6 +1084,13 @@ class SearchCommandNew {
                     const promoteId = dashAfter._pendingInboxPromoteId;
                     dashAfter._pendingInboxPromoteId = null;
                     await dashAfter.inbox.completePromote(promoteId);
+                    // A promoted bookmark that opts into status checks starts life with
+                    // no health data, so it lands on Health as "missing". Kick off a
+                    // one-off server-side check (fire-and-forget) so it shows a real
+                    // status without waiting for a full retest.
+                    if (bookmark.checkStatus === true) {
+                        dashAfter.inbox.triggerHealthCheckForUrl?.(bookmark.url);
+                    }
                 }
                 return { ok: true, pageId, bookmark: { ...bookmark, pageId } };
             } else if (response.status === 409) {

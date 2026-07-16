@@ -275,9 +275,11 @@ environment:
 
 **Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). Reset from **Tours & onboarding → Reset settings search promo**.
 
+**Inbox snooze, keyboard triage & Health always-on (v2026.07.16)** — Inbox can **snooze** links (3h / tomorrow / weekend / next week) with a **Snoozed** filter and **`z`**, gains Health-style keyboard navigation (`j`/`k`/`g`/`G`, `Enter`/`p`/`r`/`n`/`z`/`d`), per-row **notes**, mark-read + bulk **Mark all read** / **Clear read**, and a preview loading pulse for fresh links. Promoting an Inbox item with status checks on immediately health-checks that URL. **Health** is always available in the header (the old hide toggle is gone), can optionally **re-check in the background** under Config → General → Status monitoring, opens **Edit** in the dashboard inline editor, and deep-link filters (stale / unused / missing preview / …) match the right rows again.
+
 **Health dashboard view + quick shortcuts (v2026.07.15)** — the heartbeat icon opens **Health** inside the dashboard shell (like Inbox), so issue triage stays in one place; old `/health` links now redirect to this view. Keyboard entry points are mnemonic: **`Shift+H`** opens Health and **`Shift+I`** opens Inbox (legacy `0` still works). Config header navigation is cleaner too: only **back to dashboard** remains. All new Health-view labels and related cheat-sheet entries are localized consistently across **EN / NL / DE / FR**.
 
-**Health repairs & score breakdown (v2026.07.14.2)** — fixing a bookmark in the **health view** now sticks: a re-checked link turns green immediately instead of staying broken for up to three minutes, **Retest statuses** no longer skips the very bookmarks flagged as broken (and says so when there is nothing to test), and an applied redirect is verified against the new address before the row counts as healthy. Click any score badge — or press **`s`** — to unfold what the score is made of: every bookmark starts at 100, and each issue shows what it costs. The view is keyboard-first: **`Tab`** steps row by row instead of through every control, with **`s`** score, **`p`** re-check, **`f`** favicon, **`x`** select, **`m`** more actions and **`g`**/**`G`** for first/last, all listed in the legend at the top.
+**Health repairs & score breakdown (v2026.07.14.2)** — fixing a bookmark in the **health view** now sticks: a re-checked link turns green immediately instead of staying broken for up to three minutes, **Retest statuses** no longer skips the very bookmarks flagged as broken (and says so when there is nothing to test), and an applied redirect is verified against the new address before the row counts as healthy. Click any score badge — or press **`s`** — to unfold what the score is made of: every bookmark starts at 100, and each issue shows what it costs. The view is keyboard-first: **`Tab`** steps row by row instead of through every control, with **`s`** score, **`p`** re-check, **`f`** favicon, **`x`** select, **`m`** more actions and **`g`**/**`G`** for first/last, all listed in the legend under the feed.
 
 **Glass layout retired (v2026.07.14.2)** — the **Glass** layout is gone; **Classic** and **Modern** remain. Dashboards set to Glass switch to **Classic** automatically and show a one-time note. Change layout in **config → general → Basics**.
 
@@ -309,7 +311,7 @@ environment:
 
 **Longer What's new history (v2026.07.10)** — the What's new modal now shows the **25 most recent** releases instead of 7; the newest loads first and the rest still load on demand as you scroll, so opening it stays fast.
 
-**Health icon & counter (v2026.07.09)** — the dashboard header **health** link is now a heartbeat icon with an inline counter pill (broken/warning count; red for broken, amber for warnings, hidden when healthy), styled like the inbox tab. On by default for all users (toggle under Config → General → Header & buttons).
+**Health icon & counter (v2026.07.09)** — the dashboard header **health** link is now a heartbeat icon with an inline counter pill (broken/warning count; red for broken, amber for warnings, hidden when healthy), styled like the inbox tab. Always on for all users (**v2026.07.16** removed the Header & buttons hide toggle).
 
 **Dashboard margins & status rows (v2026.07.09)** — side margins are a fixed clamped buffer instead of a fixed percentage, so narrowing the window shrinks the whitespace before the columns; roomier margins on wide screens keep the columns closer together. Config and health pages share the dashboard's content box (including above 1600px), so their header and nav links line up across pages. Online/offline/checking status rows get a consistent left inset, rounded corners, and extra space so the status border does not crowd favicons.
 
@@ -345,7 +347,7 @@ environment:
 
 **Playwright E2E (v2026.07.03)** — full test suite green with isolated temp data per run; config, tags, finders, and layout-nudge tests aligned with current behaviour.
 
-**Inbox (v2026.07.06)** — lightweight link capture page separate from bookmark pages: save via paste (`Ctrl+V`), browser extension, or API; filter unread, triage one-by-one (`J`/`K`/`O`/`P`/`R`/`D`), promote to a full bookmark; shortcuts `0`, `:inbox`, `:inbox triage`; one-time intro modal; EN/NL/DE/FR.
+**Inbox (v2026.07.06)** — lightweight link capture page separate from bookmark pages: save via paste (`Ctrl+V`), browser extension, or API; filter unread, triage one-by-one (`J`/`K`/`O`/`P`/`R`/`D`), promote to a full bookmark; shortcuts `0`, `:inbox`, `:inbox triage`; one-time intro modal; EN/NL/DE/FR. **v2026.07.16** adds snooze, list keyboard navigation, notes, mark-read / bulk clear, and promote-time health checks.
 
 **Page overview & tips (v2026.07.06)** — pages button opens a centered `AppModal` with card-style rows; rotating footer tips off by default (`:tips on` to enable); `:quicktag` removed from the command palette.
 
@@ -460,7 +462,7 @@ Dynamic bookmark groups that appear automatically:
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
-- **Health view** (`/#health`) — dashboard-first health triage with summary tiles, quick filters, search, sort, retest, row score breakdown, and keyboard-first navigation (`j`/`k`, `Tab`, `g`/`G`, `s`, `p`, `f`, `x`, `m`, `Enter`, `o`). Per-row overflow actions include **detect redirect**, **refresh title**, **archive**, and delete. Legacy `/health` URLs now redirect into this view.
+- **Health view** (`/#health`) — dashboard-first health triage with summary tiles, quick filters, search, sort, retest, row score breakdown, and keyboard-first navigation (`j`/`k`, `Tab`, `g`/`G`, `s`, `p`, `f`, `x`, `m`, `Enter`, `o`). Per-row overflow actions include **detect redirect**, **refresh title**, **archive**, and delete. Edit opens the dashboard inline editor. Optional server-side background rechecks under Config → General → Status monitoring. Legacy `/health` URLs now redirect into this view. The header Health entry is always available.
 - Health badge on the dashboard and config headers: compact count-only pill (e.g. `3`) with theme accent colours for broken vs warnings; screen readers get a full `aria-label` (**v2026.07.01.1**); bulk open broken links asks for confirmation with a per-batch limit
 - Filter, sort, and search state in the health view persists across page refreshes (sessionStorage) and syncs to URL query parameters (`hv_filter`, `hv_sort`, `hv_q`)
 - Favicon display and refresh from the health view (per row)

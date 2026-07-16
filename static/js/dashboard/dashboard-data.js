@@ -214,9 +214,8 @@ class DashboardData {
             if (d.settings.inboxEnabled === false && String(d.settings.pasteDestination || '').toLowerCase() === 'inbox') {
                 d.settings.pasteDestination = 'ask';
             }
-            if (typeof d.settings.showHealthDashboard === 'undefined') {
-                d.settings.showHealthDashboard = true;
-            }
+            // Health can no longer be disabled — always force it on.
+            d.settings.showHealthDashboard = true;
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;
             }

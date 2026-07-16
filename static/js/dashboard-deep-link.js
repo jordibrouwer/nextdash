@@ -8,6 +8,7 @@
     const PARAM_BOOKMARK = 'bookmark';
     const PARAM_CATEGORY = 'category';
     const PARAM_URL = 'url';
+    const PARAM_EDIT = 'edit';
 
     function parseDashboardDeepLink(location = global.location) {
         const params = new URLSearchParams(location.search || '');
@@ -15,6 +16,7 @@
         const categoryRaw = params.get(PARAM_CATEGORY) ?? params.get('c');
         const urlRaw = params.get(PARAM_URL);
         const pageRaw = params.get(PARAM_PAGE);
+        const editRaw = (params.get(PARAM_EDIT) || '').toLowerCase();
         const pageId = pageRaw != null && pageRaw !== '' ? parseInt(pageRaw, 10) : null;
         const bookmarkIndex =
             bookmarkRaw != null && bookmarkRaw !== '' ? parseInt(bookmarkRaw, 10) : null;
@@ -23,6 +25,7 @@
             bookmarkIndex: Number.isFinite(bookmarkIndex) ? bookmarkIndex : null,
             categoryId: categoryRaw || null,
             url: urlRaw ? decodeURIComponent(urlRaw) : null,
+            edit: editRaw === '1' || editRaw === 'true',
         };
     }
 
@@ -35,12 +38,13 @@
         );
     }
 
-    function buildDashboardDeepLink({ pageId, bookmarkIndex, categoryId, url }, basePath = '/') {
+    function buildDashboardDeepLink({ pageId, bookmarkIndex, categoryId, url, edit }, basePath = '/') {
         const params = new URLSearchParams();
         if (pageId != null) params.set(PARAM_PAGE, String(pageId));
         if (bookmarkIndex != null) params.set(PARAM_BOOKMARK, String(bookmarkIndex));
         if (categoryId) params.set(PARAM_CATEGORY, categoryId);
         if (url) params.set(PARAM_URL, url);
+        if (edit) params.set(PARAM_EDIT, '1');
         const qs = params.toString();
         return qs ? `${basePath}?${qs}` : basePath;
     }
@@ -48,7 +52,7 @@
     function stripDeepLinkParams(location = global.location) {
         const params = new URLSearchParams(location.search || '');
         let changed = false;
-        for (const key of [PARAM_PAGE, PARAM_BOOKMARK, 'b', PARAM_CATEGORY, 'c', PARAM_URL]) {
+        for (const key of [PARAM_PAGE, PARAM_BOOKMARK, 'b', PARAM_CATEGORY, 'c', PARAM_URL, PARAM_EDIT]) {
             if (params.has(key)) {
                 params.delete(key);
                 changed = true;

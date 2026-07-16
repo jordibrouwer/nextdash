@@ -245,6 +245,7 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		Title        string `json:"title"`
 		Note         string `json:"note"`
 		ReadAt       *int64 `json:"readAt"`
+		SnoozedUntil *int64 `json:"snoozedUntil"`
 		PreviewTitle string `json:"previewTitle"`
 		PreviewDesc  string `json:"previewDesc"`
 		PreviewImage string `json:"previewImage"`
@@ -274,6 +275,16 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 				markedRead = true
 			}
 			item.ReadAt = *request.ReadAt
+		}
+		if request.SnoozedUntil != nil {
+			// A pointer lets a client clear a snooze by sending 0. Negative or past
+			// values collapse to 0 (not snoozed) so a stale timestamp can't wedge an
+			// item out of view.
+			if *request.SnoozedUntil > time.Now().UnixMilli() {
+				item.SnoozedUntil = *request.SnoozedUntil
+			} else {
+				item.SnoozedUntil = 0
+			}
 		}
 		if request.PreviewTitle != "" {
 			item.PreviewTitle = strings.TrimSpace(request.PreviewTitle)

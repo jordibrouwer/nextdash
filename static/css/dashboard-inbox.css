@@ -252,6 +252,30 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     color: var(--text-tertiary);
 }
 
+/* Preview still enriching server-side: a soft pulse instead of a static glyph. */
+.inbox-item-thumb--loading {
+    position: relative;
+    overflow: hidden;
+    animation: inbox-thumb-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes inbox-thumb-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
+body.no-animations .inbox-item-thumb--loading {
+    animation: none !important;
+    opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inbox-item-thumb--loading {
+        animation: none !important;
+        opacity: 0.7;
+    }
+}
+
 .inbox-item-title {
     margin: 0;
     font-size: var(--font-size-controls);
@@ -275,14 +299,93 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     color: var(--text-secondary);
 }
 
+/* ─── Snooze ──────────────────────────────────────────────────────────────── */
+
+/* A sleeping card reads quieter than a live one, with a moon marker on the meta. */
+.inbox-item.is-snoozed {
+    opacity: 0.72;
+    border-left: 3px solid color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+}
+
+.inbox-item-snooze {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--accent-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.inbox-item-snooze::before {
+    content: "💤";
+    font-size: 0.85em;
+}
+
+/* Duration popover — a floating menu positioned in JS, so it is fixed to the
+   viewport and layered above the feed. */
+.inbox-snooze-menu {
+    position: fixed;
+    z-index: 12060;
+    display: flex;
+    flex-direction: column;
+    min-width: 10rem;
+    padding: 0.3rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.inbox-snooze-option {
+    padding: 0.4rem 0.6rem;
+    border: none;
+    border-radius: 0.35rem;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.inbox-snooze-option:hover,
+.inbox-snooze-option:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    outline: none;
+}
+
+/* Actions stay collapsed until the row is hovered, focused, or keyboard-selected,
+   matching the health view. grid-template-rows 0fr → 1fr animates the row's height
+   rather than reserving an empty strip under every card; the buttons keep their box
+   (no display:none) so they remain focusable and Tab reveals them via :focus-within. */
 .inbox-item-actions {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
+}
+
+.inbox-item-actions-inner {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.inbox-item:hover .inbox-item-actions,
+.inbox-item:focus-within .inbox-item-actions,
+.inbox-item.keyboard-selected .inbox-item-actions {
+    grid-template-rows: 1fr;
     margin-top: 0.55rem;
+    opacity: 1;
 }
 
 .inbox-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     padding: 0.2rem 0.55rem;
     border-radius: 0.35rem;
     border: 1px solid var(--border-primary);
@@ -290,6 +393,16 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     color: var(--text-primary);
     font-size: 0.78rem;
     cursor: pointer;
+}
+
+.inbox-action-btn kbd {
+    font-size: 0.68rem;
+    padding: 0.02rem 0.28rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    line-height: 1.4;
 }
 
 .inbox-action-btn:hover {
@@ -300,6 +413,80 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
 .inbox-action-btn--danger:hover {
     border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
     color: var(--accent-error);
+}
+
+/* ─── Keyboard legend ────────────────────────────────────────────────────── */
+
+.inbox-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin: 1rem 0 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-secondary);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.inbox-legend kbd {
+    font-size: 0.7rem;
+    padding: 0.05rem 0.32rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+/* ─── Note modal ─────────────────────────────────────────────────────────── */
+
+.inbox-note-modal-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: left;
+}
+
+.inbox-note-modal-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+}
+
+.inbox-note-modal-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+/* Respect the app's animation preference for the actions reveal, matching health. */
+body.no-animations .inbox-item,
+body.no-animations .inbox-item-actions {
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inbox-item,
+    .inbox-item-actions {
+        transition: none !important;
+    }
+}
+
+/* Touch devices have no hover: without this the actions would only ever show on
+   tap-focus. */
+@media (hover: none) {
+    .inbox-item-actions {
+        grid-template-rows: 1fr;
+        margin-top: 0.55rem;
+        opacity: 1;
+    }
 }
 
 .inbox-empty-state,
@@ -422,6 +609,12 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
         height: 7rem;
     }
 
+    .inbox-item-actions {
+        grid-template-rows: 1fr;
+        margin-top: 0.55rem;
+        opacity: 1;
+    }
+
     .inbox-toolbar {
         flex-wrap: wrap;
     }
@@ -487,6 +680,22 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     display: block;
     width: 100%;
     margin-top: 0.35rem;
+}
+
+/* Bulk actions are secondary next to Triage: neutral chrome, not the accent fill. */
+.inbox-bulk-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.inbox-bulk-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
 }
 
 .inbox-date-group {

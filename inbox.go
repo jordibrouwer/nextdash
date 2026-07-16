@@ -32,6 +32,10 @@ type InboxLink struct {
 	Tags         []string `json:"tags,omitempty"`
 	Domain       string   `json:"domain,omitempty"`
 	ReadAt       int64    `json:"readAt,omitempty"`
+	// SnoozedUntil hides the item from the main list until this time (Unix ms).
+	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
+	// the item once now passes this value.
+	SnoozedUntil int64 `json:"snoozedUntil,omitempty"`
 }
 
 // InboxData is persisted at data/inbox.json.

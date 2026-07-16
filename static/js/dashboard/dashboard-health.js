@@ -308,6 +308,17 @@ class DashboardHealth {
                 return (Number(issue.duplicateCount) || 0) > 1;
             case 'unchecked':
                 return !issue.lastChecked;
+            // stale / unused / missing-preview / shortcut-conflict / healthy reach
+            // this view only through deep links (consumeLegacyEntryParams). Each maps
+            // to a single issue.status, so match on that rather than falling through
+            // to `return true`, which showed every issue under a filter that lit no
+            // pill.
+            case 'stale':
+            case 'unused':
+            case 'missing-preview':
+            case 'shortcut-conflict':
+            case 'healthy':
+                return issue.status === filter;
             default:
                 return true;
         }
@@ -617,6 +628,27 @@ class DashboardHealth {
         const url = String(issue?.url || '').trim();
         if (!url) return;
         window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    /**
+     * Edit the bookmark in place: leave the health view, deep-link to the row on its
+     * own page, and open the dashboard's inline editor there (?edit=1). Falls back to
+     * the config bookmarks list when the deep-link helper isn't available.
+     */
+    editIssueInline(issue) {
+        this.closeAllMenus();
+        const pageId = Number(issue?.pageId);
+        if (Number.isFinite(pageId) && typeof DashboardDeepLink?.buildDashboardDeepLink === 'function') {
+            window.location.href = DashboardDeepLink.buildDashboardDeepLink({
+                pageId,
+                bookmarkIndex: issue.index,
+                categoryId: issue.category || null,
+                url: issue.url || null,
+                edit: true,
+            });
+            return;
+        }
+        this.openIssueInConfig(issue);
     }
 
     openIssueInConfig(issue) {
@@ -1041,12 +1073,9 @@ class DashboardHealth {
 
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
-            container.appendChild(this.renderLegend('top'));
             this.finishRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
-
-        container.appendChild(this.renderLegend('top'));
 
         const visible = filtered.slice(0, this.visibleLimit);
         const feed = document.createElement('div');
@@ -1303,9 +1332,8 @@ class DashboardHealth {
     }
 
     /**
-     * Rendered above and below the list. A long list would otherwise push the only
-     * copy off-screen, which on a keyboard-first view is where it is needed most.
-     * `position` only tags the element for styling; the content is identical.
+     * Keyboard cheatsheet under the list. `position` only tags the element for
+     * styling; kept as a parameter so callers read explicitly as 'bottom'.
      */
     renderLegend(position = 'bottom') {
         const legend = document.createElement('p');
@@ -1322,10 +1350,6 @@ class DashboardHealth {
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
-        // One copy is enough for a screen reader; the second is a visual reminder.
-        if (position === 'bottom') {
-            legend.setAttribute('aria-hidden', 'true');
-        }
         return legend;
     }
 
@@ -1436,7 +1460,7 @@ class DashboardHealth {
             this.openIssue(issue);
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
-            this.openIssueInConfig(issue);
+            this.editIssueInline(issue);
         });
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();

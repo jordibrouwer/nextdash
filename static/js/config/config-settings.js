@@ -1068,7 +1068,6 @@ class ConfigSettings {
         );
         this.bindInfoButton('keep-search-open-when-empty-info-btn', 'config.keepSearchOpenWhenEmptyInfoTitle', 'config.keepSearchOpenWhenEmptyInfoMessage');
         this.bindInfoButton('show-status-info-btn', 'config.showBookmarkStatusInfoTitle', 'config.showBookmarkStatusInfoMessage');
-        this.bindInfoButton('show-health-dashboard-info-btn', 'config.showHealthDashboardInfoTitle', 'config.showHealthDashboardInfoMessage');
         this.bindInfoButton('inbox-enabled-info-btn', 'config.inboxEnabledInfoTitle', 'config.inboxEnabledInfoMessage');
         this.bindInfoButton('skip-fast-ping-info-btn', 'config.skipFastPingInfoTitle', 'config.skipFastPingInfoMessage');
         this.bindInfoButton('status-offline-retries-info-btn', 'config.statusOfflineRetriesInfoTitle', 'config.statusOfflineRetriesInfoMessage');
@@ -1314,13 +1313,8 @@ class ConfigSettings {
             });
         }
 
-        const showHealthDashboardCheckbox = document.getElementById('show-health-dashboard-checkbox');
-        if (showHealthDashboardCheckbox) {
-            showHealthDashboardCheckbox.checked = settings.showHealthDashboard === true;
-            showHealthDashboardCheckbox.addEventListener('change', (e) => {
-                settings.showHealthDashboard = e.target.checked;
-            });
-        }
+        // Health is always available and can no longer be disabled from config.
+        settings.showHealthDashboard = true;
 
         // Show page names in tabs checkbox
         const showPageNamesInTabsCheckbox = document.getElementById('show-page-names-in-tabs-checkbox');
@@ -1858,7 +1852,6 @@ class ConfigSettings {
         const showTimeCheckbox = document.getElementById('show-time-checkbox');
         const timeFormatSelect = document.getElementById('time-format-select');
         const showConfigButtonCheckbox = document.getElementById('show-config-button-checkbox');
-        const showHealthDashboardCheckbox = document.getElementById('show-health-dashboard-checkbox');
         const showAddBookmarkButtonCheckbox = document.getElementById('show-add-bookmark-button-checkbox');
         const showSearchButtonCheckbox = document.getElementById('show-search-button-checkbox');
         const showFindersButtonCheckbox = document.getElementById('show-finders-button-checkbox');
@@ -1934,7 +1927,7 @@ class ConfigSettings {
         if (showTimeCheckbox) settings.showTime = showTimeCheckbox.checked;
         if (timeFormatSelect) settings.timeFormat = timeFormatSelect.value === '12h' ? '12h' : '24h';
         if (showConfigButtonCheckbox) settings.showConfigButton = showConfigButtonCheckbox.checked;
-        if (showHealthDashboardCheckbox) settings.showHealthDashboard = showHealthDashboardCheckbox.checked;
+        settings.showHealthDashboard = true;
         if (showAddBookmarkButtonCheckbox) settings.showAddBookmarkButton = showAddBookmarkButtonCheckbox.checked;
         if (showSearchButtonCheckbox) settings.showSearchButton = showSearchButtonCheckbox.checked;
         if (showFindersButtonCheckbox) settings.showFindersButton = showFindersButtonCheckbox.checked;

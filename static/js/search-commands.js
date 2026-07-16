@@ -2016,7 +2016,6 @@ class SearchCommandsComponent {
             finders: 'showFindersButton',
             cheatsheet: 'showCheatSheetButton',
             search: 'showSearchButton',
-            health: 'showHealthDashboard',
             tagcloud: 'showTagCloudButton',
         };
 

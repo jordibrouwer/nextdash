@@ -183,6 +183,16 @@ class ConfigBackup {
         // syncAutoBackupEnabled() and loadAutoBackups() are called from
         // ConfigManager once settingsData has loaded from the server.
 
+        // Background health rechecks
+        const healthRecheckEnabled = document.getElementById('health-recheck-enabled-checkbox');
+        if (healthRecheckEnabled) {
+            healthRecheckEnabled.addEventListener('change', (e) => this.setHealthRecheckEnabled(e.target.checked));
+        }
+        const healthRecheckInterval = document.getElementById('health-recheck-interval-select');
+        if (healthRecheckInterval) {
+            healthRecheckInterval.addEventListener('change', (e) => this.setHealthRecheckInterval(e.target.value));
+        }
+
         // Import info button
         const importInfoBtn = document.getElementById('import-info-btn');
         if (importInfoBtn) {
@@ -277,6 +287,54 @@ class ConfigBackup {
         }
         // Reflect the new state in the countdown and refresh nextBackupAt.
         this.loadAutoBackups();
+    }
+
+    /**
+     * Reflect the stored health-recheck settings into the toggle + interval select.
+     * Disabled by default (the feature makes outbound requests, so it is opt-in).
+     */
+    syncHealthRecheckSettings() {
+        const checkbox = document.getElementById('health-recheck-enabled-checkbox');
+        const select = document.getElementById('health-recheck-interval-select');
+        const data = typeof configManager !== 'undefined' ? configManager.settingsData : null;
+        if (checkbox) {
+            checkbox.checked = data?.healthAutoRecheckEnabled === true;
+        }
+        if (select) {
+            const hours = Number(data?.healthAutoRecheckIntervalHours) || 24;
+            // Snap to the nearest offered option so a custom stored value still shows.
+            const options = Array.from(select.options).map((o) => Number(o.value));
+            const nearest = options.reduce((best, v) =>
+                Math.abs(v - hours) < Math.abs(best - hours) ? v : best, options[0] ?? 24);
+            select.value = String(nearest);
+        }
+    }
+
+    /** Persist the healthAutoRecheckEnabled setting. */
+    async setHealthRecheckEnabled(enabled) {
+        if (typeof configManager === 'undefined' || !configManager.settingsData) return;
+        configManager.settingsData.healthAutoRecheckEnabled = Boolean(enabled);
+        try {
+            if (configManager.settings?.saveSettingsToServer) {
+                await configManager.settings.saveSettingsToServer(configManager.settingsData);
+            }
+        } catch (e) {
+            console.error('Failed to save health-recheck setting:', e);
+        }
+    }
+
+    /** Persist the healthAutoRecheckIntervalHours setting. */
+    async setHealthRecheckInterval(hours) {
+        if (typeof configManager === 'undefined' || !configManager.settingsData) return;
+        const value = Number(hours) || 24;
+        configManager.settingsData.healthAutoRecheckIntervalHours = value;
+        try {
+            if (configManager.settings?.saveSettingsToServer) {
+                await configManager.settings.saveSettingsToServer(configManager.settingsData);
+            }
+        } catch (e) {
+            console.error('Failed to save health-recheck interval:', e);
+        }
     }
 
     /**

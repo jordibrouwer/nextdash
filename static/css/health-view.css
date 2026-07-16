@@ -608,12 +608,6 @@ button.health-view-tile:hover {
     color: var(--text-tertiary);
 }
 
-/* Sits between the toolbar and the first row: pulled up against the toolbar so it
-   reads as part of it rather than as a floating strip. */
-.health-view-legend--top {
-    margin-top: -0.35rem;
-}
-
 /* The dashboard's own "> search" hint sits below the layout container; the
    bottom padding keeps the legend clear of it. */
 .health-view-legend--bottom {

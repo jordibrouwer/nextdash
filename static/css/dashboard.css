@@ -1080,6 +1080,11 @@ body {
     background: var(--background-secondary);
     color: var(--text-primary);
     border-bottom-color: var(--accent-primary);
+    /* Square off the bottom corners while active so the underline runs straight
+       edge-to-edge, like the page-nav tab. On the rounded box the border-bottom
+       otherwise curves up at both ends. The top corners stay rounded. */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 .health-link--icon .health-link-icon {

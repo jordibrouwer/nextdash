@@ -186,6 +186,7 @@ class ConfigManager {
         this.ui?.updateTabSaveMode?.(this.ui._currentTab);
         this.backup.updateLastBackupDisplay(this.settingsData.language);
         this.backup.syncAutoBackupEnabled();
+        this.backup.syncHealthRecheckSettings();
         this.backup.loadAutoBackups();
         window.MobileExperience?.refreshBannerTranslations?.();
         if (typeof ConfigStats === 'function') {

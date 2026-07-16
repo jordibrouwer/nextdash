@@ -673,13 +673,6 @@
                                 <span class="config-advanced-action-text" data-i18n="config.configButtonLabel">Config</span>
                                 <span class="config-advanced-action-actions"><input type="checkbox" id="show-config-button-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
                             </div>
-                            <div class="config-advanced-action-row buttons-visibility-row" role="listitem">
-                                <span class="config-advanced-action-text buttons-visibility-label">
-                                    <span data-i18n="config.healthLinkButtonLabel">Health link</span>
-                                    <button type="button" id="show-health-dashboard-info-btn" class="info-button" data-i18n-aria="config.showHealthDashboardInfoTitle">ℹ</button>
-                                </span>
-                                <span class="config-advanced-action-actions"><input type="checkbox" id="show-health-dashboard-checkbox"><span class="setting-reset-btn-placeholder"></span></span>
-                            </div>
                         </div>
                         <div class="form-group" style="margin-top:1rem">
                             <label for="button-bar-position-select" data-i18n="config.buttonBarPosition">Button bar position:</label>
@@ -1052,6 +1045,24 @@
                                     <span class="checkbox-text" data-i18n="config.showSyncToasts">Show sync notifications</span>
                                     <button type="button" id="show-sync-toasts-info-btn" class="info-button" data-i18n-aria="config.showSyncToastsInfoTitle">ℹ</button>
                                 </label>
+                            </div>
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="health-recheck-enabled-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.healthRecheckEnabledLabel">Re-check bookmark health in the background</span>
+                                    <button type="button" id="health-recheck-info-btn" class="info-button" data-i18n-aria="config.healthRecheckInfoTitle">ℹ</button>
+                                </label>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="health-recheck-interval-select" data-i18n="config.healthRecheckIntervalLabel">Recheck every:</label>
+                                <select id="health-recheck-interval-select">
+                                    <option value="6"   data-i18n="config.healthRecheckInterval6h">6 hours</option>
+                                    <option value="12"  data-i18n="config.healthRecheckInterval12h">12 hours</option>
+                                    <option value="24"  data-i18n="config.healthRecheckInterval24h">24 hours (default)</option>
+                                    <option value="72"  data-i18n="config.healthRecheckInterval72h">3 days</option>
+                                    <option value="168" data-i18n="config.healthRecheckInterval168h">Weekly</option>
+                                </select>
                             </div>
                         </div>
                     </section>
@@ -2581,13 +2592,13 @@
     <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
-    <script src="/static/js/config/config-backup.js?v=tips-off-default-1"></script>
+    <script src="/static/js/config/config-backup.js?v=health-recheck-1"></script>
     <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
-    <script src="/static/js/config/config-settings.js?v=glass-removed-1"></script>
+    <script src="/static/js/config/config-settings.js?v=health-always-on-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js?v={{.Assets.ConfigToursRuntimeJS}}"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-autostart-off-1"></script>
-    <script src="/static/js/config/config-persistence.js?v=save-signal-scope-1"></script>
+    <script src="/static/js/config/config-persistence.js?v=health-always-on-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=glass-removed-1"></script>
     <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-2"></script>
@@ -2630,7 +2641,7 @@
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
-    <script src="/static/js/config.js?v=glass-removed-1"></script>
+    <script src="/static/js/config.js?v=health-recheck-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">
         <div class="config-save-sticky-inner">
