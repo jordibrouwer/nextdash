@@ -63,7 +63,9 @@ class DashboardInbox {
     }
 
     unreadCount() {
-        return (this.items || []).filter((item) => !item.readAt).length;
+        // A snoozed link is deliberately out of sight, so it must not drive the
+        // unread badge — it would nag for something the user chose to defer.
+        return (this.items || []).filter((item) => !item.readAt && !this.isSnoozed(item)).length;
     }
 
     /**
@@ -108,6 +110,39 @@ class DashboardInbox {
             }
             this.render();
         }, 4000);
+    }
+
+    /**
+     * Re-render exactly when the soonest snoozed item is due to wake, so a deferred
+     * link resurfaces on its own without a reload. One timer for the nearest wake;
+     * re-armed on every render.
+     */
+    scheduleWakeRefresh() {
+        if (this._wakeTimer) {
+            clearTimeout(this._wakeTimer);
+            this._wakeTimer = null;
+        }
+        if (!this.isActiveView()) {
+            return;
+        }
+        const now = Date.now();
+        const nextWake = (this.items || [])
+            .map((item) => Number(item.snoozedUntil || 0))
+            .filter((ts) => ts > now)
+            .sort((a, b) => a - b)[0];
+        if (!nextWake) {
+            return;
+        }
+        // Cap the delay so a far-future snooze does not overflow the timer; it will
+        // be re-scheduled on the next render long before then.
+        const delay = Math.min(nextWake - now + 250, 6 * 3600000);
+        this._wakeTimer = setTimeout(() => {
+            this._wakeTimer = null;
+            if (this.isActiveView()) {
+                this.render();
+                this.dash.pageNav?.updateInboxTabBadge?.();
+            }
+        }, delay);
     }
 
     async fetchItems() {
@@ -542,6 +577,17 @@ class DashboardInbox {
             void this.editNote(selected);
             return true;
         }
+        if (e.key === 'z' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (this.isSnoozed(selected)) {
+                void this.wakeItem(selected);
+            } else {
+                const anchor = document.querySelector(`[data-inbox-id="${CSS.escape(selected.id)}"] [data-inbox-action="snooze"]`);
+                this.openSnoozeMenu(selected, anchor);
+            }
+            return true;
+        }
         if ((e.key === 'd' || e.key === 'Delete') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -574,6 +620,184 @@ class DashboardInbox {
         const card = document.querySelector(`[data-inbox-id="${CSS.escape(item.id)}"]`);
         card?.classList.remove('is-unread');
         card?.classList.add('is-read');
+    }
+
+    /* ── Snooze ────────────────────────────────────────────────────────────── */
+
+    /**
+     * Preset snooze durations. Each resolves to an absolute wake time at call time
+     * (so "tomorrow" is anchored to the real clock, not a fixed offset).
+     */
+    snoozeDurations() {
+        const now = new Date();
+        const at = (d) => d.getTime();
+        const laterToday = new Date(now.getTime() + 3 * 3600000);
+        const tomorrowMorning = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0, 0, 0);
+        const weekend = (() => {
+            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
+            // 6 = Saturday. Advance to the next Saturday (at least one day out).
+            do { d.setDate(d.getDate() + 1); } while (d.getDay() !== 6);
+            return d;
+        })();
+        const nextWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0, 0, 0);
+        return [
+            { key: '3h', label: this.t('dashboard.inboxSnooze3h', 'In 3 hours'), until: at(laterToday) },
+            { key: 'tomorrow', label: this.t('dashboard.inboxSnoozeTomorrow', 'Tomorrow'), until: at(tomorrowMorning) },
+            { key: 'weekend', label: this.t('dashboard.inboxSnoozeWeekend', 'This weekend'), until: at(weekend) },
+            { key: 'week', label: this.t('dashboard.inboxSnoozeNextWeek', 'Next week'), until: at(nextWeek) },
+        ];
+    }
+
+    /** Small popover of preset durations anchored to the Snooze button. */
+    openSnoozeMenu(item, anchor) {
+        this.closeSnoozeMenu();
+        const menu = document.createElement('div');
+        menu.className = 'inbox-snooze-menu';
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = this.snoozeDurations()
+            .map((d) => `<button type="button" class="inbox-snooze-option" role="menuitem" data-snooze-until="${d.until}">${this.escape(d.label)}</button>`)
+            .join('');
+        document.body.appendChild(menu);
+        this._snoozeMenu = menu;
+
+        // Position under the anchor, flipped up when there is no room below.
+        const rect = anchor?.getBoundingClientRect?.();
+        if (rect) {
+            menu.style.left = `${Math.round(rect.left)}px`;
+            const below = rect.bottom + 6;
+            if (below + menu.offsetHeight > window.innerHeight - 8) {
+                menu.style.top = `${Math.round(rect.top - menu.offsetHeight - 6)}px`;
+            } else {
+                menu.style.top = `${Math.round(below)}px`;
+            }
+        }
+
+        menu.querySelectorAll('[data-snooze-until]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const until = Number(btn.getAttribute('data-snooze-until')) || 0;
+                this.closeSnoozeMenu();
+                void this.snoozeItem(item, until);
+            });
+        });
+        menu.querySelector('.inbox-snooze-option')?.focus({ preventScroll: true });
+
+        // Dismiss on outside click or Escape.
+        this._snoozeOutside = (e) => {
+            if (!menu.contains(e.target) && !anchor?.contains?.(e.target)) {
+                this.closeSnoozeMenu();
+            }
+        };
+        this._snoozeEsc = (e) => {
+            if (e.key === 'Escape') {
+                e.stopImmediatePropagation();
+                this.closeSnoozeMenu();
+                anchor?.focus?.({ preventScroll: true });
+            }
+        };
+        setTimeout(() => document.addEventListener('click', this._snoozeOutside, true), 0);
+        document.addEventListener('keydown', this._snoozeEsc, true);
+    }
+
+    closeSnoozeMenu() {
+        if (this._snoozeOutside) {
+            document.removeEventListener('click', this._snoozeOutside, true);
+            this._snoozeOutside = null;
+        }
+        if (this._snoozeEsc) {
+            document.removeEventListener('keydown', this._snoozeEsc, true);
+            this._snoozeEsc = null;
+        }
+        this._snoozeMenu?.remove();
+        this._snoozeMenu = null;
+    }
+
+    /** Persist a snooze wake time (or 0 to wake) via PATCH. */
+    async patchSnooze(id, snoozedUntil) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await fetcher('/api/inbox', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, snoozedUntil }),
+        });
+        if (!res.ok) {
+            throw new Error(`inbox snooze HTTP ${res.status}`);
+        }
+        const body = await res.json().catch(() => ({}));
+        const stored = this.items.find((entry) => entry.id === id);
+        if (stored) {
+            stored.snoozedUntil = Number(body?.item?.snoozedUntil || 0);
+        }
+        return stored;
+    }
+
+    async snoozeItem(item, until) {
+        const d = this.dash;
+        if (!(Number(until) > Date.now())) {
+            return;
+        }
+        try {
+            await this.patchSnooze(item.id, until);
+            this.dash.pageNav?.updateInboxTabBadge?.();
+            if (this.isActiveView()) {
+                this.render();
+            }
+            d.showNotification(
+                this.t('dashboard.inboxSnoozedToast', 'Snoozed until {time}', { time: this.formatSnoozeWake(until) }),
+                'success',
+                {
+                    duration: 6000,
+                    undoCallback: async () => {
+                        try {
+                            await this.patchSnooze(item.id, 0);
+                            this.dash.pageNav?.updateInboxTabBadge?.();
+                            if (this.isActiveView()) this.render();
+                        } catch {
+                            d.showNotification(this.t('dashboard.inboxSnoozeFailed', 'Could not snooze the link'), 'error');
+                        }
+                    },
+                }
+            );
+        } catch {
+            d.showNotification(this.t('dashboard.inboxSnoozeFailed', 'Could not snooze the link'), 'error');
+        }
+    }
+
+    async wakeItem(item) {
+        const d = this.dash;
+        try {
+            await this.patchSnooze(item.id, 0);
+            this.dash.pageNav?.updateInboxTabBadge?.();
+            if (this.isActiveView()) {
+                this.render();
+            }
+            d.showNotification(this.t('dashboard.inboxWokeToast', 'Back in the Inbox'), 'success', { duration: 2500 });
+        } catch {
+            d.showNotification(this.t('dashboard.inboxWakeFailed', 'Could not wake the link'), 'error');
+        }
+    }
+
+    /** Human-readable wake time: a weekday + time, or "today HH:MM" when soon. */
+    formatSnoozeWake(ts) {
+        const value = Number(ts || 0);
+        if (!value) return '';
+        const wake = new Date(value);
+        const now = new Date();
+        const sameDay = wake.getFullYear() === now.getFullYear()
+            && wake.getMonth() === now.getMonth()
+            && wake.getDate() === now.getDate();
+        const time = wake.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        if (sameDay) {
+            return this.t('dashboard.inboxSnoozeWakeToday', 'today {time}', { time });
+        }
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const isTomorrow = wake.getFullYear() === tomorrow.getFullYear()
+            && wake.getMonth() === tomorrow.getMonth()
+            && wake.getDate() === tomorrow.getDate();
+        if (isTomorrow) {
+            return this.t('dashboard.inboxSnoozeWakeTomorrow', 'tomorrow {time}', { time });
+        }
+        const day = wake.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+        return `${day} ${time}`;
     }
 
     /** AppModal.confirm when present, window.confirm as the fallback. */
@@ -719,9 +943,14 @@ class DashboardInbox {
     clearKeyboardSelection() {
         this.selectedItemId = null;
         this.unbindPointerNavigation();
+        this.closeSnoozeMenu();
         if (this._previewRefreshTimer) {
             clearTimeout(this._previewRefreshTimer);
             this._previewRefreshTimer = null;
+        }
+        if (this._wakeTimer) {
+            clearTimeout(this._wakeTimer);
+            this._wakeTimer = null;
         }
         document.querySelectorAll('.inbox-item.keyboard-selected').forEach((card) => {
             card.classList.remove('keyboard-selected');
@@ -754,10 +983,28 @@ class DashboardInbox {
         this.render();
     }
 
+    /** True while an item is snoozed into the future (hidden from the main list). */
+    isSnoozed(item) {
+        return Number(item?.snoozedUntil || 0) > Date.now();
+    }
+
+    snoozedCount() {
+        return (this.items || []).filter((item) => this.isSnoozed(item)).length;
+    }
+
     getFilteredItems() {
         let list = Array.isArray(this.items) ? this.items.slice() : [];
-        if (this.filter === 'unread') {
-            list = list.filter((item) => !item.readAt);
+        if (this.filter === 'snoozed') {
+            // Snoozed view: only sleeping items, soonest to wake first.
+            list = list
+                .filter((item) => this.isSnoozed(item))
+                .sort((a, b) => Number(a.snoozedUntil || 0) - Number(b.snoozedUntil || 0));
+        } else {
+            // All / Unread hide anything still snoozed; an elapsed snooze reappears.
+            list = list.filter((item) => !this.isSnoozed(item));
+            if (this.filter === 'unread') {
+                list = list.filter((item) => !item.readAt);
+            }
         }
         const query = String(this.searchQuery || '').trim().toLowerCase();
         if (query) {
@@ -808,6 +1055,10 @@ class DashboardInbox {
     }
 
     groupFilteredItems(items) {
+        // The snoozed view groups by when items wake, not when they were added.
+        if (this.filter === 'snoozed') {
+            return this.groupSnoozedItems(items);
+        }
         const order = ['today', 'yesterday', 'week', 'older'];
         const buckets = new Map(order.map((key) => [key, []]));
         items.forEach((item) => {
@@ -816,6 +1067,33 @@ class DashboardInbox {
         });
         return order
             .map((key) => ({ key, label: this.getDateGroupLabel(key), items: buckets.get(key) || [] }))
+            .filter((group) => group.items.length > 0);
+    }
+
+    /** Bucket snoozed items by how soon they wake: later today, tomorrow, this week, later. */
+    groupSnoozedItems(items) {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const dayMs = 86400000;
+        const order = ['wakeToday', 'wakeTomorrow', 'wakeWeek', 'wakeLater'];
+        const labels = {
+            wakeToday: this.t('dashboard.inboxSnoozeGroupToday', 'Later today'),
+            wakeTomorrow: this.t('dashboard.inboxSnoozeGroupTomorrow', 'Tomorrow'),
+            wakeWeek: this.t('dashboard.inboxSnoozeGroupThisWeek', 'This week'),
+            wakeLater: this.t('dashboard.inboxSnoozeGroupLater', 'Later'),
+        };
+        const bucketFor = (ts) => {
+            const wake = Number(ts || 0);
+            const wakeDay = new Date(new Date(wake).getFullYear(), new Date(wake).getMonth(), new Date(wake).getDate()).getTime();
+            if (wakeDay <= startOfToday) return 'wakeToday';
+            if (wakeDay <= startOfToday + dayMs) return 'wakeTomorrow';
+            if (wakeDay <= startOfToday + (7 * dayMs)) return 'wakeWeek';
+            return 'wakeLater';
+        };
+        const buckets = new Map(order.map((key) => [key, []]));
+        items.forEach((item) => buckets.get(bucketFor(item.snoozedUntil))?.push(item));
+        return order
+            .map((key) => ({ key, label: labels[key], items: buckets.get(key) || [] }))
             .filter((group) => group.items.length > 0);
     }
 
@@ -869,6 +1147,7 @@ class DashboardInbox {
             ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
             ['n', this.t('dashboard.inboxKeyNote', 'note')],
             ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
+            ['z', this.t('dashboard.inboxKeySnooze', 'snooze')],
             ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
             ['g / G', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
             ['Esc', this.t('dashboard.inboxKeyClose', 'back to bookmarks')],
@@ -959,12 +1238,17 @@ class DashboardInbox {
         container.appendChild(header);
 
         const readCount = this.items.filter((entry) => entry.readAt).length;
+        const snoozedCount = this.snoozedCount();
         const toolbar = document.createElement('div');
         toolbar.className = 'inbox-toolbar';
+        // The Snoozed pill only appears when something is asleep (or is the active
+        // filter, so it does not vanish under the user when the last item wakes).
+        const showSnoozePill = snoozedCount > 0 || this.filter === 'snoozed';
         toolbar.innerHTML = `
             <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
                 <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
                 <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
+                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
             </div>
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
             ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read">${this.escape(this.t('dashboard.inboxMarkAllRead', 'Mark all read'))}</button>` : ''}
@@ -1076,6 +1360,7 @@ class DashboardInbox {
         }
 
         this.schedulePreviewRefresh();
+        this.scheduleWakeRefresh();
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
     }
 
@@ -1090,12 +1375,25 @@ class DashboardInbox {
         const title = item.previewTitle || item.title || item.domain || item.url;
         const domain = item.domain || this.formatUrlDisplay(item.url);
         const timeLabel = this.formatRelativeTime(item.addedAt);
+        const snoozed = this.isSnoozed(item);
+        if (snoozed) {
+            card.classList.add('is-snoozed');
+        }
         // A freshly-added item enriches its preview server-side; until that lands the
         // placeholder shows a "fetching preview" pulse rather than a bare link glyph.
         const enriching = this.isPreviewPending(item);
         const thumb = item.previewImage
             ? `<div class="inbox-item-thumb" style="background-image:url('${this.escape(item.previewImage)}')"></div>`
             : `<div class="inbox-item-thumb inbox-item-thumb--placeholder${enriching ? ' inbox-item-thumb--loading' : ''}" aria-hidden="true">🔗</div>`;
+
+        // On a snoozed card, swap the Snooze button for a Wake one and show when it
+        // will resurface.
+        const snoozeBtn = snoozed
+            ? `<button type="button" class="inbox-action-btn" data-inbox-action="wake">${this.escape(this.t('dashboard.inboxWake', 'Wake now'))}<kbd>z</kbd></button>`
+            : `<button type="button" class="inbox-action-btn" data-inbox-action="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}<kbd>z</kbd></button>`;
+        const wakeLabel = snoozed
+            ? `<span class="inbox-item-snooze">${this.escape(this.t('dashboard.inboxSnoozedUntil', 'Sleeping until {time}', { time: this.formatSnoozeWake(item.snoozedUntil) }))}</span>`
+            : '';
 
         card.innerHTML = `
             ${thumb}
@@ -1104,6 +1402,7 @@ class DashboardInbox {
                 <p class="inbox-item-meta">
                     <span class="inbox-item-domain">${this.escape(domain)}</span>
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
+                    ${wakeLabel}
                 </p>
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
                 <div class="inbox-item-actions">
@@ -1111,6 +1410,7 @@ class DashboardInbox {
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
                         <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
                         ${item.readAt ? '' : `<button type="button" class="inbox-action-btn" data-inbox-action="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}<kbd>r</kbd></button>`}
+                        ${snoozeBtn}
                         <button type="button" class="inbox-action-btn" data-inbox-action="note">${this.escape(item.note ? this.t('dashboard.inboxEditNote', 'Edit note') : this.t('dashboard.inboxAddNote', 'Note'))}<kbd>n</kbd></button>
                         <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-inbox-action="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}<kbd>d</kbd></button>
                     </div>
@@ -1127,6 +1427,14 @@ class DashboardInbox {
         card.querySelector('[data-inbox-action="read"]')?.addEventListener('click', async () => {
             this.selectItemById(item.id);
             await this.markReadFromKeyboard(item);
+        });
+        card.querySelector('[data-inbox-action="snooze"]')?.addEventListener('click', (e) => {
+            this.selectItemById(item.id);
+            this.openSnoozeMenu(item, e.currentTarget);
+        });
+        card.querySelector('[data-inbox-action="wake"]')?.addEventListener('click', async () => {
+            this.selectItemById(item.id);
+            await this.wakeItem(item);
         });
         card.querySelector('[data-inbox-action="note"]')?.addEventListener('click', () => {
             this.selectItemById(item.id);
