@@ -239,7 +239,7 @@ Side rail layout (optional — **Config → General → Layout → Button bar po
 ### Header
 
 - **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
-- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when broken or warning bookmarks exist — red for broken, amber for warnings, hidden when healthy (**v2026.07.09**, styled like the inbox tab). When broken links are counted, the link opens `/?hv_filter=broken#health`. Always shown (**v2026.07.16** — the Header & buttons hide toggle was removed).  
+- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when broken or warning bookmarks exist — red for broken, amber for warnings, hidden when healthy (**v2026.07.09**, styled like the inbox tab). When broken links are counted, the link opens `/?hv_filter=broken#health`. Always shown (**v2026.07.16** — the Header & buttons hide toggle was removed). Open the same view from the keyboard with **`Shift+H`**.  
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
 
@@ -416,7 +416,9 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 | Keys | Action |
 |------|--------|
-| `0` | Open **Inbox** (when search is closed) |
+| `Shift + I` | Open **Inbox** view (recommended; `0` still works when search is closed) |
+| `Shift + H` | Open **Health** view |
+| `0` | Open **Inbox** (when search is closed; legacy — prefer `Shift + I`) |
 | `1`–`9` | Jump to bookmark page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
@@ -555,10 +557,10 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
 | `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload |
-| `:inbox` / `:inbox triage` | Open Inbox (`0`) or triage unread items one by one |
+| `:inbox` / `:inbox triage` | Open Inbox (`Shift+I`, or `0`) or triage unread items one by one |
 | `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
 | `:stale [days]` | List stale bookmarks |
-| `:health [filter]` | Open health view — `broken`, `duplicate`, `stale`, `refresh`, … |
+| `:health [filter]` | Open health view (`Shift+H`) — `broken`, `duplicate`, `stale`, `refresh`, … |
 | `:health page [n]` | Open health with a specific page context |
 | `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
 | `:find <text>` / `:find clear` | Hide non-matching tiles on page / clear filter |
@@ -784,7 +786,7 @@ When enabled, bookmarks can show online/offline from ping checks. **Essentials**
 
 ### Health view (`/#health`)
 
-Central place to triage issues inside the dashboard UI:
+Central place to triage issues inside the dashboard UI. Open it with the header **heartbeat** icon, **`Shift+H`**, **`:health`**, or a `/#health` deep link:
 
 ```
 Summary tiles (click to filter) → Compact controls (filters, search, sort, retest)
@@ -827,9 +829,9 @@ Filter, sort, and search state persist in the session across refreshes and sync 
 | `hv_q` | `/?hv_q=github#health` | Pre-fill search |
 | `hv_refresh` | `/?hv_refresh=1#health` | Run retest-all on load |
 
-From the dashboard, **`:health`** (command mode) opens health with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/?hv_filter=stale#health`.
+From the dashboard, **`Shift+H`** opens the Health view directly. **`:health`** (command mode) opens it with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/?hv_filter=stale#health`.
 
-The dashboard **health** icon (**v2026.07.09**, a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy (**v2026.07.01.1**). When broken issues exist, the link opens `/?hv_filter=broken#health`. On **config**, **General → Essentials → Health →** uses the same routing (Essentials link appears when status monitoring is on).
+The dashboard **health** icon (**v2026.07.09**, a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy (**v2026.07.01.1**). When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. On **config**, **General → Essentials → Health →** uses the same routing (Essentials link appears when status monitoring is on).
 
 ### Stats (`config#stats`)
 
@@ -871,7 +873,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 
 ### Essentials vs Advanced (general)
 
-- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/?hv_filter=broken#health` when broken issues exist, otherwise `/#health`). Language changes apply immediately; other changes need **Save**.
+- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/?hv_filter=broken#health` when broken issues exist, otherwise `/#health`; from the dashboard use **`Shift+H`**). Language changes apply immediately; other changes need **Save**.
 - **Advanced** — Full status tuning, branding, **Search & input**, **System & tools** (launcher mode, device settings), and a standalone **Tours & onboarding** card (tour replay, onboarding replay, spotlight resets, what's new) (**v2026.07.07**). Click a **section title** (+/−) to expand or collapse each panel.
 - **Layer toolbar (v2026.07.04)** — **Essentials**, **Advanced**, and **Show all** switch in one row at the top of the fused General surface.
 - **Sections index & accordion (v2026.07.07)** — a sticky **quick links** sidebar (same split-shell pattern as **Stats** and **Help**) lists every section next to the settings content and highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time. Clicking the link for an already-open section that's in view collapses it again; clicking the link for an open section that has scrolled out of view scrolls back to it instead of collapsing it invisibly off-screen. Hidden on phones (same panels as the mobile layout below). Sections have a dividing border between them, and the vertical divider next to the quick-links sidebar runs the full height of the page (**v2026.07.08**). Quick-link clicks land on the section title instead of scrolling a few lines past it (**v2026.07.08.1**).
