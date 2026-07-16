@@ -106,11 +106,12 @@ Nothing yet.
 ### Inbox
 
 - **new** **Snooze / read later** — park a link for 3 hours, tomorrow, this weekend, or next week. Snoozed items leave All/Unread until they wake, with a **Snoozed** filter, grouped wake times, an auto-wake timer, `z` to open snooze, and **Wake now** (`inbox.go`, `inbox_handlers.go`, `dashboard-inbox.js`, `dashboard-inbox.css`, `locales/{en,nl,de,fr}.json`).
-- **new** **Keyboard navigation** — `j`/`k` move, `g`/`G` first/last, and row keys: `o` open, `p` promote, `r` mark read, `n` note, `d` delete, plus a legend under the list and Health-style selection animation (`dashboard-inbox.js`, `dashboard-inbox.css`, `dashboard.html`).
+- **new** **Keyboard navigation** — `j`/`k` move, `g`/`G` first/last, and row keys: `Enter`/`Space` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete, plus a legend under the list and Health-style selection animation (`dashboard-inbox.js`, `dashboard-inbox.css`, `dashboard.html`).
 - **new** **Notes on Inbox links** — add/edit a note from the row or `n`, backed by the existing PATCH endpoint (`dashboard-inbox.js`, locales).
 - **new** **Mark read & bulk actions** — unread rows get a mark-read button (not keyboard-only); toolbar **Mark all read** (scoped to the current filter) and **Clear read** with a single batch undo (`dashboard-inbox.js`, locales).
 - **fix** **Preview loading state** — freshly added items pulse a placeholder while the server enriches the preview, then a self-cancelling poll swaps it in (`dashboard-inbox.js`, `dashboard-inbox.css`).
 - **fix** **Promote triggers a health check** — when status checks are on, promoting an Inbox link fire-and-forgets `POST /api/health/check-url` so the new bookmark is not stuck as unchecked on Health until the next full retest (`health_check_url.go`, `dashboard-inbox.js`, `main.go`).
+- **fix** **Inbox toast counts** — `t()` no longer double-prefixes `dashboard.` before `formatDashboardLabel`, and fallback strings interpolate params, so bulk/clear toasts no longer show raw `{count}` (`dashboard-inbox.js`).
 
 ### Health
 
@@ -125,8 +126,10 @@ Nothing yet.
 
 - **new** **Tests** — Go coverage for single-URL health check and background recheck scheduling (`health_check_url_test.go`, `health_recheck_test.go`); Playwright health-view legend expectations updated (`tests/health-dashboard-view.spec.js`).
 - **fix** **README, MANUAL & Config Help** — **v2026.07.16** notes for Inbox snooze/keyboard/bulk, Health always-on, background rechecks, and Edit → inline editor.
-- **fix** **What's new modal** — added **v2026.07.16** JSON entry (user-facing highlights only; no cache-bust / release-token chatter).
-- **fix** **Cache-bust** — `whats-new-v162` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v120` dashboard release token.
+- **fix** **MANUAL documents `Shift+H`** — Health open shortcut added on the header health entry, keyboard table (`Shift+I` / `Shift+H`), Health view intro, Essentials status overview, and `:health` / `:inbox` command rows (`MANUAL.md`).
+- **fix** **What's new modal** — **v2026.07.16** JSON refreshed with missing Inbox/Health fixes (toast counts, square Health underline, `Shift+H` docs) and corrected Inbox open key (`Enter`, not `o`).
+- **fix** **Inbox open key copy** — README, MANUAL, and Config → Help no longer list `o` for Inbox open; they match the real `Enter` / `Space` binding (and include `z` for snooze).
+- **fix** **Cache-bust** — `whats-new-v163` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v121` dashboard release token.
 
 ---
 

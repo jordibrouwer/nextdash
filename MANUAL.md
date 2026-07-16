@@ -188,7 +188,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 - Open with the **Inbox** header tab, **`Shift+I`**, **`0`** (when search is closed), or **`:inbox`**.  
 - Add links by pasting a URL on the dashboard (`Ctrl+V`) and choosing **Save to Inbox**, via the browser extension, or through the API.  
 - Filter **All** / **Unread** / **Snoozed**, search, and browse date groups. **Snooze** parks a link for later (`z`); **Promote** turns a link into a full bookmark (and health-checks it when status checks are on); **Triage** walks unread items one by one.  
-- Keyboard: `j`/`k` move, `g`/`G` first/last, `o` open, `p` promote, `r` mark read, `n` note, `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
+- Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
 - Toggle under **Config → General → Enable Inbox page**; set **Paste URL default** to skip the choice dialog.
 
 ### 4.5 Config vs dashboard
@@ -366,7 +366,7 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 2. **Add** — paste `Ctrl+V` on the dashboard and choose *Save to Inbox*, use the extension **Save to Inbox**, or rely on *Always save to Inbox* in General settings. Fresh items show a preview placeholder until the server fills it in.  
 3. **Browse** — filter *All* / *Unread* / *Snoozed*, search, and scroll date groups. Unread items show a badge on the Inbox tab.  
 4. **Act on a row** — *Open* in a new tab, *Promote* to open the new-bookmark form pre-filled (status-checked bookmarks are health-checked right away), *Mark read*, *Snooze* (`z`: 3h / tomorrow / weekend / next week), add a *Note* (`n`), or *Delete* (undo in the toast). Use the toolbar to **Mark all read** or **Clear read**.  
-5. **Keyboard** — `j`/`k` move, `g`/`G` first/last, `o` open, `p` promote, `r` mark read, `n` note, `d` delete (legend under the list).  
+5. **Keyboard** — `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete (legend under the list).  
 6. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
 
 The first visit may show a short intro modal. Replay it from **Config → Advanced → System → Reset Inbox intro modal**.

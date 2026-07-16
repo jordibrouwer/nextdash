@@ -13,7 +13,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Keyboard navigation matches Health</strong> — <kbd>j</kbd>/<kbd>k</kbd> move, <kbd>g</kbd>/<kbd>G</kbd> jump first/last, and row keys cover the rest: <kbd>o</kbd> open, <kbd>p</kbd> promote, <kbd>r</kbd> mark read, <kbd>n</kbd> note, <kbd>d</kbd> delete, plus a shortcut legend under the list."
+          "text": "<strong>Keyboard navigation matches Health</strong> — <kbd>j</kbd>/<kbd>k</kbd> move, <kbd>g</kbd>/<kbd>G</kbd> jump first/last, and row keys cover the rest: <kbd>Enter</kbd> open, <kbd>p</kbd> promote, <kbd>r</kbd> mark read, <kbd>n</kbd> note, <kbd>d</kbd> delete, plus a shortcut legend under the list."
         },
         {
           "badge": "new",
@@ -30,6 +30,10 @@
         {
           "badge": "fix",
           "text": "<strong>Promote starts a health check</strong> — when status checks are on, promoting an Inbox link to a bookmark immediately pings that URL so it does not sit as unchecked on Health until the next full retest."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox toasts show real counts again</strong> — bulk and clear actions no longer leak raw <code>{count}</code> placeholders into the notification text."
         }
       ]
     },
@@ -54,7 +58,15 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Less chrome in the Health view</strong> — the duplicate shortcut legend under the toolbar is gone; one legend stays under the feed. The active heartbeat underline also sits square with the page tabs."
+          "text": "<strong>Less chrome in the Health view</strong> — the duplicate shortcut legend under the toolbar is gone; one legend stays under the feed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Active Health underline sits square</strong> — the selected heartbeat icon’s bottom border no longer curves up at the corners, matching page tabs and Inbox."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>Shift+H</kbd> is documented where you look for status</strong> — the manual now lists the Health shortcut on the header, keyboard table, Health view, Essentials status overview, and <code>:health</code> command row."
         }
       ]
     }
