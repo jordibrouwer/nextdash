@@ -252,6 +252,30 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     color: var(--text-tertiary);
 }
 
+/* Preview still enriching server-side: a soft pulse instead of a static glyph. */
+.inbox-item-thumb--loading {
+    position: relative;
+    overflow: hidden;
+    animation: inbox-thumb-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes inbox-thumb-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
+body.no-animations .inbox-item-thumb--loading {
+    animation: none !important;
+    opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inbox-item-thumb--loading {
+        animation: none !important;
+        opacity: 0.7;
+    }
+}
+
 .inbox-item-title {
     margin: 0;
     font-size: var(--font-size-controls);
@@ -601,6 +625,22 @@ body.no-animations .inbox-item-actions {
     display: block;
     width: 100%;
     margin-top: 0.35rem;
+}
+
+/* Bulk actions are secondary next to Triage: neutral chrome, not the accent fill. */
+.inbox-bulk-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.inbox-bulk-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
 }
 
 .inbox-date-group {

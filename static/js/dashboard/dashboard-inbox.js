@@ -28,7 +28,19 @@ class DashboardInbox {
     t(key, fallback, params) {
         const d = this.dash;
         if (params && typeof d.formatDashboardLabel === 'function') {
-            return d.formatDashboardLabel(key, params, fallback);
+            // formatDashboardLabel prepends 'dashboard.' itself, so hand it the bare
+            // tail — passing the full key double-prefixes it and the lookup misses.
+            const bare = String(key).startsWith('dashboard.') ? String(key).slice('dashboard.'.length) : key;
+            const text = d.formatDashboardLabel(bare, params, fallback);
+            if (text && text !== bare && text !== key) {
+                return text;
+            }
+            // No translation: interpolate the fallback here rather than surface a raw
+            // `{count}`.
+            return Object.entries(params).reduce(
+                (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
+                String(fallback || '')
+            );
         }
         const raw = d.language?.t?.(key);
         return raw && raw !== key ? raw : fallback;
@@ -52,6 +64,50 @@ class DashboardInbox {
 
     unreadCount() {
         return (this.items || []).filter((item) => !item.readAt).length;
+    }
+
+    /**
+     * Server-side preview enrichment runs just after an item is added. An item with
+     * neither a preview title nor image that was added in the last ~45s is treated as
+     * still enriching — long enough to cover a slow fetch, short enough that a link
+     * that genuinely has no preview does not pulse forever.
+     */
+    isPreviewPending(item) {
+        if (item.previewImage || item.previewTitle) {
+            return false;
+        }
+        const added = Number(item.addedAt || 0);
+        if (!added) {
+            return false;
+        }
+        return Date.now() - added < 45000;
+    }
+
+    /**
+     * If any visible item is still enriching, poll once after a short delay so the
+     * preview appears without the user reloading. Self-cancelling: it only reschedules
+     * while something is pending and the view is still open.
+     */
+    schedulePreviewRefresh() {
+        if (this._previewRefreshTimer) {
+            return;
+        }
+        const pending = (this.items || []).some((item) => this.isPreviewPending(item));
+        if (!pending || !this.isActiveView()) {
+            return;
+        }
+        this._previewRefreshTimer = setTimeout(async () => {
+            this._previewRefreshTimer = null;
+            if (!this.isActiveView()) {
+                return;
+            }
+            try {
+                await this.fetchItems();
+            } catch {
+                return;
+            }
+            this.render();
+        }, 4000);
     }
 
     async fetchItems() {
@@ -520,6 +576,101 @@ class DashboardInbox {
         card?.classList.add('is-read');
     }
 
+    /** AppModal.confirm when present, window.confirm as the fallback. */
+    async confirm(title, message, { danger = false } = {}) {
+        if (typeof window.AppModal?.confirm === 'function') {
+            return Boolean(await window.AppModal.confirm({
+                title: title || '',
+                message,
+                confirmText: danger
+                    ? this.t('dashboard.inboxClearReadAction', 'Clear')
+                    : this.t('dashboard.inboxConfirmAction', 'Confirm'),
+                cancelText: this.t('dashboard.healthCancel', 'Cancel'),
+                confirmClass: danger ? 'danger' : '',
+            }));
+        }
+        return window.confirm(message);
+    }
+
+    /**
+     * Mark every unread item in the current view read in one go. Scoped to the
+     * active filter/search (getFilteredItems) so the button does what the list
+     * shows, not silently more.
+     */
+    async markAllRead() {
+        const targets = this.getFilteredItems().filter((item) => !item.readAt);
+        if (!targets.length) {
+            return;
+        }
+        const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (this.isActiveView()) {
+            this.render();
+        }
+        this.dash.showNotification(
+            failed
+                ? this.t('dashboard.inboxMarkAllReadPartial', 'Marked read, {count} failed', { count: failed })
+                : this.t('dashboard.inboxMarkAllReadDone', 'Marked {count} read', { count: targets.length }),
+            failed ? 'info' : 'success',
+            { duration: 3000 }
+        );
+    }
+
+    /**
+     * Delete every read item. Snapshots them first so a single Undo can restore the
+     * whole batch — a destructive bulk action needs an escape hatch.
+     */
+    async clearReadItems() {
+        const targets = this.items.filter((item) => item.readAt);
+        if (!targets.length) {
+            return;
+        }
+        const confirmed = await this.confirm(
+            this.t('dashboard.inboxClearRead', 'Clear read'),
+            this.t('dashboard.inboxClearReadConfirm', 'Remove {count} read links from the Inbox?', { count: targets.length }),
+            { danger: true }
+        );
+        if (!confirmed) {
+            return;
+        }
+        const d = this.dash;
+        const snapshots = targets.map((item) => JSON.parse(JSON.stringify(item)));
+        const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
+        const removed = results.filter((r) => r.status === 'fulfilled').length;
+        if (this.isActiveView()) {
+            this.render();
+        } else {
+            await this.refreshBadge();
+        }
+        if (!removed) {
+            d.showNotification(this.t('dashboard.inboxClearReadFailed', 'Could not clear read links'), 'error');
+            return;
+        }
+        d.showNotification(
+            this.t('dashboard.inboxClearReadDone', 'Removed {count} read links', { count: removed }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    const restores = await Promise.allSettled(snapshots.map((snap) => this.restoreItem(snap)));
+                    const back = restores.filter((r) => r.status === 'fulfilled' && r.value).length;
+                    if (this.isActiveView()) {
+                        await this.loadAndRender();
+                    } else {
+                        await this.refreshBadge();
+                    }
+                    d.showNotification(
+                        back
+                            ? this.t('dashboard.inboxClearReadRestored', 'Restored {count} links', { count: back })
+                            : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+                        back ? 'success' : 'error',
+                        { duration: 3000 }
+                    );
+                },
+            }
+        );
+    }
+
 
     getVisibleItemCards() {
         return Array.from(document.querySelectorAll('.inbox-feed .inbox-item'));
@@ -568,6 +719,10 @@ class DashboardInbox {
     clearKeyboardSelection() {
         this.selectedItemId = null;
         this.unbindPointerNavigation();
+        if (this._previewRefreshTimer) {
+            clearTimeout(this._previewRefreshTimer);
+            this._previewRefreshTimer = null;
+        }
         document.querySelectorAll('.inbox-item.keyboard-selected').forEach((card) => {
             card.classList.remove('keyboard-selected');
             card.setAttribute('aria-selected', 'false');
@@ -803,6 +958,7 @@ class DashboardInbox {
         `;
         container.appendChild(header);
 
+        const readCount = this.items.filter((entry) => entry.readAt).length;
         const toolbar = document.createElement('div');
         toolbar.className = 'inbox-toolbar';
         toolbar.innerHTML = `
@@ -811,6 +967,8 @@ class DashboardInbox {
                 <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
             </div>
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
+            ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read">${this.escape(this.t('dashboard.inboxMarkAllRead', 'Mark all read'))}</button>` : ''}
+            ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}</button>
         `;
         toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
@@ -835,6 +993,12 @@ class DashboardInbox {
                 return;
             }
             e.stopPropagation();
+        });
+        toolbar.querySelector('[data-inbox-bulk="read"]')?.addEventListener('click', () => {
+            void this.markAllRead();
+        });
+        toolbar.querySelector('[data-inbox-bulk="clear-read"]')?.addEventListener('click', () => {
+            void this.clearReadItems();
         });
         toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
             void this.startTriage();
@@ -911,6 +1075,7 @@ class DashboardInbox {
             this.bindPointerNavigation(container);
         }
 
+        this.schedulePreviewRefresh();
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
     }
 
@@ -925,9 +1090,12 @@ class DashboardInbox {
         const title = item.previewTitle || item.title || item.domain || item.url;
         const domain = item.domain || this.formatUrlDisplay(item.url);
         const timeLabel = this.formatRelativeTime(item.addedAt);
+        // A freshly-added item enriches its preview server-side; until that lands the
+        // placeholder shows a "fetching preview" pulse rather than a bare link glyph.
+        const enriching = this.isPreviewPending(item);
         const thumb = item.previewImage
             ? `<div class="inbox-item-thumb" style="background-image:url('${this.escape(item.previewImage)}')"></div>`
-            : `<div class="inbox-item-thumb inbox-item-thumb--placeholder" aria-hidden="true">🔗</div>`;
+            : `<div class="inbox-item-thumb inbox-item-thumb--placeholder${enriching ? ' inbox-item-thumb--loading' : ''}" aria-hidden="true">🔗</div>`;
 
         card.innerHTML = `
             ${thumb}
@@ -942,6 +1110,7 @@ class DashboardInbox {
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
                         <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
+                        ${item.readAt ? '' : `<button type="button" class="inbox-action-btn" data-inbox-action="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}<kbd>r</kbd></button>`}
                         <button type="button" class="inbox-action-btn" data-inbox-action="note">${this.escape(item.note ? this.t('dashboard.inboxEditNote', 'Edit note') : this.t('dashboard.inboxAddNote', 'Note'))}<kbd>n</kbd></button>
                         <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-inbox-action="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}<kbd>d</kbd></button>
                     </div>
@@ -954,6 +1123,10 @@ class DashboardInbox {
         });
         card.querySelector('[data-inbox-action="promote"]')?.addEventListener('click', () => {
             this.promoteItem(item);
+        });
+        card.querySelector('[data-inbox-action="read"]')?.addEventListener('click', async () => {
+            this.selectItemById(item.id);
+            await this.markReadFromKeyboard(item);
         });
         card.querySelector('[data-inbox-action="note"]')?.addEventListener('click', () => {
             this.selectItemById(item.id);
