@@ -423,12 +423,21 @@ class DashboardInbox {
             }
         }
 
+        // A key pressed while focus sits on a row control (an action button)
+        // belongs to that control — without this, a letter shortcut typed while
+        // tabbed into the actions would also fire the row-level action.
+        const onRowControl = Boolean(
+            target?.closest?.('.inbox-item')
+            && target?.matches?.('button, a, input, select')
+        );
+
         const cards = this.getVisibleItemCards();
         if (!cards.length) {
             return false;
         }
 
-        if (e.key === 'ArrowDown') {
+        if (e.key === 'ArrowDown' || e.key === 'j') {
+            if (e.key === 'j' && onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
             if (isInboxSearch) {
@@ -437,7 +446,8 @@ class DashboardInbox {
             this.moveKeyboardSelection(1, cards);
             return true;
         }
-        if (e.key === 'ArrowUp') {
+        if (e.key === 'ArrowUp' || e.key === 'k') {
+            if (e.key === 'k' && onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
             if (isInboxSearch) {
@@ -446,16 +456,68 @@ class DashboardInbox {
             this.moveKeyboardSelection(-1, cards);
             return true;
         }
-        if ((e.key === 'Enter' || e.key === ' ') && this.selectedItemId) {
+        if (onRowControl) {
+            return false;
+        }
+        const selected = this.selectedItemId
+            ? this.items.find((entry) => entry.id === this.selectedItemId)
+            : null;
+        if ((e.key === 'Enter' || e.key === ' ') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            const item = this.items.find((entry) => entry.id === this.selectedItemId);
-            if (item) {
-                this.openItem(item);
-            }
+            this.openItem(selected);
+            return true;
+        }
+        if (e.key === 'p' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.promoteItem(selected);
+            return true;
+        }
+        if ((e.key === 'r') && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.markReadFromKeyboard(selected);
+            return true;
+        }
+        if (e.key === 'n' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.editNote(selected);
+            return true;
+        }
+        if ((e.key === 'd' || e.key === 'Delete') && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.deleteItemWithUndo(selected.id);
+            return true;
+        }
+        if (e.key === 'g') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.selectedItemId = cards[0]?.dataset?.inboxId || null;
+            this.applyKeyboardSelection(cards);
+            return true;
+        }
+        if (e.key === 'G') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.selectedItemId = cards[cards.length - 1]?.dataset?.inboxId || null;
+            this.applyKeyboardSelection(cards);
             return true;
         }
         return false;
+    }
+
+    /** Mark an item read without opening it — the keyboard "keep" action. */
+    async markReadFromKeyboard(item) {
+        if (item.readAt) {
+            return;
+        }
+        await this.markRead(item.id);
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(item.id)}"]`);
+        card?.classList.remove('is-unread');
+        card?.classList.add('is-read');
     }
 
 
@@ -635,6 +697,31 @@ class DashboardInbox {
         }
         const days = Math.floor(hours / 24);
         return this.t('dashboard.inboxTimeDays', '{count}d ago', { count: days });
+    }
+
+    /**
+     * Keyboard cheatsheet under the feed, mirroring the health view. One copy at the
+     * bottom; hidden from assistive tech since the actions it describes are the row
+     * buttons a screen reader already reaches.
+     */
+    renderLegend() {
+        const legend = document.createElement('p');
+        legend.className = 'inbox-legend';
+        legend.setAttribute('aria-hidden', 'true');
+        const keys = [
+            ['j / k', this.t('dashboard.inboxKeyMove', 'move')],
+            ['Enter', this.t('dashboard.inboxKeyOpen', 'open')],
+            ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
+            ['n', this.t('dashboard.inboxKeyNote', 'note')],
+            ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
+            ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
+            ['g / G', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
+            ['Esc', this.t('dashboard.inboxKeyClose', 'back to bookmarks')],
+        ];
+        legend.innerHTML = keys
+            .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
+            .join('');
+        return legend;
     }
 
     scheduleSearchRender() {
@@ -818,6 +905,8 @@ class DashboardInbox {
             container.appendChild(more);
         }
 
+        container.appendChild(this.renderLegend());
+
         if (container.querySelector('.inbox-feed')) {
             this.bindPointerNavigation(container);
         }
@@ -850,9 +939,12 @@ class DashboardInbox {
                 </p>
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
                 <div class="inbox-item-actions">
-                    <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
-                    <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
-                    <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-inbox-action="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
+                    <div class="inbox-item-actions-inner">
+                        <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
+                        <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
+                        <button type="button" class="inbox-action-btn" data-inbox-action="note">${this.escape(item.note ? this.t('dashboard.inboxEditNote', 'Edit note') : this.t('dashboard.inboxAddNote', 'Note'))}<kbd>n</kbd></button>
+                        <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-inbox-action="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}<kbd>d</kbd></button>
+                    </div>
                 </div>
             </div>
         `;
@@ -863,16 +955,17 @@ class DashboardInbox {
         card.querySelector('[data-inbox-action="promote"]')?.addEventListener('click', () => {
             this.promoteItem(item);
         });
+        card.querySelector('[data-inbox-action="note"]')?.addEventListener('click', () => {
+            this.selectItemById(item.id);
+            void this.editNote(item);
+        });
         card.querySelector('[data-inbox-action="delete"]')?.addEventListener('click', async () => {
             await this.deleteItemWithUndo(item.id);
         });
 
-        card.addEventListener('mouseenter', () => {
-            if (!this.isActiveView()) {
-                return;
-            }
-            this.selectItemById(item.id);
-        });
+        // Pointer-hover selection is handled once at the container level via
+        // bindPointerNavigation (pointerover); a per-card mouseenter would be a
+        // redundant second binding for the same behaviour.
 
         card.addEventListener('click', (e) => {
             if (e.target.closest('.inbox-action-btn')) {
@@ -932,6 +1025,84 @@ class DashboardInbox {
         } catch {
             // promote succeeded; inbox cleanup is best-effort
         }
+    }
+
+    /**
+     * Add or edit the note on an item. The backend already stores a per-item note
+     * (PATCH /api/inbox), it just had no way in from the list. clearNote=1 lets an
+     * emptied field actually blank the note rather than being ignored as "unset".
+     */
+    async editNote(item) {
+        if (!item) {
+            return;
+        }
+        const current = String(item.note || '');
+        const next = await this.promptNote(current);
+        if (next === null || next === current) {
+            return;
+        }
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const clearParam = next.trim() === '' ? '?clearNote=1' : '';
+        try {
+            const res = await fetcher(`/api/inbox${clearParam}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, note: next }),
+            });
+            if (!res.ok) {
+                throw new Error(`note HTTP ${res.status}`);
+            }
+            const stored = this.items.find((entry) => entry.id === item.id);
+            if (stored) {
+                stored.note = next.trim();
+            }
+            if (this.isActiveView()) {
+                this.render();
+            }
+            this.dash.showNotification(
+                next.trim()
+                    ? this.t('dashboard.inboxNoteSaved', 'Note saved')
+                    : this.t('dashboard.inboxNoteCleared', 'Note removed'),
+                'success',
+                { duration: 2500 }
+            );
+        } catch {
+            this.dash.showNotification(this.t('dashboard.inboxNoteFailed', 'Could not save the note'), 'error');
+        }
+    }
+
+    /** Textarea modal → the entered note, or null if the user cancelled. */
+    promptNote(current) {
+        const modal = window.AppModal;
+        if (!modal || typeof modal.show !== 'function') {
+            const value = window.prompt(this.t('dashboard.inboxNotePrompt', 'Note'), current);
+            return Promise.resolve(value === null ? null : value);
+        }
+        return new Promise((resolve) => {
+            const label = this.escape(this.t('dashboard.inboxNoteLabel', 'Add a note for this link'));
+            const placeholder = this.escape(this.t('dashboard.inboxNotePlaceholder', 'Why you saved it, what to do with it…'));
+            modal.show({
+                title: this.t('dashboard.inboxNoteTitle', 'Inbox note'),
+                htmlMessage: `
+                    <label class="inbox-note-modal-label" for="inbox-note-modal-input">${label}</label>
+                    <textarea id="inbox-note-modal-input" class="inbox-note-modal-input" rows="4" placeholder="${placeholder}"></textarea>
+                `,
+                confirmText: this.t('dashboard.inboxNoteSave', 'Save note'),
+                cancelText: this.t('dashboard.healthCancel', 'Cancel'),
+                initialFocusSelector: '#inbox-note-modal-input',
+                onConfirm: () => {
+                    const input = document.getElementById('inbox-note-modal-input');
+                    resolve(input ? input.value : '');
+                },
+                onCancel: () => resolve(null),
+            });
+            // htmlMessage sets innerHTML but a textarea's value can't be expressed as
+            // an attribute reliably (newlines, quotes), so seed it after mount.
+            const input = document.getElementById('inbox-note-modal-input');
+            if (input) {
+                input.value = current;
+            }
+        });
     }
 
     highlightItem(id) {

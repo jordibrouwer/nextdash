@@ -308,6 +308,17 @@ class DashboardHealth {
                 return (Number(issue.duplicateCount) || 0) > 1;
             case 'unchecked':
                 return !issue.lastChecked;
+            // stale / unused / missing-preview / shortcut-conflict / healthy reach
+            // this view only through deep links (consumeLegacyEntryParams). Each maps
+            // to a single issue.status, so match on that rather than falling through
+            // to `return true`, which showed every issue under a filter that lit no
+            // pill.
+            case 'stale':
+            case 'unused':
+            case 'missing-preview':
+            case 'shortcut-conflict':
+            case 'healthy':
+                return issue.status === filter;
             default:
                 return true;
         }
