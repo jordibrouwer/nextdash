@@ -154,9 +154,9 @@ var sharedAssetVersions = pageAssetVersions{
 	PageLayoutSyncJS:         "page-layout-sync-1",
 	DashboardRenderCoreJS:    "sort-locked-drag-hint-1",
 
-	DashboardCSS:            "sort-locked-drag-hint-1",
+	DashboardCSS:            "health-icon-square-underline-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
-	LayoutModernCSS:         "dashboard-d12-row-tokens-1",
+	LayoutModernCSS:         "health-icon-square-underline-1",
 
 	AppNotificationCSS:       "app-notification-1",
 	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",
