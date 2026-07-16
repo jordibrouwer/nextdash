@@ -2070,10 +2070,53 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
 	includeFlagged := strings.EqualFold(scope, "all")
 
+	result, err := h.runHealthRetest(r.Context(), includeFlagged, activitySourceFromRequest(r))
+	if err != nil {
+		if errors.Is(err, errHealthRetestPersist) {
+			// A persistence failure has already been mapped for the client by the
+			// callee's respond* helpers in older paths; here we just report 500.
+			http.Error(w, "Failed to persist retest results", http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, "Failed to re-check bookmarks", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":           "completed",
+		"count":            len(result.Results),
+		"results":          result.Results,
+		"skipped":          result.Skipped,
+		"skippedOverLimit": result.SkippedOverLimit,
+		"tested":           result.Tested,
+		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
+	})
+}
+
+// errHealthRetestPersist wraps a failure to persist retest results, so callers can
+// distinguish it from other errors when shaping their response.
+var errHealthRetestPersist = errors.New("failed to persist health retest results")
+
+// healthRetestResult holds the counts and per-bookmark outcomes of one retest run.
+type healthRetestResult struct {
+	Results          []map[string]interface{}
+	Tested           int
+	OnlineCount      int
+	OfflineCount     int
+	Skipped          int
+	SkippedOverLimit int
+}
+
+// runHealthRetest pings the eligible bookmarks once and persists their status,
+// shared by the RetestAll handler and the background recheck scheduler. When
+// includeFlagged is true it also revisits bookmarks with checkStatus off but a
+// stored error, so a broken row can be cleared. activitySource labels the batch in
+// the activity log.
+func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, activitySource string) (healthRetestResult, error) {
 	pages := h.store.GetPages()
-	var results []map[string]interface{}
+	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
-	var tested, onlineCount, offlineCount, skipped, skippedOverLimit int
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -2088,20 +2131,20 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			// and scored -60, yet the default run never revisits it.
 			eligible := bm.CheckStatus || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
 			if !eligible {
-				skipped++
+				res.Skipped++
 				continue
 			}
-			if tested >= retestAllMaxBookmarks {
-				skippedOverLimit++
+			if res.Tested >= retestAllMaxBookmarks {
+				res.SkippedOverLimit++
 				continue
 			}
 
-			result := h.pingURLDetailed(r.Context(), bm.URL)
-			tested++
+			result := h.pingURLDetailed(ctx, bm.URL)
+			res.Tested++
 			if result.Status == "online" {
-				onlineCount++
+				res.OnlineCount++
 			} else {
-				offlineCount++
+				res.OfflineCount++
 			}
 			errMsg := ""
 			if result.Status != "online" {
@@ -2127,7 +2170,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			results = append(results, map[string]interface{}{
+			res.Results = append(res.Results, map[string]interface{}{
 				"name":   bm.Name,
 				"url":    bm.URL,
 				"status": result.Status,
@@ -2143,7 +2186,7 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
 				// No CheckStatus filter here: updatesByKey only holds bookmarks this run
-				// actually pinged, and re-filtering would discard the scope=all results.
+				// actually pinged, and re-filtering would discard the includeFlagged results.
 				key := canonicalBookmarkURLKey(current[i].URL)
 				if key == "" {
 					continue
@@ -2161,29 +2204,17 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 			if errors.Is(err, ErrBookmarkNotFound) {
 				continue
 			}
-			if !respondBookmarkMutationError(w, err) {
-				return
-			}
+			return res, err
 		}
 	}
 
-	if !respondStorePersistError(w, h.mergeHealthCacheUpdates(healthUpdates)) {
-		return
+	if err := h.mergeHealthCacheUpdates(healthUpdates); err != nil {
+		return res, fmt.Errorf("%w: %v", errHealthRetestPersist, err)
 	}
 
 	h.invalidateHealthReportCache()
-
-	logBookmarkStatusBatch(tested, onlineCount, offlineCount, activitySourceFromRequest(r))
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":           "completed",
-		"count":            len(results),
-		"results":          results,
-		"skipped":          skipped,
-		"skippedOverLimit": skippedOverLimit,
-		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
-	})
+	logBookmarkStatusBatch(res.Tested, res.OnlineCount, res.OfflineCount, activitySource)
+	return res, nil
 }
 
 // OpenBroken returns broken bookmark URLs for client-side opening.

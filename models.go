@@ -216,6 +216,8 @@ type Settings struct {
 	InboxDeleteAfterPromote     bool                             `json:"inboxDeleteAfterPromote"`     // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
 	AutoBackupEnabled           bool                             `json:"autoBackupEnabled"`           // Automatically create a weekly local backup (keeps the latest 3)
+	HealthAutoRecheckEnabled    bool                             `json:"healthAutoRecheckEnabled"`    // Periodically re-ping status-checked bookmarks in the background
+	HealthAutoRecheckIntervalHours int                           `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
 }
 
@@ -511,6 +513,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			InboxDeleteAfterPromote:     true,
 			AllowLocalBookmarks:         true,
 			AutoBackupEnabled:           true,
+			HealthAutoRecheckEnabled:       false,
+			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -1677,6 +1681,8 @@ func (fs *FileStore) GetSettings() Settings {
 			InboxDeleteAfterPromote:   true,
 			AllowLocalBookmarks:       true,
 			AutoBackupEnabled:         true,
+			HealthAutoRecheckEnabled:       false,
+			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 		}
 	}
 
@@ -1909,6 +1915,7 @@ func (fs *FileStore) GetSettings() Settings {
 	}
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
+	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
 
 	return settings
 }
@@ -2211,7 +2218,11 @@ type HealthScanCache struct {
 
 type HealthScanCacheFile struct {
 	GeneratedAt int64                      `json:"generatedAt"`
-	Cache       map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	// LastAutoRecheck is when the background recheck scheduler last completed a run
+	// (Unix ms). Persisted so "is a recheck due?" survives restarts, mirroring how
+	// auto-backup compares the newest backup's age rather than an in-process timer.
+	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
+	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
 }
 
 // Search indexing

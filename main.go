@@ -151,6 +151,8 @@ func main() {
 	// Weekly automatic local backups (keeps the latest few, respects the setting).
 	schedulerStop := make(chan struct{})
 	handlers.StartAutoBackupScheduler(schedulerStop)
+	// Periodic background health rechecks (opt-in, respects the setting + interval).
+	handlers.StartHealthRecheckScheduler(schedulerStop)
 
 	go func() {
 		log.Printf("Server starting on port %s", port)

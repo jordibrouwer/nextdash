@@ -42,6 +42,7 @@ const SETTING_INFO_DEFS = [
     { type: 'checkbox', targetId: 'show-status-checkbox', btnId: 'show-status-info-btn', title: 'showBookmarkStatusInfoTitle', message: 'showBookmarkStatusInfoMessage' },
     { type: 'checkbox', targetId: 'colorize-status-checkbox', btnId: 'colorize-status-info-btn', title: 'colorizeStatusInfoTitle', message: 'colorizeStatusInfoMessage' },
     { type: 'labelFor', labelFor: 'status-recheck-interval-select', btnId: 'status-recheck-interval-info-btn', title: 'statusRecheckIntervalInfoTitle', message: 'statusRecheckIntervalInfoMessage' },
+    { type: 'checkbox', targetId: 'health-recheck-enabled-checkbox', btnId: 'health-recheck-info-btn', title: 'healthRecheckInfoTitle', message: 'healthRecheckInfoMessage' },
     { type: 'checkbox', targetId: 'show-ping-checkbox', btnId: 'show-ping-info-btn', title: 'showPingTimesInfoTitle', message: 'showPingTimesInfoMessage' },
     { type: 'checkbox', targetId: 'show-status-loading-checkbox', btnId: 'show-status-loading-info-btn', title: 'showStatusLoadingInfoTitle', message: 'showStatusLoadingInfoMessage' },
     { type: 'checkbox', targetId: 'device-specific-checkbox', btnId: 'device-specific-info-btn', title: 'deviceSpecificSettingsInfoTitle', message: 'deviceSpecificSettingsInfoMessage' },
