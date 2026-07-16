@@ -177,29 +177,25 @@ test.describe('health dashboard view', () => {
         await expect(row.locator('.health-view-action-btn').first()).toBeVisible();
     });
 
-    test('the shortcut legend renders above and below the list', async ({ page }) => {
+    test('the shortcut legend renders once, below the list', async ({ page }) => {
         await openHealthView(page);
         await page.click('[data-health-filter="all"]');
 
-        // A long list would push a single copy off-screen, which on a keyboard-first
-        // view is exactly when it is needed.
-        await expect(page.locator('.health-view-legend')).toHaveCount(2);
-        await expect(page.locator('.health-view-legend--top')).toBeVisible();
+        // A single copy under the feed — the top strip was removed as visual clutter.
+        await expect(page.locator('.health-view-legend')).toHaveCount(1);
         await expect(page.locator('.health-view-legend--bottom')).toBeVisible();
+        await expect(page.locator('.health-view-legend--top')).toHaveCount(0);
 
-        // The top copy sits between the toolbar and the first row.
+        // It sits after the feed, not between toolbar and first row.
         const order = await page.locator('#dashboard-layout > *').evaluateAll(
             (els) => els.map((el) => el.className)
         );
-        const topIndex = order.findIndex((c) => c.includes('legend--top'));
+        const legendIndex = order.findIndex((c) => c.includes('legend--bottom'));
         const feedIndex = order.findIndex((c) => c.includes('health-view-feed'));
-        const toolbarIndex = order.findIndex((c) => c.includes('health-view-toolbar'));
-        expect(topIndex).toBeGreaterThan(toolbarIndex);
-        expect(topIndex).toBeLessThan(feedIndex);
+        expect(legendIndex).toBeGreaterThan(feedIndex);
 
-        // Only one copy is announced; the second is a visual reminder.
-        await expect(page.locator('.health-view-legend--bottom')).toHaveAttribute('aria-hidden', 'true');
-        await expect(page.locator('.health-view-legend--top')).not.toHaveAttribute('aria-hidden', 'true');
+        // The sole copy stays announced to assistive tech (no longer aria-hidden).
+        await expect(page.locator('.health-view-legend--bottom')).not.toHaveAttribute('aria-hidden', 'true');
     });
 
     test('m opens the row menu, arrows walk it, Escape closes it without leaving', async ({ page }) => {

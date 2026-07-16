@@ -1073,12 +1073,9 @@ class DashboardHealth {
 
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
-            container.appendChild(this.renderLegend('top'));
             this.finishRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
-
-        container.appendChild(this.renderLegend('top'));
 
         const visible = filtered.slice(0, this.visibleLimit);
         const feed = document.createElement('div');
@@ -1335,9 +1332,8 @@ class DashboardHealth {
     }
 
     /**
-     * Rendered above and below the list. A long list would otherwise push the only
-     * copy off-screen, which on a keyboard-first view is where it is needed most.
-     * `position` only tags the element for styling; the content is identical.
+     * Keyboard cheatsheet under the list. `position` only tags the element for
+     * styling; kept as a parameter so callers read explicitly as 'bottom'.
      */
     renderLegend(position = 'bottom') {
         const legend = document.createElement('p');
@@ -1354,10 +1350,6 @@ class DashboardHealth {
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
-        // One copy is enough for a screen reader; the second is a visual reminder.
-        if (position === 'bottom') {
-            legend.setAttribute('aria-hidden', 'true');
-        }
         return legend;
     }
 
