@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.16 — July 2026](#v20260716--july-2026)
 - [v2026.07.15 — July 2026](#v20260715--july-2026)
 - [v2026.07.14.2 — July 2026](#v202607142--july-2026)
 - [v2026.07.14.1 — July 2026](#v202607141--july-2026)
@@ -95,6 +96,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.16 — July 2026
+
+**Inbox triage with snooze and keyboard polish, plus Health that stays current** — Inbox gains snooze/read-later, row shortcuts, notes, and bulk clean-up; Health is always on, can re-check in the background, and Edit opens the dashboard inline editor.
+
+### Inbox
+
+- **new** **Snooze / read later** — park a link for 3 hours, tomorrow, this weekend, or next week. Snoozed items leave All/Unread until they wake, with a **Snoozed** filter, grouped wake times, an auto-wake timer, `z` to open snooze, and **Wake now** (`inbox.go`, `inbox_handlers.go`, `dashboard-inbox.js`, `dashboard-inbox.css`, `locales/{en,nl,de,fr}.json`).
+- **new** **Keyboard navigation** — `j`/`k` move, `g`/`G` first/last, and row keys: `o` open, `p` promote, `r` mark read, `n` note, `d` delete, plus a legend under the list and Health-style selection animation (`dashboard-inbox.js`, `dashboard-inbox.css`, `dashboard.html`).
+- **new** **Notes on Inbox links** — add/edit a note from the row or `n`, backed by the existing PATCH endpoint (`dashboard-inbox.js`, locales).
+- **new** **Mark read & bulk actions** — unread rows get a mark-read button (not keyboard-only); toolbar **Mark all read** (scoped to the current filter) and **Clear read** with a single batch undo (`dashboard-inbox.js`, locales).
+- **fix** **Preview loading state** — freshly added items pulse a placeholder while the server enriches the preview, then a self-cancelling poll swaps it in (`dashboard-inbox.js`, `dashboard-inbox.css`).
+- **fix** **Promote triggers a health check** — when status checks are on, promoting an Inbox link fire-and-forgets `POST /api/health/check-url` so the new bookmark is not stuck as unchecked on Health until the next full retest (`health_check_url.go`, `dashboard-inbox.js`, `main.go`).
+
+### Health
+
+- **new** **Health always on** — `ShowHealthDashboard` is forced on regardless of stored value; the Header & buttons Health-link checkbox, info button, autosave binding, and `:buttons` toggle are removed (`models.go`, `config.html`, `config-settings.js`, `search-commands.js`).
+- **new** **Optional background rechecks** — server-side periodic re-pings of status-checked bookmarks (off by default; interval 6h–weekly, default 24h) under **Config → General → Status monitoring**, with last-run persistence across restarts (`health_recheck.go`, `handlers.go`, `models.go`, `config.html`, locales).
+- **fix** **Edit opens the dashboard inline editor** — Health row Edit deep-links with an `edit` flag to leave the Health view, land on the bookmark’s page, and open inline edit (falls back to Config when the helper is absent) (`dashboard-health.js`, `dashboard-deep-link.js`, `dashboard-page-nav.js`).
+- **fix** **Deep-link filters match correctly** — `matchesFilter` now handles stale / unused / missing-preview / shortcut-conflict / healthy instead of showing the full list (`dashboard-health.js`).
+- **fix** **Shortcut legend declutter** — the redundant legend under the toolbar is removed; the single copy under the feed stays announced to assistive tech (`dashboard-health.js`, `health-view.css`, `dashboard.html`).
+- **fix** **Active Health underline** — the selected heartbeat icon’s bottom border sits square with page-nav / inbox tabs (`dashboard.css`, `layout-modern.css`).
+
+### Developer & docs
+
+- **new** **Tests** — Go coverage for single-URL health check and background recheck scheduling (`health_check_url_test.go`, `health_recheck_test.go`); Playwright health-view legend expectations updated (`tests/health-dashboard-view.spec.js`).
+- **fix** **README, MANUAL & Config Help** — **v2026.07.16** notes for Inbox snooze/keyboard/bulk, Health always-on, background rechecks, and Edit → inline editor.
+- **fix** **What's new modal** — added **v2026.07.16** JSON entry (user-facing highlights only; no cache-bust / release-token chatter).
+- **fix** **Cache-bust** — `whats-new-v162` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v120` dashboard release token.
 
 ---
 

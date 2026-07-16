@@ -1,0 +1,62 @@
+{
+  "tag": "v2026.07.16",
+  "date": "July 2026",
+  "releasedAt": "2026-07-16",
+  "modalLead": "Inbox gets snooze, keyboard triage, and bulk clean-up — and Health stays current with optional background rechecks.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Snooze links for later</strong> — park a link for 3 hours, tomorrow, this weekend, or next week. Snoozed items leave the All/Unread lists until they wake, with a dedicated <strong>Snoozed</strong> filter, grouped wake times, <kbd>z</kbd> to snooze, and <strong>Wake now</strong> when you are ready."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Keyboard navigation matches Health</strong> — <kbd>j</kbd>/<kbd>k</kbd> move, <kbd>g</kbd>/<kbd>G</kbd> jump first/last, and row keys cover the rest: <kbd>o</kbd> open, <kbd>p</kbd> promote, <kbd>r</kbd> mark read, <kbd>n</kbd> note, <kbd>d</kbd> delete, plus a shortcut legend under the list."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Notes on Inbox links</strong> — add or edit a short note on any row (click or <kbd>n</kbd>) so you remember why you saved it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mark read and bulk clean-up</strong> — unread rows get a mark-read button (not only the <kbd>r</kbd> shortcut), and the toolbar can mark all read for the current filter or clear read items with one undoable batch."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fresh links show a preview placeholder</strong> — newly added items pulse while the server fetches a preview, then swap it in automatically."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Promote starts a health check</strong> — when status checks are on, promoting an Inbox link to a bookmark immediately pings that URL so it does not sit as unchecked on Health until the next full retest."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health is always available</strong> — the header heartbeat entry is permanent. The old Header &amp; buttons toggle that could hide it is gone, so Health stays one click (or <kbd>Shift+H</kbd>) away."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Optional background rechecks</strong> — turn on periodic server-side re-pings under <strong>Config → General → Status monitoring</strong> (6h–weekly, default 24h, off by default) so the Health view stays current without a manual Retest all."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Edit opens the dashboard inline editor</strong> — Health row Edit no longer dumps you into Config. It leaves the Health view, lands on the bookmark’s page, and opens the inline editor there."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Deep-link filters show the right rows</strong> — stale, unused, missing-preview, shortcut-conflict, and healthy filters now match correctly instead of falling back to the full list."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Less chrome in the Health view</strong> — the duplicate shortcut legend under the toolbar is gone; one legend stays under the feed. The active heartbeat underline also sits square with the page tabs."
+        }
+      ]
+    }
+  ]
+}
