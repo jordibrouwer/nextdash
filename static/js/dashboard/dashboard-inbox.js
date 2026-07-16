@@ -1493,6 +1493,28 @@ class DashboardInbox {
         });
     }
 
+    /**
+     * Fire-and-forget a one-off server-side health check for a just-created
+     * bookmark URL (used after an inbox promote). The server pings the URL and
+     * writes the result into the health cache so the Health view reflects it
+     * immediately instead of showing the bookmark as unchecked/missing. Failures
+     * are swallowed — this is a best-effort nicety, not part of the promote.
+     */
+    triggerHealthCheckForUrl(url) {
+        const target = String(url || '').trim();
+        if (!target) {
+            return;
+        }
+        const doFetch = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        Promise.resolve()
+            .then(() => doFetch('/api/health/check-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: target }),
+            }))
+            .catch(() => {});
+    }
+
     async completePromote(id) {
         if (this.dash.settings?.inboxDeleteAfterPromote === false) {
             await this.markRead(id);

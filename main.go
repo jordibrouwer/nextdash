@@ -89,6 +89,7 @@ func main() {
 	r.HandleFunc("/api/health/cache-scan", handlers.CacheScanResult).Methods("POST")
 	r.HandleFunc("/api/health/update-status", handlers.UpdateBookmarkHealthStatus).Methods("POST")
 	r.HandleFunc("/api/health/retest-all", handlers.RetestAll).Methods("POST")
+	r.HandleFunc("/api/health/check-url", handlers.CheckBookmarkHealthURL).Methods("POST")
 	r.HandleFunc("/api/health/open-broken", handlers.OpenBroken).Methods("POST")
 	r.HandleFunc("/api/health/merge-duplicates", handlers.MergeDuplicates).Methods("POST")
 	r.HandleFunc("/api/health/delete-bookmark", handlers.DeleteHealthBookmark).Methods("POST")
