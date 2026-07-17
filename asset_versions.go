@@ -35,7 +35,6 @@ type pageAssetVersions struct {
 	SearchCommandsNoteJS     string
 	FuzzySearchJS            string
 	HyprModeJS               string
-	ConfigBookmarksTourJS    string
 	SkeletonLoadingJS        string
 	ShortcutFormatJS         string
 	PWAInstallHintJS         string
@@ -49,10 +48,8 @@ type pageAssetVersions struct {
 	ConfigDataJS             string
 	ConfigBookmarkStoreJS    string
 	ConfigFontJS             string
-	ConfigToursRuntimeJS     string
 	ConfigCommandPaletteJS   string
 	ConfigSettingInfoJS      string
-	PageLayoutSyncJS         string
 	DashboardRenderCoreJS    string
 
 	// dashboard.css and dashboard-bookmark-row.css/layout-modern.css each shared a
@@ -70,11 +67,9 @@ type pageAssetVersions struct {
 	SelectCSS                string
 	FontSizeCSS              string
 	QuickStartCSS            string
-	ConfigGeneralTourCSS     string
 	EnhancedFeaturesCSS      string
 	ModalCSS                 string
 	ResponsiveCSS            string
-	ConfigButtonsCSS         string
 	OverlaysModernCSS        string
 	SkeletonLoadingCSS       string
 	ReorderCSS               string
@@ -114,7 +109,6 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCommandsNoteJS:     "search-commands-note-1",
 	FuzzySearchJS:            "fuzzy-search-1",
 	HyprModeJS:               "hypr-mode-1",
-	ConfigBookmarksTourJS:    "config-bookmarks-tour-1",
 	SkeletonLoadingJS:        "skeleton-loading-1",
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
@@ -128,10 +122,8 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigDataJS:             "config-data-1",
 	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
 	ConfigFontJS:             "config-font-1",
-	ConfigToursRuntimeJS:     "config-tours-runtime-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
 	ConfigSettingInfoJS:      "config-setting-info-health-always-on-1",
-	PageLayoutSyncJS:         "page-layout-sync-1",
 	DashboardRenderCoreJS:    "sort-locked-drag-hint-1",
 
 	DashboardCSS:            "health-icon-square-underline-1",
@@ -145,11 +137,9 @@ var sharedAssetVersions = pageAssetVersions{
 	SelectCSS:                "select-1",
 	FontSizeCSS:              "font-size-1",
 	QuickStartCSS:            "quickstart-4-actionable",
-	ConfigGeneralTourCSS:     "general-tour-v4",
 	EnhancedFeaturesCSS:      "enhanced-features-1",
 	ModalCSS:                 "page-overview-modal-1",
 	ResponsiveCSS:            "config-shell-align-1",
-	ConfigButtonsCSS:         "config-buttons-1",
 	OverlaysModernCSS:        "whats-new-config-parity-1",
 	SkeletonLoadingCSS:       "load-faster-1",
 	ReorderCSS:               "reorder-1",
