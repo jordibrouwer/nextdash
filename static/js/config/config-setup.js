@@ -21,9 +21,13 @@ class ConfigSetup {
             document.body.setAttribute('data-layout-preset', this.c.settingsData.layoutPreset || 'default');
         }
         if (window.LayoutVersionUtils) {
+            // saveSettings:false — this only re-applies the value we just loaded.
+            // Saving here would POST the whole settings object on every render and
+            // clobber anything written since load (e.g. the tab intro panels).
             this.c.settingsData.layoutVersion = window.LayoutVersionUtils.applyLayoutVersion(
                 this.c.settingsData,
-                this.c.settingsData.layoutVersion || 'classic'
+                this.c.settingsData.layoutVersion || 'classic',
+                { saveSettings: false }
             );
         } else {
             const normalized = (this.c.settingsData.layoutVersion || 'classic').toLowerCase().trim();
@@ -199,14 +203,11 @@ class ConfigSetup {
                 this.c.settingsData.onboardingCompleted = false;
                 // Reset server-side quick-start progress so the setup card + checklist
                 // show again (state is per-user in settings JSON, not localStorage).
-                // seenTabIntros is cleared too: "show onboarding again" should also
-                // re-open each config tab's intro panel on its next visit.
                 this.c.settingsData.quickStart = {
                     setupDone: false,
                     dismissed: false,
                     visitedConfig: false,
                     seenCheatsheet: false,
-                    seenTabIntros: {},
                 };
                 const ok = await this.c.settings.saveSettingsToServer(this.c.settingsData);
                 if (!ok) {

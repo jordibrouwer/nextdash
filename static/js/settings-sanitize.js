@@ -8,6 +8,7 @@
         }
         const copy = { ...settings };
         delete copy._sortMigratedPageIds;
+
         return copy;
     }
 
