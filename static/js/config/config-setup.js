@@ -605,25 +605,6 @@ class ConfigSetup {
     
         const resetBtn = document.getElementById('reset-btn');
         if (resetBtn) resetBtn.addEventListener('click', () => this.c.resetToDefaults());
-        const resetContextTipsBtn = document.getElementById('reset-context-tips-btn');
-        if (resetContextTipsBtn) {
-            resetContextTipsBtn.addEventListener('click', async () => {
-                const confirmed = await window.AppModal.confirm({
-                    title: this.c.language.t('config.resetContextTipsTitle') || 'Reset context tips',
-                    message: this.c.language.t('config.resetContextTipsConfirm') || 'All dismissed context tips will appear again on the dashboard.',
-                    confirmText: this.c.language.t('config.resetContextTipsButton') || 'Reset context tips',
-                    cancelText: this.c.language.t('config.cancel') || 'Cancel',
-                });
-                if (!confirmed) return;
-                try {
-                    localStorage.removeItem('nextdash-inline-context-tip-usage-v1');
-                    localStorage.removeItem('nextdash-inline-context-tip-usage-v2');
-                } catch {
-                    // Ignore storage errors
-                }
-                this.c.ui.showNotification(this.c.language.t('config.resetContextTipsSuccess') || 'Context tips reset. They will show again per page.', 'success');
-            });
-        }
         this.c.setupStructureAutoSyncListeners();
         this.c.setupDirtyTracking();
         this.c.setupAutosaveLowRiskFields();

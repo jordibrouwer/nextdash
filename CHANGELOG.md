@@ -128,6 +128,7 @@ Nothing yet.
 - **fix** **What's new modal** — **v2026.07.17** JSON added for the removal + quick-start + Tips & tricks arc.
 - **fix** **README, MANUAL & Config Help** — updated throughout to describe the quick-start card and Tips & tricks instead of the removed tours, spotlights, and promo balloons.
 - **fix** **Cache-bust** — `whats-new-v164` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v122` dashboard release token.
+- **fix** **Leftover config-page dead code from the tour removal** — the "Onboarding & tips" advanced section still had a "Reset context tips" button whose feature no longer exists; clicking it cleared two dead `localStorage` keys and showed a false success toast. Removed the button, its handler, its CSS rule, and five now-unused locale keys in all four languages; the section is renamed "Onboarding" (`config.html`, `config-setup.js`, `config-forms.css`, `locales/{en,nl,de,fr}.json`).
 
 ---
 
