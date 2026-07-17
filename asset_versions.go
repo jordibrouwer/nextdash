@@ -8,19 +8,9 @@ type pageAssetVersions struct {
 	VisualSettingsJS       string
 	SettingsSanitizeJS     string
 	DiscoverabilityJS      string
-	GuidedFlowCSS          string
-	GuidedFlowJS           string
 	MobileExperienceCSS    string
 	MobileExperienceJS     string
-	FeatureSpotlightCSS    string
-	FeatureSpotlightJS     string
-	LayoutModernNudgeJS    string
-	LayoutBetaToastJS      string
-	LayoutGlassRemovedJS   string
 	LayoutVersionUtilsJS   string
-	InboxIntroToastJS      string
-	InboxIntroModalJS      string
-	PreviewCardSpotlightJS string
 	HealthBadgeJS          string
 	AppNotificationJS      string
 	SearchCommandsNewJS    string
@@ -45,7 +35,6 @@ type pageAssetVersions struct {
 	SearchCommandsNoteJS     string
 	FuzzySearchJS            string
 	HyprModeJS               string
-	ConfigBookmarksTourJS    string
 	SkeletonLoadingJS        string
 	ShortcutFormatJS         string
 	PWAInstallHintJS         string
@@ -59,10 +48,8 @@ type pageAssetVersions struct {
 	ConfigDataJS             string
 	ConfigBookmarkStoreJS    string
 	ConfigFontJS             string
-	ConfigToursRuntimeJS     string
 	ConfigCommandPaletteJS   string
 	ConfigSettingInfoJS      string
-	PageLayoutSyncJS         string
 	DashboardRenderCoreJS    string
 
 	// dashboard.css and dashboard-bookmark-row.css/layout-modern.css each shared a
@@ -79,12 +66,10 @@ type pageAssetVersions struct {
 	SearchCommandsNoteCSS    string
 	SelectCSS                string
 	FontSizeCSS              string
-	OnboardingCSS            string
-	ConfigGeneralTourCSS     string
+	QuickStartCSS            string
 	EnhancedFeaturesCSS      string
 	ModalCSS                 string
 	ResponsiveCSS            string
-	ConfigButtonsCSS         string
 	OverlaysModernCSS        string
 	SkeletonLoadingCSS       string
 	ReorderCSS               string
@@ -100,30 +85,20 @@ var sharedAssetVersions = pageAssetVersions{
 	VisualSettingsJS:       "theme-sync-1",
 	SettingsSanitizeJS:     "settings-sanitize-1",
 	DiscoverabilityJS:      "discoverability-state-4",
-	GuidedFlowCSS:          "guided-flow-v5",
-	GuidedFlowJS:           "guided-flow-v5",
-	MobileExperienceCSS:    "phone-layout-6",
+	MobileExperienceCSS:    "phone-layout-7-hint-css-gone",
 	MobileExperienceJS:     "general-split-shell-1",
-	FeatureSpotlightCSS:    "c15-reduced-motion-1",
-	FeatureSpotlightJS:     "paste-replay-v1",
-	LayoutModernNudgeJS:    "layout-versions-2",
-	LayoutBetaToastJS:      "layout-beta-toast-3-outwait-modal",
-	LayoutGlassRemovedJS:   "layout-glass-removed-2",
-	LayoutVersionUtilsJS:   "glass-removed-1",
-	InboxIntroToastJS:      "inbox-intro-toast-4-outwait-modal",
-	InboxIntroModalJS:      "inbox-intro-modal-4",
-	PreviewCardSpotlightJS: "preview-cards-v1",
+	LayoutVersionUtilsJS:   "glass-migrate-1",
 	HealthBadgeJS:          "health-badge-count-only-1",
 	AppNotificationJS:      "toast-grouped-1",
 	SearchCommandsNewJS:    "search-commands-new-6-promote-healthcheck",
-	WhatsNewData:           "whats-new-v163",
+	WhatsNewData:           "whats-new-v164",
 	DataRevision:           "data-revision-8-promo-starvation",
 
 	WriteAPIJS:               "write-api-1",
 	FontPresetsJS:            "font-presets-1",
 	DeviceSettingsMergeJS:    "device-settings-merge-1",
 	LayoutUtilsJS:            "layout-utils-1",
-	ConfigLanguageJS:         "config-language-1",
+	ConfigLanguageJS:         "config-language-2-tips-removed",
 	BookmarkURLUtilsJS:       "bookmark-url-utils-1",
 	BookmarkPreviewServiceJS: "bookmark-preview-service-1",
 	BookmarkFormPreviewJS:    "bookmark-form-preview-1",
@@ -134,7 +109,6 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCommandsNoteJS:     "search-commands-note-1",
 	FuzzySearchJS:            "fuzzy-search-1",
 	HyprModeJS:               "hypr-mode-1",
-	ConfigBookmarksTourJS:    "config-bookmarks-tour-1",
 	SkeletonLoadingJS:        "skeleton-loading-1",
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
@@ -148,15 +122,13 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigDataJS:             "config-data-1",
 	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
 	ConfigFontJS:             "config-font-1",
-	ConfigToursRuntimeJS:     "config-tours-runtime-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
 	ConfigSettingInfoJS:      "config-setting-info-health-always-on-1",
-	PageLayoutSyncJS:         "page-layout-sync-1",
 	DashboardRenderCoreJS:    "sort-locked-drag-hint-1",
 
 	DashboardCSS:            "health-icon-square-underline-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
-	LayoutModernCSS:         "health-icon-square-underline-1",
+	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 
 	AppNotificationCSS:       "app-notification-1",
 	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",
@@ -164,16 +136,14 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCommandsNoteCSS:    "search-commands-note-1",
 	SelectCSS:                "select-1",
 	FontSizeCSS:              "font-size-1",
-	OnboardingCSS:            "onboarding-1",
-	ConfigGeneralTourCSS:     "general-tour-v4",
+	QuickStartCSS:            "quickstart-4-actionable",
 	EnhancedFeaturesCSS:      "enhanced-features-1",
 	ModalCSS:                 "page-overview-modal-1",
 	ResponsiveCSS:            "config-shell-align-1",
-	ConfigButtonsCSS:         "config-buttons-1",
 	OverlaysModernCSS:        "whats-new-config-parity-1",
 	SkeletonLoadingCSS:       "load-faster-1",
 	ReorderCSS:               "reorder-1",
-	SearchCSS:                "dashboard-whats-new-fab-1",
+	SearchCSS:                "dashboard-whats-new-fab-2-hint-css-gone",
 	StatusCSS:                "dashboard-chrome-c3-1",
 	DashboardEnhancementsCSS: "page-overview-modal-1",
 	FontsCSS:                 "self-hosted-scp-1",

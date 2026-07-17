@@ -19,11 +19,6 @@ type PingResult struct {
 	HTTPStatus  int
 }
 
-func (h *Handlers) pingURL(ctx context.Context, urlStr string) (string, int) {
-	result := h.pingURLDetailed(ctx, urlStr)
-	return result.Status, result.PingMs
-}
-
 func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResult {
 	if ctx == nil {
 		ctx = context.Background()

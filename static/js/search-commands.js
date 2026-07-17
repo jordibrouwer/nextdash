@@ -45,7 +45,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
                     'theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed',
-                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'tips', 'buttons',
+                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
                 ],
             },
             {
@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tour', 'promo'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -82,7 +82,6 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
-            'tips': this.handleTipsCommand.bind(this),
             'favicons': this.handleFaviconCommand.bind(this),
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
@@ -120,8 +119,6 @@ class SearchCommandsComponent {
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
             'metadata': this.handleMetadataCommand.bind(this),
-            'tour': this.handleTourCommand.bind(this),
-            'promo': this.handlePromoCommand.bind(this),
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
         };
@@ -2039,41 +2036,6 @@ class SearchCommandsComponent {
         return matchingButtons.map((name) => this._buildButtonRow(name, buttons[name], dashboard, explicitState));
     }
 
-    handleTipsCommand(args, fullQuery) {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) {
-            return [];
-        }
-
-        const stateArg = (args[0] || '').toLowerCase();
-        const enabled = dashboard.settings.showTips === true;
-        const apply = (value) => this.setTipsVisibility(dashboard, value);
-
-        if (!stateArg) {
-            return this._buildOnOffRows({ prefix: 'tips', shortcut: ':TIPS', enabled, apply });
-        }
-
-        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
-            return [{
-                name: `on (${enabled ? 'current' : 'off'})`,
-                shortcut: ':TIPS',
-                stateId: 'tips:on',
-                type: 'command',
-                action: () => apply(true),
-            }];
-        }
-        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
-            return [{
-                name: `off (${enabled ? 'on' : 'current'})`,
-                shortcut: ':TIPS',
-                stateId: 'tips:off',
-                type: 'command',
-                action: () => apply(false),
-            }];
-        }
-
-        return [];
-    }
 
     handleFaviconCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
@@ -2269,20 +2231,6 @@ class SearchCommandsComponent {
         return this._paletteRefresh(`buttons:${buttonId}`);
     }
 
-    setTipsVisibility(dashboard, enabled) {
-        dashboard.settings.showTips = enabled;
-        window.TipsPolicy?.onUserPreference?.(enabled);
-        if (typeof dashboard.setupDOM === 'function') {
-            dashboard.setupDOM();
-        }
-        if (typeof dashboard.initializeButtonTipsRotation === 'function') {
-            dashboard.initializeButtonTipsRotation();
-        }
-        if (typeof dashboard.saveSettings === 'function') {
-            dashboard.saveSettings();
-        }
-        return this._paletteRefresh(enabled ? 'tips:on' : 'tips:off');
-    }
 
     setFaviconVisibility(dashboard, enabled) {
         dashboard.settings.showIcons = enabled;
@@ -3215,74 +3163,6 @@ class SearchCommandsComponent {
         }
 
         return [];
-    }
-
-    handleTourCommand() {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) return [];
-
-        return [{
-            name: this._t('commands.tourStart', 'Start feature tour'),
-            shortcut: ':TOUR',
-            type: 'command',
-            action: () => this._runOverlayAction(() => dashboard.startFeatureTour?.()),
-        }];
-    }
-
-    handlePromoCommand(args) {
-        const registry = window.DashboardPromoRegistry;
-        const entries = registry?.entries || [];
-        const sub = (args[0] || '').toLowerCase();
-
-        if (!sub) {
-            const rows = entries.map((entry) => ({
-                name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', entry.id),
-                shortcut: ':PROMO',
-                stateId: `promo:${entry.id}`,
-                completion: `:promo ${entry.id} `,
-                type: 'command',
-                action: () => {
-                    registry?.clearById?.(entry.id);
-                    return { stateId: `promo:${entry.id}` };
-                },
-            }));
-            rows.push({
-                name: this._t('commands.promoResetAll', 'Reset all promos'),
-                shortcut: ':PROMO',
-                stateId: 'promo:all',
-                type: 'command',
-                action: () => {
-                    registry?.clearAll?.();
-                    return { stateId: 'promo:all' };
-                },
-            });
-            return rows;
-        }
-
-        if (sub === 'all') {
-            return [{
-                name: this._t('commands.promoResetAll', 'Reset all promos'),
-                shortcut: ':PROMO',
-                type: 'command',
-                action: () => {
-                    registry?.clearAll?.();
-                    return { stateId: 'promo:all' };
-                },
-            }];
-        }
-
-        const match = entries.find((entry) => entry.id === sub || entry.id.startsWith(sub));
-        if (!match) return [];
-
-        return [{
-            name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', match.id),
-            shortcut: ':PROMO',
-            type: 'command',
-            action: () => {
-                registry?.clearById?.(match.id);
-                return { stateId: `promo:${match.id}` };
-            },
-        }];
     }
 
     handleFilterCommand(args) {

@@ -20,7 +20,6 @@ class DashboardSetup {
         document.body.setAttribute('data-show-finders-button', d.settings.showFindersButton);
         document.body.setAttribute('data-show-commands-button', d.settings.showCommandsButton);
         document.body.setAttribute('data-show-recent-button', d.settings.showRecentButton !== false);
-        document.body.setAttribute('data-show-tips', d.shouldShowRotatingTipsNow() ? 'true' : 'false');
         document.body.setAttribute(
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
@@ -280,9 +279,6 @@ class DashboardSetup {
             }
 
             // Check if a number key (1-9) was pressed
-            if (key === '>') this.markInlineTipUsed('search_open');
-            if (key === '?') this.markInlineTipUsed('finder_open');
-            if (key === ':') this.markInlineTipUsed('command_open');
             // Legacy inbox shortcut. Superseded by Shift+I and no longer documented
             // in the cheat sheet, but kept working so it does not break the habit of
             // anyone already using it.
@@ -333,12 +329,7 @@ class DashboardSetup {
                     e.stopPropagation();
 
                     const page = d.pages[pageIndex];
-                    void d.requestPageNavigation(page.id).then((switched) => {
-                        if (!switched) {
-                            return;
-                        }
-                        this.markInlineTipUsed('page_switch');
-                    });
+                    void d.requestPageNavigation(page.id);
                 }
             }
 
@@ -358,12 +349,7 @@ class DashboardSetup {
                 }
 
                 const page = d.pages[newIndex];
-                void d.requestPageNavigation(page.id).then((switched) => {
-                    if (!switched) {
-                        return;
-                    }
-                    this.markInlineTipUsed('page_switch');
-                });
+                void d.requestPageNavigation(page.id);
             }
         });
     }
@@ -401,116 +387,22 @@ class DashboardSetup {
     }
 
 
+    /**
+     * Rotating footer tips are gone; the search-flow hint that shared this entry
+     * point is not. Kept under the old name because mobile-experience.js and the
+     * dashboard both call it on layout/settings changes.
+     */
     initializeButtonTipsRotation() {
-        const d = this.dash;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
-            document.body.setAttribute('data-show-tips', 'false');
             return;
         }
         this.initializeSearchFlowHint();
-        const hintEl = document.getElementById('button-hint-text');
-        if (!hintEl) {
-            return;
-        }
-        if (d.tipRotationTimer) {
-            clearTimeout(d.tipRotationTimer);
-            d.tipRotationTimer = null;
-        }
-        if (d.tipRotationDelayTimer) {
-            clearTimeout(d.tipRotationDelayTimer);
-            d.tipRotationDelayTimer = null;
-        }
-
-        const tipsEnabled = d.areRotatingTipsEnabled();
-        if (!tipsEnabled) {
-            document.body.setAttribute('data-show-tips', 'false');
-            return;
-        }
-
-        const tipsDelayMs = window.TipsPolicy?.getTipsStartDelayMs?.() ?? 0;
-        if (tipsDelayMs > 0) {
-            document.body.setAttribute('data-show-tips', 'false');
-            d.tipRotationDelayTimer = setTimeout(() => {
-                d.tipRotationDelayTimer = null;
-                window.TipsPolicy?.clearTipsStartDelay?.();
-                this.initializeButtonTipsRotation();
-            }, tipsDelayMs);
-            return;
-        }
-
-        document.body.setAttribute('data-show-tips', 'true');
-
-        const { priorityTips, normalTips } = window.DashboardTipsCatalog.buildLists({
-            language: d.language,
-            includeTagCloud: d.isTagCloudTipRelevant?.() === true,
-        });
-
-        let normalCounter = 0;
-        const run = () => {
-            if (!d.shouldShowRotatingTipsNow()) {
-                document.body.setAttribute('data-show-tips', 'false');
-                return;
-            }
-            const currentContextTips = this.getInlineContextTipsForCurrentPage();
-            if (currentContextTips.length > 0) {
-                d.setTipHtml(hintEl, currentContextTips[d.contextTipRotationIndex % currentContextTips.length]);
-                d.contextTipRotationIndex += 1;
-            } else {
-                const showPriority = normalCounter >= 5;
-                if (showPriority) {
-                    d.setTipHtml(hintEl, priorityTips[d.tipPriorityIndex % priorityTips.length]);
-                    d.tipPriorityIndex += 1;
-                    normalCounter = 0;
-                } else {
-                    d.setTipHtml(hintEl, normalTips[d.tipRotationIndex % normalTips.length]);
-                    d.tipRotationIndex += 1;
-                    normalCounter += 1;
-                }
-            }
-            const delay = 5000 + Math.floor(Math.random() * 3001); // 5-8s
-            d.tipRotationTimer = setTimeout(run, delay);
-        };
-        run();
     }
 
-
-    /** Refresh context tips after page change without resetting rotation timers or onboarding delay. */
-    refreshButtonTipsOnPageChange() {
-        const d = this.dash;
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
-            return;
-        }
-        if (d.tipRotationDelayTimer) {
-            return;
-        }
-        if (!d.tipRotationTimer || !d.shouldShowRotatingTipsNow()) {
-            return;
-        }
-        const hintEl = document.getElementById('button-hint-text');
-        if (!hintEl) {
-            return;
-        }
-        const contextTips = this.getInlineContextTipsForCurrentPage();
-        if (contextTips.length > 0) {
-            d.setTipHtml(hintEl, contextTips[d.contextTipRotationIndex % contextTips.length]);
-        }
-    }
 
 
     teardownDashboardTimers() {
         const d = this.dash;
-        if (d.tipRotationTimer) {
-            clearTimeout(d.tipRotationTimer);
-            d.tipRotationTimer = null;
-        }
-        if (d.tipRotationDelayTimer) {
-            clearTimeout(d.tipRotationDelayTimer);
-            d.tipRotationDelayTimer = null;
-        }
-        if (d.backupTipTimer) {
-            clearTimeout(d.backupTipTimer);
-            d.backupTipTimer = null;
-        }
         if (d._postOnboardingPromptsTimer) {
             clearTimeout(d._postOnboardingPromptsTimer);
             d._postOnboardingPromptsTimer = null;
@@ -522,40 +414,6 @@ class DashboardSetup {
     }
 
 
-    scheduleBackupTip() {
-        const d = this.dash;
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
-            return;
-        }
-        if (d.backupTipShown || d.backupTipTimer) {
-            return;
-        }
-
-        const hintEl = document.getElementById('button-hint-text');
-        if (!hintEl) {
-            return;
-        }
-
-        if (!d.shouldShowRotatingTipsNow()) {
-            return;
-        }
-
-        d.backupTipTimer = setTimeout(() => {
-            d.backupTipTimer = null;
-            if (d.backupTipShown) {
-                return;
-            }
-
-            const currentHintEl = document.getElementById('button-hint-text');
-            if (!currentHintEl || !d.shouldShowRotatingTipsNow()) {
-                return;
-            }
-
-            d.backupTipShown = true;
-            const backupTip = d.language ? d.language.t('dashboard.tipBackup') : 'Tip: create a backup via <a class="button-hint-link" href="/config#backups">config → backups</a>.';
-            d.setTipHtml(currentHintEl, backupTip);
-        }, 30000);
-    }
 
 
     initializeSearchFlowHint() {
@@ -589,76 +447,12 @@ class DashboardSetup {
         }, 6200);
     }
 
-    getInlineTipUsageState() {
-        const d = this.dash;
-        try {
-            const raw = localStorage.getItem(d.inlineTipUsageStorageKey);
-            if (!raw) return {};
-            const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-                return {};
-            }
-            return parsed;
-        } catch {
-            return {};
-        }
-    }
 
 
-    getCurrentPageTipUsage() {
-        const d = this.dash;
-        const state = this.getInlineTipUsageState();
-        const pageKey = String(Number(d.currentPageId) || d.currentPageId || 'default');
-        const pageState = state[pageKey];
-        if (!pageState || typeof pageState !== 'object' || Array.isArray(pageState)) {
-            return {};
-        }
-        return pageState;
-    }
 
 
-    markInlineTipUsed(tipKey) {
-        const d = this.dash;
-        if (!tipKey) return;
-        try {
-            const state = this.getInlineTipUsageState();
-            const pageKey = String(Number(d.currentPageId) || d.currentPageId || 'default');
-            if (!state[pageKey] || typeof state[pageKey] !== 'object' || Array.isArray(state[pageKey])) {
-                state[pageKey] = {};
-            }
-            if (state[pageKey][tipKey] === true) {
-                return;
-            }
-            state[pageKey][tipKey] = true;
-            localStorage.setItem(d.inlineTipUsageStorageKey, JSON.stringify(state));
-            this.initializeButtonTipsRotation();
-        } catch {
-            // ignore localStorage errors
-        }
-    }
 
 
-    getInlineContextTipsForCurrentPage() {
-        const d = this.dash;
-        const usage = this.getCurrentPageTipUsage();
-        const tips = [];
-        if (!usage.search_open) {
-            tips.push(d.language?.t?.('dashboard.contextTipSearchOpen') || 'Tip: <code>&gt;</code> open search (hides after first use on this page)');
-        }
-        if (!usage.finder_open) {
-            tips.push(d.language?.t?.('dashboard.contextTipFinderOpen') || 'Tip: <code>?</code> open finders (hides after first use on this page)');
-        }
-        if (!usage.command_open) {
-            tips.push(d.language?.t?.('dashboard.contextTipCommandOpen') || 'Tip: <code>:</code> open commands (hides after first use on this page)');
-        }
-        if (!usage.bookmark_open) {
-            tips.push(d.language?.t?.('dashboard.contextTipBookmarkOpen') || 'Tip: open any bookmark once on this page to hide this tip');
-        }
-        if (Array.isArray(d.pages) && d.pages.length > 1 && !usage.page_switch) {
-            tips.push(d.language?.t?.('dashboard.contextTipPageSwitch') || 'Tip: switch page with <code>1-9</code> or <code>Shift+←/→</code> to hide this tip');
-        }
-        return tips;
-    }
 
 
     setupBookmarkTracking() {
@@ -671,7 +465,6 @@ class DashboardSetup {
             if (!openLink) {
                 return;
             }
-            this.markInlineTipUsed('bookmark_open');
             try {
                 d.dismissBookmarkPreviewInteractions();
             } catch (_err) {

@@ -711,43 +711,16 @@
         });
     }
 
-    function isVisibleTourCard(el) {
-        if (!(el instanceof HTMLElement)) return false;
-        const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden') return false;
-        const rect = el.getBoundingClientRect();
-        return rect.width > 8 && rect.height > 8;
-    }
-
-    function hasVisibleTourCard() {
-        return [...document.querySelectorAll('[class$="-tour-card"], .onboarding-card, .feature-tour-card')]
-            .some(isVisibleTourCard);
-    }
-
-    function isConfigTourActive() {
-        const attrs = document.body.getAttributeNames();
-        for (let i = 0; i < attrs.length; i += 1) {
-            if (/^data-config-.+-tour-active$/.test(attrs[i])) return true;
-        }
-        return hasVisibleTourCard();
-    }
-
     function isWhatsNewModalOpen() {
         const overlay = document.getElementById('app-modal');
         if (!overlay?.classList.contains('show')) return false;
         return Boolean(overlay.querySelector('.modal.whats-new-modal'));
     }
 
+    // Tours, spotlights and the guided-flow guard are gone; what's new is the only
+    // remaining flow this promo must not talk over.
     function isGuidedFlowActive() {
-        if (isConfigTourActive()) return true;
-        if (document.querySelector('.feature-spotlight.show')) return true;
-        if (isWhatsNewModalOpen()) return true;
-        if (document.querySelector('.onboarding-overlay, .feature-tour-overlay')) return true;
-        if (!document.body.classList.contains('guided-flow-locked')) return false;
-        if (window.GuidedFlowGuard?.isActive?.() !== true) return false;
-        return hasVisibleTourCard()
-            || Boolean(document.querySelector('.feature-spotlight.show'))
-            || isWhatsNewModalOpen();
+        return isWhatsNewModalOpen();
     }
 
     function isPromoVisible() {
@@ -798,7 +771,22 @@
                 : 'config-settings-search-promo--beside-left'
         );
         promoEl.style.left = `${Math.round(placement.left)}px`;
-        promoEl.style.top = `${Math.round(placement.top)}px`;
+        // positionBesideAnchor centres the balloon on the anchor, so its top half
+        // lands on the tab bar and swallows clicks on the tabs it covers. Keep it
+        // level with the field or lower; it may hang below, never above.
+        let top = Math.max(placement.top, rect.top);
+        const maxTop = window.innerHeight - height - window.DashboardPromoPlacement.VIEWPORT_PAD;
+        top = Math.min(top, Math.max(window.DashboardPromoPlacement.VIEWPORT_PAD, maxTop));
+        promoEl.style.top = `${Math.round(top)}px`;
+
+        // The tail is centred by default; once the balloon no longer lines up with
+        // the field it has to follow the anchor instead of pointing at nothing.
+        const tail = promoEl.querySelector('.config-settings-search-promo-tail');
+        if (tail) {
+            const anchorMid = rect.top + rect.height / 2;
+            const offset = Math.min(Math.max(anchorMid - top, 14), Math.max(14, height - 14));
+            tail.style.top = `${Math.round(offset)}px`;
+        }
         promoEl.style.visibility = 'visible';
     }
 

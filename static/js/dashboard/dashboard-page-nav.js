@@ -239,12 +239,6 @@ class DashboardPageNav {
         if ((d.inbox?.unreadCount?.() || 0) <= 0) {
             return false;
         }
-        if (window.DiscoverabilityState?.isStorageKeyConfirmed?.('nextdash:inbox-intro-toast-v1')) {
-            return false;
-        }
-        if (window.InboxIntroToast?.hasShown?.()) {
-            return false;
-        }
         try {
             if (localStorage.getItem('nextdash:inbox-tab-opened-v1') === '1') {
                 return false;
@@ -269,7 +263,6 @@ class DashboardPageNav {
         try {
             localStorage.setItem('nextdash:inbox-tab-opened-v1', '1');
         } catch { /* ignore */ }
-        window.InboxIntroToast?.markShown?.();
         this.syncInboxTabHighlight();
     }
 
@@ -308,7 +301,6 @@ class DashboardPageNav {
                 if (!switched) {
                     return;
                 }
-                d.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
             pageBtn.addEventListener('keydown', (e) => {

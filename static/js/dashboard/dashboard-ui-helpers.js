@@ -43,62 +43,8 @@ class DashboardUiHelpers {
     }
 
 
-    setTipHtml(element, html) {
-        const d = this.dash;
-        if (!element) return;
-        element.innerHTML = this.sanitizeTipHtml(html);
-    }
 
 
-    sanitizeTipHtml(html) {
-        const d = this.dash;
-        const source = String(html || '');
-        if (!source) return '';
-
-        const doc = new DOMParser().parseFromString(`<div>${source}</div>`, 'text/html');
-        const root = doc.body.firstElementChild;
-        if (!root) return this.escapeHtml(source);
-
-        const sanitizeNode = (node) => {
-            if (node.nodeType === Node.TEXT_NODE) {
-                return document.createTextNode(node.textContent);
-            }
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                return null;
-            }
-
-            const tag = node.tagName.toLowerCase();
-            if (tag === 'code') {
-                const code = document.createElement('code');
-                node.childNodes.forEach((child) => {
-                    const sanitized = sanitizeNode(child);
-                    if (sanitized) code.appendChild(sanitized);
-                });
-                return code;
-            }
-
-            if (tag === 'a') {
-                const href = String(node.getAttribute('href') || '').trim();
-                const classes = String(node.getAttribute('class') || '').split(/\s+/);
-                if (classes.includes('button-hint-link') && /^\/[a-z0-9#./?=&_-]*$/i.test(href)) {
-                    const link = document.createElement('a');
-                    link.className = 'button-hint-link';
-                    link.href = href;
-                    link.textContent = node.textContent;
-                    return link;
-                }
-            }
-
-            return document.createTextNode(node.textContent);
-        };
-
-        const wrapper = document.createElement('div');
-        root.childNodes.forEach((child) => {
-            const sanitized = sanitizeNode(child);
-            if (sanitized) wrapper.appendChild(sanitized);
-        });
-        return wrapper.innerHTML;
-    }
 
     /**
      * Recent bookmarks by `lastOpened` (newest first).
@@ -130,9 +76,8 @@ class DashboardUiHelpers {
     }
 
 
-    isModalOpen(options = {}) {
+    isModalOpen() {
         const d = this.dash;
-        const excludeDiscoverabilityPromos = options.excludeDiscoverabilityPromos === true;
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
         if (window.DashboardTagCloud?.modalOpen) return true;
@@ -142,27 +87,6 @@ class DashboardUiHelpers {
         if (document.getElementById('delete-popover')) return true;
         if (document.getElementById('tag-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
-        if (!excludeDiscoverabilityPromos) {
-            const promoSelectors = (
-                '.dashboard-search-promo, .dashboard-feature-promo, .dashboard-grid-kbd-promo, '
-                + '.dashboard-g-jump-promo, .dashboard-smart-collection-promo'
-            );
-            for (const el of document.querySelectorAll(promoSelectors)) {
-                if (this.isVisibleBlockingOverlay(el)) return true;
-            }
-        }
-        const blockingSelectors = [
-            '.onboarding-overlay',
-            '.onboarding-card',
-            '.feature-tour-overlay',
-            '.feature-tour-card',
-            '[class$="-tour-card"]',
-        ];
-        for (const selector of blockingSelectors) {
-            for (const el of document.querySelectorAll(selector)) {
-                if (this.isVisibleBlockingOverlay(el)) return true;
-            }
-        }
         if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
         if (this.dash.inbox?.triage?.isOpen?.()) return true;
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
@@ -335,6 +259,17 @@ class DashboardUiHelpers {
         if (!window.AppModal) {
             return;
         }
+        // Record for the first-run quick-start checklist (server-side, per-user).
+        // Only while onboarding is still in progress, so we don't write on every open.
+        if (d.settings && d.settings.onboardingCompleted !== true) {
+            const qs = d.settings.quickStart || (d.settings.quickStart = {});
+            if (qs.seenCheatsheet !== true) {
+                qs.seenCheatsheet = true;
+                Promise.resolve(d.saveSettings?.()).catch(() => {});
+                // Update the checklist immediately instead of waiting for the next poll.
+                d.quickStart?.refresh?.();
+            }
+        }
         this._cleanupCheatSheetKeyHandler();
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
@@ -379,17 +314,7 @@ class DashboardUiHelpers {
             initialFocusSelector: '#cheat-sheet-filter',
             onHide: () => {
                 this._cleanupCheatSheetKeyHandler();
-                if (window.DashboardFeaturePromos?.isPromoOpen?.('cheatsheet')) {
-                    window.DashboardFeaturePromos.dismissOpen();
-                }
             },
-        });
-
-        requestAnimationFrame(() => {
-            const panel = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
-            if (panel) {
-                window.DashboardFeaturePromos?.tryShowDeferred?.('cheatsheet', panel, [0, 180, 400]);
-            }
         });
 
         const filterInput = document.getElementById('cheat-sheet-filter');
@@ -669,9 +594,6 @@ class DashboardUiHelpers {
             modalMaxWidth: '22rem',
             modalWidth: 'min(22rem, calc(100vw - 2.5rem))',
             onHide: () => {
-                if (window.DashboardFeaturePromos?.isPromoOpen?.('pageOverview')) {
-                    window.DashboardFeaturePromos?.dismissOpen?.();
-                }
                 this._cleanupPageOverviewKeyHandler();
                 const restoreTarget = document.getElementById('page-overview-header-btn');
                 if (restoreTarget && typeof restoreTarget.focus === 'function') {
@@ -682,13 +604,6 @@ class DashboardUiHelpers {
 
         const listRoot = document.querySelector('#app-modal .page-overview-modal-list');
         this._setupPageOverviewKeyboardNav(pages, listRoot);
-
-        requestAnimationFrame(() => {
-            const panel = document.querySelector('#app-modal.show .page-overview-modal');
-            if (panel) {
-                window.DashboardFeaturePromos?.tryShow?.('pageOverview', panel);
-            }
-        });
     }
 
 
@@ -728,9 +643,6 @@ class DashboardUiHelpers {
         window.FocusTrapUtils?.syncDashboardInert?.();
 
         const close = () => {
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickAddOmnibox')) {
-                window.DashboardFeaturePromos?.dismissOpen?.();
-            }
             overlay.remove();
             document.removeEventListener('keydown', onKey, true);
             window.FocusTrapUtils?.syncDashboardInert?.();
@@ -870,7 +782,6 @@ class DashboardUiHelpers {
         requestAnimationFrame(() => {
             overlay.classList.add('is-visible');
             input.focus({ preventScroll: true });
-            window.DashboardFeaturePromos?.tryShowDeferred?.('quickAddOmnibox', box);
         });
     }
 

@@ -100,7 +100,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen({ excludeDiscoverabilityPromos: true })) {
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
                 return;
             }
 
@@ -206,7 +206,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen({ excludeDiscoverabilityPromos: true })) {
+            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
                 return;
             }
 
@@ -296,12 +296,6 @@ class KeyboardNavigation {
         document.body.classList.remove('bookmark-kbd-selection-dimmed');
     }
 
-    _syncGridKeyboardPromoAnchor() {
-        if (this.currentIndex < 0 || this.currentIndex >= this.navigableElements.length) {
-            return;
-        }
-        window.DashboardGridKeyboardPromo?.onSelectionAnchorChanged?.(this.navigableElements[this.currentIndex]);
-    }
 
     _gridNavActive() {
         return this.currentIndex >= 0;
@@ -472,7 +466,6 @@ class KeyboardNavigation {
         const target = rows[0] || this.navigableElements[0];
         this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigateCategoryEnd() {
@@ -485,7 +478,6 @@ class KeyboardNavigation {
         const target = rows.length ? rows[rows.length - 1] : this.navigableElements[this.navigableElements.length - 1];
         this.currentIndex = Math.max(0, this.navigableElements.indexOf(target));
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigateCtrlHome() {
@@ -495,7 +487,6 @@ class KeyboardNavigation {
         }
         this.currentIndex = 0;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigateCtrlEnd() {
@@ -505,7 +496,6 @@ class KeyboardNavigation {
         }
         this.currentIndex = this.navigableElements.length - 1;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigatePageUp() {
@@ -516,7 +506,6 @@ class KeyboardNavigation {
         if (this.currentIndex < 0) {
             this.currentIndex = 0;
             this.highlightCurrentElement({ keyboardNav: true });
-            this._syncGridKeyboardPromoAnchor();
             return;
         }
         const current = this.navigableElements[this.currentIndex];
@@ -532,7 +521,6 @@ class KeyboardNavigation {
         }
         this.currentIndex = targetIndex;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigatePageDown() {
@@ -543,7 +531,6 @@ class KeyboardNavigation {
         if (this.currentIndex < 0) {
             this.currentIndex = this.navigableElements.length - 1;
             this.highlightCurrentElement({ keyboardNav: true });
-            this._syncGridKeyboardPromoAnchor();
             return;
         }
         const current = this.navigableElements[this.currentIndex];
@@ -559,7 +546,6 @@ class KeyboardNavigation {
         }
         this.currentIndex = targetIndex;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     syncRovingTabStops(options = {}) {
@@ -618,40 +604,6 @@ class KeyboardNavigation {
 
     handleKeyPress(e) {
         const key = e.key;
-        const gridPromo = window.DashboardGridKeyboardPromo;
-        const gJumpPromo = window.DashboardGJumpPromo;
-        const smartPromo = window.DashboardSmartCollectionPromo;
-        const featurePromos = window.DashboardFeaturePromos;
-        const discoverabilityPromoOpen = gridPromo?.isPromoOpen?.()
-            || gJumpPromo?.isPromoOpen?.()
-            || smartPromo?.isPromoOpen?.()
-            || featurePromos?.isAnyOpen?.();
-
-        if (discoverabilityPromoOpen) {
-            if (key === 'Escape') {
-                e.preventDefault();
-                if (gridPromo?.isPromoOpen?.()) {
-                    gridPromo.confirmPromo();
-                } else if (gJumpPromo?.isPromoOpen?.()) {
-                    gJumpPromo.confirmPromo();
-                } else if (smartPromo?.isPromoOpen?.()) {
-                    smartPromo.confirmPromo();
-                } else {
-                    featurePromos?.confirmOpen?.();
-                }
-                return;
-            }
-            if (key === 'Tab') {
-                const closeBtn = document.querySelector(
-                    '.dashboard-grid-kbd-promo-close, .dashboard-g-jump-promo-close, .dashboard-smart-collection-promo-close, .dashboard-feature-promo-close'
-                );
-                if (closeBtn && document.activeElement !== closeBtn) {
-                    e.preventDefault();
-                    closeBtn.focus({ preventScroll: true });
-                }
-                return;
-            }
-        }
 
         const isGChordFollowUp = (key >= '1' && key <= '9') || key === 'p' || key === 'P';
         if (this._gAwaitingRelease && isGChordFollowUp) {
@@ -709,7 +661,6 @@ class KeyboardNavigation {
                 this.currentIndex = (this.currentIndex + 1) % this.navigableElements.length;
             }
             this.highlightCurrentElement({ keyboardNav: true });
-            this._syncGridKeyboardPromoAnchor();
             return;
         }
 
@@ -837,21 +788,6 @@ class KeyboardNavigation {
         }
     }
 
-    _getGJumpPromoAnchor() {
-        this.updateNavigableElements();
-        if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex]) {
-            return this.navigableElements[this.currentIndex];
-        }
-        if (this.navigableElements[0]) {
-            return this.navigableElements[0];
-        }
-        const category = document.querySelector('.category[data-category-id]');
-        if (!category) {
-            return null;
-        }
-        return category.querySelector('.bookmark-link[data-bookmark-index]') || category;
-    }
-
     _armGChordTimeout(ms) {
         if (this._gTimeout) {
             clearTimeout(this._gTimeout);
@@ -863,21 +799,13 @@ class KeyboardNavigation {
         this._cancelGHoldTimer();
         this._gAwaitingRelease = false;
         this._gPressed = true;
-        const anchor = this._getGJumpPromoAnchor();
-        const promoShown = anchor
-            && window.DashboardGJumpPromo?.onFirstChordHold?.(anchor) === true;
-        // Longer window while the first-time hint is visible so the user can press a digit.
-        this._armGChordTimeout(promoShown ? 10000 : 3000);
+        this._armGChordTimeout(3000);
     }
 
     _performGgJump() {
         this._clearGState();
         this.currentIndex = 0;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
-        if (this.navigableElements[0]) {
-            window.DashboardGJumpPromo?.onFirstGgJump?.(this.navigableElements[0]);
-        }
     }
 
     _clearGState() {
@@ -909,8 +837,6 @@ class KeyboardNavigation {
 
         this.currentIndex = idx;
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
-        window.DashboardGJumpPromo?.onFirstCategoryJump?.(pinnedRow.closest('.category'));
     }
 
     jumpToCategory(n) {
@@ -931,7 +857,6 @@ class KeyboardNavigation {
 
             this.currentIndex = idx;
             this.highlightCurrentElement({ keyboardNav: true });
-            this._syncGridKeyboardPromoAnchor();
         } else if (isSmartCollection) {
             this.clearSelection();
             target.scrollIntoView({ block: 'nearest', behavior: this._scrollBehavior() });
@@ -942,12 +867,6 @@ class KeyboardNavigation {
         } else {
             return;
         }
-
-        if (isSmartCollection) {
-            window.DashboardSmartCollectionPromo?.onFirstNavigation?.(target);
-        } else {
-            window.DashboardGJumpPromo?.onFirstCategoryJump?.(target);
-        }
     }
 
     navigateDown() {
@@ -955,7 +874,6 @@ class KeyboardNavigation {
         
         if (this.navigableElements.length === 0) return;
 
-        const wasUnselected = this.currentIndex === -1;
 
         // Get current element position
         const currentElement = this.navigableElements[this.currentIndex];
@@ -976,11 +894,6 @@ class KeyboardNavigation {
         }
         
         this.highlightCurrentElement({ keyboardNav: true });
-        if (wasUnselected) {
-            window.DashboardGridKeyboardPromo?.onFirstArrowSelection?.(this.navigableElements[this.currentIndex]);
-        } else {
-            this._syncGridKeyboardPromoAnchor();
-        }
     }
 
     navigateUp() {
@@ -988,7 +901,6 @@ class KeyboardNavigation {
         
         if (this.navigableElements.length === 0) return;
 
-        const wasUnselected = this.currentIndex === -1;
 
         // Get current element position
         const currentElement = this.navigableElements[this.currentIndex];
@@ -1009,11 +921,6 @@ class KeyboardNavigation {
         }
         
         this.highlightCurrentElement({ keyboardNav: true });
-        if (wasUnselected) {
-            window.DashboardGridKeyboardPromo?.onFirstArrowSelection?.(this.navigableElements[this.currentIndex]);
-        } else {
-            this._syncGridKeyboardPromoAnchor();
-        }
     }
 
     navigateRight() {
@@ -1038,7 +945,6 @@ class KeyboardNavigation {
         }
         
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     navigateLeft() {
@@ -1063,7 +969,6 @@ class KeyboardNavigation {
         }
         
         this.highlightCurrentElement({ keyboardNav: true });
-        this._syncGridKeyboardPromoAnchor();
     }
 
     findElementBelow(currentElement) {
@@ -1425,7 +1330,6 @@ class KeyboardNavigation {
             focus: options.focus !== false,
             keyboardNav: false,
         });
-        this._syncGridKeyboardPromoAnchor();
         return true;
     }
 

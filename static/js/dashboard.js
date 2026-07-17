@@ -43,7 +43,6 @@ class Dashboard {
             showConfigButton: true,
             showHealthDashboard: true,
             showRecentButton: false,
-            showTips: false,
 
             showSyncToasts: false,
             showCheatSheetButton: false,
@@ -152,14 +151,6 @@ class Dashboard {
         this._movePopoverCleanup = null;
         this._deletePopoverCleanup = null;
         this.notificationTimeout = null;
-        this.tipRotationTimer = null;
-        this.tipRotationDelayTimer = null;
-        this.backupTipTimer = null;
-        this.backupTipShown = false;
-        this.tipRotationIndex = 0;
-        this.tipPriorityIndex = 0;
-        this.contextTipRotationIndex = 0;
-        this.inlineTipUsageStorageKey = 'nextdash-inline-context-tip-usage-v2';
         this.structureSyncEventKey = 'nextdash:config-structure-sync';
         this.settingsSyncEventKey = 'nextdash:config-settings-sync';
         this.pendingStructureSyncKey = 'nextdash:pending-dashboard-structure-sync';
@@ -225,25 +216,7 @@ class Dashboard {
         return svg;
     }
 
-    areRotatingTipsEnabled() {
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
-            return false;
-        }
-        if (window.TipsPolicy && typeof window.TipsPolicy.shouldShowRotatingTips === 'function') {
-            return window.TipsPolicy.shouldShowRotatingTips(this.settings);
-        }
-        return this.settings.showTips === true;
-    }
 
-    shouldShowRotatingTipsNow() {
-        if (!this.areRotatingTipsEnabled()) {
-            return false;
-        }
-        if (window.TipsPolicy && typeof window.TipsPolicy.getTipsStartDelayMs === 'function') {
-            return window.TipsPolicy.getTipsStartDelayMs() <= 0;
-        }
-        return true;
-    }
 
     isCoarsePointer() {
         return window.matchMedia('(hover: none) and (pointer: coarse)').matches
@@ -253,9 +226,6 @@ class Dashboard {
     async init() {
         try {
             await this.loadData();
-            if (window.TipsPolicy && typeof window.TipsPolicy.applyExpiry === 'function') {
-                await window.TipsPolicy.applyExpiry(this);
-            }
             this.applyVisualSettings();
             this.initializeAutoDarkMode();
             this.loadCollapsedStates();
@@ -294,7 +264,6 @@ class Dashboard {
             this.setupConfigReturnRefreshListener();
             this.setupDataRevisionListener();
             this.setupExtensionBookmarkSavedListener();
-            this.scheduleBackupTip();
 
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
@@ -338,15 +307,6 @@ class Dashboard {
 
             this.updateMiniStatusLine();
             this.initializeOnboarding();
-            this.initializeFeatureTour();
-            this.initializeConfigBookmarksTour();
-            window.LayoutVersionNudge?.consumeReplayPending?.();
-            window.FeatureSpotlight?.consumePasteReplayPending?.();
-            window.PreviewCardSpotlight?.consumeReplayPending?.();
-            // Reports a setting that already changed, so it is scheduled outside
-            // the discoverability queue: that queue re-opens what's new until it
-            // is acknowledged and returns early, which would starve this toast.
-            window.LayoutGlassRemovedToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }
@@ -639,36 +599,12 @@ class Dashboard {
         return this.promos.shouldShowWhatsNewPrompt(...arguments);
     }
 
-    shouldShowLayoutNudgePrompt() {
-        return this.promos.shouldShowLayoutNudgePrompt(...arguments);
-    }
-
-    shouldShowPasteSpotlightPrompt() {
-        return this.promos.shouldShowPasteSpotlightPrompt(...arguments);
-    }
-
     schedulePostOnboardingPrompts(options = {}) {
         return this.promos.schedulePostOnboardingPrompts(...arguments);
     }
 
     runPostOnboardingPrompts(options = {}) {
         return this.promos.runPostOnboardingPrompts(...arguments);
-    }
-
-    shouldShowPreviewCardSpotlightPrompt() {
-        return this.promos.shouldShowPreviewCardSpotlightPrompt(...arguments);
-    }
-
-    maybeShowPreviewCardSpotlight(options = {}) {
-        return this.promos.maybeShowPreviewCardSpotlight(...arguments);
-    }
-
-    maybeShowPasteSpotlight(options = {}) {
-        return this.promos.maybeShowPasteSpotlight(...arguments);
-    }
-
-    maybeShowLayoutModernNudge(options = {}) {
-        return this.promos.maybeShowLayoutModernNudge(...arguments);
     }
 
     maybeShowWhatsNew() {
@@ -683,17 +619,6 @@ class Dashboard {
         return this.promos.initializeOnboarding(...arguments);
     }
 
-    initializeFeatureTour() {
-        return this.promos.initializeFeatureTour(...arguments);
-    }
-
-    initializeConfigBookmarksTour() {
-        return this.promos.initializeConfigBookmarksTour(...arguments);
-    }
-
-    startFeatureTour(onFinish) {
-        return this.promos.startFeatureTour(...arguments);
-    }
 
     formatDashboardLabel(key, replacements = {}, fallback = '') {
         return this.uiHelpers.formatDashboardLabel(...arguments);
@@ -711,13 +636,7 @@ class Dashboard {
         return this.uiHelpers.escapeHtml(...arguments);
     }
 
-    setTipHtml(element, html) {
-        return this.uiHelpers.setTipHtml(...arguments);
-    }
 
-    sanitizeTipHtml(html) {
-        return this.uiHelpers.sanitizeTipHtml(...arguments);
-    }
 
     isVisibleBlockingOverlay(el) {
         return this.uiHelpers.isVisibleBlockingOverlay(...arguments);
@@ -799,33 +718,17 @@ class Dashboard {
         return this.setup.initializeButtonTipsRotation(...arguments);
     }
 
-    refreshButtonTipsOnPageChange() {
-        return this.setup.refreshButtonTipsOnPageChange(...arguments);
-    }
-
     teardownDashboardTimers() {
         return this.setup.teardownDashboardTimers(...arguments);
     }
 
-    scheduleBackupTip() {
-        return this.setup.scheduleBackupTip(...arguments);
-    }
 
     initializeSearchFlowHint() {
         return this.setup.initializeSearchFlowHint(...arguments);
     }
 
-    getInlineTipUsageState() {
-        return this.setup.getInlineTipUsageState(...arguments);
-    }
 
-    getCurrentPageTipUsage() {
-        return this.setup.getCurrentPageTipUsage(...arguments);
-    }
 
-    markInlineTipUsed(tipKey) {
-        return this.setup.markInlineTipUsed(...arguments);
-    }
 
     getInlineContextTipsForCurrentPage() {
         return this.setup.getInlineContextTipsForCurrentPage(...arguments);

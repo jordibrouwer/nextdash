@@ -529,7 +529,6 @@ class ConfigPersistence {
 
     setupAutosaveLowRiskFields() {
         const selector = [
-            '#show-tips-checkbox',
             '#show-config-button-checkbox',
             '#show-recent-button-checkbox',
             '#animations-enabled-checkbox',

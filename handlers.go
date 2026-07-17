@@ -2609,12 +2609,6 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handlers) detectRedirectURL(urlStr string) string {
-	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
-	defer cancel()
-	return h.detectRedirectURLCtx(ctx, urlStr, false)
-}
-
 func (h *Handlers) detectRedirectURLCtx(ctx context.Context, urlStr string, quickOnly bool) string {
 	urlStr = strings.TrimSpace(urlStr)
 	if ctx.Err() != nil {
@@ -2682,12 +2676,6 @@ func (h *Handlers) detectRedirectURLCtx(ctx context.Context, urlStr string, quic
 		}
 	}
 	return ""
-}
-
-func (h *Handlers) fetchPageTitleSafe(urlStr string) string {
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	defer cancel()
-	return h.fetchPageTitleSafeCtx(ctx, urlStr)
 }
 
 func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) string {

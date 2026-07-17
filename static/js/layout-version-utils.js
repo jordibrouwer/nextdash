@@ -53,6 +53,25 @@
         return applyLayoutVersion(settings, next, options);
     }
 
+    /**
+     * Rewrites a device-specific "glass" layout to classic. Glass was removed;
+     * server-stored settings normalize in models.go, but the device-specific
+     * copy never round-trips through Go, so it needs rewriting here.
+     */
+    function migrateDeviceGlassLayout() {
+        try {
+            if (localStorage.getItem('deviceSpecificSettings') !== 'true') return;
+            const raw = localStorage.getItem('dashboardSettings');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if ((parsed?.layoutVersion || '').toLowerCase().trim() !== 'glass') return;
+            parsed.layoutVersion = 'classic';
+            localStorage.setItem('dashboardSettings', JSON.stringify(parsed));
+        } catch { /* ignore */ }
+    }
+
+    migrateDeviceGlassLayout();
+
     window.LayoutVersionUtils = {
         getLayoutVersions,
         normalizeLayoutVersion,

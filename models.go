@@ -111,8 +111,6 @@ type Settings struct {
 	ShowFindersButton           bool                             `json:"showFindersButton"`
 	ShowCommandsButton          bool                             `json:"showCommandsButton"`
 	ShowRecentButton            bool                             `json:"showRecentButton"`
-	ShowTips                    bool                             `json:"showTips"`
-	ShowTipsOffMigrated         bool                             `json:"showTipsOffMigrated,omitempty"` // one-time: default rotating tips to off
 	ShowTagCloudButton          bool                             `json:"showTagCloudButton"` // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated     bool                             `json:"tagCloudDefaultMigrated,omitempty"` // one-time: enable tag cloud for existing installs
 	LinkPreviewCardsOffMigrated bool                             `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
@@ -193,6 +191,7 @@ type Settings struct {
 	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
 	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
+	QuickStart                  QuickStartState                  `json:"quickStart"`                  // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted   bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted   bool                             `json:"configFindersTourCompleted"`
@@ -218,21 +217,29 @@ type Settings struct {
 	AutoBackupEnabled           bool                             `json:"autoBackupEnabled"`           // Automatically create a weekly local backup (keeps the latest 3)
 	HealthAutoRecheckEnabled    bool                             `json:"healthAutoRecheckEnabled"`    // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                           `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
-	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
+	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
 type DiscoverabilityState struct {
-	Confirmed           map[string]bool `json:"confirmed,omitempty"`
-	LastWhatsNewRelease string          `json:"lastWhatsNewRelease,omitempty"`
-	TipsPromoUntil      int64           `json:"tipsPromoUntil,omitempty"`
-	TipsNotBefore       int64           `json:"tipsNotBefore,omitempty"`
+	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
+	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
+	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
 }
 
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
 	Style     string  `json:"style"`
 	Intensity float64 `json:"intensity"`
+}
+
+// QuickStartState tracks first-run quick-start progress, persisted per-user in
+// settings JSON (not client localStorage) so it is consistent across devices.
+type QuickStartState struct {
+	SetupDone      bool `json:"setupDone"`      // Compact setup card finished or skipped
+	Dismissed      bool `json:"dismissed"`      // Checklist completed or dismissed
+	VisitedConfig  bool `json:"visitedConfig"`  // Opened Config → General (checklist item)
+	SeenCheatsheet bool `json:"seenCheatsheet"` // Opened the keyboard cheat sheet (checklist item)
 }
 
 func isValidFontPreset(s string) bool {
@@ -435,7 +442,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowFindersButton:           true,
 			ShowCommandsButton:          true,
 			ShowRecentButton:            false,
-			ShowTips:                    false,
 			ShowTagCloudButton:          true,
 			ShowSearchFlowBanner:        true,
 			ShowCheatSheetButton:        false,
@@ -549,7 +555,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
 	fs.migrateHideEmptyCategoriesDefaultOn()
-	fs.migrateShowTipsDefaultOff()
 
 }
 
@@ -607,37 +612,6 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 	_ = writeFileAtomic(fs.settingsFile, out, 0644)
 }
 
-func (fs *FileStore) migrateShowTipsDefaultOff() {
-	fs.mutex.Lock()
-	defer fs.mutex.Unlock()
-
-	fs.ensureDataDir()
-
-	data, err := os.ReadFile(fs.settingsFile)
-	if err != nil {
-		return
-	}
-
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return
-	}
-	if migrated, ok := raw["showTipsOffMigrated"]; ok {
-		var done bool
-		if json.Unmarshal(migrated, &done) == nil && done {
-			return
-		}
-	}
-
-	raw["showTips"] = json.RawMessage(`false`)
-	raw["showTipsOffMigrated"] = json.RawMessage(`true`)
-
-	out, err := json.MarshalIndent(raw, "", "  ")
-	if err != nil {
-		return
-	}
-	_ = writeFileAtomic(fs.settingsFile, out, 0644)
-}
 
 func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 	fs.mutex.Lock()
@@ -1606,7 +1580,6 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowFindersButton:         true,
 			ShowCommandsButton:        true,
 			ShowRecentButton:          true,
-			ShowTips:                  false,
 			ShowSearchFlowBanner:      true,
 			ShowCheatSheetButton:      true,
 			ShowSearchButtonText:      true,
@@ -1754,10 +1727,6 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showIcons"]; !ok {
 			settings.ShowIcons = true
-		}
-		if !settings.ShowTipsOffMigrated {
-			settings.ShowTips = false
-			settings.ShowTipsOffMigrated = true
 		}
 		if !settings.TagCloudDefaultMigrated {
 			settings.ShowTagCloudButton = true
@@ -1935,7 +1904,6 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
 			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
-			settings.ShowTipsOffMigrated = stored.ShowTipsOffMigrated
 		}
 	}
 

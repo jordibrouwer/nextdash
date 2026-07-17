@@ -187,13 +187,6 @@
             }
         }
 
-        // normalizeLayoutVersion() silently maps the removed "glass" onto classic,
-        // so record the raw value first — LayoutGlassRemovedToast needs it to
-        // explain the switch, and this is the only place it is still observable.
-        if ((layoutVersion || '').toLowerCase().trim() === 'glass') {
-            window.__nextdashLayoutWasGlass = true;
-        }
-
         return normalizeLayoutVersion(layoutVersion);
     }
 

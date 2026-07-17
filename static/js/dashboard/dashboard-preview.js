@@ -418,7 +418,6 @@ class DashboardPreview {
         document.body.classList.add('preview-card-active');
         this.positionBookmarkPreviewCard(event.clientX, event.clientY);
         if (context?.promoSource === 'keyboard') {
-            window.DashboardFeaturePromos?.tryShowDeferred?.('previewCard', card);
         }
     }
 
@@ -461,9 +460,6 @@ class DashboardPreview {
     hideBookmarkPreviewCard() {
         const d = this.dash;
         if (!d.previewCardElement) return;
-        if (window.DashboardFeaturePromos?.isPromoOpen?.('previewCard')) {
-            window.DashboardFeaturePromos?.dismissOpen?.();
-        }
         d.previewCardElement.classList.remove('is-visible');
         d.previewCardElement._previewContext = null;
         d._previewCardHovered = false;

@@ -421,12 +421,6 @@
     letter-spacing: 0.02em;
 }
 
-.reset-context-tips-btn {
-    display: block;
-    width: 100%;
-    margin-top: 0.55rem;
-}
-
 
 @media (max-width: 991px) {
     .general-layout {

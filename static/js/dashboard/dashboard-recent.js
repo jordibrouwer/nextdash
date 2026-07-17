@@ -114,9 +114,6 @@ class DashboardRecent {
             modalMaxWidth: '760px',
             modalWidth: '92vw',
             onHide: () => {
-                if (window.DashboardFeaturePromos?.isPromoOpen?.('recentBookmarks')) {
-                    window.DashboardFeaturePromos?.dismissOpen?.();
-                }
                 this._cleanupRecentModalKeyHandler();
             },
         });
@@ -214,7 +211,6 @@ class DashboardRecent {
             this._setupRecentModalKeyboardNav(contentEl);
         }
 
-        window.DashboardFeaturePromos?.tryShowDeferred?.('recentBookmarks', panel);
     }
 
 

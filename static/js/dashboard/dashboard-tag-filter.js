@@ -872,7 +872,6 @@ class DashboardTagFilter {
 
         toolbar.appendChild(actions);
         wrap.appendChild(toolbar);
-        window.DashboardFeaturePromos?.tryShowDeferred?.('tagFilterBulk', toolbar);
     }
 
 
