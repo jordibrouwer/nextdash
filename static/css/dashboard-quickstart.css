@@ -1,0 +1,328 @@
+/*
+ * Quick-start card (checklist + compact first-run setup).
+ * Non-blocking, bottom-left, theme-driven. Mirrors feature-spotlight conventions
+ * so it reads as part of the same system.
+ */
+
+.quickstart-card {
+    position: fixed;
+    left: max(1rem, env(safe-area-inset-left));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    width: 340px;
+    max-width: calc(100vw - 2rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+    z-index: 2147482800;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity 0.26s ease, visibility 0.26s ease, transform 0.26s ease;
+    overflow: hidden;
+    font-family: var(--font-family-main, inherit);
+}
+
+.quickstart-card.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.quickstart-stripe {
+    height: 3px;
+    background: var(--accent-primary);
+}
+
+.quickstart-inner {
+    padding: 0.875rem 1rem 0.9rem;
+}
+
+.quickstart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.quickstart-title {
+    font-size: var(--font-size-controls, 0.82rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.35rem;
+    line-height: 1.3;
+}
+
+.quickstart-head .quickstart-title {
+    margin-bottom: 0;
+}
+
+.quickstart-text {
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+    margin: 0 0 0.6rem;
+    line-height: 1.5;
+}
+
+.quickstart-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    border-radius: 0.25rem;
+}
+
+.quickstart-close:hover,
+.quickstart-close:focus-visible {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+/* ---- Checklist ---- */
+
+.quickstart-progress {
+    font-size: var(--font-size-small, 0.7rem);
+    color: var(--text-secondary);
+    margin: 0.4rem 0 0.55rem;
+    letter-spacing: 0.02em;
+}
+
+.quickstart-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.quickstart-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+/* Actionable rows: the button becomes the flex row so the layout matches
+   a plain item exactly. */
+.quickstart-item.is-actionable {
+    display: block;
+}
+
+.quickstart-item-action {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    width: 100%;
+    margin: -0.15rem -0.3rem;
+    padding: 0.15rem 0.3rem;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.quickstart-item-action:hover,
+.quickstart-item-action:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    outline: none;
+}
+
+.quickstart-item-action:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* Underline only while not done — .is-done owns text-decoration for the
+   strikethrough, and the shorthand would otherwise cancel it. */
+.quickstart-item.is-actionable:not(.is-done) .quickstart-item-label {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    text-underline-offset: 2px;
+}
+
+.quickstart-check {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.quickstart-item.is-done .quickstart-check {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.quickstart-check svg {
+    width: 11px;
+    height: 11px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.quickstart-item-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.quickstart-item-label {
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-primary);
+    line-height: 1.35;
+}
+
+.quickstart-item.is-done .quickstart-item-label {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--text-secondary) 55%, transparent);
+}
+
+.quickstart-item-hint {
+    font-size: var(--font-size-small, 0.66rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.35;
+    margin-top: 0.05rem;
+}
+
+.quickstart-card.is-complete .quickstart-stripe {
+    background: var(--accent-success, var(--accent-primary));
+}
+
+/* ---- Compact setup card ---- */
+
+.quickstart-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.7rem;
+}
+
+/* [hidden] must win over the flex display above (e.g. weather location field). */
+.quickstart-card [hidden] {
+    display: none !important;
+}
+
+.quickstart-field > span,
+.quickstart-fieldset legend {
+    font-size: var(--font-size-small, 0.7rem);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.quickstart-select,
+.quickstart-input {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
+}
+
+.quickstart-setup-fields {
+    max-height: 46vh;
+    overflow-y: auto;
+    margin-bottom: 0.25rem;
+}
+
+.quickstart-field-hint {
+    font-size: var(--font-size-small, 0.66rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.4;
+    margin: 0 0 0.35rem;
+}
+
+.quickstart-fieldset {
+    border: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.quickstart-fieldset legend {
+    margin-bottom: 0.3rem;
+    padding: 0;
+}
+
+.quickstart-radio {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.quickstart-radio input {
+    accent-color: var(--accent-primary);
+}
+
+.quickstart-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+}
+
+.quickstart-btn {
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.74rem);
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.35rem;
+    border: 1px solid var(--border-primary);
+    cursor: pointer;
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.quickstart-btn-ghost {
+    background: transparent;
+}
+
+.quickstart-btn-primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #fff;
+    font-weight: 600;
+}
+
+.quickstart-btn:hover,
+.quickstart-btn:focus-visible {
+    filter: brightness(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quickstart-card {
+        transition: opacity 0.01s linear;
+        transform: none;
+    }
+}
+
+/* On small screens, span the width so it doesn't crowd the corner. */
+@media (max-width: 560px) {
+    .quickstart-card {
+        left: 0.75rem;
+        right: 0.75rem;
+        width: auto;
+        max-width: none;
+    }
+}

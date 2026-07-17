@@ -193,6 +193,7 @@ type Settings struct {
 	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
 	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
 	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
+	QuickStart                  QuickStartState                  `json:"quickStart"`                  // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted   bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted   bool                             `json:"configFindersTourCompleted"`
@@ -232,6 +233,15 @@ type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
 	Style     string  `json:"style"`
 	Intensity float64 `json:"intensity"`
+}
+
+// QuickStartState tracks first-run quick-start progress, persisted per-user in
+// settings JSON (not client localStorage) so it is consistent across devices.
+type QuickStartState struct {
+	SetupDone      bool `json:"setupDone"`      // Compact setup card finished or skipped
+	Dismissed      bool `json:"dismissed"`      // Checklist completed or dismissed
+	VisitedConfig  bool `json:"visitedConfig"`  // Opened Config → General (checklist item)
+	SeenCheatsheet bool `json:"seenCheatsheet"` // Opened the keyboard cheat sheet (checklist item)
 }
 
 func isValidFontPreset(s string) bool {

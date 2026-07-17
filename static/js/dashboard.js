@@ -338,15 +338,6 @@ class Dashboard {
 
             this.updateMiniStatusLine();
             this.initializeOnboarding();
-            this.initializeFeatureTour();
-            this.initializeConfigBookmarksTour();
-            window.LayoutVersionNudge?.consumeReplayPending?.();
-            window.FeatureSpotlight?.consumePasteReplayPending?.();
-            window.PreviewCardSpotlight?.consumeReplayPending?.();
-            // Reports a setting that already changed, so it is scheduled outside
-            // the discoverability queue: that queue re-opens what's new until it
-            // is acknowledged and returns early, which would starve this toast.
-            window.LayoutGlassRemovedToast?.scheduleShow?.({ delay: 1000, resetAttempts: true });
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
             }
@@ -639,36 +630,12 @@ class Dashboard {
         return this.promos.shouldShowWhatsNewPrompt(...arguments);
     }
 
-    shouldShowLayoutNudgePrompt() {
-        return this.promos.shouldShowLayoutNudgePrompt(...arguments);
-    }
-
-    shouldShowPasteSpotlightPrompt() {
-        return this.promos.shouldShowPasteSpotlightPrompt(...arguments);
-    }
-
     schedulePostOnboardingPrompts(options = {}) {
         return this.promos.schedulePostOnboardingPrompts(...arguments);
     }
 
     runPostOnboardingPrompts(options = {}) {
         return this.promos.runPostOnboardingPrompts(...arguments);
-    }
-
-    shouldShowPreviewCardSpotlightPrompt() {
-        return this.promos.shouldShowPreviewCardSpotlightPrompt(...arguments);
-    }
-
-    maybeShowPreviewCardSpotlight(options = {}) {
-        return this.promos.maybeShowPreviewCardSpotlight(...arguments);
-    }
-
-    maybeShowPasteSpotlight(options = {}) {
-        return this.promos.maybeShowPasteSpotlight(...arguments);
-    }
-
-    maybeShowLayoutModernNudge(options = {}) {
-        return this.promos.maybeShowLayoutModernNudge(...arguments);
     }
 
     maybeShowWhatsNew() {
@@ -683,17 +650,6 @@ class Dashboard {
         return this.promos.initializeOnboarding(...arguments);
     }
 
-    initializeFeatureTour() {
-        return this.promos.initializeFeatureTour(...arguments);
-    }
-
-    initializeConfigBookmarksTour() {
-        return this.promos.initializeConfigBookmarksTour(...arguments);
-    }
-
-    startFeatureTour(onFinish) {
-        return this.promos.startFeatureTour(...arguments);
-    }
 
     formatDashboardLabel(key, replacements = {}, fallback = '') {
         return this.uiHelpers.formatDashboardLabel(...arguments);
