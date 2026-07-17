@@ -286,6 +286,11 @@ class ConfigKeyboard {
                         descriptionFallback: 'Quick actions palette (save, open dashboard, tour resets)',
                     },
                     {
+                        keys: ['<'],
+                        descriptionKey: 'config.keyboardConfigBackDashboardDesc',
+                        descriptionFallback: 'Back to dashboard (< is Shift+,; on the dashboard < opens config)',
+                    },
+                    {
                         keys: ['Alt+↑', 'Alt+↓'],
                         descriptionKey: 'config.keyboardConfigReorderDesc',
                         descriptionFallback: 'Reorder selected bookmark on the Bookmarks tab',

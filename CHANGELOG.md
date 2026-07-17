@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
 - [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
 - [v2026.07.17 — July 2026](#v20260717--july-2026)
 - [v2026.07.16 — July 2026](#v20260716--july-2026)
@@ -98,6 +99,20 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.17.2 — July 2026
+
+**Jump between dashboard and config with `<`** — a single keyboard shortcut now toggles the two pages.
+
+### Navigation
+
+- **new** **`<` opens config from the dashboard, and returns to the dashboard from config** — `<` (which is `Shift+,`, next to the `,` page overview) jumps to `/config` on the dashboard; in config it goes back to the dashboard, asking to confirm first if there are unsaved changes. Layout-independent: it accepts both the `<` character and the physical comma key with Shift, so it works on keyboard layouts that don't emit `<`. Documented in the dashboard cheat sheet (`!` / `F1`) and the Config → Keyboard tab, localized across EN / NL / DE / FR (`dashboard-setup.js`, `config-ui.js`).
+
+### Config
+
+- **new** **Config → General opens compact on first visit** — a fresh first open of Config → General lands on **Essentials** with only **Localisation** expanded, instead of four sections open at once. Once you expand or collapse any section, your own layout is remembered as before (`config-setup.js`).
 
 ---
 

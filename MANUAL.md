@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.17**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.17.2**).
 
 ---
 
@@ -419,6 +419,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
+| `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes (**v2026.07.17.2**) |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
 ### 9.2 Bookmark grid
@@ -846,7 +847,7 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 
 ## 16. Config — complete walkthrough
 
-Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**, and **Help**. **`1`–`9`** jumps to the Nth visible tab; **`←`/`→`** moves tab-by-tab and crosses into the next group at group edges; **`Alt+←`/`Alt+→`** jumps to the first tab of the previous/next group (when focus is not in an input or modal). **`S`** saves (sticky bar).
+Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**, and **Help**. **`1`–`9`** jumps to the Nth visible tab; **`←`/`→`** moves tab-by-tab and crosses into the next group at group edges; **`Alt+←`/`Alt+→`** jumps to the first tab of the previous/next group (when focus is not in an input or modal). **`S`** saves (sticky bar); **`<`** (`Shift+,`) returns to the dashboard, confirming first if there are unsaved changes.
 
 | Tab | Purpose |
 |-----|---------|
@@ -893,6 +894,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 | `←` / `→` | Previous / next tab; crosses tab groups at the edges |
 | `Alt` + `←` / `→` | Jump to first tab of previous / next group (**System**, **Dashboard**, **Extras**, **Help**) |
 | `S` | Save (same as **Save** button / sticky bar) |
+| `<` | Back to dashboard (`Shift+,`); asks to confirm if there are unsaved changes (**v2026.07.17.2**) |
 | `Alt` + `↑` / `↓` | Reorder selected bookmark on **Bookmarks** tab |
 
 Guards: shortcuts do not fire while focus is in an input, textarea, select, contenteditable field, or app modal. The dashboard cheat sheet (`!` / `F1`) lists these under **Other**; **config → keyboard** lists them under **Config tab bar**.
@@ -929,7 +931,7 @@ Available on every screen width (including phone). The **Help** tab uses the sha
 
 - **Quick links & accordion (v2026.07.08)** — the sidebar highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time, same behaviour as General's section accordion. Clicking a quick link always scrolls so the section's title lands below the sticky toolbar instead of partway down the section.
 - **Support the project** — a **Support me on Ko-fi** button at the bottom of Help, centered on its own row with the same twinkling-star glow animation as the What's New modal's donate CTA (**v2026.07.08**); the **jordibrw.nl** signature link below it is larger and accent-themed.
-- **What's new recap** — scrollable history of up to **25 recent** releases in the ★ modal; **v2026.07.17** documents the removal of every tour, spotlight, and promo balloon, the new quick-start card, and the Tips & tricks section in Help; **v2026.07.16** documents Inbox snooze, keyboard triage, notes, bulk clean-up, Health always-on, optional background rechecks, and Edit → inline editor; **v2026.07.15** documents health as an in-dashboard view, new `Shift+H` / `Shift+I` view shortcuts, config-header cleanup, and localized health-view/cheat-sheet text parity across EN/NL/DE/FR; **v2026.07.08.1** documents the General quick-link scroll offset hotfix; **v2026.07.08** documents the Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** documents General's split-shell (sticky quick links, section accordion), Advanced further split into smaller cards, and number-input styling; **v2026.07.05.1** documents hotfixes (★ corner FAB below tag cloud, Config Help *Show what's new*, modal chrome parity, status-row highlight, save-indicator and merge fixes); **v2026.07.05** documents config shell polish (Help B5, flattened cards, B10/C15), dashboard chrome (toolbar modals for recent/help, D8/D12, fresh-install footer defaults, Classic beta notice); **v2026.07.04** documents config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
+- **What's new recap** — scrollable history of up to **25 recent** releases in the ★ modal; **v2026.07.17.2** documents the `<` (`Shift+,`) dashboard↔config toggle and Config → General opening compact (Essentials, only Localisation expanded) on first visit; **v2026.07.17.1** documents the custom theme name input styling hotfix; **v2026.07.17** documents the removal of every tour, spotlight, and promo balloon, the new quick-start card, and the Tips & tricks section in Help; **v2026.07.16** documents Inbox snooze, keyboard triage, notes, bulk clean-up, Health always-on, optional background rechecks, and Edit → inline editor; **v2026.07.15** documents health as an in-dashboard view, new `Shift+H` / `Shift+I` view shortcuts, config-header cleanup, and localized health-view/cheat-sheet text parity across EN/NL/DE/FR; **v2026.07.08.1** documents the General quick-link scroll offset hotfix; **v2026.07.08** documents the Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** documents General's split-shell (sticky quick links, section accordion), Advanced further split into smaller cards, and number-input styling; **v2026.07.05.1** documents hotfixes (★ corner FAB below tag cloud, Config Help *Show what's new*, modal chrome parity, status-row highlight, save-indicator and merge fixes); **v2026.07.05** documents config shell polish (Help B5, flattened cards, B10/C15), dashboard chrome (toolbar modals for recent/help, D8/D12, fresh-install footer defaults, Classic beta notice); **v2026.07.04** documents config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
@@ -944,6 +946,7 @@ On phone, Help is the only config tab besides **General** that shows the full do
 | `←` / `→` | Previous / next tab; crosses tab groups at the edges |
 | `Alt` + `←` / `→` | Jump to first tab of previous / next group |
 | `S` | Save |
+| `<` | Back to dashboard (`Shift+,`); confirms first if there are unsaved changes |
 | `Alt+↑` / `Alt+↓` | Reorder bookmark in list |
 | `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard) |
 | `Ctrl/Cmd+Shift+K` | Find settings (tabs, panels, labels, help sections) |

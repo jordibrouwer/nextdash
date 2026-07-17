@@ -410,6 +410,22 @@ class ConfigUI {
             }
         });
 
+        // '<' (Shift+,) — back to dashboard, mirroring the dashboard's '<' → config
+        // shortcut. Layout-independent: also accept the physical comma key with Shift.
+        // Route through the header back-link so the unsaved-changes guard runs.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== '<' && !(e.code === 'Comma' && e.shiftKey)) return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (!configTabKeyAllowed()) return;
+            const backLink = document.querySelector('header.header .back-link');
+            e.preventDefault();
+            if (backLink) {
+                backLink.click();
+            } else {
+                window.location.href = '/';
+            }
+        });
+
         // Fade mask + scroll hint when tab bar overflows horizontally
         const tabBar = document.querySelector('.config-controls-wrapper .tabs');
         const tabWrapper = document.querySelector('.tabs-scroll-wrapper');

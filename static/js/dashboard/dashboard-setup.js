@@ -263,6 +263,15 @@ class DashboardSetup {
                 return;
             }
 
+            // '<' (Shift+,) — jump to config. Layout-independent: also accept the
+            // physical comma key with Shift, since some layouts don't emit '<'.
+            if (e.key === '<' || (e.code === 'Comma' && e.shiftKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = '/config';
+                return;
+            }
+
             if (e.key === '&') {
                 e.preventDefault();
                 e.stopPropagation();
