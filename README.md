@@ -8,6 +8,8 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix).
 
+🗂️ **[Cheat sheet (PDF)](docs/nextDash-cheatsheet.pdf)** — one-page printable reference of the keyboard shortcuts and command palette for quick lookup.
+
 ---
 
 ## Screenshots
