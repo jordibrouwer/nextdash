@@ -137,13 +137,6 @@ class ConfigLanguage {
         if (document.getElementById('config-main')) {
             window.ConfigSettingsSearch?.relocateForLayout?.();
             window.ConfigSettingsSearch?.syncMobileLayout?.({ rebuildIndex: false });
-            const settings = window.configManager?.settingsData;
-            const includeTagCloud = settings?.showTagCloudButton === true
-                && window.MobileExperience?.isMobileLayout?.() !== true;
-            window.DashboardTipsCatalog?.renderHelpOverview?.({
-                language: { t: (key) => this.t(key) },
-                includeTagCloud,
-            });
             document.dispatchEvent(new CustomEvent('nextdash:translations-applied'));
             this.scheduleSearchIndexRefresh();
             const tab = window.configManager?.ui?._currentTab;

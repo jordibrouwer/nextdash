@@ -74,10 +74,6 @@
         ['tipNewBookmarkAmpersandShort', 'Tip: <code>+</code> full new-bookmark modal — page, category, preview, and more options'],
     ];
 
-    const HELP_EXCLUDE_KEYS = new Set(['tipDisableTips', 'tipDisableTipsAlt']);
-
-    const localeCache = new Map();
-
     function resolveTip(language, key, fallback) {
         const fullKey = `dashboard.${key}`;
         const translated = language?.t?.(fullKey);
@@ -93,12 +89,9 @@
             .filter(Boolean);
     }
 
-    function buildLists({ language, includeTagCloud = true, forHelp = false } = {}) {
+    function buildLists({ language, includeTagCloud = true } = {}) {
         const priorityTips = resolveEntries(language, PRIORITY_ENTRIES);
         const normalEntries = NORMAL_ENTRIES.filter(([key]) => {
-            if (forHelp && HELP_EXCLUDE_KEYS.has(key)) {
-                return false;
-            }
             if (key === 'tipTagCloudSlash') {
                 return includeTagCloud;
             }
@@ -108,133 +101,7 @@
         return { priorityTips, normalTips };
     }
 
-    function fillList(listEl, items) {
-        if (!listEl) {
-            return;
-        }
-        listEl.innerHTML = '';
-        items.forEach((html) => {
-            const li = document.createElement('li');
-            li.innerHTML = html;
-            listEl.appendChild(li);
-        });
-    }
-
-    function getHelpTipsLists(root = document.getElementById('help-tips-catalog')) {
-        if (!root) {
-            return null;
-        }
-        return {
-            root,
-            priority: document.getElementById('help-tips-priority-list')
-                || root.querySelector('.help-tips-list--priority'),
-            normal: document.getElementById('help-tips-normal-list')
-                || root.querySelector('.help-tips-list--normal'),
-        };
-    }
-
-    function renderHelpOverview({ language, includeTagCloud = true } = {}) {
-        const lists = getHelpTipsLists();
-        if (!lists) {
-            return false;
-        }
-        const { priorityTips, normalTips } = buildLists({ language, includeTagCloud, forHelp: true });
-        fillList(lists.priority, priorityTips);
-        fillList(lists.normal, normalTips);
-        return priorityTips.length > 0 || normalTips.length > 0;
-    }
-
-    function createLanguageFromTranslations(translations) {
-        return {
-            t(key) {
-                if (typeof key !== 'string') {
-                    return String(key);
-                }
-                const keys = key.split('.');
-                let value = translations ?? {};
-                for (const k of keys) {
-                    if (value == null || typeof value !== 'object') {
-                        return key;
-                    }
-                    value = value[k];
-                }
-                return typeof value === 'string' ? value : key;
-            },
-        };
-    }
-
-    function resolveIncludeTagCloud() {
-        const settings = window.configManager?.settingsData;
-        return settings?.showTagCloudButton === true
-            && window.MobileExperience?.isMobileLayout?.() !== true;
-    }
-
-    function resolveLanguageCode() {
-        return window.configManager?.settingsData?.language
-            || window.configManager?.language?.currentLanguage
-            || document.documentElement.lang?.slice(0, 2)
-            || 'en';
-    }
-
-    async function loadLocaleLanguage(lang) {
-        if (window.configManager?.language?.translations?.dashboard) {
-            return window.configManager.language;
-        }
-        if (localeCache.has(lang)) {
-            return localeCache.get(lang);
-        }
-        try {
-            const response = await fetch(`/locales/${lang}.json`, { cache: 'no-store' });
-            if (!response.ok) {
-                return null;
-            }
-            const translations = await response.json();
-            const language = createLanguageFromTranslations(translations);
-            localeCache.set(lang, language);
-            return language;
-        } catch {
-            return null;
-        }
-    }
-
-    async function ensureHelpTipsOverview() {
-        if (!document.getElementById('help-tips-catalog')) {
-            return false;
-        }
-        const includeTagCloud = resolveIncludeTagCloud();
-        const lang = resolveLanguageCode();
-        const managerLanguage = window.configManager?.language;
-        if (managerLanguage?.translations?.dashboard) {
-            return renderHelpOverview({ language: managerLanguage, includeTagCloud });
-        }
-        const fetchedLanguage = await loadLocaleLanguage(lang);
-        if (fetchedLanguage) {
-            return renderHelpOverview({ language: fetchedLanguage, includeTagCloud });
-        }
-        return renderHelpOverview({
-            language: createLanguageFromTranslations({}),
-            includeTagCloud,
-        });
-    }
-
-    function bootHelpTipsOverview() {
-        void ensureHelpTipsOverview();
-    }
-
     window.DashboardTipsCatalog = {
         buildLists,
-        renderHelpOverview,
-        ensureHelpTipsOverview,
-        resolveTip,
     };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bootHelpTipsOverview);
-    } else {
-        bootHelpTipsOverview();
-    }
-    window.addEventListener('load', bootHelpTipsOverview);
-    document.addEventListener('nextdash:translations-applied', bootHelpTipsOverview);
-    setTimeout(bootHelpTipsOverview, 250);
-    setTimeout(bootHelpTipsOverview, 1500);
 }());

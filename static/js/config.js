@@ -177,8 +177,6 @@ class ConfigManager {
     }
 
     async init() {
-        window.LayoutVersionNudge?.clearLegacySessionKeys?.();
-        window.ConfigGeneralTour?.recoverStaleDom?.();
         window.MobileExperience?.initConfig?.();
         await this.loadData();
         this.currentCategoriesPageId = this.getLastCategoriesPageId();
@@ -311,23 +309,8 @@ class ConfigManager {
             this.scheduleConfigThemeTour();
         }
 
-        const includeTagCloud = this.settingsData?.showTagCloudButton === true
-            && window.MobileExperience?.isMobileLayout?.() !== true;
-        window.DashboardTipsCatalog?.renderHelpOverview?.({
-            language: this.language,
-            includeTagCloud,
-        });
-
         window.ConfigSettingsSearch?.refreshIndex?.();
         window.ConfigSettingsSearch?.bootPromoAutoStart?.();
-
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('configTour') === '1') {
-            void this.maybeStartConfigGeneralTour({ force: true });
-        }
-
-        window.LayoutGlassRemovedToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
-        window.LayoutBetaToast?.scheduleShow?.({ delay: 1500, resetAttempts: true });
     }
 
     async loadData() {
