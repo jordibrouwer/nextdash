@@ -1156,18 +1156,14 @@ test.describe('config help surface (B5)', () => {
         expect(nestedCards).toBe(true);
     });
 
-    test('help tab lists rotating tips from shared catalog', async ({ page }) => {
-        const disclosure = page.locator('#help-tips-disclosure');
-        await expect(disclosure).toBeVisible();
-        await expect(disclosure).not.toHaveAttribute('open', '');
+    test('help tab lists tips & tricks from shared catalog', async ({ page }) => {
+        const section = page.locator('#help-tips');
+        await expect(section).toBeVisible();
 
-        await disclosure.locator('summary').click();
-
-        const priorityCount = await page.locator('#help-tips-catalog .help-tips-list--priority li').count();
-        const normalCount = await page.locator('#help-tips-catalog .help-tips-list--normal li').count();
-        expect(priorityCount).toBeGreaterThan(5);
-        expect(normalCount).toBeGreaterThan(10);
-        await expect(page.locator('#help-tips-catalog .help-tips-list--priority li').first()).toContainText(/Tip:/i);
+        const groupCount = await page.locator('#help-tips-body .help-tips-group-title').count();
+        const itemCount = await page.locator('#help-tips-body .help-tips-list li').count();
+        expect(groupCount).toBeGreaterThan(3);
+        expect(itemCount).toBeGreaterThan(15);
     });
 
     test('help sections use narrative prose instead of bullet lists', async ({ page }) => {

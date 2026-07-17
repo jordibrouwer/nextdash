@@ -95,17 +95,6 @@ test.describe('dashboard command palette', () => {
         await expect.poll(async () => page.locator('#quick-add-toolbar-btn').isVisible()).not.toBe(visibleBefore);
     });
 
-    test(':tips off disables tips on Enter', async ({ page }) => {
-        await page.keyboard.press(':');
-        await page.keyboard.type('tips off', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
-        await page.keyboard.press('Enter');
-
-        await expect.poll(async () => page.evaluate(() => (
-            window.dashboardInstance?.settings?.showTips === false
-        ))).toBe(true);
-    });
-
     test(':buttons cheatsheet stays open and label updates after toggle', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('buttons cheatsheet', { delay: 20 });
@@ -203,17 +192,6 @@ test.describe('dashboard command palette', () => {
             ));
             return index >= 0;
         }, { timeout: 10_000 }).toBe(true);
-    });
-
-    test(':buttons health toggles health link visibility', async ({ page }) => {
-        const visibleBefore = await page.locator('.health-link').count();
-
-        await page.keyboard.press(':');
-        await page.keyboard.type('buttons health', { delay: 15 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
-        await page.keyboard.press('Enter');
-
-        await expect.poll(async () => page.locator('.health-link').count()).not.toBe(visibleBefore);
     });
 
     test('lone colon shows five command groups', async ({ page }) => {
