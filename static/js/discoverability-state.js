@@ -1,6 +1,6 @@
 /**
  * Server-backed discoverability state (settings.discoverabilityState).
- * Replaces per-browser localStorage for promo/tour/what's-new progress.
+ * Replaces per-browser localStorage for what's-new and tips progress.
  */
 (function initDiscoverabilityState(global) {
     'use strict';
@@ -9,44 +9,7 @@
     const TIPS_UNTIL_LEGACY_KEY = 'nextdash-tips-promo-until-v1';
     const TIPS_NOT_BEFORE_LEGACY_KEY = 'nextdash-tips-not-before-v1';
 
-    /** @type {Record<string, string>} legacy localStorage key → canonical id */
-    const LEGACY_KEY_TO_ID = {
-        'nextdash:dashboard-search-promo-search-v2': 'search:search',
-        'nextdash:dashboard-search-promo-command-v1': 'search:command',
-        'nextdash:dashboard-search-promo-finder-v1': 'search:finder',
-        'nextdash:dashboard-search-promo-filters-v1': 'search:filters',
-        'nextdash:dashboard-g-jump-promo-confirmed-v1': 'promo:gJump',
-        'nextdash:dashboard-grid-keyboard-promo-confirmed-v1': 'promo:gridKeyboard',
-        'nextdash:dashboard-smart-collection-promo-confirmed-v1': 'promo:smartCollection',
-        'nextdash:dashboard-inline-edit-promo-confirmed-v1': 'feature:inlineEdit',
-        'nextdash:dashboard-tag-cloud-promo-confirmed-v1': 'feature:tagCloud',
-        'nextdash:dashboard-tag-filter-bulk-promo-confirmed-v1': 'feature:tagFilterBulk',
-        'nextdash:dashboard-recent-bookmarks-promo-confirmed-v1': 'feature:recentBookmarks',
-        'nextdash:dashboard-preview-card-promo-confirmed-v1': 'feature:previewCard',
-        'nextdash:dashboard-quick-add-omnibox-promo-confirmed-v1': 'feature:quickAddOmnibox',
-        'nextdash:dashboard-date-popover-promo-confirmed-v1': 'feature:datePopover',
-        'nextdash:dashboard-weather-geolocation-promo-confirmed-v1': 'feature:weatherGeolocation',
-        'nextdash:dashboard-category-collapse-promo-confirmed-v1': 'feature:categoryCollapse',
-        'nextdash:dashboard-category-rename-promo-confirmed-v1': 'feature:categoryRename',
-        'nextdash:dashboard-quick-move-promo-confirmed-v1': 'feature:quickMove',
-        'nextdash:dashboard-quick-delete-promo-confirmed-v1': 'feature:quickDelete',
-        'nextdash:dashboard-quick-tag-promo-confirmed-v1': 'feature:quickTag',
-        'nextdash:dashboard-page-overview-promo-confirmed-v1': 'feature:pageOverview',
-        'nextdash:dashboard-cheatsheet-promo-confirmed-v1': 'feature:cheatsheet',
-        'nextdash:feature-spotlight-paste-v1': 'spotlight:paste',
-        'nextdash:layout-modern-nudge-v1': 'spotlight:layoutNudge',
-        'nextdash:layout-beta-toast-v1': 'toast:layoutBeta',
-        'nextdash:inbox-intro-toast-v1': 'toast:inboxIntro',
-        'nextdash:inbox-intro-modal-v2': 'modal:inboxIntroGuide',
-        'nextdash:feature-spotlight-preview-cards-v1': 'spotlight:previewCards',
-    };
-
-    const ID_TO_LEGACY_KEY = Object.fromEntries(
-        Object.entries(LEGACY_KEY_TO_ID).map(([key, id]) => [id, key])
-    );
-
     let state = {
-        confirmed: {},
         lastWhatsNewRelease: '',
         tipsPromoUntil: 0,
         tipsNotBefore: 0,
@@ -57,49 +20,19 @@
     function normalizeIncoming(raw) {
         if (!raw || typeof raw !== 'object') {
             return {
-                confirmed: {},
                 lastWhatsNewRelease: '',
                 tipsPromoUntil: 0,
                 tipsNotBefore: 0,
             };
         }
-        const confirmed = {};
-        if (raw.confirmed && typeof raw.confirmed === 'object') {
-            Object.entries(raw.confirmed).forEach(([id, value]) => {
-                if (value === true) {
-                    confirmed[String(id)] = true;
-                }
-            });
-        }
         return {
-            confirmed,
             lastWhatsNewRelease: String(raw.lastWhatsNewRelease || '').trim(),
             tipsPromoUntil: Number(raw.tipsPromoUntil) || 0,
             tipsNotBefore: Number(raw.tipsNotBefore) || 0,
         };
     }
 
-    function writeLegacyKey(legacyKey, seen) {
-        if (!legacyKey) {
-            return;
-        }
-        try {
-            if (seen) {
-                localStorage.setItem(legacyKey, '1');
-            } else {
-                localStorage.removeItem(legacyKey);
-            }
-        } catch {
-            // Ignore storage errors.
-        }
-    }
-
     function syncLegacyKeysFromState() {
-        Object.entries(state.confirmed).forEach(([id, seen]) => {
-            if (seen === true) {
-                writeLegacyKey(ID_TO_LEGACY_KEY[id], true);
-            }
-        });
         try {
             if (state.lastWhatsNewRelease) {
                 localStorage.setItem(WHATS_NEW_LEGACY_KEY, state.lastWhatsNewRelease);
@@ -114,86 +47,6 @@
             } else {
                 localStorage.removeItem(TIPS_NOT_BEFORE_LEGACY_KEY);
             }
-        } catch {
-            // Ignore storage errors.
-        }
-    }
-
-    function isConfirmed(id) {
-        if (!id) {
-            return false;
-        }
-        if (state.confirmed[id] === true) {
-            return true;
-        }
-        const legacyKey = ID_TO_LEGACY_KEY[id];
-        if (!legacyKey) {
-            return false;
-        }
-        try {
-            return localStorage.getItem(legacyKey) === '1';
-        } catch {
-            return false;
-        }
-    }
-
-    function isStorageKeyConfirmed(legacyKey) {
-        const id = LEGACY_KEY_TO_ID[legacyKey];
-        if (id) {
-            return isConfirmed(id);
-        }
-        try {
-            return Boolean(localStorage.getItem(legacyKey));
-        } catch {
-            return false;
-        }
-    }
-
-    function markConfirmed(id, options = {}) {
-        if (!id) {
-            return;
-        }
-        state.confirmed[id] = true;
-        writeLegacyKey(ID_TO_LEGACY_KEY[id], true);
-        applyToDashboardSettings();
-        if (options.persist !== false) {
-            schedulePersist();
-        }
-    }
-
-    function markStorageKeyConfirmed(legacyKey, options = {}) {
-        const id = LEGACY_KEY_TO_ID[legacyKey];
-        if (id) {
-            markConfirmed(id, options);
-            return;
-        }
-        try {
-            localStorage.setItem(legacyKey, '1');
-        } catch {
-            // Ignore storage errors.
-        }
-    }
-
-    function clearConfirmed(id, options = {}) {
-        if (!id) {
-            return;
-        }
-        delete state.confirmed[id];
-        writeLegacyKey(ID_TO_LEGACY_KEY[id], false);
-        applyToDashboardSettings();
-        if (options.persist !== false) {
-            schedulePersist();
-        }
-    }
-
-    function clearStorageKey(legacyKey, options = {}) {
-        const id = LEGACY_KEY_TO_ID[legacyKey];
-        if (id) {
-            clearConfirmed(id, options);
-            return;
-        }
-        try {
-            localStorage.removeItem(legacyKey);
         } catch {
             // Ignore storage errors.
         }
@@ -285,7 +138,6 @@
 
     function exportState() {
         return {
-            confirmed: { ...state.confirmed },
             lastWhatsNewRelease: state.lastWhatsNewRelease || undefined,
             tipsPromoUntil: state.tipsPromoUntil > 0 ? state.tipsPromoUntil : undefined,
             tipsNotBefore: state.tipsNotBefore > 0 ? state.tipsNotBefore : undefined,
@@ -304,20 +156,6 @@
 
     function migrateFromLocalStorageIfNeeded() {
         let dirty = false;
-
-        Object.entries(LEGACY_KEY_TO_ID).forEach(([legacyKey, id]) => {
-            if (state.confirmed[id] === true) {
-                return;
-            }
-            try {
-                if (localStorage.getItem(legacyKey) === '1') {
-                    state.confirmed[id] = true;
-                    dirty = true;
-                }
-            } catch {
-                // Ignore storage errors.
-            }
-        });
 
         if (!state.lastWhatsNewRelease) {
             try {
@@ -402,25 +240,9 @@
         }, 700);
     }
 
-    function clearAllConfirmed(options = {}) {
-        state.confirmed = {};
-        Object.keys(LEGACY_KEY_TO_ID).forEach((legacyKey) => writeLegacyKey(legacyKey, false));
-        applyToDashboardSettings();
-        if (options.persist !== false) {
-            schedulePersist();
-        }
-    }
-
     global.DiscoverabilityState = {
         init,
         exportState,
-        isConfirmed,
-        isStorageKeyConfirmed,
-        markConfirmed,
-        markStorageKeyConfirmed,
-        clearConfirmed,
-        clearStorageKey,
-        clearAllConfirmed,
         getLastWhatsNewRelease,
         setLastWhatsNewRelease,
         getTipsPromoUntil,
@@ -429,6 +251,5 @@
         setTipsNotBefore,
         schedulePersist,
         persistNow,
-        LEGACY_KEY_TO_ID,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -218,15 +218,14 @@ type Settings struct {
 	AutoBackupEnabled           bool                             `json:"autoBackupEnabled"`           // Automatically create a weekly local backup (keeps the latest 3)
 	HealthAutoRecheckEnabled    bool                             `json:"healthAutoRecheckEnabled"`    // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                           `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
-	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser promo/tour/what's-new seen state
+	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
 type DiscoverabilityState struct {
-	Confirmed           map[string]bool `json:"confirmed,omitempty"`
-	LastWhatsNewRelease string          `json:"lastWhatsNewRelease,omitempty"`
-	TipsPromoUntil      int64           `json:"tipsPromoUntil,omitempty"`
-	TipsNotBefore       int64           `json:"tipsNotBefore,omitempty"`
+	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
+	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
+	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
 }
 
 type ThemeIconStylingEntry struct {
