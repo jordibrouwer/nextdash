@@ -2684,7 +2684,7 @@
         "palettesInfoMessage": "Drie manieren om kleuren op dit tabblad te bewerken:\n\n• Donker en Licht — pas de fallback-paletten aan voor de klassieke dark/light-themes onder Algemeen → Weergave.\n\n• Custom themes — maak eigen single-palette themes met Custom theme toevoegen. Elk custom theme is één vaste look, geen dag/nacht-paar.\n\n• Ingebouwde themes (Cherry Graphite, Nordic Frost, enz.) kies je onder Algemeen → Weergave.",
         "saveColorsInfoTitle": "Opslaan kleuren vs config Opslaan",
         "saveColorsInfoMessage": "Twee aparte save-acties:\n\n• Opslaan kleuren (dit tabblad) — schrijft palet-wijzigingen van het Theme-tabblad naar de server. Gebruik dit na hex-wijzigingen of custom themes toevoegen/verwijderen.\n\n• Opslaan (config-header) — slaat Algemeen-instellingen op: actief theme, layout, bladwijzers, taal, enz. Slaat geen hex-waarden van dit tabblad op.\n\nTypische flow: kleuren bewerken → Opslaan kleuren → theme kiezen onder Algemeen → Weergave → Opslaan in de header.",
-        "customThemesInfoTitle": "Custom themes & auto dark mode",
+        "customThemesInfoTitle": "Eigen thema's & automatische donkere modus",
         "customThemesInfoMessage": "Custom themes zijn single palettes die je hier maakt.\n\n• Custom theme toevoegen kloont de standaard startkleuren. Hernoem het theme en pas kleuren rechts aan.\n\n• Gebruik het op het dashboard via Algemeen → Weergave en klik Opslaan in de config-header.\n\n• Auto dark mode (Algemeen → Weergave) werkt alleen met ingebouwde themes met aparte donker- en lichtvarianten. Het staat uit zolang een custom theme actief is.",
         "colorsReset": "Kleuren opnieuw ingesteld naar standaardwaarden",
         "errorResettingColors": "Kan kleuren niet opnieuw instellen"

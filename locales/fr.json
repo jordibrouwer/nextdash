@@ -2153,7 +2153,7 @@
         "resetConfigTagsTourFailedReload": "Impossible de démarrer la visite Tags. Actualisez la page et réessayez.",
         "resetConfigTagsTourFailedMobile": "Impossible de démarrer la visite Tags. Fenêtre plus large ou désactivez l’émulation mobile.",
         "helpPageIndexTitle": "Liens rapides",
-        "helpIntro": "This guide walks you through nextDash in plain language: how the dashboard feels day to day, where settings live, and which habits save time once you are past the first five minutes.",
+        "helpIntro": "Ce guide présente nextDash en langage clair : comment le tableau de bord s'utilise au quotidien, où se trouvent les réglages, et quelles habitudes font gagner du temps une fois les cinq premières minutes passées.",
         "helpFilterLabel": "Filtrer l'aide",
         "helpFilterPlaceholder": "Filtrer les sections d'aide…",
         "helpFilterNoResults": "Aucune section ne correspond.",
