@@ -191,6 +191,7 @@ environment:
 - `Shift + ←/→` — cycle between page tabs (plain arrows move bookmarks only, not pages)
 - `Shift + H` — open **Health** view directly (inside dashboard)
 - `,` — page overview: all pages with bookmark counts (`Tab` / `Shift+Tab` move between rows; arrow keys do not affect bookmarks behind the overlay)
+- `<` — open **config** (`<` is `Shift+,`); in config, `<` returns to the dashboard, confirming first if there are unsaved changes (**v2026.07.17.2**)
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern** and **Glass**, keyboard-selected rows use a full-row accent fill (**v2026.07.01.2**)
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
 - `G + 1–9` — jump to the nth category or smart collection and select its first bookmark (hold `G` ~300 ms, or press `G` then a digit; a **quick tap** on `G` opens bookmark shortcuts starting with `G` instead)
@@ -264,9 +265,12 @@ environment:
 - `←`/`→` — previous/next config tab; crosses into the next tab group at group edges (when focus is not in an input or modal)
 - `Alt` + `←`/`→` — jump to the first tab of the previous/next tab group
 - `S` — save changes
+- `<` — back to the dashboard (`Shift+,`); confirms first if there are unsaved changes
 - `Alt + ↑/↓` — reorder the selected bookmark on the Bookmarks tab
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
+
+**Dashboard ↔ config shortcut** (**v2026.07.17.2**) — `<` (which is `Shift+,`) jumps from the dashboard to config, and from config back to the dashboard — confirming first if there are unsaved config changes. It accepts both the `<` character and the physical comma key with Shift, so it works regardless of keyboard layout. On the same release, a fresh first visit to Config → General opens compact — **Essentials** with only **Localisation** expanded — until you set your own section layout.
 
 **Quick-start card** (first run only, any window width) — a compact three-step card walks through language & auto dark mode, column layout, and weather, then becomes a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet). Skip or dismiss any time; every setting it touches stays reachable in Config afterwards. Progress is stored server-side in `settings.quickStart`, so it holds across devices (**v2026.07.17**, replacing the onboarding wizard, config-tab guided tours, and dashboard feature tour).
 

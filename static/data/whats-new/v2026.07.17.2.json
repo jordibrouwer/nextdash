@@ -1,0 +1,25 @@
+{
+  "tag": "v2026.07.17.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-17",
+  "sections": [
+    {
+      "title": "Navigation",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Jump between dashboard and config with <code>&lt;</code></strong> — <code>&lt;</code> (that's <code>Shift+,</code>, next to the <code>,</code> page overview) opens config from the dashboard, and takes you back to the dashboard from config — asking to confirm first if there are unsaved changes. It's on the cheat sheet (<code>!</code> / <code>F1</code>) and Config → Keyboard."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config → General opens compact on first visit</strong> — a fresh first open lands on <strong>Essentials</strong> with only <strong>Localisation</strong> expanded instead of four sections at once. Once you expand or collapse a section, your own layout is remembered."
+        }
+      ]
+    }
+  ]
+}
