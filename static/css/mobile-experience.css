@@ -269,10 +269,8 @@ body[data-mobile-layout="true"] .general-keyboard-link-row {
     display: none !important;
 }
 
-/* Tips, search-flow hint, spotlights — desktop discoverability only */
-body[data-mobile-layout="true"] .button-hint,
-body[data-mobile-layout="true"] .search-flow-hint,
-body[data-mobile-layout="true"] .feature-spotlight {
+/* Search-flow hint — desktop discoverability only */
+body[data-mobile-layout="true"] .search-flow-hint {
     display: none !important;
 }
 

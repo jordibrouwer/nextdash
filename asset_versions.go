@@ -90,7 +90,7 @@ var sharedAssetVersions = pageAssetVersions{
 	VisualSettingsJS:       "theme-sync-1",
 	SettingsSanitizeJS:     "settings-sanitize-1",
 	DiscoverabilityJS:      "discoverability-state-4",
-	MobileExperienceCSS:    "phone-layout-6",
+	MobileExperienceCSS:    "phone-layout-7-hint-css-gone",
 	MobileExperienceJS:     "general-split-shell-1",
 	LayoutVersionUtilsJS:   "glass-migrate-1",
 	HealthBadgeJS:          "health-badge-count-only-1",
@@ -136,7 +136,7 @@ var sharedAssetVersions = pageAssetVersions{
 
 	DashboardCSS:            "health-icon-square-underline-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
-	LayoutModernCSS:         "health-icon-square-underline-1",
+	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 
 	AppNotificationCSS:       "app-notification-1",
 	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",
@@ -153,7 +153,7 @@ var sharedAssetVersions = pageAssetVersions{
 	OverlaysModernCSS:        "whats-new-config-parity-1",
 	SkeletonLoadingCSS:       "load-faster-1",
 	ReorderCSS:               "reorder-1",
-	SearchCSS:                "dashboard-whats-new-fab-1",
+	SearchCSS:                "dashboard-whats-new-fab-2-hint-css-gone",
 	StatusCSS:                "dashboard-chrome-c3-1",
 	DashboardEnhancementsCSS: "page-overview-modal-1",
 	FontsCSS:                 "self-hosted-scp-1",

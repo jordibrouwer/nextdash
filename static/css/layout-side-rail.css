@@ -227,19 +227,6 @@ body[data-button-position="side-left"] .search-flow-hint-text > .sfh-seg:nth-chi
     display: none;
 }
 
-body[data-button-position="side-left"][data-show-tips="true"] .button-hint {
-    position: fixed;
-    left: calc(var(--rail-width) + 0.65rem);
-    right: auto;
-    top: auto;
-    bottom: calc(var(--corner-fab-height, 2.75rem) * 2 + 1.15rem);
-    transform: none;
-    width: max-content;
-    max-width: min(20rem, calc(100vw - var(--rail-width) - 1.5rem));
-    text-align: left;
-    z-index: 1002;
-}
-
 /* ── One-time side-rail legend (icon → label map) ───────────────────────────── */
 .side-rail-legend {
     position: fixed;
@@ -581,17 +568,6 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
 
     body[data-button-position="side-left"] .search-flow-hint-text > .sfh-seg:nth-child(even) {
         display: inline;
-    }
-
-    body[data-button-position="side-left"][data-show-tips="true"] .button-hint {
-        position: absolute;
-        left: 50%;
-        right: auto;
-        top: auto;
-        bottom: calc(100% + 0.5rem);
-        transform: translateX(-50%);
-        text-align: center;
-        max-width: calc(100vw - 3rem);
     }
 
     body[data-button-position="side-left"] .side-rail-legend {
