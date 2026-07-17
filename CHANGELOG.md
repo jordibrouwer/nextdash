@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.17 — July 2026](#v20260717--july-2026)
 - [v2026.07.16 — July 2026](#v20260716--july-2026)
 - [v2026.07.15 — July 2026](#v20260715--july-2026)
 - [v2026.07.14.2 — July 2026](#v202607142--july-2026)
@@ -96,6 +97,37 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.17 — July 2026
+
+**Tours, spotlights, and promo balloons removed; quick-start card and Tips & tricks in Help take their place** — the entire interruptive discoverability layer (onboarding wizard, nine config-tab guided tours, dashboard feature tour, ~20 one-time promo balloons) is gone, replaced by a short first-run quick-start card and a proper Tips & tricks section in Help.
+
+### Onboarding
+
+- **new** **Quick-start card** — first run shows a compact three-step card (language & auto dark mode, packed columns & columns per row, open-in-new-tab & weather) followed by a short dismissible checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet). The cheat-sheet checklist row is a button so there is always a way to open it, even when the toolbar's cheat-sheet button is hidden. Progress lives in `settings.quickStart` server-side, not `localStorage`, so it holds across devices (`models.go`, `dashboard-quickstart.js`, `dashboard-quickstart.css`, `dashboard/dashboard-promos.js`).
+- **new** **Tips & tricks section in Help** — the rotating footer tips (64 entries, one line at a time, five to eight seconds apart) are retired. A new **Tips & tricks** `.help-block` groups 30 rewritten tips by task — Everyday, Adding bookmarks, Editing and organising, Finding things, Keeping it healthy, Making it yours — each naming what the key is *for*, not just the key. Picked up automatically by the Help search filter, quick-links nav, and accordion (`config-help-tips.js`, `config.html`, `locales/{en,nl,de,fr}.json`).
+
+### Removed
+
+- **fix** **Config-tab tours** — the nine guided tours (General, Bookmarks, Pages, Categories, Tags, Stats, Collections, Finders, Theme) and their ~40 call sites in config.js are removed; the modules are deleted and their stylesheets with them (`config-*-tour.js`, `config-general-tour.css`, `feature-tour.css`, `onboarding.css`).
+- **fix** **Dashboard promo balloons** — ~21 one-time "Got it" balloons (search modes, grid navigation, G+jump, smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks, preview, quick-add, week overview, category collapse/rename, quick move/tag/delete, page overview, cheat sheet, weather location) and the promo registry that sequenced them are gone, along with `dashboard-promo-placement.js`'s anchor-sync for keyboard selection moves. Everything they taught is already in the keyboard cheat sheet, in more detail. `dashboard-promo-placement.js` itself stays — it also positions the config settings-search popover and the dashboard quick-move popover (`static/js/dashboard-*-promo.js`, `static/css/dashboard-*-promo.css`).
+- **fix** **Spotlights, layout nudge, and one-time toasts** — the paste and preview-card spotlights, the "try modern layout" nudge, the inbox intro modal/toast, and the layout beta/glass toasts are removed. `dashboard-promos.js` drops from ~335 to ~115 lines now that the skip flags, retry budgets, and abort/reschedule bookkeeping that ordered these against each other have nothing left to order. The device-specific glass→classic layout migration this toast used to run on load moves to `layout-version-utils.js` (`dashboard-promos.js`, `layout-version-utils.js`).
+- **fix** **`:tour` and `:promo` commands removed** — both pointed at systems that no longer exist (`search-commands.js`).
+- **fix** **Settings search promo is the one balloon that stays** — its `isGuidedFlowActive()` guard collapses to just the What's new modal now that tours and spotlights are gone, and it no longer covers the config tab bar: it is clamped to the search field's top so it can hang below the anchor but never above it (`config-settings-search.js`, `config-settings-search.css`).
+- **fix** **Dead CSS removed** — eleven `.button-hint` rules across five stylesheets styled the tip strip above the footer buttons that no longer exists; the mobile rule that grouped it with `.feature-spotlight` is trimmed rather than dropped, since the search-flow hint it also covers is still live (`layout-modern.css`, `layout-side-rail.css`, `mobile-experience.css`, `search.css`, `dashboard.html`).
+
+### Help
+
+- **fix** **Help text matches what's actually there** — Getting started, Configuring, Search & toolbar, Workspace, Tags & collections, Inbox, and Finders no longer send you to buttons that are gone (e.g. "replay from Advanced → System → Tours & onboarding"); Getting started now describes the quick-start card. What's new entries keep their original tour/spotlight mentions since those releases really did ship them (`locales/{en,nl,de,fr}.json`).
+- **fix** **Two missing translations filled in** — `helpIntro` (Help's opening paragraph) was still English in German and French; `customThemesInfoTitle` was still English in Dutch. Found by auditing all four locale files for values that match English when the key sets were already in sync (`locales/{de,fr,nl}.json`).
+
+### Developer & docs
+
+- **fix** **What's new modal** — **v2026.07.17** JSON added for the removal + quick-start + Tips & tricks arc.
+- **fix** **README, MANUAL & Config Help** — updated throughout to describe the quick-start card and Tips & tricks instead of the removed tours, spotlights, and promo balloons.
+- **fix** **Cache-bust** — `whats-new-v164` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v122` dashboard release token.
 
 ---
 

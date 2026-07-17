@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.16**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.17**).
 
 ---
 
@@ -126,15 +126,14 @@ For day-to-day use you do **not** need to switch branches: clone the default **`
 ### First launch flow
 
 ```
-Install → Open URL in browser → Onboarding wizard (optional)
+Install → Open URL in browser → Quick-start card (optional)
     → Dashboard (may be empty) → Config to add pages/bookmarks
-    → Optional: What's new, layout tip, paste spotlight (desktop); config guided tours; feature tour; browser extension
+    → Optional: What's new; browser extension
 ```
 
-1. **Onboarding** — Language, links, weather/date, classic or modern layout, search mode, smart collections, optional status monitoring, and a combined keyboard & mouse bookmark step. The finish step covers pages and first bookmarks when you start empty. You can skip and change everything later in **Config → General**.
+1. **Quick-start card** — A compact three-step card in the corner: language & auto dark mode, column layout, and weather. Skip it whenever you like — nothing is locked in, and every setting it touches stays reachable in **Config → General** afterwards. It then becomes a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet) that dismisses itself once every item is done, or any time you close it (see [Quick-start card](#quick-start-card)).
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
-3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form.
-4. **Guided config tours** — The first time you open **General**, **Bookmarks**, **Theme**, **Finders**, or other config tabs on a desktop-width window, an optional step-by-step spotlight tour may start automatically (see [Guided config tours](#guided-config-tours)).
+3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form, plus a **Tips & tricks** section and a **What's new** recap.
 
 ---
 
@@ -159,7 +158,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 - Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once.  
 - Drag the **`//` prefix** in a category title to reorder sections.  
 - Add a new category (or page) straight from the **new-bookmark modal** — the **Category** and **Page** dropdowns each carry a **+ New…** option that creates and saves it inline, no bookmark required.  
-- Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. The first rename may show a one-time **Got it** promo beside the header; **Esc** dismisses the promo and cancels rename.
+- Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
 - In **config → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
 ### 4.3 Bookmarks
@@ -214,7 +213,6 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 │  [Smart collections]  [Tag collections]  [Categories…]      │
 │    └─ bookmark rows (icon · name · shortcut)                │
 ├─────────────────────────────────────────────────────────────┤
-│  Rotating tips (optional)                                     │
 │  [ + ] [ > ] [ : ] [ ? ] [ * ] [ ! ]   ← button bar         │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -228,7 +226,7 @@ Side rail layout (optional — **Config → General → Layout → Button bar po
 │> │  [Smart collections]  [Tag collections]  [Categories…] │
 │? │    └─ bookmark rows                                     │
 │: │                                                         │
-│* │  Rotating tips (optional)                               │
+│* │                                                         │
 │──│                                                         │
 │/ │                                                         │
 │! │                                                         │
@@ -291,14 +289,14 @@ Follow this path once; later you will mix steps freely.
 
 | Step | Action | Where |
 |------|--------|--------|
-| 1 | Complete or skip onboarding | First visit |
+| 1 | Complete or skip the quick-start card | First visit |
 | 2 | Open **config → pages** — add or rename pages | `/config#pages` |
 | 3 | Open **config → categories** — create sections per page | `/config#categories` |
 | 4 | Add 3–5 bookmarks with **&** quick-add | Dashboard |
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
 | 7 | Enable a theme you like | **config → general → appearance** |
-| 7b | (Optional) Let the **General**, **Bookmarks**, and **Theme** guided tours run when you open those tabs | `/config#general`, `/config#bookmarks`, `/config#colors` |
+| 7b | (Optional) Skim **Config → Help → Tips & tricks** for more shortcuts | `/config#help` |
 | 8 | Create a ZIP backup | **config → backups** |
 | 9 | (Optional) Install browser extension | `extension/` folder |
 | 10 | (Optional) Import old browser bookmarks | **config → backups → Import from Browser** |
@@ -334,7 +332,7 @@ With the dashboard focused and no text field active, paste a URL. A choice dialo
 
 ### 7.4 Inline edit after long-press
 
-Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **nearly opaque panel** (~96% background) with a **tour-like full-page blur** behind it — including in the **launcher** preset, where other tiles blur but the form stays sharp and readable. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes — **Esc** also works while the inline-edit discoverability promo is open (dismissing the promo cancels the form). **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Background dashboard re-renders are skipped while unsaved inline edits are open. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
+Long-press a bookmark row (~500 ms, not on the drag strip) to edit in place on the dashboard — including rows shown in **smart collections** (Today, Recently opened, etc.). The editor opens in a **nearly opaque panel** (~96% background) with a **full-page blur** behind it — including in the **launcher** preset, where other tiles blur but the form stays sharp and readable. The form shows field-level validation errors while you type. Success and error toasts use your UI language. **Save** or **Ctrl+Enter** writes changes to disk immediately (no separate dashboard Save button); **note** and **tags** sync to the bookmark on its category column and in the global store. Press **ESC** or click outside to dismiss; both use an in-app confirm dialog if you have unsaved changes. **Page switches**, **tag-filter** changes, and **config sync** from another tab also confirm before discarding unsaved edits. Background dashboard re-renders are skipped while unsaved inline edits are open. Keyboard grid navigation, **swipe page change**, and **Ctrl+V** paste are paused or blocked while the editor is open. Delete confirms first (modal above the editor), then persists right away; undo in the toast restores the bookmark on the server and in smart-collection views too.
 
 ### 7.5 Config → bookmarks (bulk and detail)
 
@@ -346,9 +344,7 @@ The breadcrumb row shows your current location (e.g. `bookmarks › Work › dev
 
 On a **phone** (≤768px), opening `/config#bookmarks` shows a clear *desktop only* card with a link back to the dashboard — use a wider window for the split-view editor.
 
-All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs and after guided tours.
-
-The first time you open this tab on a desktop-width window, a **10-step guided tour** walks through these areas (see [Guided config tours](#guided-config-tours)).
+All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs.
 
 ### 7.6 Browser extension
 
@@ -570,7 +566,6 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:collections` | Toggle smart collections (today, recent, stale, most used) |
 | `:backup` / `:export` | Open config backups or download ZIP backup |
 | `:metadata` | Health missing previews or config bookmarks |
-| `:tour` / `:promo` | Start feature tour or reset discoverability promos |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
 | `:layoutversion` | List classic / modern |
 | `:layoutversion modern` / `classic` / `toggle` | Switch layout version (`toggle` switches between classic and modern) |
@@ -732,11 +727,11 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 **Where to switch**
 
 - **Config → General → Layout → Layout version** — dropdown with a live description under the control.  
-- **First-run onboarding** — dedicated layout step with classic and modern previews.  
+- **Quick-start card** — the layout step covers packed columns and columns per row (see [Quick-start card](#quick-start-card)).  
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically after onboarding or on dashboard load. Last-seen release and dismissed promos sync via **`settings.discoverabilityState`** in `settings.json` across browsers (**v2026.07.01.1**). **Rotating footer tips** above the action buttons wait **one minute** after you finish or skip first-run onboarding before they start (they also refresh on page change without resetting that delay). **One-time discoverability promos** (desktop only) show **Got it** balloons beside features the first time you use them — search modes (`>`, `:`, `?`, filters), grid arrow navigation, **G+jump** (hold `G` ~300 ms or `G` then `1`–`9`, `G+P`, or `GG` — quick tap `G` opens shortcuts starting with `G`; the G+jump hint may appear on hold and retries when blocked by What's new or another overlay), smart collections, inline edit, tag cloud, tag-filter bulk toolbar, recent bookmarks (`*`), preview (`[`), quick-add (`&`), week overview, category collapse, **category rename** (first long-press or double-click rename; **Esc** on the promo cancels rename), quick move (`Shift+M`), quick tag (`Shift+T`), quick delete (`Shift+D`), page overview (`,`), keyboard cheat sheet (`!` / `F1`), and **weather location** when geolocation is blocked. Dismiss with **Got it** or `Esc`; they do not repeat after confirmation. **Layout-versions** (classic layout), **paste URL**, and **preview cards** spotlights are separate one-time hints that may follow in the same session — there is no queue bar or **Later this session** coordinator. Reset layout/paste/preview, **Reset all dashboard promos**, or individual promo resets from **config → general → Advanced → System & tools → Tours & onboarding**. Resetting the layout prompt from config when no dashboard tab is open queues a replay for the next dashboard visit.
+**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically on dashboard load. Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers (**v2026.07.01.1**). The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
 
 ### Layout presets
 
@@ -752,8 +747,6 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **config → theme** tab (`#colors`) — four subtabs: **Dark**, **Light** (default palettes), **Custom themes** (your saved palettes), and **Packaged themes** (edit built-in families such as Cherry Graphite). Live preview applies to palette cards only; a contrast hint warns when text vs background is too weak. **Export** / **import** JSON, **Undo**, and **↑/↓** reorder for custom themes. Press **S** or **Save colors** to persist. On mobile the tab is read-only (viewer banner).  
 - **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
-
-The first time you open the **Theme** tab on a desktop-width window, a **9-step guided tour** creates a temporary **Tour demo** palette, saves it, activates it on General, then removes it (see [Guided config tours](#guided-config-tours)).
 
 ### Config → pages & categories (list tabs)
 
@@ -774,7 +767,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.16** Inbox snooze / keyboard triage / notes / bulk mark-read & clear-read, Health always-on with optional background rechecks, Edit → dashboard inline editor, and corrected deep-link filters; **v2026.07.15** health as an in-dashboard view (opened from the heartbeat icon without leaving the dashboard; legacy `/health` links redirect to this view), new mnemonic view shortcuts (**Shift+H** for Health, **Shift+I** for Inbox, with legacy `0` kept), a cleaner config header that now keeps only **back to dashboard**, and health-view wording/localized cheat-sheet additions aligned across **EN/NL/DE/FR**; **v2026.07.14.1** clearer feedback when a category sorted A–Z or Recent can't have its bookmarks dragged (hover tooltip, not-allowed cursor, and a one-off note pointing you to switch back to manual order); **v2026.07.14** dashboard organising (drag a bookmark from anywhere on its row to reorder or move it between categories, no column flicker across columns, `.` to collapse or expand every category at once, the `//` category-title drag handle for reordering sections, and a **+ New…** option in the add-bookmark form's Page/Category dropdowns to create a page or category inline); **v2026.07.13.1** automatic-backup refinements (restore a stored backup in one click, a totals line, a Back Up Now last-backup-date fix, and same-second filename uniqueness); **v2026.07.13** automatic weekly local backups (a rolling set of 3 ZIPs under Config → Backup with download/delete/Back Up Now and a countdown, toggleable, restart-robust) plus two health fixes (bulk delete and unusual favicon filenames); **v2026.07.12** fresh defaults for new installs (Kelp Drift dark theme with auto dark mode on, and starter bookmarks seeding a *Tech* category with Unraid/Phoronix and a *Social* category with Bluesky instead of Facebook/Instagram) plus dashboard polish (the `&` quick-add omnibox restyled to match the search/commands/finders overlays, *Config → Bookmarks* opening on the first page each fresh load while remembering the session's page, and reliable loading of icons with unusual filenames); **v2026.07.11.4** smoother dialogs (keyboard and screen-reader focus handed back cleanly when a dialog closes, no console warnings); **v2026.07.11.3** bulk tags in the config bookmarks bulk toolbar (add, replace, or remove tags across every selected bookmark at once, with tag autocomplete); **v2026.07.11.2** tags moved above the fold in the bookmark forms (out of *More options*, right under Page/Category), the dashboard inline editor reordered to match (Page → Category → Tags → Note), autocomplete on custom-collection rule values, and a back/forward-cache fix; **v2026.07.11** clearer General settings (busiest sections split into labelled sub-groups: Localization → language / date & time, Appearance & Style → theme / text / extras, Layout → grid / spacing / extras), the Stats/Pages/Tags/Theme config tours no longer auto-starting (run them from Config → General → Tours & onboarding), plus accessibility polish (config spinner labels, health skip-to-content link, lazy category icons, and a no-JavaScript fallback message on the dashboard); **v2026.07.10.2** gzip-compressed responses (HTML/JS/CSS/JSON transfer 70-90% smaller), deferred config tour scripts (~374 KB) and peripheral dashboard scripts (~107 KB) off first paint, a line-style dashboard inbox icon matching the health icon, and quieter health borders (same cleanup as config: softer tile/panel borders, intro frame dropped, sections by spacing and headings); **v2026.07.10.1** quieter config borders (fewer nested frames; sections separated by spacing and headings, classic layout); **v2026.07.10** self-hosted default font (no Google Fonts request, works offline), deferred promo scripts for faster first paint, correct per-theme browser/PWA `theme-color`, centralized CSS cache-busting, and this 25-release modal history; **v2026.07.09** header health icon with counter (on by default), roomier dashboard side margins with exact config/health alignment at every width (including above 1600px), rounded status-row highlights with extra left inset for favicon clearance, config header health icon parity (dashboard-style icon + counter, inbox pill removed), and Stats inbox insights plus expand/collapse-all with remembered state; **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.17** removal of every tour, spotlight, and promo balloon in favor of the quick-start card and a **Tips & tricks** section in Help; **v2026.07.16** Inbox snooze / keyboard triage / notes / bulk mark-read & clear-read, Health always-on with optional background rechecks, Edit → dashboard inline editor, and corrected deep-link filters; **v2026.07.15** health as an in-dashboard view (opened from the heartbeat icon without leaving the dashboard; legacy `/health` links redirect to this view), new mnemonic view shortcuts (**Shift+H** for Health, **Shift+I** for Inbox, with legacy `0` kept), a cleaner config header that now keeps only **back to dashboard**, and health-view wording/localized cheat-sheet additions aligned across **EN/NL/DE/FR**; **v2026.07.14.1** clearer feedback when a category sorted A–Z or Recent can't have its bookmarks dragged (hover tooltip, not-allowed cursor, and a one-off note pointing you to switch back to manual order); **v2026.07.14** dashboard organising (drag a bookmark from anywhere on its row to reorder or move it between categories, no column flicker across columns, `.` to collapse or expand every category at once, the `//` category-title drag handle for reordering sections, and a **+ New…** option in the add-bookmark form's Page/Category dropdowns to create a page or category inline); **v2026.07.13.1** automatic-backup refinements (restore a stored backup in one click, a totals line, a Back Up Now last-backup-date fix, and same-second filename uniqueness); **v2026.07.13** automatic weekly local backups (a rolling set of 3 ZIPs under Config → Backup with download/delete/Back Up Now and a countdown, toggleable, restart-robust) plus two health fixes (bulk delete and unusual favicon filenames); **v2026.07.12** fresh defaults for new installs (Kelp Drift dark theme with auto dark mode on, and starter bookmarks seeding a *Tech* category with Unraid/Phoronix and a *Social* category with Bluesky instead of Facebook/Instagram) plus dashboard polish (the `&` quick-add omnibox restyled to match the search/commands/finders overlays, *Config → Bookmarks* opening on the first page each fresh load while remembering the session's page, and reliable loading of icons with unusual filenames); **v2026.07.11.4** smoother dialogs (keyboard and screen-reader focus handed back cleanly when a dialog closes, no console warnings); **v2026.07.11.3** bulk tags in the config bookmarks bulk toolbar (add, replace, or remove tags across every selected bookmark at once, with tag autocomplete); **v2026.07.11.2** tags moved above the fold in the bookmark forms (out of *More options*, right under Page/Category), the dashboard inline editor reordered to match (Page → Category → Tags → Note), autocomplete on custom-collection rule values, and a back/forward-cache fix; **v2026.07.11** clearer General settings (busiest sections split into labelled sub-groups: Localization → language / date & time, Appearance & Style → theme / text / extras, Layout → grid / spacing / extras), the Stats/Pages/Tags/Theme config tours no longer auto-starting (run them from Config → General → Tours & onboarding), plus accessibility polish (config spinner labels, health skip-to-content link, lazy category icons, and a no-JavaScript fallback message on the dashboard); **v2026.07.10.2** gzip-compressed responses (HTML/JS/CSS/JSON transfer 70-90% smaller), deferred config tour scripts (~374 KB) and peripheral dashboard scripts (~107 KB) off first paint, a line-style dashboard inbox icon matching the health icon, and quieter health borders (same cleanup as config: softer tile/panel borders, intro frame dropped, sections by spacing and headings); **v2026.07.10.1** quieter config borders (fewer nested frames; sections separated by spacing and headings, classic layout); **v2026.07.10** self-hosted default font (no Google Fonts request, works offline), deferred promo scripts for faster first paint, correct per-theme browser/PWA `theme-color`, centralized CSS cache-busting, and this 25-release modal history; **v2026.07.09** header health icon with counter (on by default), roomier dashboard side margins with exact config/health alignment at every width (including above 1600px), rounded status-row highlights with extra left inset for favicon clearance, config header health icon parity (dashboard-style icon + counter, inbox pill removed), and Stats inbox insights plus expand/collapse-all with remembered state; **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -874,7 +867,7 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 ### Essentials vs Advanced (general)
 
 - **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/?hv_filter=broken#health` when broken issues exist, otherwise `/#health`; from the dashboard use **`Shift+H`**). Language changes apply immediately; other changes need **Save**.
-- **Advanced** — Full status tuning, branding, **Search & input**, **System & tools** (launcher mode, device settings), and a standalone **Tours & onboarding** card (tour replay, onboarding replay, spotlight resets, what's new) (**v2026.07.07**). Click a **section title** (+/−) to expand or collapse each panel.
+- **Advanced** — Full status tuning, branding, **Search & input**, and **System & tools** (launcher mode, device settings) (**v2026.07.07**; the **Tours & onboarding** card was removed in **v2026.07.17** along with everything it controlled). Click a **section title** (+/−) to expand or collapse each panel.
 - **Layer toolbar (v2026.07.04)** — **Essentials**, **Advanced**, and **Show all** switch in one row at the top of the fused General surface.
 - **Sections index & accordion (v2026.07.07)** — a sticky **quick links** sidebar (same split-shell pattern as **Stats** and **Help**) lists every section next to the settings content and highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time. Clicking the link for an already-open section that's in view collapses it again; clicking the link for an open section that has scrolled out of view scrolls back to it instead of collapsing it invisibly off-screen. Hidden on phones (same panels as the mobile layout below). Sections have a dividing border between them, and the vertical divider next to the quick-links sidebar runs the full height of the page (**v2026.07.08**). Quick-link clicks land on the section title instead of scrolling a few lines past it (**v2026.07.08.1**).
 - **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls.
@@ -889,8 +882,8 @@ Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**
 - **Save row** — compact strip with **Save**, **Undo** / **Discard** (only when there are unsaved changes), **Requires save** / **Auto-save** / **Read-only** / **Save colors** pill, and one dirty/saved/syncing status line.
 - **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. When a tab in a group has unsaved changes, the group label shows a dot (e.g. **System ●**) (**v2026.07.01.4**). Active group and tab use stronger accent styling (**v2026.07.04**).
 - **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
-- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll). Dismiss with **Got it**, focus, or typing. Replay from **Tours & onboarding → Reset settings search promo**. Skips mobile and active guided tours.  
-- **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard, tour resets). Settings navigation is separate — use search settings, not the command palette.
+- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll, clamped so it never covers the tab bar). Dismiss with **Got it**, focus, or typing. It is the only one-time promo balloon left in the app (**v2026.07.17**). Skips mobile.  
+- **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard). Settings navigation is separate — use search settings, not the command palette.
 
 #### Config tab bar (keyboard)
 
@@ -907,34 +900,28 @@ Guards: shortcuts do not fire while focus is in an input, textarea, select, cont
 #### Layout and structure
 
 - **Tab groups (v2026.07.01)** — labelled groups **System**, **Dashboard**, **Extras**, **Help** with proportional width; active group highlighted; **Keyboard** under System. Tab bar may show a *more tabs →* hint when it overflows horizontally.
-- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1 / v2026.07.01.4 / v2026.07.01.5 / v2026.07.01.8 / v2026.07.04 / v2026.07.05)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout (`config-list-tab`, **v2026.07.01.5** / **v2026.07.04**). **Pages** and **Categories** also show a **Usage** column (popularity bar + bookmark count, like Tags) (**v2026.07.01.4**). **Bookmarks** uses a master/detail split with toolbar above the panes (**v2026.07.04**); **Collections** editor sits inside its fused surface (**v2026.07.01.5**). **Stats** uses a Help-style split shell for chip-nav + sidebar (**v2026.07.04**). **Help** uses the same split-shell pattern with chip navigation (**v2026.07.05** / B5). **Theme** color rows use divided-list rhythm inside the fused surface (**v2026.07.04**); Colors subtabs match the General layer switcher (**v2026.07.05**). **Keyboard** and **Backups** use the fused `config-tab-surface` pattern. On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows (Classic **header chrome** stays separate from save row and tabs — **v2026.07.01.3**, C10 reverted). Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs. Config chrome respects `prefers-reduced-motion` (**v2026.07.01.4** / **v2026.07.05** C15); tag cloud, keyboard pulse, health shimmer, settings-search promo, skeleton loaders, and spotlight tours also respect it (**v2026.07.01.8**). Unsaved group dots include **Extras ●** when only **Collections** changes (**v2026.07.01.8** / C14).
+- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1 / v2026.07.01.4 / v2026.07.01.5 / v2026.07.01.8 / v2026.07.04 / v2026.07.05)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout (`config-list-tab`, **v2026.07.01.5** / **v2026.07.04**). **Pages** and **Categories** also show a **Usage** column (popularity bar + bookmark count, like Tags) (**v2026.07.01.4**). **Bookmarks** uses a master/detail split with toolbar above the panes (**v2026.07.04**); **Collections** editor sits inside its fused surface (**v2026.07.01.5**). **Stats** uses a Help-style split shell for chip-nav + sidebar (**v2026.07.04**). **Help** uses the same split-shell pattern with chip navigation (**v2026.07.05** / B5). **Theme** color rows use divided-list rhythm inside the fused surface (**v2026.07.04**); Colors subtabs match the General layer switcher (**v2026.07.05**). **Keyboard** and **Backups** use the fused `config-tab-surface` pattern. On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows (Classic **header chrome** stays separate from save row and tabs — **v2026.07.01.3**, C10 reverted). Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs. Config chrome respects `prefers-reduced-motion` (**v2026.07.01.4** / **v2026.07.05** C15); tag cloud, keyboard pulse, health shimmer, settings-search promo, and skeleton loaders also respect it (**v2026.07.01.8**). Unsaved group dots include **Extras ●** when only **Collections** changes (**v2026.07.01.8** / C14).
 - **Save UX** — tabs that auto-save (Pages, Categories, Finders, …) show an **Auto-save** pill in the **save row**; General and Bookmarks show **Requires save** until you click **Save**. Stats is **Read-only**; Theme uses **Save colors**. One status line beside **Save** shows dirty / saved / syncing. **Undo** and **Discard** in the save row appear only when something changed.
 - **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
-- **Tours & onboarding** — collapsible block inside **Advanced → System & tools**: onboarding wizard replay, feature tour link, **What's new**, **Reset all dashboard promos**, **Reset layout versions prompt**, **Reset paste spotlight**, **Reset preview cards spotlight**, **Reset settings search promo**, **Reset G+jump promo**, **Reset cheat sheet promo**, **Reset weather location promo**, and per-tab **Show … tour again** buttons (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme).
+### Quick-start card
 
-### Guided config tours
+**v2026.07.17** replaced the onboarding wizard, the nine config-tab guided tours, the dashboard feature tour, and around twenty one-time discoverability balloons with one lightweight, non-blocking card. Nothing about it dims the page, locks scroll, or blocks other controls — you can ignore it and keep using the dashboard normally.
 
-**One-time spotlight tours** explain config without reading every panel first. Each tour highlights one UI region at a time with a small card (Back, Next, Skip tour, step counter). The card stays near the bottom on large highlights so it does not cover the spotlight. Page scroll is locked per step so the highlight stays stable. While a tour runs, the **rest of the config page is dimmed and non-interactive** — tab buttons, Save, settings search, and other fields cannot be clicked; only the **spotlight region** for the current step and the **tour card** stay active, so you cannot switch tabs mid-tour. Tours need a **desktop-width** window (the mobile config layout does not run them).
+**Setup step** — On first load, a compact card in the bottom-left corner walks through three short steps:
 
-| Tour | When it starts | What it covers |
-|------|----------------|----------------|
-| **General** (11 steps) | First visit to **config → general** | Overview-only welcome, Essentials vs Advanced layers, appearance, layout, bookmarks, dashboard toolbar, smart collections summary, Advanced section nav, other config tabs, **Search settings…** (`Ctrl+Shift+K`), **Save** |
-| **Bookmarks** (extended) | First visit to **config → bookmarks** | Split layout, collapsed **Context** panel (page/category switcher — not full structure editing), **+ Bookmark** menu, filters, optional demo bookmarks (editor, detail panel, dashboard **+**), search, bulk toolbar, favicon policy, cleanup of demos, **Save** |
-| **Pages** (8 steps) | First visit to **config → pages** | Page list, add page, optional demo page, naming, dashboard handoff, remove page, demo cleanup |
-| **Categories** (8 steps) | First visit to **config → categories** | Per-page categories, add category, optional demo **news** category, name/icon, dashboard reorder, remove, cleanup |
-| **Tags** (8 steps) | First visit to **config → tags** | Tag cloud, list actions, optional demo bookmark with tag (via Bookmarks tab), tags field, see result on Tags tab, cleanup |
-| **Collections** (11 steps) | First visit to **config → collections** | List, new collection, optional demo rules (tag/category/shortcut, AND/OR), save to dashboard, preview on dashboard, cleanup |
-| **Finders** (8 steps) | First visit to **config → finders** | Concept, fields, **+ Add finder**, optional **Google** example (`?g`), dashboard usage, reorder/remove, **Save** |
-| **Stats** (12 steps) | First visit to **config → stats** — index, overview, cleanup score, activity, top bookmarks, pages/categories, shortcuts, **tags**, rot & cleanup, conflicts (Health link), search/status settings (re-enabled **v2026.07.02**) |
-| **Theme** (9 steps) | First visit to **config → theme** (`#colors`) | Editor, dark/light/custom subtabs, add custom theme, auto **Tour demo** palette, live preview, **Save colors**, **General → Appearance** to activate, confirm removal and restore previous theme |
+| Step | Covers |
+|------|--------|
+| 1. Language & theme | UI language, auto dark mode |
+| 2. Layout | Packed columns, columns per row |
+| 3. Links & weather | Open links in new tab or same tab, show weather next to the date, weather location |
 
-**Completion** — Each tour runs automatically only until you finish or skip it. Completion is stored in your settings (`configGeneralTourCompleted`, `configBookmarksTourCompleted`, `configPagesTourCompleted`, `configCategoriesTourCompleted`, `configTagsTourCompleted`, `configCollectionsTourCompleted`, `configFindersTourCompleted`, `configStatsTourCompleted`, `configThemeTourCompleted`) and in browser `localStorage`.
+Skip at any step, or finish to apply your choices immediately. Nothing here is locked in — every setting it touches stays reachable afterwards in **Config → General**.
 
-**Replay** — Open **config → general → Advanced** → **System & tools** and expand the **Tours & onboarding** block. Each tab has a **Show … tour again** button (General, Bookmarks, Finders, Stats, Categories, Tags, Pages, Collections, Theme). Open the matching tab first if the tour does not start. If a tour leaves the page scroll-locked without a visible card, refresh once — stale tour state is cleared automatically on load.
+**Checklist step** — Once setup is done (or skipped), the same card becomes a short checklist: add your first bookmark, tag a bookmark, open **Config → General**, and see the keyboard cheat sheet (its row is a button, since the toolbar's own cheat-sheet button is off by default on a fresh install — pressing **`!`** or **`F1`** also works). Items check themselves off as you do them; the checklist closes on its own once everything is done, or any time you dismiss it with the **×**.
 
-**Mobile** — Tours do not auto-start on the phone config layout (≤768px). Portrait tablets and wider touch layouts keep full config and may run tours. Rotating footer tips, the settings search promo, and promo banners are also hidden on the broader mobile dashboard layout.
+**Where it lives** — Progress is stored server-side in `settings.quickStart` (`setupDone`, `dismissed`, `visitedConfig`, `seenCheatsheet`), not in browser `localStorage`, so it stays in sync across devices. Once dismissed or completed, it does not come back. Skips mobile — the phone config layout doesn't run it either.
 
-**Not the same as** — **First-run onboarding** (language, layout, status, finish step for pages/bookmarks) or the dashboard **feature tour** (search, finders, commands — start from **config → general → Advanced → System & tools → Start tour**, or `/?tour=1`; each step highlights the matching control with a focus ring). After onboarding, **What's new** may open first; classic-layout users may then see a **layout-versions** tip, a **paste URL** spotlight, and a **preview cards** spotlight in the same session — separate from config tab tours.
+**Not the same as** — the **settings search promo** (a separate one-time balloon on your first desktop config visit, see below) or the **What's new** modal, which may still open automatically on dashboard load when there's an unread release.
 
 ### Config → Help
 
@@ -942,7 +929,7 @@ Available on every screen width (including phone). The **Help** tab uses the sha
 
 - **Quick links & accordion (v2026.07.08)** — the sidebar highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time, same behaviour as General's section accordion. Clicking a quick link always scrolls so the section's title lands below the sticky toolbar instead of partway down the section.
 - **Support the project** — a **Support me on Ko-fi** button at the bottom of Help, centered on its own row with the same twinkling-star glow animation as the What's New modal's donate CTA (**v2026.07.08**); the **jordibrw.nl** signature link below it is larger and accent-themed.
-- **What's new recap** — scrollable history of up to **25 recent** releases in the ★ modal; **v2026.07.16** documents Inbox snooze, keyboard triage, notes, bulk clean-up, Health always-on, optional background rechecks, and Edit → inline editor; **v2026.07.15** documents health as an in-dashboard view, new `Shift+H` / `Shift+I` view shortcuts, config-header cleanup, and localized health-view/cheat-sheet text parity across EN/NL/DE/FR; **v2026.07.08.1** documents the General quick-link scroll offset hotfix; **v2026.07.08** documents the Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** documents General's split-shell (sticky quick links, section accordion), Advanced further split into smaller cards, and number-input styling; **v2026.07.05.1** documents hotfixes (★ corner FAB below tag cloud, Config Help *Show what's new*, modal chrome parity, status-row highlight, save-indicator and merge fixes); **v2026.07.05** documents config shell polish (Help B5, flattened cards, B10/C15), dashboard chrome (toolbar modals for recent/help, D8/D12, fresh-install footer defaults, Classic beta notice); **v2026.07.04** documents config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
+- **What's new recap** — scrollable history of up to **25 recent** releases in the ★ modal; **v2026.07.17** documents the removal of every tour, spotlight, and promo balloon, the new quick-start card, and the Tips & tricks section in Help; **v2026.07.16** documents Inbox snooze, keyboard triage, notes, bulk clean-up, Health always-on, optional background rechecks, and Edit → inline editor; **v2026.07.15** documents health as an in-dashboard view, new `Shift+H` / `Shift+I` view shortcuts, config-header cleanup, and localized health-view/cheat-sheet text parity across EN/NL/DE/FR; **v2026.07.08.1** documents the General quick-link scroll offset hotfix; **v2026.07.08** documents the Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** documents General's split-shell (sticky quick links, section accordion), Advanced further split into smaller cards, and number-input styling; **v2026.07.05.1** documents hotfixes (★ corner FAB below tag cloud, Config Help *Show what's new*, modal chrome parity, status-row highlight, save-indicator and merge fixes); **v2026.07.05** documents config shell polish (Help B5, flattened cards, B10/C15), dashboard chrome (toolbar modals for recent/help, D8/D12, fresh-install footer defaults, Classic beta notice); **v2026.07.04** documents config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
 - **Translated** — EN, NL, DE, FR (same keys as the rest of config).
 - **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
 - **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
@@ -958,7 +945,7 @@ On phone, Help is the only config tab besides **General** that shows the full do
 | `Alt` + `←` / `→` | Jump to first tab of previous / next group |
 | `S` | Save |
 | `Alt+↑` / `Alt+↓` | Reorder bookmark in list |
-| `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard, tour resets) |
+| `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard) |
 | `Ctrl/Cmd+Shift+K` | Find settings (tabs, panels, labels, help sections) |
 
 ---
@@ -1074,15 +1061,15 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing and for **guided config tours** (General and Bookmarks). If you open `/config#bookmarks` on a phone, a **desktop only** card explains the limit and links back to the dashboard.
+On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing. If you open `/config#bookmarks` on a phone, a **desktop only** card explains the limit and links back to the dashboard.
 
-Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers or guided General tour.
+Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers.
 
-**Tablets** — Portrait tablets and other touch layouts above 768px keep the full config (all tabs, Essentials/Advanced layers, settings search in the breadcrumb, guided tours). Only true phone widths use the reduced layout.
+**Tablets** — Portrait tablets and other touch layouts above 768px keep the full config (all tabs, Essentials/Advanced layers, settings search in the breadcrumb). Only true phone widths use the reduced layout.
 
 ### Phone vs desktop
 
-nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer and config tabs. **Touch layout** (portrait tablets, coarse pointers) still skips hover previews and discoverability promos but keeps the **full desktop dashboard toolbar** on tablets wider than 768px. A dismissible banner on dashboard and config summarizes the limits.
+nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer and config tabs. **Touch layout** (portrait tablets, coarse pointers) still skips hover previews but keeps the **full desktop dashboard toolbar** on tablets wider than 768px. A dismissible banner on dashboard and config summarizes the limits.
 
 | Feature | Phone (≤768px) | Tablet / desktop |
 |---------|----------------|------------------|
@@ -1094,9 +1081,9 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
 | **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
-| **Config tabs** | **General** (language, theme, layout) + **Help**; `#bookmarks` shows desktop-only card | Bookmarks, pages, backup, stats, health, theme editor, tours, all settings |
+| **Config tabs** | **General** (language, theme, layout) + **Help**; `#bookmarks` shows desktop-only card | Bookmarks, pages, backup, stats, health, theme editor, all settings |
 | **Link preview on hover** | Off | When enabled in settings |
-| **Guided tours & footer tips** | Skipped / hidden | Optional on first visit |
+| **Quick-start card & settings search promo** | Skipped / hidden | Optional on first visit |
 
 ### Touch gestures
 
@@ -1254,7 +1241,7 @@ Preview metadata is cached in memory and flushed periodically (~30 s) and on shu
 
 ### Dashboard empty after install
 
-Normal. Add bookmarks via **&**, **+**, import, or config. Run onboarding if offered — the finish step covers pages and first bookmarks.
+Normal. Add bookmarks via **&**, **+**, import, or config. Walk through the quick-start card if it's offered — it covers language, layout, and weather before becoming a checklist that includes adding your first bookmark.
 
 ### Dashboard failed to load
 
@@ -1286,19 +1273,18 @@ Click **Save** in config (sticky bar) when the save row shows **Requires save**.
 
 A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **Allow localhost & private-network bookmarks** is off. Enable it under **Config → General → Advanced**, change the URL, or let nextDash suggest enabling the flag when private URLs are detected. Save posts settings before bookmarks so the flag applies during validation.
 
-### Config guided tour does not start
+### Quick-start card doesn't appear
 
-- Use a **wider browser window** or turn off mobile device emulation.  
-- Open the correct tab (**general**, **bookmarks**, **theme** / `#colors`, **finders**, **stats**, …) before replaying from **System & tools**.  
-- If you already completed the tour, expand the **Tours & onboarding** block in **config → general → Advanced → System & tools** and use the matching **Show … tour again** button (e.g. **Show Theme tour again**).  
-- Refresh the page if the editor is still loading, then try again.
+- It only shows once: if you already finished or dismissed it, `settings.quickStart.dismissed` is `true` and it will not come back on this account.  
+- It is skipped on mobile — use a **wider browser window** or turn off mobile device emulation.  
+- Hard-refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) after an update if you still run cached JavaScript.
 
 ### Settings search promo does not appear
 
 - Use a **desktop-width** window (>768px; not portrait tablet or mobile emulation).  
-- The promo shows once until dismissed — use **Tours & onboarding → Reset settings search promo** to replay it.  
+- The promo shows once until dismissed, focused, or you start typing in the field — there is no reset control in Config for it.  
 - Hard-refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) after an update if you still run cached JavaScript.  
-- Wait a few seconds after the config page finishes loading; the promo waits until guided tours finish.
+- Wait a few seconds after the config page finishes loading.
 
 ### Weather not showing
 
@@ -1327,7 +1313,7 @@ arrows nav  Enter open    ; edit       Shift+M move  Shift+T tag  Shift+D delete
 ### Config (desktop)
 
 ```
-Ctrl/Cmd+K          quick actions (save, open dashboard, tours)
+Ctrl/Cmd+K          quick actions (save, open dashboard)
 Ctrl/Cmd+Shift+K    find any setting, tab, or help section
 :layoutversion      switch Classic / Modern layout (dashboard)
 ```

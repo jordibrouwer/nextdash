@@ -1,0 +1,47 @@
+{
+  "tag": "v2026.07.17",
+  "date": "July 2026",
+  "releasedAt": "2026-07-17",
+  "modalLead": "The tours, spotlights, and promo balloons are gone. In their place: a short quick-start card on first run, and a proper Tips & tricks section in Help.",
+  "sections": [
+    {
+      "title": "Onboarding",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Quick-start card replaces the wizard</strong> — first run now shows a compact three-step card (language &amp; auto dark mode, layout, weather) followed by a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet). Skip or dismiss any time; progress is saved server-side per user, so it holds across devices."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tips &amp; tricks in Help</strong> — the rotating footer tips are retired. Config → Help now has a proper <strong>Tips &amp; tricks</strong> section with 30 tips grouped by task (Everyday, Adding bookmarks, Editing and organising, Finding things, Keeping it healthy, Making it yours), picked up by the Help search filter and quick-links nav like any other section."
+        }
+      ]
+    },
+    {
+      "title": "Removed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Every tour, spotlight, and promo balloon is gone</strong> — the onboarding wizard, the nine config-tab guided tours, the dashboard feature tour, and roughly twenty one-time discoverability balloons (search modes, G+jump, grid navigation, smart collections, inline edit, and more). Everything they taught is already in the keyboard cheat sheet (<kbd>!</kbd> or <kbd>F1</kbd>), in more detail. The <code>:tour</code> and <code>:promo</code> commands are gone with them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings search promo stays</strong> — the one-time balloon that points at <strong>Search settings…</strong> on your first config visit is the only survivor; it no longer covers the tab bar."
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Getting started describes the real flow</strong> — Help no longer sends you to buttons that don't exist any more; Getting started, Configuring, Search &amp; toolbar, Workspace, Tags &amp; collections, Inbox, and Finders are rewritten for the quick-start card and the removed tours, in all four languages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Two missing translations filled in</strong> — the Help intro paragraph and the custom-themes info title are now translated in every language instead of falling back to English."
+        }
+      ]
+    }
+  ]
+}
