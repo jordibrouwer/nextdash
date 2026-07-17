@@ -232,6 +232,38 @@ body[data-layout-version="modern"] .help-tab-surface {
     text-transform: lowercase;
 }
 
+.help-tips-catalog {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.help-tips-group-title {
+    margin: 0.6rem 0 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--accent-primary);
+}
+
+.help-tips-group-title:first-child {
+    margin-top: 0;
+}
+
+.help-tips-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.6;
+}
+
+.help-tips-list li + li {
+    margin-top: 0.3rem;
+}
+
+.help-tips-list code {
+    white-space: nowrap;
+}
+
 .help-keyboard-cta {
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.03em;

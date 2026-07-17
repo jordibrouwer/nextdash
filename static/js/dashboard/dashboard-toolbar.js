@@ -16,18 +16,6 @@ class DashboardToolbar {
                 d.showKeyboardCheatSheet();
             });
         }
-        const searchButton = document.getElementById('search-button');
-        if (searchButton) {
-            searchButton.addEventListener('click', () => d.markInlineTipUsed('search_open'));
-        }
-        const findersButton = document.getElementById('finders-button');
-        if (findersButton) {
-            findersButton.addEventListener('click', () => d.markInlineTipUsed('finder_open'));
-        }
-        const commandsButton = document.getElementById('commands-button');
-        if (commandsButton) {
-            commandsButton.addEventListener('click', () => d.markInlineTipUsed('command_open'));
-        }
         const recentButton = document.getElementById('recent-bookmarks-button');
         if (recentButton) {
             recentButton.addEventListener('click', () => {

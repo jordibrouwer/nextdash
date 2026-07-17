@@ -301,7 +301,6 @@ class DashboardPageNav {
                 if (!switched) {
                     return;
                 }
-                d.markInlineTipUsed('page_switch');
                 pageBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
             });
             pageBtn.addEventListener('keydown', (e) => {

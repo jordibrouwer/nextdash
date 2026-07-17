@@ -211,7 +211,6 @@ class SearchComponent {
         const findersButton = document.getElementById('finders-button');
         if (findersButton) {
             findersButton.addEventListener('click', () => {
-                window.dashboardInstance?.markInlineTipUsed?.('finder_open');
                 this.openSearchInterface();
                 this.currentQuery = '?';
                 this.updateSearch();
@@ -223,7 +222,6 @@ class SearchComponent {
         const commandsButton = document.getElementById('commands-button');
         if (commandsButton) {
             commandsButton.addEventListener('click', () => {
-                window.dashboardInstance?.markInlineTipUsed?.('command_open');
                 this.openSearchInterface();
                 this.currentQuery = ':';
                 this.updateSearch();
@@ -237,11 +235,9 @@ class SearchComponent {
                 e.stopPropagation();
                 const mode = tab.dataset.mode;
                 if (mode === 'command') {
-                    window.dashboardInstance?.markInlineTipUsed?.('command_open');
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
                 } else if (mode === 'finder') {
-                    window.dashboardInstance?.markInlineTipUsed?.('finder_open');
                     this.currentQuery = '?';
                 } else {
                     this.currentQuery = '';
@@ -509,7 +505,6 @@ class SearchComponent {
                 this.addToQuery(':');
                 return;
             }
-            window.dashboardInstance?.markInlineTipUsed?.('command_open');
             const keyNav = window.dashboardInstance?.keyboardNavigation;
             const selected = keyNav && typeof keyNav.getSelectedBookmark === 'function'
                 ? keyNav.getSelectedBookmark()
@@ -547,7 +542,6 @@ class SearchComponent {
         // Handle ? key to start finders
         if (key === '?') {
             e.preventDefault();
-            window.dashboardInstance?.markInlineTipUsed?.('finder_open');
             this.addToQuery('?');
             return;
         }
@@ -2014,7 +2008,6 @@ class SearchComponent {
 
     openBookmark(bookmark) {
         this.recordSearchHistory(this.currentQuery);
-        window.dashboardInstance?.markInlineTipUsed?.('bookmark_open');
 
         // Close search first if it's active
         if (this.searchActive) {
@@ -2093,7 +2086,6 @@ class SearchComponent {
 
     // Open search interface directly (for button click)
     openSearchInterface() {
-        window.dashboardInstance?.markInlineTipUsed?.('search_open');
         if (!this.searchActive) {
             this.currentQuery = '';
             this.searchMatches = [];
@@ -2107,7 +2099,6 @@ class SearchComponent {
     openSearchWithTagFilter(tag) {
         const normalized = String(tag || '').trim().toLowerCase();
         if (!normalized) return;
-        window.dashboardInstance?.markInlineTipUsed?.('search_open');
         this.commandsComponent.resetState();
         this.currentQuery = `tag:${normalized}`;
         this.selectedMatchIndex = 0;

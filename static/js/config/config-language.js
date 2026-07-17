@@ -137,6 +137,9 @@ class ConfigLanguage {
         if (document.getElementById('config-main')) {
             window.ConfigSettingsSearch?.relocateForLayout?.();
             window.ConfigSettingsSearch?.syncMobileLayout?.({ rebuildIndex: false });
+            // Tips are injected, not data-i18n markup, so applyTranslations does not
+            // reach them; re-render so a language switch updates them too.
+            window.ConfigHelpTips?.render?.({ t: (key) => this.t(key) });
             document.dispatchEvent(new CustomEvent('nextdash:translations-applied'));
             this.scheduleSearchIndexRefresh();
             const tab = window.configManager?.ui?._currentTab;

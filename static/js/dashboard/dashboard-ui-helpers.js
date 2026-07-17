@@ -43,62 +43,8 @@ class DashboardUiHelpers {
     }
 
 
-    setTipHtml(element, html) {
-        const d = this.dash;
-        if (!element) return;
-        element.innerHTML = this.sanitizeTipHtml(html);
-    }
 
 
-    sanitizeTipHtml(html) {
-        const d = this.dash;
-        const source = String(html || '');
-        if (!source) return '';
-
-        const doc = new DOMParser().parseFromString(`<div>${source}</div>`, 'text/html');
-        const root = doc.body.firstElementChild;
-        if (!root) return this.escapeHtml(source);
-
-        const sanitizeNode = (node) => {
-            if (node.nodeType === Node.TEXT_NODE) {
-                return document.createTextNode(node.textContent);
-            }
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                return null;
-            }
-
-            const tag = node.tagName.toLowerCase();
-            if (tag === 'code') {
-                const code = document.createElement('code');
-                node.childNodes.forEach((child) => {
-                    const sanitized = sanitizeNode(child);
-                    if (sanitized) code.appendChild(sanitized);
-                });
-                return code;
-            }
-
-            if (tag === 'a') {
-                const href = String(node.getAttribute('href') || '').trim();
-                const classes = String(node.getAttribute('class') || '').split(/\s+/);
-                if (classes.includes('button-hint-link') && /^\/[a-z0-9#./?=&_-]*$/i.test(href)) {
-                    const link = document.createElement('a');
-                    link.className = 'button-hint-link';
-                    link.href = href;
-                    link.textContent = node.textContent;
-                    return link;
-                }
-            }
-
-            return document.createTextNode(node.textContent);
-        };
-
-        const wrapper = document.createElement('div');
-        root.childNodes.forEach((child) => {
-            const sanitized = sanitizeNode(child);
-            if (sanitized) wrapper.appendChild(sanitized);
-        });
-        return wrapper.innerHTML;
-    }
 
     /**
      * Recent bookmarks by `lastOpened` (newest first).

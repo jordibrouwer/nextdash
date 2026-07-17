@@ -219,14 +219,6 @@ class DashboardData {
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;
             }
-            if (typeof d.settings.showTips === 'undefined') {
-                d.settings.showTips = false;
-            }
-            if (!d.settings.showTipsOffMigrated) {
-                d.settings.showTips = false;
-                d.settings.showTipsOffMigrated = true;
-            }
-
             if (typeof d.settings.showLinkPreviewCards === 'undefined') {
                 d.settings.showLinkPreviewCards = false;
             }
@@ -699,8 +691,6 @@ class DashboardData {
         if (!preserveView) {
             d.activeView = 'bookmarks';
         }
-        d.refreshButtonTipsOnPageChange?.();
-
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
         if (!preserveView && pageIndex !== -1) {
             window.location.hash = `#${pageIndex + 1}`;

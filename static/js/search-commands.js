@@ -45,7 +45,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
                     'theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed',
-                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'tips', 'buttons',
+                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
                 ],
             },
             {
@@ -82,7 +82,6 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
-            'tips': this.handleTipsCommand.bind(this),
             'favicons': this.handleFaviconCommand.bind(this),
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
@@ -2037,41 +2036,6 @@ class SearchCommandsComponent {
         return matchingButtons.map((name) => this._buildButtonRow(name, buttons[name], dashboard, explicitState));
     }
 
-    handleTipsCommand(args, fullQuery) {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) {
-            return [];
-        }
-
-        const stateArg = (args[0] || '').toLowerCase();
-        const enabled = dashboard.settings.showTips === true;
-        const apply = (value) => this.setTipsVisibility(dashboard, value);
-
-        if (!stateArg) {
-            return this._buildOnOffRows({ prefix: 'tips', shortcut: ':TIPS', enabled, apply });
-        }
-
-        if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
-            return [{
-                name: `on (${enabled ? 'current' : 'off'})`,
-                shortcut: ':TIPS',
-                stateId: 'tips:on',
-                type: 'command',
-                action: () => apply(true),
-            }];
-        }
-        if (stateArg === 'off' || 'off'.startsWith(stateArg)) {
-            return [{
-                name: `off (${enabled ? 'on' : 'current'})`,
-                shortcut: ':TIPS',
-                stateId: 'tips:off',
-                type: 'command',
-                action: () => apply(false),
-            }];
-        }
-
-        return [];
-    }
 
     handleFaviconCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
@@ -2267,20 +2231,6 @@ class SearchCommandsComponent {
         return this._paletteRefresh(`buttons:${buttonId}`);
     }
 
-    setTipsVisibility(dashboard, enabled) {
-        dashboard.settings.showTips = enabled;
-        window.TipsPolicy?.onUserPreference?.(enabled);
-        if (typeof dashboard.setupDOM === 'function') {
-            dashboard.setupDOM();
-        }
-        if (typeof dashboard.initializeButtonTipsRotation === 'function') {
-            dashboard.initializeButtonTipsRotation();
-        }
-        if (typeof dashboard.saveSettings === 'function') {
-            dashboard.saveSettings();
-        }
-        return this._paletteRefresh(enabled ? 'tips:on' : 'tips:off');
-    }
 
     setFaviconVisibility(dashboard, enabled) {
         dashboard.settings.showIcons = enabled;

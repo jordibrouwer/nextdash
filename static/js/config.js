@@ -78,7 +78,6 @@ class ConfigManager {
             showAddBookmarkButton: true,
             showRecentButton: false,
             showHealthDashboard: true,
-            showTips: false,
             showSearchFlowBanner: true,
             showSyncToasts: false,
             showStatus: true,
@@ -308,6 +307,10 @@ class ConfigManager {
         } else {
             this.scheduleConfigThemeTour();
         }
+
+        // Before the help filter indexes anything: it matches on section text, so
+        // the tips must already be in the DOM to be searchable.
+        window.ConfigHelpTips?.render?.(this.language);
 
         window.ConfigSettingsSearch?.refreshIndex?.();
         window.ConfigSettingsSearch?.bootPromoAutoStart?.();

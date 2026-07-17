@@ -417,15 +417,6 @@
                                 <p class="form-hint theme-iconstyling-preview-hint" data-i18n="config.themeIconStylingPreviewHint">Preview only — click Save to apply on the dashboard.</p>
                             </div>
                         </div>
-                        <div class="checkbox-tree" style="margin-top:0.6rem">
-                            <div class="checkbox-tree-item">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="show-tips-checkbox">
-                                    <span class="checkbox-text" data-i18n="config.showTipsAboveButtons">Show tips above buttons</span>
-                                    <button type="button" id="show-tips-info-btn" class="info-button" data-i18n-aria="config.showTipsInfoTitle">ℹ</button>
-                                </label>
-                            </div>
-                        </div>
                         </div>
                     </section>
 
@@ -2368,6 +2359,7 @@
                         <h3 class="section-title config-split-index-title" data-i18n="config.helpPageIndexTitle">Quick links</h3>
                         <ul class="help-index-list config-split-index-list">
                             <li><a href="#help-getting-started" data-i18n="config.helpPageGettingStartedTitle">Getting started</a></li>
+                            <li><a href="#help-tips" data-i18n="config.helpPageTipsTitle">Tips &amp; tricks</a></li>
                             <li><a href="#help-configuring" data-i18n="config.helpPageConfiguringTitle">Configuring nextDash</a></li>
                             <li><a href="#help-keyboard" data-i18n="config.helpPageKeyboardTitle">Keyboard shortcuts</a></li>
                             <li><a href="#help-search-toolbar" data-i18n="config.helpPageSearchToolbarTitle">Search, commands &amp; toolbar</a></li>
@@ -2386,6 +2378,12 @@
                         <section id="help-getting-started" class="help-block">
                             <h3 class="section-title" data-i18n="config.helpPageGettingStartedTitle">Getting started</h3>
                             <div class="help-prose" data-i18n="config.helpPageGettingStartedBody"></div>
+                        </section>
+
+                        <section id="help-tips" class="help-block">
+                            <h3 class="section-title" data-i18n="config.helpPageTipsTitle">Tips &amp; tricks</h3>
+                            <p class="help-block-intro" data-i18n="config.helpPageTipsBody">Small things that make nextDash faster. Use the filter above to search them.</p>
+                            <div id="help-tips-body" class="help-tips-catalog"></div>
                         </section>
 
                         <section id="help-configuring" class="help-block">
@@ -2515,10 +2513,10 @@
     <script src="/static/js/config/config-persistence.js?v=health-always-on-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
     <script src="/static/js/config/config-setup.js?v=glass-removed-1"></script>
-    <script src="/static/js/dashboard-tips-catalog.js?v=tips-catalog-3-help-removed"></script>
     <script src="/static/js/config/config-language.js?v=tips-removed-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-nav-highlight-1"></script>
     <script src="/static/js/config/config-help-search.js?v=help-expand-collapse-all-1"></script>
+    <script src="/static/js/config/config-help-tips.js?v=help-tips-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>
     <script src="/static/js/config/config-settings-search.js?v=promo-clamp-below-tabs-1"></script>
     <script src="/static/js/config/config-command-palette.js?v={{.Assets.ConfigCommandPaletteJS}}"></script>
