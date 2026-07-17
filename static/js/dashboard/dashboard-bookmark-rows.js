@@ -1065,9 +1065,6 @@ class DashboardBookmarkRows {
             if (pop.parentNode) {
                 pop.remove();
             }
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickMove')) {
-                window.DashboardFeaturePromos.dismissOpen();
-            }
             this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
@@ -1116,7 +1113,6 @@ class DashboardBookmarkRows {
             onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
         }, 0);
-        window.DashboardFeaturePromos?.tryShow?.('quickMove', pop);
         requestAnimationFrame(() => setFocus(focusedIdx));
     }
 
@@ -1285,9 +1281,6 @@ class DashboardBookmarkRows {
             if (pop.parentNode) {
                 pop.remove();
             }
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickTag')) {
-                window.DashboardFeaturePromos.dismissOpen();
-            }
             pop.removeEventListener('keydown', onKey, true);
             this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
@@ -1376,7 +1369,6 @@ class DashboardBookmarkRows {
             onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
         }, 0);
-        window.DashboardFeaturePromos?.tryShow?.('quickTag', pop);
         requestAnimationFrame(() => {
             trapPopoverFocus();
             requestAnimationFrame(() => trapPopoverFocus());
@@ -1471,9 +1463,6 @@ class DashboardBookmarkRows {
             if (pop.parentNode) {
                 pop.remove();
             }
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('quickDelete')) {
-                window.DashboardFeaturePromos.dismissOpen();
-            }
             this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
@@ -1523,7 +1512,6 @@ class DashboardBookmarkRows {
             onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
         }, 0);
-        window.DashboardFeaturePromos?.tryShow?.('quickDelete', pop);
         requestAnimationFrame(() => setFocus(focusedIdx));
     }
 

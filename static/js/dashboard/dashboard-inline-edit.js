@@ -861,7 +861,6 @@ class DashboardInlineEdit {
 
         row.appendChild(form);
         this.applySolidInlineEditSurfaces(row, form);
-        requestAnimationFrame(() => window.DashboardFeaturePromos?.reposition?.());
         d._inlineEditContext = {
             bookmarkRef,
             row,
@@ -1070,7 +1069,6 @@ class DashboardInlineEdit {
 
     enterBookmarkInlineEditFocusMode() {
         const d = this.dash;
-        window.DashboardPromoRegistry?.dismissAllDiscoverabilityOverlays?.();
         document.body.classList.add('bookmark-inline-edit-active');
         d.keyboardNavigation?.disable?.();
         window.FocusTrapUtils?.syncDashboardInert?.();

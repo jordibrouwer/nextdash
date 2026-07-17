@@ -280,9 +280,6 @@ class DashboardDateWeather {
         document.body.appendChild(pop);
 
         const close = () => {
-            if (window.DashboardFeaturePromos?.isPromoOpen?.('datePopover')) {
-                window.DashboardFeaturePromos?.dismissOpen?.();
-            }
             pop.remove();
             document.removeEventListener('click', outside);
             document.removeEventListener('keydown', onKey);
@@ -294,7 +291,6 @@ class DashboardDateWeather {
             document.addEventListener('click', outside);
             document.addEventListener('keydown', onKey);
         }, 0);
-        window.DashboardFeaturePromos?.tryShowDeferred?.('datePopover', pop);
     }
 
 
@@ -395,7 +391,6 @@ class DashboardDateWeather {
         ) {
             const anchor = document.getElementById('date-element');
             if (anchor) {
-                window.DashboardFeaturePromos?.tryShowDeferred?.('weatherGeolocation', anchor);
             }
         }
         this.renderDateWeatherLine();

@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tour', 'promo'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -120,8 +120,6 @@ class SearchCommandsComponent {
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
             'metadata': this.handleMetadataCommand.bind(this),
-            'tour': this.handleTourCommand.bind(this),
-            'promo': this.handlePromoCommand.bind(this),
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
         };
@@ -3215,74 +3213,6 @@ class SearchCommandsComponent {
         }
 
         return [];
-    }
-
-    handleTourCommand() {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) return [];
-
-        return [{
-            name: this._t('commands.tourStart', 'Start feature tour'),
-            shortcut: ':TOUR',
-            type: 'command',
-            action: () => this._runOverlayAction(() => dashboard.startFeatureTour?.()),
-        }];
-    }
-
-    handlePromoCommand(args) {
-        const registry = window.DashboardPromoRegistry;
-        const entries = registry?.entries || [];
-        const sub = (args[0] || '').toLowerCase();
-
-        if (!sub) {
-            const rows = entries.map((entry) => ({
-                name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', entry.id),
-                shortcut: ':PROMO',
-                stateId: `promo:${entry.id}`,
-                completion: `:promo ${entry.id} `,
-                type: 'command',
-                action: () => {
-                    registry?.clearById?.(entry.id);
-                    return { stateId: `promo:${entry.id}` };
-                },
-            }));
-            rows.push({
-                name: this._t('commands.promoResetAll', 'Reset all promos'),
-                shortcut: ':PROMO',
-                stateId: 'promo:all',
-                type: 'command',
-                action: () => {
-                    registry?.clearAll?.();
-                    return { stateId: 'promo:all' };
-                },
-            });
-            return rows;
-        }
-
-        if (sub === 'all') {
-            return [{
-                name: this._t('commands.promoResetAll', 'Reset all promos'),
-                shortcut: ':PROMO',
-                type: 'command',
-                action: () => {
-                    registry?.clearAll?.();
-                    return { stateId: 'promo:all' };
-                },
-            }];
-        }
-
-        const match = entries.find((entry) => entry.id === sub || entry.id.startsWith(sub));
-        if (!match) return [];
-
-        return [{
-            name: this._t('commands.promoReset', 'Reset promo — {id}').replace('{id}', match.id),
-            shortcut: ':PROMO',
-            type: 'command',
-            action: () => {
-                registry?.clearById?.(match.id);
-                return { stateId: `promo:${match.id}` };
-            },
-        }];
     }
 
     handleFilterCommand(args) {

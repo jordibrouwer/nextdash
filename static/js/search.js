@@ -1182,11 +1182,6 @@ class SearchComponent {
     }
 
     updateSearch() {
-        if (this.currentQuery.length > 0) {
-            window.DashboardSearchPromo?.onSearchQueryStarted?.(this.currentQuery);
-            window.DashboardSearchPromo?.onSearchFilterPrefixUsed?.(this.currentQuery);
-        }
-
         // Find matching shortcuts
         this.searchMatches = [];
 
@@ -1436,7 +1431,6 @@ class SearchComponent {
     showSearch() {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
-            this._lastPromoMode = undefined;
             window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         }
         this.searchActive = true;
@@ -1450,7 +1444,6 @@ class SearchComponent {
             // Auto-scroll to the right to keep the cursor position visible
             queryElement.scrollLeft = queryElement.scrollWidth;
             searchElement.classList.add('show');
-            window.DashboardSearchPromo?.dismissCompetingDiscoverabilityPromos?.();
             this._syncDashboardInert();
             
             // Prevent body scroll only if not already prevented
@@ -1477,7 +1470,6 @@ class SearchComponent {
 
             requestAnimationFrame(() => {
                 this.focusSearchPanel();
-                window.DashboardSearchPromo?.onSearchOpened?.({ query: this.currentQuery });
             });
         }
     }
@@ -1499,7 +1491,6 @@ class SearchComponent {
         }
         this._syncDashboardInert();
 
-        window.DashboardSearchPromo?.onSearchClosed?.();
         
         // Restore body scroll only if this component changed it
         if (this.previousOverflow !== null) {
@@ -1596,7 +1587,6 @@ class SearchComponent {
         this.selectedChipIndex = 0;
         this.matchElements = []; // Clear element references
         this.selectableMatches = [];
-        this._lastPromoMode = undefined;
     }
 
     updateModeIndicator() {
@@ -1627,12 +1617,6 @@ class SearchComponent {
         document.querySelectorAll('.search-mode-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.mode === mode);
         });
-
-        const prevMode = this._lastPromoMode;
-        this._lastPromoMode = mode;
-        if (this.searchActive && prevMode !== undefined && prevMode !== mode) {
-            window.DashboardSearchPromo?.onSearchModeChanged?.({ query: this.currentQuery, mode });
-        }
     }
 
     renderSearchMatches() {

@@ -510,7 +510,6 @@
                 this.backdrop?.classList.add('is-open');
                 requestAnimationFrame(() => {
                     this.positionModal();
-                    window.DashboardFeaturePromos?.tryShow?.('tagCloud', this.modal);
                 });
             });
             this.syncToggleState();
@@ -669,7 +668,6 @@
             this.modal.style.top = `${Math.round(top)}px`;
             this.modal.style.bottom = 'auto';
             this.modal.style.transformOrigin = 'top left';
-            window.DashboardFeaturePromos?.reposition?.();
             return true;
         },
 
@@ -712,7 +710,6 @@
 
             this.modal.style.top = `${Math.round(top)}px`;
             this.modal.style.bottom = 'auto';
-            window.DashboardFeaturePromos?.reposition?.();
         },
 
         positionModal() {
@@ -763,7 +760,6 @@
 
             this.modal.style.bottom = `${bottom}px`;
             this.modal.style.top = 'auto';
-            window.DashboardFeaturePromos?.reposition?.();
         },
 
         getTagCountLabel(count) {

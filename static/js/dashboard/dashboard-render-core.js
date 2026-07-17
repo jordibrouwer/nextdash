@@ -1074,7 +1074,6 @@ class DashboardRenderCore {
         nameSpan.replaceWith(input);
         input.focus();
         input.select();
-        window.DashboardFeaturePromos?.tryShowDeferred?.('categoryRename', titleEl);
 
         let done = false;
 
@@ -1351,7 +1350,6 @@ class DashboardRenderCore {
                 e.preventDefault();
                 setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
                 if (!titleElement.classList.contains('category-title--renaming')) {
-                    window.DashboardFeaturePromos?.tryShowDeferred?.('categoryCollapse', titleElement);
                 }
             }
         });
