@@ -88,10 +88,6 @@ func validateHTTPURLCtx(ctx context.Context, rawURL string, allowLocal bool) err
 	return nil
 }
 
-func validatePublicHTTPURL(rawURL string) error {
-	return validateHTTPURL(rawURL, false)
-}
-
 func isAllowedDialIP(addr netip.Addr, allowLocal bool) bool {
 	if allowLocal {
 		return true
@@ -166,13 +162,7 @@ func drainAndCloseResponse(resp *http.Response) {
 	_ = resp.Body.Close()
 }
 
-// redirectLocationFromResponse resolves a 3xx Location header against baseURL.
-func redirectLocationFromResponse(baseURL string, resp *http.Response, allowLocal bool) string {
-	ctx, cancel := context.WithTimeout(context.Background(), hostLookupTimeout)
-	defer cancel()
-	return redirectLocationFromResponseCtx(ctx, baseURL, resp, allowLocal)
-}
-
+// redirectLocationFromResponseCtx resolves a 3xx Location header against baseURL.
 func redirectLocationFromResponseCtx(ctx context.Context, baseURL string, resp *http.Response, allowLocal bool) string {
 	if ctx.Err() != nil || resp == nil || resp.StatusCode < 300 || resp.StatusCode >= 400 {
 		return ""

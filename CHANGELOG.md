@@ -130,6 +130,7 @@ Nothing yet.
 - **fix** **Cache-bust** — `whats-new-v164` data version (`asset_versions.go`, `whats-new-stub.js`) and `2026.07-dashboard-release-v122` dashboard release token.
 - **fix** **Leftover config-page dead code from the tour removal** — the "Onboarding & tips" advanced section still had a "Reset context tips" button whose feature no longer exists; clicking it cleared two dead `localStorage` keys and showed a false success toast. Removed the button, its handler, its CSS rule, and five now-unused locale keys in all four languages; the section is renamed "Onboarding" (`config.html`, `config-setup.js`, `config-forms.css`, `locales/{en,nl,de,fr}.json`).
 - **fix** **Five dead `asset_versions.go` fields removed** — `ConfigBookmarksTourJS`, `ConfigToursRuntimeJS`, `PageLayoutSyncJS`, `ConfigGeneralTourCSS`, and `ConfigButtonsCSS` pointed at files deleted with the tour removal; `static/js/page-layout-sync.js` (186 lines, a leftover from the pre-v2026.07.15 standalone `/health` page) is deleted outright (`asset_versions.go`).
+- **fix** **Five dead Go wrapper functions removed** — `pingURL`, `fetchPageTitleSafe`, `detectRedirectURL`, `redirectLocationFromResponse`, and `validatePublicHTTPURL` were thin `context.Background()` shims around their `*Ctx` counterparts that production code no longer called directly; only their own tests did, so the tests now call the `*Ctx` variants instead (`ping.go`, `handlers.go`, `url_safety.go`).
 
 ---
 

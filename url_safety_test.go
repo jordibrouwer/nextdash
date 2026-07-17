@@ -16,7 +16,7 @@ func TestValidatePublicHTTPURL(t *testing.T) {
 		"http://github.com",
 	}
 	for _, u := range allowed {
-		if err := validatePublicHTTPURL(u); err != nil {
+		if err := validateHTTPURL(u, false); err != nil {
 			t.Fatalf("%q should be allowed: %v", u, err)
 		}
 	}
@@ -30,7 +30,7 @@ func TestValidatePublicHTTPURL(t *testing.T) {
 		"http://10.0.0.1/internal",
 	}
 	for _, u := range blocked {
-		if err := validatePublicHTTPURL(u); err == nil {
+		if err := validateHTTPURL(u, false); err == nil {
 			t.Fatalf("%q should be blocked", u)
 		}
 	}

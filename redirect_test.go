@@ -14,9 +14,9 @@ func TestRedirectLocationFromResponse(t *testing.T) {
 		StatusCode: http.StatusFound,
 		Header:     http.Header{"Location": []string{"/moved"}},
 	}
-	got := redirectLocationFromResponse("https://example.com/old", resp, false)
+	got := redirectLocationFromResponseCtx(t.Context(), "https://example.com/old", resp, false)
 	if got != "https://example.com/moved" {
-		t.Fatalf("redirectLocationFromResponse() = %q, want %q", got, "https://example.com/moved")
+		t.Fatalf("redirectLocationFromResponseCtx() = %q, want %q", got, "https://example.com/moved")
 	}
 }
 
@@ -35,10 +35,10 @@ func TestDetectRedirectURL_HeaderRedirect(t *testing.T) {
 	defer server.Close()
 
 	h := testHandlersWithLocalBookmarks(t)
-	got := h.detectRedirectURL(server.URL + "/old")
+	got := h.detectRedirectURLCtx(t.Context(), server.URL+"/old", false)
 	want := server.URL + "/new"
 	if got != want {
-		t.Fatalf("detectRedirectURL() = %q, want %q", got, want)
+		t.Fatalf("detectRedirectURLCtx() = %q, want %q", got, want)
 	}
 }
 
