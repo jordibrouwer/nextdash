@@ -723,7 +723,7 @@ class ConfigSetup {
 
     setupGeneralCardCollapsible() {
         const storageKey = 'nextdash-config-general-panel-state';
-        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization', 'basics-core', 'layout', 'status-essentials-summary']);
+        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization']);
         const DEFAULT_OPEN_ADVANCED = new Set(['appearance-advanced']);
     
         const getDefaultOpenForLayer = (layerMode) => {
