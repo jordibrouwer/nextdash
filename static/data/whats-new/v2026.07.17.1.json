@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.17.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-17",
+  "sections": [
+    {
+      "title": "Theme",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Custom theme name fields fixed</strong> — the \"Custom Theme\" name inputs under Colors → Custom themes now use the dashboard's theme colors instead of an unstyled white browser-default box."
+        }
+      ]
+    }
+  ]
+}

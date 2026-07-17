@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
 - [v2026.07.17 — July 2026](#v20260717--july-2026)
 - [v2026.07.16 — July 2026](#v20260716--july-2026)
 - [v2026.07.15 — July 2026](#v20260715--july-2026)
@@ -97,6 +98,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.17.1 — July 2026
+
+**Custom theme name fields hotfix** — the two "Custom Theme" name inputs under Colors → Custom themes rendered with unstyled browser-default white input boxes instead of the dashboard's theme colors.
+
+### Theme
+
+- **fix** **Custom theme name inputs styled** — `.custom-theme-list-item` and its reorder buttons/name input had no CSS at all, so the name field fell back to the browser default (white background, black text) regardless of the active theme. Added matching styles consistent with the existing `.category-item`/`.finder-item` list rows (`config-lists.css`, `config.css`).
 
 ---
 
