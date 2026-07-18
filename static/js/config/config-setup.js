@@ -605,6 +605,8 @@ class ConfigSetup {
     
         const resetBtn = document.getElementById('reset-btn');
         if (resetBtn) resetBtn.addEventListener('click', () => this.c.resetToDefaults());
+        const deleteAllBookmarksBtn = document.getElementById('delete-all-bookmarks-btn');
+        if (deleteAllBookmarksBtn) deleteAllBookmarksBtn.addEventListener('click', () => this.c.deleteAllBookmarks());
         this.c.setupStructureAutoSyncListeners();
         this.c.setupDirtyTracking();
         this.c.setupAutosaveLowRiskFields();

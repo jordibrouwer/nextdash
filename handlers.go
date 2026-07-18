@@ -1193,6 +1193,31 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
+// DeleteAllBookmarks empties every page's bookmarks while keeping pages,
+// categories, and settings. No default bookmarks are recreated.
+func (h *Handlers) DeleteAllBookmarks(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var req struct {
+		Confirm bool `json:"confirm"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || !req.Confirm {
+		http.Error(w, "Confirmation required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.DeleteAllBookmarks(); err != nil {
+		http.Error(w, "Error deleting bookmarks", http.StatusInternalServerError)
+		return
+	}
+	h.invalidateHealthReportCache()
+	logBookmarksDeletedAll(r)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
 func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
 	w.Header().Set("Content-Type", "application/json")

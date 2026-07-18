@@ -53,6 +53,7 @@ func main() {
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
 	r.HandleFunc("/api/bookmarks/prefetch-icons", handlers.PrefetchBookmarkIcons).Methods("POST")
+	r.HandleFunc("/api/bookmarks/delete-all", handlers.DeleteAllBookmarks).Methods("POST")
 	r.HandleFunc("/api/finders", handlers.GetFinders).Methods("GET")
 	r.HandleFunc("/api/finders", handlers.SaveFinders).Methods("POST")
 	r.HandleFunc("/api/categories", handlers.GetCategories).Methods("GET")

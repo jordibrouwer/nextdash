@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
     <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/config.css?v=general-clarity-1">
+    <link rel="stylesheet" href="/static/css/config.css?v=delete-all-bookmarks-1">
     <link rel="stylesheet" href="/static/css/reorder.css?v={{.Assets.ReorderCSS}}">
     <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-inbox-block-1">
@@ -1246,9 +1246,11 @@
                                 <div class="backups-action-item">
                                     <div class="backups-action-buttons">
                                         <button id="reset-btn" type="button" class="btn btn-danger" disabled data-i18n="config.resetAllDataButton">Reset all data and start over</button>
+                                        <button id="delete-all-bookmarks-btn" type="button" class="btn btn-warning-solid" disabled data-i18n="config.deleteAllBookmarksButton">Delete all bookmarks only</button>
                                     </div>
                                 </div>
                             </div>
+                            <p class="setting-description delete-all-bookmarks-hint" data-i18n="config.deleteAllBookmarksHint">Removes every bookmark on every page. Your pages, categories, and all settings stay exactly as they are — and no default sample bookmarks are added back. This cannot be undone.</p>
                         </div>
                     </section>
 
@@ -2576,7 +2578,7 @@
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-persistence.js?v=health-always-on-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=essentials-localisation-only-1"></script>
+    <script src="/static/js/config/config-setup.js?v=delete-all-bookmarks-1"></script>
     <script src="/static/js/config/config-language.js?v=tips-removed-1"></script>
     <script src="/static/js/config/config-general-layers.js?v=general-nav-highlight-1"></script>
     <script src="/static/js/config/config-help-search.js?v=help-expand-collapse-all-1"></script>
@@ -2585,7 +2587,7 @@
     <script src="/static/js/config/config-settings-search.js?v=promo-clamp-below-tabs-1"></script>
     <script src="/static/js/config/config-command-palette.js?v={{.Assets.ConfigCommandPaletteJS}}"></script>
     <script src="/static/js/config/config-setting-info.js?v={{.Assets.ConfigSettingInfoJS}}"></script>
-    <script src="/static/js/config/config-custom-themes.js?v=config-domain-1"></script>
+    <script src="/static/js/config/config-custom-themes.js?v=delete-all-bookmarks-1"></script>
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-b10-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
@@ -2599,7 +2601,7 @@
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/config/config-render.js?v=config-modular-1"></script>
-    <script src="/static/js/config/config-reset.js?v=config-modular-1"></script>
+    <script src="/static/js/config/config-reset.js?v=delete-all-bookmarks-1"></script>
     <script src="/static/js/config.js?v=health-recheck-1"></script>
 
     <div id="config-save-sticky" class="config-save-sticky" aria-live="polite">

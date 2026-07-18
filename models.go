@@ -310,6 +310,8 @@ type Store interface {
 	DeleteBookmarkAt(pageID int, index int) error
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
+	// DeleteAllBookmarks empties every page's bookmarks while keeping pages/categories/settings.
+	DeleteAllBookmarks() error
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
@@ -890,6 +892,35 @@ func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// DeleteAllBookmarks empties every page's bookmark list while preserving pages,
+// categories, finders, and settings. No default bookmarks are recreated.
+func (fs *FileStore) DeleteAllBookmarks() error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	files, err := os.ReadDir(fs.dataDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasPrefix(file.Name(), "bookmarks-") || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+		pageID, ok := parseBookmarkPageIDFromFilename(file.Name())
+		if !ok {
+			continue
+		}
+		if err := fs.saveBookmarksByPageLocked(pageID, []Bookmark{}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
