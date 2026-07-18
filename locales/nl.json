@@ -156,6 +156,8 @@
         "emptyStateCommandNote": "Notitie bewerken",
         "emptyStateCommandsGroupLabel": "Commando's",
         "emptyStateSetupPages": "Pagina's instellen in config",
+        "emptyStateManageBookmarks": "Bookmarks beheren in config",
+        "emptyStateAddBookmark": "Een bookmark toevoegen",
         "firstBookmarkGuide": "Voeg je eerste bladwijzer toe met + (& voor sneltoevoegen), of stel pagina's in via config → pagina's.",
         "stepPagesOverviewTitle": "Alle pagina's in één oogopslag",
         "stepPagesOverviewBody": "Druk op \",\" of tik op de pagina's-knop om elke pagina met aantal bladwijzers te zien.",

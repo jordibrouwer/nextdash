@@ -273,6 +273,8 @@
         "emptyStateCommandNote": "Modifier la note",
         "emptyStateCommandsGroupLabel": "Commandes",
         "emptyStateSetupPages": "Configurer les pages dans config",
+        "emptyStateManageBookmarks": "Gérer les favoris dans config",
+        "emptyStateAddBookmark": "Ajouter un favori",
         "stepPagesOverviewTitle": "Toutes les pages en un coup d'œil",
         "stepPagesOverviewBody": "Appuyez sur \",\" ou sur le bouton pages pour voir chaque page avec le nombre de favoris.",
         "searchPrefix": ">",

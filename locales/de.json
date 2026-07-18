@@ -273,6 +273,8 @@
         "emptyStateCommandNote": "Notiz bearbeiten",
         "emptyStateCommandsGroupLabel": "Befehle",
         "emptyStateSetupPages": "Seiten in der Konfiguration einrichten",
+        "emptyStateManageBookmarks": "Lesezeichen in der Konfiguration verwalten",
+        "emptyStateAddBookmark": "Lesezeichen hinzufügen",
         "stepPagesOverviewTitle": "Alle Seiten auf einen Blick",
         "stepPagesOverviewBody": "Drücken Sie \",\" oder tippen Sie auf die Seiten-Schaltfläche, um jede Seite mit Lesezeichenanzahl zu sehen.",
         "searchPrefix": ">",

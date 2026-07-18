@@ -96,6 +96,9 @@ class SearchComponent {
     buildShortcutsMap() {
         this.shortcuts.clear();
 
+        if (!Array.isArray(this.bookmarks)) {
+            this.bookmarks = [];
+        }
         this.bookmarks.forEach(bookmark => {
             if (bookmark.shortcut && bookmark.shortcut.trim()) {
                 this.shortcuts.set(bookmark.shortcut.toLowerCase(), bookmark);

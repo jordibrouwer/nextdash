@@ -124,7 +124,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigFontJS:             "config-font-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
-	DashboardRenderCoreJS:    "category-item-limit-1",
+	DashboardRenderCoreJS:    "empty-dashboard-fix-1",
 
 	DashboardCSS:            "category-item-limit-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
@@ -137,7 +137,7 @@ var sharedAssetVersions = pageAssetVersions{
 	SelectCSS:                "select-1",
 	FontSizeCSS:              "font-size-1",
 	QuickStartCSS:            "quickstart-4-actionable",
-	EnhancedFeaturesCSS:      "enhanced-features-1",
+	EnhancedFeaturesCSS:      "empty-dashboard-fix-1",
 	ModalCSS:                 "page-overview-modal-1",
 	ResponsiveCSS:            "config-shell-align-1",
 	OverlaysModernCSS:        "whats-new-config-parity-1",

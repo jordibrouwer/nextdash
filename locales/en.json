@@ -156,6 +156,8 @@
         "emptyStateCommandNote": "Edit note",
         "emptyStateCommandsGroupLabel": "Commands",
         "emptyStateSetupPages": "Set up pages in config",
+        "emptyStateManageBookmarks": "Manage bookmarks in config",
+        "emptyStateAddBookmark": "Add a bookmark",
         "firstBookmarkGuide": "Add your first bookmark with + (& for quick-add), or set up pages in config → pages.",
         "stepPagesOverviewTitle": "All pages at a glance",
         "stepPagesOverviewBody": "Press \",\" or tap the pages button to see every page with bookmark counts — handy when you have many pages.",

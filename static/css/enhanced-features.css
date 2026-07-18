@@ -454,6 +454,37 @@ kbd {
     border-color: var(--accent-primary);
 }
 
+/* Secondary text links under the fresh empty state (add modal, config, import).
+   Styled locally because the global .btn styles are config-only and don't load
+   on the dashboard — bare <a> would otherwise render as raw browser links. */
+.empty-state-links {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+.empty-state-link {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 1px dotted color-mix(in srgb, var(--text-secondary) 55%, transparent);
+    cursor: pointer;
+    transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.empty-state-link:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary, var(--text-primary));
+}
+
 /* ===== Confirmation Dialogs ===== */
 .confirm-dialog {
     position: fixed;

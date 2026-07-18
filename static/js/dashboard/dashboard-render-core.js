@@ -352,13 +352,17 @@ class DashboardRenderCore {
                             ${searchFreshHtml}
                         </div>
                         <p class="empty-state-hint">${esc(addHint)}</p>
-                        <div class="empty-state-action">
-                            <a class="btn btn-secondary" href="/config#pages" data-i18n="dashboard.emptyStateSetupPages">Set up pages in config</a>
-                            <a class="btn btn-secondary" href="/config#backups" data-i18n="config.importDescription">Import your data</a>
+                        <div class="empty-state-links">
+                            <button class="empty-state-link" id="empty-state-add-modal-fresh" type="button" data-i18n="dashboard.emptyStateAddBookmark">${esc(d.language?.t('dashboard.emptyStateAddBookmark') || 'Add a bookmark')}</button>
+                            <a class="empty-state-link" href="/config#bookmarks" data-i18n="dashboard.emptyStateManageBookmarks">${esc(d.language?.t('dashboard.emptyStateManageBookmarks') || 'Manage bookmarks in config')}</a>
+                            <a class="empty-state-link" href="/config#backups" data-i18n="config.importDescription">${esc(d.language?.t('config.importDescription') || 'Import your data')}</a>
                         </div>
                     </div>
                 `;
                 container.querySelector('#empty-state-new-bookmark-fresh')?.addEventListener('click', () => {
+                    d.openEmptyStateAdd();
+                });
+                container.querySelector('#empty-state-add-modal-fresh')?.addEventListener('click', () => {
                     d.openEmptyStateAdd();
                 });
                 container.querySelector('#empty-state-search-fresh')?.addEventListener('click', () => {
