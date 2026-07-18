@@ -136,7 +136,7 @@ var sharedAssetVersions = pageAssetVersions{
 	SearchCommandsNoteCSS:    "search-commands-note-1",
 	SelectCSS:                "select-1",
 	FontSizeCSS:              "font-size-1",
-	QuickStartCSS:            "quickstart-4-actionable",
+	QuickStartCSS:            "fresh-start-step-1",
 	EnhancedFeaturesCSS:      "empty-dashboard-fix-1",
 	ModalCSS:                 "page-overview-modal-1",
 	ResponsiveCSS:            "config-shell-align-1",
