@@ -158,7 +158,11 @@ body:not([data-layout-version]) .config-page-shell > .config-section.section-hea
     border: none;
     border-radius: 0;
     box-shadow: none;
-    padding-top: 2rem;
+    /* No top padding of its own — the shared top bar above (section-controls-top)
+       already owns the 2rem, like the dashboard's section-title/section-controls
+       split. Without this override the title row was 2rem taller than intended,
+       pushing the save bar/tabs further down and reading as an extra gap. */
+    padding-top: 0;
     padding-bottom: 0;
     margin-bottom: 0;
 }
@@ -172,10 +176,14 @@ body:not([data-layout-version]) .config-page-shell > .config-section.section-con
     box-shadow: none;
 }
 
+/* Save row and tabs now read as one seamless bar — no gap, no separate card
+   borders — instead of two visually distinct cards with empty space between
+   them. The tabs row keeps only a top divider line. */
 body[data-layout-version="classic"] .config-section.section-controls .config-actions-top,
 body:not([data-layout-version]) .config-section.section-controls .config-actions-top {
     border: 1px solid var(--config-border, var(--border-primary));
-    border-radius: var(--config-surface-radius, 6px);
+    border-bottom: none;
+    border-radius: var(--config-surface-radius, 6px) var(--config-surface-radius, 6px) 0 0;
     box-shadow: var(--config-surface-shadow, 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent));
     padding: var(--config-save-bar-padding-block, 0.45rem) var(--config-save-bar-padding-inline, 0.65rem);
 }
@@ -186,10 +194,11 @@ body[data-layout-version="classic"] .config-section.section-controls .config-act
 
 body[data-layout-version="classic"] .config-section.section-controls .tabs-scroll-wrapper,
 body:not([data-layout-version]) .config-section.section-controls .tabs-scroll-wrapper {
-    margin-top: var(--config-tab-gap, 0.85rem);
+    margin-top: 0;
     padding-top: 0;
     border: 1px solid var(--config-border, var(--border-primary));
-    border-radius: var(--config-surface-radius, 6px);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 38%, transparent);
+    border-radius: 0 0 var(--config-surface-radius, 6px) var(--config-surface-radius, 6px);
     box-shadow: var(--config-surface-shadow, 0 1px 4px color-mix(in srgb, var(--border-primary) 45%, transparent));
 }
 

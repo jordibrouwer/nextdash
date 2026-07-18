@@ -91,9 +91,24 @@ body {
     width: 100%;
 }
 
-.config-section.section-header {
+/* Shared top bar (logo slot + back link). padding-top matches the dashboard
+   .dashboard-section.section-controls so the top bar itself starts at the same
+   height as on the dashboard. padding-bottom is intentionally tighter than the
+   dashboard's 1.5rem for now: the dashboard's gap is partly filled by the
+   two-line date/weather text, but the logo slot here is still empty, so the
+   full dashboard padding would read as a gap. Once the logo lands, bump this
+   back to 1.5rem to match the dashboard exactly (a deliberate one-time height
+   change at that point, not before). */
+.config-section.section-controls-top {
     padding-top: 2rem;
-    padding-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* Title section now sits directly under the shared top bar, like the
+   dashboard .dashboard-section.section-title (no padding of its own). */
+.config-section.section-header {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 :root {
@@ -443,7 +458,67 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
     justify-content: flex-start;
 }
 
-/* Header — aligned with dashboard .header-top row */
+/* Shared top bar: logo slot (placeholder for now) on the left, back link on the
+   right — mirrors the dashboard/inbox/health .header-top row. Centered like the
+   dashboard row so the back link sits vertically aligned with the logo slot,
+   the same way the dashboard nav sits aligned with the date/weather block. */
+.config-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    width: 100%;
+}
+
+.config-header-controls .header-top-primary {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+/* Placeholder for the upcoming logo. No height of its own for now — the row's
+   height comes from the back-link text next to it, keeping the bar compact
+   until the logo is added (see section-controls-top comment above). */
+.config-logo-slot {
+    align-self: stretch;
+}
+
+.config-header-controls .header-actions,
+.config-header-controls .header-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    margin-left: auto;
+}
+
+.config-header-controls .dashboard-link a,
+.config-header-controls .header-links .back-link {
+    text-decoration: none;
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.config-header-controls .dashboard-link a:hover,
+.config-header-controls .header-links .back-link:hover {
+    color: var(--text-primary);
+}
+
+/* Title row — now holds only the "configuration" heading. */
 .config-header-top {
     display: flex;
     justify-content: space-between;
@@ -463,7 +538,9 @@ html:has(#config-main) #config-main :is(.structure-column, .structure-list, .str
 
 .config-header-label {
     margin: 0;
-    font-size: calc(var(--font-size-title) * 0.62);
+    /* Same size as the dashboard/inbox/health page title (.title) so "configuration"
+       reads as one family of headers with them, not a smaller sub-heading. */
+    font-size: var(--font-size-title);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-black);
     letter-spacing: 0;

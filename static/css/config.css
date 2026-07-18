@@ -1,5 +1,5 @@
 /* Config Styles - Imports all config modules */
-@import url('config/config-general.css?v=quiet-borders-1');
+@import url('config/config-general.css?v=config-shared-topbar-2');
 @import url('config/config-tabs.css?v=quiet-borders-1');
 @import url('config/config-forms.css?v=general-clarity-1');
 @import url('config/config-lists.css?v=custom-theme-input-style-1');

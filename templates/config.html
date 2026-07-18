@@ -46,23 +46,35 @@
     <link rel="stylesheet" href="/static/css/config-modern.css?v=config-polish-c2-2">
     <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
-    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=quiet-borders-1">
+    <link rel="stylesheet" href="/static/css/config-save-bar.css?v=config-shared-topbar-2">
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
 </head>
 <body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}">
     <a class="skip-to-content" href="#config-main" data-i18n="dashboard.skipToContent">Skip to settings</a>
     <div class="config-page-shell">
-    <!-- Section 1: Title and nav links -->
-    <div class="config-section section-header config-page-column">
-            <header class="header header-top config-header-top">
+    <!-- Section 0: Shared top bar — mirrors the dashboard/inbox/health header (logo
+         slot on the left, back link on the right) so the title below starts at the
+         same height as "main"/"inbox"/"health" and the page doesn't jump when
+         navigating between dashboard and config. -->
+    <div class="config-section section-controls-top config-page-column">
+            <div class="header-top config-header-controls skeleton-hide-while-loading">
                 <div class="header-top-primary">
-                    <h1 class="config-header-label" data-i18n="config.title">configuration</h1>
+                    <div class="config-logo-slot" aria-hidden="true"></div>
                 </div>
                 <div class="header-actions header-links">
                     <div class="dashboard-link">
                         <a href="/" class="back-link" data-i18n="config.backToDashboard">← back to dashboard</a>
                     </div>
+                </div>
+            </div>
+    </div>
+
+    <!-- Section 1: Title -->
+    <div class="config-section section-header config-page-column">
+            <header class="header header-top config-header-top">
+                <div class="header-top-primary">
+                    <h1 class="config-header-label" data-i18n="config.title">configuration</h1>
                 </div>
             </header>
     </div>
