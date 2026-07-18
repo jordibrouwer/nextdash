@@ -169,7 +169,13 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	for {
 		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false)
 		totalApplied += result.Applied
-		if result.Done || result.Attempted == 0 {
+		// Stop when done, when nothing was attempted, OR when a batch made no
+		// progress. Without the Applied==0 guard, a single bookmark whose favicon
+		// can never be fetched (dead URL, timeout, blocked outbound) stays
+		// "needing icon" forever, so Done never flips and this loop spins on the
+		// same failing network fetches — a busy loop that pins CPU (worst on
+		// servers with restricted outbound access).
+		if result.Done || result.Attempted == 0 || result.Applied == 0 {
 			break
 		}
 	}
