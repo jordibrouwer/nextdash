@@ -1,0 +1,39 @@
+{
+  "tag": "v2026.07.18",
+  "date": "July 2026",
+  "releasedAt": "2026-07-18",
+  "modalLead": "Long categories stay tidy, the config page lines up with the dashboard, and new installs start on a darker theme with a leaner set of starter bookmarks.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Items per category</strong> — a category now shows only its first <strong>15</strong> bookmarks by default, with the rest tucked behind a per-category <em>+ N more</em> / <em>show less</em> toggle, so one big category no longer towers over the others. Change the limit (or turn it off) under <strong>Config → General → Layout</strong>. This is on by default, so existing long categories are capped after this update; smart collections are never affected, and expanding a category is remembered."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config header lines up with the dashboard</strong> — the Configuration page now uses the same top bar as the dashboard, inbox, and health views, and the <strong>configuration</strong> title matches their size, so switching between them no longer makes the page jump. The save row and tabs read as one seamless bar."
+        }
+      ]
+    },
+    {
+      "title": "New installs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Midnight Ink is the default theme</strong> — a fresh install now starts on the near-black Midnight Ink theme (following your system for light/dark). Existing dashboards keep whatever theme you already chose."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Leaner starter bookmarks</strong> — a brand-new install no longer seeds the Tech category or its Unraid and Phoronix bookmarks. Your existing bookmarks are untouched."
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.18 — July 2026](#v20260718--july-2026)
 - [v2026.07.17.3 — July 2026](#v2026071713--july-2026)
 - [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
 - [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
@@ -100,6 +101,29 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.18 — July 2026
+
+### Dashboard
+
+- **new** — **Items per category.** A new `categoryItemLimit` setting (default **15**) caps how many bookmarks a category shows before a per-category **+ N more** / **show less** toggle, so one large category no longer towers over the others. Rows past the limit stay in the DOM (drag/reorder unaffected) but hidden until expanded; the expanded state is remembered per category in `localStorage`. Smart collections and tag-filter chunks are excluded. Wired through both the full and incremental render paths (`dashboard-render-core.js`, `dashboard-render-incremental.js`), styled in `dashboard.css`. On by default, so existing long categories are capped after this update.
+
+### Config
+
+- **fix** — **Config header aligned with the dashboard.** The Configuration page now mirrors the dashboard/inbox/health top bar — a shared row (logo slot placeholder + back-to-dashboard link) above the title — and the `configuration` heading matches the dashboard title size, so navigating between them no longer jumps. The save row and tabs merged into one seamless bar instead of two cards with a gap (`config.html`, `config-general.css`, `config-save-bar.css`).
+- **fix** — **Items per category setting** lives under **General → Layout** (Essentials), after Density and above the spacing group, with an info popover.
+
+### New installs
+
+- **new** — **Midnight Ink is the default theme.** Fresh installs now default to `midnight-ink-dark` instead of `kelp-drift-dark`, in both Go settings-default blocks and the JS defaults (`models.go`, `dashboard.js`, `config.js`, `config-settings.js`). Existing installs keep their chosen theme.
+- **fix** — **Leaner starter bookmarks.** The default page seed no longer includes the Tech category or its Unraid and Phoronix bookmarks (`models.go`). Existing installs are untouched.
+
+### Developer & docs
+
+- **fix** — Split the shared `models.go` changes per topic across commits; added `categoryItemLimit` migration in `GetSettings` for existing installs.
+- **fix** — Documented v2026.07.18: what's-new modal, CHANGELOG, README, MANUAL, and Config → Help; bumped `DASHBOARD_RELEASE` (v126), `NEXTDASH_WHATS_NEW_DATA_VERSION`/`WhatsNewData` (v168), and the relevant asset tokens. Added six i18n keys across en/nl/de/fr for the category-limit setting and toggle.
 
 ---
 
