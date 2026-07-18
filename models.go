@@ -420,7 +420,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
 			CurrentPage:                    1,
-			Theme:                          "kelp-drift-dark",
+			Theme:                          "midnight-ink-dark",
 			OpenInNewTab:                   true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
@@ -1557,7 +1557,7 @@ func (fs *FileStore) GetSettings() Settings {
 		// Return default settings if file doesn't exist
 		return Settings{
 			CurrentPage:                    1,
-			Theme:                          "kelp-drift-dark",
+			Theme:                          "midnight-ink-dark",
 			OpenInNewTab:                   true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",

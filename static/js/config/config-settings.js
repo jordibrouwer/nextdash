@@ -2877,7 +2877,7 @@ class ConfigSettings {
      */
     getDefaults() {
         return {
-            theme: 'kelp-drift-dark',
+            theme: 'midnight-ink-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
