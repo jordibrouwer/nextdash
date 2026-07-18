@@ -268,6 +268,7 @@ class DashboardSetup {
             if (e.key === '<' || (e.code === 'Comma' && e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                 window.location.href = '/config';
                 return;
             }

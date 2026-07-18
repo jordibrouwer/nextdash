@@ -23,23 +23,22 @@ import (
 )
 
 type Handlers struct {
-	store          Store
-	files          embed.FS
-	previewCacheMu   sync.RWMutex
-	previewCache     PreviewCacheFile
-	previewLoaded    bool
+	store             Store
+	files             embed.FS
+	previewCacheMu    sync.RWMutex
+	previewCache      PreviewCacheFile
+	previewLoaded     bool
 	previewCacheDirty bool
-	healthCacheMu  sync.RWMutex
-	healthReportMu sync.RWMutex
-	healthReport   BookmarkHealthReport
-	healthReportAt time.Time
-	healthReportOK bool
-	prefetchMu       sync.Mutex
-	autoBackupMu     sync.Mutex
-	ssrfAPILimiter     *slidingWindowLimiter
-	statusPingLimiter  *slidingWindowLimiter
+	healthCacheMu     sync.RWMutex
+	healthReportMu    sync.RWMutex
+	healthReport      BookmarkHealthReport
+	healthReportAt    time.Time
+	healthReportOK    bool
+	prefetchMu        sync.Mutex
+	autoBackupMu      sync.Mutex
+	ssrfAPILimiter    *slidingWindowLimiter
+	statusPingLimiter *slidingWindowLimiter
 }
-
 
 const healthReportCacheTTL = 3 * time.Minute
 
@@ -165,8 +164,8 @@ func (h *Handlers) FlushCaches() {
 
 func NewHandlers(store Store, files embed.FS) *Handlers {
 	h := &Handlers{
-		store:          store,
-		files:          files,
+		store:             store,
+		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
@@ -606,13 +605,27 @@ type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
 	Assets     pageAssetVersions
+
+	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
+	// project's shared instance; the template only emits the tracker when
+	// Settings.EnableUsageAnalytics is true.
+	AnalyticsWebsiteID string
+	AnalyticsScriptSrc string
 }
+
+// analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
+const (
+	analyticsWebsiteID = "6088e50e-b155-4efc-bc19-c4754edbbab1"
+	analyticsScriptSrc = "https://stats.nextdash.cc/script.js"
+)
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
-		Settings:   settings,
-		WriteToken: writeAccessToken(),
-		Assets:     sharedAssetVersions,
+		Settings:           settings,
+		WriteToken:         writeAccessToken(),
+		Assets:             sharedAssetVersions,
+		AnalyticsWebsiteID: analyticsWebsiteID,
+		AnalyticsScriptSrc: analyticsScriptSrc,
 	}
 }
 

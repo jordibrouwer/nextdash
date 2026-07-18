@@ -162,7 +162,8 @@
                     <span>${this.escape(this.t('setupLocation', 'Location'))}</span>
                     <input class="quickstart-input" type="text" data-qs-field="weatherLocation"
                            placeholder="${this.escape(this.t('setupLocationPlaceholder', 'City name (e.g. Amsterdam)'))}">
-                </label>`;
+                </label>
+                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are on — no bookmark names, URLs, or searches are ever sent. You can turn this off in Config → General.'))}</p>`;
         }
 
         renderSetupStep() {

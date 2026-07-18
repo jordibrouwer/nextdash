@@ -1426,6 +1426,7 @@ class SearchComponent {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
             window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+            window.nextdashTrack?.('search-open');
         }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');

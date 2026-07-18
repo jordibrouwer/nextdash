@@ -33,6 +33,11 @@ class DashboardPageNav {
             return true;
         }
 
+        // Track by position only (never the page name) to keep analytics PII-free.
+        const targetIndex = d.pages?.findIndex((page) => Number(page.id) === targetPageId);
+        if (typeof targetIndex === 'number' && targetIndex >= 0) {
+            window.nextdashTrack?.('page-switch', { index: targetIndex });
+        }
         return d.loadPageBookmarks(targetPageId, { skipInlineEditConfirm: true });
     }
 

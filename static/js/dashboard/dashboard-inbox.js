@@ -370,6 +370,7 @@ class DashboardInbox {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         this.clearKeyboardSelection();
         d.activeView = DashboardInbox.VIEW;
+        window.nextdashTrack?.('view:inbox');
         d.pageNav?.setActiveInboxTab?.();
         d.pageNav?.updateDocumentTitle?.();
         d.pageNav?.markInboxTabDiscovered?.();

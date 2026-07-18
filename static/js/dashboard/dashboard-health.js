@@ -240,6 +240,7 @@ class DashboardHealth {
         d.inbox?.clearKeyboardSelection?.();
         this.clearKeyboardSelection();
         d.activeView = DashboardHealth.VIEW;
+        window.nextdashTrack?.('view:health');
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();
         const legacyEntry = this.consumeLegacyEntryParams();

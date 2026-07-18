@@ -73,6 +73,10 @@ class ConfigUI {
         // Function to switch to a specific tab
         const switchToTab = async (targetTab) => {
             const previousTab = this._currentTab;
+            if (targetTab && targetTab !== previousTab) {
+                // Tab ids are a fixed enum (general, bookmarks, help, …) — no PII.
+                window.nextdashTrack?.('config-tab', { tab: targetTab });
+            }
             if (previousTab === 'categories' && targetTab !== 'categories') {
                 const allowed = await window.configManager?.guardCategoriesTabLeave?.(targetTab);
                 if (allowed === false) {
@@ -419,6 +423,7 @@ class ConfigUI {
             if (!configTabKeyAllowed()) return;
             const backLink = document.querySelector('header.header .back-link');
             e.preventDefault();
+            window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-dashboard' });
             if (backLink) {
                 backLink.click();
             } else {
