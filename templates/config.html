@@ -1863,6 +1863,7 @@
                         <li><a href="#stats-shortcuts" data-i18n="config.statsNavShortcuts">shortcuts</a></li>
                         <li><a href="#stats-finders" data-i18n="config.statsNavFinders">finders</a></li>
                         <li><a href="#stats-inbox" data-i18n="config.statsNavInbox">inbox</a></li>
+                        <li><a href="#stats-health" data-i18n="config.statsNavHealth">health</a></li>
                         <li><a href="#stats-rot" data-i18n="config.statsNavRot">rot &amp; cleanup</a></li>
                         <li><a href="#stats-conflicts" data-i18n="config.statsNavConflicts">conflicts &amp; duplicates</a></li>
                         <li><a href="#stats-search" data-i18n="config.statsNavSearch">search &amp; status</a></li>
@@ -2222,6 +2223,50 @@
                         </div>
                     </section>
 
+                    <section id="stats-health" class="stats-block">
+                        <div class="stats-block-title-row">
+                            <h3 class="section-title" data-i18n="config.statsNavHealth">health</h3>
+                            <button type="button" class="info-button" id="stats-health-info-btn">ℹ</button>
+                        </div>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsHealthSubOverview">link health</h4>
+                        <div class="stats-shortcut-bar-wrap">
+                            <div class="stats-shortcut-bar">
+                                <div id="stats-health-healthy-fill" class="stats-shortcut-bar-fill"></div>
+                            </div>
+                            <span id="stats-health-healthy-label" class="stats-shortcut-bar-label"></span>
+                        </div>
+                        <div class="stats-rot-grid">
+                            <div class="stats-rot-card">
+                                <div id="stats-health-total" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsHealthTotal">checked bookmarks</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-health-healthy" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsHealthHealthy">healthy</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-health-broken" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsHealthBroken">broken</div>
+                            </div>
+                            <div class="stats-rot-card">
+                                <div id="stats-health-unchecked" class="stats-rot-value">0</div>
+                                <div class="stats-rot-label" data-i18n="config.statsHealthUnchecked">unchecked</div>
+                            </div>
+                        </div>
+
+                        <h4 class="stats-subtitle" data-i18n="config.statsHealthSubBreakdown">issue breakdown</h4>
+                        <dl class="stats-dl">
+                            <div><dt data-i18n="config.statsHealthDuplicate">Duplicate URLs</dt><dd id="stats-health-duplicate">0</dd></div>
+                            <div><dt data-i18n="config.statsHealthShortcutConflict">Shortcut conflicts</dt><dd id="stats-health-shortcut-conflict">0</dd></div>
+                            <div><dt data-i18n="config.statsHealthStale">Stale checks</dt><dd id="stats-health-stale">0</dd></div>
+                            <div><dt data-i18n="config.statsHealthMissingPreview">Missing preview</dt><dd id="stats-health-missing-preview">0</dd></div>
+                            <div><dt data-i18n="config.statsHealthUnused">Unused</dt><dd id="stats-health-unused">0</dd></div>
+                            <div><dt data-i18n="config.statsHealthPinned">Pinned</dt><dd id="stats-health-pinned">0</dd></div>
+                        </dl>
+                        <p id="stats-health-empty" class="stats-muted" hidden data-i18n="config.statsHealthEmpty">No bookmarks to check yet.</p>
+                    </section>
+
                     <section id="stats-rot" class="stats-block">
                         <div class="stats-block-title-row">
                             <h3 class="section-title" data-i18n="config.statsNavRot">rot &amp; cleanup</h3>
@@ -2519,7 +2564,7 @@
     <script src="/static/js/color-value-utils.js?v=colors-preview-v2"></script>
     <script src="/static/js/colors.js?v=colors-b10-1"></script>
     <script src="/static/js/config/config-pwa-install.js?v=pwa-install-1"></script>
-    <script src="/static/js/config/config-stats.js?v=stats-expand-collapse-all-1"></script>
+    <script src="/static/js/config/config-stats.js?v=stats-health-block-1"></script>
     <script src="/static/js/config/config-keyboard.js?v=lt-dashboard-shortcut-1"></script>
     <script src="/static/js/config/config-tags.js?v=config-b11-empty-hidden-1"></script>
     <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>

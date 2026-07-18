@@ -15,6 +15,8 @@ class ConfigStats {
         // Inbox data sources (fetched async; snapshot from /api/inbox, lifetime from /api/inbox-stats)
         this._inboxItems = [];
         this._inboxStats = null;
+        // Health summary (fetched async from /api/bookmark-health; mirrors the Health view)
+        this._healthSummary = null;
         // Persisted per-section collapse state (accordion; at most one open).
         this._collapseStateKey = 'nextdash_config_stats_open';
     }
@@ -308,6 +310,7 @@ class ConfigStats {
         const keys = {
             'stats-overview': 'statsInfoOverviewTitle',
             'stats-inbox': 'statsInfoInboxTitle',
+            'stats-health': 'statsInfoHealthTitle',
             'stats-insights': 'statsInfoInsightsTitle',
             'stats-score': 'statsInfoScoreTitle',
             'stats-activity': 'statsInfoActivityTitle',
@@ -624,6 +627,7 @@ class ConfigStats {
         const sections = [
             ['stats-overview-info-btn',   'statsInfoOverviewTitle',   'statsInfoOverviewMsg'],
             ['stats-inbox-info-btn',      'statsInfoInboxTitle',      'statsInfoInboxMsg'],
+            ['stats-health-info-btn',     'statsInfoHealthTitle',     'statsInfoHealthMsg'],
             ['stats-insights-info-btn',   'statsInfoInsightsTitle',   'statsInfoInsightsMsg'],
             ['stats-score-info-btn',      'statsInfoScoreTitle',      'statsInfoScoreMsg'],
             ['stats-activity-info-btn',   'statsInfoActivityTitle',   'statsInfoActivityMsg'],
@@ -1946,6 +1950,56 @@ class ConfigStats {
         ));
     }
 
+    // ── Health ─────────────────────────────────────────────────────────────
+
+    /** Fetch the health summary (same source as the Health view) and render it. */
+    async loadHealthData() {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/bookmark-health');
+            if (res && res.ok) {
+                const body = await res.json();
+                this._healthSummary = body && typeof body.summary === 'object' ? body.summary : null;
+            }
+        } catch { this._healthSummary = null; }
+        this.renderHealthBlock();
+        this.applyTableFilter();
+    }
+
+    renderHealthBlock() {
+        const s = this._healthSummary || {};
+        const total     = Number(s.totalBookmarks || 0);
+        const healthy   = Number(s.healthyCount || 0);
+        const broken    = Number(s.brokenCount || 0);
+        const unchecked = Number(s.uncheckedCount || 0);
+
+        this.setText('stats-health-total',     String(total));
+        this.setText('stats-health-healthy',   String(healthy));
+        this.setText('stats-health-broken',    String(broken));
+        this.setText('stats-health-unchecked', String(unchecked));
+
+        this.setText('stats-health-duplicate',         String(Number(s.duplicateCount || 0)));
+        this.setText('stats-health-shortcut-conflict', String(Number(s.shortcutConflictCount || 0)));
+        this.setText('stats-health-stale',             String(Number(s.staleCount || 0)));
+        this.setText('stats-health-missing-preview',   String(Number(s.missingPreviewCount || 0)));
+        this.setText('stats-health-unused',            String(Number(s.unusedCount || 0)));
+        this.setText('stats-health-pinned',            String(Number(s.pinnedCount || 0)));
+
+        const pct = total > 0 ? Math.round((healthy / total) * 100) : 0;
+        const fill = document.getElementById('stats-health-healthy-fill');
+        const label = document.getElementById('stats-health-healthy-label');
+        if (fill) fill.style.width = `${pct}%`;
+        if (label) {
+            label.textContent = this.t('config.statsHealthHealthyPct')
+                .replace('{count}', String(healthy))
+                .replace('{total}', String(total))
+                .replace('{pct}', String(pct));
+        }
+
+        const empty = document.getElementById('stats-health-empty');
+        if (empty) empty.hidden = total > 0;
+    }
+
     // ── Main entry point ───────────────────────────────────────────────────
 
     refresh(manager) {
@@ -1969,6 +2023,7 @@ class ConfigStats {
         this.renderConflictsBlock(bookmarks);
         this.renderSearchStatus(settings, bookmarks);
         void this.loadInboxData(locale);
+        void this.loadHealthData();
 
         const filterInput = document.getElementById('stats-filter-input');
         if (filterInput) {
