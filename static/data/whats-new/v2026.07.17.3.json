@@ -1,0 +1,16 @@
+{
+  "tag": "v2026.07.17.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-18",
+  "sections": [
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>High CPU from favicon prefetch fixed</strong> — on startup nextDash prefetches missing favicons for the default bookmarks. A single bookmark whose favicon couldn't be fetched (dead URL, timeout, or blocked outbound) kept the loop retrying the same failing request forever, pinning the CPU (noticeable as high CPU on Docker). The loop now stops when a batch makes no progress, so fetchable icons are still loaded and unfetchable ones no longer spin the CPU."
+        }
+      ]
+    }
+  ]
+}
