@@ -2521,6 +2521,35 @@ a.bookmark-open:hover {
     color: var(--accent-primary);
 }
 
+/* Per-category item cap: rows past the limit are hidden until "show more". */
+.bookmark-link.is-overflow-hidden {
+    display: none;
+}
+
+/* "+ N more" / "show less" toggle — a quiet, secondary control so it doesn't
+   compete with the primary "+ bookmark" action. */
+.category-show-more {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.15rem;
+    padding: 0.1rem 0.35rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--layout-radius-sm, 8px);
+    font-family: inherit;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.category-show-more:hover,
+.category-show-more:focus-visible {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    outline: none;
+}
+
 /* Terminal layout: monospace style with > prefix */
 .dashboard-grid.layout-terminal .empty-state--category {
     padding-left: 1rem;

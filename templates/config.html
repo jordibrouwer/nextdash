@@ -471,6 +471,19 @@
                             <span class="setting-preview-label" data-i18n="config.layoutLivePreview">Live preview:</span>
                             <span id="layout-density-preview-text"></span>
                         </div>
+                        <div class="form-group">
+                            <label for="category-item-limit-select" data-i18n="config.categoryItemLimitLabel">Items per category:</label>
+                            <button type="button" id="category-item-limit-info-btn" class="info-button" data-i18n-aria="config.categoryItemLimitInfoTitle">ℹ</button>
+                            <select id="category-item-limit-select">
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="0" data-i18n="config.categoryItemLimitUnlimited">Unlimited</option>
+                            </select>
+                        </div>
                         </div>
                         <div class="general-card-group">
                         <span class="general-card-group-label" data-i18n="config.generalGroupSpacing">spacing</span>
@@ -2557,7 +2570,7 @@
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=health-recheck-1"></script>
     <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
-    <script src="/static/js/config/config-settings.js?v=health-always-on-1"></script>
+    <script src="/static/js/config/config-settings.js?v=category-item-limit-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>

@@ -1586,6 +1586,17 @@ class ConfigSettings {
             });
         }
 
+        const categoryItemLimitSelect = document.getElementById('category-item-limit-select');
+        if (categoryItemLimitSelect) {
+            const currentCatLimit = Number(settings.categoryItemLimit ?? 15);
+            const normalizedCatLimit = Number.isFinite(currentCatLimit) && currentCatLimit >= 0 ? currentCatLimit : 15;
+            categoryItemLimitSelect.value = normalizedCatLimit === 0 ? '0' : String(normalizedCatLimit);
+            categoryItemLimitSelect.addEventListener('change', (e) => {
+                const value = Number(e.target.value);
+                settings.categoryItemLimit = Number.isFinite(value) && value >= 0 ? value : 15;
+            });
+        }
+
         const smartTodayWorkKeywordsInput = document.getElementById('smart-today-work-keywords-input');
         if (smartTodayWorkKeywordsInput) {
             smartTodayWorkKeywordsInput.value = String(settings.smartTodayWorkKeywords || '');
@@ -1880,6 +1891,7 @@ class ConfigSettings {
         const smartRecentLimitSelect = document.getElementById('smart-recent-limit-select');
         const smartStaleLimitSelect = document.getElementById('smart-stale-limit-select');
         const smartMostUsedLimitSelect = document.getElementById('smart-most-used-limit-select');
+        const categoryItemLimitSelect = document.getElementById('category-item-limit-select');
         const smartTodayWorkKeywordsInput = document.getElementById('smart-today-work-keywords-input');
         const smartTodayEveningKeywordsInput = document.getElementById('smart-today-evening-keywords-input');
         const smartTodayWeekendKeywordsInput = document.getElementById('smart-today-weekend-keywords-input');
@@ -1976,6 +1988,10 @@ class ConfigSettings {
         if (smartTodayLimitSelect) {
             const parsedLimit = Number(smartTodayLimitSelect.value);
             settings.smartTodayLimit = Number.isFinite(parsedLimit) && parsedLimit >= 0 ? parsedLimit : 8;
+        }
+        if (categoryItemLimitSelect) {
+            const parsedLimit = Number(categoryItemLimitSelect.value);
+            settings.categoryItemLimit = Number.isFinite(parsedLimit) && parsedLimit >= 0 ? parsedLimit : 15;
         }
         if (smartRecentLimitSelect) {
             const parsedLimit = Number(smartRecentLimitSelect.value);
@@ -2841,6 +2857,7 @@ class ConfigSettings {
         watch('weather-location-input', 'weatherLocation');
         watch('tag-collections-min-count', 'tagCollectionsMinCount');
         watch('smart-today-limit-select', 'smartTodayLimit');
+        watch('category-item-limit-select', 'categoryItemLimit');
         watch('smart-recent-limit-select', 'smartRecentLimit');
         watch('smart-stale-limit-select', 'smartStaleLimit');
         watch('smart-most-used-limit-select', 'smartMostUsedLimit');
@@ -2951,6 +2968,7 @@ class ConfigSettings {
             smartRecentLimit: 50,
             smartStaleLimit: 50,
             smartMostUsedLimit: 25,
+            categoryItemLimit: 15,
             smartTodayPageIds: [],
             smartTodayWorkKeywords: 'calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams',
             smartTodayEveningKeywords: 'youtube,spotify,netflix,reddit',

@@ -1189,6 +1189,102 @@ class DashboardRenderCore {
     }
 
 
+    // Page+category-scoped key for remembering which capped categories the user
+    // expanded, mirroring how collapsedCategories keys are scoped.
+    _overflowKey(category) {
+        const d = this.dash;
+        return `${d.currentPageId}:${category.id ?? ''}`;
+    }
+
+    _loadExpandedOverflow() {
+        const d = this.dash;
+        if (d._expandedOverflowCategories) return d._expandedOverflowCategories;
+        let parsed = {};
+        try {
+            const raw = localStorage.getItem('expandedOverflowCategories');
+            if (raw) parsed = JSON.parse(raw) || {};
+        } catch { parsed = {}; }
+        d._expandedOverflowCategories = (parsed && typeof parsed === 'object') ? parsed : {};
+        return d._expandedOverflowCategories;
+    }
+
+    _saveExpandedOverflow() {
+        const d = this.dash;
+        try {
+            localStorage.setItem('expandedOverflowCategories', JSON.stringify(d._expandedOverflowCategories || {}));
+        } catch {
+            // localStorage unavailable — state kept in memory only
+        }
+    }
+
+    /**
+     * Cap a category's bookmark list at settings.categoryItemLimit, hiding the
+     * overflow rows behind a "show more / show less" toggle. Idempotent: safe to
+     * call repeatedly on the same list (the incremental render path re-runs it
+     * after patching rows), because it clears any prior marks/button first.
+     */
+    applyCategoryItemLimit(bookmarksList, category) {
+        const d = this.dash;
+        if (!bookmarksList) return;
+
+        // Clear previous state so re-runs start clean.
+        bookmarksList.querySelectorAll('.bookmark-link.is-overflow-hidden').forEach((row) => {
+            row.classList.remove('is-overflow-hidden');
+        });
+        const existingBtn = bookmarksList.parentElement?.querySelector(':scope > .category-show-more');
+        if (existingBtn) existingBtn.remove();
+        const staleBtn = bookmarksList.querySelector(':scope > .category-show-more');
+        if (staleBtn) staleBtn.remove();
+
+        const limit = Number(d.settings.categoryItemLimit);
+        if (!Number.isFinite(limit) || limit <= 0) return;
+
+        const rows = Array.from(bookmarksList.querySelectorAll(':scope > .bookmark-link'));
+        if (rows.length <= limit) return;
+
+        const overflowStore = this._loadExpandedOverflow();
+        const key = this._overflowKey(category);
+        const expanded = overflowStore[key] === true;
+
+        const hiddenCount = rows.length - limit;
+
+        const applyVisibility = () => {
+            rows.forEach((row, i) => {
+                row.classList.toggle('is-overflow-hidden', !expandedRef.value && i >= limit);
+            });
+        };
+        const expandedRef = { value: expanded };
+        applyVisibility();
+
+        const t = (k, fb) => { const v = d.language?.t?.(k); return (v && v !== k) ? v : (fb ?? k); };
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'category-show-more';
+        const syncBtnLabel = () => {
+            btn.textContent = expandedRef.value
+                ? t('dashboard.categoryShowLess', 'show less')
+                : t('dashboard.categoryShowMore', '+ {n} more').replace('{n}', String(hiddenCount));
+            btn.setAttribute('aria-expanded', expandedRef.value ? 'true' : 'false');
+        };
+        syncBtnLabel();
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            expandedRef.value = !expandedRef.value;
+            const store = this._loadExpandedOverflow();
+            if (expandedRef.value) {
+                store[key] = true;
+            } else {
+                delete store[key];
+            }
+            this._saveExpandedOverflow();
+            applyVisibility();
+            syncBtnLabel();
+        });
+        bookmarksList.appendChild(btn);
+    }
+
+
     createCategoryElement(category, bookmarks) {
         const d = this.dash;
         const animate = d._renderAnimationsEnabled === true;
@@ -1396,6 +1492,13 @@ class DashboardRenderCore {
             }
             bookmarksList.appendChild(bookmarkElement);
         });
+
+        // Cap long categories: hide rows past the limit behind a "show more" toggle
+        // so one big category doesn't tower over the others. Smart collections have
+        // their own limits and tag-filter chunks are already split, so skip both.
+        if (!isSmartCollection && !isTagFilterChunk) {
+            this.applyCategoryItemLimit(bookmarksList, category);
+        }
 
         if (bookmarks.length === 0) {
             const t = (key, fallback) => { const v = d.language?.t?.(key); return (v && v !== key) ? v : (fallback ?? key); };

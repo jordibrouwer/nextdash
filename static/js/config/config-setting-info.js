@@ -52,6 +52,7 @@ const SETTING_INFO_DEFS = [
     { type: 'checkbox', targetId: 'fuzzy-suggestions-start-with-checkbox', btnId: 'fuzzy-suggestions-start-with-info-btn', title: 'fuzzySuggestionsStartWithInfoTitle', message: 'fuzzySuggestionsStartWithInfoMessage' },
     { type: 'checkbox', targetId: 'enable-fuzzy-suggestions-checkbox', btnId: 'fuzzy-suggestions-info-btn', title: 'fuzzySuggestionsInfoTitle', message: 'fuzzySuggestionsInfoMessage' },
     { type: 'checkbox', targetId: 'packed-columns-checkbox', btnId: 'packed-columns-info-btn', title: 'packedColumnsInfoTitle', message: 'packedColumnsInfoMessage' },
+    { type: 'labelFor', labelFor: 'category-item-limit-select', btnId: 'category-item-limit-info-btn', title: 'categoryItemLimitInfoTitle', message: 'categoryItemLimitInfoMessage' },
     { type: 'checkbox', targetId: 'hypr-mode-checkbox', btnId: 'hypr-mode-info-btn', title: 'hyprModeInfoTitle', message: 'hyprModeInfoMessage' },
     { type: 'checkbox', targetId: 'keep-search-open-when-empty-checkbox', btnId: 'keep-search-open-when-empty-info-btn', title: 'keepSearchOpenWhenEmptyInfoTitle', message: 'keepSearchOpenWhenEmptyInfoMessage' },
     { type: 'checkbox', targetId: 'interleave-mode-checkbox', btnId: 'interleave-mode-info-btn', title: 'interleaveModeInfoTitle', message: 'interleaveModeInfoMessage' },

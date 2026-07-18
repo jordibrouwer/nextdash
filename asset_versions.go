@@ -123,10 +123,10 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
 	ConfigFontJS:             "config-font-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
-	ConfigSettingInfoJS:      "config-setting-info-health-always-on-1",
-	DashboardRenderCoreJS:    "sort-locked-drag-hint-1",
+	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
+	DashboardRenderCoreJS:    "category-item-limit-1",
 
-	DashboardCSS:            "health-icon-square-underline-1",
+	DashboardCSS:            "category-item-limit-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

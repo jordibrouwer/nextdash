@@ -177,6 +177,7 @@ type Settings struct {
 	SmartRecentLimit               int                              `json:"smartRecentLimit"`             // Max items in smart recently opened (0 = unlimited)
 	SmartStaleLimit                int                              `json:"smartStaleLimit"`              // Max items in smart stale bookmarks (0 = unlimited)
 	SmartMostUsedLimit             int                              `json:"smartMostUsedLimit"`           // Max items in smart most used (0 = unlimited)
+	CategoryItemLimit              int                              `json:"categoryItemLimit"`            // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
 	SmartTodayWorkKeywords         string                           `json:"smartTodayWorkKeywords"`       // Comma-separated work-hour keyword boosts
 	SmartTodayEveningKeywords      string                           `json:"smartTodayEveningKeywords"`    // Comma-separated evening keyword boosts
 	SmartTodayWeekendKeywords      string                           `json:"smartTodayWeekendKeywords"`    // Comma-separated weekend keyword boosts
@@ -493,6 +494,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartTodayLimit:                8,
 			SmartRecentLimit:               50,
 			SmartMostUsedLimit:             25,
+			CategoryItemLimit:              15,
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -1625,6 +1627,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartTodayLimit:                8,
 			SmartRecentLimit:               50,
 			SmartStaleLimit:                50,
+			CategoryItemLimit:              15,
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -1748,6 +1751,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartStaleLimit"]; !ok || settings.SmartStaleLimit < 0 {
 			settings.SmartStaleLimit = 50
+		}
+		if _, ok := rawSettings["categoryItemLimit"]; !ok || settings.CategoryItemLimit < 0 {
+			settings.CategoryItemLimit = 15
 		}
 		if _, ok := rawSettings["smartRecentPageIds"]; !ok || settings.SmartRecentPageIds == nil {
 			settings.SmartRecentPageIds = []int{}

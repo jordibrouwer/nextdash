@@ -84,6 +84,7 @@ class Dashboard {
             smartRecentLimit: 50,
             smartStaleLimit: 50,
             smartMostUsedLimit: 25,
+            categoryItemLimit: 15,
             smartTodayWorkKeywords: 'calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams',
             smartTodayEveningKeywords: 'youtube,spotify,netflix,reddit',
             smartTodayWeekendKeywords: 'news,weather,maps',
