@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.17.3 — July 2026](#v2026071713--july-2026)
 - [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
 - [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
 - [v2026.07.17 — July 2026](#v20260717--july-2026)
@@ -99,6 +100,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.17.3 — July 2026
+
+**Hotfix: high CPU from favicon prefetch** — a runaway startup loop that could pin the CPU is fixed.
+
+### Fixes
+
+- **fix** **Favicon prefetch no longer spins the CPU** — on startup nextDash prefetches missing favicons for the default bookmarks. The loop only stopped once *every* bookmark had an icon, so a single bookmark whose favicon can't be fetched (dead URL, timeout, or blocked outbound — common on servers with restricted egress) kept it retrying the same failing network request without pause, pinning the CPU (observed ramping past 100% at idle in Docker). The loop now also stops when a batch makes no progress: fetchable icons are still fetched, and unfetchable ones no longer spin the loop. Added a regression test that fails if the loop doesn't terminate (`favicon_prefetch.go`).
 
 ---
 

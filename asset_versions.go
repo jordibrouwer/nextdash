@@ -3,19 +3,19 @@ package main
 // pageAssetVersions holds cache-bust query tokens shared across dashboard, config, and health.
 // Bump a value when the underlying static file changes; all three templates read from here.
 type pageAssetVersions struct {
-	ThemeCSS               string
-	ThemeJS                string
-	VisualSettingsJS       string
-	SettingsSanitizeJS     string
-	DiscoverabilityJS      string
-	MobileExperienceCSS    string
-	MobileExperienceJS     string
-	LayoutVersionUtilsJS   string
-	HealthBadgeJS          string
-	AppNotificationJS      string
-	SearchCommandsNewJS    string
-	WhatsNewData           string
-	DataRevision           string // dashboard data-revision / cross-tab sync bundles
+	ThemeCSS             string
+	ThemeJS              string
+	VisualSettingsJS     string
+	SettingsSanitizeJS   string
+	DiscoverabilityJS    string
+	MobileExperienceCSS  string
+	MobileExperienceJS   string
+	LayoutVersionUtilsJS string
+	HealthBadgeJS        string
+	AppNotificationJS    string
+	SearchCommandsNewJS  string
+	WhatsNewData         string
+	DataRevision         string // dashboard data-revision / cross-tab sync bundles
 
 	// Previously referenced without a cache-bust token, so static_cache.go served
 	// them with max-age=86400 and a deploy stayed invisible for up to a day.
@@ -80,19 +80,19 @@ type pageAssetVersions struct {
 }
 
 var sharedAssetVersions = pageAssetVersions{
-	ThemeCSS:               "bg-dots-layer-2",
-	ThemeJS:                "theme-color-meta-1",
-	VisualSettingsJS:       "theme-sync-1",
-	SettingsSanitizeJS:     "settings-sanitize-1",
-	DiscoverabilityJS:      "discoverability-state-4",
-	MobileExperienceCSS:    "phone-layout-7-hint-css-gone",
-	MobileExperienceJS:     "general-split-shell-1",
-	LayoutVersionUtilsJS:   "glass-migrate-1",
-	HealthBadgeJS:          "health-badge-count-only-1",
-	AppNotificationJS:      "toast-grouped-1",
-	SearchCommandsNewJS:    "search-commands-new-6-promote-healthcheck",
-	WhatsNewData:           "whats-new-v166",
-	DataRevision:           "data-revision-8-promo-starvation",
+	ThemeCSS:             "bg-dots-layer-2",
+	ThemeJS:              "theme-color-meta-1",
+	VisualSettingsJS:     "theme-sync-1",
+	SettingsSanitizeJS:   "settings-sanitize-1",
+	DiscoverabilityJS:    "discoverability-state-4",
+	MobileExperienceCSS:  "phone-layout-7-hint-css-gone",
+	MobileExperienceJS:   "general-split-shell-1",
+	LayoutVersionUtilsJS: "glass-migrate-1",
+	HealthBadgeJS:        "health-badge-count-only-1",
+	AppNotificationJS:    "toast-grouped-1",
+	SearchCommandsNewJS:  "search-commands-new-6-promote-healthcheck",
+	WhatsNewData:         "whats-new-v167",
+	DataRevision:         "data-revision-8-promo-starvation",
 
 	WriteAPIJS:               "write-api-1",
 	FontPresetsJS:            "font-presets-1",
