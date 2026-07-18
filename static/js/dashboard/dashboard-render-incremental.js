@@ -294,6 +294,13 @@ class DashboardRenderIncremental {
             emptyEl.appendChild(textSpan);
             list.appendChild(emptyEl);
         }
+
+        // Re-apply the per-category item cap after patching rows — otherwise the
+        // "show more" toggle and hidden-overflow state would be lost on every
+        // incremental update. Shared with the full-render path (idempotent).
+        if (!isSmartCollection && category.tagFilterChunk !== true) {
+            this.core.applyCategoryItemLimit(list, category);
+        }
     }
 
     normalizeUrl(url) {

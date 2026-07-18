@@ -23,23 +23,22 @@ import (
 )
 
 type Handlers struct {
-	store          Store
-	files          embed.FS
-	previewCacheMu   sync.RWMutex
-	previewCache     PreviewCacheFile
-	previewLoaded    bool
+	store             Store
+	files             embed.FS
+	previewCacheMu    sync.RWMutex
+	previewCache      PreviewCacheFile
+	previewLoaded     bool
 	previewCacheDirty bool
-	healthCacheMu  sync.RWMutex
-	healthReportMu sync.RWMutex
-	healthReport   BookmarkHealthReport
-	healthReportAt time.Time
-	healthReportOK bool
-	prefetchMu       sync.Mutex
-	autoBackupMu     sync.Mutex
-	ssrfAPILimiter     *slidingWindowLimiter
-	statusPingLimiter  *slidingWindowLimiter
+	healthCacheMu     sync.RWMutex
+	healthReportMu    sync.RWMutex
+	healthReport      BookmarkHealthReport
+	healthReportAt    time.Time
+	healthReportOK    bool
+	prefetchMu        sync.Mutex
+	autoBackupMu      sync.Mutex
+	ssrfAPILimiter    *slidingWindowLimiter
+	statusPingLimiter *slidingWindowLimiter
 }
-
 
 const healthReportCacheTTL = 3 * time.Minute
 
@@ -165,8 +164,8 @@ func (h *Handlers) FlushCaches() {
 
 func NewHandlers(store Store, files embed.FS) *Handlers {
 	h := &Handlers{
-		store:          store,
-		files:          files,
+		store:             store,
+		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}

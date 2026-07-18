@@ -31,7 +31,7 @@ class Dashboard {
         this.currentPageId = 'default';
         this.settings = {
             currentPage: 'default',
-            theme: 'kelp-drift-dark',
+            theme: 'midnight-ink-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -84,6 +84,7 @@ class Dashboard {
             smartRecentLimit: 50,
             smartStaleLimit: 50,
             smartMostUsedLimit: 25,
+            categoryItemLimit: 15,
             smartTodayWorkKeywords: 'calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams',
             smartTodayEveningKeywords: 'youtube,spotify,netflix,reddit',
             smartTodayWeekendKeywords: 'news,weather,maps',
@@ -251,7 +252,6 @@ class Dashboard {
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
-            this.inbox.setupKeyboardNavigation();
             this.health?.setupEscapeShortcut();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);

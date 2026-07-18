@@ -59,7 +59,7 @@ class ConfigManager {
         this.currentBookmarksSearch = '';
         this.settingsData = {
             currentPage: 'default',
-            theme: 'kelp-drift-dark',
+            theme: 'midnight-ink-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -123,6 +123,7 @@ class ConfigManager {
             smartRecentLimit: 50,
             smartStaleLimit: 50,
             smartMostUsedLimit: 25,
+            categoryItemLimit: 15,
             smartTodayWorkKeywords: 'calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams',
             smartTodayEveningKeywords: 'youtube,spotify,netflix,reddit',
             smartTodayWeekendKeywords: 'news,weather,maps',

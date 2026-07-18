@@ -106,7 +106,6 @@ class DashboardConfigSync {
         document.getElementById('bookmark-grid')?.removeAttribute('aria-activedescendant');
 
         d.initializeKeyboardNavigation();
-        d.inbox?.setupKeyboardNavigation?.();
         d.inbox?.clearKeyboardSelection?.();
         d.inbox?.restoreViewIfNeeded?.();
         d.keyboardNavigation?.scheduleUpdate?.();

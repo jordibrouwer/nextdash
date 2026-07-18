@@ -425,14 +425,6 @@ class DashboardInbox {
     }
 
 
-    setupKeyboardNavigation() {
-        if (this._keyboardHandler) {
-            document.removeEventListener('keydown', this._keyboardHandler, true);
-            this._keyboardHandler = null;
-        }
-    }
-
-
     bindPointerNavigation(container) {
         if (!container) {
             return;
