@@ -18,23 +18,23 @@ const (
 	activityCategoryOpen     = "open"
 	activityCategorySecurity = "security"
 
-	activityLogMaxBytes    = 5 << 20
-	activityLogBackupCount = 3
+	activityLogMaxBytes     = 5 << 20
+	activityLogBackupCount  = 3
 	activityStatusDedupeTTL = 10 * time.Minute
 )
 
 type activityLogConfig struct {
-	enabled    map[string]bool
-	persist    bool
-	filePath   string
-	disabled   bool
+	enabled  map[string]bool
+	persist  bool
+	filePath string
+	disabled bool
 }
 
 var (
-	activityCfgOnce sync.Once
-	activityCfg     activityLogConfig
-	activityCfgTest *activityLogConfig
-	activityFile    *activityRotatingFile
+	activityCfgOnce  sync.Once
+	activityCfg      activityLogConfig
+	activityCfgTest  *activityLogConfig
+	activityFile     *activityRotatingFile
 	activityFileOnce sync.Once
 
 	activityStatusDedupe = newStatusDedupeCache(activityStatusDedupeTTL)

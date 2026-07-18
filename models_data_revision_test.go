@@ -1,18 +1,18 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
-	"os"
 	"time"
 )
 
 func TestGetDataRevisionChangesOnBookmarkWrite(t *testing.T) {
 	dir := t.TempDir()
 	store := &FileStore{
-		dataDir:      dir,
-		settingsFile: filepath.Join(dir, "settings.json"),
-		colorsFile:   filepath.Join(dir, "colors.json"),
+		dataDir:       dir,
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
 		pageOrderFile: filepath.Join(dir, "pages.json"),
 	}
 	store.ensureDataDir()
@@ -33,9 +33,9 @@ func TestGetDataRevisionChangesOnBookmarkWrite(t *testing.T) {
 func TestGetDataRevisionStableWithoutWrites(t *testing.T) {
 	dir := t.TempDir()
 	store := &FileStore{
-		dataDir:      dir,
-		settingsFile: filepath.Join(dir, "settings.json"),
-		colorsFile:   filepath.Join(dir, "colors.json"),
+		dataDir:       dir,
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
 		pageOrderFile: filepath.Join(dir, "pages.json"),
 	}
 	store.ensureDataDir()

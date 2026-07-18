@@ -71,9 +71,9 @@ type Category struct {
 }
 
 type Page struct {
-	ID    int    `json:"id"`             // Numeric ID matching the file number (bookmarks-1.json = id: 1)
-	Name  string `json:"name"`           // Editable page name
-	Icon  string `json:"icon,omitempty"` // Optional emoji icon shown in the tab
+	ID    int    `json:"id"`              // Numeric ID matching the file number (bookmarks-1.json = id: 1)
+	Name  string `json:"name"`            // Editable page name
+	Icon  string `json:"icon,omitempty"`  // Optional emoji icon shown in the tab
 	Color string `json:"color,omitempty"` // Optional accent color (hex) for the tab indicator
 }
 
@@ -88,136 +88,136 @@ type PageOrder struct {
 }
 
 type Settings struct {
-	CurrentPage                 int                              `json:"currentPage"` // Numeric ID of the current page
-	Theme                       string                           `json:"theme"`       // "light" or "dark"
-	OpenInNewTab                bool                             `json:"openInNewTab"`
-	ColumnsPerRow               int                              `json:"columnsPerRow"`
-	FontSize                    string                           `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
-	ShowBackgroundDots          bool                             `json:"showBackgroundDots"`
-	ShowTitle                   bool                             `json:"showTitle"`
-	ShowDate                    bool                             `json:"showDate"`
-	ShowTime                    bool                             `json:"showTime"`
-	TimeFormat                  string                           `json:"timeFormat"`          // 24h or 12h
-	DateFormat                  string                           `json:"dateFormat"`          // Date format: short-slash, short-dash, long-weekday
-	ShowWeatherWithDate         bool                             `json:"showWeatherWithDate"` // Show weather info next to date
-	WeatherSource               string                           `json:"weatherSource"`       // manual or browser
-	WeatherLocation             string                           `json:"weatherLocation"`     // Manual location query (city)
-	WeatherUnit                 string                           `json:"weatherUnit"`         // celsius or fahrenheit
-	WeatherRefreshMinutes       int                              `json:"weatherRefreshMinutes"`
-	ShowConfigButton            bool                             `json:"showConfigButton"`
-	ShowHealthDashboard         bool                             `json:"showHealthDashboard"`
-	ShowSearchButton            bool                             `json:"showSearchButton"`
-	ShowAddBookmarkButton       bool                             `json:"showAddBookmarkButton"`
-	ShowFindersButton           bool                             `json:"showFindersButton"`
-	ShowCommandsButton          bool                             `json:"showCommandsButton"`
-	ShowRecentButton            bool                             `json:"showRecentButton"`
-	ShowTagCloudButton          bool                             `json:"showTagCloudButton"` // Dashboard / key: horizontal tag cloud toggle
-	TagCloudDefaultMigrated     bool                             `json:"tagCloudDefaultMigrated,omitempty"` // one-time: enable tag cloud for existing installs
-	LinkPreviewCardsOffMigrated bool                             `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
-	ShowSearchFlowBanner        bool                             `json:"showSearchFlowBanner"`
-	ShowCheatSheetButton        bool                             `json:"showCheatSheetButton"`
-	ShowSearchButtonText        bool                             `json:"showSearchButtonText"`
-	ShowFindersButtonText       bool                             `json:"showFindersButtonText"`
-	ShowCommandsButtonText      bool                             `json:"showCommandsButtonText"`
-	ShowStatus                  bool                             `json:"showStatus"`
-	ColorizeStatus              bool                             `json:"colorizeStatus"` // Keep online/offline/checking color changes on bookmark rows
-	ShowPing                    bool                             `json:"showPing"`
-	ShowStatusLoading           bool                             `json:"showStatusLoading"`
-	SkipFastPing                bool                             `json:"skipFastPing"`
-	StatusOfflineRetries        int                              `json:"statusOfflineRetries"`        // Failed pings per check before marking offline (1-10)
-	StatusOfflineRetryDelayMs   int                              `json:"statusOfflineRetryDelayMs"`   // Delay between retry pings in ms (100-3000)
-	StatusRecheckIntervalMinutes int                             `json:"statusRecheckIntervalMinutes"` // Background re-check interval in minutes (1-60)
-	GlobalShortcuts             bool                             `json:"globalShortcuts"`             // Use shortcuts from all pages
-	HyprMode                    bool                             `json:"hyprMode"`                    // Launcher mode for PWA usage
-	AnimationsEnabled           bool                             `json:"animationsEnabled"`           // Enable or disable animations globally
-	EnableCustomTitle           bool                             `json:"enableCustomTitle"`           // Enable custom page title
-	CustomTitle                 string                           `json:"customTitle"`                 // Custom page title
-	ShowPageInTitle             bool                             `json:"showPageInTitle"`             // Show current page name in title
-	ShowPageNamesInTabs         bool                             `json:"showPageNamesInTabs"`         // Show page names in tabs instead of numbers
-	EnableCustomFavicon         bool                             `json:"enableCustomFavicon"`         // Enable custom favicon
-	CustomFaviconPath           string                           `json:"customFaviconPath"`           // Path to custom favicon file
-	EnableCustomFont            bool                             `json:"enableCustomFont"`            // Enable custom font
-	CustomFontPath              string                           `json:"customFontPath"`              // Path to custom font file
-	Language                    string                           `json:"language"`                    // Language code, e.g., "en" or "es"
-	InterleaveMode              bool                             `json:"interleaveMode"`              // Interleave mode for search (/ for shortcuts, direct input for fuzzy)
-	ShowPageTabs                bool                             `json:"showPageTabs"`                // Show page navigation tabs
-	AlwaysCollapseCategories    bool                             `json:"alwaysCollapseCategories"`    // Always collapse categories on load
-	HideEmptyCategories         bool                             `json:"hideEmptyCategories"`         // Hide categories with no bookmarks
-	HideEmptyCategoriesMigrated bool                             `json:"hideEmptyCategoriesMigrated"` // Migration marker for hide-empty default-on
-	EnableFuzzySuggestions      bool                             `json:"enableFuzzySuggestions"`      // Enable fuzzy suggestions in shortcut search
-	FuzzySuggestionsStartWith   bool                             `json:"fuzzySuggestionsStartWith"`   // Fuzzy suggestions start with query instead of contains
-	KeepSearchOpenWhenEmpty     bool                             `json:"keepSearchOpenWhenEmpty"`     // Keep search interface open when query is empty
-	ShowIcons                   bool                             `json:"showIcons"`                   // Show bookmark icons
-	ShowLinkPreviewCards        bool                             `json:"showLinkPreviewCards"`        // Show link preview cards on hover
-	LinkPreviewHoverDelayMs     int                              `json:"linkPreviewHoverDelayMs"`     // Hover delay before preview card appears
-	ShowShortcuts               bool                             `json:"showShortcuts"`               // Show bookmark shortcuts
-	ShowPinIcon                 bool                             `json:"showPinIcon"`                 // Show pin icon next to pinned bookmarks
-	ShowNoteIcon                bool                             `json:"showNoteIcon"`                // Show note icon next to bookmarks with a note
-	IncludeFindersInSearch      bool                             `json:"includeFindersInSearch"`      // Include finders in normal search
-	SortMethod                  string                           `json:"sortMethod,omitempty"`        // Legacy global sort (migrated to per-category sortMode)
-	CategorySortModes           map[string]map[string]string     `json:"categorySortModes,omitempty"` // Per-page sort for uncategorized/orphan categories
-	CategorySortModesMigrated   bool                             `json:"categorySortModesMigrated"`   // Legacy sortMethod migrated to per-category modes
-	LayoutPreset                string                           `json:"layoutPreset"`                // Dashboard layout preset
-	LayoutVersion               string                           `json:"layoutVersion"`               // Dashboard layout version: classic, modern
-	DensityMode                 string                           `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense
-	PackedColumns               bool                             `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
-	LauncherIconSize            string                           `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
-	CalendarUrl                 string                           `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
-	ButtonBarPosition           string                           `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right, side-left
-	ShowDockLayoutSelector      bool                             `json:"showDockLayoutSelector"`      // Show layout selector button in side-dock
-	BackgroundOpacity           float64                          `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
-	FontWeight                  string                           `json:"fontWeight"`                  // Font weight: normal, 600, bold
-	FontPreset                  string                           `json:"fontPreset"`                  // UI font preset: source-code-pro, jetbrains-mono, etc.
-	AutoDarkMode                bool                             `json:"autoDarkMode"`                // Auto-detect dark mode from system
-	ShowSmartRecentCollection   bool                             `json:"showSmartRecentCollection"`   // Show smart recently opened collection
-	ShowSmartTodayCollection    bool                             `json:"showSmartTodayCollection"`    // Show smart start "today" collection
-	ShowSmartStaleCollection    bool                             `json:"showSmartStaleCollection"`    // Show smart stale bookmarks collection
-	ShowSmartMostUsedCollection bool                             `json:"showSmartMostUsedCollection"` // Show smart most used bookmarks collection
-	SmartTodayLimit             int                              `json:"smartTodayLimit"`             // Max items in smart today (0 = unlimited)
-	SmartRecentLimit            int                              `json:"smartRecentLimit"`            // Max items in smart recently opened (0 = unlimited)
-	SmartStaleLimit             int                              `json:"smartStaleLimit"`             // Max items in smart stale bookmarks (0 = unlimited)
-	SmartMostUsedLimit          int                              `json:"smartMostUsedLimit"`          // Max items in smart most used (0 = unlimited)
-	SmartTodayWorkKeywords      string                           `json:"smartTodayWorkKeywords"`      // Comma-separated work-hour keyword boosts
-	SmartTodayEveningKeywords   string                           `json:"smartTodayEveningKeywords"`   // Comma-separated evening keyword boosts
-	SmartTodayWeekendKeywords   string                           `json:"smartTodayWeekendKeywords"`   // Comma-separated weekend keyword boosts
-	SmartTodayPageIds           []int                            `json:"smartTodayPageIds"`           // Page IDs where smart today is enabled (empty = all)
-	SmartRecentPageIds          []int                            `json:"smartRecentPageIds"`          // Page IDs where smart recent is enabled (empty = all)
-	SmartStalePageIds           []int                            `json:"smartStalePageIds"`           // Page IDs where smart stale is enabled (empty = all)
-	SmartMostUsedPageIds        []int                            `json:"smartMostUsedPageIds"`        // Page IDs where smart most used is enabled (empty = all)
-	ArchivedPageIds             []int                            `json:"archivedPageIds"`             // Archived pages hidden from active management flows
-	Collections                 []Collection                     `json:"collections,omitempty"`       // User-defined dynamic collections
-	ShowTagCollections          bool                             `json:"showTagCollections"`          // Auto-generate a collection per tag
-	TagCollectionsMinCount      int                              `json:"tagCollectionsMinCount"`      // Minimum bookmarks per tag to show collection (0 = all)
-	FaviconRefreshPolicy        string                           `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
-	SearchIndexed               bool                             `json:"searchIndexed"`               // Is search index built
-	OnboardingCompleted         bool                             `json:"onboardingCompleted"`
-	QuickStart                  QuickStartState                  `json:"quickStart"`                  // First-run quick-start progress (server-side, per-user)
-	ConfigGeneralTourCompleted   bool                             `json:"configGeneralTourCompleted"`
-	ConfigBookmarksTourCompleted bool                             `json:"configBookmarksTourCompleted"`
-	ConfigFindersTourCompleted   bool                             `json:"configFindersTourCompleted"`
-	ConfigStatsTourCompleted     bool                             `json:"configStatsTourCompleted"`
-	ConfigCategoriesTourCompleted bool                            `json:"configCategoriesTourCompleted"`
-	ConfigTagsTourCompleted       bool                            `json:"configTagsTourCompleted"`
-	ConfigPagesTourCompleted      bool                            `json:"configPagesTourCompleted"`
-	ConfigCollectionsTourCompleted bool                           `json:"configCollectionsTourCompleted"`
-	ConfigThemeTourCompleted       bool                           `json:"configThemeTourCompleted"`
-	CustomKeyBindings           map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
-	BackgroundType              string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
-	BackgroundGradient          string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
-	BackgroundImageUrl          string                           `json:"backgroundImageUrl"`          // URL used when type="image"
-	ThemeIconStyling            map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd            bool                             `json:"pasteUrlQuickAdd"`            // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled                bool                             `json:"inboxEnabled"`                // Enable inbox page and paste-to-inbox flow
-	PasteDestination            string                           `json:"pasteDestination"`            // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls             bool                             `json:"inboxDedupeUrls"`             // Skip duplicate URLs in inbox
-	InboxMaxItems               int                              `json:"inboxMaxItems"`               // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs         bool                             `json:"inboxShowInPageTabs"`         // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote     bool                             `json:"inboxDeleteAfterPromote"`     // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks         bool                             `json:"allowLocalBookmarks"`         // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled           bool                             `json:"autoBackupEnabled"`           // Automatically create a weekly local backup (keeps the latest 3)
-	HealthAutoRecheckEnabled    bool                             `json:"healthAutoRecheckEnabled"`    // Periodically re-ping status-checked bookmarks in the background
-	HealthAutoRecheckIntervalHours int                           `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
-	DiscoverabilityState        *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
+	CurrentPage                    int                              `json:"currentPage"` // Numeric ID of the current page
+	Theme                          string                           `json:"theme"`       // "light" or "dark"
+	OpenInNewTab                   bool                             `json:"openInNewTab"`
+	ColumnsPerRow                  int                              `json:"columnsPerRow"`
+	FontSize                       string                           `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
+	ShowBackgroundDots             bool                             `json:"showBackgroundDots"`
+	ShowTitle                      bool                             `json:"showTitle"`
+	ShowDate                       bool                             `json:"showDate"`
+	ShowTime                       bool                             `json:"showTime"`
+	TimeFormat                     string                           `json:"timeFormat"`          // 24h or 12h
+	DateFormat                     string                           `json:"dateFormat"`          // Date format: short-slash, short-dash, long-weekday
+	ShowWeatherWithDate            bool                             `json:"showWeatherWithDate"` // Show weather info next to date
+	WeatherSource                  string                           `json:"weatherSource"`       // manual or browser
+	WeatherLocation                string                           `json:"weatherLocation"`     // Manual location query (city)
+	WeatherUnit                    string                           `json:"weatherUnit"`         // celsius or fahrenheit
+	WeatherRefreshMinutes          int                              `json:"weatherRefreshMinutes"`
+	ShowConfigButton               bool                             `json:"showConfigButton"`
+	ShowHealthDashboard            bool                             `json:"showHealthDashboard"`
+	ShowSearchButton               bool                             `json:"showSearchButton"`
+	ShowAddBookmarkButton          bool                             `json:"showAddBookmarkButton"`
+	ShowFindersButton              bool                             `json:"showFindersButton"`
+	ShowCommandsButton             bool                             `json:"showCommandsButton"`
+	ShowRecentButton               bool                             `json:"showRecentButton"`
+	ShowTagCloudButton             bool                             `json:"showTagCloudButton"`                    // Dashboard / key: horizontal tag cloud toggle
+	TagCloudDefaultMigrated        bool                             `json:"tagCloudDefaultMigrated,omitempty"`     // one-time: enable tag cloud for existing installs
+	LinkPreviewCardsOffMigrated    bool                             `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
+	ShowSearchFlowBanner           bool                             `json:"showSearchFlowBanner"`
+	ShowCheatSheetButton           bool                             `json:"showCheatSheetButton"`
+	ShowSearchButtonText           bool                             `json:"showSearchButtonText"`
+	ShowFindersButtonText          bool                             `json:"showFindersButtonText"`
+	ShowCommandsButtonText         bool                             `json:"showCommandsButtonText"`
+	ShowStatus                     bool                             `json:"showStatus"`
+	ColorizeStatus                 bool                             `json:"colorizeStatus"` // Keep online/offline/checking color changes on bookmark rows
+	ShowPing                       bool                             `json:"showPing"`
+	ShowStatusLoading              bool                             `json:"showStatusLoading"`
+	SkipFastPing                   bool                             `json:"skipFastPing"`
+	StatusOfflineRetries           int                              `json:"statusOfflineRetries"`         // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs      int                              `json:"statusOfflineRetryDelayMs"`    // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes   int                              `json:"statusRecheckIntervalMinutes"` // Background re-check interval in minutes (1-60)
+	GlobalShortcuts                bool                             `json:"globalShortcuts"`              // Use shortcuts from all pages
+	HyprMode                       bool                             `json:"hyprMode"`                     // Launcher mode for PWA usage
+	AnimationsEnabled              bool                             `json:"animationsEnabled"`            // Enable or disable animations globally
+	EnableCustomTitle              bool                             `json:"enableCustomTitle"`            // Enable custom page title
+	CustomTitle                    string                           `json:"customTitle"`                  // Custom page title
+	ShowPageInTitle                bool                             `json:"showPageInTitle"`              // Show current page name in title
+	ShowPageNamesInTabs            bool                             `json:"showPageNamesInTabs"`          // Show page names in tabs instead of numbers
+	EnableCustomFavicon            bool                             `json:"enableCustomFavicon"`          // Enable custom favicon
+	CustomFaviconPath              string                           `json:"customFaviconPath"`            // Path to custom favicon file
+	EnableCustomFont               bool                             `json:"enableCustomFont"`             // Enable custom font
+	CustomFontPath                 string                           `json:"customFontPath"`               // Path to custom font file
+	Language                       string                           `json:"language"`                     // Language code, e.g., "en" or "es"
+	InterleaveMode                 bool                             `json:"interleaveMode"`               // Interleave mode for search (/ for shortcuts, direct input for fuzzy)
+	ShowPageTabs                   bool                             `json:"showPageTabs"`                 // Show page navigation tabs
+	AlwaysCollapseCategories       bool                             `json:"alwaysCollapseCategories"`     // Always collapse categories on load
+	HideEmptyCategories            bool                             `json:"hideEmptyCategories"`          // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated    bool                             `json:"hideEmptyCategoriesMigrated"`  // Migration marker for hide-empty default-on
+	EnableFuzzySuggestions         bool                             `json:"enableFuzzySuggestions"`       // Enable fuzzy suggestions in shortcut search
+	FuzzySuggestionsStartWith      bool                             `json:"fuzzySuggestionsStartWith"`    // Fuzzy suggestions start with query instead of contains
+	KeepSearchOpenWhenEmpty        bool                             `json:"keepSearchOpenWhenEmpty"`      // Keep search interface open when query is empty
+	ShowIcons                      bool                             `json:"showIcons"`                    // Show bookmark icons
+	ShowLinkPreviewCards           bool                             `json:"showLinkPreviewCards"`         // Show link preview cards on hover
+	LinkPreviewHoverDelayMs        int                              `json:"linkPreviewHoverDelayMs"`      // Hover delay before preview card appears
+	ShowShortcuts                  bool                             `json:"showShortcuts"`                // Show bookmark shortcuts
+	ShowPinIcon                    bool                             `json:"showPinIcon"`                  // Show pin icon next to pinned bookmarks
+	ShowNoteIcon                   bool                             `json:"showNoteIcon"`                 // Show note icon next to bookmarks with a note
+	IncludeFindersInSearch         bool                             `json:"includeFindersInSearch"`       // Include finders in normal search
+	SortMethod                     string                           `json:"sortMethod,omitempty"`         // Legacy global sort (migrated to per-category sortMode)
+	CategorySortModes              map[string]map[string]string     `json:"categorySortModes,omitempty"`  // Per-page sort for uncategorized/orphan categories
+	CategorySortModesMigrated      bool                             `json:"categorySortModesMigrated"`    // Legacy sortMethod migrated to per-category modes
+	LayoutPreset                   string                           `json:"layoutPreset"`                 // Dashboard layout preset
+	LayoutVersion                  string                           `json:"layoutVersion"`                // Dashboard layout version: classic, modern
+	DensityMode                    string                           `json:"densityMode"`                  // Dashboard density mode: comfortable, compact, dense
+	PackedColumns                  bool                             `json:"packedColumns"`                // Stack categories in vertical columns (round-robin) to reduce empty space
+	LauncherIconSize               string                           `json:"launcherIconSize"`             // Launcher tile icon size: small, normal, large
+	CalendarUrl                    string                           `json:"calendarUrl"`                  // URL for calendar link in date popover (empty = hidden)
+	ButtonBarPosition              string                           `json:"buttonBarPosition"`            // Button bar position: bottom, bottom-left, bottom-right, side-left
+	ShowDockLayoutSelector         bool                             `json:"showDockLayoutSelector"`       // Show layout selector button in side-dock
+	BackgroundOpacity              float64                          `json:"backgroundOpacity"`            // Background opacity (0.0-1.0)
+	FontWeight                     string                           `json:"fontWeight"`                   // Font weight: normal, 600, bold
+	FontPreset                     string                           `json:"fontPreset"`                   // UI font preset: source-code-pro, jetbrains-mono, etc.
+	AutoDarkMode                   bool                             `json:"autoDarkMode"`                 // Auto-detect dark mode from system
+	ShowSmartRecentCollection      bool                             `json:"showSmartRecentCollection"`    // Show smart recently opened collection
+	ShowSmartTodayCollection       bool                             `json:"showSmartTodayCollection"`     // Show smart start "today" collection
+	ShowSmartStaleCollection       bool                             `json:"showSmartStaleCollection"`     // Show smart stale bookmarks collection
+	ShowSmartMostUsedCollection    bool                             `json:"showSmartMostUsedCollection"`  // Show smart most used bookmarks collection
+	SmartTodayLimit                int                              `json:"smartTodayLimit"`              // Max items in smart today (0 = unlimited)
+	SmartRecentLimit               int                              `json:"smartRecentLimit"`             // Max items in smart recently opened (0 = unlimited)
+	SmartStaleLimit                int                              `json:"smartStaleLimit"`              // Max items in smart stale bookmarks (0 = unlimited)
+	SmartMostUsedLimit             int                              `json:"smartMostUsedLimit"`           // Max items in smart most used (0 = unlimited)
+	SmartTodayWorkKeywords         string                           `json:"smartTodayWorkKeywords"`       // Comma-separated work-hour keyword boosts
+	SmartTodayEveningKeywords      string                           `json:"smartTodayEveningKeywords"`    // Comma-separated evening keyword boosts
+	SmartTodayWeekendKeywords      string                           `json:"smartTodayWeekendKeywords"`    // Comma-separated weekend keyword boosts
+	SmartTodayPageIds              []int                            `json:"smartTodayPageIds"`            // Page IDs where smart today is enabled (empty = all)
+	SmartRecentPageIds             []int                            `json:"smartRecentPageIds"`           // Page IDs where smart recent is enabled (empty = all)
+	SmartStalePageIds              []int                            `json:"smartStalePageIds"`            // Page IDs where smart stale is enabled (empty = all)
+	SmartMostUsedPageIds           []int                            `json:"smartMostUsedPageIds"`         // Page IDs where smart most used is enabled (empty = all)
+	ArchivedPageIds                []int                            `json:"archivedPageIds"`              // Archived pages hidden from active management flows
+	Collections                    []Collection                     `json:"collections,omitempty"`        // User-defined dynamic collections
+	ShowTagCollections             bool                             `json:"showTagCollections"`           // Auto-generate a collection per tag
+	TagCollectionsMinCount         int                              `json:"tagCollectionsMinCount"`       // Minimum bookmarks per tag to show collection (0 = all)
+	FaviconRefreshPolicy           string                           `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
+	SearchIndexed                  bool                             `json:"searchIndexed"`                // Is search index built
+	OnboardingCompleted            bool                             `json:"onboardingCompleted"`
+	QuickStart                     QuickStartState                  `json:"quickStart"` // First-run quick-start progress (server-side, per-user)
+	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
+	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
+	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
+	ConfigStatsTourCompleted       bool                             `json:"configStatsTourCompleted"`
+	ConfigCategoriesTourCompleted  bool                             `json:"configCategoriesTourCompleted"`
+	ConfigTagsTourCompleted        bool                             `json:"configTagsTourCompleted"`
+	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
+	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
+	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
+	CustomKeyBindings              map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
+	BackgroundType                 string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
+	BackgroundGradient             string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
+	BackgroundImageUrl             string                           `json:"backgroundImageUrl"`          // URL used when type="image"
+	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
+	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`               // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled                   bool                             `json:"inboxEnabled"`                   // Enable inbox page and paste-to-inbox flow
+	PasteDestination               string                           `json:"pasteDestination"`               // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls                bool                             `json:"inboxDedupeUrls"`                // Skip duplicate URLs in inbox
+	InboxMaxItems                  int                              `json:"inboxMaxItems"`                  // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`            // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"`        // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`            // Allow http(s) bookmarks to localhost and private hosts
+	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a weekly local backup (keeps the latest 3)
+	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
+	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
+	DiscoverabilityState           *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
@@ -355,12 +355,12 @@ type PrefetchIconUpdate struct {
 }
 
 type FileStore struct {
-	settingsFile                string
-	colorsFile                  string
-	pageOrderFile               string
-	dataDir                     string
-	customThemesMigrationMarker string
-	mutex                       sync.RWMutex
+	settingsFile                 string
+	colorsFile                   string
+	pageOrderFile                string
+	dataDir                      string
+	customThemesMigrationMarker  string
+	mutex                        sync.RWMutex
 	prefetchDefaultBookmarkIcons bool
 }
 
@@ -419,106 +419,106 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// Initialize settings if file doesn't exist
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
-			CurrentPage:                 1,
-			Theme:                       "kelp-drift-dark",
-			OpenInNewTab:                true,
-			ColumnsPerRow:               3,
-			FontSize:                    "m",
-			ShowBackgroundDots:          true,
-			ShowTitle:                   true,
-			ShowDate:                    true,
-			ShowTime:                    true,
-			TimeFormat:                  "24h",
-			DateFormat:                  "short-slash",
-			ShowWeatherWithDate:         false,
-			WeatherSource:               "manual",
-			WeatherLocation:             "",
-			WeatherUnit:                 "celsius",
-			WeatherRefreshMinutes:       30,
-			ShowConfigButton:            true,
-			ShowHealthDashboard:         true,
-			ShowSearchButton:            true,
-			ShowAddBookmarkButton:       true,
-			ShowFindersButton:           true,
-			ShowCommandsButton:          true,
-			ShowRecentButton:            false,
-			ShowTagCloudButton:          true,
-			ShowSearchFlowBanner:        true,
-			ShowCheatSheetButton:        false,
-			ShowSearchButtonText:        true,
-			ShowFindersButtonText:       true,
-			ShowCommandsButtonText:      true,
-			ShowStatus:                  true,
-			ColorizeStatus:              true,
-			ShowPing:                    true,
-			ShowStatusLoading:           false,
-			SkipFastPing:                false,
-			StatusOfflineRetries:        3,
-			StatusOfflineRetryDelayMs:   450,
-			StatusRecheckIntervalMinutes: 5,
-			GlobalShortcuts:             true,
-			HyprMode:                    false,
-			AnimationsEnabled:           true,
-			EnableCustomTitle:           false,
-			CustomTitle:                 "",
-			ShowPageInTitle:             false,
-			ShowPageNamesInTabs:         false,
-			EnableCustomFavicon:         false,
-			CustomFaviconPath:           "",
-			EnableCustomFont:            false,
-			CustomFontPath:              "",
-			Language:                    "en",
-			InterleaveMode:              false,
-			ShowPageTabs:                true,
-			AlwaysCollapseCategories:    false,
-			HideEmptyCategories:         true,
-			EnableFuzzySuggestions:      false,
-			FuzzySuggestionsStartWith:   false,
-			KeepSearchOpenWhenEmpty:     false,
-			ShowIcons:                   true,
-			ShowLinkPreviewCards:        false,
-			LinkPreviewHoverDelayMs:     150,
-			ShowShortcuts:               true,
-			ShowPinIcon:                 false,
-			ShowNoteIcon:                true,
-			IncludeFindersInSearch:      false,
-			SortMethod:                  "order",
-			LayoutPreset:                "default",
-			LayoutVersion:               "classic",
-			BackgroundOpacity:           1,
-			FontWeight:                  "normal",
-			FontPreset:                  "source-code-pro",
-			AutoDarkMode:                true,
-			ShowSmartRecentCollection:   false,
-			ShowSmartTodayCollection:    true,
-			ShowSmartStaleCollection:    false,
-			ShowSmartMostUsedCollection: false,
-			SmartTodayLimit:             8,
-			SmartRecentLimit:            50,
-			SmartMostUsedLimit:          25,
-			SmartTodayWorkKeywords:      "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
-			SmartTodayEveningKeywords:   "youtube,spotify,netflix,reddit",
-			SmartTodayWeekendKeywords:   "news,weather,maps",
-			SmartTodayPageIds:           []int{},
-			SmartRecentPageIds:          []int{},
-			SmartStalePageIds:           []int{},
-			SmartMostUsedPageIds:        []int{},
-			ArchivedPageIds:             []int{},
-			FaviconRefreshPolicy:        "on-save",
-			OnboardingCompleted:         false,
-			PackedColumns:               true,
-			LauncherIconSize:            "normal",
-			ButtonBarPosition:           "bottom",
-			ShowDockLayoutSelector:      true,
-			PasteUrlQuickAdd:            true,
-			InboxEnabled:                true,
-			PasteDestination:            "ask",
-			InboxDedupeUrls:             true,
-			InboxMaxItems:               500,
-			InboxShowInPageTabs:         true,
-			InboxDeleteAfterPromote:     true,
-			AllowLocalBookmarks:         true,
-			AutoBackupEnabled:           true,
+			CurrentPage:                    1,
+			Theme:                          "kelp-drift-dark",
+			OpenInNewTab:                   true,
+			ColumnsPerRow:                  3,
+			FontSize:                       "m",
+			ShowBackgroundDots:             true,
+			ShowTitle:                      true,
+			ShowDate:                       true,
+			ShowTime:                       true,
+			TimeFormat:                     "24h",
+			DateFormat:                     "short-slash",
+			ShowWeatherWithDate:            false,
+			WeatherSource:                  "manual",
+			WeatherLocation:                "",
+			WeatherUnit:                    "celsius",
+			WeatherRefreshMinutes:          30,
+			ShowConfigButton:               true,
+			ShowHealthDashboard:            true,
+			ShowSearchButton:               true,
+			ShowAddBookmarkButton:          true,
+			ShowFindersButton:              true,
+			ShowCommandsButton:             true,
+			ShowRecentButton:               false,
+			ShowTagCloudButton:             true,
+			ShowSearchFlowBanner:           true,
+			ShowCheatSheetButton:           false,
+			ShowSearchButtonText:           true,
+			ShowFindersButtonText:          true,
+			ShowCommandsButtonText:         true,
+			ShowStatus:                     true,
+			ColorizeStatus:                 true,
+			ShowPing:                       true,
+			ShowStatusLoading:              false,
+			SkipFastPing:                   false,
+			StatusOfflineRetries:           3,
+			StatusOfflineRetryDelayMs:      450,
+			StatusRecheckIntervalMinutes:   5,
+			GlobalShortcuts:                true,
+			HyprMode:                       false,
+			AnimationsEnabled:              true,
+			EnableCustomTitle:              false,
+			CustomTitle:                    "",
+			ShowPageInTitle:                false,
+			ShowPageNamesInTabs:            false,
+			EnableCustomFavicon:            false,
+			CustomFaviconPath:              "",
+			EnableCustomFont:               false,
+			CustomFontPath:                 "",
+			Language:                       "en",
+			InterleaveMode:                 false,
+			ShowPageTabs:                   true,
+			AlwaysCollapseCategories:       false,
+			HideEmptyCategories:            true,
+			EnableFuzzySuggestions:         false,
+			FuzzySuggestionsStartWith:      false,
+			KeepSearchOpenWhenEmpty:        false,
+			ShowIcons:                      true,
+			ShowLinkPreviewCards:           false,
+			LinkPreviewHoverDelayMs:        150,
+			ShowShortcuts:                  true,
+			ShowPinIcon:                    false,
+			ShowNoteIcon:                   true,
+			IncludeFindersInSearch:         false,
+			SortMethod:                     "order",
+			LayoutPreset:                   "default",
+			LayoutVersion:                  "classic",
+			BackgroundOpacity:              1,
+			FontWeight:                     "normal",
+			FontPreset:                     "source-code-pro",
+			AutoDarkMode:                   true,
+			ShowSmartRecentCollection:      false,
+			ShowSmartTodayCollection:       true,
+			ShowSmartStaleCollection:       false,
+			ShowSmartMostUsedCollection:    false,
+			SmartTodayLimit:                8,
+			SmartRecentLimit:               50,
+			SmartMostUsedLimit:             25,
+			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
+			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
+			SmartTodayWeekendKeywords:      "news,weather,maps",
+			SmartTodayPageIds:              []int{},
+			SmartRecentPageIds:             []int{},
+			SmartStalePageIds:              []int{},
+			SmartMostUsedPageIds:           []int{},
+			ArchivedPageIds:                []int{},
+			FaviconRefreshPolicy:           "on-save",
+			OnboardingCompleted:            false,
+			PackedColumns:                  true,
+			LauncherIconSize:               "normal",
+			ButtonBarPosition:              "bottom",
+			ShowDockLayoutSelector:         true,
+			PasteUrlQuickAdd:               true,
+			InboxEnabled:                   true,
+			PasteDestination:               "ask",
+			InboxDedupeUrls:                true,
+			InboxMaxItems:                  500,
+			InboxShowInPageTabs:            true,
+			InboxDeleteAfterPromote:        true,
+			AllowLocalBookmarks:            true,
+			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 		}
@@ -611,7 +611,6 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 	}
 	_ = writeFileAtomic(fs.settingsFile, out, 0644)
 }
-
 
 func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 	fs.mutex.Lock()
@@ -1557,103 +1556,103 @@ func (fs *FileStore) GetSettings() Settings {
 	if err != nil {
 		// Return default settings if file doesn't exist
 		return Settings{
-			CurrentPage:               1,
-			Theme:                     "kelp-drift-dark",
-			OpenInNewTab:              true,
-			ColumnsPerRow:             3,
-			FontSize:                  "m",
-			ShowBackgroundDots:        true,
-			ShowTitle:                 true,
-			ShowDate:                  true,
-			ShowTime:                  true,
-			TimeFormat:                "24h",
-			DateFormat:                "short-slash",
-			ShowWeatherWithDate:       false,
-			WeatherSource:             "manual",
-			WeatherLocation:           "",
-			WeatherUnit:               "celsius",
-			WeatherRefreshMinutes:     30,
-			ShowConfigButton:          true,
-			ShowHealthDashboard:       true,
-			ShowSearchButton:          true,
-			ShowAddBookmarkButton:     true,
-			ShowFindersButton:         true,
-			ShowCommandsButton:        true,
-			ShowRecentButton:          true,
-			ShowSearchFlowBanner:      true,
-			ShowCheatSheetButton:      true,
-			ShowSearchButtonText:      true,
-			ShowFindersButtonText:     true,
-			ShowCommandsButtonText:    true,
-			ShowStatus:                true,
-			ColorizeStatus:            true,
-			ShowPing:                  true,
-			ShowStatusLoading:         false,
-			SkipFastPing:              false,
-			StatusOfflineRetries:      3,
-			StatusOfflineRetryDelayMs: 450,
-			StatusRecheckIntervalMinutes: 5,
-			GlobalShortcuts:           true,
-			HyprMode:                  false,
-			AnimationsEnabled:         true,
-			EnableCustomTitle:         false,
-			CustomTitle:               "",
-			ShowPageInTitle:           false,
-			ShowPageNamesInTabs:       false,
-			EnableCustomFavicon:       false,
-			CustomFaviconPath:         "",
-			EnableCustomFont:          false,
-			CustomFontPath:            "",
-			Language:                  "en",
-			InterleaveMode:            false,
-			ShowPageTabs:              true,
-			AlwaysCollapseCategories:  false,
-			HideEmptyCategories:       true,
-			EnableFuzzySuggestions:    false,
-			FuzzySuggestionsStartWith: false,
-			KeepSearchOpenWhenEmpty:   false,
-			ShowIcons:                 true,
-			ShowLinkPreviewCards:      false,
-			LinkPreviewHoverDelayMs:   150,
-			ShowShortcuts:             true,
-			ShowPinIcon:               false,
-			ShowNoteIcon:              true,
-			IncludeFindersInSearch:    false,
-			BackgroundOpacity:         1,
-			FontWeight:                "normal",
-			FontPreset:                "source-code-pro",
-			AutoDarkMode:              true,
-			ShowSmartRecentCollection: false,
-			ShowSmartTodayCollection:  true,
-			ShowSmartStaleCollection:  false,
-			SmartTodayLimit:           8,
-			SmartRecentLimit:          50,
-			SmartStaleLimit:           50,
-			SmartTodayWorkKeywords:    "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
-			SmartTodayEveningKeywords: "youtube,spotify,netflix,reddit",
-			SmartTodayWeekendKeywords: "news,weather,maps",
-			SmartTodayPageIds:         []int{},
-			SmartRecentPageIds:        []int{},
-			SmartStalePageIds:         []int{},
-			ArchivedPageIds:           []int{},
-			FaviconRefreshPolicy:      "on-save",
-			LayoutPreset:              "default",
-			LayoutVersion:             "classic",
-			DensityMode:               "compact",
-			PackedColumns:             true,
-			BackgroundType:            "none",
-			BackgroundGradient:        "",
-			BackgroundImageUrl:        "",
-			ThemeIconStyling:          map[string]ThemeIconStylingEntry{},
-			PasteUrlQuickAdd:          true,
-			InboxEnabled:              true,
-			PasteDestination:          "ask",
-			InboxDedupeUrls:           true,
-			InboxMaxItems:             500,
-			InboxShowInPageTabs:       true,
-			InboxDeleteAfterPromote:   true,
-			AllowLocalBookmarks:       true,
-			AutoBackupEnabled:         true,
+			CurrentPage:                    1,
+			Theme:                          "kelp-drift-dark",
+			OpenInNewTab:                   true,
+			ColumnsPerRow:                  3,
+			FontSize:                       "m",
+			ShowBackgroundDots:             true,
+			ShowTitle:                      true,
+			ShowDate:                       true,
+			ShowTime:                       true,
+			TimeFormat:                     "24h",
+			DateFormat:                     "short-slash",
+			ShowWeatherWithDate:            false,
+			WeatherSource:                  "manual",
+			WeatherLocation:                "",
+			WeatherUnit:                    "celsius",
+			WeatherRefreshMinutes:          30,
+			ShowConfigButton:               true,
+			ShowHealthDashboard:            true,
+			ShowSearchButton:               true,
+			ShowAddBookmarkButton:          true,
+			ShowFindersButton:              true,
+			ShowCommandsButton:             true,
+			ShowRecentButton:               true,
+			ShowSearchFlowBanner:           true,
+			ShowCheatSheetButton:           true,
+			ShowSearchButtonText:           true,
+			ShowFindersButtonText:          true,
+			ShowCommandsButtonText:         true,
+			ShowStatus:                     true,
+			ColorizeStatus:                 true,
+			ShowPing:                       true,
+			ShowStatusLoading:              false,
+			SkipFastPing:                   false,
+			StatusOfflineRetries:           3,
+			StatusOfflineRetryDelayMs:      450,
+			StatusRecheckIntervalMinutes:   5,
+			GlobalShortcuts:                true,
+			HyprMode:                       false,
+			AnimationsEnabled:              true,
+			EnableCustomTitle:              false,
+			CustomTitle:                    "",
+			ShowPageInTitle:                false,
+			ShowPageNamesInTabs:            false,
+			EnableCustomFavicon:            false,
+			CustomFaviconPath:              "",
+			EnableCustomFont:               false,
+			CustomFontPath:                 "",
+			Language:                       "en",
+			InterleaveMode:                 false,
+			ShowPageTabs:                   true,
+			AlwaysCollapseCategories:       false,
+			HideEmptyCategories:            true,
+			EnableFuzzySuggestions:         false,
+			FuzzySuggestionsStartWith:      false,
+			KeepSearchOpenWhenEmpty:        false,
+			ShowIcons:                      true,
+			ShowLinkPreviewCards:           false,
+			LinkPreviewHoverDelayMs:        150,
+			ShowShortcuts:                  true,
+			ShowPinIcon:                    false,
+			ShowNoteIcon:                   true,
+			IncludeFindersInSearch:         false,
+			BackgroundOpacity:              1,
+			FontWeight:                     "normal",
+			FontPreset:                     "source-code-pro",
+			AutoDarkMode:                   true,
+			ShowSmartRecentCollection:      false,
+			ShowSmartTodayCollection:       true,
+			ShowSmartStaleCollection:       false,
+			SmartTodayLimit:                8,
+			SmartRecentLimit:               50,
+			SmartStaleLimit:                50,
+			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
+			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
+			SmartTodayWeekendKeywords:      "news,weather,maps",
+			SmartTodayPageIds:              []int{},
+			SmartRecentPageIds:             []int{},
+			SmartStalePageIds:              []int{},
+			ArchivedPageIds:                []int{},
+			FaviconRefreshPolicy:           "on-save",
+			LayoutPreset:                   "default",
+			LayoutVersion:                  "classic",
+			DensityMode:                    "compact",
+			PackedColumns:                  true,
+			BackgroundType:                 "none",
+			BackgroundGradient:             "",
+			BackgroundImageUrl:             "",
+			ThemeIconStyling:               map[string]ThemeIconStylingEntry{},
+			PasteUrlQuickAdd:               true,
+			InboxEnabled:                   true,
+			PasteDestination:               "ask",
+			InboxDedupeUrls:                true,
+			InboxMaxItems:                  500,
+			InboxShowInPageTabs:            true,
+			InboxDeleteAfterPromote:        true,
+			AllowLocalBookmarks:            true,
+			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 		}
@@ -2098,11 +2097,11 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 }
 
 type HealthSummary struct {
-	TotalBookmarks      int `json:"totalBookmarks"`
-	HealthyCount        int `json:"healthyCount"`
-	BrokenCount         int `json:"brokenCount"`
-	DuplicateCount      int `json:"duplicateCount"`
-	UncheckedCount      int `json:"uncheckedCount"`
+	TotalBookmarks        int `json:"totalBookmarks"`
+	HealthyCount          int `json:"healthyCount"`
+	BrokenCount           int `json:"brokenCount"`
+	DuplicateCount        int `json:"duplicateCount"`
+	UncheckedCount        int `json:"uncheckedCount"`
 	StaleCount            int `json:"staleCount"`
 	MissingPreviewCount   int `json:"missingPreviewCount"`
 	UnusedCount           int `json:"unusedCount"`
@@ -2186,7 +2185,7 @@ type HealthScanCache struct {
 }
 
 type HealthScanCacheFile struct {
-	GeneratedAt int64                      `json:"generatedAt"`
+	GeneratedAt int64 `json:"generatedAt"`
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
 	// (Unix ms). Persisted so "is a recheck due?" survives restarts, mirroring how
 	// auto-backup compares the newest backup's age rather than an in-process timer.

@@ -9,10 +9,10 @@ import (
 func TestInboxAddDedupeAndDelete(t *testing.T) {
 	dir := t.TempDir()
 	store := &FileStore{
-		settingsFile: filepath.Join(dir, "settings.json"),
-		colorsFile:   filepath.Join(dir, "colors.json"),
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
 		pageOrderFile: filepath.Join(dir, "pages.json"),
-		dataDir:      dir,
+		dataDir:       dir,
 	}
 	store.initializeDefaultFiles()
 
@@ -49,10 +49,10 @@ func TestInboxAddDedupeAndDelete(t *testing.T) {
 func TestInboxMaxItemsTrim(t *testing.T) {
 	dir := t.TempDir()
 	store := &FileStore{
-		settingsFile: filepath.Join(dir, "settings.json"),
-		colorsFile:   filepath.Join(dir, "colors.json"),
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
 		pageOrderFile: filepath.Join(dir, "pages.json"),
-		dataDir:      dir,
+		dataDir:       dir,
 	}
 	store.initializeDefaultFiles()
 

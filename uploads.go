@@ -266,4 +266,3 @@ func randomHex(byteLen int) string {
 	}
 	return hex.EncodeToString(b)
 }
-

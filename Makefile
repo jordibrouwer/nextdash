@@ -1,7 +1,21 @@
 # nextDash — handige Docker-commando's
 # Gebruik: `make build` om te herbouwen en op de VOORGROND online te gaan.
 
-.PHONY: build build-clean up down logs
+.PHONY: build build-clean up down logs fmt fmt-check
+
+# Formatteer alle Go-bestanden.
+fmt:
+	gofmt -w .
+
+# Faalt als er ongeformatteerde Go-bestanden zijn (voor CI/pre-commit).
+fmt-check:
+	@unformatted="$$(gofmt -l .)"; \
+	if [ -n "$$unformatted" ]; then \
+		echo "gofmt: de volgende bestanden zijn niet geformatteerd:"; \
+		echo "$$unformatted"; \
+		echo "Draai 'make fmt' om dit te herstellen."; \
+		exit 1; \
+	fi
 
 # Herbouw het image en start op de voorgrond (live logs, Ctrl-C stopt).
 build:
