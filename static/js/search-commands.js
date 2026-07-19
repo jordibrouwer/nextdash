@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tracking'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -115,6 +115,7 @@ class SearchCommandsComponent {
             'lang': this.handleLangCommand.bind(this),
             'animations': this.handleAnimationsCommand.bind(this),
             'status': this.handleStatusCommand.bind(this),
+            'tracking': this.handleTrackingCommand.bind(this),
             'collections': this.handleCollectionsCommand.bind(this),
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
@@ -337,6 +338,28 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return this._paletteRefresh(enabled ? 'status:on' : 'status:off');
+    }
+
+    /**
+     * Toggle privacy-friendly usage analytics.
+     *
+     * Unlike the other toggles this cannot take effect in place: the tracker
+     * <script> is emitted server-side only when the setting is on, so turning it
+     * on needs a reload to load it, and turning it off needs one to unload it.
+     * Save first, then reload, so the new page reflects the choice.
+     */
+    setUsageAnalytics(dashboard, enabled) {
+        dashboard.settings.enableUsageAnalytics = enabled;
+        const done = () => {
+            dashboard.isNavigatingAway = true;
+            window.location.reload();
+        };
+        if (typeof dashboard.saveSettings === 'function') {
+            Promise.resolve(dashboard.saveSettings()).then(done).catch(done);
+        } else {
+            done();
+        }
+        return this._paletteRefresh(enabled ? 'tracking:on' : 'tracking:off');
     }
 
     setBackgroundOpacity(dashboard, opacity) {
@@ -2915,6 +2938,15 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.showStatus !== false;
         const apply = (value) => this.setStatusVisibility(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':STATUS', prefix: 'status', enabled, apply });
+    }
+
+    /** :tracking on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */
+    handleTrackingCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.enableUsageAnalytics !== false;
+        const apply = (value) => this.setUsageAnalytics(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':TRACKING', prefix: 'tracking', enabled, apply });
     }
 
     _handleSimpleToggle(args, { shortcut, prefix, enabled, apply }) {

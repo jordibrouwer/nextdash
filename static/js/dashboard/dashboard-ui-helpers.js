@@ -234,6 +234,7 @@ class DashboardUiHelpers {
             section('sectionCommandsTools', 'Commands — tools', [
                 item(':backup / :export', 'ctBackup', 'Open config backups or download a ZIP backup immediately'),
                 item(':metadata', 'ctMetadata', 'Open health missing previews or config bookmarks metadata view'),
+                item(':tracking on / off', 'ctTracking', 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)'),
                 item(':tour', 'ctTour', 'Start the dashboard feature tour'),
                 item(':promo', 'ctPromo', 'Reset discoverability promos (Got it balloons)'),
             ]),
