@@ -211,10 +211,7 @@ class SearchComponent {
         const findersButton = document.getElementById('finders-button');
         if (findersButton) {
             findersButton.addEventListener('click', () => {
-                this.openSearchInterface();
-                this.currentQuery = '?';
-                this.updateSearch();
-                this.renderSearchMatches();
+                this._openInMode('?');
             });
         }
 
@@ -222,10 +219,7 @@ class SearchComponent {
         const commandsButton = document.getElementById('commands-button');
         if (commandsButton) {
             commandsButton.addEventListener('click', () => {
-                this.openSearchInterface();
-                this.currentQuery = ':';
-                this.updateSearch();
-                this.renderSearchMatches();
+                this._openInMode(':');
             });
         }
 
@@ -252,6 +246,46 @@ class SearchComponent {
                 this.renderSearchMatches();
             }
         });
+    }
+
+    /**
+     * Open the overlay directly in commands (`:`) or finders (`?`) mode.
+     *
+     * The prefix is set before the first updateSearch() so the open is tracked as
+     * that mode — going through openSearchInterface() first would briefly run with
+     * an empty query and report a plain search open as well.
+     */
+    _openInMode(prefix) {
+        if (!this.searchActive) {
+            this.searchMatches = [];
+            this.selectedMatchIndex = 0;
+        }
+        this.commandsComponent.resetState();
+        this.currentQuery = prefix;
+        this.updateSearch();
+        this.renderSearchMatches();
+    }
+
+    /**
+     * Fire exactly one usage event for the overlay that opened: modal:search,
+     * modal:commands, or modal:finders. The three are mutually exclusive, so each
+     * counter reads directly without having to subtract the others.
+     *
+     * Every entry point — the `>`/`:`/`?` keys, the toolbar buttons, and the mode
+     * tabs — funnels through updateSearch(), so tracking the mode *transition* here
+     * covers them all once. Without the transition check each keystroke inside a
+     * mode would fire another event; switching mode mid-session (`:` → `?`) counts
+     * as a new open, and closeSearch() resets so reopening counts again.
+     */
+    _trackModeOpen() {
+        const mode = this.currentQuery.startsWith(':')
+            ? 'commands'
+            : this.currentQuery.startsWith('?')
+                ? 'finders'
+                : 'search';
+        if (mode === this._lastTrackedMode) return;
+        this._lastTrackedMode = mode;
+        window.nextdashTrack?.(`modal:${mode}`);
     }
 
     getThemeIconStylingEntry() {
@@ -1176,6 +1210,8 @@ class SearchComponent {
     }
 
     updateSearch() {
+        this._trackModeOpen();
+
         // Find matching shortcuts
         this.searchMatches = [];
 
@@ -1426,7 +1462,8 @@ class SearchComponent {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
             window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
-            window.nextdashTrack?.('search-open');
+            // The open event is fired from _trackModeOpen(), which knows whether this
+            // is a plain search, commands, or finders — see updateSearch().
         }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
@@ -1475,6 +1512,8 @@ class SearchComponent {
             this._debounceTimer = null;
         }
         this.searchActive = false;
+        // Reset so reopening the same mode counts as a new open.
+        this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
