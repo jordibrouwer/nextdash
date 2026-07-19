@@ -991,6 +991,7 @@ class SearchCommandNew {
         }
         if (!form?.checkValidity()) {
             form.reportValidity();
+            window.nextdashTrack?.('bookmark-created', { result: 'invalid' });
             return { ok: false };
         }
 
@@ -1005,19 +1006,24 @@ class SearchCommandNew {
         if (shortcut && this.hasShortcutConflictOnPage(shortcut, pageId)) {
             this.updateShortcutConflictHint();
             this.notify(this.t('config.shortcutConflict', 'Shortcut already in use'), 'error');
+            window.nextdashTrack?.('bookmark-created', { result: 'shortcut-conflict' });
             return { ok: false };
         }
 
         if (normalizedUrl && this.hasUrlDuplicateOnPage(normalizedUrl, pageId)) {
             this.updateUrlDuplicateHint();
             this.notify(this.duplicateBookmarkUrlMessage(), 'error');
+            window.nextdashTrack?.('bookmark-created', { result: 'duplicate' });
             return { ok: false };
         }
 
         const iconFile = document.getElementById('new-bookmark-icon-file')?.files?.[0];
         const iconUrl = (document.getElementById('new-bookmark-icon-url')?.value || '').trim();
         const icon = await this.resolveIconValue(iconFile, iconUrl);
-        if (icon === null) return { ok: false };
+        if (icon === null) {
+            window.nextdashTrack?.('bookmark-created', { result: 'icon-failed' });
+            return { ok: false };
+        }
 
         const rawTags = String(formData.get('tags') || '');
         const tags = rawTags.split(',').map(t => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i);
@@ -1044,6 +1050,7 @@ class SearchCommandNew {
 
         if (!Number.isFinite(pageId) || pageId < 1) {
             this.notify(this.t('config.errorCreatingBookmark', 'Invalid page selected.'), 'error');
+            window.nextdashTrack?.('bookmark-created', { result: 'invalid-page' });
             return { ok: false };
         }
 
@@ -1056,6 +1063,7 @@ class SearchCommandNew {
                 : (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
             if (pool.some((b) => this.canonicalBookmarkURLKey(b.url) === urlKey)) {
                 this.notify(this.duplicateBookmarkUrlMessage(), 'error');
+                window.nextdashTrack?.('bookmark-created', { result: 'duplicate' });
                 return { ok: false };
             }
         }
@@ -1096,6 +1104,14 @@ class SearchCommandNew {
                         dashAfter.inbox.triggerHealthCheckForUrl?.(bookmark.url);
                     }
                 }
+                // Outcome of the add-bookmark funnel: modal:new-bookmark opened it,
+                // this closes it. Props stay low-cardinality — never name/url/tags.
+                window.nextdashTrack?.('bookmark-created', {
+                    result: 'ok',
+                    withIcon: Boolean(bookmark.icon),
+                    withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
+                    withShortcut: Boolean(bookmark.shortcut),
+                });
                 return { ok: true, pageId, bookmark: { ...bookmark, pageId } };
             } else if (response.status === 409) {
                 let conflictMessage = this.duplicateBookmarkUrlMessage();
@@ -1111,12 +1127,15 @@ class SearchCommandNew {
                     }
                 }
                 this.notify(conflictMessage, 'error');
+                window.nextdashTrack?.('bookmark-created', { result: 'conflict' });
             } else {
                 this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
+                window.nextdashTrack?.('bookmark-created', { result: 'error' });
             }
         } catch (error) {
             console.error('Error creating bookmark:', error);
             this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
+            window.nextdashTrack?.('bookmark-created', { result: 'error' });
         }
         return { ok: false };
     }
