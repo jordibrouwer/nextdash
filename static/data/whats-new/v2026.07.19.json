@@ -2,7 +2,7 @@
   "tag": "v2026.07.19",
   "date": "July 2026",
   "releasedAt": "2026-07-19",
-  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a fresh-start choice on first run and a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
+  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also brings a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
   "sections": [
     {
       "title": "Privacy-friendly analytics",
@@ -39,6 +39,19 @@
         {
           "badge": "new",
           "text": "<strong>Start seeded or start empty</strong> — the first-run setup card now ends with a <strong>Starting point</strong> step. Keep the example bookmarks to explore with a ready-made dashboard, or choose <em>Start from scratch</em> to begin with a completely empty one. Choosing empty clears every example bookmark; your pages, categories, and settings stay exactly as they are, and nothing is added back. Bookmark status checks are switched off at the same time, since there is nothing left to monitor."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The quick-start checklist no longer ticks itself</strong> — <em>Add your first bookmark</em> and <em>Tag a bookmark</em> were shown as done before you had done anything, because a fresh install ships example bookmarks that already carry tags. The checklist now measures against what was there when setup finished, so an item only ticks once you actually do it. The tagging step has been dropped altogether — it is not a first-run task."
+        }
+      ]
+    },
+    {
+      "title": "New installs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Moss &amp; Stone is the default theme</strong> — a fresh install now starts on Moss &amp; Stone, a desaturated earthy olive-grey palette (following your system for light/dark). Existing dashboards keep whatever theme you already chose."
         }
       ]
     },
