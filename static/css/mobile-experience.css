@@ -280,8 +280,10 @@ body[data-mobile-layout="true"] .app-notification {
     max-width: min(420px, calc(100vw - 1.25rem));
 }
 
-/* ── Modals: mobile sheet ── */
-@media (max-width: 768px), (max-width: 991px) and (orientation: portrait) {
+/* ── Modals: mobile sheet ──
+   Touch-only, mirroring isMobileLayout() in mobile-experience.js. Width alone
+   would turn every narrow desktop window into a full-screen sheet. */
+@media (hover: none) and (pointer: coarse) and (max-width: 991px) {
     .modal-overlay.show .modal,
     .modal-overlay.show .modal.modal--mobile-sheet {
         width: 100% !important;

@@ -13,26 +13,32 @@
     const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
     const DEVICE_SUGGEST_KEY = 'nextdash-mobile-device-suggest-done';
 
-    function isPhoneLayout() {
+    /**
+     * A touch device without a hover-capable pointer — a phone or tablet, never a
+     * desktop with a mouse. Width alone is not enough: narrowing a desktop window
+     * would otherwise switch the app to the mobile layout, which is wrong (and was
+     * especially easy to trigger, since a narrow window is usually taller than it
+     * is wide and so matched the portrait-tablet rule).
+     */
+    function isTouchDevice() {
         return typeof window.matchMedia === 'function'
+            && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    }
+
+    function isPhoneLayout() {
+        return isTouchDevice()
             && window.matchMedia('(max-width: 768px)').matches;
     }
 
     function isPortraitTablet() {
-        return window.matchMedia('(max-width: 991px) and (orientation: portrait)').matches;
+        return isTouchDevice()
+            && window.matchMedia('(max-width: 991px) and (orientation: portrait)').matches;
     }
 
     function isMobileLayout() {
         if (typeof window.matchMedia !== 'function') return false;
-        if (isPhoneLayout()) return true;
-        if (isPortraitTablet()) return true;
-        if (
-            window.matchMedia('(hover: none) and (pointer: coarse)').matches
-            && window.matchMedia('(max-width: 991px)').matches
-        ) {
-            return true;
-        }
-        return false;
+        if (!isTouchDevice()) return false;
+        return window.matchMedia('(max-width: 991px)').matches;
     }
 
     function t(key, fallback) {
