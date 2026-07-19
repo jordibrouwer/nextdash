@@ -281,7 +281,12 @@ class ConfigUI {
     // Check initial hash and switch to corresponding tab
     const initialHash = window.location.hash.substring(1);
     const initialTab = resolveTabFromHash(initialHash);
-    switchToTab(initialTab || 'general');
+    const resolvedInitialTab = initialTab || 'general';
+    // Count the tab the page lands on. switchToTab() only fires on a *change*, so
+    // without this the default tab (general) would never be counted on a plain
+    // /config visit — the most common entry point of all.
+    window.nextdashTrack?.('config-tab', { tab: resolvedInitialTab });
+    switchToTab(resolvedInitialTab);
     if (initialTab === 'general' && window.configManager?.generalLayers) {
         window.configManager.generalLayers.applyHash(window.location.hash);
     }
