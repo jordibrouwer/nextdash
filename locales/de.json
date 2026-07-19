@@ -2991,8 +2991,6 @@
         "progress": "{done} von {total} erledigt",
         "itemBookmark": "Erstes Lesezeichen hinzufügen",
         "itemBookmarkHint": "+ drücken oder eine URL einfügen",
-        "itemTag": "Ein Lesezeichen taggen",
-        "itemTagHint": "Lesezeichen bearbeiten und Tag hinzufügen",
         "itemConfig": "Konfiguration → Allgemein öffnen",
         "itemConfigHint": "Sprache, Design und Layout anpassen",
         "itemCheatsheet": "Tastenkürzel ansehen",

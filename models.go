@@ -243,6 +243,12 @@ type QuickStartState struct {
 	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
 	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)
 	SeenAnalyticsNotice bool `json:"seenAnalyticsNotice"` // One-time card telling the user analytics is on
+	// Bookmark counts at the moment setup finished. The checklist ticks "add a
+	// bookmark" / "tag a bookmark" only once the user gets past these, so the
+	// seeded example bookmarks (which already carry tags) do not tick them for
+	// free. -1 means "not captured yet".
+	BaselineBookmarks int `json:"baselineBookmarks"`
+	BaselineTagged    int `json:"baselineTagged"`
 }
 
 func isValidFontPreset(s string) bool {
@@ -500,6 +506,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartRecentLimit:               50,
 			SmartMostUsedLimit:             25,
 			CategoryItemLimit:              15,
+			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -1663,6 +1670,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentLimit:               50,
 			SmartStaleLimit:                50,
 			CategoryItemLimit:              15,
+			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -1789,6 +1797,23 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["categoryItemLimit"]; !ok || settings.CategoryItemLimit < 0 {
 			settings.CategoryItemLimit = 15
+		}
+		// Baselines default to -1 ("not captured yet"), not Go's zero value: 0
+		// would read as a captured baseline of no bookmarks, and the seeded
+		// examples would immediately tick the checklist's add/tag items.
+		if _, ok := rawSettings["quickStart"]; !ok {
+			settings.QuickStart.BaselineBookmarks = -1
+			settings.QuickStart.BaselineTagged = -1
+		} else if raw, ok := rawSettings["quickStart"]; ok {
+			var qs map[string]json.RawMessage
+			if json.Unmarshal(raw, &qs) == nil {
+				if _, has := qs["baselineBookmarks"]; !has {
+					settings.QuickStart.BaselineBookmarks = -1
+				}
+				if _, has := qs["baselineTagged"]; !has {
+					settings.QuickStart.BaselineTagged = -1
+				}
+			}
 		}
 		if _, ok := rawSettings["smartRecentPageIds"]; !ok || settings.SmartRecentPageIds == nil {
 			settings.SmartRecentPageIds = []int{}

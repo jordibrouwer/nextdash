@@ -2991,8 +2991,6 @@
         "progress": "{done} van {total} gedaan",
         "itemBookmark": "Voeg je eerste bookmark toe",
         "itemBookmarkHint": "Druk op + of plak ergens een URL",
-        "itemTag": "Geef een bookmark een tag",
-        "itemTagHint": "Bewerk een bookmark en voeg een tag toe",
         "itemConfig": "Open Config → Algemeen",
         "itemConfigHint": "Stel taal, thema en indeling in",
         "itemCheatsheet": "Bekijk de sneltoetsen",

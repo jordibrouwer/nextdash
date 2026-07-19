@@ -2991,8 +2991,6 @@
         "progress": "{done} of {total} done",
         "itemBookmark": "Add your first bookmark",
         "itemBookmarkHint": "Press + or paste a URL anywhere",
-        "itemTag": "Tag a bookmark",
-        "itemTagHint": "Edit a bookmark and add a tag",
         "itemConfig": "Open Config → General",
         "itemConfigHint": "Tune language, theme and layout",
         "itemCheatsheet": "See the keyboard shortcuts",

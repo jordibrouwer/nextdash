@@ -364,6 +364,10 @@
                 } catch { /* best effort */ }
 
                 this.state().setupDone = true;   // marked in the same single save below
+                // Runs after the optional fresh-start wipe, so the baseline is
+                // whatever the user actually starts with — 0 when they chose to
+                // begin empty, the seed count when they kept the examples.
+                this.captureBaseline();
                 Promise.resolve(d.saveSettings?.()).catch(() => {});
             }
             this.teardownSetup();
@@ -412,13 +416,7 @@
                     id: 'bookmark',
                     label: this.t('itemBookmark', 'Add your first bookmark'),
                     hint: this.t('itemBookmarkHint', 'Press + or paste a URL anywhere'),
-                    done: (d) => this.bookmarkCount(d) > 0,
-                },
-                {
-                    id: 'tag',
-                    label: this.t('itemTag', 'Tag a bookmark'),
-                    hint: this.t('itemTagHint', 'Edit a bookmark and add a tag'),
-                    done: (d) => this.anyTagged(d),
+                    done: (d) => this.bookmarkCount(d) > Math.max(this.baseline().bookmarks, 0),
                 },
                 {
                     id: 'config',
@@ -478,9 +476,47 @@
             return Math.max(all, page);
         }
 
-        anyTagged(d) {
-            const lists = [d?.allBookmarks, d?.bookmarks];
-            return lists.some((list) => Array.isArray(list) && list.some((b) => Array.isArray(b?.tags) && b.tags.length > 0));
+        /** Still recorded in the baseline so the data stays consistent, even though
+         *  the checklist no longer has a "tag a bookmark" step. */
+        taggedCount(d) {
+            const count = (list) => (Array.isArray(list)
+                ? list.filter((b) => Array.isArray(b?.tags) && b.tags.length > 0).length
+                : 0);
+            return Math.max(count(d?.allBookmarks), count(d?.bookmarks));
+        }
+
+        /**
+         * Bookmark counts as they were when setup finished.
+         *
+         * A fresh install ships example bookmarks that already carry tags, so
+         * comparing against zero ticked "add a bookmark" and "tag a bookmark"
+         * before the user had done anything. Captured once; -1 until then, which
+         * older installs fall back to (they keep the old zero-based behaviour
+         * rather than having items un-tick under them).
+         */
+        baseline() {
+            const qs = this.state();
+            const bookmarks = Number.isFinite(qs.baselineBookmarks) ? qs.baselineBookmarks : -1;
+            const tagged = Number.isFinite(qs.baselineTagged) ? qs.baselineTagged : -1;
+            return { bookmarks, tagged };
+        }
+
+        /**
+         * Capture once, but only when the bookmarks have actually loaded.
+         *
+         * The checklist can render before the first page load resolves, and
+         * recording 0 then would be worse than not recording at all: every seeded
+         * bookmark would count as the user's own. So skip while nothing is loaded
+         * yet and let a later call (poll/refresh) capture the real numbers.
+         */
+        captureBaseline() {
+            const qs = this.state();
+            if (Number.isFinite(qs.baselineBookmarks) && qs.baselineBookmarks >= 0) return;
+            const d = this.dash;
+            const loaded = Array.isArray(d?.bookmarks) || Array.isArray(d?.allBookmarks);
+            if (!loaded) return;
+            qs.baselineBookmarks = this.bookmarkCount(d);
+            qs.baselineTagged = this.taggedCount(d);
         }
 
         renderChecklist() {
@@ -513,6 +549,9 @@
         refresh() {
             if (!this.el) return;
             const d = this.dash;
+            // Capture here rather than at render time: this runs once the page's
+            // bookmarks have loaded, so the baseline reflects what is really there.
+            this.captureBaseline();
             const items = this.buildItems();
             const list = this.el.querySelector('[data-qs-list]');
             const progressEl = this.el.querySelector('[data-qs-progress]');

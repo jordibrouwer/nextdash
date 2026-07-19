@@ -2991,8 +2991,6 @@
         "progress": "{done} sur {total} terminé",
         "itemBookmark": "Ajoutez votre premier favori",
         "itemBookmarkHint": "Appuyez sur + ou collez une URL",
-        "itemTag": "Étiquetez un favori",
-        "itemTagHint": "Modifiez un favori et ajoutez une étiquette",
         "itemConfig": "Ouvrir Config → Général",
         "itemConfigHint": "Réglez langue, thème et disposition",
         "itemCheatsheet": "Voir les raccourcis clavier",
