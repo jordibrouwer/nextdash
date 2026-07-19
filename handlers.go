@@ -595,6 +595,7 @@ type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
 	Assets     pageAssetVersions
+	AppVersion string
 }
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
@@ -602,6 +603,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		Settings:   settings,
 		WriteToken: writeAccessToken(),
 		Assets:     sharedAssetVersions,
+		AppVersion: appVersionToken(),
 	}
 }
 

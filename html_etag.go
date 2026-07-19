@@ -3,8 +3,33 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
+	"sync"
 )
+
+// appVersionToken is a short fingerprint of all shared asset versions. It changes
+// whenever any static asset is bumped, and is embedded in the HTML shell and served
+// at /api/app-version so a running page can detect it is stale and reload itself.
+var appVersionToken = func() func() string {
+	var once sync.Once
+	var token string
+	return func() string {
+		once.Do(func() {
+			sum := sha256.Sum256([]byte(fmt.Sprintf("%#v", sharedAssetVersions)))
+			token = hex.EncodeToString(sum[:8])
+		})
+		return token
+	}
+}()
+
+// AppVersion serves the current asset fingerprint, never cached, so a stale page can
+// compare it against the version baked into its HTML and force a one-time reload.
+func (h *Handlers) AppVersion(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	fmt.Fprintf(w, `{"version":%q}`, appVersionToken())
+}
 
 // writeHTMLShell serves a generated HTML document (dashboard/config shell) with a
 // content-based ETag so browsers can revalidate cheaply.

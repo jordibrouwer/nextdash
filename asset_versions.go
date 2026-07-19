@@ -21,6 +21,7 @@ type pageAssetVersions struct {
 	// them with max-age=86400 and a deploy stayed invisible for up to a day.
 	// The head scripts are the sharp end: write-api.js carries write-token auth.
 	WriteAPIJS               string
+	AppVersionGuardJS        string
 	FontPresetsJS            string
 	DeviceSettingsMergeJS    string
 	LayoutUtilsJS            string
@@ -95,6 +96,7 @@ var sharedAssetVersions = pageAssetVersions{
 	DataRevision:         "data-revision-8-promo-starvation",
 
 	WriteAPIJS:               "write-api-1",
+	AppVersionGuardJS:        "app-version-guard-1",
 	FontPresetsJS:            "font-presets-1",
 	DeviceSettingsMergeJS:    "device-settings-merge-1",
 	LayoutUtilsJS:            "layout-utils-1",
