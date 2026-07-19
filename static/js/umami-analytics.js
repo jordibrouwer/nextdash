@@ -60,6 +60,57 @@
         }
     };
 
+    /**
+     * One settings snapshot per page load, so adoption reads directly as
+     * "X% of sessions have feature Y on" — a change-only event would miss
+     * everyone who never touches a setting.
+     *
+     * Booleans and small enums only; numbers are bucketed. Never a hostname,
+     * path, title or any other free-form value.
+     */
+    function trackSettingsSnapshot(settings) {
+        if (!enabled || !settings || typeof settings !== 'object') return;
+        if (trackSettingsSnapshot._sent) return; // once per page load
+        trackSettingsSnapshot._sent = true;
+        const bool = (v) => v === true;
+        const bucket = (n, steps) => {
+            const value = Number(n);
+            if (!Number.isFinite(value)) return 'unset';
+            for (const step of steps) {
+                if (value <= step) return String(step);
+            }
+            return `${steps[steps.length - 1]}+`;
+        };
+        window.nextdashTrack('settings-snapshot', {
+            // Appearance / layout
+            theme: String(settings.theme || 'default').slice(0, 40),
+            autoDarkMode: bool(settings.autoDarkMode),
+            layoutPreset: String(settings.layoutPreset || 'default').slice(0, 20),
+            densityMode: String(settings.densityMode || 'compact').slice(0, 20),
+            columns: bucket(settings.columnsPerRow, [1, 2, 3, 4, 6]),
+            packedColumns: bool(settings.packedColumns),
+            hideEmptyCategories: bool(settings.hideEmptyCategories),
+            categoryItemLimit: bucket(settings.categoryItemLimit, [0, 10, 15, 25, 50]),
+            // Features
+            inboxEnabled: settings.inboxEnabled !== false,
+            healthView: settings.healthViewEnabled !== false,
+            healthAutoRecheck: bool(settings.healthAutoRecheckEnabled),
+            showStatus: bool(settings.showStatus),
+            linkPreviewCards: bool(settings.showLinkPreviewCards),
+            smartRecent: bool(settings.showSmartRecentCollection),
+            smartMostUsed: bool(settings.showSmartMostUsedCollection),
+            weather: bool(settings.showWeatherWithDate),
+            globalShortcuts: bool(settings.globalShortcuts),
+            hyprMode: bool(settings.hyprMode),
+            autoBackup: bool(settings.autoBackupEnabled),
+            openInNewTab: settings.openInNewTab !== false,
+        });
+    }
+
+    // Exposed so the dashboard/config can report once their settings are loaded.
+    // Always defined (a no-op when off) so callers never feature-detect.
+    window.nextdashTrackSettings = trackSettingsSnapshot;
+
     if (!enabled || !websiteId || !scriptSrc) {
         return;
     }

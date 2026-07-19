@@ -306,6 +306,8 @@ class Dashboard {
             await this.reconcilePendingConfigSyncAfterLoad();
 
             this.updateMiniStatusLine();
+            // Feature-adoption snapshot, once settings are resolved.
+            window.nextdashTrackSettings?.(this.settings);
             this.initializeOnboarding();
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
