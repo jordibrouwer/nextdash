@@ -1,0 +1,72 @@
+{
+  "tag": "v2026.07.19",
+  "date": "July 2026",
+  "releasedAt": "2026-07-19",
+  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a fresh-start choice on first run and a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
+  "sections": [
+    {
+      "title": "Privacy-friendly analytics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Why this exists</strong> — nextDash is built without any idea of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, the inbox? Where do people give up halfway through adding a bookmark? Without answers, improvements are guesswork. These statistics answer exactly those questions — <strong>which features get used and what can be made better</strong> — and nothing else. They are <strong>not</strong> meant to follow you around: it is purely abstract, technical measurement of flow and feature usage, aggregated across everyone."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How to turn it off — two clicks</strong> — go to <strong>Config → General → Advanced → Privacy</strong> and clear the <strong>Privacy-friendly analytics</strong> checkbox. It takes effect after the page reloads. When it is off, the tracker script is <strong>not loaded at all</strong> and <strong>no request ever leaves your machine</strong> — not even to fetch it. The choice is stored per user in your settings, so it follows you across devices."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Or use the keyboard: <code>:tracking</code></strong> — press <kbd>:</kbd> and type <strong>tracking</strong> to see the current state, or go straight to <code>:tracking off</code> / <code>:tracking on</code>. It changes the same setting as the Privacy checkbox and reloads the page so the change applies immediately."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What is measured</strong> — page views, which views you open (health, inbox), which config tab you land on, opening search / commands / finders / the cheat sheet / the tag cloud / what's-new / the add-bookmark form, bookmark opens (and whether they came from the dashboard, search, or recent), inbox triage and health actions, and whether adding a bookmark succeeded or hit a snag. Once per page load it also records which features you have switched on — as plain yes/no values — so it is clear which options are worth keeping and improving."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What is never measured</strong> — no bookmark names, no URLs, no search queries, no page or category names, no notes or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Where a number would be revealing it is rounded into a bucket (for example <em>2-5 items</em> rather than an exact count). Everything is self-hosted on the project's own Umami instance, so nothing is shared with an advertising network."
+        }
+      ]
+    },
+    {
+      "title": "Getting started",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Start seeded or start empty</strong> — the first-run setup card now ends with a <strong>Starting point</strong> step. Keep the example bookmarks to explore with a ready-made dashboard, or choose <em>Start from scratch</em> to begin with a completely empty one. Choosing empty clears every example bookmark; your pages, categories, and settings stay exactly as they are, and nothing is added back. Bookmark status checks are switched off at the same time, since there is nothing left to monitor."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Delete all bookmarks, and nothing else</strong> — <strong>Config → General → Reset</strong> now has a second button next to the red full reset: <strong>Delete all bookmarks only</strong>. It removes every bookmark on every page while keeping your pages, categories, finders, and all settings — and unlike a full reset it does <strong>not</strong> put the example bookmarks back. It asks for confirmation and then for you to type <code>DELETE</code>, so it cannot happen by accident."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help covers the newer features</strong> — <strong>Config → Help</strong> was still describing an older nextDash. It now explains the analytics and how to switch them off (under <em>Self-hosting &amp; security</em>), both reset buttons (<em>Data &amp; backups</em>), the first-run starting point and the empty-dashboard state (<em>Getting started</em>), and the per-category item limit from the previous release (<em>Appearance</em>). All four languages were updated, and it is searchable like the rest of Help."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A narrow window is no longer treated as a phone</strong> — resizing a desktop browser window used to flip nextDash into the mobile layout: the toolbar lost commands and finders, modals became full-screen sheets, and a banner appeared telling you to open nextDash on a computer, while you were sitting at one. The mobile layout now requires an actual touch device, so a narrow window simply stays the full desktop app. Phones and tablets are unaffected."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An empty dashboard no longer breaks</strong> — with no bookmarks at all, the dashboard used to fail to start and show <em>Failed to load dashboard</em>, leaving the page unresponsive. It now shows a friendly empty state instead: <strong>No bookmarks yet</strong>, with a button to add your first one, a hint that <kbd>+</kbd> opens the full form, and links to manage bookmarks in config or import your data."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Updates are picked up without a hard reload</strong> — after an update, a browser could keep serving an old cached page and quietly run the previous version's JavaScript, so new features stayed invisible until you cleared the cache by hand (Safari was especially prone to this). Pages now carry a content fingerprint and revalidate properly, and a tab left open across an update reloads itself once. A normal reload is enough again."
+        }
+      ]
+    }
+  ]
+}

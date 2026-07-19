@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.19 — July 2026](#v20260719--july-2026)
 - [v2026.07.18 — July 2026](#v20260718--july-2026)
 - [v2026.07.17.3 — July 2026](#v2026071713--july-2026)
 - [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
@@ -101,6 +102,44 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.19 — July 2026
+
+**Privacy-friendly, anonymous usage analytics** — nextDash now measures which features are used and where the app can be improved. Never who you are, never what you bookmark. On by default, off in two clicks.
+
+### Privacy
+
+- **new** **Privacy-friendly analytics** — nextDash records anonymous usage statistics through a self-hosted [Umami](https://umami.is) instance (`stats.nextdash.cc`).
+
+  **Why.** The project has had no idea how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, the inbox? Where do people abandon the add-bookmark form? Without answers, every improvement is guesswork. These statistics exist to answer exactly that — **which features get used, and what can be made better** — and nothing more. They are explicitly **not** for following individual users: it is abstract, technical measurement of flow and feature usage, aggregated across everyone.
+
+  **How to turn it off.** **Config → General → Advanced → Privacy** → clear **Privacy-friendly analytics**. It applies after the page reloads. When off, the tracker script is **not emitted into the page at all**, so it is never even downloaded and **no request leaves your machine**. The setting is stored per user in `settings.json` as `enableUsageAnalytics`, so the choice follows you across devices.
+
+  **Or from the keyboard.** `:tracking` shows the current state with **on** / **off** rows; `:tracking off` and `:tracking on` go straight there. It writes the same `enableUsageAnalytics` setting as the Privacy checkbox and reloads the page, since the tracker `<script>` is emitted server-side and only a fresh page can load or unload it.
+
+  **What is measured.** Page views; opening the health and inbox views; which config tab you land on; opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form; bookmark opens with their source (dashboard, search, or recent); inbox triage and health actions; and the outcome of adding a bookmark (created, duplicate, shortcut conflict, invalid, error). Once per page load a snapshot records which features are switched on, as plain booleans and small enums.
+
+  **What is never measured.** No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies, no personal profile, no cross-site tracking. Counts that could be identifying are bucketed (for example `2-5` instead of an exact number). The instance is self-hosted, so nothing goes to an advertising network.
+
+### Getting started
+
+- **new** **Starting point step on first run** — the quick-start setup card gained a fourth step asking whether to keep the example bookmarks or begin with an empty dashboard. Keeping them is the default, so clicking straight through behaves exactly as before. Choosing **Start from scratch** wipes every bookmark on every page (reusing the delete-all endpoint) while leaving pages, categories, finders, and settings untouched, and no default bookmarks are recreated. `showStatus` is switched off at the same time, since status checks have nothing left to monitor. On a first run the wording says "example bookmarks"; on a rare wizard re-entry with your own bookmarks present it drops that word, so the prompt never promises to only clear samples.
+
+### Config
+
+- **new** **Delete all bookmarks only** — **Config → General → Reset** now offers a second, amber button beside the red full reset. It empties every page's bookmarks while keeping pages, categories, finders, and all settings, and — unlike the full reset — does not recreate the default sample bookmarks. Guarded by a confirmation dialog followed by a typed `DELETE`. Backed by a new `DeleteAllBookmarks()` store method and `POST /api/bookmarks/delete-all` (confirmation required, health cache invalidated, activity-logged).
+
+- **fix** **Config → Help caught up with the app** — Help's own sections still described an older nextDash: several shipped features were only ever mentioned in the What's new list, never in the sections that actually explain them. Added across EN/NL/DE/FR: privacy-friendly analytics and how to turn them off, including `:tracking` (*Self-hosting & security*); both reset buttons and what each one keeps (*Data & backups*); the first-run **Starting point** step and the empty-dashboard state (*Getting started*); and the per-category item limit shipped in v2026.07.18 (*Appearance*). All of it is searchable through settings search like the rest of Help.
+
+### Dashboard
+
+- **fix** **A narrow desktop window is no longer treated as a phone** — resizing a browser window used to switch nextDash to the mobile layout: the footer dropped to search-only, the toolbar lost commands and finders, modals turned into full-screen sheets, and a banner suggested opening nextDash on a computer while you were already on one. `isMobileLayout()` tested width alone, and the portrait-tablet rule was especially easy to hit because a narrowed window is usually taller than it is wide. All three entry points now require an actual touch device (`hover: none` and `pointer: coarse`). Phones and tablets are unchanged; dashboard column stacking below 767px stays, since that is ordinary responsive layout rather than a device assumption.
+
+- **fix** **Empty dashboard no longer fails to load** — with zero bookmarks, `SearchComponent.buildShortcutsMap()` ran `.forEach` on a null list during init, so the whole dashboard bootstrap threw and rendered *Failed to load dashboard*, leaving the page unresponsive. The search bookmark source now falls back to `[]` in both `dashboard-setup.js` and `search.js`. The fresh empty state also reads properly now: an **Add a bookmark** link that opens the modal, plus **Manage bookmarks in config** (`/config#bookmarks`) and **Import your data**, styled locally since the global `.btn` rules are config-only and bare anchors rendered as raw browser links.
+
+- **fix** **Stale pages after an update** — a browser could keep serving an HTML shell from its cache and run the previous release's JavaScript, so new features stayed invisible until the cache was cleared by hand; Safari hit this most often because the shell had no validator to revalidate against. The dashboard and config shells now carry a content-based `ETag` and honour `If-None-Match` (304 when unchanged, a fresh 200 when the assets change). A small `app-version-guard.js` additionally reloads once when a page is restored from the back/forward cache, or when the shell's baked-in asset fingerprint no longer matches `/api/app-version` — guarded by `sessionStorage` so it can never loop.
 
 ---
 
