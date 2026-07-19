@@ -1253,6 +1253,8 @@ These statistics exist to answer exactly those questions — **which features ge
 | Navigation | switching dashboard pages (by position), which config tab you land on, the `<` dashboard↔config shortcut |
 | Overlays | search, commands, finders, cheat sheet, tag cloud, what's-new, add-bookmark form |
 | Bookmark opens | that one was opened, and whether from the dashboard, search, or recent |
+| Commands | which command palette command was run, by name (`theme`, `config`, `density`, …) — only names from the built-in list; anything else you typed is discarded |
+| Bookmark maintenance | starting an edit and saving it (and whether that was on the dashboard or in config), deleting, moving to another category (bucketed count, so a bulk move counts once), reordering by drag |
 | Outcomes | whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure |
 | Inbox | snooze, mark-read, wake, promote, delete, mark-all-read, clear-read |
 | Health | recheck, retest-all, detect-redirect, refresh-title, delete |

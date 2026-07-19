@@ -173,6 +173,8 @@ These statistics exist to answer exactly that — **which features get used, and
 - **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut.
 - **Overlays** — opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form.
 - **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, or `recent`).
+- **Commands** — which command palette command was run, by its name (`theme`, `config`, `density`, …). Only names from the built-in command list are recorded; anything else you typed is discarded.
+- **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
 - **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
 - **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
 - **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums.

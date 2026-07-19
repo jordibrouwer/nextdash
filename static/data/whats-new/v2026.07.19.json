@@ -25,7 +25,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>What is measured</strong> — page views, which views you open (health, inbox), which config tab you land on, opening search / commands / finders / the cheat sheet / the tag cloud / what's-new / the add-bookmark form, bookmark opens (and whether they came from the dashboard, search, or recent), inbox triage and health actions, and whether adding a bookmark succeeded or hit a snag. Once per page load it also records which features you have switched on — as plain yes/no values — so it is clear which options are worth keeping and improving."
+          "text": "<strong>What is measured</strong> — page views, which views you open (health, inbox), which config tab you land on, opening search / commands / finders / the cheat sheet / the tag cloud / what's-new / the add-bookmark form, bookmark opens (and whether they came from the dashboard, search, or recent), which command palette command you ran, bookmark maintenance (starting and saving an edit, deleting, moving, reordering), inbox triage and health actions, and whether adding a bookmark succeeded or hit a snag. Once per page load it also records which features you have switched on — as plain yes/no values — so it is clear which options are worth keeping and improving."
         },
         {
           "badge": "new",
