@@ -119,6 +119,8 @@ Nothing yet.
 
   **Or from the keyboard.** `:tracking` shows the current state with **on** / **off** rows; `:tracking off` and `:tracking on` go straight there. It writes the same `enableUsageAnalytics` setting as the Privacy checkbox and reloads the page, since the tracker `<script>` is emitted server-side and only a fresh page can load or unload it.
 
+  **Instance-wide kill switch.** Set `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) to switch analytics off for the whole server, whatever individual users have configured. The tracker is never emitted, `POST /api/settings` and the `:tracking` command cannot turn it back on, and the Privacy checkbox renders disabled with a note pointing at the environment variable. Stored per-user preferences are deliberately left untouched, so they return unchanged if the variable is later unset. Commented out in both compose files.
+
   **What is measured.** Page views; opening the health and inbox views; which config tab you land on; opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form; bookmark opens with their source (dashboard, search, or recent); inbox triage and health actions; and the outcome of adding a bookmark (created, duplicate, shortcut conflict, invalid, error). Once per page load a snapshot records which features are switched on, as plain booleans and small enums.
 
   **What is never measured.** No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies, no personal profile, no cross-site tracking. Counts that could be identifying are bucketed (for example `2-5` instead of an exact number). The instance is self-hosted, so nothing goes to an advertising network.

@@ -21,6 +21,10 @@
         },
         {
           "badge": "new",
+          "text": "<strong>Running nextDash for other people?</strong> Set the environment variable <code>DISABLE_TELEMETRY=true</code> to switch analytics off for the entire server, whatever anyone has configured. Nothing is ever sent, it cannot be re-enabled from the app, and the Privacy checkbox shows as greyed out with a note explaining that the server operator turned it off. Everyone's own preference stays stored, so it returns unchanged if you ever unset the variable."
+        },
+        {
+          "badge": "new",
           "text": "<strong>What is measured</strong> — page views, which views you open (health, inbox), which config tab you land on, opening search / commands / finders / the cheat sheet / the tag cloud / what's-new / the add-bookmark form, bookmark opens (and whether they came from the dashboard, search, or recent), inbox triage and health actions, and whether adding a bookmark succeeded or hit a snag. Once per page load it also records which features you have switched on — as plain yes/no values — so it is clear which options are worth keeping and improving."
         },
         {

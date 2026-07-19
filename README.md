@@ -146,6 +146,19 @@ nextDash records **anonymous, privacy-friendly usage statistics** through a self
 
 From the keyboard: press <kbd>:</kbd> and run **`:tracking off`** (or `:tracking on`). Typing `:tracking` on its own shows the current state. It writes the same setting and reloads the page for you.
 
+#### Disable it for the whole instance
+
+Set the environment variable **`DISABLE_TELEMETRY=true`** to switch analytics off server-wide, regardless of what any user has configured:
+
+```yaml
+environment:
+  - DISABLE_TELEMETRY=true
+```
+
+The tracker is then never emitted, the setting cannot be turned back on through the API or the `:tracking` command, and the **Privacy** checkbox in config renders disabled with a note explaining why. Accepts `true`, `1`, `yes`, or `on`; unset or `false` leaves analytics under user control.
+
+Each user's own preference is left stored and untouched, so it returns exactly as it was if you ever unset the variable.
+
 When it is off, the tracker script is **not emitted into the page at all** — it is never even downloaded, and **no request leaves your machine**. There is no client-side flag quietly suppressing calls; the code simply is not there. The choice is stored per user in `settings.json` as `enableUsageAnalytics`, so it follows you across devices.
 
 #### Why it exists

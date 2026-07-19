@@ -1234,6 +1234,8 @@ Go to **Config → General → Advanced → Privacy** and clear the **Privacy-fr
 
 **Or from the keyboard.** Press <kbd>:</kbd> and run **`:tracking off`** — or `:tracking on` to switch it back. Typing `:tracking` on its own lists both options and marks which one is current. The command writes the same setting as the checkbox and reloads the page for you, because the tracker script is emitted server-side: only a fresh page can actually load or unload it.
 
+**For the whole server (self-hosting).** If you run nextDash for others, or simply do not want the choice to depend on anyone leaving a toggle alone, set the environment variable **`DISABLE_TELEMETRY=true`** (also accepts `1`, `yes`, `on`). Analytics is then off for every user: the tracker is never emitted, the setting cannot be re-enabled through the API or the `:tracking` command, and the **Privacy** checkbox appears greyed out with a note explaining that the server operator switched it off. Each user's stored preference is left as it is, so it comes back unchanged if you later unset the variable.
+
 When it is off, the tracker script is **not emitted into the page at all**. It is never downloaded, and **no request leaves your machine** — not even to fetch the script. This is not a client-side switch that quietly drops events; the analytics code simply is not loaded. Your choice is stored per user in `settings.json` as `enableUsageAnalytics`, so it follows you to every device you use nextDash on.
 
 #### Why nextDash measures anything at all
