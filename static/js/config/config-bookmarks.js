@@ -363,6 +363,10 @@ class ConfigBookmarks {
         this.activeDetailIndex = index;
         const bookmark = bookmarks[index];
         if (!bookmark) return;
+        // Config's counterpart to the dashboard's inline editor. There is no
+        // per-bookmark save here — fields write straight into the page's data and
+        // one Save button commits the lot — so only the open is countable.
+        window.nextdashTrack?.('bookmark:edit-open', { source: 'config' });
         // Always use the freshest category list available.
         const resolvedCategories = (Array.isArray(categories) && categories.length > 0)
             ? categories

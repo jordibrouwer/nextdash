@@ -128,7 +128,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigFontJS:             "config-font-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
-	DashboardRenderCoreJS:    "empty-dashboard-fix-1",
+	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
 	DashboardCSS:            "category-item-limit-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",

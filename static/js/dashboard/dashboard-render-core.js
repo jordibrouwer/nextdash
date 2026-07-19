@@ -531,6 +531,7 @@ class DashboardRenderCore {
                 longPressMs: 0,
                 delegateItemDragOver: true,
                 onReorder: () => {
+                    window.nextdashTrack?.('bookmark:reorder');
                     this.syncBookmarksFromDom();
                 }
             });

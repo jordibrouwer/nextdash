@@ -340,6 +340,9 @@ class DashboardInlineEdit {
         if (!bookmark) {
             return;
         }
+        // Pairs with bookmark:edit (which fires on save) to show how often an
+        // edit is started but abandoned.
+        window.nextdashTrack?.('bookmark:edit-open', { source: 'dashboard' });
         if (row._bookmarkLongPressAbort) {
             row._bookmarkLongPressAbort.abort();
             row._bookmarkLongPressAbort = null;
@@ -974,6 +977,7 @@ class DashboardInlineEdit {
         if (!bookmark || !bookmarkRef) {
             return;
         }
+        window.nextdashTrack?.('bookmark:edit', { source: 'dashboard' });
 
         const name = fields.nameInput.value.trim();
         const url = fields.urlInput.value.trim();
@@ -1335,6 +1339,9 @@ class DashboardInlineEdit {
         if (!bookmarkRef?.bookmark) {
             return;
         }
+        // Both branches below end in a delete, so count it once here rather than
+        // in each of them.
+        window.nextdashTrack?.('bookmark:delete');
         if (bookmarkRef.scope === 'current') {
             await this.deleteBookmarkAtIndexInline(bookmarkRef, options);
             return;
