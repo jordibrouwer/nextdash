@@ -1332,6 +1332,7 @@
         "generalPrivacyTitle": "Confidentialité",
         "usageAnalyticsLabel": "Analyse respectueuse de la vie privée",
         "usageAnalyticsHint": "NextDash utilise Umami pour comprendre quelles fonctionnalités sont utilisées et comment l'application peut être améliorée. Nous l'utilisons uniquement pour des informations produit telles que les pages vues, l'utilisation des fonctionnalités et l'engagement général. Aucun cookie n'est utilisé, aucun profil personnel n'est créé et les utilisateurs ne sont pas suivis d'un site à l'autre. Les données d'analyse servent uniquement à améliorer NextDash. Vous pouvez désactiver cette option ici ; elle prend effet après le rechargement de la page.",
+        "usageAnalyticsLockedHint": "Désactivé pour ce serveur via la variable d'environnement DISABLE_TELEMETRY. Rien n'est envoyé et cela ne peut pas être modifié ici tant que l'administrateur du serveur ne l'a pas retirée.",
         "advancedNavAppearance": "Réglages fins",
         "advancedNavBookmarks": "Options d'affichage",
         "advancedNavBookmarkBehavior": "Comportement",

@@ -8,7 +8,7 @@
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
     <script src="/static/js/app-version-guard.js?v={{.Assets.AppVersionGuardJS}}"></script>
     <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
-    {{if .EnableUsageAnalytics}}<script src="/static/js/umami-analytics.js?v={{.Assets.UmamiAnalyticsJS}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}"></script>{{end}}
+    {{if .AnalyticsEnabled}}<script src="/static/js/umami-analytics.js?v={{.Assets.UmamiAnalyticsJS}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}"></script>{{end}}
     <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>

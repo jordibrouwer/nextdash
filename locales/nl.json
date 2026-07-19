@@ -1342,6 +1342,7 @@
         "generalPrivacyTitle": "Privacy",
         "usageAnalyticsLabel": "Privacyvriendelijke analytics",
         "usageAnalyticsHint": "NextDash gebruikt Umami om te begrijpen welke functies worden gebruikt en hoe de app kan worden verbeterd. We gebruiken dit alleen voor productinzichten zoals paginaweergaven, functiegebruik en algemene betrokkenheid. Er worden geen cookies gebruikt, er worden geen persoonlijke profielen aangemaakt en gebruikers worden niet gevolgd over websites heen. Analysegegevens worden uitsluitend gebruikt om NextDash te verbeteren. Je kunt dit hier uitschakelen; het gaat in na het herladen van de pagina.",
+        "usageAnalyticsLockedHint": "Uitgeschakeld voor deze server via de omgevingsvariabele DISABLE_TELEMETRY. Er wordt niets verstuurd en dit kan hier niet worden gewijzigd totdat de serverbeheerder deze weer uitzet.",
         "advancedNavAppearance": "Afstemming",
         "advancedNavBookmarks": "Weergave-opties",
         "advancedNavBookmarkBehavior": "Gedrag",

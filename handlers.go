@@ -598,10 +598,15 @@ type htmlPageData struct {
 	AppVersion string
 
 	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
-	// project's shared instance; the template only emits the tracker when
-	// Settings.EnableUsageAnalytics is true.
+	// project's shared instance. The template emits the tracker only when
+	// AnalyticsEnabled is true — that is the user's setting AND the operator
+	// not having switched telemetry off via DISABLE_TELEMETRY.
 	AnalyticsWebsiteID string
 	AnalyticsScriptSrc string
+	AnalyticsEnabled   bool
+	// TelemetryLockedOff mirrors DISABLE_TELEMETRY so config can render the
+	// Privacy checkbox disabled and explain why it cannot be changed.
+	TelemetryLockedOff bool
 }
 
 // analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
@@ -618,6 +623,8 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AppVersion:         appVersionToken(),
 		AnalyticsWebsiteID: analyticsWebsiteID,
 		AnalyticsScriptSrc: analyticsScriptSrc,
+		AnalyticsEnabled:   analyticsEnabled(settings),
+		TelemetryLockedOff: telemetryDisabledByEnv(),
 	}
 }
 
@@ -1226,6 +1233,12 @@ func (h *Handlers) DeleteAllBookmarks(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
+	// Report the effective value: with DISABLE_TELEMETRY set, analytics is off no
+	// matter what is stored, and clients should render it that way. The stored
+	// setting is left untouched so it returns when the operator lifts the switch.
+	if telemetryDisabledByEnv() {
+		settings.EnableUsageAnalytics = false
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(settings)
 }
@@ -1270,6 +1283,15 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+
+	// DISABLE_TELEMETRY is an operator kill switch, so it has to hold at the API
+	// too — otherwise a client could simply POST the setting back to true. Keep
+	// whatever is already stored rather than writing false: the switch suppresses
+	// analytics while it is set, and the user's own preference must survive it so
+	// it returns unchanged once the operator unsets it.
+	if telemetryDisabledByEnv() {
+		settings.EnableUsageAnalytics = h.store.GetSettings().EnableUsageAnalytics
 	}
 
 	// Validate and sanitize collections
