@@ -114,7 +114,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
 	DashboardDeepLinkJS:      "dashboard-deep-link-edit-2",
-	AnalyticsJS:              "analytics-2-umami-track",
+	AnalyticsJS:              "analytics-3-open-source",
 	UmamiAnalyticsJS:         "umami-analytics-1",
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-1",

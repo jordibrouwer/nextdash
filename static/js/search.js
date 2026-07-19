@@ -2048,6 +2048,9 @@ class SearchComponent {
 
     openBookmark(bookmark) {
         this.recordSearchHistory(this.currentQuery);
+        // Opening from search went uncounted before: it bypasses the dashboard row
+        // handler that normally records the open. Attribute it to the search source.
+        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');
 
         // Close search first if it's active
         if (this.searchActive) {
