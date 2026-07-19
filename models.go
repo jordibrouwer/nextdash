@@ -238,10 +238,11 @@ type ThemeIconStylingEntry struct {
 // QuickStartState tracks first-run quick-start progress, persisted per-user in
 // settings JSON (not client localStorage) so it is consistent across devices.
 type QuickStartState struct {
-	SetupDone      bool `json:"setupDone"`      // Compact setup card finished or skipped
-	Dismissed      bool `json:"dismissed"`      // Checklist completed or dismissed
-	VisitedConfig  bool `json:"visitedConfig"`  // Opened Config → General (checklist item)
-	SeenCheatsheet bool `json:"seenCheatsheet"` // Opened the keyboard cheat sheet (checklist item)
+	SetupDone           bool `json:"setupDone"`           // Compact setup card finished or skipped
+	Dismissed           bool `json:"dismissed"`           // Checklist completed or dismissed
+	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
+	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)
+	SeenAnalyticsNotice bool `json:"seenAnalyticsNotice"` // One-time card telling the user analytics is on
 }
 
 func isValidFontPreset(s string) bool {

@@ -610,7 +610,21 @@
         "healthRedirectBody": "Dieses Lesezeichen leitet weiter zu:\n\n{url}",
         "healthRedirectStillBroken": "URL aktualisiert, aber sie schlägt weiterhin fehl: {error}",
         "healthRetestDone": "{count} Lesezeichen erneut geprüft",
-        "healthScoreToggle": "Punktzahl {score} — Aufschlüsselung anzeigen"
+        "healthScoreToggle": "Punktzahl {score} — Aufschlüsselung anzeigen",
+        "analyticsNoticeTitle": "Datenschutzfreundliche Statistiken",
+        "analyticsNoticeBody": "nextDash erfasst anonyme Nutzungsstatistiken, um zu sehen, welche Funktionen genutzt werden und was verbessert werden kann — nie Lesezeichennamen, URLs oder Suchanfragen. Du kannst dies jederzeit abschalten.",
+        "analyticsNoticeLearnMore": "Was wird erfasst?",
+        "analyticsNoticeGotIt": "Verstanden",
+        "analyticsNoticeDismiss": "Schließen",
+        "analyticsNoticeModalTitle": "datenschutzfreundliche Statistiken",
+        "analyticsNoticeWhyTitle": "Warum es das gibt",
+        "analyticsNoticeWhyBody": "nextDash hatte kein Bild davon, wie es tatsächlich genutzt wird. Welche Ansichten öffnen die Leute? Nutzt jemand Finder, die Tag-Cloud oder den Posteingang? Wo brechen Leute das Hinzufügen eines Lesezeichens ab? Ohne Antworten ist jede Verbesserung Rätselraten. Diese Statistiken beantworten genau das — welche Funktionen genutzt werden und was besser gemacht werden kann — und nichts sonst. Sie sollen dir nicht folgen: Es ist rein abstrakte, technische Messung von Abläufen und Funktionsnutzung, über alle Nutzenden aggregiert.",
+        "analyticsNoticeNeverTitle": "Was nie erfasst wird",
+        "analyticsNoticeNeverBody": "Keine Lesezeichennamen, URLs, Suchanfragen, Seiten- oder Kategorienamen, Notizen oder Tags. Es werden keine Cookies gesetzt, kein persönliches Profil erstellt, und du wirst nicht über andere Websites verfolgt. Aufschlussreiche Zahlen werden in Bereiche gerundet, und die Instanz ist selbst gehostet, es wird also nichts an ein Werbenetzwerk weitergegeben.",
+        "analyticsNoticeOffTitle": "So schaltest du es ab",
+        "analyticsNoticeOffBody": "Gehe zu Konfiguration → Allgemein → Erweitert → Datenschutz und deaktiviere „Datenschutzfreundliche Statistiken\", oder führe :tracking off in der Befehlspalette aus. Es wirkt nach dem Neuladen der Seite. Ist es aus, wird der Tracker gar nicht geladen und es verlässt keine Anfrage deinen Rechner.",
+        "analyticsNoticeOpenConfig": "Datenschutzeinstellungen öffnen",
+        "analyticsNoticeClose": "Schließen"
     },
     "health": {
         "pageTitle": "health beta",

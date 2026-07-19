@@ -435,6 +435,17 @@
             onClose?.();
         };
 
+        // finish() must run however the modal goes away — the close button, Escape,
+        // or a click on the backdrop. The latter two only call AppModal.hide(),
+        // which fires onHide but not onConfirm/onCancel, so hang it there and guard
+        // against running twice when the button path fires both.
+        let finished = false;
+        const finishOnce = () => {
+            if (finished) return;
+            finished = true;
+            finish();
+        };
+
         teardownLazyLoader();
         window.AppModal.show({
             title: "what's new",
@@ -442,8 +453,9 @@
             confirmText: 'close',
             showCancel: false,
             modalClass: 'whats-new-modal',
-            onConfirm: finish,
-            onCancel: finish,
+            onConfirm: finishOnce,
+            onCancel: finishOnce,
+            onHide: finishOnce,
         });
 
         return fetchManifest()

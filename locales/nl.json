@@ -610,7 +610,21 @@
         "healthRedirectBody": "Deze bladwijzer redirect naar:\n\n{url}",
         "healthRedirectStillBroken": "URL bijgewerkt, maar faalt nog steeds: {error}",
         "healthRetestDone": "{count} bladwijzers opnieuw gecontroleerd",
-        "healthScoreToggle": "Score {score} — uitsplitsing tonen"
+        "healthScoreToggle": "Score {score} — uitsplitsing tonen",
+        "analyticsNoticeTitle": "Privacyvriendelijke statistieken",
+        "analyticsNoticeBody": "nextDash verzamelt anonieme gebruiksstatistieken om te zien welke functies gebruikt worden en wat beter kan — nooit bookmarknamen, URL's of zoekopdrachten. Je kunt dit op elk moment uitzetten.",
+        "analyticsNoticeLearnMore": "Wat wordt er vastgelegd?",
+        "analyticsNoticeGotIt": "Begrepen",
+        "analyticsNoticeDismiss": "Sluiten",
+        "analyticsNoticeModalTitle": "privacyvriendelijke statistieken",
+        "analyticsNoticeWhyTitle": "Waarom dit bestaat",
+        "analyticsNoticeWhyBody": "nextDash had geen beeld van hoe het daadwerkelijk gebruikt wordt. Welke weergaven openen mensen? Gebruikt iemand finders, de tag cloud of de inbox? Waar haken mensen halverwege af bij het toevoegen van een bookmark? Zonder antwoorden is elke verbetering giswerk. Deze statistieken beantwoorden precies dat — welke functies gebruikt worden en wat beter kan — en niets anders. Ze zijn niet bedoeld om jou te volgen: het is puur abstracte, technische meting van flow en functiegebruik, geaggregeerd over alle gebruikers.",
+        "analyticsNoticeNeverTitle": "Wat nooit wordt vastgelegd",
+        "analyticsNoticeNeverBody": "Geen bookmarknamen, URL's, zoekopdrachten, pagina- of categorienamen, notities of tags. Er worden geen cookies gezet, geen persoonlijk profiel opgebouwd en je wordt niet gevolgd op andere websites. Aantallen die veelzeggend kunnen zijn worden afgerond naar categorieën, en de instantie is zelf-gehost, dus er wordt niets gedeeld met een advertentienetwerk.",
+        "analyticsNoticeOffTitle": "Zo zet je het uit",
+        "analyticsNoticeOffBody": "Ga naar Config → Algemeen → Geavanceerd → Privacy en vink \"Privacyvriendelijke statistieken\" uit, of voer :tracking off uit in het commandopalet. Het werkt na het herladen van de pagina. Staat het uit, dan wordt de tracker niet eens geladen en verlaat er geen enkel verzoek je machine.",
+        "analyticsNoticeOpenConfig": "Privacy-instellingen openen",
+        "analyticsNoticeClose": "Sluiten"
     },
     "health": {
         "pageTitle": "health beta",

@@ -610,7 +610,21 @@
         "healthRedirectBody": "Ce favori redirige vers :\n\n{url}",
         "healthRedirectStillBroken": "URL mise à jour, mais elle échoue encore : {error}",
         "healthRetestDone": "{count} favoris revérifiés",
-        "healthScoreToggle": "Score {score} — afficher le détail"
+        "healthScoreToggle": "Score {score} — afficher le détail",
+        "analyticsNoticeTitle": "Statistiques respectueuses de la vie privée",
+        "analyticsNoticeBody": "nextDash enregistre des statistiques d'usage anonymes pour voir quelles fonctionnalités sont utilisées et ce qui peut être amélioré — jamais les noms de favoris, URL ou recherches. Vous pouvez désactiver cela à tout moment.",
+        "analyticsNoticeLearnMore": "Qu'est-ce qui est enregistré ?",
+        "analyticsNoticeGotIt": "Compris",
+        "analyticsNoticeDismiss": "Fermer",
+        "analyticsNoticeModalTitle": "statistiques respectueuses de la vie privée",
+        "analyticsNoticeWhyTitle": "Pourquoi cela existe",
+        "analyticsNoticeWhyBody": "nextDash n'avait aucune idée de la façon dont il est réellement utilisé. Quelles vues les gens ouvrent-ils ? Quelqu'un utilise-t-il les finders, le nuage de tags ou la boîte de réception ? Où les gens abandonnent-ils en cours d'ajout d'un favori ? Sans réponses, chaque amélioration relève de la devinette. Ces statistiques répondent exactement à cela — quelles fonctionnalités sont utilisées et ce qui peut être amélioré — et rien d'autre. Elles ne servent pas à vous suivre : c'est une mesure purement abstraite et technique des parcours et de l'usage, agrégée sur l'ensemble des utilisateurs.",
+        "analyticsNoticeNeverTitle": "Ce qui n'est jamais enregistré",
+        "analyticsNoticeNeverBody": "Aucun nom de favori, URL, requête de recherche, nom de page ou de catégorie, note ou tag. Aucun cookie n'est déposé, aucun profil personnel n'est créé et vous n'êtes pas suivi sur d'autres sites. Les nombres qui pourraient être révélateurs sont arrondis par tranches, et l'instance est auto-hébergée : rien n'est partagé avec un réseau publicitaire.",
+        "analyticsNoticeOffTitle": "Comment le désactiver",
+        "analyticsNoticeOffBody": "Allez dans Config → Général → Avancé → Confidentialité et décochez « Statistiques respectueuses de la vie privée », ou lancez :tracking off depuis la palette de commandes. Cela prend effet après le rechargement de la page. Une fois désactivé, le traceur n'est même pas chargé et aucune requête ne quitte votre machine.",
+        "analyticsNoticeOpenConfig": "Ouvrir les paramètres de confidentialité",
+        "analyticsNoticeClose": "Fermer"
     },
     "health": {
         "pageTitle": "health beta",

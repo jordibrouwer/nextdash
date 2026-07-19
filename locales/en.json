@@ -610,7 +610,21 @@
         "healthRedirectBody": "This bookmark redirects to:\n\n{url}",
         "healthRedirectStillBroken": "URL updated, but it still fails: {error}",
         "healthRetestDone": "Re-checked {count} bookmarks",
-        "healthScoreToggle": "Score {score} — show breakdown"
+        "healthScoreToggle": "Score {score} — show breakdown",
+        "analyticsNoticeTitle": "Privacy-friendly analytics",
+        "analyticsNoticeBody": "nextDash records anonymous usage statistics to see which features are used and what can be improved — never bookmark names, URLs, or searches. You can turn this off at any time.",
+        "analyticsNoticeLearnMore": "What is recorded?",
+        "analyticsNoticeGotIt": "Got it",
+        "analyticsNoticeDismiss": "Dismiss",
+        "analyticsNoticeModalTitle": "privacy-friendly analytics",
+        "analyticsNoticeWhyTitle": "Why this exists",
+        "analyticsNoticeWhyBody": "nextDash had no picture of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, or the inbox? Where do people give up halfway through adding a bookmark? Without answers, every improvement is guesswork. These statistics answer exactly that — which features get used and what can be made better — and nothing else. They are not meant to follow you around: it is purely abstract, technical measurement of flow and feature usage, aggregated across everyone.",
+        "analyticsNoticeNeverTitle": "What is never recorded",
+        "analyticsNoticeNeverBody": "No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.",
+        "analyticsNoticeOffTitle": "How to turn it off",
+        "analyticsNoticeOffBody": "Go to Config → General → Advanced → Privacy and clear \"Privacy-friendly analytics\", or run :tracking off from the command palette. It applies after the page reloads. When off, the tracker is not loaded at all and no request leaves your machine.",
+        "analyticsNoticeOpenConfig": "Open privacy settings",
+        "analyticsNoticeClose": "Close"
     },
     "health": {
         "pageTitle": "health beta",
