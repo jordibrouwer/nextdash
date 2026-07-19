@@ -345,7 +345,10 @@
 
                 // "Start from scratch": wipe the seeded bookmarks before rendering so
                 // the dashboard lands on the empty state. Reuses the delete-all endpoint.
+                // With no bookmarks left, dashboard status checks have nothing to
+                // monitor — turn the setting off so it isn't left dangling.
                 if (draft.startEmpty === true) {
+                    d.settings.showStatus = false;
                     await this.clearAllBookmarksForFreshStart();
                 }
 
